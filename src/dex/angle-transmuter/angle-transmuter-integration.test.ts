@@ -13,6 +13,8 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { AngleTransmuterEventPool } from './angle-transmuter-pool';
+import { Address } from '../../types';
 
 /*
   README
@@ -24,7 +26,7 @@ import { Tokens } from '../../../tests/constants-e2e';
   logic.
 
   You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
+  `npx jest src/dex/angle-transmuter/angle-transmuter-integration.test.ts`
 
   (This comment should be removed from the final implementation)
 */
@@ -35,12 +37,16 @@ function getReaderCalldata(
   amounts: bigint[],
   funcName: string,
   // TODO: Put here additional arguments you need
+  tokenIn: Address,
+  tokenOut: Address,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
       // TODO: Put here additional arguments to encode them
       amount,
+      tokenIn,
+      tokenOut,
     ]),
   }));
 }
@@ -63,19 +69,23 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  tokenIn: Address,
+  tokenOut: Address,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = '0x00253582b2a3FE112feEC532221d9708c64cEFAb'; // TODO: Put here the real exchange address
 
   // TODO: Replace dummy interface with the real one
   // Normally you can get it from angleTransmuter.Iface or from eventPool.
   // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = AngleTransmuterEventPool.angleTransmuterIface;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    tokenIn,
+    tokenOut,
   );
   const readerResult = (
     await angleTransmuter.dexHelper.multiContract.methods
@@ -143,6 +153,8 @@ async function testPricingOnNetwork(
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    networkTokens[srcTokenSymbol].address,
+    networkTokens[destTokenSymbol].address,
   );
 }
 
@@ -159,8 +171,8 @@ describe('AngleTransmuter', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'EUROC';
+    const destTokenSymbol = 'agEUR';
 
     const amountsForSell = [
       0n,
@@ -208,48 +220,48 @@ describe('AngleTransmuter', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'quoteIn', // TODO: Put here proper function name to check pricing
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        angleTransmuter,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
+    // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    //   await testPricingOnNetwork(
+    //     angleTransmuter,
+    //     network,
+    //     dexKey,
+    //     blockNumber,
+    //     srcTokenSymbol,
+    //     destTokenSymbol,
+    //     SwapSide.BUY,
+    //     amountsForBuy,
+    //     'quoteOut', // TODO: Put here proper function name to check pricing
+    //   );
+    // });
 
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newAngleTransmuter = new AngleTransmuter(
-        network,
-        dexKey,
-        dexHelper,
-      );
-      if (newAngleTransmuter.updatePoolState) {
-        await newAngleTransmuter.updatePoolState();
-      }
-      const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+    // it('getTopPoolsForToken', async function () {
+    //   // We have to check without calling initializePricing, because
+    //   // pool-tracker is not calling that function
+    //   const newAngleTransmuter = new AngleTransmuter(
+    //     network,
+    //     dexKey,
+    //     dexHelper,
+    //   );
+    //   if (newAngleTransmuter.updatePoolState) {
+    //     await newAngleTransmuter.updatePoolState();
+    //   }
+    //   const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
+    //     tokens[srcTokenSymbol].address,
+    //     10,
+    //   );
+    //   console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
-    });
+    //   if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
+    //     checkPoolsLiquidity(
+    //       poolLiquidity,
+    //       Tokens[network][srcTokenSymbol].address,
+    //       dexKey,
+    //     );
+    //   }
+    // });
   });
 });

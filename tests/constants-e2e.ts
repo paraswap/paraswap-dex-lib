@@ -299,6 +299,14 @@ export const Tokens: {
       address: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
       decimals: 6,
     },
+    agEUR: {
+      address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',
+      decimals: 18,
+    },
+    EUROC: {
+      address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c',
+      decimals: 6,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -784,10 +792,6 @@ export const Tokens: {
     WBTC: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
-    },
-    USDCe: {
-      address: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
-      decimals: 6,
     },
     LEX: {
       address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',

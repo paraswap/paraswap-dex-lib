@@ -344,3 +344,18 @@ function _computeFee(
     return _invertFeeBurn(amount, fees);
   }
 }
+
+export function filterDictionaryOnly<T extends { [key: string]: any }>(
+  obj: T,
+): Partial<T> {
+  const result: Partial<T> = {};
+  Object.keys(obj).map(key => {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      // Skip numeric keys to exclude array-like properties
+      if (isNaN(Number(key))) {
+        result[key as keyof T] = obj[key];
+      }
+    }
+  });
+  return result;
+}

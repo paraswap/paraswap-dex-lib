@@ -1,0 +1,739 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "uint80",
+        "name": "requestedRoundId",
+        "type": "uint80"
+      }
+    ],
+    "name": "GetRoundDataCanBeOnlyCalledWithLatestRound",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "description",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getDataFeedId",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPriceFeedAdapter",
+    "outputs": [
+      {
+        "internalType": "contract IRedstoneAdapter",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint80",
+        "name": "requestedRoundId",
+        "type": "uint80"
+      }
+    ],
+    "name": "getRoundData",
+    "outputs": [
+      {
+        "internalType": "uint80",
+        "name": "roundId",
+        "type": "uint80"
+      },
+      {
+        "internalType": "int256",
+        "name": "answer",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startedAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "updatedAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint80",
+        "name": "answeredInRound",
+        "type": "uint80"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "latestAnswer",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "latestRound",
+    "outputs": [
+      {
+        "internalType": "uint80",
+        "name": "",
+        "type": "uint80"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "latestRoundData",
+    "outputs": [
+      {
+        "internalType": "uint80",
+        "name": "roundId",
+        "type": "uint80"
+      },
+      {
+        "internalType": "int256",
+        "name": "answer",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startedAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "updatedAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint80",
+        "name": "answeredInRound",
+        "type": "uint80"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "version",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "CalldataMustHaveValidPayload",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CalldataOverOrUnderFlow",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CanNotPickMedianOfEmptyArray",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "dataFeedId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DataFeedIdNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "dataFeedId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DataFeedValueCannotBeZero",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "expectedDataTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dataPackageTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "DataPackageTimestampMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedDataTimestampMilliseconds",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lastDataTimestampMilliseconds",
+        "type": "uint256"
+      }
+    ],
+    "name": "DataTimestampShouldBeNewerThanBefore",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EachSignerMustProvideTheSameValue",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EmptyCalldataPointersArr",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IncorrectUnsignedMetadataSize",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedSignersCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requiredSignersCount",
+        "type": "uint256"
+      }
+    ],
+    "name": "InsufficientNumberOfUniqueSigners",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidCalldataPointer",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "currentBlockTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lastUpdateTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minIntervalBetweenUpdates",
+        "type": "uint256"
+      }
+    ],
+    "name": "MinIntervalBetweenUpdatesHasNotPassedYet",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "receivedSigner",
+        "type": "address"
+      }
+    ],
+    "name": "SignerNotAuthorised",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedTimestampSeconds",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "TimestampFromTooLongFuture",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedTimestampSeconds",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "TimestampIsTooOld",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "signer",
+        "type": "address"
+      }
+    ],
+    "name": "UpdaterNotAuthorised",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "values",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "aggregateValues",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllowedTimestampDiffsInSeconds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "maxDataAheadSeconds",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxDataDelaySeconds",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "signerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "getAuthorisedSignerIndex",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getBlockTimestamp",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getBlockTimestampFromLatestUpdate",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "blockTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getDataFeedIds",
+    "outputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "dataFeedIds",
+        "type": "bytes32[]"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "dataFeedId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getDataFeedIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getDataTimestampFromLatestUpdate",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "lastDataTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getMinIntervalBetweenUpdates",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPackedTimestampsFromLatestUpdate",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "packedTimestamps",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTimestampsFromLatestUpdate",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "dataTimestamp",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "blockTimestamp",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getUniqueSignersThreshold",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "dataFeedId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getValueForDataFeed",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "dataFeedId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getValueForDataFeedUnsafe",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "dataFeedValue",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "requestedDataFeedIds",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "getValuesForDataFeedUnsafe",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "values",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "requestedDataFeedIds",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "getValuesForDataFeeds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "updater",
+        "type": "address"
+      }
+    ],
+    "name": "requireAuthorisedUpdater",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "dataPackagesTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateDataFeedsValues",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "dataFeedId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "valueForDataFeed",
+        "type": "uint256"
+      }
+    ],
+    "name": "validateDataFeedValue",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "dataPackagesTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "validateDataPackagesTimestampOnce",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "dataPackagesTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "validateProposedDataPackagesTimestamp",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedTimestampMilliseconds",
+        "type": "uint256"
+      }
+    ],
+    "name": "validateTimestamp",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

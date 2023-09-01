@@ -7,6 +7,7 @@ import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   ChainlinkConfig,
+  DecodedOracleConfig,
   DexParams,
   OracleReadType,
   PoolConfig,
@@ -20,9 +21,11 @@ import { Contract } from 'web3-eth-contract';
 import { TransmuterSubscriber } from './transmuter';
 import { PythSubscriber } from './pyth';
 import { _quoteBurnExactInput, _quoteMintExactInput } from './utils';
+import { RedstoneSubscriber } from './redstone';
 
 export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
   public transmuter: Contract;
+  static angleTransmuterIface = new Interface(TransmuterABI);
 
   constructor(
     readonly parentName: string,
@@ -30,7 +33,6 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     protected dexHelper: IDexHelper,
     logger: Logger,
     config: PoolConfig,
-    protected angleTransmuterIface = new Interface(TransmuterABI),
   ) {
     const chainlinkMap = Object.entries(config.oracles.chainlink).reduce(
       (
@@ -148,14 +150,15 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     _tokenIn: Address,
     _tokenOut: Address,
   ): Promise<number> {
-    return 0;
+    return 1;
   }
 
+  // TODO
   async getBurnOraclePrice(
     _tokenIn: Address,
     _tokenOut: Address,
   ): Promise<{ oracleValue: number; ratio: number }> {
-    return { oracleValue: 0, ratio: 0 };
+    return { oracleValue: 1, ratio: 1 };
   }
 
   static async getCollateralsList(
@@ -176,11 +179,9 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         ])
         .call({}, blockNumber)
     ).returnData;
-    const tokens: Address[] = tokensResult.map((t: any) =>
-      TransmuterSubscriber.interface
-        .decodeFunctionResult('getCollateralList', tokensResult)[0]
-        .toLowerCase(),
-    );
+    const tokens: Address[] = TransmuterSubscriber.interface
+      .decodeFunctionResult('getCollateralList', tokensResult[0])[0]
+      .map((t: any) => t.toLowerCase());
     return tokens;
   }
 
@@ -205,18 +206,16 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         .aggregate(getOracleConfigData)
         .call({}, blockNumber)
     ).returnData;
-    const oracleConfigs: string[] = oracleConfigResult.map(
+    const oracleConfigs: DecodedOracleConfig[] = oracleConfigResult.map(
       (p: any) =>
-        TransmuterSubscriber.interface.decodeFunctionResult('priceFeeds', p)[0],
+        TransmuterSubscriber.interface.decodeFunctionResult('getOracle', p),
     );
 
     const chainlinkMap: ChainlinkConfig = {} as ChainlinkConfig;
     const pythIds: PythConfig = { proxy: pythAddress, ids: [] } as PythConfig;
 
     await Promise.all(
-      oracleConfigs.map(async oracle => {
-        const oracleConfigDecoded =
-          TransmuterSubscriber._decodeOracleConfig(oracle);
+      oracleConfigs.map(async oracleConfigDecoded => {
         if (oracleConfigDecoded.oracleType !== OracleReadType.EXTERNAL) {
           // add all the feed oracles used to their respective channels
           const oracleFeed = TransmuterSubscriber._decodeOracleFeed(
@@ -226,16 +225,37 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           if (oracleFeed.isChainlink) {
             await Promise.all(
               oracleFeed.chainlink!.circuitChainlink.map(async feed => {
-                const proxyResult = (
-                  await multiContract.methods
-                    .aggregate([
-                      ChainLinkSubscriber.getReadAggregatorMultiCallInput(feed),
-                    ])
-                    .call({}, blockNumber)
-                ).returnData;
-                const aggreagator: Address = ChainLinkSubscriber.readAggregator(
-                  proxyResult[0],
-                );
+                let aggreagator: Address;
+                // it can be Chainlink or Redstone feed
+                // if the call getReadAggregatorMultiCallInput fail with a Chainlink instance
+                // then it is a Redstone one
+                try {
+                  const proxyResult = (
+                    await multiContract.methods
+                      .aggregate([
+                        ChainLinkSubscriber.getReadAggregatorMultiCallInput(
+                          feed,
+                        ),
+                      ])
+                      .call({}, blockNumber)
+                  ).returnData;
+                  aggreagator = ChainLinkSubscriber.readAggregator(
+                    proxyResult[0],
+                  );
+                } catch {
+                  const proxyResult = (
+                    await multiContract.methods
+                      .aggregate([
+                        RedstoneSubscriber.getReadAggregatorMultiCallInput(
+                          feed,
+                        ),
+                      ])
+                      .call({}, blockNumber)
+                  ).returnData;
+                  aggreagator = RedstoneSubscriber.readAggregator(
+                    proxyResult[0],
+                  );
+                }
                 chainlinkMap[feed] = {
                   proxy: feed,
                   aggregator: aggreagator,
@@ -251,7 +271,6 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         }
       }),
     );
-
     return { chainlink: chainlinkMap, pyth: pythIds };
   }
 

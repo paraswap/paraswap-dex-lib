@@ -25,6 +25,7 @@ import {
 import _ from 'lodash';
 import { BigNumber, ethers } from 'ethers';
 import { formatUnits } from 'ethers/lib/utils';
+import { filterDictionaryOnly } from './utils';
 
 export class TransmuterSubscriber<State> extends PartialEventSubscriber<
   State,
@@ -119,7 +120,12 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     multicallOutputs: MultiCallOutput[],
     blockNumber?: number | 'latest',
   ): DeepReadonly<TransmuterState> {
-    let transmuterState = {} as TransmuterState;
+    let transmuterState = {
+      collaterals: {},
+      totalStablecoinIssued: 0,
+      xRedemptionCurve: [],
+      yRedemptionCurve: [],
+    } as TransmuterState;
 
     const nbrCollaterals = this.collaterals.length;
     const indexStableIssued = 0;
@@ -162,17 +168,14 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
                 'getIssuedByCollateral',
                 multicallOutputs[indexStableIssued * nbrCollaterals + i],
               )[0],
-              9,
+              18,
             ),
           ),
           oracles: {
             collateralMintPrice: 0,
             collateralBurnPrice: 0,
             config: this._setOracleConfig(
-              TransmuterSubscriber.interface.decodeFunctionResult(
-                'getOracle',
-                multicallOutputs[indexOracleFees * nbrCollaterals + i],
-              )[0],
+              multicallOutputs[indexOracleFees * nbrCollaterals + i],
             ),
           },
         }),
@@ -195,10 +198,9 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
           'getTotalIssued',
           multicallOutputs[multicallOutputs.length - 1],
         )[0],
-        9,
+        18,
       ),
     );
-
     return transmuterState;
   }
 
@@ -313,11 +315,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     conifgOracle.targetType = oracleConfigDecoded.targetType;
     if (oracleConfigDecoded.oracleType == OracleReadType.EXTERNAL) {
       const externalOracle: Address = ethers.utils.defaultAbiCoder.decode(
-        [
-          `
-          address externalOracle
-          `,
-        ],
+        [`address externalOracle`],
         oracleConfigDecoded.oracleData,
       )[0];
       conifgOracle.externalOracle = externalOracle;
@@ -331,23 +329,21 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
         oracleConfigDecoded.targetData,
       );
     }
-
     return conifgOracle;
   }
 
   static _decodeOracleConfig(oracleConfig: string): DecodedOracleConfig {
-    const oracleConfigDecoded: DecodedOracleConfig =
+    const oracleConfigDecoded = filterDictionaryOnly(
       ethers.utils.defaultAbiCoder.decode(
         [
-          `
-        uint8 oracleType,
-        uint8 targetType,
-        bytes memory oracleData,
-        bytes memory targetData
-        `,
+          'uint8 oracleType',
+          'uint8 targetType',
+          'bytes oracleData',
+          'bytes targetData',
         ],
         oracleConfig,
-      )[0];
+      ),
+    ) as unknown as DecodedOracleConfig;
 
     return oracleConfigDecoded;
   }
@@ -380,36 +376,35 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
   }
 
   static _decodeChainlinkOracle(oracleData: string): Chainlink {
-    const chainlinkOracleDecoded: Chainlink =
+    const chainlinkOracleDecoded = filterDictionaryOnly(
       ethers.utils.defaultAbiCoder.decode(
         [
-          `
-        address[] memory circuitChainlink,
-        uint32[] memory stalePeriods,
-        uint8[] memory circuitChainIsMultiplied,
-        uint8[] memory chainlinkDecimals,
-        uint8 quoteType
-        `,
+          'address[] circuitChainlink',
+          'uint32[] stalePeriods',
+          'uint8[] circuitChainIsMultiplied',
+          'uint8[] chainlinkDecimals',
+          'uint8 quoteType',
         ],
         oracleData,
-      )[0];
+      ),
+    ) as unknown as Chainlink;
 
     return chainlinkOracleDecoded;
   }
 
   static _decodePythOracle(oracleData: string): Pyth {
-    const pythOracleDecoded: Pyth = ethers.utils.defaultAbiCoder.decode(
-      [
-        `
-        address pyth,
-        bytes32[] memory feedIds,
-        uint32[] memory stalePeriods,
-        uint8[] memory isMultiplied,
-        uint8 quoteType
-        `,
-      ],
-      oracleData,
-    )[0];
+    const pythOracleDecoded = filterDictionaryOnly(
+      ethers.utils.defaultAbiCoder.decode(
+        [
+          'address pyth',
+          'bytes32[] feedIds',
+          'uint32[] stalePeriods',
+          'uint8[] isMultiplied',
+          'uint8 quoteType',
+        ],
+        oracleData,
+      ),
+    ) as unknown as Pyth;
 
     return pythOracleDecoded;
   }

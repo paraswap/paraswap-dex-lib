@@ -121,7 +121,7 @@ export class AngleTransmuter
     const uniquePool = `${this.dexKey}_${this.params.agEUR.address}`;
     if (
       this._knownAddress(srcToken, destToken) ||
-      (limitPools && !limitPools.includes(uniquePool))
+      (limitPools && limitPools.length > 0 && !limitPools.includes(uniquePool))
     )
       return null;
 

@@ -76,7 +76,7 @@ export class PythSubscriber<State> extends PartialEventSubscriber<
       return PythSubscriber.proxyInterface.decodeFunctionResult(
         'getPriceUnsafe',
         call,
-      );
+      )[0];
     });
     const _state = {} as PythState;
     this.oracleIds.map((id, index) => {
@@ -99,7 +99,7 @@ export class PythSubscriber<State> extends PartialEventSubscriber<
 
   public _processPrice(price: BigNumber, expo: number): number {
     const isNormalizerExpoNeg = expo < 0;
-    if (isNormalizerExpoNeg) return Number(formatUnits(price, expo));
+    if (isNormalizerExpoNeg) return Number(formatUnits(price, -expo));
     else return Number(parseUnits(price.toString(), expo));
   }
 }
