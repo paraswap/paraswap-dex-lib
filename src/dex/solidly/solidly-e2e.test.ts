@@ -2,7 +2,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders, NativeTokenSymbols } from '../../../tests/constants-e2e';
+import {
+  Tokens,
+  Holders,
+  NativeTokenSymbols,
+} from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -388,6 +392,28 @@ describe('Solidly E2E', () => {
           });
         });
       });
+    });
+
+    describe('Equalizer', () => {
+      const dexKey = 'Equalizer';
+      const network = Network.FANTOM;
+
+      const tokenASymbol: string = 'FUSDT';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '111110';
+      const tokenBAmount: string = '100000';
+      const nativeTokenAmount = '11000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
     });
   });
 
@@ -1378,5 +1404,4 @@ describe('Solidly E2E', () => {
       );
     });
   });
-
 });
