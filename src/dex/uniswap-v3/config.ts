@@ -151,7 +151,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       quoter: '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e',
       router: '0x24c90C7d8fb463722e304A71255341610Fa7589b',
       supportedFees: SUPPORTED_FEES,
-      stateMulticall: '',
+      stateMulticall: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
       uniswapMulticall: '0x8C0F842791F03C095b6c633759224FcC9ACe68ea',
       chunksCount: 10,
       initRetryFrequency: 10,
