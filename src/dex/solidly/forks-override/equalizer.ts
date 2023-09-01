@@ -9,8 +9,8 @@ import _ from 'lodash';
 
 const EqualizerFactoryABI = [
   {
-    inputs: [{ internalType: 'bool', name: '_stable', type: 'bool' }],
-    name: 'getFee',
+    inputs: [{ internalType: 'address', name: '_pair', type: 'address' }],
+    name: 'getRealFee',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
@@ -39,14 +39,14 @@ export class Equalizer extends Solidly {
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: this.factoryAddress,
-      callData: equalizerFactoryIface.encodeFunctionData('getFee', [
-        pair.stable,
+      callData: equalizerFactoryIface.encodeFunctionData('getRealFee', [
+        pair.exchange,
       ]),
     };
     const callDecoder = (values: any[]) =>
       parseInt(
         equalizerFactoryIface
-          .decodeFunctionResult('getFee', values)[0]
+          .decodeFunctionResult('getRealFee', values)[0]
           .toString(),
       );
 
