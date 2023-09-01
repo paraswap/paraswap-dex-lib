@@ -462,7 +462,7 @@ export const Tokens: {
     },
     EQUAL: {
       address: '0x3fd3a0c85b70754efc07ac9ac0cbbdce664865a6',
-      decimals: 18
+      decimals: 18,
     },
     POPS: {
       address: '0x9dE4b40bDcE50Ec6a1A668bF85997BbBD324069a',
