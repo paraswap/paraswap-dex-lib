@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -47,7 +48,7 @@ function decodeReaderResult(
 const constructCheckOnChainPricing =
   (dexHelper: DummyDexHelper) =>
   async (
-    soldily: Solidly,
+    solidly: Solidly,
     funcName: string,
     blockNumber: number,
     prices: bigint[],
@@ -89,7 +90,7 @@ describe('Solidly integration tests', () => {
 
     describe('Solidly', function () {
       const dexKey = 'Solidly';
-      const soldily = new Solidly(network, dexKey, dexHelper);
+      const solidly = new Solidly(network, dexKey, dexHelper);
 
       describe('UniswapV2 like pool', function () {
         const TokenASymbol = 'WFTM';
@@ -101,7 +102,7 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await soldily.getPoolIdentifiers(
+          const pools = await solidly.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -114,7 +115,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await soldily.getPricesVolume(
+          const poolPrices = await solidly.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -132,13 +133,13 @@ describe('Solidly integration tests', () => {
 
           // Check if onchain pricing equals to calculated ones
 
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              soldily,
+              solidly,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -146,7 +147,7 @@ describe('Solidly integration tests', () => {
         });
 
         it('getTopPoolsForToken', async function () {
-          const poolLiquidity = await soldily.getTopPoolsForToken(
+          const poolLiquidity = await solidly.getTopPoolsForToken(
             tokenA.address,
             10,
           );
@@ -166,7 +167,7 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await soldily.getPoolIdentifiers(
+          const pools = await solidly.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -179,7 +180,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await soldily.getPricesVolume(
+          const poolPrices = await solidly.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -196,13 +197,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              soldily,
+              solidly,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -210,7 +211,7 @@ describe('Solidly integration tests', () => {
         });
 
         it('getTopPoolsForToken', async function () {
-          const poolLiquidity = await soldily.getTopPoolsForToken(
+          const poolLiquidity = await solidly.getTopPoolsForToken(
             tokenA.address,
             10,
           );
@@ -266,13 +267,13 @@ describe('Solidly integration tests', () => {
 
           // Check if onchain pricing equals to calculated ones
 
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               spiritSwapV2,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -330,13 +331,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               spiritSwapV2,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -400,13 +401,13 @@ describe('Solidly integration tests', () => {
 
           // Check if onchain pricing equals to calculated ones
 
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               equalizer,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -454,13 +455,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               equalizer,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -510,13 +511,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               equalizer,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -576,13 +577,13 @@ describe('Solidly integration tests', () => {
 
           // Check if onchain pricing equals to calculated ones
 
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               dystopia,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -640,13 +641,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               dystopia,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -716,13 +717,13 @@ describe('Solidly integration tests', () => {
 
           // Check if onchain pricing equals to calculated ones
 
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               cone,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -780,13 +781,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               cone,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -856,13 +857,13 @@ describe('Solidly integration tests', () => {
 
           // Check if onchain pricing equals to calculated ones
 
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               chronos,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -920,13 +921,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               chronos,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -992,13 +993,13 @@ describe('Solidly integration tests', () => {
 
           // Check if onchain pricing equals to calculated ones
 
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               ramses,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -1056,13 +1057,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               ramses,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -1132,13 +1133,13 @@ describe('Solidly integration tests', () => {
 
           // Check if onchain pricing equals to calculated ones
 
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               velodromeV2,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
@@ -1186,13 +1187,13 @@ describe('Solidly integration tests', () => {
           checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
-          for (const i in poolPrices || []) {
+          for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
               velodromeV2,
               'getAmountOut',
               blocknumber,
-              poolPrices![i].prices,
-              poolPrices![i].poolAddresses![0],
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
               tokenA.address,
               amounts,
             );
