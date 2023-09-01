@@ -193,9 +193,6 @@ describe('Smardex', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       smardex = new Smardex(network, dexKey, dexHelper);
-      if (smardex.initializePricing) {
-        await smardex.initializePricing(blockNumber);
-      }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -230,9 +227,6 @@ describe('Smardex', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newSmardex = new Smardex(network, dexKey, dexHelper);
-      if (newSmardex.updatePoolState) {
-        await newSmardex.updatePoolState();
-      }
       const poolLiquidity = await newSmardex.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
