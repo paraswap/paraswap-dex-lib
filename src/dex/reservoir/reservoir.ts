@@ -9,7 +9,7 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -46,8 +46,8 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     readonly factoryAddress: Address = ReservoirConfig[dexKey][network].factory,
-    readonly subgraphURL: string | undefined = ReservoirConfig[dexKey][network]
-      .subgraphURL,
+    readonly subgraphURL: string | undefined = ReservoirConfig[dexKey] &&
+      ReservoirConfig[dexKey][network].subgraphURL,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
     protected router: Address = ReservoirConfig[dexKey][network].router,
   ) {
@@ -183,6 +183,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
   // to implement this
   async updatePoolState(): Promise<void> {
     // TODO: complete me!
+    // low priority as it is optional
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -191,8 +192,40 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    if (!this.subgraphURL) return [];
+    // query graphQL and return pools with that particular token
+    const query = `
+      query TopPools ($token: String!) { 
+        Pairs(filter: { OR: [{token0: $token}, {token1: $token} ]}) {
+          address
+          swapFee
+          curveId
+          tvlUSD
+          token0
+          token1
+          token0Decimals
+          token1Decimals
+        } 
+      }`;
+
+    const { data } = await this.dexHelper.httpRequest.post(
+      this.subgraphURL,
+      {
+        variables: { token: tokenAddress },
+      },
+      SUBGRAPH_TIMEOUT,
+    );
+
+    // TODO: need to sort by tvlUSD
+    // Not possible to do with graphQL for now cuz we're not indexing things I think
+    // need to change the endpoint with robo's support to achieve this
+
+    // console.log('data', data);
+
+    // return all pools with the query as there is no need to do further processing
+    // cuz it is impossible to have overlaps
+
+    return data;
   }
 
   // This is optional function in case if your implementation has acquired any resources

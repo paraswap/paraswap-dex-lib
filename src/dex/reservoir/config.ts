@@ -14,6 +14,8 @@ export const ReservoirConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
+  // adapters are not applicable until the paraswap team integrates them
+  // i.e. deploys them onto those networks
   [Network.AVALANCHE]: {
     [SwapSide.SELL]: [
       {
