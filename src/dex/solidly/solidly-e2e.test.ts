@@ -415,6 +415,28 @@ describe('Solidly E2E', () => {
         nativeTokenAmount,
       );
     });
+
+    describe('Fvm', () => {
+      const dexKey = 'Fvm';
+      const network = Network.FANTOM;
+
+      const tokenASymbol: string = 'lzUSDC';
+      const tokenBSymbol: string = 'axlUSDC';
+
+      const tokenAAmount: string = '111110';
+      const tokenBAmount: string = '100000';
+      const nativeTokenAmount = '11000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
   });
 
   describe('Mainnet', () => {
