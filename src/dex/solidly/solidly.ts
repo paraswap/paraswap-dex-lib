@@ -74,6 +74,7 @@ export class Solidly extends UniswapV2 {
         'SoliSnek',
         'Chronos',
         'Ramses',
+        'Equalizer',
         'Fvm',
       ]),
     );

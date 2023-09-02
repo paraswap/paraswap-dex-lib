@@ -394,6 +394,28 @@ describe('Solidly E2E', () => {
       });
     });
 
+    describe('Equalizer', () => {
+      const dexKey = 'Equalizer';
+      const network = Network.FANTOM;
+
+      const tokenASymbol: string = 'FUSDT';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '111110';
+      const tokenBAmount: string = '100000';
+      const nativeTokenAmount = '11000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+
     describe('Fvm', () => {
       const dexKey = 'Fvm';
       const network = Network.FANTOM;

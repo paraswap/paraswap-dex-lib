@@ -460,6 +460,10 @@ export const Tokens: {
       address: '0x049d68029688eabf473097a2fc38ef61633a3c7a',
       decimals: 6,
     },
+    EQUAL: {
+      address: '0x3fd3a0c85b70754efc07ac9ac0cbbdce664865a6',
+      decimals: 18,
+    },
     POPS: {
       address: '0x9dE4b40bDcE50Ec6a1A668bF85997BbBD324069a',
       decimals: 18,
@@ -991,6 +995,8 @@ export const Holders: {
     ETH: '0xf48883940b4056801de30f12b934dcea90133ee6',
     GUSDC: '0x894d774a293f8aa3d23d67815d4cadb5319c1094',
     GDAI: '0x0e2ed73f9c1409e2b36fe6c46e60d4557b7c2ac0',
+    EQUAL: '0x8b187ea19c93091a4d6b426b71871648182b5fac',
+    FVM: '0x07BB65fAaC502d4996532F834A1B7ba5dC32Ff96',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
