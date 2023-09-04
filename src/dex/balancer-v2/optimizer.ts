@@ -3,17 +3,14 @@ import { BalancerSwapV2 } from './types';
 import { SwapSide } from '../../constants';
 import { BalancerConfig } from './config';
 
-const MAX_UINT256 =
-  '115792089237316195423570985008687907853269984665640564039457584007913129639935';
-
-const AllBalancerV2Forks = Object.keys(BalancerConfig);
+export const AllBalancerV2Forks = Object.keys(BalancerConfig);
 
 export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
   const fixSwap = (
     rawSwap: OptimalSwapExchange<any>[],
+    newBalancers: { [key: string]: OptimalSwapExchange<any> },
     side: SwapSide,
   ): OptimalSwapExchange<any>[] => {
-    const newBalancers: { [key: string]: OptimalSwapExchange<any> } = {};
     let optimizedSwap = new Array<OptimalSwapExchange<any>>();
     rawSwap.forEach((s: OptimalSwapExchange<any>) => {
       const exchangeKey = s.exchange.toLowerCase();
@@ -59,12 +56,17 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
     return optimizedSwap;
   };
 
-  or.bestRoute = or.bestRoute.map(r => ({
-    ...r,
-    swaps: r.swaps.map(s => ({
-      ...s,
-      swapExchanges: fixSwap(s.swapExchanges, or.side),
-    })),
-  }));
+  or.bestRoute = or.bestRoute.map(r => {
+    const newBalancers: {
+      [key: string]: OptimalSwapExchange<any>;
+    } = {};
+    return {
+      ...r,
+      swaps: r.swaps.map(s => ({
+        ...s,
+        swapExchanges: fixSwap(s.swapExchanges, newBalancers, or.side),
+      })),
+    };
+  });
   return or;
 }
