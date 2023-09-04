@@ -69,10 +69,16 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
     } = {};
     return {
       ...r,
-      swaps: r.swaps.map(s => ({
-        ...s,
-        swapExchanges: fixSwap(s.swapExchanges, accumulatedBalancers, or.side),
-      })),
+      swaps: r.swaps
+        .map(s => ({
+          ...s,
+          swapExchanges: fixSwap(
+            s.swapExchanges,
+            accumulatedBalancers,
+            or.side,
+          ),
+        }))
+        .filter(s => s.swapExchanges.length > 0),
     };
   });
   return or;
