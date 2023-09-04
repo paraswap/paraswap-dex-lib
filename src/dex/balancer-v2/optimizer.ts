@@ -41,8 +41,6 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
         ).toString();
 
         accumulatedBalancers[exchangeKey].percent += s.percent;
-        accumulatedBalancers[exchangeKey].data.exchangeProxy =
-          s.data.exchangeProxy;
         accumulatedBalancers[exchangeKey].data.gasUSD = (
           parseFloat(accumulatedBalancers[exchangeKey].data.gasUSD) +
           parseFloat(s.data.gasUSD)
