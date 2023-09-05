@@ -817,8 +817,8 @@ export function inputOutputComparator(
   outputB: CurrencyAmount,
 ): number {
   // must have same input and output token for comparison
-  //   invariant(inputA.currency === inputB.currency, 'INPUT_CURRENCY');
-  //   invariant(outputA.currency === outputB.currency, 'OUTPUT_CURRENCY');
+  if (inputA.currency !== inputB.currency) throw new Error('INPUT_CURRENCY');
+  if (outputA.currency !== outputB.currency) throw new Error('OUTPUT_CURRENCY');
   if (outputA.amount.eq(outputB.amount)) {
     if (inputA.amount.eq(inputB.amount)) {
       return 0;
@@ -931,13 +931,13 @@ function bestTradeExactInInternal(
   nextAmountIn: CurrencyAmount = currencyAmountIn,
   bestTrades: Trade[] = [],
 ): Trade[] {
-  //   invariant(pairs.length > 0, 'PAIRS');
-  //   invariant(maxHops > 0, 'MAX_HOPS');
-  //   invariant(
-  //     currencyAmountIn.currency === nextAmountIn.currency ||
-  //       currentPairs.length > 0,
-  //     'INVALID_RECURSION',
-  //   );
+  if (pairs.length <= 0) throw new Error('PAIRS');
+  if (maxHops <= 0) throw new Error('MAX_HOPS');
+  if (
+    currencyAmountIn.currency !== nextAmountIn.currency &&
+    currentPairs.length <= 0
+  )
+    throw new Error('INVALID_RECURSION');
 
   for (let i = 0; i < pairs.length; i += 1) {
     const pair = { ...pairs[i] };
@@ -1095,13 +1095,13 @@ function bestTradeExactOutInternal(
   nextAmountOut: CurrencyAmount = currencyAmountOut,
   bestTrades: Trade[] = [],
 ): Trade[] {
-  //   invariant(pairs.length > 0, 'PAIRS');
-  //   invariant(maxHops > 0, 'MAX_HOPS');
-  //   invariant(
-  //     currencyAmountOut.currency === nextAmountOut.currency ||
-  //       currentPairs.length > 0,
-  //     'INVALID_RECURSION',
-  //   );
+  if (pairs.length <= 0) throw new Error('PAIRS');
+  if (maxHops <= 0) throw new Error('MAX_HOPS');
+  if (
+    currencyAmountOut.currency !== nextAmountOut.currency &&
+    currentPairs.length <= 0
+  )
+    throw new Error('INVALID_RECURSION');
 
   for (let i = 0; i < pairs.length; i += 1) {
     const pair = { ...pairs[i] };
@@ -1396,9 +1396,9 @@ export function sortedInsert<T>(
   maxSize: number,
   comparator: (a: T, b: T) => number,
 ): T | null {
-  //   invariant(maxSize > 0, 'MAX_SIZE_ZERO');
+  if (maxSize <= 0) throw new Error('MAX_SIZE_ZERO');
   // this is an invariant because the interface cannot return multiple removed items if items.length exceeds maxSize
-  //   invariant(items.length <= maxSize, 'ITEMS_SIZE');
+  if (items.length > maxSize) throw new Error('ITEMS_SIZE');
 
   // short circuit first item add
   if (items.length === 0) {

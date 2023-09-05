@@ -1,6 +1,6 @@
 import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { Network } from '../../constants';
 
 const gatewaySubgraph = 'https://subgraph.smardex.io/paraswap';
 const mainnetInitHash =
@@ -42,7 +42,6 @@ export const SmardexConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  // This is an example
+  // [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
 };
