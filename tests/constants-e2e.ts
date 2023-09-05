@@ -307,6 +307,10 @@ export const Tokens: {
       address: '0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E',
       decimals: 18,
     },
+    wibBTC: {
+      address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -455,6 +459,10 @@ export const Tokens: {
     FUSDT: {
       address: '0x049d68029688eabf473097a2fc38ef61633a3c7a',
       decimals: 6,
+    },
+    EQUAL: {
+      address: '0x3fd3a0c85b70754efc07ac9ac0cbbdce664865a6',
+      decimals: 18,
     },
     POPS: {
       address: '0x9dE4b40bDcE50Ec6a1A668bF85997BbBD324069a',
@@ -918,6 +926,7 @@ export const Holders: {
     PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
     GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
+    wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -958,7 +967,7 @@ export const Holders: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
     FTM: '0x431e81E5dfB5A24541b5Ff8762bDEF3f32F96354',
     WFTM: '0x3e923747ca2675e096d812c3b24846ac39aed645',
-    USDC: '0xe48793b1533b351ae184e1c3119d0955dde7b330',
+    USDC: '0xf53feaeb035361c046e5669745695e450ebb4028',
     FUSDT: '0x9ade1c17d25246c405604344f89E8F23F8c1c632',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     aFanUSDT: '0x8EBc96fF91A30059E447bFC7C0a7394f8A5793E6',
@@ -974,6 +983,7 @@ export const Holders: {
     ETH: '0xf48883940b4056801de30f12b934dcea90133ee6',
     GUSDC: '0x894d774a293f8aa3d23d67815d4cadb5319c1094',
     GDAI: '0x0e2ed73f9c1409e2b36fe6c46e60d4557b7c2ac0',
+    EQUAL: '0x8b187ea19c93091a4d6b426b71871648182b5fac',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',

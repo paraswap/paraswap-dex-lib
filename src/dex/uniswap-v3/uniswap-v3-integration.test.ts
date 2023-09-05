@@ -611,3 +611,360 @@ describe('RamsesV2', () => {
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
 });
+
+describe('ChronosV3', () => {
+  const dexKey = 'ChronosV3';
+  let blockNumber: number;
+  let uniswapV3: UniswapV3;
+  let uniswapV3Mainnet: UniswapV3;
+
+  const network = Network.ARBITRUM;
+  const dexHelper = new DummyDexHelper(network);
+  const TokenASymbol = 'USDCe';
+  const TokenA = Tokens[network][TokenASymbol];
+
+  const TokenBSymbol = 'USDT';
+  const TokenB = Tokens[network][TokenBSymbol];
+
+  beforeEach(async () => {
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
+    uniswapV3Mainnet = new UniswapV3(
+      Network.ARBITRUM,
+      dexKey,
+      dexHelper,
+    );
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+
+    const amounts = [0n, BI_POWS[6], 2000000n];
+
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          dexHelper,
+          uniswapV3,
+          'quoteExactInputSingle',
+          blockNumber,
+          '0x6E7f0Ca45171a4440c0CDdF3A46A8dC5D4c2d4A0',
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amounts,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+
+    const amounts = [0n, BI_POWS[6], 2000000n];
+
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          dexHelper,
+          uniswapV3,
+          'quoteExactOutputSingle',
+          blockNumber,
+          '0x6E7f0Ca45171a4440c0CDdF3A46A8dC5D4c2d4A0',
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amounts,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it.skip('getTopPoolsForToken', async function () {
+    const poolLiquidity = await uniswapV3.getTopPoolsForToken(
+      TokenB.address,
+      10,
+    );
+    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+  });
+});
+
+describe('SushiSwapV3', () => {
+  const dexKey = 'SushiSwapV3';
+
+  describe('Mainnet', () => {
+    let blockNumber: number;
+    let sushiSwapV3: UniswapV3;
+    let sushiSwapV3Mainnet: UniswapV3;
+
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
+    const TokenASymbol = 'USDC';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDT';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    beforeEach(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      sushiSwapV3 = new UniswapV3(network, dexKey, dexHelper);
+      sushiSwapV3Mainnet = new UniswapV3(Network.MAINNET, dexKey, dexHelper);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await sushiSwapV3.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await sushiSwapV3.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = sushiSwapV3.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            sushiSwapV3,
+            'quoteExactInputSingle',
+            blockNumber,
+            '0x64e8802FE490fa7cc61d3463958199161Bb608A7',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await sushiSwapV3.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await sushiSwapV3.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = sushiSwapV3.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            sushiSwapV3,
+            'quoteExactOutputSingle',
+            blockNumber,
+            '0x64e8802FE490fa7cc61d3463958199161Bb608A7',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getTopPoolsForToken', async function () {
+      const poolLiquidity = await sushiSwapV3.getTopPoolsForToken(
+        TokenB.address,
+        10,
+      );
+      console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+      checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+    });
+  });
+
+  describe('Arbitrum', () => {
+    let blockNumber: number;
+    let sushiSwapV3: UniswapV3;
+    let sushiSwapV3Mainnet: UniswapV3;
+
+    const network = Network.ARBITRUM;
+    const dexHelper = new DummyDexHelper(network);
+    const TokenASymbol = 'USDCe';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDT';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    beforeEach(async () => {
+      // blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      blockNumber = 125789437;
+      sushiSwapV3 = new UniswapV3(network, dexKey, dexHelper);
+      sushiSwapV3Mainnet = new UniswapV3(Network.ARBITRUM, dexKey, dexHelper);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const amounts = [0n, 100000000n, 200000000n];
+
+      const pools = await sushiSwapV3.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await sushiSwapV3.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = sushiSwapV3.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            sushiSwapV3,
+            'quoteExactOutputSingle',
+            blockNumber,
+            '0x0524E833cCD057e4d7A296e3aaAb9f7675964Ce1',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+  });
+});
+

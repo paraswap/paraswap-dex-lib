@@ -140,6 +140,10 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       _destToken.address,
     );
 
+    if (!limitPools?.includes(expectedIdentifier)) {
+      return null;
+    }
+
     const rates = await this.rateFetcher.getOrderPrice(
       _srcToken,
       _destToken,
@@ -203,6 +207,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
       options.txOrigin,
+      options.partner,
     );
 
     const expiryAsBigInt = BigInt(order.order.expiry);
