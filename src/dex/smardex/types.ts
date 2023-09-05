@@ -13,12 +13,25 @@ export interface SmardexPoolState {
   reserves1: string;
   fictiveReserves0: string;
   fictiveReserves1: string;
-  priceAverageIn: string;
-  priceAverageOut: string;
+  priceAverage0: string;
+  priceAverage1: string;
   feeCode: number;
 }
 
-export type SmardexData = UniswapV2Data;
+export interface SmardexData extends UniswapV2Data {
+  deadline: number;
+  receiver: Address;
+}
+
+export enum SmardexRouterFunctions {
+  sellExactEth = 'swapExactETHForTokens',
+  sellExactToken = 'swapExactTokensForETH',
+  swapExactIn = 'swapExactTokensForTokens',
+  buyExactEth = 'swapTokensForExactETH',
+  buyExactToken = 'swapETHForExactTokens',
+  swapExactOut = 'swapTokensForExactTokens',
+}
+
 export type DexParams = UniswapV2DexParams;
 
 export interface SmardexPoolOrderedParams extends UniswapV2PoolOrderedParams {

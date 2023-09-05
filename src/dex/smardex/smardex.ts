@@ -38,23 +38,21 @@ import SmardexFactoryLayerOneABI from '../../abi/smardex/layer-1/smardex-factory
 import SmardexFactoryLayerTwoABI from '../../abi/smardex/layer-2/smardex-factory.json';
 import SmardexPoolLayerOneABI from '../../abi/smardex/layer-1/smardex-pool.json';
 import SmardexPoolLayerTwoABI from '../../abi/smardex/layer-2/smardex-pool.json';
+import SmardexRouterABI from '../../abi/smardex/all/smardex-router.json';
 import { DeepReadonly, AsyncOrSync } from 'ts-essentials';
 import { SimpleExchange } from '../simple-exchange';
-import { SmardexData } from '../smardex/types';
+import { SmardexData, SmardexRouterFunctions } from '../smardex/types';
 import { IDex, StatefulEventSubscriber } from '../..';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Adapters, SmardexConfig } from './config';
 import { Contract } from 'web3-eth-contract';
-import { directUniswapFunctionName } from '../uniswap-v2/uniswap-v2';
 import ParaSwapABI from '../../abi/IParaswap.json';
-import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import {
   UniswapDataLegacy,
   UniswapParam,
   UniswapV2Functions,
 } from '../uniswap-v2/types';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
-import erc20ABI from '../../abi/erc20.json';
 import _ from 'lodash';
 import { getAmountIn, getAmountOut } from './smardex-sdk';
 import { BigNumber } from 'ethers';
@@ -63,12 +61,22 @@ import { BigNumber } from 'ethers';
 export const SYNC_EVENT_TOPIC =
   '0x2a368c7f33bb86e2d999940a3989d849031aff29b750f67947e6b8e8c3d2ffd6';
 
-const DefaultUniswapV2PoolGasCost = 90 * 1000;
+const DefaultSmardexPoolGasCost = 90 * 1000;
 
 const smardexPoolL1 = new Interface(SmardexPoolLayerOneABI);
 const smardexPoolL2 = new Interface(SmardexPoolLayerTwoABI);
 
 const coder = new AbiCoder();
+
+const directSmardexFunctionName = [
+  SmardexRouterFunctions.sellExactEth,
+  SmardexRouterFunctions.sellExactToken,
+  SmardexRouterFunctions.swapExactIn,
+  SmardexRouterFunctions.buyExactEth,
+  SmardexRouterFunctions.buyExactToken,
+  SmardexRouterFunctions.swapExactOut,
+];
+
 export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> {
   constructor(
     protected poolInterface: Interface,
@@ -107,8 +115,8 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
           reserves1: event.args.reserve1.toString(),
           fictiveReserves0: event.args.fictiveReserve0.toString(),
           fictiveReserves1: event.args.fictiveReserve1.toString(),
-          priceAverageIn: event.args.priceAverageIn.toString(),
-          priceAverageOut: event.args.priceAverageOut.toString(),
+          priceAverage0: event.args.priceAverage0.toString(),
+          priceAverage1: event.args.priceAverage1.toString(),
           feeCode: state.feeCode,
         };
     }
@@ -148,7 +156,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
         .call({}, blockNumber);
 
     const [reserves0, reserves1] = coder.decode(
-      ['uint112', 'uint112', 'uint32'],
+      ['uint256', 'uint256'],
       data.returnData[0],
     );
 
@@ -157,7 +165,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
       data.returnData[1],
     );
 
-    const [priceAverageIn, priceAverageOut] = coder.decode(
+    const [priceAverage0, priceAverage1, priceAverageLastTimestamp] = coder.decode(
       ['uint256', 'uint256', 'uint256'],
       data.returnData[2],
     );
@@ -167,8 +175,9 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
       reserves1: reserves1.toString(),
       fictiveReserves0: fictiveReserve0.toString(),
       fictiveReserves1: fictiveReserve1.toString(),
-      priceAverageIn: priceAverageIn.toString(),
-      priceAverageOut: priceAverageOut.toString(),
+      priceAverage0: priceAverage0.toString(),
+      priceAverage1: priceAverage1.toString(),
+      // priceAverageLastTimestamp: priceAverageLastTimestamp.toNumber(),
       feeCode: dynamicFees
         ? this.smardexFeesMulticallDecoder!(data.returnData[3])
         : 700, // TODO: Ensure the fees are correct
@@ -199,7 +208,7 @@ export class Smardex
 
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
-  static directFunctionName = directUniswapFunctionName;
+  static directFunctionName = directSmardexFunctionName;
 
   factoryAddress: string;
   routerAddress: string;
@@ -235,11 +244,11 @@ export class Smardex
       this.factoryAddress,
     );
     this.routerInterface = new Interface(ParaSwapABI);
-    this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
+    this.exchangeRouterInterface = new Interface(SmardexRouterABI);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return Adapters[this.network][side];
+    return Adapters[this.network]?.[side] || null;
   }
 
   async getPoolIdentifiers(
@@ -350,6 +359,8 @@ export class Smardex
           prices: outputsWithFee,
           unit: unitOutWithFee,
           data: {
+            deadline: 3387835836, // TODO make deadline and receiver dynamic !
+            receiver: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
             router: this.routerAddress,
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
             factory: this.factoryAddress,
@@ -365,7 +376,7 @@ export class Smardex
           },
           exchange: this.dexKey,
           poolIdentifier,
-          gasCost: DefaultUniswapV2PoolGasCost,
+          gasCost: DefaultSmardexPoolGasCost,
           poolAddresses: [pairParam.exchange],
         },
       ];
@@ -506,8 +517,8 @@ export class Smardex
           pairState.reserves1,
           pairState.fictiveReserves0,
           pairState.fictiveReserves1,
-          pairState.priceAverageIn,
-          pairState.priceAverageOut,
+          pairState.priceAverage0,
+          pairState.priceAverage1,
           pairState.feeCode,
           blockNumber,
         );
@@ -541,8 +552,8 @@ export class Smardex
     reserves1: string,
     fictiveReserves0: string,
     fictiveReserves1: string,
-    priceAverageIn: string,
-    priceAverageOut: string,
+    priceAverage0: string,
+    priceAverage1: string,
     feeCode: number,
     blockNumber: number,
   ) {
@@ -566,8 +577,8 @@ export class Smardex
         reserves1,
         fictiveReserves0,
         fictiveReserves1,
-        priceAverageIn,
-        priceAverageOut,
+        priceAverage0,
+        priceAverage1,
         feeCode,
       },
     });
@@ -622,12 +633,15 @@ export class Smardex
         fictiveReserves1: coder
           .decode(['uint256', 'uint256'], returnData[i][1])[1]
           .toString(),
-        priceAverageIn: coder
+        priceAverage0: coder
           .decode(['uint256', 'uint256'], returnData[i][2])[0]
           .toString(),
-        priceAverageOut: coder
+        priceAverage1: coder
           .decode(['uint256', 'uint256'], returnData[i][2])[1]
           .toString(),
+        // priceAverageLastTimestamp: coder
+        //   .decode(['uint256', 'uint256', 'uint256'], returnData[i][2])[2]
+        //   .toString(),
         feeCode: this.isLayer1()
           ? 700
           : multiCallFeeData[i]!.callDecoder(returnData[i][3]),
@@ -755,8 +769,8 @@ export class Smardex
         reservesOut: pairState.reserves0,
         fictiveReservesIn: pairState.fictiveReserves1,
         fictiveReservesOut: pairState.fictiveReserves0,
-        priceAverageIn: pairState.priceAverageOut,
-        priceAverageOut: pairState.priceAverageIn,
+        priceAverageIn: pairState.priceAverage0,
+        priceAverageOut: pairState.priceAverage1,
         fee,
         direction: false,
         exchange: pair.exchange,
@@ -769,8 +783,8 @@ export class Smardex
       reservesOut: pairState.reserves1,
       fictiveReservesIn: pairState.fictiveReserves0,
       fictiveReservesOut: pairState.fictiveReserves1,
-      priceAverageIn: pairState.priceAverageIn,
-      priceAverageOut: pairState.priceAverageOut,
+      priceAverageIn: pairState.priceAverage0,
+      priceAverageOut: pairState.priceAverage1,
       fee,
       direction: true,
       exchange: pair.exchange,
@@ -822,10 +836,20 @@ export class Smardex
   ): Promise<SimpleExchangeParam> {
     const pools = encodePools(data.pools, this.feeFactor);
     const weth = this.getWETHAddress(src, dest, data.wethAddress);
-    const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
-      [src, srcAmount, destAmount, weth, pools],
-    );
+
+    let routerMethod: any;
+    let routerArgs: any;
+    if (side === SwapSide.SELL) {
+      routerMethod = isETHAddress(src) ? SmardexRouterFunctions.sellExactEth : SmardexRouterFunctions.swapExactIn;
+      routerMethod = isETHAddress(dest) ? SmardexRouterFunctions.sellExactToken : routerMethod;
+      routerArgs = [srcAmount, BigNumber.from(destAmount).mul(105).div(100).toString(), data.path, data.receiver, data.deadline];
+    } else {
+      routerMethod = isETHAddress(src) ? SmardexRouterFunctions.buyExactToken : SmardexRouterFunctions.swapExactOut;
+      routerMethod = isETHAddress(dest) ? SmardexRouterFunctions.buyExactEth : routerMethod;
+      routerArgs = [destAmount, srcAmount, data.path, data.receiver, data.deadline];
+    }
+
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(routerMethod, routerArgs);
     return this.buildSimpleParamWithoutWETHConversion(
       src,
       srcAmount,

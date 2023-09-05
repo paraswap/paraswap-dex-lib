@@ -19,41 +19,55 @@ describe('Smardex E2E Mainnet', () => {
     const dexKey = 'Smardex';
 
     describe('Simpleswap', () => {
-      it('ETH -> TOKEN', async () => {
+      it('WETH -> TOKEN', async () => {
         await testE2E(
-          tokens.ETH,
-          tokens.USDC,
-          holders.ETH,
-          '7000000000000000000',
-          SwapSide.SELL,
+          tokens.WETH,
+          tokens.USDT,
+          holders.WETH,
+          '2000000000000000000', // 2 WETH
+          SwapSide.SELL, // exact input
           dexKey,
-          ContractMethod.swapOnUniswap,
+          ContractMethod.simpleSwap,
           network,
           provider,
         );
       });
-      it('TOKEN -> ETH', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.ETH,
-          holders.USDC,
-          '2000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.swapOnUniswap,
-          network,
-          provider,
-        );
-      });
-      // it('TOKEN -> TOKEN', async () => {
+      // it('WETH <- TOKEN', async () => {
       //   await testE2E(
-      //     tokens.WBTC,
-      //     tokens.BADGER,
-      //     holders.WBTC,
-      //     '20000000',
-      //     SwapSide.SELL,
+      //     tokens.WETH,
+      //     tokens.USDT,
+      //     holders.WETH,
+      //     '2000000000000000000', // 2 WETH
+      //     SwapSide.BUY, // exact output
       //     dexKey,
-      //     ContractMethod.,
+      //     ContractMethod.simpleSwap,
+      //     network,
+      //     provider,
+      //   );
+      // });
+
+      // it('ETH -> TOKEN', async () => {
+      //   await testE2E(
+      //     tokens.ETH,
+      //     tokens.USDT,
+      //     holders.ETH,
+      //     '7000000000000000000', // 7 ETH
+      //     SwapSide.SELL, // exact input
+      //     dexKey,
+      //     ContractMethod.simpleSwap,
+      //     network,
+      //     provider,
+      //   );
+      // });
+      // it('ETH <- TOKEN', async () => {
+      //   await testE2E(
+      //     tokens.ETH,
+      //     tokens.USDT,
+      //     holders.ETH,
+      //     '7000000000000000000', // 7 ETH
+      //     SwapSide.BUY, // exact output
+      //     dexKey,
+      //     ContractMethod.simpleSwap,
       //     network,
       //     provider,
       //   );
@@ -89,9 +103,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '200000000',
     //       SwapSide.SELL,
     //       dexKey,
@@ -131,9 +145,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN[USDC] -> ETH', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.ETH,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '200000000',
     //       SwapSide.SELL,
     //       dexKey,
@@ -144,9 +158,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '200000000',
     //       SwapSide.SELL,
     //       dexKey,
@@ -186,9 +200,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '200000000',
     //       SwapSide.SELL,
     //       dexKey,
@@ -228,9 +242,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '200000000',
     //       SwapSide.SELL,
     //       dexKey,
@@ -270,9 +284,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN[USDC] -> ETH', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.ETH,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '2000000000000000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -284,9 +298,9 @@ describe('Smardex E2E Mainnet', () => {
 
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '200000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -326,9 +340,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN[USDC] -> ETH', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.ETH,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '2000000000000000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -340,9 +354,9 @@ describe('Smardex E2E Mainnet', () => {
 
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '200000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -382,9 +396,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN[USDC] -> ETH', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.ETH,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '2000000000000000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -396,9 +410,9 @@ describe('Smardex E2E Mainnet', () => {
 
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '200000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -438,9 +452,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN[USDC] -> ETH', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.ETH,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '2000000000000000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -451,9 +465,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '20000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -493,9 +507,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN[USDC] -> ETH', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.ETH,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '2000000000000000000',
     //       SwapSide.BUY,
     //       dexKey,
@@ -506,9 +520,9 @@ describe('Smardex E2E Mainnet', () => {
     //   });
     //   it('TOKEN -> TOKEN', async () => {
     //     await testE2E(
-    //       tokens.USDC,
+    //       tokens.USDT,
     //       tokens.WBTC,
-    //       holders.USDC,
+    //       holders.USDT,
     //       '20000000',
     //       SwapSide.BUY,
     //       dexKey,
