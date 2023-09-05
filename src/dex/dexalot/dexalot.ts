@@ -64,6 +64,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isFeeOnTransferSupported = false;
   private rateFetcher: RateFetcher;
 
+  private dexalotAuthToken: string;
+
   private pricesCacheKey: string;
   private pairsCacheKey: string;
   private tokensAddrCacheKey: string;
@@ -87,6 +89,13 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
+    const authToken = dexHelper.config.data.dexalotAuthToken;
+    assert(
+      authToken !== undefined,
+      'Dexalot auth token is not specified with env variable',
+    );
+    this.dexalotAuthToken = authToken;
+
     this.pricesCacheKey = `${CACHE_PREFIX}_prices`;
     this.pairsCacheKey = `${CACHE_PREFIX}_pairs`;
     this.tokensAddrCacheKey = `${CACHE_PREFIX}_tokens_addr`;
@@ -106,15 +115,27 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           blacklistIntervalMs: DEXALOT_API_BLACKLIST_POLLING_INTERVAL_MS,
           pairsReqParams: {
             url: `${DEXALOT_API_URL}/api/rfq/pairs`,
+            headers: {
+              'x-apikey': this.dexalotAuthToken,
+            },
           },
           pricesReqParams: {
             url: `${DEXALOT_API_URL}/api/rfq/prices`,
+            headers: {
+              'x-apikey': this.dexalotAuthToken,
+            },
           },
           tokensReqParams: {
             url: `${DEXALOT_API_URL}/api/rfq/tokens`,
+            headers: {
+              'x-apikey': this.dexalotAuthToken,
+            },
           },
           blacklistReqParams: {
             url: `${DEXALOT_API_URL}/api/rfq/blacklist`,
+            headers: {
+              'x-apikey': this.dexalotAuthToken,
+            },
           },
           pairsCacheKey: this.pairsCacheKey,
           pairsCacheTTLSecs: DEXALOT_PAIRS_CACHES_TTL_S,
@@ -489,6 +510,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const rfq: RFQResponse = await this.dexHelper.httpRequest.post(
         `${DEXALOT_API_URL}/api/rfq/firm`,
         rfqParams,
+        undefined,
+        { 'x-apikey': this.dexalotAuthToken },
       );
       if (!rfq) {
         this.generateRFQError(

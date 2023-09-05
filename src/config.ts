@@ -30,6 +30,7 @@ type BaseConfig = {
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   swaapV2AuthToken?: string;
+  dexalotAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 
@@ -219,6 +220,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
+    dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
       AvalancheAdapter02: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
@@ -358,6 +360,7 @@ export function generateConfig(network: number): Config {
       baseConfig.rpcPollingBlocksBackToTriggerUpdate,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
+    dexalotAuthToken: baseConfig.dexalotAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
   };
