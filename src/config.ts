@@ -317,6 +317,35 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingBlocksBackToTriggerUpdate: 3,
     forceRpcFallbackDexs: [],
   },
+  [Network.BASE]: {
+    network: Network.BASE,
+    networkName: 'Base',
+    isTestnet: false,
+    nativeTokenName: 'Ether',
+    nativeTokenSymbol: 'ETH',
+    wrappedNativeTokenAddress: '0x4200000000000000000000000000000000000006',
+    hasEIP1559: false,
+    augustusAddress: '0x793a0Bb089c6787e84277f08179DAC594eDb9443',
+    augustusRFQAddress: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
+    tokenTransferProxyAddress: '0xCADa28FC80ceB3baF3BEa4C2d7a819e69435907E',
+    multicallV2Address: '0xeDF6D2a16e8081F777eB623EeB4411466556aF3d',
+    privateHttpProvider: process.env.HTTP_PROVIDER_8453,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
+    hashFlowDisabledMMs:
+      process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
+
+    adapterAddresses: {
+      BaseAdapter01: '0x9F77bb28e97F093Aa6CbE37cE095C18605d98Af2',
+      BaseBuyAdapter: '0x8DE036910e34b0d8447Dd0D34C742636de1DDfEb',
+    },
+    uniswapV2ExchangeRouterAddress:
+      '0x75d199EfB540e47D27D52c62Da3E7daC2B9e834F',
+    uniswapV3EventLoggingSampleRate: 0,
+    rfqConfigs: {},
+    rpcPollingMaxAllowedStateDelayInBlocks: 5,
+    rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
+  },
 };
 
 // Should not be used, except by internal test code

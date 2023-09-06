@@ -21,7 +21,7 @@ export const MAX_BLOCKS_HISTORY = 7;
 
 export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 
-export const FETCH_POOL_IDENTIFIER_TIMEOUT = 1 * 1000; // 1s
+export const FETCH_POOL_IDENTIFIER_TIMEOUT = 60 * 1000; // 1s // TODO change once finished testing
 export const FETCH_POOL_PRICES_TIMEOUT = 3 * 1000; // 3s
 
 // How frequently logs wil be printed
@@ -38,6 +38,7 @@ export enum Network {
   FANTOM = 250,
   ARBITRUM = 42161,
   OPTIMISM = 10,
+  BASE = 8453,
 }
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
 

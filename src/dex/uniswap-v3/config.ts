@@ -106,6 +106,19 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/lynnshaoyu/uniswap-v3-avax',
     },
+    [Network.BASE]: {
+      factory: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
+      quoter: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
+      router: '0xaeE2b8d4A154e36f479dAeCe3FB3e6c3c03d396E',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/lynnshaoyu/uniswap-v3-base',
+    },
   },
   SushiSwapV3: {
     [Network.MAINNET]: {
