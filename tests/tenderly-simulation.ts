@@ -1,5 +1,7 @@
+/* eslint-disable no-console */
 import axios from 'axios';
 import { Address } from '@paraswap/core';
+import { Provider } from '@ethersproject/providers';
 import { TxObject } from '../src/types';
 import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
 
@@ -9,7 +11,50 @@ const TENDERLY_PROJECT = process.env.TENDERLY_PROJECT;
 const TENDERLY_FORK_ID = process.env.TENDERLY_FORK_ID;
 const TENDERLY_FORK_LAST_TX_ID = process.env.TENDERLY_FORK_LAST_TX_ID;
 
-export class TenderlySimulation {
+export type SimulationResult = {
+  success: boolean;
+  gasUsed?: string;
+  url?: string;
+  transaction?: any;
+};
+
+export interface TransactionSimulator {
+  forkId: string;
+  setup(): Promise<void>;
+
+  simulate(
+    params: TxObject,
+    stateOverrides?: StateOverrides,
+  ): Promise<SimulationResult>;
+}
+
+export class EstimateGasSimulation implements TransactionSimulator {
+  forkId: string = '0';
+
+  constructor(private provider: Provider) {}
+
+  async setup() {}
+
+  async simulate(
+    params: TxObject,
+    _: StateOverrides,
+  ): Promise<SimulationResult> {
+    try {
+      const result = await this.provider.estimateGas(params);
+      return {
+        success: true,
+        gasUsed: result.toNumber().toString(),
+      };
+    } catch (e) {
+      console.error(`Estimate gas simulation failed:`, e);
+      return {
+        success: false,
+      };
+    }
+  }
+}
+
+export class TenderlySimulation implements TransactionSimulator {
   lastTx: string = '';
   forkId: string = '';
   maxGasLimit = 80000000;
@@ -118,7 +163,6 @@ export class TenderlySimulation {
       console.error(`TenderlySimulation_simulate:`, e);
       return {
         success: false,
-        tenderlyUrl: '',
       };
     }
   }
