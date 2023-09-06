@@ -15,6 +15,7 @@ export interface SmardexPoolState {
   fictiveReserves1: string;
   priceAverage0: string;
   priceAverage1: string;
+  priceAverageLastTimestamp?: number;
   feeCode: number;
 }
 

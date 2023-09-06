@@ -1,3 +1,8 @@
+import { AbiCoder, Interface } from '@ethersproject/abi';
+import { BigNumber } from 'ethers';
+import _ from 'lodash';
+import { DeepReadonly, AsyncOrSync } from 'ts-essentials';
+import { Contract } from 'web3-eth-contract';
 import {
   DEST_TOKEN_PARASWAP_TRANSFERS,
   ETHER_ADDRESS,
@@ -21,7 +26,6 @@ import {
   TxInfo,
 } from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
-import { AbiCoder, Interface } from '@ethersproject/abi';
 import {
   SmardexPair,
   SmardexPool,
@@ -39,13 +43,11 @@ import SmardexFactoryLayerTwoABI from '../../abi/smardex/layer-2/smardex-factory
 import SmardexPoolLayerOneABI from '../../abi/smardex/layer-1/smardex-pool.json';
 import SmardexPoolLayerTwoABI from '../../abi/smardex/layer-2/smardex-pool.json';
 import SmardexRouterABI from '../../abi/smardex/all/smardex-router.json';
-import { DeepReadonly, AsyncOrSync } from 'ts-essentials';
 import { SimpleExchange } from '../simple-exchange';
 import { SmardexData, SmardexRouterFunctions } from '../smardex/types';
 import { IDex, StatefulEventSubscriber } from '../..';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Adapters, SmardexConfig } from './config';
-import { Contract } from 'web3-eth-contract';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import {
   UniswapDataLegacy,
@@ -53,9 +55,7 @@ import {
   UniswapV2Functions,
 } from '../uniswap-v2/types';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
-import _ from 'lodash';
 import { getAmountIn, getAmountOut } from './smardex-sdk';
-import { BigNumber } from 'ethers';
 
 // event Sync (uint256 reserve0, uint256 reserve1, uint256 fictiveReserve0, uint256 fictiveReserve1, uint256 priceAverage0, uint256 priceAverage1)
 export const SYNC_EVENT_TOPIC =
@@ -106,7 +106,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     state: DeepReadonly<SmardexPoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<SmardexPoolState> | null> {
-    if (log.topics[0] === SYNC_EVENT_TOPIC) return null;
+    if (log.topics[0] !== SYNC_EVENT_TOPIC) return null;
     const event = smardexPoolL1.parseLog(log);
     switch (event.name) {
       case 'Sync':
@@ -117,6 +117,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
           fictiveReserves1: event.args.fictiveReserve1.toString(),
           priceAverage0: event.args.priceAverage0.toString(),
           priceAverage1: event.args.priceAverage1.toString(),
+          priceAverageLastTimestamp: state.priceAverageLastTimestamp, // should be updated but only on Swap event
           feeCode: state.feeCode,
         };
     }
@@ -177,7 +178,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
       fictiveReserves1: fictiveReserve1.toString(),
       priceAverage0: priceAverage0.toString(),
       priceAverage1: priceAverage1.toString(),
-      // priceAverageLastTimestamp: priceAverageLastTimestamp.toNumber(),
+      priceAverageLastTimestamp: priceAverageLastTimestamp.toNumber(),
       feeCode: dynamicFees
         ? this.smardexFeesMulticallDecoder!(data.returnData[3])
         : 700, // TODO: Ensure the fees are correct
@@ -360,7 +361,7 @@ export class Smardex
           unit: unitOutWithFee,
           data: {
             deadline: 3387835836, // TODO make deadline and receiver dynamic !
-            receiver: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
+            receiver: this.augustusAddress,
             router: this.routerAddress,
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
             factory: this.factoryAddress,
@@ -521,6 +522,7 @@ export class Smardex
           pairState.priceAverage1,
           pairState.feeCode,
           blockNumber,
+          pairState.priceAverageLastTimestamp,
         );
       } else pair.pool.setState(pairState, blockNumber);
     }
@@ -556,6 +558,7 @@ export class Smardex
     priceAverage1: string,
     feeCode: number,
     blockNumber: number,
+    priceAverageLastTimestamp?: number,
   ) {
     const multiCallFeeData = this.getFeesMultiCallData(pair);
     pair.pool = new SmardexEventPool(
@@ -580,6 +583,7 @@ export class Smardex
         priceAverage0,
         priceAverage1,
         feeCode,
+        priceAverageLastTimestamp,
       },
     });
   }
@@ -634,14 +638,14 @@ export class Smardex
           .decode(['uint256', 'uint256'], returnData[i][1])[1]
           .toString(),
         priceAverage0: coder
-          .decode(['uint256', 'uint256'], returnData[i][2])[0]
+          .decode(['uint256', 'uint256', 'uint256'], returnData[i][2])[0]
           .toString(),
         priceAverage1: coder
-          .decode(['uint256', 'uint256'], returnData[i][2])[1]
+          .decode(['uint256', 'uint256', 'uint256'], returnData[i][2])[1]
           .toString(),
-        // priceAverageLastTimestamp: coder
-        //   .decode(['uint256', 'uint256', 'uint256'], returnData[i][2])[2]
-        //   .toString(),
+        priceAverageLastTimestamp: coder
+          .decode(['uint256', 'uint256', 'uint256'], returnData[i][2])[2]
+          .toString(),
         feeCode: this.isLayer1()
           ? 700
           : multiCallFeeData[i]!.callDecoder(returnData[i][3]),
@@ -842,7 +846,7 @@ export class Smardex
     if (side === SwapSide.SELL) {
       routerMethod = isETHAddress(src) ? SmardexRouterFunctions.sellExactEth : SmardexRouterFunctions.swapExactIn;
       routerMethod = isETHAddress(dest) ? SmardexRouterFunctions.sellExactToken : routerMethod;
-      routerArgs = [srcAmount, BigNumber.from(destAmount).mul(105).div(100).toString(), data.path, data.receiver, data.deadline];
+      routerArgs = [srcAmount, destAmount, data.path, data.receiver, data.deadline];
     } else {
       routerMethod = isETHAddress(src) ? SmardexRouterFunctions.buyExactToken : SmardexRouterFunctions.swapExactOut;
       routerMethod = isETHAddress(dest) ? SmardexRouterFunctions.buyExactEth : routerMethod;
