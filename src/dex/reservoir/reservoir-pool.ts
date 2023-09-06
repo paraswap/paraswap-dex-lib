@@ -1,43 +1,44 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Log, Logger } from '../../types';
+import { Log, Logger, Token } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState } from './types';
-import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
+import { ReservoirPoolState, ReservoirPoolTypes } from './types';
+import ReservoirPairABI from '../../abi/reservoir/ReservoirPair.json';
+import { Address } from '@paraswap/core';
 
-export class ReservoirEventPool extends StatefulEventSubscriber<PoolState> {
+export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolState> {
   handlers: {
     [event: string]: (
       event: any,
-      state: DeepReadonly<PoolState>,
+      state: DeepReadonly<ReservoirPoolState>,
       log: Readonly<Log>,
-    ) => DeepReadonly<PoolState> | null;
+    ) => DeepReadonly<ReservoirPoolState> | null;
   } = {};
-
-  logDecoder: (log: Log) => any;
-
-  addressesSubscribed: string[];
 
   constructor(
     readonly parentName: string,
-    protected network: number,
     protected dexHelper: IDexHelper,
+    private poolAddress: Address,
+    private token0: Token,
+    private token1: Token,
+    private curveId: ReservoirPoolTypes,
     logger: Logger,
-    protected reservoirIface = new Interface(ReservoirRouterABI), // TODO: add any additional params required for event subscriber
+    protected reservoirIface = new Interface(ReservoirPairABI),
   ) {
-    // TODO: Add pool name
-    super(parentName, 'POOL_NAME', dexHelper, logger);
+    const poolName = token0.address + '-' + token1.address + '-' + curveId;
+    super(parentName, poolName, dexHelper, logger);
 
-    // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.reservoirIface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
-
-    // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    // I think we're not taking this approach
+    // // TODO: make logDecoder decode logs that
+    // this.logDecoder = (log: Log) => this.reservoirIface.parseLog(log);
+    // this.addressesSubscribed = [
+    //   /* subscribed addresses */
+    // ];
+    //
+    // // Add handlers
+    // this.handlers['myEvent'] = this.handleMyEvent.bind(this);
   }
 
   /**
@@ -50,14 +51,10 @@ export class ReservoirEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns Updates state of the event subscriber after the log
    */
   protected processLog(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<ReservoirPoolState>,
     log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
+  ): DeepReadonly<ReservoirPoolState> | null {
     try {
-      const event = this.logDecoder(log);
-      if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
-      }
     } catch (e) {
       catchParseLogError(e, this.logger);
     }
@@ -74,7 +71,9 @@ export class ReservoirEventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
+  async generateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<ReservoirPoolState>> {
     // TODO: complete me!
 
     return {
@@ -83,14 +82,5 @@ export class ReservoirEventPool extends StatefulEventSubscriber<PoolState> {
       curveId: 0,
       swapFee: 0n,
     };
-  }
-
-  // Its just a dummy example
-  handleMyEvent(
-    event: any,
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    return null;
   }
 }

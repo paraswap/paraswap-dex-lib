@@ -9,12 +9,21 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
+import {
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { ReservoirData, ReservoirSwapFunctions } from './types';
+import {
+  ReservoirData,
+  ReservoirPoolTypes,
+  ReservoirSwapFunctions,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, ReservoirConfig } from './config';
 import { ReservoirEventPool } from './reservoir-pool';
@@ -23,9 +32,14 @@ import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
 import { Contract } from '@ethersproject/contracts';
 import { Interface } from '@ethersproject/abi';
 
-export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
-  protected eventPools: ReservoirEventPool;
+export interface ReservoirPair {
+  token0: Token;
+  token1: Token;
+  exchange?: Address;
+  pool?: ReservoirEventPool;
+}
 
+export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
   readonly hasConstantPriceLargeAmounts = false;
 
   readonly needWrapNative = true;
@@ -37,9 +51,11 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
   logger: Logger;
 
+  reservoirRouterInterface: Interface;
+
   factory: Contract;
 
-  reservoirRouterInterface: Interface;
+  pairs: { [key: string]: ReservoirPair } = {};
 
   constructor(
     readonly network: Network,
@@ -53,12 +69,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new ReservoirEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
     this.factory = new Contract(factoryAddress, GenericFactoryABI);
     this.reservoirRouterInterface = new Interface(ReservoirRouterABI);
   }
@@ -86,9 +96,74 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
+    // TODO: do we add curveId here??
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const from = this.dexHelper.config.wrapETH(srcToken);
+    const to = this.dexHelper.config.wrapETH(destToken);
+
+    if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      return [];
+    }
+
+    // do I add the curveId in the identifier?
+    const tokenAddresses = [
+      from.address.toLowerCase(),
+      to.address.toLowerCase(),
+    ]
+      .sort((a, b) => (a > b ? 1 : -1))
+      .join('_');
+
+    const poolIdentifier = `${this.dexKey}_${tokenAddresses}`;
+
+    return [poolIdentifier];
+  }
+
+  // adds the pair into the class variable for use in routing
+  async addPair(
+    pair: ReservoirPair,
+    reserves0: string, // should we use bigint instead?
+    reserves1: string,
+    curveId: ReservoirPoolTypes,
+    blockNumber: number,
+  ): Promise<void> {
+    pair.pool = new ReservoirEventPool(
+      this.dexKey,
+      this.dexHelper,
+      pair.exchange!,
+      pair.token0,
+      pair.token1,
+      curveId,
+      this.logger,
+    );
+  }
+
+  async findPair(
+    from: Token,
+    to: Token,
+    curveId: ReservoirPoolTypes,
+  ): Promise<ReservoirPair | null> {
+    if (from.address.toLowerCase() == to.address.toLowerCase()) return null;
+    const [token0, token1] =
+      from.address.toLowerCase() < to.address.toLowerCase()
+        ? [from, to]
+        : [to, from];
+
+    // okay we might need to do some curveID shit here
+    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}-${curveId}`;
+    let pair = this.pairs[key];
+    if (pair) return pair;
+    const exchange = await this.factory.methods
+      .getPair(token0.address, token1.address, curveId)
+      .call();
+
+    if (exchange === NULL_ADDRESS) {
+      pair = { token0, token1 };
+    } else {
+      pair = { token0, token1, exchange };
+    }
+
+    this.pairs[key] = pair;
+    return pair;
   }
 
   // Returns pool prices for amounts.
@@ -103,8 +178,29 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<ReservoirData>> {
-    // TODO: complete me!
-    return null;
+    try {
+      const from = this.dexHelper.config.wrapETH(srcToken);
+      const to = this.dexHelper.config.wrapETH(destToken);
+      if (from.address.toLowerCase() === to.address.toLowerCase()) {
+        return null;
+      }
+
+      const tokenAddresses = [
+        from.address.toLowerCase(),
+        to.address.toLowerCase(),
+      ]
+        .sort((a, b) => (a > b ? 1 : -1))
+        .join('_'); // not sure what this underscore is for, or if we even need it
+
+      // TODO: what exactly are limit pools?
+      // if defined it will only search within these defined pools. If not use all pools
+
+      // TODO: placeholder for now
+      return null;
+    } catch (e) {
+      this.logger.error('Reservoir_getPricesVolume', e);
+      return null;
+    }
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
