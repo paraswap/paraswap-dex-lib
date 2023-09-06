@@ -73,14 +73,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     this.reservoirRouterInterface = new Interface(ReservoirRouterABI);
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
-  }
-
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -96,7 +88,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
-    // TODO: do we add curveId here??
   ): Promise<string[]> {
     const from = this.dexHelper.config.wrapETH(srcToken);
     const to = this.dexHelper.config.wrapETH(destToken);
@@ -121,8 +112,8 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
   // adds the pair into the class variable for use in routing
   async addPair(
     pair: ReservoirPair,
-    reserves0: string, // should we use bigint instead?
-    reserves1: string,
+    reserve0: string,
+    reserve1: string,
     curveId: ReservoirPoolTypes,
     blockNumber: number,
   ): Promise<void> {
@@ -135,6 +126,11 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       curveId,
       this.logger,
     );
+    pair.pool.addressesSubscribed.push(pair.exchange!);
+
+    await pair.pool.initialize(blockNumber, {
+      state: { reserve0, reserve1, curveId, swapFee: 0n },
+    });
   }
 
   async findPair(
@@ -191,9 +187,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       ]
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_'); // not sure what this underscore is for, or if we even need it
-
-      // TODO: what exactly are limit pools?
-      // if defined it will only search within these defined pools. If not use all pools
 
       // TODO: placeholder for now
       return null;
@@ -326,7 +319,5 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
-  // releaseResources(): AsyncOrSync<void> {
-  //   // TODO: complete me!
-  // }
+  releaseResources(): AsyncOrSync<void> {}
 }

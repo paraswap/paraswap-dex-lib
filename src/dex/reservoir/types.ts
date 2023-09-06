@@ -15,8 +15,8 @@ export type ReservoirPoolState = {
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // pool prices. Complete me!
-  reserve0: bigint;
-  reserve1: bigint;
+  reserve0: string;
+  reserve1: string;
   curveId: ReservoirPoolTypes;
   swapFee: bigint;
 };

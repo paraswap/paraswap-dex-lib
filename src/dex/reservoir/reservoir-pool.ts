@@ -77,8 +77,8 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
     // TODO: complete me!
 
     return {
-      reserve0: 0n,
-      reserve1: 0n,
+      reserve0: '0',
+      reserve1: '0',
       curveId: 0,
       swapFee: 0n,
     };
