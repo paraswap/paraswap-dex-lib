@@ -24,7 +24,6 @@ const VelodromeV2FactoryABI = [
 const velodromeV2FactoryIface = new Interface(VelodromeV2FactoryABI);
 
 export class VelodromeV2 extends Solidly {
-
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(_.pick(SolidlyConfig, ['VelodromeV2']));
 
@@ -44,7 +43,10 @@ export class VelodromeV2 extends Solidly {
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: this.factoryAddress,
-      callData: velodromeV2FactoryIface.encodeFunctionData('getFee', [pair.exchange, pair.stable]),
+      callData: velodromeV2FactoryIface.encodeFunctionData('getFee', [
+        pair.exchange,
+        pair.stable,
+      ]),
     };
     const callDecoder = (values: any[]) =>
       parseInt(

@@ -18,6 +18,7 @@ type StateCache<State> = {
 export type InitializeStateOptions<State> = {
   state?: DeepReadonly<State>;
   initCallback?: (state: DeepReadonly<State>) => void;
+  forceRegenerate?: boolean;
 };
 
 export abstract class StatefulEventSubscriber<State>
@@ -89,6 +90,13 @@ export abstract class StatefulEventSubscriber<State>
     let masterBn: undefined | number = undefined;
     if (options && options.state) {
       this.setState(options.state, blockNumber);
+    } else if (options && options.forceRegenerate) {
+      // ZkEVM forces to always regenerate state when it is old
+      this.logger.debug(
+        `${this.parentName}: ${this.name}: forced to regenerate state`,
+      );
+      const state = await this.generateState(blockNumber);
+      this.setState(state, blockNumber);
     } else {
       if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
         let stateAsString = await this.dexHelper.cache.hget(
