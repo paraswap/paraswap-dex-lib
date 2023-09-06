@@ -1,8 +1,8 @@
 import { Address } from '../../types';
 
 export enum ReservoirPoolTypes {
-  ConstantProduct,
-  Stable,
+  ConstantProduct = 0,
+  Stable = 1,
 }
 
 export enum ReservoirSwapFunctions {
