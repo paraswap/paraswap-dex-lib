@@ -51,6 +51,7 @@ import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { SoliSnek } from './solidly/forks-override/solisnek';
+import { Equalizer } from './solidly/forks-override/equalizer';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -73,6 +74,7 @@ import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
 import { QuickPerps } from './quick-perps/quick-perps';
+import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 
 const LegacyDexes = [
   CurveV2,
@@ -134,6 +136,7 @@ const Dexes = [
   VelodromeV2,
   Cone,
   SoliSnek,
+  Equalizer,
   Synthetix,
   CurveV1Factory,
   SwaapV1,
@@ -143,6 +146,7 @@ const Dexes = [
   Camelot,
   SwaapV2,
   QuickPerps,
+  NomiswapV2,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
