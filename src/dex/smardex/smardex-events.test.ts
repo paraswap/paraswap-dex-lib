@@ -43,16 +43,34 @@ describe('Smardex Ethereum SDEX-USDT Pool Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     ['Swap']: [
       18064045,
-      // 18064060, 18064194, 18065266, //18066464, // the last one contains multiple Swap events
+      // 18064060, 
+      // 18064194, 
+      // 18065266, 
+      // 18066464, // the last one contains multiple Swap events
     ],
-    // ['Burn']: [1806404500000],
-    // ['Mint']: [1806404500000],
+    // ['Burn']: [
+    //   17231921,
+    //   17762042,
+    //   17762668,
+    // ],
+    // ['Mint']: [
+    //   17739609,
+    //   17973926,
+    //   18062443,
+    // ],
     ['SetFeeProtocol']: [],
     ['Sync']: [
       18064045,
-      // 18064060, 18064194, 18065266, //18066464, // the last one contains multiple Snyc events
+      // 18064060, 
+      // 18064194, 
+      // 18065266, 
+      // 18066464, // the last one contains multiple Snyc events
     ],
-    ['Transfer']: [18064025],
+    ['Transfer']: [
+      18064025,
+      18064045,
+      // 18065266,
+    ],
   };
 
   describe('SmardexEventPool ethereum', function () {
