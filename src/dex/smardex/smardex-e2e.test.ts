@@ -19,10 +19,10 @@ describe('Smardex E2E Mainnet', () => {
     const dexKey = 'Smardex';
 
     describe('Simpleswap', () => {
-      it('WETH -> TOKEN', async () => {
+      it('WETH -> SDEX', async () => {
         await testE2E(
           tokens.WETH,
-          tokens.USDT,
+          tokens.SDEX,
           holders.WETH,
           '2000000000000000000', // 2 WETH
           SwapSide.SELL, // exact input

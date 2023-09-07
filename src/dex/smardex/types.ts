@@ -21,7 +21,9 @@ export interface SmardexPoolState {
 }
 
 // event Sync (uint256 reserve0, uint256 reserve1, uint256 fictiveReserve0, uint256 fictiveReserve1, uint256 priceAverage0, uint256 priceAverage1)
-export enum TOPICS { SYNC_EVENT = '0x2a368c7f33bb86e2d999940a3989d849031aff29b750f67947e6b8e8c3d2ffd6' };
+export enum TOPICS {
+  SYNC_EVENT = '0x2a368c7f33bb86e2d999940a3989d849031aff29b750f67947e6b8e8c3d2ffd6',
+}
 
 export interface SmardexData extends UniswapV2Data {
   deadline: number;
@@ -64,7 +66,9 @@ export interface SmardexPoolOrderedParams extends UniswapV2PoolOrderedParams {
   fictiveReservesOut: string;
   priceAverageIn: string;
   priceAverageOut: string;
-  priceAverageLastTimestamp: number,
+  priceAverageLastTimestamp: number;
+  feesLP?: string;
+  feesPool?: string;
 }
 
 export interface SmardexPair extends Omit<UniswapV2Pair, 'pool'> {
