@@ -206,7 +206,8 @@ export class Smardex
   factoryAddress: string;
   routerAddress: string;
 
-  initCode: string;
+  protected subgraphURL: string;
+  protected initCode: string;
 
   logger: Logger;
 
@@ -228,6 +229,7 @@ export class Smardex
     const config = SmardexConfig[dexKey];
     this.routerAddress = config[network].router!;
     this.factoryAddress = config[network].factoryAddress;
+    this.subgraphURL = config[network].subgraphURL;
     this.initCode = config[network].initCode;
     const factoryAbi = this.isLayer1()
       ? SmardexFactoryLayerOneABI
@@ -550,7 +552,7 @@ export class Smardex
     priceAverage1: string,
     feeCode: number,
     blockNumber: number,
-    priceAverageLastTimestamp?: number,
+    priceAverageLastTimestamp: number,
   ) {
     const multiCallFeeData = this.getFeesMultiCallData(pair);
     pair.pool = new SmardexEventPool(
@@ -688,7 +690,6 @@ export class Smardex
       const path = this.fixPath(data.path, srcToken, destToken);
 
       switch (contractMethod) {
-          return [
         case SmardexRouterFunctions.sellExactEth:
         case SmardexRouterFunctions.sellExactToken:
         case SmardexRouterFunctions.swapExactIn:
@@ -774,6 +775,7 @@ export class Smardex
         fictiveReservesOut: pairState.fictiveReserves0,
         priceAverageIn: pairState.priceAverage0,
         priceAverageOut: pairState.priceAverage1,
+        priceAverageLastTimestamp: pairState.priceAverageLastTimestamp,
         fee,
         direction: false,
         exchange: pair.exchange,
@@ -788,6 +790,7 @@ export class Smardex
       fictiveReservesOut: pairState.fictiveReserves1,
       priceAverageIn: pairState.priceAverage0,
       priceAverageOut: pairState.priceAverage1,
+      priceAverageLastTimestamp: pairState.priceAverageLastTimestamp,
       fee,
       direction: true,
       exchange: pair.exchange,

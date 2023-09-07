@@ -16,7 +16,7 @@ export interface SmardexPoolState {
   fictiveReserves1: string;
   priceAverage0: string;
   priceAverage1: string;
-  priceAverageLastTimestamp?: number;
+  priceAverageLastTimestamp: number;
   feeCode: number;
 }
 
@@ -64,6 +64,7 @@ export interface SmardexPoolOrderedParams extends UniswapV2PoolOrderedParams {
   fictiveReservesOut: string;
   priceAverageIn: string;
   priceAverageOut: string;
+  priceAverageLastTimestamp: number,
 }
 
 export interface SmardexPair extends Omit<UniswapV2Pair, 'pool'> {
