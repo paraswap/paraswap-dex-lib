@@ -9,18 +9,14 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import {
-  Network,
-  NULL_ADDRESS,
-  SUBGRAPH_TIMEOUT,
-  SwapSide,
-} from '../../constants';
+import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   ReservoirData,
+  ReservoirPoolState,
   ReservoirPoolTypes,
   ReservoirSwapFunctions,
 } from './types';
@@ -30,7 +26,9 @@ import { ReservoirEventPool } from './reservoir-pool';
 import GenericFactoryABI from '../../abi/reservoir/GenericFactory.json';
 import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
 import { Contract } from '@ethersproject/contracts';
-import { Interface } from '@ethersproject/abi';
+import { AbiCoder, Interface } from '@ethersproject/abi';
+import _ from 'lodash';
+import { SwapSide } from '@paraswap/core';
 
 export interface ReservoirPair {
   token0: Token;
@@ -38,6 +36,8 @@ export interface ReservoirPair {
   exchange?: Address;
   pool?: ReservoirEventPool;
 }
+
+const coder = new AbiCoder();
 
 export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -129,7 +129,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     pair.pool.addressesSubscribed.push(pair.exchange!);
 
     await pair.pool.initialize(blockNumber, {
-      state: { reserve0, reserve1, curveId, swapFee: 0n },
+      state: { reserve0, reserve1, curveId, swapFee: 0n, ampCoefficient: 0n },
     });
   }
 
@@ -144,7 +144,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
         ? [from, to]
         : [to, from];
 
-    // okay we might need to do some curveID shit here
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}-${curveId}`;
     let pair = this.pairs[key];
     if (pair) return pair;
@@ -160,6 +159,83 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
     this.pairs[key] = pair;
     return pair;
+  }
+
+  async getManyPoolReserves(
+    pairs: ReservoirPair[],
+    blockNumber: number,
+  ): Promise<ReservoirPoolState[]> {
+    try {
+      const calldata = pairs
+        .map((pair, i) => {
+          let calldata = [
+            {
+              target: pair.exchange,
+            },
+          ];
+        })
+        .flat();
+
+      const data: { returnData: any[] } =
+        await this.dexHelper.multiContract.methods
+          .aggregate(calldata)
+          .call({}, blockNumber);
+
+      const returnData = _.chunk(data.returnData);
+
+      return pairs.map((pair, i) => ({
+        reserve0: coder.decode(['uint104'], returnData[i][0])[0].toString(),
+        reserve1: coder.decode(['uint104'], returnData[i][1])[0].toString(),
+        curveId: 0,
+        swapFee: 0n,
+        ampCoefficient: null,
+      }));
+    } catch (e) {
+      this.logger.error(
+        `Error_getManyPoolReserves could not get reserves with error:`,
+        e,
+      );
+      return [];
+    }
+  }
+
+  async batchCatchUpPairs(
+    pairs: [Token, Token][],
+    blockNumber: number,
+  ): Promise<void> {
+    if (!blockNumber) return;
+
+    const pairsToFetch: ReservoirPair[] = [];
+    // TODO: optimize this into parallel promises instead of blocking in a loop
+    for (const _pair of pairs) {
+      const pair = await this.findPair(_pair[0], _pair[1], 0);
+      if (!(pair && pair.exchange)) continue;
+      if (!pair.pool) {
+        pairsToFetch.push(pair);
+      } else if (!pair.pool.getState(blockNumber)) {
+        pairsToFetch.push(pair);
+      }
+    }
+    // for the stable curve
+    for (const _pair of pairs) {
+      const pair = await this.findPair(_pair[0], _pair[1], 1);
+      if (!(pair && pair.exchange)) continue;
+      if (!pair.pool) {
+        pairsToFetch.push(pair);
+      } else if (!pair.pool.getState(blockNumber)) {
+        pairsToFetch.push(pair);
+      }
+    }
+
+    if (!pairsToFetch.length) return;
+
+    const reserves = await this.getManyPoolReserves(pairsToFetch, blockNumber);
+
+    if (reserves.length !== pairsToFetch.length) {
+      this.logger.error(
+        `Error_getManyPoolReserves didn't get any pool reserves`,
+      );
+    }
   }
 
   // Returns pool prices for amounts.
@@ -187,6 +263,16 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       ]
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_'); // not sure what this underscore is for, or if we even need it
+
+      const poolIdentifier = `${this.dexKey}_${tokenAddresses}`;
+
+      if (limitPools && limitPools.every(p => p !== poolIdentifier)) {
+        return null;
+      }
+
+      await this.batchCatchUpPairs([[from, to]], blockNumber);
+
+      const isSell = side === SwapSide.SELL;
 
       // TODO: placeholder for now
       return null;

@@ -19,6 +19,8 @@ export type ReservoirPoolState = {
   reserve1: string;
   curveId: ReservoirPoolTypes;
   swapFee: bigint;
+  // only applicable for Stable pool, null for a constant product pool
+  ampCoefficient: bigint | null;
 };
 
 export type ReservoirData = {

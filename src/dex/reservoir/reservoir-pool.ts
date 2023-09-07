@@ -81,6 +81,7 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
       reserve1: '0',
       curveId: 0,
       swapFee: 0n,
+      ampCoefficient: 0n,
     };
   }
 }
