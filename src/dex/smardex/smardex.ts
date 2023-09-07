@@ -31,6 +31,7 @@ import {
   SmardexPool,
   SmardexPoolOrderedParams,
   SmardexPoolState,
+  TOPICS,
 } from './types';
 import {
   getBigIntPow,
@@ -44,22 +45,13 @@ import SmardexPoolLayerOneABI from '../../abi/smardex/layer-1/smardex-pool.json'
 import SmardexPoolLayerTwoABI from '../../abi/smardex/layer-2/smardex-pool.json';
 import SmardexRouterABI from '../../abi/smardex/all/smardex-router.json';
 import { SimpleExchange } from '../simple-exchange';
-import { SmardexData, SmardexRouterFunctions } from '../smardex/types';
+import { SmardexData, SmardexParam, SmardexRouterFunctions } from '../smardex/types';
 import { IDex, StatefulEventSubscriber } from '../..';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Adapters, SmardexConfig } from './config';
 import ParaSwapABI from '../../abi/IParaswap.json';
-import {
-  UniswapDataLegacy,
-  UniswapParam,
-  UniswapV2Functions,
-} from '../uniswap-v2/types';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { getAmountIn, getAmountOut } from './smardex-sdk';
-
-// event Sync (uint256 reserve0, uint256 reserve1, uint256 fictiveReserve0, uint256 fictiveReserve1, uint256 priceAverage0, uint256 priceAverage1)
-export const SYNC_EVENT_TOPIC =
-  '0x2a368c7f33bb86e2d999940a3989d849031aff29b750f67947e6b8e8c3d2ffd6';
 
 const DefaultSmardexPoolGasCost = 90 * 1000;
 
@@ -106,7 +98,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     state: DeepReadonly<SmardexPoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<SmardexPoolState> | null> {
-    if (log.topics[0] !== SYNC_EVENT_TOPIC) return null;
+    if (log.topics[0] !== TOPICS.SYNC_EVENT) return null;
     const event = smardexPoolL1.parseLog(log);
     switch (event.name) {
       case 'Sync':
@@ -117,7 +109,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
           fictiveReserves1: event.args.fictiveReserve1.toString(),
           priceAverage0: event.args.priceAverage0.toString(),
           priceAverage1: event.args.priceAverage1.toString(),
-          priceAverageLastTimestamp: state.priceAverageLastTimestamp, // should be updated but only on Swap event
+          priceAverageLastTimestamp: state.priceAverageLastTimestamp, // TODO should be updated but only on Swap event
           feeCode: state.feeCode,
         };
     }
@@ -201,7 +193,7 @@ function encodePools(
 
 export class Smardex
   extends SimpleExchange
-  implements IDex<SmardexData, UniswapParam>
+  implements IDex<SmardexData, SmardexParam>
 {
   pairs: { [key: string]: SmardexPair } = {};
   feeFactor = 10000;
@@ -266,7 +258,7 @@ export class Smardex
     }
 
     const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
-      .sort((a, b) => (a > b ? 1 : -1))
+      .sort((a, b) => (BigInt(a) > BigInt(b) ? 1 : -1))
       .join('_');
 
     const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
@@ -300,7 +292,7 @@ export class Smardex
         from.address.toLowerCase(),
         to.address.toLowerCase(),
       ]
-        .sort((a, b) => (a > b ? 1 : -1))
+        .sort((a, b) => (BigInt(a) > BigInt(b) ? 1 : -1))
         .join('_');
 
       const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
@@ -466,7 +458,7 @@ export class Smardex
   async findPair(from: Token, to: Token) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
-      from.address.toLowerCase() < to.address.toLowerCase()
+      BigInt(from.address.toLowerCase()) < BigInt(to.address.toLowerCase())
         ? [from, to]
         : [to, from];
 
@@ -687,56 +679,63 @@ export class Smardex
     partner: string,
     beneficiary: string,
     contractMethod?: string,
-  ): TxInfo<UniswapParam> {
+  ): TxInfo<SmardexParam> {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (permit !== '0x') contractMethod += 'WithPermit';
 
-    const swapParams = ((): UniswapParam => {
-      const data = _data as unknown as UniswapDataLegacy;
+    const swapParams = ((): SmardexParam => {
+      const data = _data as unknown as SmardexData;
       const path = this.fixPath(data.path, srcToken, destToken);
 
       switch (contractMethod) {
-        case UniswapV2Functions.swapOnUniswap:
-        case UniswapV2Functions.buyOnUniswap:
-          return [srcAmount, destAmount, path];
-
-        case UniswapV2Functions.swapOnUniswapFork:
-        case UniswapV2Functions.buyOnUniswapFork:
           return [
-            data.factory,
-            prependWithOx(data.initCode),
-            srcAmount,
-            destAmount,
-            path,
-          ];
+        case SmardexRouterFunctions.sellExactEth:
+        case SmardexRouterFunctions.sellExactToken:
+        case SmardexRouterFunctions.swapExactIn:
+          return [srcAmount, destAmount, data.path, data.receiver, data.deadline];
 
-        case UniswapV2Functions.swapOnUniswapV2Fork:
-        case UniswapV2Functions.buyOnUniswapV2Fork:
-          return [
-            srcToken,
-            srcAmount,
-            destAmount,
-            this.getWETHAddress(srcToken, destToken, _data.wethAddress),
-            encodePools(_data.pools, this.feeFactor),
-          ];
+        case SmardexRouterFunctions.buyExactEth:
+        case SmardexRouterFunctions.buyExactToken:
+        case SmardexRouterFunctions.swapExactOut:
+          return [destAmount, srcAmount, data.path, data.receiver, data.deadline];
 
-        case UniswapV2Functions.swapOnUniswapV2ForkWithPermit:
-        case UniswapV2Functions.buyOnUniswapV2ForkWithPermit:
-          return [
-            srcToken,
-            srcAmount,
-            destAmount,
-            this.getWETHAddress(srcToken, destToken, _data.wethAddress),
-            encodePools(_data.pools, this.feeFactor),
-            permit,
-          ];
+        // case UniswapV2Functions.swapOnUniswapFork:
+        // case UniswapV2Functions.buyOnUniswapFork:
+        //   return [
+        //     data.factory,
+        //     prependWithOx(data.initCode),
+        //     srcAmount,
+        //     destAmount,
+        //     path,
+        //   ];
+
+        // case UniswapV2Functions.swapOnUniswapV2Fork:
+        // case UniswapV2Functions.buyOnUniswapV2Fork:
+        //   return [
+        //     srcToken,
+        //     srcAmount,
+        //     destAmount,
+        //     this.getWETHAddress(srcToken, destToken, _data.wethAddress),
+        //     encodePools(_data.pools, this.feeFactor),
+        //   ];
+
+        // case UniswapV2Functions.swapOnUniswapV2ForkWithPermit:
+        // case UniswapV2Functions.buyOnUniswapV2ForkWithPermit:
+        //   return [
+        //     srcToken,
+        //     srcAmount,
+        //     destAmount,
+        //     this.getWETHAddress(srcToken, destToken, _data.wethAddress),
+        //     encodePools(_data.pools, this.feeFactor),
+        //     permit,
+        //   ];
 
         default:
           throw new Error(`contractMethod=${contractMethod} is not supported`);
       }
     })();
 
-    const encoder = (...params: UniswapParam) =>
+    const encoder = (...params: SmardexParam) =>
       this.routerInterface.encodeFunctionData(contractMethod!, params);
     return {
       params: swapParams,
