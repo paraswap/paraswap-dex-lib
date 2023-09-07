@@ -601,7 +601,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
     } else {
       const isToken0 = deltaQty0 > 0n;
 
-      ksElasticMath.swapFromEvent(
+      let [stateUsingExactInput] = ksElasticMath.swapFromEvent(
         pool,
         isToken0 ? deltaQty0 : deltaQty1,
         isToken0 ? deltaQty1 : deltaQty0,
@@ -610,6 +610,21 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
         newLiquidity,
         isToken0,
       );
+
+      let [stateUsingExactOutput] = ksElasticMath.swapFromEvent(
+        pool,
+        isToken0 ? deltaQty1 : deltaQty0,
+        isToken0 ? deltaQty0 : deltaQty1,
+        sqrtP,
+        newCurrentTick,
+        newLiquidity,
+        !isToken0,
+      );
+
+      pool =
+        stateUsingExactInput.poolData.sqrtP == sqrtP
+          ? stateUsingExactInput
+          : stateUsingExactOutput;
 
       if (isToken0) {
         if (deltaQty1 < 0n) {

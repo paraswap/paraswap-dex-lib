@@ -395,14 +395,16 @@ class KSElasticMath {
   }
 
   swapFromEvent(
-    poolState: PoolState,
+    state: PoolState,
     specifiedAmount: bigint,
     returnedAmount: bigint,
     newSqrtP: bigint,
     newTick: bigint,
     newLiquidity: bigint,
     isToken0: boolean,
-  ): void {
+  ): [PoolState] {
+    let poolState = _.cloneDeep(state);
+
     let isExactInput = specifiedAmount > 0n;
     let willTickUp: boolean = isExactInput != isToken0;
 
@@ -432,7 +434,7 @@ class KSElasticMath {
       governmentFee: 0n,
       lpFee: 0n,
     };
-    while (swapData.specifiedAmount != 0n) {
+    while (swapData.specifiedAmount != 0n && swapData.sqrtP != newSqrtP) {
       let tempNextTick = swapData.nextTick;
       if (
         willTickUp &&
@@ -450,9 +452,9 @@ class KSElasticMath {
       swapData.nextSqrtP = TickMath.getSqrtRatioAtTick(tempNextTick);
 
       let targetSqrtP = swapData.nextSqrtP;
-      if (willTickUp == swapData.nextSqrtP > newSqrtP) {
-        targetSqrtP = newSqrtP;
-      }
+      // if (willTickUp == swapData.nextSqrtP > newSqrtP) {
+      //   targetSqrtP = newSqrtP;
+      // }
 
       let computeSwapResult = SwapMath.computeSwapStep(
         BigInt(swapData.baseL + swapData.reinvestL),
@@ -462,7 +464,6 @@ class KSElasticMath {
         BigInt(swapData.specifiedAmount),
         swapData.isExactInput,
         swapData.isToken0,
-        true,
       );
 
       swapData.specifiedAmount -= computeSwapResult.usedAmount;
@@ -549,12 +550,9 @@ class KSElasticMath {
         ? poolState.initializedTicks[Number(swapData.nextTick)].previous
         : swapData.nextTick;
     poolState.reinvestLiquidity = swapData.reinvestL;
+    poolState.currentTick = poolState.poolData.currentTick;
 
-    [
-      poolState.poolData.sqrtP,
-      poolState.currentTick,
-      poolState.poolData.baseL,
-    ] = [newSqrtP, newTick, newLiquidity];
+    return [poolState];
   }
 
   burnRToken(state: PoolState, params: BurnRTokenParams): void {
