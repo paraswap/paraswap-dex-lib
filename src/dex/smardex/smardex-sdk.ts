@@ -858,7 +858,7 @@ export function getAmountIn(
     );
 
   // if we need a second trade
-  if (firstAmount < amountOut) {
+  if (firstAmount.lt(amountOut)) {
     // in the second trade ALWAYS recompute fictive reserves
     [newResInFic, newResOutFic] = computeReserveFic(
       newResIn,
@@ -926,7 +926,7 @@ export function getUpdatedPriceAverage(
   priceAverageOut: BigNumber,
   currentTimestampInSecond: number,
 ): [BigNumber, BigNumber] {
-  if (currentTimestampInSecond < priceAverageLastTimestamp)
+  if (BigNumber.from(currentTimestampInSecond).lt(priceAverageLastTimestamp))
     throw new Error('INVALID_TIMESTAMP');
 
   // very first time
