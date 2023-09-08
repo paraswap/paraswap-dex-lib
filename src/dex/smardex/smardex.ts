@@ -415,15 +415,15 @@ export class Smardex
     destAmount: bigint,
   ): Promise<bigint> {
     const amountIn = getAmountIn(
-      BigNumber.from(destAmount),
-      BigNumber.from(priceParams.reservesIn),
-      BigNumber.from(priceParams.reservesOut),
-      BigNumber.from(priceParams.fictiveReservesIn),
-      BigNumber.from(priceParams.fictiveReservesOut),
-      BigNumber.from(priceParams.priceAverageIn),
-      BigNumber.from(priceParams.priceAverageOut),
-      BigNumber.from(priceParams.feesLP),
-      BigNumber.from(priceParams.feesPool),
+      BigInt(destAmount),
+      BigInt(priceParams.reserves0),
+      BigInt(priceParams.reserves1),
+      BigInt(priceParams.fictiveReserves0),
+      BigInt(priceParams.fictiveReserves1),
+      BigInt(priceParams.priceAverage0),
+      BigInt(priceParams.priceAverage1),
+      BigInt(priceParams.feesLP || '700'),
+      BigInt(priceParams.feesPool || '200'),
     )[0];
     return BigInt(amountIn.toString());
   }
@@ -433,19 +433,39 @@ export class Smardex
     srcAmount: bigint,
   ): Promise<bigint> {
     const amountOut = computeAmountOut(
-      priceParams.tokenIn,
-      priceParams.tokenOut,
-      BigNumber.from(priceParams.reservesIn),
-      BigNumber.from(priceParams.reservesOut),
-      BigNumber.from(priceParams.fictiveReservesIn),
-      BigNumber.from(priceParams.fictiveReservesOut),
-      BigNumber.from(srcAmount),
-      priceParams.tokenIn,
-      BigNumber.from(priceParams.priceAverageLastTimestamp),
-      BigNumber.from(priceParams.priceAverageIn),
-      BigNumber.from(priceParams.priceAverageOut),
-      BigNumber.from(priceParams.feesLP),
-      BigNumber.from(priceParams.feesPool),
+      priceParams.direction ? priceParams.token0 : priceParams.token1,
+      priceParams.direction ? priceParams.token1 : priceParams.token0,
+      BigInt(
+        priceParams.direction ? priceParams.reserves0 : priceParams.reserves1,
+      ),
+      BigInt(
+        priceParams.direction ? priceParams.reserves1 : priceParams.reserves0,
+      ),
+      BigInt(
+        priceParams.direction
+          ? priceParams.fictiveReserves0
+          : priceParams.fictiveReserves1,
+      ),
+      BigInt(
+        priceParams.direction
+          ? priceParams.fictiveReserves1
+          : priceParams.fictiveReserves0,
+      ),
+      BigInt(srcAmount),
+      priceParams.direction ? priceParams.token0 : priceParams.token1,
+      +priceParams.priceAverageLastTimestamp,
+      BigInt(
+        priceParams.direction
+          ? priceParams.priceAverage0
+          : priceParams.priceAverage1,
+      ),
+      BigInt(
+        priceParams.direction
+          ? priceParams.priceAverage1
+          : priceParams.priceAverage1,
+      ),
+      BigInt(priceParams.feesLP || '700'),
+      BigInt(priceParams.feesPool || '200'),
     ).amount;
     // uncomment to get rate
     // console.log("srcAmount.", utils.formatEther(srcAmount.toString()))
@@ -792,41 +812,21 @@ export class Smardex
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
 
-    const fees = {
-      feesLP: '700',
-      feesPool: '200',
-    };
-    if (pairReversed) {
-      return {
-        ...fees,
-        tokenIn: from.address,
-        tokenOut: to.address,
-        reservesIn: pairState.reserves1,
-        reservesOut: pairState.reserves0,
-        fictiveReservesIn: pairState.fictiveReserves1,
-        fictiveReservesOut: pairState.fictiveReserves0,
-        priceAverageIn: pairState.priceAverage0,
-        priceAverageOut: pairState.priceAverage1,
-        priceAverageLastTimestamp: pairState.priceAverageLastTimestamp,
-        fee,
-        direction: false,
-        exchange: pair.exchange,
-      };
-    }
     return {
-      ...fees,
-      tokenIn: from.address,
-      tokenOut: to.address,
-      reservesIn: pairState.reserves0,
-      reservesOut: pairState.reserves1,
-      fictiveReservesIn: pairState.fictiveReserves0,
-      fictiveReservesOut: pairState.fictiveReserves1,
-      priceAverageIn: pairState.priceAverage0,
-      priceAverageOut: pairState.priceAverage1,
+      token0: pair.token0.address,
+      token1: pair.token1.address,
+      reserves0: pairState.reserves0,
+      reserves1: pairState.reserves1,
+      fictiveReserves0: pairState.fictiveReserves0,
+      fictiveReserves1: pairState.fictiveReserves1,
+      priceAverage0: pairState.priceAverage0,
+      priceAverage1: pairState.priceAverage1,
       priceAverageLastTimestamp: pairState.priceAverageLastTimestamp,
       fee,
-      direction: true,
+      direction: !pairReversed,
       exchange: pair.exchange,
+      feesLP: '700',
+      feesPool: '200',
     };
   }
 

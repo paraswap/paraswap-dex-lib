@@ -61,14 +61,21 @@ export type SmardexParam = SellOnSmardexParam | BuyOnSmardexParam;
 
 export type DexParams = UniswapV2DexParams;
 
-export interface SmardexPoolOrderedParams extends UniswapV2PoolOrderedParams {
-  fictiveReservesIn: string;
-  fictiveReservesOut: string;
-  priceAverageIn: string;
-  priceAverageOut: string;
+export interface SmardexPoolOrderedParams {
+  token0: string;
+  token1: string;
+  reserves0: string;
+  reserves1: string;
+  fictiveReserves0: string;
+  fictiveReserves1: string;
+  priceAverage0: string;
+  priceAverage1: string;
   priceAverageLastTimestamp: number;
-  feesLP?: string;
-  feesPool?: string;
+  fee: string;
+  direction: boolean;
+  exchange: string;
+  feesLP: string;
+  feesPool: string;
 }
 
 export interface SmardexPair extends Omit<UniswapV2Pair, 'pool'> {
