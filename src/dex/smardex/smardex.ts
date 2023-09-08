@@ -1,5 +1,5 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import _ from 'lodash';
 import { DeepReadonly, AsyncOrSync } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
@@ -55,7 +55,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Adapters, SmardexConfig } from './config';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
-import { getAmountIn, getAmountOut } from './smardex-sdk';
+import { getAmountIn, getAmountOut, computeAmountOut } from './smardex-sdk';
 
 const DefaultSmardexPoolGasCost = 90 * 1000;
 
@@ -432,17 +432,24 @@ export class Smardex
     priceParams: SmardexPoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
-    const amountOut = getAmountOut(
-      BigNumber.from(srcAmount),
+    const amountOut = computeAmountOut(
+      priceParams.tokenIn,
+      priceParams.tokenOut,
       BigNumber.from(priceParams.reservesIn),
       BigNumber.from(priceParams.reservesOut),
       BigNumber.from(priceParams.fictiveReservesIn),
       BigNumber.from(priceParams.fictiveReservesOut),
+      BigNumber.from(srcAmount),
+      priceParams.tokenIn,
+      BigNumber.from(priceParams.priceAverageLastTimestamp),
       BigNumber.from(priceParams.priceAverageIn),
       BigNumber.from(priceParams.priceAverageOut),
       BigNumber.from(priceParams.feesLP),
       BigNumber.from(priceParams.feesPool),
-    )[0];
+    ).amount;
+    // uncomment to get rate
+    // console.log("srcAmount.", utils.formatEther(srcAmount.toString()))
+    // console.log("amountOut", utils.formatEther(amountOut.toString()))
     return BigInt(amountOut.toString());
   }
 
