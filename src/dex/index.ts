@@ -73,6 +73,7 @@ import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 
 const LegacyDexes = [
@@ -144,6 +145,7 @@ const Dexes = [
   MaverickV1,
   Camelot,
   SwaapV2,
+  QuickPerps,
   NomiswapV2,
 ];
 
