@@ -93,7 +93,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     state: DeepReadonly<SmardexPoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<SmardexPoolState> | null> {
-    if (!Object.keys(TOPICS).includes(log.topics[0])) return null;
+    if (!Object.values(TOPICS).includes(log.topics[0] as TOPICS)) return null;
     const event = smardexPoolL1.parseLog(log);
     switch (event.name) {
       case 'Sync':
