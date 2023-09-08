@@ -1,13 +1,11 @@
 import { Address, NumberAsString } from '../../types';
 import {
   UniswapV2Data,
-  UniswapV2PoolOrderedParams,
   DexParams as UniswapV2DexParams,
   UniswapPool,
-  UniswapDataLegacy,
 } from '../uniswap-v2/types';
 import { UniswapV2Pair } from '../uniswap-v2/uniswap-v2';
-import { SmardexEventPool } from './smardex';
+import { type SmardexEventPool } from './smardex';
 
 export interface SmardexPoolState {
   reserves0: string;
@@ -20,25 +18,9 @@ export interface SmardexPoolState {
   feeCode: number;
 }
 
-// event Sync (uint256 reserve0, uint256 reserve1, uint256 fictiveReserve0, uint256 fictiveReserve1, uint256 priceAverage0, uint256 priceAverage1)
-export enum TOPICS {
-  SYNC_EVENT = '0x2a368c7f33bb86e2d999940a3989d849031aff29b750f67947e6b8e8c3d2ffd6',
-}
-
-export interface SmardexData extends UniswapV2Data {
+export interface SmardexData extends Omit<UniswapV2Data, 'feeFactor'>{
   deadline: number;
   receiver: Address;
-}
-
-// export type SmardexDataLegacy = UniswapDataLegacy;
-
-export enum SmardexRouterFunctions {
-  sellExactEth = 'swapExactETHForTokens',
-  sellExactToken = 'swapExactTokensForETH',
-  swapExactIn = 'swapExactTokensForTokens',
-  buyExactEth = 'swapTokensForExactETH',
-  buyExactToken = 'swapETHForExactTokens',
-  swapExactOut = 'swapTokensForExactTokens',
 }
 
 export type SellOnSmardexParam = [

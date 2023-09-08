@@ -31,7 +31,6 @@ import {
   SmardexPool,
   SmardexPoolOrderedParams,
   SmardexPoolState,
-  TOPICS,
 } from './types';
 import {
   getBigIntPow,
@@ -46,10 +45,13 @@ import SmardexPoolLayerTwoABI from '../../abi/smardex/layer-2/smardex-pool.json'
 import SmardexRouterABI from '../../abi/smardex/all/smardex-router.json';
 import { SimpleExchange } from '../simple-exchange';
 import {
-  SmardexData,
-  SmardexParam,
   SmardexRouterFunctions,
-} from '../smardex/types';
+  directSmardexFunctionName,
+  TOPICS,
+  DefaultSmardexPoolGasCost,
+  SUBGRAPH_TIMEOUT,
+} from '../smardex/constants';
+import { SmardexData, SmardexParam } from '../smardex/types';
 import { IDex, StatefulEventSubscriber } from '../..';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Adapters, SmardexConfig } from './config';
@@ -57,23 +59,10 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { computeAmountIn, computeAmountOut } from './smardex-sdk';
 
-const DefaultSmardexPoolGasCost = 90 * 1000;
-
 const smardexPoolL1 = new Interface(SmardexPoolLayerOneABI);
 const smardexPoolL2 = new Interface(SmardexPoolLayerTwoABI);
 
 const coder = new AbiCoder();
-
-const directSmardexFunctionName = [
-  SmardexRouterFunctions.sellExactEth,
-  SmardexRouterFunctions.sellExactToken,
-  SmardexRouterFunctions.swapExactIn,
-  SmardexRouterFunctions.buyExactEth,
-  SmardexRouterFunctions.buyExactToken,
-  SmardexRouterFunctions.swapExactOut,
-];
-
-const SUBGRAPH_TIMEOUT = 20 * 1000;
 
 export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> {
   constructor(
@@ -104,7 +93,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     state: DeepReadonly<SmardexPoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<SmardexPoolState> | null> {
-    if (log.topics[0] !== TOPICS.SYNC_EVENT) return null;
+    if (!Object.keys(TOPICS).includes(log.topics[0])) return null;
     const event = smardexPoolL1.parseLog(log);
     switch (event.name) {
       case 'Sync':
@@ -139,7 +128,6 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
           [],
         ),
       },
-
       {
         target: this.poolAddress,
         callData: this.poolInterface.encodeFunctionData('getPriceAverage', []),
