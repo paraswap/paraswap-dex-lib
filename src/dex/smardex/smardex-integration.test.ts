@@ -159,8 +159,8 @@ describe('Smardex', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDT';
+    const destTokenSymbol = 'WETH';
 
     const amountsForSell = [
       0n,

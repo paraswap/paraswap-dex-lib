@@ -73,6 +73,8 @@ const directSmardexFunctionName = [
   SmardexRouterFunctions.swapExactOut,
 ];
 
+const SUBGRAPH_TIMEOUT = 20 * 1000;
+
 export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> {
   constructor(
     protected poolInterface: Interface,
@@ -921,7 +923,75 @@ export class Smardex
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: Complete with a query on our subgraph gateway
-    return [];
+    if (!this.subgraphURL) return [];
+    const query = `
+      query ($token: Bytes!, $limit: Int) {
+        pools0: pairs(first: $limit, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+        id
+        token0 {
+          id
+          decimals
+        }
+        token1 {
+          id
+          decimals
+        }
+        reserveUSD
+      }
+      pools1: pairs(first: $limit, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+        id
+        token0 {
+          id
+          decimals
+        }
+        token1 {
+          id
+          decimals
+        }
+        reserveUSD
+      }
+    }`;
+
+    const { data } = await this.dexHelper.httpRequest.post(
+      this.subgraphURL,
+      {
+        query,
+        variables: { token: tokenAddress.toLowerCase(), limit },
+      },
+      SUBGRAPH_TIMEOUT,
+      { 'x-api-key': process.env.SUBGRAPH_APIKEY! },
+    );
+
+    if (!(data && data.pools0 && data.pools1))
+      throw new Error("Couldn't fetch the pools from the subgraph");
+    const pools0 = _.map(data.pools0, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.token1.id.toLowerCase(),
+          decimals: parseInt(pool.token1.decimals),
+        },
+      ],
+      liquidityUSD: parseFloat(pool.reserveUSD),
+    }));
+
+    const pools1 = _.map(data.pools1, pool => ({
+      exchange: this.dexKey,
+      address: pool.id.toLowerCase(),
+      connectorTokens: [
+        {
+          address: pool.token0.id.toLowerCase(),
+          decimals: parseInt(pool.token0.decimals),
+        },
+      ],
+      liquidityUSD: parseFloat(pool.reserveUSD),
+    }));
+
+    return _.slice(
+      _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
+      0,
+      limit,
+    );
   }
 }
