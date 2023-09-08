@@ -57,7 +57,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Adapters, SmardexConfig } from './config';
 import ParaSwapABI from '../../abi/IParaswap.json';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
-import { computeAmountIn, computeAmountOut } from './smardex-sdk';
+import { computeAmountIn, computeAmountOut } from './sdk/core';
 
 const smardexPoolL1 = new Interface(SmardexPoolLayerOneABI);
 const smardexPoolL2 = new Interface(SmardexPoolLayerTwoABI);
@@ -351,12 +351,13 @@ export class Smardex
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
             factory: this.factoryAddress,
             initCode: this.initCode,
-            feeFactor: this.feeFactor,
             pools: [
               {
                 address: pairParam.exchange,
                 fee: parseInt(pairParam.fee),
-                direction: pairParam.tokenIn.toLocaleLowerCase() === pairParam.token0.toLocaleLowerCase(),
+                direction:
+                  pairParam.tokenIn.toLocaleLowerCase() ===
+                  pairParam.token0.toLocaleLowerCase(),
               },
             ],
           },
@@ -405,18 +406,22 @@ export class Smardex
     const amountIn = computeAmountIn(
       priceParams.token0,
       priceParams.token1,
-      priceParams.reserves0,
-      priceParams.reserves1,
-      priceParams.fictiveReserves0,
-      priceParams.fictiveReserves1,
-      destAmount,
-      priceParams.tokenOut,
+      BigInt(priceParams.reserves0),
+      BigInt(priceParams.reserves1),
+      BigInt(priceParams.fictiveReserves0),
+      BigInt(priceParams.fictiveReserves1),
+      BigInt(destAmount),
+      priceParams.to,
       +priceParams.priceAverageLastTimestamp,
-      priceParams.priceAverage0,
-      priceParams.priceAverage1,
-      priceParams.feesLP,
-      priceParams.feesPool,
+      BigInt(priceParams.priceAverage0),
+      BigInt(priceParams.priceAverage1),
+      BigInt(priceParams.feesLP || '700'),
+      BigInt(priceParams.feesPool || '200'),
     ).amount;
+
+    // console.log("destAmount.", utils.formatEther(destAmount.toString()))
+    // console.log("amountIn", utils.formatEther(amountIn.toString()))
+
     return BigInt(amountIn.toString());
   }
 
@@ -427,18 +432,19 @@ export class Smardex
     const amountOut = computeAmountOut(
       priceParams.token0,
       priceParams.token1,
-      priceParams.reserves0,
-      priceParams.reserves1,
-      priceParams.fictiveReserves0,
-      priceParams.fictiveReserves1,
-      srcAmount,
-      priceParams.tokenIn,
+      BigInt(priceParams.reserves0),
+      BigInt(priceParams.reserves1),
+      BigInt(priceParams.fictiveReserves0),
+      BigInt(priceParams.fictiveReserves1),
+      BigInt(srcAmount),
+      priceParams.from,
       +priceParams.priceAverageLastTimestamp,
-      priceParams.priceAverage0,
-      priceParams.priceAverage1,
-      priceParams.feesLP,
-      priceParams.feesPool,
+      BigInt(priceParams.priceAverage0),
+      BigInt(priceParams.priceAverage1),
+      BigInt(priceParams.feesLP || '700'),
+      BigInt(priceParams.feesPool || '200'),
     ).amount;
+
     // uncomment to get rate
     // console.log("srcAmount.", utils.formatEther(srcAmount.toString()))
     // console.log("amountOut", utils.formatEther(amountOut.toString()))
@@ -783,6 +789,8 @@ export class Smardex
     const fee = (pairState.feeCode + tokenDexTransferFee).toString();
 
     return {
+      from: from.address,
+      to: to.address,
       token0: pair.token0.address,
       token1: pair.token1.address,
       reserves0: BigInt(pairState.reserves0),

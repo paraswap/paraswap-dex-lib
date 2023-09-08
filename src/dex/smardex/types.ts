@@ -18,7 +18,7 @@ export interface SmardexPoolState {
   feeCode: number;
 }
 
-export interface SmardexData extends Omit<UniswapV2Data, 'feeFactor'>{
+export interface SmardexData extends Omit<UniswapV2Data, 'feeFactor'> {
   deadline: number;
   receiver: Address;
 }
@@ -44,6 +44,8 @@ export type SmardexParam = SellOnSmardexParam | BuyOnSmardexParam;
 export type DexParams = UniswapV2DexParams;
 
 export interface SmardexPoolOrderedParams {
+  from: string;
+  to: string;
   token0: string;
   token1: string;
   reserves0: bigint;

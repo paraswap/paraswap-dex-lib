@@ -1,70 +1,8 @@
-// Protocol's fees constants
-export const FEES_LP = BigInt(500);
-export const FEES_POOL = BigInt(200);
-export const FEES_TOTAL = FEES_LP + FEES_POOL;
-export const FEES_BASE = BigInt(1000);
-export const FEES_TOTAL_REVERSED = FEES_BASE - FEES_TOTAL;
-export interface Pair {
-  address?: string;
-  token0: string;
-  token1: string;
-  reserve0: bigint;
-  reserve1: bigint;
-  reserve0LastFictive: bigint;
-  reserve1LastFictive: bigint;
-  priceAverageLastTimestamp: number;
-  priceAverage0: bigint;
-  priceAverage1: bigint;
-  forcedPriceAverageTimestamp?: number;
-  prevReserveFic0?: bigint;
-  prevReserveFic1?: bigint;
-}
-
-export interface CurrencyAmount {
-  currency: string;
-  amount: bigint;
-  amountMax?: bigint;
-  newRes0?: bigint;
-  newRes1?: bigint;
-  newRes0Fic?: bigint;
-  newRes1Fic?: bigint;
-  newPriceAverage0?: bigint;
-  newPriceAverage1?: bigint;
-  forcedPriceAverageTimestamp?: number;
-}
-
-export interface BestTradeOptions {
-  maxNumResults?: number; // how many results to return
-  maxHops?: number; // the maximum number of hops for the swap
-  arbitrage?: boolean; // consider arbitrage loops or not
-}
-
-export interface Route {
-  pairs: Pair[];
-  path: string[];
-  input: string;
-  output: string;
-}
-
-export interface Trade {
-  route: Route;
-  amountIn: CurrencyAmount;
-  amountOut: CurrencyAmount;
-  tradeType: TradeType;
-  priceImpact?: bigint; // defined only after calling bestTradeExactIn or bestTradeExactOut
-}
-// constant for function 'updatePriceAverage'
-export const MAX_BLOCK_DIFF_SECONDS = process.env.SDK_MAX_BLOCK_DIFF_SECONDS
-  ? Number(process.env.SDK_MAX_BLOCK_DIFF_SECONDS)
-  : 300;
-export const LATENCY_OFFSET_SECONDS = 20;
-
-export enum TradeType {
-  EXACT_INPUT,
-  EXACT_OUTPUT,
-}
-
+import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { FEES_BASE, LATENCY_OFFSET_SECONDS, TradeType } from './constants';
 import { ratioApproxEq, sqrt } from './utils';
+import SmardexError from './errors';
+import type { BestTradeOptions, CurrencyAmount, Pair, Trade } from './types';
 
 // compute first trade amountIn using arbitrage feature
 function computeFirstTradeQtyIn(
@@ -159,7 +97,7 @@ function applyKConstRuleOut(
   const denominator = reserveInFic * FEES_BASE + amountInWithFee;
 
   if (denominator === 0n) {
-    throw new Error('SMARDEX_K_ERROR');
+    throw new SmardexError('SMARDEX_K_ERROR');
   }
 
   const amountOut = numerator / denominator;
@@ -191,7 +129,7 @@ function applyKConstRuleIn(
   const denominator = (reserveOutFic - amountOut) * feesTotalReversed;
 
   if (denominator === 0n) {
-    throw new Error('SMARDEX_K_ERROR');
+    throw new SmardexError('SMARDEX_K_ERROR');
   }
 
   const amountIn = numerator / denominator + 1n;
@@ -265,19 +203,19 @@ export function getAmountOut(
   feesPool: bigint,
 ): [bigint, bigint, bigint, bigint, bigint] {
   // if (amountIn <= 0n) {
-  //   throw new Error('INSUFFICIENT_INPUT_AMOUNT');
+  //   throw new SmardexError('INSUFFICIENT_INPUT_AMOUNT');
   // }
 
   if (reserveIn <= 0n || reserveOut <= 0n) {
-    throw new Error('INSUFFICIENT_LIQUIDITY');
+    throw new SmardexError('INSUFFICIENT_LIQUIDITY');
   }
 
   if (reserveInFic <= 0n || reserveOutFic <= 0n) {
-    throw new Error('INSUFFICIENT_LIQUIDITY');
+    throw new SmardexError('INSUFFICIENT_LIQUIDITY');
   }
 
   if (priceAverageIn <= 0n || priceAverageOut <= 0n) {
-    throw new Error('INSUFFICIENT_PRICE_AVERAGE');
+    throw new SmardexError('INSUFFICIENT_PRICE_AVERAGE');
   }
 
   let reserveInFicUpdated = reserveInFic;
@@ -374,7 +312,7 @@ export function getAmountOut(
     newResInFic <= 0n ||
     newResOutFic <= 0n
   ) {
-    throw new Error('INSUFFICIENT_LIQUIDITY');
+    throw new SmardexError('INSUFFICIENT_LIQUIDITY');
   }
 
   return [amountOut, newResIn, newResOut, newResInFic, newResOutFic];
@@ -405,20 +343,20 @@ export function getAmountIn(
   feesLP: bigint,
   feesPool: bigint,
 ): [bigint, bigint, bigint, bigint, bigint] {
-  if (amountOut <= 0n) {
-    throw new Error('INSUFFICIENT_OUTPUT_AMOUNT');
-  }
+  // if (amountOut <= 0n) {
+  //   throw new SmardexError('INSUFFICIENT_OUTPUT_AMOUNT');
+  // }
 
   if (reserveIn <= 0n || reserveOut <= 0n) {
-    throw new Error('INSUFFICIENT_LIQUIDITY');
+    throw new SmardexError('INSUFFICIENT_LIQUIDITY');
   }
 
   if (reserveInFic <= 0n || reserveOutFic <= 0n) {
-    throw new Error('INSUFFICIENT_LIQUIDITY');
+    throw new SmardexError('INSUFFICIENT_LIQUIDITY');
   }
 
   if (priceAverageIn <= 0n || priceAverageOut <= 0n) {
-    throw new Error('INSUFFICIENT_PRICE_AVERAGE');
+    throw new SmardexError('INSUFFICIENT_PRICE_AVERAGE');
   }
 
   let reserveInFicUpdated = reserveInFic;
@@ -450,7 +388,7 @@ export function getAmountIn(
   // Avoid K constant division by 0
   if (reserveInFic <= 0n) {
     return [
-      BigInt(0),
+      BigInt('0'),
       reserveIn,
       reserveOut,
       reserveInFicUpdated,
@@ -482,7 +420,7 @@ export function getAmountIn(
     // Avoid K constant division by 0
     if (newResInFic <= 0n) {
       return [
-        BigInt(0),
+        BigInt('0'),
         reserveIn,
         reserveOut,
         reserveInFicUpdated,
@@ -512,7 +450,7 @@ export function getAmountIn(
     newResInFic <= 0n ||
     newResOutFic <= 0n
   ) {
-    throw new Error('INSUFFICIENT_LIQUIDITY');
+    throw new SmardexError('INSUFFICIENT_LIQUIDITY');
   }
 
   return [amountIn, newResIn, newResOut, newResInFic, newResOutFic];
@@ -541,7 +479,7 @@ export function getUpdatedPriceAverage(
   maxBlockDiffSeconds: number,
 ): [bigint, bigint] {
   if (currentTimestampInSecond < priceAverageLastTimestamp) {
-    throw new Error('INVALID_TIMESTAMP');
+    throw new SmardexError('INVALID_TIMESTAMP', 'SmarDexError');
   }
 
   // very first time

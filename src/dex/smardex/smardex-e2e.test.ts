@@ -19,59 +19,121 @@ describe('Smardex E2E Mainnet', () => {
     const dexKey = 'Smardex';
 
     describe('Simpleswap', () => {
-      it('WETH -> SDEX', async () => {
-        await testE2E(
-          tokens.WETH,
-          tokens.SDEX,
-          holders.WETH,
-          '2000000000000000000', // 2 WETH
-          SwapSide.SELL, // exact input
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      // it('WETH <- TOKEN', async () => {
-      //   await testE2E(
-      //     tokens.WETH,
-      //     tokens.USDT,
-      //     holders.WETH,
-      //     '2000000000000000000', // 2 WETH
-      //     SwapSide.BUY, // exact output
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
+      describe('SELL', () => {
+        it('WETH -> SDEX', async () => {
+          await testE2E(
+            tokens.WETH,
+            tokens.SDEX,
+            holders.WETH,
+            '2000000000000000000', // 2 WETH
+            SwapSide.SELL, // exact input
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
 
-      // it('ETH -> TOKEN', async () => {
-      //   await testE2E(
-      //     tokens.ETH,
-      //     tokens.USDT,
-      //     holders.ETH,
-      //     '7000000000000000000', // 7 ETH
-      //     SwapSide.SELL, // exact input
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
-      // it('ETH <- TOKEN', async () => {
-      //   await testE2E(
-      //     tokens.ETH,
-      //     tokens.USDT,
-      //     holders.ETH,
-      //     '7000000000000000000', // 7 ETH
-      //     SwapSide.BUY, // exact output
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
+        it('SDEX -> WETH', async () => {
+          await testE2E(
+            tokens.SDEX,
+            tokens.WETH,
+            holders.SDEX,
+            '300000000000000000000000', // 300K SDEX
+            SwapSide.SELL, // exact input
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+
+        it('USDT -> SDEX', async () => {
+          await testE2E(
+            tokens.USDT,
+            tokens.SDEX,
+            holders.USDT,
+            '200000000', // 200 USDT
+            SwapSide.SELL, // exact input
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+
+        it('SDEX -> USDT', async () => {
+          await testE2E(
+            tokens.SDEX,
+            tokens.USDT,
+            holders.SDEX,
+            '30000000000000000000000', // 30K SDEX
+            SwapSide.SELL, // exact input
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+      });
+
+      describe('BUY', () => {
+        it('WETH -> SDEX', async () => {
+          await testE2E(
+            tokens.WETH,
+            tokens.SDEX,
+            holders.WETH,
+            '300000000000000000000000', // 300K SDEX
+            SwapSide.BUY, // exact input
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+
+        it('SDEX -> WETH', async () => {
+          await testE2E(
+            tokens.SDEX,
+            tokens.WETH,
+            holders.SDEX,
+            '2000000000000000000', // 2 ETH
+            SwapSide.BUY, // exact input
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+
+        it('USDT -> SDEX', async () => {
+          await testE2E(
+            tokens.USDT,
+            tokens.SDEX,
+            holders.USDT,
+            '30000000000000000000000', // 30K SDEX
+            SwapSide.BUY, // exact input
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+
+        it.skip('SDEX -> USDT', async () => {
+          await testE2E(
+            tokens.SDEX,
+            tokens.USDT,
+            holders.SDEX,
+            '1000000', // 200 USDT
+            SwapSide.BUY, // exact input
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+      });
     });
 
     // describe('Multiswap', () => {
