@@ -8,12 +8,8 @@ import SmardexPoolLayerOneABI from '../../abi/smardex/layer-1/smardex-pool.json'
 import { SmardexEventPool } from './smardex';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
-import {
-  testEventSubscriber,
-} from '../../../tests/utils-events';
-import {
-  SmardexPoolState,
-} from './types';
+import { testEventSubscriber } from '../../../tests/utils-events';
+import { SmardexPoolState } from './types';
 
 jest.setTimeout(120 * 1000);
 const dexKey = 'Smardex';
@@ -37,42 +33,37 @@ async function fetchPoolStateFromContractAtBlock(
 
 describe('Smardex Ethereum SDEX-USDT Pool Event', function () {
   const poolAddress = '0xd2bf378cea07fe117ffdfd3f5b7e53c2b0b78c05'; // sdex-usdt
-  const token0 = { address: '0x5de8ab7e27f6e7a1fff3e5b337584aa43961beef', decimals: 18 };
-  const token1 = { address: '0xdac17f958d2ee523a2206206994597c13d831ec7', decimals: 6 };
+  const token0 = {
+    address: '0x5de8ab7e27f6e7a1fff3e5b337584aa43961beef',
+    decimals: 18,
+  };
+  const token1 = {
+    address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    decimals: 6,
+  };
 
   const blockNumbers: { [eventName: string]: number[] } = {
     ['Swap']: [
       18064045,
-      // 18064060, 
-      // 18064194, 
-      // 18065266, 
-      // 18066464, // the last one contains multiple Swap events
+      18064060,
+      18064194,
+      18065266,
+      18066464, // the last one contains multiple Swap events
     ],
-    // ['Burn']: [
-    //   17231921,
-    //   17762042,
-    //   17762668,
-    // ],
-    // ['Mint']: [
-    //   17739609,
-    //   17973926,
-    //   18062443,
-    // ],
-    ['SetFeeProtocol']: [],
+    ['Burn']: [17231921, 17762042, 17762668],
+    ['Mint']: [17739609, 17973926, 18062443],
+    // ['FeesChanged']: [], // none on L1
     ['Sync']: [
       18064045,
-      // 18064060, 
-      // 18064194, 
-      // 18065266, 
-      // 18066464, // the last one contains multiple Snyc events
+      18064060,
+      18064194,
+      18065266,
+      18066464, // the last one contains multiple Snyc events
     ],
-    ['Transfer']: [
-      18064025,
-      18064045,
-      // 18065266,
-    ],
+    ['Transfer']: [18064025, 18064045, 18065266],
   };
 
+  // events in the same block must update the same element
   describe('SmardexEventPool ethereum', function () {
     Object.keys(blockNumbers).forEach((event: string) => {
       blockNumbers[event].forEach((blockNumber: number) => {
@@ -93,8 +84,8 @@ describe('Smardex Ethereum SDEX-USDT Pool Event', function () {
           );
 
           // It is done in generateState. But here have to make it manually
-          // SmardexPool.poolAddress = poolAddress.toLowerCase();
-          // SmardexPool.addressesSubscribed[0] = poolAddress.toLowerCase();
+          SmardexPool.poolAddress = poolAddress.toLowerCase();
+          SmardexPool.addressesSubscribed[0] = poolAddress.toLowerCase();
 
           await testEventSubscriber(
             SmardexPool,

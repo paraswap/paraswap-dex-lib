@@ -68,7 +68,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
   constructor(
     protected poolInterface: Interface,
     protected dexHelper: IDexHelper,
-    private poolAddress: Address,
+    public poolAddress: Address,
     token0: Token,
     token1: Token,
     logger: Logger,
@@ -106,11 +106,14 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     }
 
     const data: { returnData: any[] } =
-    await this.dexHelper.multiContract.methods
-      .aggregate(calldata)
-      .call({}, blockNumber);
+      await this.dexHelper.multiContract.methods
+        .aggregate(calldata)
+        .call({}, blockNumber);
 
-    const priceAverageLastTimestamp = coder.decode(['uint256', 'uint256', 'uint256'], data.returnData[0])[2];
+    const priceAverageLastTimestamp = coder.decode(
+      ['uint256', 'uint256', 'uint256'],
+      data.returnData[0],
+    )[2];
 
     return {
       feesLp: dynamicFees
@@ -134,7 +137,9 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     const event = smardexPoolL1.parseLog(log);
     switch (event.name) {
       case 'Sync':
-        const fetchedSync = await this.fetchPairFeesAndLastTimestamp(log.blockNumber);
+        const fetchedSync = await this.fetchPairFeesAndLastTimestamp(
+          log.blockNumber,
+        );
         return {
           reserves0: event.args.reserve0.toString(),
           reserves1: event.args.reserve1.toString(),
