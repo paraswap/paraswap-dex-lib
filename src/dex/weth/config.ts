@@ -30,6 +30,9 @@ export const WethConfig: DexConfigMap<DexParams> = {
     [Network.BSC]: {
       poolGasCost: WethGasCost,
     },
+    [Network.OPBNB]: {
+      poolGasCost: WethGasCost,
+    },
   },
   Wmatic: {
     [Network.POLYGON]: {
@@ -69,5 +72,8 @@ export const Adapters: {
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 1 }],
+  },
+  [Network.OPBNB]: {
+    [SwapSide.SELL]: [{ name: 'OpBnbAdapter01', index: 1 }],
   },
 };

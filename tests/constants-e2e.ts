@@ -883,6 +883,24 @@ export const Tokens: {
       decimals: 6,
     },
   },
+  [Network.OPBNB]: {
+    BNB: {
+      address: ETHER_ADDRESS,
+      decimals: 18,
+    },
+    WBNB: {
+      address: '0x4200000000000000000000000000000000000006',
+      decimals: 18,
+    },
+    '0101': {
+      address: '0xa41B3067eC694DBec668c389550bA8fc589e5797',
+      decimals: 18,
+    },
+    LUIGI: {
+      address: '0x196AD5A70279Fc112db4F8Baf6f5022c9B1cF0a5',
+      decimals: 18,
+    },
+  },
 };
 
 export const Holders: {
@@ -1101,6 +1119,12 @@ export const Holders: {
     MATIC: '0x8f2a1450c040b3c19efe9676165d8f30d8280019',
     WBTC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
+  },
+  [Network.OPBNB]: {
+    BNB: '0xb12e5f8f44b167f609e189d5ed66970328efdd22',
+    WBNB: '0x506B8322E1159d06E493EBe7ffA41a24291e7Ae3',
+    '0101': '0x39a786421889EB581bd105508a0D2Dc03523B903',
+    LUIGI: '0x245736d44f7A77c8DB80625Ea498d85eF8AE629d',
   },
 };
 

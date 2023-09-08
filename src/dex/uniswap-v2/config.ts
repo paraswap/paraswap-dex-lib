@@ -117,6 +117,10 @@ export const Adapters: {
       },
     ],
   },
+  [Network.OPBNB]: {
+    [SwapSide.SELL]: [{ name: 'OpBnbAdapter01', index: 2 }],
+    [SwapSide.BUY]: [{ name: 'OpBnbBuyAdapter', index: 1 }],
+  },
 };
 
 export const UniswapV2Config: DexConfigMap<DexParams> = {
@@ -693,6 +697,22 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       initCode:
         '0x1a76b7e7272f6187014e23f04d1b2e543eed2fd1f76481149008cc6eacb05c22',
       poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
+  },
+  BinarySwap: {
+    [Network.OPBNB]: {
+      factoryAddress: '0xd50aaE6C73E2486B0Da718D23F35Dcf5aad25911',
+      initCode:
+        '0x5ef9d9226744e2d0335d11ea48193e4ccd224fb01d8557c9db762f93cfe52881',
+      feeCode: 30,
+    },
+  },
+  LuigiSwap: {
+    [Network.OPBNB]: {
+      factoryAddress: '0x0dAe6d22182c20AB9150a4DCB3160591Dc41027a',
+      initCode:
+        '0xbff47a1925fa689deb4b6dfefbb1970779754f4fde5ba903fc5d0db1160c1901',
       feeCode: 30,
     },
   },
