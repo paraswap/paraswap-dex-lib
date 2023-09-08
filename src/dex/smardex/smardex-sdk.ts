@@ -572,7 +572,7 @@ export function getAmountOut(
 
   // if there are 2 trades: 1st trade mustn't re-compute ReserveFic, 2nd should
   if (
-    firstAmount === amountWithFees &&
+    firstAmount.eq(amountWithFees) &&
     ratioApproxEq(reserveInFic, reserveOutFic, priceAverageIn, priceAverageOut)
   ) {
     [reserveInFicUpdated, reserveOutFicUpdated] = computeReserveFic(
@@ -824,7 +824,7 @@ export function getAmountIn(
 
   // if there are 2 trades: 1st trade mustn't re-compute ReserveFic, 2nd should
   if (
-    firstAmount === amountOut &&
+    firstAmount.eq(amountOut) &&
     ratioApproxEq(reserveInFic, reserveOutFic, priceAverageIn, priceAverageOut)
   ) {
     [reserveInFicUpdated, reserveOutFicUpdated] = computeReserveFic(
