@@ -911,13 +911,10 @@ export class Smardex
       routerMethod = isETHAddress(dest)
         ? SmardexRouterFunctions.sellExactToken
         : routerMethod;
-      routerArgs = [
-        srcAmount,
-        destAmount,
-        data.path,
-        data.receiver,
-        data.deadline,
-      ];
+
+      routerArgs = isETHAddress(src)
+        ? [destAmount, data.path, data.receiver, data.deadline]
+        : [srcAmount, destAmount, data.path, data.receiver, data.deadline];
     } else {
       routerMethod = isETHAddress(src)
         ? SmardexRouterFunctions.buyExactToken
@@ -925,13 +922,10 @@ export class Smardex
       routerMethod = isETHAddress(dest)
         ? SmardexRouterFunctions.buyExactEth
         : routerMethod;
-      routerArgs = [
-        destAmount,
-        srcAmount,
-        data.path,
-        data.receiver,
-        data.deadline,
-      ];
+
+      routerArgs = isETHAddress(src)
+        ? [destAmount, data.path, data.receiver, data.deadline]
+        : [destAmount, srcAmount, data.path, data.receiver, data.deadline];
     }
 
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
