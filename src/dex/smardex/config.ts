@@ -15,28 +15,28 @@ export const SmardexConfig: DexConfigMap<DexParams> = {
       router: '0xEf2f9b48d7EC80440Ab4573dF1A2aBDBE06D3f60',
       initCode: mainnetInitHash,
       subgraphURL: `${gatewaySubgraph}/ethereum`,
-      feeCode: 0,
+      // feeCode: 0, // this is ignored as Smardex uses dynamic fees
     },
     [Network.ARBITRUM]: {
       factoryAddress: '0x41A00e3FbE7F479A99bA6822704d9c5dEB611F22',
       router: '0xdd4536dD9636564D891c919416880a3e250f975A',
       initCode: layer2InitHash,
       subgraphURL: `${gatewaySubgraph}/arbitrum`,
-      feeCode: 0,
+      // feeCode: 0, // this is ignored as Smardex uses dynamic fees
     },
     [Network.BSC]: {
       factoryAddress: '0xA8EF6FEa013034E62E2C4A9Ec1CDb059fE23Af33',
       router: '0x391BeCc8DAaf32b9ba8e602e9527Bf9DA04C8deb',
       initCode: layer2InitHash,
       subgraphURL: `${gatewaySubgraph}/bsc`,
-      feeCode: 0,
+      // feeCode: 0, // this is ignored as Smardex uses dynamic fees
     },
     [Network.POLYGON]: {
       factoryAddress: '0x9A1e1681f6D59Ca051776410465AfAda6384398f',
       router: '0xA8EF6FEa013034E62E2C4A9Ec1CDb059fE23Af33',
       initCode: layer2InitHash,
       subgraphURL: `${gatewaySubgraph}/polygon`,
-      feeCode: 0,
+      // feeCode: 0, // this is ignored as Smardex uses dynamic fees
     },
   },
 };

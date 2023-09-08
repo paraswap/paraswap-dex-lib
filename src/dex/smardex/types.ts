@@ -19,9 +19,8 @@ export interface SmardexPoolState {
   feesPool: number;
 }
 
-// export interface SmardexData extends Omit<UniswapV2Data, 'feeFactor'> {
-export interface SmardexData extends UniswapV2Data {
-
+// export interface SmardexData extends UniswapV2Data {
+export interface SmardexData extends Omit<UniswapV2Data, 'feeFactor'> {
   deadline: number;
   receiver: Address;
 }

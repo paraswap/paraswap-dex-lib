@@ -1,7 +1,7 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { BigNumber, utils } from 'ethers';
 import _ from 'lodash';
-import { DeepReadonly, AsyncOrSync } from 'ts-essentials';
+import { DeepReadonly } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
 import {
   DEST_TOKEN_PARASWAP_TRANSFERS,
@@ -89,14 +89,52 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     );
   }
 
-  protected processLog(
+  async fetchPairFeesAndLastTimestamp(blockNumber: number): Promise<{
+    feesLp: number;
+    feesPool: number;
+    priceAverageLastTimestamp: number;
+  }> {
+    const dynamicFees = !!this.smardexFeesMultiCallEntry;
+    let calldata = [
+      {
+        target: this.poolAddress,
+        callData: this.poolInterface.encodeFunctionData('getPriceAverage', []),
+      },
+    ];
+    if (dynamicFees) {
+      calldata.push(this.smardexFeesMultiCallEntry!);
+    }
+
+    const data: { returnData: any[] } =
+    await this.dexHelper.multiContract.methods
+      .aggregate(calldata)
+      .call({}, blockNumber);
+
+    const priceAverageLastTimestamp = coder.decode(['uint256', 'uint256', 'uint256'], data.returnData[0])[2];
+
+    return {
+      feesLp: dynamicFees
+        ? this.smardexFeesMulticallDecoder!(data.returnData[1][0])
+        : 500,
+      feesPool: dynamicFees
+        ? this.smardexFeesMulticallDecoder!(data.returnData[1][1])
+        : 200,
+      priceAverageLastTimestamp: priceAverageLastTimestamp.toNumber(),
+    };
+  }
+
+  // This methode overrides previous state with new state.
+  // Problem: Smardex Pair state is updated partially on different events
+  // This is why we must fetch pair's missing state in Events
+  protected async processLog(
     state: DeepReadonly<SmardexPoolState>,
     log: Readonly<Log>,
-  ): AsyncOrSync<DeepReadonly<SmardexPoolState> | null> {
+  ): Promise<DeepReadonly<SmardexPoolState> | null> {
     if (!Object.values(TOPICS).includes(log.topics[0] as TOPICS)) return null;
     const event = smardexPoolL1.parseLog(log);
     switch (event.name) {
       case 'Sync':
+        const fetchedSync = await this.fetchPairFeesAndLastTimestamp(log.blockNumber);
         return {
           reserves0: event.args.reserve0.toString(),
           reserves1: event.args.reserve1.toString(),
@@ -104,9 +142,35 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
           fictiveReserves1: event.args.fictiveReserve1.toString(),
           priceAverage0: event.args.priceAverage0.toString(),
           priceAverage1: event.args.priceAverage1.toString(),
-          priceAverageLastTimestamp: state.priceAverageLastTimestamp, // TODO should be updated but only on Swap event
-          feeCode: state.feeCode,
+          priceAverageLastTimestamp: fetchedSync.priceAverageLastTimestamp,
+          feesLp: fetchedSync.feesLp,
+          feesPool: fetchedSync.feesPool,
         };
+      case 'FeesChanged': // only triggerd on L2
+        return {
+          reserves0: state.reserves0,
+          reserves1: state.reserves1,
+          fictiveReserves0: state.fictiveReserves0,
+          fictiveReserves1: state.fictiveReserves1,
+          priceAverage0: state.priceAverage0,
+          priceAverage1: state.priceAverage1,
+          priceAverageLastTimestamp: state.priceAverageLastTimestamp,
+          feesLp: event.args.feesLp.toNumber(),
+          feesPool: event.args.feesPool.toNumber(),
+        };
+      // case 'Swap':
+      //   const fetchedSwap = await this.fetchPairFeesAndLastTimestamp(log.blockNumber);
+      //   return {
+      //     reserves0: state.reserves0,
+      //     reserves1: state.reserves1,
+      //     fictiveReserves0: state.fictiveReserves0,
+      //     fictiveReserves1: state.fictiveReserves1,
+      //     priceAverage0: state.priceAverage0,
+      //     priceAverage1: state.priceAverage1,
+      //     priceAverageLastTimestamp: fetchedSwap.priceAverageLastTimestamp,
+      //     feesLp: fetchedSwap.feesLp,
+      //     feesPool: fetchedSwap.feesPool,
+      //   };
     }
     return null;
   }
@@ -163,20 +227,23 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
       priceAverage0: priceAverage0.toString(),
       priceAverage1: priceAverage1.toString(),
       priceAverageLastTimestamp: priceAverageLastTimestamp.toNumber(),
-      feeCode: dynamicFees
-        ? this.smardexFeesMulticallDecoder!(data.returnData[3])
-        : 700, // TODO: Ensure the fees are correct
+      feesLp: dynamicFees
+        ? this.smardexFeesMulticallDecoder!(data.returnData[3][0])
+        : 500,
+      feesPool: dynamicFees
+        ? this.smardexFeesMulticallDecoder!(data.returnData[3][1])
+        : 200,
     };
   }
 }
 
 function encodePools(
   pools: SmardexPool[],
-  feeFactor: number,
+  // feeFactor: number,
 ): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
-      (BigInt(feeFactor - fee) << 161n) +
+      (BigInt(fee) << 161n) +
       ((direction ? 0n : 1n) << 160n) +
       BigInt(address)
     ).toString();
@@ -188,7 +255,7 @@ export class Smardex
   implements IDex<SmardexData, SmardexParam>
 {
   pairs: { [key: string]: SmardexPair } = {};
-  feeFactor = 10000;
+  // feeFactor = 10000;
   factory: Contract;
 
   routerInterface: Interface;
@@ -306,7 +373,7 @@ export class Smardex
 
       const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
 
-      // TODO SMARDEX does not support FoT
+      // TODO SMARDEX does not support Fees on Transfer Tokens
       const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
         [unitAmount, ...amounts],
         side,
@@ -352,6 +419,7 @@ export class Smardex
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
             factory: this.factoryAddress,
             initCode: this.initCode,
+            // feeFactor: this.feeFactor,
             pools: [
               {
                 address: pairParam.exchange,
@@ -528,7 +596,8 @@ export class Smardex
           pairState.fictiveReserves1,
           pairState.priceAverage0,
           pairState.priceAverage1,
-          pairState.feeCode,
+          pairState.feesLp,
+          pairState.feesPool,
           blockNumber,
           pairState.priceAverageLastTimestamp,
         );
@@ -547,7 +616,7 @@ export class Smardex
     };
     const callDecoder = (values: any[]) =>
       parseInt(
-        smardexPoolL2.decodeFunctionResult('getPairFees', values)[0].toString(),
+        smardexPoolL2.decodeFunctionResult('getPairFees', values).toString(),
       );
 
     return {
@@ -564,7 +633,8 @@ export class Smardex
     fictiveReserves1: string,
     priceAverage0: string,
     priceAverage1: string,
-    feeCode: number,
+    feesLp: number,
+    feesPool: number,
     blockNumber: number,
     priceAverageLastTimestamp: number,
   ) {
@@ -590,7 +660,8 @@ export class Smardex
         fictiveReserves1,
         priceAverage0,
         priceAverage1,
-        feeCode,
+        feesLp,
+        feesPool,
         priceAverageLastTimestamp,
       },
     });
@@ -654,9 +725,12 @@ export class Smardex
         priceAverageLastTimestamp: coder
           .decode(['uint256', 'uint256', 'uint256'], returnData[i][2])[2]
           .toString(),
-        feeCode: this.isLayer1()
-          ? 700
-          : multiCallFeeData[i]!.callDecoder(returnData[i][3]),
+        feesLp: this.isLayer1()
+          ? 500
+          : multiCallFeeData[i]!.callDecoder(returnData[i][3][0]),
+        feesPool: this.isLayer1()
+          ? 200
+          : multiCallFeeData[i]!.callDecoder(returnData[i][3][1]),
       }));
     } catch (e) {
       this.logger.error(
@@ -757,7 +831,7 @@ export class Smardex
       );
       return null;
     }
-    const fee = (pairState.feeCode + tokenDexTransferFee).toString();
+    // const fee = (pairState.feesPool + tokenDexTransferFee).toString();
 
     return {
       fromToken: from.address,
@@ -771,12 +845,9 @@ export class Smardex
       priceAverage0: BigInt(pairState.priceAverage0),
       priceAverage1: BigInt(pairState.priceAverage1),
       priceAverageLastTimestamp: pairState.priceAverageLastTimestamp,
-      fee,
-      tokenIn: from.address,
-      tokenOut: to.address,
       exchange: pair.exchange,
-      feesLp: 700n,
-      feesPool: 200n,
+      feesLp: BigInt(pairState.feesLp),
+      feesPool: BigInt(pairState.feesPool),
     };
   }
 
@@ -791,7 +862,7 @@ export class Smardex
     data: SmardexData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const pools = encodePools(data.pools, this.feeFactor);
+    const pools = encodePools(data.pools);
     const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
     const payload = this.abiCoder.encodeParameter(
       {
@@ -823,7 +894,7 @@ export class Smardex
     data: SmardexData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const pools = encodePools(data.pools, this.feeFactor);
+    const pools = encodePools(data.pools);
     const weth = this.getWETHAddress(src, dest, data.wethAddress);
 
     let routerMethod: any;
