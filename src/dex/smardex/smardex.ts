@@ -306,6 +306,7 @@ export class Smardex
 
       const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
 
+      // TODO SMARDEX does not support FoT
       const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
         [unitAmount, ...amounts],
         side,
@@ -354,10 +355,8 @@ export class Smardex
             pools: [
               {
                 address: pairParam.exchange,
-                fee: parseInt(pairParam.fee),
-                direction:
-                  pairParam.tokenIn.toLocaleLowerCase() ===
-                  pairParam.token0.toLocaleLowerCase(),
+                fee: 0, // Smardex does not support Fees on Transfer Tokens
+                direction: pairParam.fromToken.toLocaleLowerCase() === pairParam.token0.toLocaleLowerCase(),
               },
             ],
           },
@@ -406,17 +405,17 @@ export class Smardex
     const amountIn = computeAmountIn(
       priceParams.token0,
       priceParams.token1,
-      BigInt(priceParams.reserves0),
-      BigInt(priceParams.reserves1),
-      BigInt(priceParams.fictiveReserves0),
-      BigInt(priceParams.fictiveReserves1),
-      BigInt(destAmount),
+      priceParams.reserves0,
+      priceParams.reserves1,
+      priceParams.fictiveReserves0,
+      priceParams.fictiveReserves1,
+      destAmount,
       priceParams.to,
       +priceParams.priceAverageLastTimestamp,
-      BigInt(priceParams.priceAverage0),
-      BigInt(priceParams.priceAverage1),
-      BigInt(priceParams.feesLP || '700'),
-      BigInt(priceParams.feesPool || '200'),
+      priceParams.priceAverage0,
+      priceParams.priceAverage1,
+      priceParams.feesLp,
+      priceParams.feesPool,
     ).amount;
 
     // console.log("destAmount.", utils.formatEther(destAmount.toString()))
@@ -432,17 +431,17 @@ export class Smardex
     const amountOut = computeAmountOut(
       priceParams.token0,
       priceParams.token1,
-      BigInt(priceParams.reserves0),
-      BigInt(priceParams.reserves1),
-      BigInt(priceParams.fictiveReserves0),
-      BigInt(priceParams.fictiveReserves1),
-      BigInt(srcAmount),
-      priceParams.from,
+      priceParams.reserves0,
+      priceParams.reserves1,
+      priceParams.fictiveReserves0,
+      priceParams.fictiveReserves1,
+      srcAmount,
+      priceParams.fromToken,
       +priceParams.priceAverageLastTimestamp,
-      BigInt(priceParams.priceAverage0),
-      BigInt(priceParams.priceAverage1),
-      BigInt(priceParams.feesLP || '700'),
-      BigInt(priceParams.feesPool || '200'),
+      priceParams.priceAverage0,
+      priceParams.priceAverage1,
+      priceParams.feesLp,
+      priceParams.feesPool,
     ).amount;
 
     // uncomment to get rate
