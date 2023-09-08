@@ -86,7 +86,7 @@ describe('Smardex E2E Mainnet', () => {
             '300000000000000000000000', // 300K SDEX
             SwapSide.BUY, // exact input
             dexKey,
-            ContractMethod.simpleSwap,
+            ContractMethod.simpleBuy,
             network,
             provider,
           );
@@ -97,10 +97,10 @@ describe('Smardex E2E Mainnet', () => {
             tokens.SDEX,
             tokens.WETH,
             holders.SDEX,
-            '2000000000000000000', // 2 ETH
+            '2000000000000000000',
             SwapSide.BUY, // exact input
             dexKey,
-            ContractMethod.simpleSwap,
+            ContractMethod.simpleBuy,
             network,
             provider,
           );
@@ -111,24 +111,24 @@ describe('Smardex E2E Mainnet', () => {
             tokens.USDT,
             tokens.SDEX,
             holders.USDT,
-            '30000000000000000000000', // 30K SDEX
+            '30000000000000000000000',
             SwapSide.BUY, // exact input
             dexKey,
-            ContractMethod.simpleSwap,
+            ContractMethod.simpleBuy,
             network,
             provider,
           );
         });
 
-        it.skip('SDEX -> USDT', async () => {
+        it('SDEX -> USDT', async () => {
           await testE2E(
             tokens.SDEX,
             tokens.USDT,
             holders.SDEX,
-            '1000000', // 200 USDT
+            '3000000000', // 3K USDT
             SwapSide.BUY, // exact input
             dexKey,
-            ContractMethod.simpleSwap,
+            ContractMethod.simpleBuy,
             network,
             provider,
           );
