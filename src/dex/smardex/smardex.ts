@@ -725,37 +725,6 @@ export class Smardex
             data.deadline,
           ];
 
-        // case UniswapV2Functions.swapOnUniswapFork:
-        // case UniswapV2Functions.buyOnUniswapFork:
-        //   return [
-        //     data.factory,
-        //     prependWithOx(data.initCode),
-        //     srcAmount,
-        //     destAmount,
-        //     path,
-        //   ];
-
-        // case UniswapV2Functions.swapOnUniswapV2Fork:
-        // case UniswapV2Functions.buyOnUniswapV2Fork:
-        //   return [
-        //     srcToken,
-        //     srcAmount,
-        //     destAmount,
-        //     this.getWETHAddress(srcToken, destToken, _data.wethAddress),
-        //     encodePools(_data.pools, this.feeFactor),
-        //   ];
-
-        // case UniswapV2Functions.swapOnUniswapV2ForkWithPermit:
-        // case UniswapV2Functions.buyOnUniswapV2ForkWithPermit:
-        //   return [
-        //     srcToken,
-        //     srcAmount,
-        //     destAmount,
-        //     this.getWETHAddress(srcToken, destToken, _data.wethAddress),
-        //     encodePools(_data.pools, this.feeFactor),
-        //     permit,
-        //   ];
-
         default:
           throw new Error(`contractMethod=${contractMethod} is not supported`);
       }

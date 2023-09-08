@@ -1,8 +1,7 @@
-import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { FEES_BASE, LATENCY_OFFSET_SECONDS, TradeType } from './constants';
+import { FEES_BASE, LATENCY_OFFSET_SECONDS } from './constants';
 import { ratioApproxEq, sqrt } from './utils';
 import SmardexError from './errors';
-import type { BestTradeOptions, CurrencyAmount, Pair, Trade } from './types';
+import type { CurrencyAmount, Pair } from './types';
 
 // compute first trade amountIn using arbitrage feature
 function computeFirstTradeQtyIn(
