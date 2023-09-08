@@ -356,7 +356,9 @@ export class Smardex
               {
                 address: pairParam.exchange,
                 fee: 0, // Smardex does not support Fees on Transfer Tokens
-                direction: pairParam.fromToken.toLocaleLowerCase() === pairParam.token0.toLocaleLowerCase(),
+                direction:
+                  pairParam.fromToken.toLocaleLowerCase() ===
+                  pairParam.token0.toLocaleLowerCase(),
               },
             ],
           },
@@ -410,7 +412,7 @@ export class Smardex
       priceParams.fictiveReserves0,
       priceParams.fictiveReserves1,
       destAmount,
-      priceParams.to,
+      priceParams.toToken,
       +priceParams.priceAverageLastTimestamp,
       priceParams.priceAverage0,
       priceParams.priceAverage1,
@@ -788,8 +790,8 @@ export class Smardex
     const fee = (pairState.feeCode + tokenDexTransferFee).toString();
 
     return {
-      from: from.address,
-      to: to.address,
+      fromToken: from.address,
+      toToken: to.address,
       token0: pair.token0.address,
       token1: pair.token1.address,
       reserves0: BigInt(pairState.reserves0),
@@ -803,7 +805,7 @@ export class Smardex
       tokenIn: from.address,
       tokenOut: to.address,
       exchange: pair.exchange,
-      feesLP: 700n,
+      feesLp: 700n,
       feesPool: 200n,
     };
   }

@@ -44,8 +44,8 @@ export type SmardexParam = SellOnSmardexParam | BuyOnSmardexParam;
 export type DexParams = UniswapV2DexParams;
 
 export interface SmardexPoolOrderedParams {
-  from: string;
-  to: string;
+  fromToken: string;
+  toToken: string;
   token0: string;
   token1: string;
   reserves0: bigint;
@@ -59,7 +59,7 @@ export interface SmardexPoolOrderedParams {
   tokenIn: string;
   tokenOut: string;
   exchange: string;
-  feesLP: bigint;
+  feesLp: bigint;
   feesPool: bigint;
 }
 
