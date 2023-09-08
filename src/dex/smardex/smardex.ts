@@ -420,6 +420,7 @@ export class Smardex
       priceParams.feesPool,
     ).amount;
 
+    // uncomment to log rates
     // console.log("destAmount.", utils.formatEther(destAmount.toString()))
     // console.log("amountIn", utils.formatEther(amountIn.toString()))
 
@@ -446,7 +447,7 @@ export class Smardex
       priceParams.feesPool,
     ).amount;
 
-    // uncomment to get rate
+    // uncomment to log rates
     // console.log("srcAmount.", utils.formatEther(srcAmount.toString()))
     // console.log("amountOut", utils.formatEther(amountOut.toString()))
     return BigInt(amountOut.toString());
