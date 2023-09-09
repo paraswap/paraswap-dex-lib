@@ -112,6 +112,10 @@ class DummyCache implements ICache {
     return 0;
   }
 
+  async zrem(key: string, membersKeys: string[]): Promise<number> {
+    return 0;
+  }
+
   async zadd(key: string, bulkItemsToAdd: (number | string)[], option?: 'NX') {
     return 0;
   }

@@ -38,14 +38,15 @@ import {
 import { AlgebraMath } from './lib/AlgebraMath';
 import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
+import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
 
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
 };
 
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 60 * 60 * 1000; // 3 hours
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const ALGEBRA_EFFICIENCY_FACTOR = 3;
 const ALGEBRA_TICK_GAS_COST = 24_000; // Ceiled
 const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
@@ -114,6 +115,14 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     this.AlgebraPoolImplem =
       config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
+
+    new AlgebraFactory(
+      dexHelper,
+      dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet,
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -143,6 +152,28 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       );
     }
   }
+
+  /*
+   * When a non exisiting pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   *  Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+  }) => {
+    const [_token0, _token1] = this._sortTokens(token0, token1);
+    const poolKey = `${token0}_${token1}`.toLowerCase();
+
+    // consider doing it only from master pool for less calls to distant cache
+
+    try {
+      // delete pool record from set
+      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+    } catch (e) {}
+
+    // delete entry locally to let local instance discover the pool
+    delete this.eventPools[this.getPoolIdentifier(_token0, _token1)];
+  };
 
   async getPool(
     srcAddress: Address,
