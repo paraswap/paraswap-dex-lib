@@ -73,7 +73,6 @@ export type DexParams = {
   version: 'v1.1' | 'v1.9';
   forceRPC?: boolean;
   forceManualStateGenerate?: boolean;
-  cleanExistingPoolTTLMs?: number;
 };
 
 export type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;
