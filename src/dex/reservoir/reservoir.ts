@@ -39,6 +39,8 @@ import { AbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { SwapSide } from '@paraswap/core';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { ReservoirStablePool } from './reservoir-stable-pool';
+import { ReservoirConstantProductPool } from './reservoir-constant-product-pool';
 
 export interface ReservoirPair {
   token0: Token;
@@ -257,25 +259,33 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     }
   }
 
-  getSellPrice(priceParams: ReservoirOrderedParams): bigint {
-    return 0n;
+  getSellPrice(priceParams: ReservoirOrderedParams, amount: bigint): bigint {
+    if (priceParams.stable) {
+      return ReservoirStablePool.getSellPrice();
+    } else {
+      return ReservoirConstantProductPool.getSellPrice(priceParams, amount);
+    }
   }
 
-  getBuyPrice(priceParams: ReservoirOrderedParams): bigint {
-    return 0n;
+  getBuyPrice(priceParams: ReservoirOrderedParams, amount: bigint): bigint {
+    if (priceParams.stable) {
+      return ReservoirStablePool.getBuyPrice();
+    } else {
+      return ReservoirConstantProductPool.getBuyPrice(priceParams, amount);
+    }
   }
 
   // we're not considering multi-hop scenarios in this case
   // if one day we need to cater for this case, refer to uniswap-v2's impl of the same function
   getSellPricePath(amount: bigint, params: ReservoirOrderedParams[]): bigint[] {
     return params.map(param => {
-      return this.getSellPrice(param);
+      return this.getSellPrice(param, amount);
     });
   }
 
   getBuyPricePath(amount: bigint, params: ReservoirOrderedParams[]): bigint[] {
     return params.map(param => {
-      return this.getBuyPrice(param);
+      return this.getBuyPrice(param, amount);
     });
   }
 
