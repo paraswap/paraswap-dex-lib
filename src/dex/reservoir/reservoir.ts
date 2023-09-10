@@ -8,14 +8,23 @@ import {
   PoolPrices,
   SimpleExchangeParam,
   Token,
+  TransferFeeParams,
 } from '../../types';
-import { Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT } from '../../constants';
+import {
+  DEST_TOKEN_DEX_TRANSFERS,
+  DEST_TOKEN_PARASWAP_TRANSFERS,
+  Network,
+  NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
+  SUBGRAPH_TIMEOUT,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   ReservoirData,
+  ReservoirOrderedParams,
   ReservoirPoolState,
   ReservoirPoolTypes,
   ReservoirSwapFunctions,
@@ -29,6 +38,7 @@ import { Contract } from '@ethersproject/contracts';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { SwapSide } from '@paraswap/core';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 export interface ReservoirPair {
   token0: Token;
@@ -208,22 +218,15 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     const pairsToFetch: ReservoirPair[] = [];
     // TODO: optimize this into parallel promises instead of blocking in a loop
     for (const _pair of pairs) {
-      const pair = await this.findPair(_pair[0], _pair[1], 0);
-      if (!(pair && pair.exchange)) continue;
-      if (!pair.pool) {
-        pairsToFetch.push(pair);
-      } else if (!pair.pool.getState(blockNumber)) {
-        pairsToFetch.push(pair);
-      }
-    }
-    // for the stable curve
-    for (const _pair of pairs) {
-      const pair = await this.findPair(_pair[0], _pair[1], 1);
-      if (!(pair && pair.exchange)) continue;
-      if (!pair.pool) {
-        pairsToFetch.push(pair);
-      } else if (!pair.pool.getState(blockNumber)) {
-        pairsToFetch.push(pair);
+      // iterate over all curves
+      for (let i = 0; i < Object.keys(ReservoirPoolTypes).length / 2; ++i) {
+        const pair = await this.findPair(_pair[0], _pair[1], i);
+        if (!(pair && pair.exchange)) continue;
+        if (!pair.pool) {
+          pairsToFetch.push(pair);
+        } else if (!pair.pool.getState(blockNumber)) {
+          pairsToFetch.push(pair);
+        }
       }
     }
 
@@ -236,6 +239,143 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
         `Error_getManyPoolReserves didn't get any pool reserves`,
       );
     }
+
+    for (let i = 0; i < pairsToFetch.length; ++i) {
+      const pairState = reserves[i];
+      const pair = pairsToFetch[i];
+      if (!pair.pool) {
+        await this.addPair(
+          pair,
+          pairState.reserve0,
+          pairState.reserve1,
+          pairState.curveId,
+          blockNumber,
+        );
+      } else {
+        pair.pool.setState(pairState, blockNumber);
+      }
+    }
+  }
+
+  getSellPrice(priceParams: ReservoirOrderedParams): bigint {
+    return 0n;
+  }
+
+  getBuyPrice(priceParams: ReservoirOrderedParams): bigint {
+    return 0n;
+  }
+
+  // we're not considering multi-hop scenarios in this case
+  // if one day we need to cater for this case, refer to uniswap-v2's impl of the same function
+  getSellPricePath(amount: bigint, params: ReservoirOrderedParams[]): bigint[] {
+    return params.map(param => {
+      return this.getSellPrice(param);
+    });
+  }
+
+  getBuyPricePath(amount: bigint, params: ReservoirOrderedParams[]): bigint[] {
+    return params.map(param => {
+      return this.getBuyPrice(param);
+    });
+  }
+
+  async getPairOrderedParams(
+    from: Token,
+    to: Token,
+    blockNumber: number,
+  ): Promise<ReservoirOrderedParams[] | null> {
+    const orderedParamsResult: ReservoirOrderedParams[] = [];
+
+    const constantProduct = await this.findPair(from, to, 0);
+    const stable = await this.findPair(from, to, 1);
+
+    if (constantProduct && constantProduct.pool && constantProduct.exchange) {
+      const pairState = constantProduct.pool.getState(blockNumber);
+
+      if (pairState) {
+        const pairResersed =
+          constantProduct.token1.address.toLowerCase() ==
+          from.address.toLowerCase();
+
+        if (pairResersed) {
+          orderedParamsResult.push({
+            tokenIn: from.address,
+            tokenOut: to.address,
+            reservesIn: pairState.reserve1,
+            reservesOut: pairState.reserve0,
+            stable: null,
+            fee: '0',
+            direction: false,
+            exchange: constantProduct.exchange,
+          });
+        } else {
+          orderedParamsResult.push({
+            tokenIn: from.address,
+            tokenOut: to.address,
+            reservesIn: pairState.reserve0,
+            reservesOut: pairState.reserve1,
+            stable: null,
+            fee: '0',
+            direction: true,
+            exchange: constantProduct.exchange,
+          });
+        }
+      } else {
+        this.logger.error(
+          `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
+            from.symbol || from.address
+          } ${to.symbol || to.address} constant product`,
+        );
+      }
+    }
+    if (stable && stable.pool && stable.exchange) {
+      const pairState = stable.pool.getState(blockNumber);
+
+      if (pairState) {
+        const pairResersed =
+          stable.token1.address.toLowerCase() == from.address.toLowerCase();
+
+        if (pairResersed) {
+          orderedParamsResult.push({
+            tokenIn: from.address,
+            tokenOut: to.address,
+            reservesIn: pairState.reserve1,
+            reservesOut: pairState.reserve0,
+            stable: {
+              decimalsIn: 0n,
+              decimalsOut: 0n,
+              ampCoefficient: 0n,
+            },
+            fee: '0',
+            direction: false,
+            exchange: stable.exchange,
+          });
+        } else {
+          orderedParamsResult.push({
+            tokenIn: from.address,
+            tokenOut: to.address,
+            reservesIn: pairState.reserve0,
+            reservesOut: pairState.reserve1,
+            stable: {
+              decimalsIn: 0n,
+              decimalsOut: 0n,
+              ampCoefficient: 0n,
+            },
+            fee: '0',
+            direction: true,
+            exchange: stable.exchange,
+          });
+        }
+      } else {
+        this.logger.error(
+          `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
+            from.symbol || from.address
+          } ${to.symbol || to.address} stable`,
+        );
+      }
+    }
+
+    return orderedParamsResult.length > 0 ? null : orderedParamsResult;
   }
 
   // Returns pool prices for amounts.
@@ -249,6 +389,12 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<null | ExchangePrices<ReservoirData>> {
     try {
       const from = this.dexHelper.config.wrapETH(srcToken);
@@ -274,8 +420,71 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
       const isSell = side === SwapSide.SELL;
 
-      // TODO: placeholder for now
-      return null;
+      const pairsParam = await this.getPairOrderedParams(from, to, blockNumber);
+
+      if (!pairsParam) return null;
+
+      const unitAmount: bigint = getBigIntPow(
+        isSell ? from.decimals : to.decimals,
+      );
+
+      const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
+        [unitAmount, ...amounts],
+        side,
+        isSell ? transferFees.srcFee : transferFees.destFee,
+        isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
+      );
+
+      const unit = isSell
+        ? this.getSellPricePath(unitVolumeWithFee, pairsParam)
+        : this.getBuyPricePath(unitVolumeWithFee, pairsParam);
+
+      const prices = isSell
+        ? amountsWithFee.map(amount =>
+            this.getSellPricePath(amount, pairsParam),
+          )
+        : amountsWithFee.map(amount =>
+            this.getBuyPricePath(amount, pairsParam),
+          );
+
+      const unitOutWithfee = applyTransferFee(
+        [...unit],
+        side,
+        isSell ? transferFees.destDexFee : transferFees.srcFee,
+        isSell ? DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
+      );
+
+      const outputsWithFee = prices.map(pricesForCurve =>
+        applyTransferFee(
+          [...pricesForCurve],
+          side,
+          isSell ? transferFees.destDexFee : transferFees.srcFee,
+          isSell ? DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
+        ),
+      );
+
+      // we return up to ReservoirPoolTypes.length pairs for each srcToken -> destToken query as we have 2 curve types
+      // if we increase the types of curves in the future this will go up as well
+      return pairsParam.map((pair, index) => {
+        return {
+          prices: outputsWithFee[index],
+          unit: unitOutWithfee[index],
+          data: {
+            router: this.router,
+            path: [from.address.toLowerCase(), to.address.toLowerCase()],
+            curveIds: [
+              pair.stable
+                ? ReservoirPoolTypes.Stable
+                : ReservoirPoolTypes.ConstantProduct,
+            ],
+            type: side,
+          },
+          exchange: this.dexKey,
+          poolIdentifier,
+          gasCost: 0, // gotta fill this in somehow
+          poolAddresses: [pair.exchange],
+        };
+      });
     } catch (e) {
       this.logger.error('Reservoir_getPricesVolume', e);
       return null;
@@ -331,14 +540,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       swapFunction,
       // doesn't consider the multi hop at the moment?
       // we don't calculate the slippage here ourselves?
-      [
-        srcAmount,
-        destAmount,
-        srcToken,
-        destToken,
-        data.curveIds,
-        data.recipient,
-      ],
+      [srcAmount, destAmount, srcToken, destToken, data.curveIds],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(

@@ -1,4 +1,6 @@
 import { Address } from '../../types';
+import { SwapSide } from '@paraswap/core';
+import { UniswapV2PoolOrderedParams } from '../uniswap-v2/types';
 
 export enum ReservoirPoolTypes {
   ConstantProduct = 0,
@@ -27,16 +29,11 @@ export type ReservoirData = {
   // TODO: ReservoirFinanceData is the dex data that is
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
-  // Complete me!
-  wavax: Address;
   router: Address;
   // denominated in basis points, should be a positive number
-  slippage: bigint;
-
+  type: SwapSide;
   curveIds: ReservoirPoolTypes[];
   path: Address[];
-  recipient: Address;
-
   // initcode hash for both constant product and stable?
 };
 
@@ -48,3 +45,11 @@ export type DexParams = {
   factory: Address;
   router: Address;
 };
+
+export interface ReservoirOrderedParams extends UniswapV2PoolOrderedParams {
+  stable: {
+    decimalsIn: bigint;
+    decimalsOut: bigint;
+    ampCoefficient: bigint;
+  } | null;
+}
