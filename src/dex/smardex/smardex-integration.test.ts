@@ -2,244 +2,146 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
+import { ETHER_ADDRESS, Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { Smardex } from './smardex';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for Smardex general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Smardex specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
-function getReaderCalldata(
-  exchangeAddress: string,
-  readerIface: Interface,
-  amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
-) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
-  }));
-}
-
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
-  });
-}
-
-async function checkOnChainPricing(
-  smardex: Smardex,
-  funcName: string,
-  blockNumber: number,
-  prices: bigint[],
-  amounts: bigint[],
-) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from smardex.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
-
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts.slice(1),
-    funcName,
-  );
-  const readerResult = (
-    await smardex.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
-  );
-
-  expect(prices).toEqual(expectedPrices);
-}
-
-async function testPricingOnNetwork(
-  smardex: Smardex,
-  network: Network,
-  dexKey: string,
-  blockNumber: number,
-  srcTokenSymbol: string,
-  destTokenSymbol: string,
-  side: SwapSide,
-  amounts: bigint[],
-  funcNameToCheck: string,
-) {
-  const networkTokens = Tokens[network];
-
-  const pools = await smardex.getPoolIdentifiers(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    side,
-    blockNumber,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
-    pools,
-  );
-
-  expect(pools.length).toBeGreaterThan(0);
-
-  const poolPrices = await smardex.getPricesVolume(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    amounts,
-    side,
-    blockNumber,
-    pools,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
-  );
-
-  expect(poolPrices).not.toBeNull();
-  if (smardex.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
-
-  // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    smardex,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
-}
 
 describe('Smardex', function () {
   const dexKey = 'Smardex';
-  let blockNumber: number;
-  let smardex: Smardex;
+  const network = Network.MAINNET;
+  const tokens = Tokens[network];
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-    const dexHelper = new DummyDexHelper(network);
+  describe('Ethereum', () => {
+    let dexHelper: DummyDexHelper;
+    let blocknumber: number;
 
-    const tokens = Tokens[network];
-
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'USDT';
-    const destTokenSymbol = 'WETH';
-
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
-
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
-
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      smardex = new Smardex(network, dexKey, dexHelper);
+    beforeEach(async () => {
+      dexHelper = new DummyDexHelper(network);
+      blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     });
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        smardex,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+    // Token pairs to test
+    const tokenPairs = [
+      { src: 'SDEX', dest: 'USDT' },
+      { src: 'SDEX', dest: 'WETH' },
+      { src: 'SDEX', dest: 'ETH' },
+      { src: 'WETH', dest: 'WBTC' },
+    ] as { src: string; dest: string }[];
+
+    /**
+     * Allow to generate amounts for a pair of tokens according to the decimals of each token
+     * Note: The amounts must increase at the same interval (e.g. 1000, 2000, 3000, 4000)
+     */
+    const generateAmountsForPair = (
+      sellToken: string,
+      buyToken: string,
+      sellMultipliers: number[],
+      buyMultipliers: number[],
+    ) => {
+      const sell = sellMultipliers.map(
+        multiplier => BigInt(multiplier) * BI_POWS[tokens[sellToken].decimals],
       );
+      const buy = buyMultipliers.map(
+        multiplier => BigInt(multiplier) * BI_POWS[tokens[buyToken].decimals],
+      );
+      return { sell, buy };
+    };
+
+    const amounts = {
+      'SDEX-USDT': generateAmountsForPair(
+        'SDEX',
+        'USDT',
+        [0, 10_000, 20_000, 30_000],
+        [0, 1_000, 2_000, 3_000],
+      ),
+      'SDEX-WETH': generateAmountsForPair(
+        'SDEX',
+        'WETH',
+        [0, 100_000, 200_000, 300_000],
+        [0, 1, 2, 3],
+      ),
+      'SDEX-ETH': generateAmountsForPair(
+        'SDEX',
+        'WETH',
+        [0, 100_000, 200_000, 300_000],
+        [0, 1, 2, 3],
+      ),
+      'WETH-WBTC': generateAmountsForPair(
+        'WETH',
+        'WBTC',
+        [0, 2, 4, 6],
+        [0, 1, 2, 3],
+      ),
+    } as { [key: string]: { sell: bigint[]; buy: bigint[] } };
+
+    // Help us to test the pool prices and volume for a given amount of tokens to swap
+    const testPoolPricesVolume = async (swapSide: SwapSide, pair: any) => {
+      const smardex = new Smardex(network, dexKey, dexHelper);
+      const currentAmounts =
+        swapSide === SwapSide.SELL
+          ? amounts[`${pair.src}-${pair.dest}`].sell
+          : amounts[`${pair.src}-${pair.dest}`].buy;
+
+      const pools = await smardex.getPoolIdentifiers(
+        tokens[pair.src],
+        tokens[pair.dest],
+        swapSide,
+        blocknumber,
+      );
+      console.log(`${pair.src} <> ${pair.dest} Pool Identifiers: `, pools);
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await smardex.getPricesVolume(
+        tokens[pair.src],
+        tokens[pair.dest],
+        currentAmounts,
+        swapSide,
+        blocknumber,
+        pools,
+      );
+      console.log(`${pair.src} <> ${pair.dest} Pool Prices: `, poolPrices);
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, currentAmounts, swapSide, dexKey);
+    };
+
+    /**
+     * For each token pair, test:
+     * - Compute pool identifiers and prices for a given amount of tokens to swap (SELL and BUY)
+     * - Get top pools for a token
+     */
+    tokenPairs.forEach(pair => {
+      describe(`${pair.src} <> ${pair.dest}`, () => {
+        it('SELL: Compute pool identiers and prices', async () => {
+          await testPoolPricesVolume(SwapSide.SELL, pair);
+        });
+
+        it('BUY: Compute pool identiers and prices', async () => {
+          await testPoolPricesVolume(SwapSide.BUY, pair);
+        });
+      });
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        smardex,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+    it('getTopPoolsForToken', async () => {
+      const smardex = new Smardex(network, dexKey, dexHelper);
+      // Get all distinct tokens of the pairs
+      const distinctTokens = tokenPairs
+        .reduce((acc, pair) => [...acc, pair.src, pair.dest], [] as string[])
+        .filter((value, index, self) => self.indexOf(value) === index)
+        // Native token doesn't have a pool, avoid it
+        .filter(token => tokens[token].address !== ETHER_ADDRESS);
+      // Get top pools for each token and check liquidity
+      await Promise.all(
+        distinctTokens.map(async token =>
+          checkPoolsLiquidity(
+            await smardex.getTopPoolsForToken(tokens[token].address, 10),
+            tokens[token].address,
+            dexKey,
+          ),
+        ),
       );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newSmardex = new Smardex(network, dexKey, dexHelper);
-      const poolLiquidity = await newSmardex.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newSmardex.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
     });
   });
 });

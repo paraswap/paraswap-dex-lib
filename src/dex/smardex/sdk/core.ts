@@ -384,8 +384,12 @@ export function getAmountIn(
     );
   }
 
-  // Avoid K constant division by 0
-  if (reserveInFic <= 0n) {
+  if (
+    // Avoid K constant division by 0
+    reserveInFic <= 0n ||
+    // Avoid finding an amountIn for an exact amountOut that is equal to 0
+    amountOut <= 0n
+  ) {
     return [
       BigInt('0'),
       reserveIn,
