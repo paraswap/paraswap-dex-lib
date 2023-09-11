@@ -303,11 +303,11 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       const pairState = constantProduct.pool.getState(blockNumber);
 
       if (pairState) {
-        const pairResersed =
+        const pairReversed =
           constantProduct.token1.address.toLowerCase() ==
           from.address.toLowerCase();
 
-        if (pairResersed) {
+        if (pairReversed) {
           orderedParamsResult.push({
             tokenIn: from.address,
             tokenOut: to.address,
@@ -342,10 +342,10 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       const pairState = stable.pool.getState(blockNumber);
 
       if (pairState) {
-        const pairResersed =
+        const pairReversed =
           stable.token1.address.toLowerCase() == from.address.toLowerCase();
 
-        if (pairResersed) {
+        if (pairReversed) {
           orderedParamsResult.push({
             tokenIn: from.address,
             tokenOut: to.address,

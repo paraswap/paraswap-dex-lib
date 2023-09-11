@@ -7,7 +7,7 @@ import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { PoolState } from './types';
+import { ReservoirPoolState } from './types';
 
 /*
   README
@@ -48,7 +48,7 @@ async function fetchPoolState(
   reservoirFinancePools: ReservoirEventPool,
   blockNumber: number,
   poolAddress: string,
-): Promise<PoolState> {
+): Promise<ReservoirPoolState> {
   // TODO: complete me!
   return {};
 }
@@ -56,9 +56,9 @@ async function fetchPoolState(
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('Reservoir EventPool Mainnet', function () {
+describe('Reservoir EventPool AVAX Mainnet', function () {
   const dexKey = 'Reservoir';
-  const network = Network.MAINNET;
+  const network = Network.AVALANCHE;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
   let reservoirFinancePool: ReservoirEventPool;

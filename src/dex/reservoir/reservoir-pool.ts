@@ -8,6 +8,11 @@ import { ReservoirPoolState, ReservoirPoolTypes } from './types';
 import ReservoirPairABI from '../../abi/reservoir/ReservoirPair.json';
 import { Address } from '@paraswap/core';
 
+const LogCallTopics = [
+  // sync(uint104, uint104)
+  '0xcf2aa50876cdfbb541206f89af0ee78d44a2abf8d328e37fa4917f982149848a',
+];
+
 export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolState> {
   handlers: {
     [event: string]: (
@@ -16,6 +21,8 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
       log: Readonly<Log>,
     ) => DeepReadonly<ReservoirPoolState> | null;
   } = {};
+
+  decoder = (log: Log) => this.reservoirIface.parseLog(log);
 
   constructor(
     readonly parentName: string,
@@ -29,16 +36,6 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
   ) {
     const poolName = token0.address + '-' + token1.address + '-' + curveId;
     super(parentName, poolName, dexHelper, logger);
-
-    // I think we're not taking this approach
-    // // TODO: make logDecoder decode logs that
-    // this.logDecoder = (log: Log) => this.reservoirIface.parseLog(log);
-    // this.addressesSubscribed = [
-    //   /* subscribed addresses */
-    // ];
-    //
-    // // Add handlers
-    // this.handlers['myEvent'] = this.handleMyEvent.bind(this);
   }
 
   /**
@@ -54,9 +51,20 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
     state: DeepReadonly<ReservoirPoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<ReservoirPoolState> | null {
-    try {
-    } catch (e) {
-      catchParseLogError(e, this.logger);
+    if (LogCallTopics.includes(log.topics[0])) return null;
+
+    const event = this.decoder(log);
+    switch (event.name) {
+      case 'Sync':
+        return {
+          reserve0: event.args.reserve0.toString(),
+          reserve1: event.args.reserve1.toString(),
+          curveId: state.curveId,
+          swapFee: state.swapFee,
+          ampCoefficient: state.ampCoefficient,
+        };
+
+      // TODO: also handle SwapFee(fees change) and (RampA) ampCoefficient changes
     }
 
     return null;
