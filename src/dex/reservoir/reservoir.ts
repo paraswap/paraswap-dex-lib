@@ -261,7 +261,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
   getSellPrice(priceParams: ReservoirOrderedParams, amount: bigint): bigint {
     if (priceParams.stable) {
-      return ReservoirStablePool.getSellPrice();
+      return ReservoirStablePool.getSellPrice(priceParams, amount);
     } else {
       return ReservoirConstantProductPool.getSellPrice(priceParams, amount);
     }
@@ -269,7 +269,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
   getBuyPrice(priceParams: ReservoirOrderedParams, amount: bigint): bigint {
     if (priceParams.stable) {
-      return ReservoirStablePool.getBuyPrice();
+      return ReservoirStablePool.getBuyPrice(priceParams, amount);
     } else {
       return ReservoirConstantProductPool.getBuyPrice(priceParams, amount);
     }
