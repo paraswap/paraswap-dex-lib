@@ -28,6 +28,7 @@ describe('Smardex', function () {
       { src: 'SDEX', dest: 'USDT' },
       { src: 'SDEX', dest: 'WETH' },
       { src: 'SDEX', dest: 'ETH' },
+      { src: 'WETH', dest: 'WBTC' },
     ] as { src: string; dest: string }[];
 
     /**
@@ -66,6 +67,12 @@ describe('Smardex', function () {
         'SDEX',
         'WETH',
         [0, 100_000, 200_000, 300_000],
+        [0, 1, 2, 3],
+      ),
+      'WETH-WBTC': generateAmountsForPair(
+        'WETH',
+        'WBTC',
+        [0, 2, 4, 6],
         [0, 1, 2, 3],
       ),
     } as { [key: string]: { sell: bigint[]; buy: bigint[] } };
