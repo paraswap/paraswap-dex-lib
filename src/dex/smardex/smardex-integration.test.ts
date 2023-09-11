@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
+import { ETHER_ADDRESS, Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { Smardex } from './smardex';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
@@ -114,16 +114,27 @@ describe('Smardex', function () {
         it('BUY: Compute pool identiers and prices', async () => {
           await testPoolPricesVolume(SwapSide.BUY, pair);
         });
-
-        it('getTopPoolsForToken', async () => {
-          const smardex = new Smardex(network, dexKey, dexHelper);
-          const poolLiquidity = await smardex.getTopPoolsForToken(
-            tokens[pair.src].address,
-            10,
-          );
-          checkPoolsLiquidity(poolLiquidity, tokens[pair.src].address, dexKey);
-        });
       });
+    });
+
+    it('getTopPoolsForToken', async () => {
+      const smardex = new Smardex(network, dexKey, dexHelper);
+      // Get all distinct tokens of the pairs
+      const distinctTokens = tokenPairs
+        .reduce((acc, pair) => [...acc, pair.src, pair.dest], [] as string[])
+        .filter((value, index, self) => self.indexOf(value) === index)
+        // Native token doesn't have a pool, avoid it
+        .filter(token => tokens[token].address !== ETHER_ADDRESS);
+      // Get top pools for each token and check liquidity
+      await Promise.all(
+        distinctTokens.map(async token =>
+          checkPoolsLiquidity(
+            await smardex.getTopPoolsForToken(tokens[token].address, 10),
+            tokens[token].address,
+            dexKey,
+          ),
+        ),
+      );
     });
   });
 });
