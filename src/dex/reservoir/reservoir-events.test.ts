@@ -72,35 +72,13 @@ describe('Reservoir EventPool AVAX Mainnet', function () {
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     USDT_USDC_STABLE_POOL: {
-      // these blocks are one before the event happening
-      // if I add 1 to those block numbers the test fails
       Sync: [
-        // 33021203, // event emitted at block 33021203 swap event
-        // 33051184, // event emitted at block 33051184 swap event
+        33021203, // event emitted at block 33021203 swap event
+        33051184, // event emitted at block 33051184 swap event
         33754996, // event emitted at block 33754996 addLiq event
       ],
     },
   };
-
-  beforeEach(async () => {
-    // move this out of beforeEach
-    reservoirEventPool = new ReservoirEventPool(
-      dexKey,
-      dexHelper,
-      '0x146D00567Cef404c1c0aAF1dfD2abEa9F260B8C7',
-      {
-        address: '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7',
-        decimals: 6,
-      },
-      {
-        address: '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
-        decimals: 6,
-      },
-      ReservoirPoolTypes.Stable,
-      logger,
-    );
-    reservoirEventPool.addressesSubscribed.push(USDT_USDC_STABLE_POOL);
-  });
 
   Object.entries(eventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {
@@ -110,6 +88,25 @@ describe('Reservoir EventPool AVAX Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
+                  reservoirEventPool = new ReservoirEventPool(
+                    dexKey,
+                    dexHelper,
+                    USDT_USDC_STABLE_POOL,
+                    {
+                      address: '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7',
+                      decimals: 6,
+                    },
+                    {
+                      address: '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
+                      decimals: 6,
+                    },
+                    ReservoirPoolTypes.Stable,
+                    logger,
+                  );
+                  reservoirEventPool.addressesSubscribed.push(
+                    USDT_USDC_STABLE_POOL,
+                  );
+
                   await testEventSubscriber(
                     reservoirEventPool,
                     reservoirEventPool.addressesSubscribed,
