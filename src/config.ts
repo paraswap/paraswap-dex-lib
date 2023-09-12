@@ -360,9 +360,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xeDF6D2a16e8081F777eB623EeB4411466556aF3d',
     privateHttpProvider: process.env.HTTP_PROVIDER_8453,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    hashFlowDisabledMMs:
-      process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
-
+    hashFlowDisabledMMs: [],
     adapterAddresses: {
       BaseAdapter01: '0x9F77bb28e97F093Aa6CbE37cE095C18605d98Af2',
       BaseBuyAdapter: '0x8DE036910e34b0d8447Dd0D34C742636de1DDfEb',
