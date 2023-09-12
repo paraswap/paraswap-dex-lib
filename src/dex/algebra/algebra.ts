@@ -126,10 +126,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async initializePricing(blockNumber: number) {
+    const cleanNonExistingPoolTTLMs =
+      this.config.cleanExistingPoolTTLMs ||
+      ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
-        const maxTimestamp =
-          Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+        const maxTimestamp = Date.now() - cleanNonExistingPoolTTLMs;
         await this.dexHelper.cache.zremrangebyscore(
           this.notExistingPoolSetKey,
           0,
