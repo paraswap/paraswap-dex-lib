@@ -76,7 +76,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
       target: string;
       callData: string;
     },
-    protected smardexFeesMulticallDecoder?: (values: any[]) => number,
+    protected smardexFeesMulticallDecoder?: (values: any[]) => number[],
   ) {
     super(
       'Smardex',
@@ -117,10 +117,10 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
 
     return {
       feesLp: dynamicFees
-        ? this.smardexFeesMulticallDecoder!(data.returnData[1][0])
+        ? this.smardexFeesMulticallDecoder!(data.returnData[1])[0]
         : 500,
       feesPool: dynamicFees
-        ? this.smardexFeesMulticallDecoder!(data.returnData[1][1])
+        ? this.smardexFeesMulticallDecoder!(data.returnData[1])[1]
         : 200,
       priceAverageLastTimestamp: priceAverageLastTimestamp.toNumber(),
     };
@@ -233,10 +233,10 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
       priceAverage1: priceAverage1.toString(),
       priceAverageLastTimestamp: priceAverageLastTimestamp.toNumber(),
       feesLp: dynamicFees
-        ? this.smardexFeesMulticallDecoder!(data.returnData[3][0])
+        ? this.smardexFeesMulticallDecoder!(data.returnData[3])[0]
         : 500,
       feesPool: dynamicFees
-        ? this.smardexFeesMulticallDecoder!(data.returnData[3][1])
+        ? this.smardexFeesMulticallDecoder!(data.returnData[3])[1]
         : 200,
     };
   }
@@ -619,10 +619,8 @@ export class Smardex
       target: pair.exchange!,
       callData: smardexPoolL2.encodeFunctionData('getPairFees'),
     };
-    const callDecoder = (values: any[]) =>
-      parseInt(
-        smardexPoolL2.decodeFunctionResult('getPairFees', values).toString(),
-      );
+    const callDecoder = (values: any[]): number[] =>
+      smardexPoolL2.decodeFunctionResult('getPairFees', values) as number[];
 
     return {
       callEntry,
@@ -707,7 +705,7 @@ export class Smardex
           .aggregate(calldata)
           .call({}, blockNumber);
 
-      const returnData = _.chunk(data.returnData, 3);
+      const returnData = _.chunk(data.returnData, 4);
       return pairs.map((_pair: SmardexPair, i) => ({
         reserves0: coder
           .decode(['uint256', 'uint256'], returnData[i][0])[0]
@@ -732,10 +730,10 @@ export class Smardex
           .toString(),
         feesLp: this.isLayer1()
           ? 500
-          : multiCallFeeData[i]!.callDecoder(returnData[i][3][0]),
+          : multiCallFeeData[i]!.callDecoder(returnData[i][3])[0],
         feesPool: this.isLayer1()
           ? 200
-          : multiCallFeeData[i]!.callDecoder(returnData[i][3][1]),
+          : multiCallFeeData[i]!.callDecoder(returnData[i][3])[1],
       }));
     } catch (e) {
       this.logger.error(
