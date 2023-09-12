@@ -10,7 +10,7 @@ import { Address } from '@paraswap/core';
 
 const LogCallTopics = [
   // sync(uint104, uint104)
-  '0xcf2aa50876cdfbb541206f89af0ee78d44a2abf8d328e37fa4917f982149848a',
+  '0xff388a12130349259b5ae24af90448f511c2340be808f2c371230fc2da175c44',
 ];
 
 export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolState> {
@@ -45,8 +45,8 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
     state: DeepReadonly<ReservoirPoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<ReservoirPoolState> | null {
-    this.logger.error('processLog', log);
-    if (LogCallTopics.includes(log.topics[0])) return null;
+    this.logger.debug('processLog', log);
+    if (!LogCallTopics.includes(log.topics[0])) return null;
 
     const event = this.decoder(log);
     switch (event.name) {
