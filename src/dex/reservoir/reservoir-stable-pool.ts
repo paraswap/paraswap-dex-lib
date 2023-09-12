@@ -1,5 +1,5 @@
 import { ReservoirOrderedParams } from './types';
-import { A_PRECISION, FEE_ACCURACY } from './constants';
+import { A_PRECISION, FEE_ACCURACY, RESERVE_LIMIT } from './constants';
 import { MathUtil } from '../nerve/utils';
 
 export class ReservoirStablePool {
@@ -12,6 +12,9 @@ export class ReservoirStablePool {
     amount: bigint,
   ): bigint {
     if (!priceParams.stable) throw new Error(this.STABLE_DATA_ERROR);
+    if (BigInt(priceParams.reservesIn) + amount > RESERVE_LIMIT) {
+      return 0n;
+    }
     const N_A = 2n * priceParams.stable.ampCoefficient;
     const adjustedReservesIn =
       BigInt(priceParams.reservesIn) * priceParams.stable.decimalsIn;
