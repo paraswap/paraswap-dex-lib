@@ -6,7 +6,7 @@ export const ReservoirConfig: DexConfigMap<DexParams> = {
   ReservoirFinance: {
     [Network.AVALANCHE]: {
       subgraphURL:
-        'https://data.staging.arkiver.net/robolabs/reservoir-mainnet/graphql',
+        'https://data.staging.arkiver.net/robolabs/reservoir-mainnet-v2/graphql',
       factory: '0xDd723D9273642D82c5761a4467fD5265d94a22da',
       router: '0x9Fc6B082DfB632bC11156f6fD2dc5F97F9B865F0',
     },

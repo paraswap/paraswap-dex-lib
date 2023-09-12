@@ -14,14 +14,6 @@ const LogCallTopics = [
 ];
 
 export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolState> {
-  handlers: {
-    [event: string]: (
-      event: any,
-      state: DeepReadonly<ReservoirPoolState>,
-      log: Readonly<Log>,
-    ) => DeepReadonly<ReservoirPoolState> | null;
-  } = {};
-
   decoder = (log: Log) => this.reservoirIface.parseLog(log);
   coder = new AbiCoder();
 
