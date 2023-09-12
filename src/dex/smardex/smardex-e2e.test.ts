@@ -7,31 +7,17 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-describe('Smardex E2E Mainnet', () => {
-  const network = Network.MAINNET;
-  const tokens = Tokens[network];
-  const holders = Holders[network];
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
+interface SmardexE2ePairToken {
+  name: string;
+  sellAmount: string;
+  buyAmount: string;
+}
+type SmardexE2ePair = SmardexE2ePairToken[];
 
-  describe('Smardex Swap', () => {
-    const dexKey = 'Smardex';
-
-    const sideToContractMethods = new Map([
-      [
-        SwapSide.SELL,
-        [
-          ContractMethod.simpleSwap,
-          // ContractMethod.multiSwap, // TODO: uncomment when Adapter is ready to enable Multiswap
-          // ContractMethod.megaSwap, // TODO: uncomment when Adapter is ready to enable Megaswap
-        ],
-      ],
-      // [SwapSide.BUY, [ContractMethod.simpleBuy]],
-    ]);
-
-    const pairsSmallAmount: { name: string; sellAmount: string; buyAmount: string }[][] = [
+describe('Smardex E2E', () => {
+  // Generate pairs for each network twice: each time with small and big swap amount (x10)
+  const allPairs: { [key: number]: SmardexE2ePair[] } = {
+    [Network.MAINNET]: [
       [
         {
           name: 'ETH',
@@ -80,56 +66,245 @@ describe('Smardex E2E Mainnet', () => {
           buyAmount: '30000000', // 0.3 WBTC
         },
       ],
-    ];
+    ]
+      .map((pair, i, arr) => [
+        [pair],
+        [
+          arr[i].map(token => ({
+            ...token,
+            sellAmount: token.sellAmount + '0',
+            buyAmount: token.buyAmount + '0',
+          })),
+        ],
+      ])
+      .flat(2),
+    // [Network.ARBITRUM]: [
+    //   [
+    //     {
+    //       name: 'WETH',
+    //       sellAmount: '1500000000000000000', // 1.5 WETH
+    //       buyAmount: '250000000000000000000000', // 250K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '250000000000000000000000', // 250K SDEX
+    //       buyAmount: '1500000000000000000', // 1.5 WETH
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'USDT',
+    //       sellAmount: '1200000000', // 1200 USDT
+    //       buyAmount: '300000000000000000000000', // 300K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '300000000000000000000000', // 300K SDEX
+    //       buyAmount: '1200000000', // 1200 USDT
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'WBTC',
+    //       sellAmount: '30000000', // 0.3 WBTC
+    //       buyAmount: '2500000000000000000', // 2.5 WETH
+    //     },
+    //     {
+    //       name: 'WETH',
+    //       sellAmount: '2500000000000000000', // 2.5 WETH
+    //       buyAmount: '30000000', // 0.3 WBTC
+    //     },
+    //   ],
+    // ]
+    //   .map((pair, i, arr) => [
+    //     [pair],
+    //     [
+    //       arr[i].map(token => ({
+    //         ...token,
+    //         sellAmount: token.sellAmount + '0',
+    //         buyAmount: token.buyAmount + '0',
+    //       })),
+    //     ],
+    //   ])
+    //   .flat(2),
+    // [Network.BSC]: [
+    //   [
+    //     {
+    //       name: 'USDT',
+    //       sellAmount: '1200000000', // 1200 USDT
+    //       buyAmount: '300000000000000000000000', // 300K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '300000000000000000000000', // 300K SDEX
+    //       buyAmount: '1200000000', // 1200 USDT
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '5000000', // 005 WBTC
+    //       buyAmount: '300000000000000000000000', // 300K SDEX
+    //     },
+    //     {
+    //       name: 'bBTC',
+    //       sellAmount: '300000000000000000000000', // 300K SDEX
+    //       buyAmount: '5000000', // 0.05 WBTC
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'USDT',
+    //       sellAmount: '1500000000', // 1500 USDT
+    //       buyAmount: '20000000000000000000', // 20 BNB
+    //     },
+    //     {
+    //       name: 'BNB',
+    //       sellAmount: '20000000000000000000', // 20 BNB
+    //       buyAmount: '1500000000', // 1500 USDT
+    //     },
+    //   ],
+    // ]
+    //   .map((pair, i, arr) => [
+    //     [pair],
+    //     [
+    //       arr[i].map(token => ({
+    //         ...token,
+    //         sellAmount: token.sellAmount + '0',
+    //         buyAmount: token.buyAmount + '0',
+    //       })),
+    //     ],
+    //   ])
+    //   .flat(2),
+    // [Network.POLYGON]: [
+    //   [
+    //     {
+    //       name: 'WETH',
+    //       sellAmount: '1500000000000000000', // 1.5 WETH
+    //       buyAmount: '250000000000000000000000', // 250K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '250000000000000000000000', // 250K SDEX
+    //       buyAmount: '1500000000000000000', // 1.5 WETH
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'USDC',
+    //       sellAmount: '2500000000', // 2500 USDC
+    //       buyAmount: '300000000000000000000000', // 300K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '300000000000000000000000', // 300K SDEX
+    //       buyAmount: '2500000000', // 2500 USDC
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'USDC',
+    //       sellAmount: '2500000000', // 2500 USDC
+    //       buyAmount: '8000000000000000000000', // 8000 MATIC
+    //     },
+    //     {
+    //       name: 'MATIC',
+    //       sellAmount: '8000000000000000000000', // 8000 MATIC
+    //       buyAmount: '2500000000', // 2500 USDC
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '9000000', // 0.09 WBTC
+    //       buyAmount: '190000000000000000000000', // 190K SDEX
+    //     },
+    //     {
+    //       name: 'WBTC',
+    //       sellAmount: '190000000000000000000000', // 190K SDEX
+    //       buyAmount: '9000000', // 0.09 WBTC
+    //     },
+    //   ],
+    // ]
+    //   .map((pair, i, arr) => [
+    //     [pair],
+    //     [
+    //       arr[i].map(token => ({
+    //         ...token,
+    //         sellAmount: token.sellAmount + '0',
+    //         buyAmount: token.buyAmount + '0',
+    //       })),
+    //     ],
+    //   ])
+    //   .flat(2),
+  };
 
-    // multiply all amounts by 10
-    const pairsBigAmount: { name: string; sellAmount: string; buyAmount: string  }[][] =
-      pairsSmallAmount.map((pair) =>
-        pair.map((token) => ({ ...token, sellAmount: token.sellAmount + '0', buyAmount: token.buyAmount + '0' })),
+  // TODO add Base network when available
+  Object.keys(allPairs).forEach(
+    netKey => {
+      const network = Number(netKey);
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
       );
+      describe(`Smardex Swap on Chain ${network}`, () => {
+        const dexKey = 'Smardex';
 
-    // copy smallAmount and bigAmount into the same array alternatively to get same pairs together
-    const pairs = pairsSmallAmount.map((small, index) => ([small, pairsBigAmount[index]])).flat(1);
+        const sideToContractMethods = new Map([
+          [
+            SwapSide.SELL,
+            [
+              ContractMethod.simpleSwap,
+              // ContractMethod.multiSwap, // TODO: uncomment when Adapter is ready to enable Multiswap
+              // ContractMethod.megaSwap, // TODO: uncomment when Adapter is ready to enable Megaswap
+            ],
+          ],
+          [SwapSide.BUY, [ContractMethod.simpleBuy]],
+        ]);
 
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
-          pairs.forEach(pair => {
-            describe(`${contractMethod}`, () => {
-              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
-                await testE2E(
-                  tokens[pair[0].name],
-                  tokens[pair[1].name],
-                  holders[pair[0].name],
-                  side === SwapSide.SELL
-                      ? pair[0].sellAmount
-                      : pair[0].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
-              });
-              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-                await testE2E(
-                  tokens[pair[1].name],
-                  tokens[pair[0].name],
-                  holders[pair[1].name],
-                  side === SwapSide.SELL
-                      ? pair[1].sellAmount
-                      : pair[1].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
+        sideToContractMethods.forEach((contractMethods, side) =>
+          describe(`${side}`, () => {
+            contractMethods.forEach((contractMethod: ContractMethod) => {
+              allPairs[network].forEach(pair => {
+                describe(`${contractMethod}`, () => {
+                  it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                    await testE2E(
+                      tokens[pair[0].name],
+                      tokens[pair[1].name],
+                      holders[pair[0].name],
+                      side === SwapSide.SELL
+                        ? pair[0].sellAmount
+                        : pair[0].buyAmount,
+                      side,
+                      dexKey,
+                      contractMethod,
+                      network,
+                      provider,
+                    );
+                  });
+                  it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                    await testE2E(
+                      tokens[pair[1].name],
+                      tokens[pair[0].name],
+                      holders[pair[1].name],
+                      side === SwapSide.SELL
+                        ? pair[1].sellAmount
+                        : pair[1].buyAmount,
+                      side,
+                      dexKey,
+                      contractMethod,
+                      network,
+                      provider,
+                    );
+                  });
+                });
               });
             });
-          });
-        });
-      }),
-    );
-  });
+          }),
+        );
+      });
+    },
+  );
 });
