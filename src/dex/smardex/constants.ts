@@ -26,4 +26,4 @@ export const directSmardexFunctionName = [
 
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
 
-export const DefaultSmardexPoolGasCost = 90 * 1000;
+export const DefaultSmardexPoolGasCost = 130 * 1000;
