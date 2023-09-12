@@ -1,5 +1,4 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import { BigNumber, utils } from 'ethers';
 import _ from 'lodash';
 import { DeepReadonly } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
@@ -865,7 +864,7 @@ export class Smardex
   }
 
   // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
+  // Used for multiSwap & megaSwap
   // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: Address,
@@ -907,9 +906,6 @@ export class Smardex
     data: SmardexData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const pools = encodePools(data.pools);
-    const weth = this.getWETHAddress(src, dest, data.wethAddress);
-
     let routerMethod: any;
     let routerArgs: any;
     if (side === SwapSide.SELL) {

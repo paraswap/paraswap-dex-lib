@@ -7,974 +7,302 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-describe('Smardex E2E Mainnet', () => {
-  const network = Network.MAINNET;
-  const tokens = Tokens[network];
-  const holders = Holders[network];
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
-  describe('Smardex', () => {
-    const dexKey = 'Smardex';
+interface SmardexE2ePairToken {
+  name: string;
+  sellAmount: string;
+  buyAmount: string;
+}
+type SmardexE2ePair = SmardexE2ePairToken[];
 
-    describe('Simpleswap', () => {
-      describe('SELL small amounts', () => {
-        it('ETH -> SDEX', async () => {
-          await testE2E(
-            tokens.ETH,
-            tokens.SDEX,
-            holders.ETH,
-            '2000000000000000000', // 2 ETH
-            SwapSide.SELL, // exact input
-            dexKey,
+describe('Smardex E2E', () => {
+  // Generate pairs for each network twice: each time with small and big swap amount (x10)
+  const allPairs: { [key: number]: SmardexE2ePair[] } = {
+    [Network.MAINNET]: [
+      [
+        {
+          name: 'ETH',
+          sellAmount: '2000000000000000000', // 2 ETH
+          buyAmount: '300000000000000000000000', // 300K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '300000000000000000000000', // 300K SDEX
+          buyAmount: '2000000000000000000', // 2 ETH
+        },
+      ],
+      [
+        {
+          name: 'WETH',
+          sellAmount: '1500000000000000000', // 1.5 WETH
+          buyAmount: '250000000000000000000000', // 250K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '250000000000000000000000', // 250K SDEX
+          buyAmount: '1500000000000000000', // 1.5 WETH
+        },
+      ],
+      [
+        {
+          name: 'USDT',
+          sellAmount: '1200000000', // 1200 USDT
+          buyAmount: '300000000000000000000000', // 300K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '300000000000000000000000', // 300K SDEX
+          buyAmount: '1200000000', // 1200 USDT
+        },
+      ],
+      [
+        {
+          name: 'WBTC',
+          sellAmount: '30000000', // 0.3 WBTC
+          buyAmount: '2500000000000000000', // 2.5 WETH
+        },
+        {
+          name: 'WETH',
+          sellAmount: '2500000000000000000', // 2.5 WETH
+          buyAmount: '30000000', // 0.3 WBTC
+        },
+      ],
+    ]
+      .map((pair, i, arr) => [
+        [pair],
+        [
+          arr[i].map(token => ({
+            ...token,
+            sellAmount: token.sellAmount + '0',
+            buyAmount: token.buyAmount + '0',
+          })),
+        ],
+      ])
+      .flat(2),
+    // [Network.ARBITRUM]: [
+    //   [
+    //     {
+    //       name: 'WETH',
+    //       sellAmount: '1500000000000000000', // 1.5 WETH
+    //       buyAmount: '250000000000000000000000', // 250K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '250000000000000000000000', // 250K SDEX
+    //       buyAmount: '1500000000000000000', // 1.5 WETH
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'USDT',
+    //       sellAmount: '1200000000', // 1200 USDT
+    //       buyAmount: '300000000000000000000000', // 300K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '300000000000000000000000', // 300K SDEX
+    //       buyAmount: '1200000000', // 1200 USDT
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'WBTC',
+    //       sellAmount: '30000000', // 0.3 WBTC
+    //       buyAmount: '2500000000000000000', // 2.5 WETH
+    //     },
+    //     {
+    //       name: 'WETH',
+    //       sellAmount: '2500000000000000000', // 2.5 WETH
+    //       buyAmount: '30000000', // 0.3 WBTC
+    //     },
+    //   ],
+    // ]
+    //   .map((pair, i, arr) => [
+    //     [pair],
+    //     [
+    //       arr[i].map(token => ({
+    //         ...token,
+    //         sellAmount: token.sellAmount + '0',
+    //         buyAmount: token.buyAmount + '0',
+    //       })),
+    //     ],
+    //   ])
+    //   .flat(2),
+    // [Network.BSC]: [
+    //   [
+    //     {
+    //       name: 'USDT',
+    //       sellAmount: '1200000000', // 1200 USDT
+    //       buyAmount: '300000000000000000000000', // 300K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '300000000000000000000000', // 300K SDEX
+    //       buyAmount: '1200000000', // 1200 USDT
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '5000000', // 005 WBTC
+    //       buyAmount: '300000000000000000000000', // 300K SDEX
+    //     },
+    //     {
+    //       name: 'bBTC',
+    //       sellAmount: '300000000000000000000000', // 300K SDEX
+    //       buyAmount: '5000000', // 0.05 WBTC
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'USDT',
+    //       sellAmount: '1500000000', // 1500 USDT
+    //       buyAmount: '20000000000000000000', // 20 BNB
+    //     },
+    //     {
+    //       name: 'BNB',
+    //       sellAmount: '20000000000000000000', // 20 BNB
+    //       buyAmount: '1500000000', // 1500 USDT
+    //     },
+    //   ],
+    // ]
+    //   .map((pair, i, arr) => [
+    //     [pair],
+    //     [
+    //       arr[i].map(token => ({
+    //         ...token,
+    //         sellAmount: token.sellAmount + '0',
+    //         buyAmount: token.buyAmount + '0',
+    //       })),
+    //     ],
+    //   ])
+    //   .flat(2),
+    // [Network.POLYGON]: [
+    //   [
+    //     {
+    //       name: 'WETH',
+    //       sellAmount: '1500000000000000000', // 1.5 WETH
+    //       buyAmount: '250000000000000000000000', // 250K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '250000000000000000000000', // 250K SDEX
+    //       buyAmount: '1500000000000000000', // 1.5 WETH
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'USDC',
+    //       sellAmount: '2500000000', // 2500 USDC
+    //       buyAmount: '300000000000000000000000', // 300K SDEX
+    //     },
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '300000000000000000000000', // 300K SDEX
+    //       buyAmount: '2500000000', // 2500 USDC
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'USDC',
+    //       sellAmount: '2500000000', // 2500 USDC
+    //       buyAmount: '8000000000000000000000', // 8000 MATIC
+    //     },
+    //     {
+    //       name: 'MATIC',
+    //       sellAmount: '8000000000000000000000', // 8000 MATIC
+    //       buyAmount: '2500000000', // 2500 USDC
+    //     },
+    //   ],
+    //   [
+    //     {
+    //       name: 'SDEX',
+    //       sellAmount: '9000000', // 0.09 WBTC
+    //       buyAmount: '190000000000000000000000', // 190K SDEX
+    //     },
+    //     {
+    //       name: 'WBTC',
+    //       sellAmount: '190000000000000000000000', // 190K SDEX
+    //       buyAmount: '9000000', // 0.09 WBTC
+    //     },
+    //   ],
+    // ]
+    //   .map((pair, i, arr) => [
+    //     [pair],
+    //     [
+    //       arr[i].map(token => ({
+    //         ...token,
+    //         sellAmount: token.sellAmount + '0',
+    //         buyAmount: token.buyAmount + '0',
+    //       })),
+    //     ],
+    //   ])
+    //   .flat(2),
+  };
+
+  // TODO add Base network when available
+  Object.keys(allPairs).forEach(netKey => {
+    const network = Number(netKey);
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+    describe(`Smardex Swap on Chain ${network}`, () => {
+      const dexKey = 'Smardex';
+
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
             ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
+            // ContractMethod.multiSwap, // TODO: uncomment when Adapter is ready to enable Multiswap
+            // ContractMethod.megaSwap, // TODO: uncomment when Adapter is ready to enable Megaswap
+          ],
+        ],
+        [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      ]);
 
-        it('SDEX -> ETH', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.ETH,
-            holders.SDEX,
-            '300000000000000000000000', // 300K SDEX
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('WETH -> SDEX', async () => {
-          await testE2E(
-            tokens.WETH,
-            tokens.SDEX,
-            holders.WETH,
-            '1500000000000000000', // 1.5 WETH
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX -> WETH', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.WETH,
-            holders.SDEX,
-            '250000000000000000000000', // 250K SDEX
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('USDT -> SDEX', async () => {
-          await testE2E(
-            tokens.USDT,
-            tokens.SDEX,
-            holders.USDT,
-            '1200000000', // 1200 USDT
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX -> USDT', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.USDT,
-            holders.SDEX,
-            '300000000000000000000000', // 300K SDEX
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('WBTC -> WETH', async () => {
-          await testE2E(
-            tokens.WBTC,
-            tokens.WETH,
-            holders.WBTC,
-            '30000000', // 0.3 WBTC
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('WETH -> WBTC', async () => {
-          await testE2E(
-            tokens.WETH,
-            tokens.WBTC,
-            holders.WETH,
-            '2500000000000000000', // 2.5 ETH
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('USDT -> ETH', async () => {
-          await testE2E(
-            tokens.USDT,
-            tokens.ETH,
-            holders.USDT,
-            '5000000000', // 5000 USDT
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('ETH -> USDT', async () => {
-          await testE2E(
-            tokens.ETH,
-            tokens.USDT,
-            holders.ETH,
-            '2500000000000000000', // 2.5K ETH
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-      });
-
-      describe('SELL big amounts', () => {
-        it('ETH -> SDEX', async () => {
-          await testE2E(
-            tokens.ETH,
-            tokens.SDEX,
-            holders.ETH,
-            '18000000000000000000', // 18 ETH
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX -> ETH', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.ETH,
-            holders.SDEX,
-            '30000000000000000000000000', // 30M SDEX
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('WETH -> SDEX', async () => {
-          await testE2E(
-            tokens.WETH,
-            tokens.SDEX,
-            holders.WETH,
-            '42000000000000000000', // 42 WETH
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX -> WETH', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.WETH,
-            holders.SDEX,
-            '32000000000000000000000000', // 32M SDEX
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('USDT -> SDEX', async () => {
-          await testE2E(
-            tokens.USDT,
-            tokens.SDEX,
-            holders.USDT,
-            '200000000000', // 200K USDT
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX -> USDT', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.USDT,
-            holders.SDEX,
-            '30000000000000000000000000', // 30M SDEX
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('WBTC -> WETH', async () => {
-          await testE2E(
-            tokens.WBTC,
-            tokens.WETH,
-            holders.WBTC,
-            '500000000', // 5 WBTC
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-
-        it('WETH -> WBTC', async () => {
-          await testE2E(
-            tokens.WETH,
-            tokens.WBTC,
-            holders.WETH,
-            '42000000000000000000', // 42 ETH
-            SwapSide.SELL, // exact input
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-      });
-
-      describe('BUY small amounts', () => {
-        it('SDEX <- ETH', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.ETH,
-            holders.SDEX,
-            '2000000000000000000', // 2 WETH
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('ETH <- SDEX', async () => {
-          await testE2E(
-            tokens.ETH,
-            tokens.SDEX,
-            holders.ETH,
-            '300000000000000000000000', // 300K SDEX
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX <- WETH', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.WETH,
-            holders.SDEX,
-            '1500000000000000000', // 1.5 WETH
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('WETH <- SDEX', async () => {
-          await testE2E(
-            tokens.WETH,
-            tokens.SDEX,
-            holders.WETH,
-            '250000000000000000000000', // 250K SDEX
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX <- USDT', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.USDT,
-            holders.SDEX,
-            '1200000000', // 1200 USDT
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('USDT <- SDEX', async () => {
-          await testE2E(
-            tokens.USDT,
-            tokens.SDEX,
-            holders.USDT,
-            '300000000000000000000000', // 300k SDEX
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('WETH <- WBTC', async () => {
-          await testE2E(
-            tokens.WETH,
-            tokens.WBTC,
-            holders.WETH,
-            '30000000', // 0.3 WBTC
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('WBTC <- WETH', async () => {
-          await testE2E(
-            tokens.WBTC,
-            tokens.WETH,
-            holders.WBTC,
-            '2500000000000000000', // 2.5 ETH
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-      });
-
-      describe('BUY big amounts', () => {
-        it('SDEX <- ETH', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.ETH,
-            holders.SDEX,
-            '18000000000000000000', // 18 WETH
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('ETH <- SDEX', async () => {
-          await testE2E(
-            tokens.ETH,
-            tokens.SDEX,
-            holders.ETH,
-            '30000000000000000000000000', // 30M SDEX
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX <- WETH', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.WETH,
-            holders.SDEX,
-            '42000000000000000000', // 42 WETH
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('WETH <- SDEX', async () => {
-          await testE2E(
-            tokens.WETH,
-            tokens.SDEX,
-            holders.WETH,
-            '20000000000000000000000000', // 20M SDEX
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('USDT <- SDEX', async () => {
-          await testE2E(
-            tokens.USDT,
-            tokens.SDEX,
-            holders.USDT,
-            '20000000000000000000000000', // 20M SDEX
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-
-        it('SDEX <- USDT', async () => {
-          await testE2E(
-            tokens.SDEX,
-            tokens.USDT,
-            holders.SDEX,
-            '200000000000', // 200K USDT
-            SwapSide.BUY, // exact output
-            dexKey,
-            ContractMethod.simpleBuy,
-            network,
-            provider,
-          );
-        });
-      });
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            allPairs[network].forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    side === SwapSide.SELL
+                      ? pair[0].sellAmount
+                      : pair[0].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
     });
-
-    // describe('Multiswap', () => {
-    //   it('ETH -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.WBTC,
-    //       holders.ETH,
-    //       '2000000000000000000', // 2 ETH
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.multiSwap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.BADGER,
-    //       tokens.ETH,
-    //       holders.BADGER,
-    //       '700000000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.multiSwap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '200000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.multiSwap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('swapOnUniswap', () => {
-    //   it('ETH -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.WBTC,
-    //       holders.ETH,
-    //       '7000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN[BADGER] -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.BADGER,
-    //       tokens.ETH,
-    //       holders.BADGER,
-    //       '700000000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN[USDC] -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '200000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '200000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('swapOnUniswapFork', () => {
-    //   it('ETH -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.WBTC,
-    //       holders.ETH,
-    //       '7000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswapFork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.BADGER,
-    //       tokens.ETH,
-    //       holders.BADGER,
-    //       '700000000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswapFork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '200000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswapFork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('swapOnUniswapV2Fork', () => {
-    //   it('ETH -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.WBTC,
-    //       holders.ETH,
-    //       '7000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswapV2Fork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.BADGER,
-    //       tokens.ETH,
-    //       holders.BADGER,
-    //       '700000000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswapV2Fork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '200000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.swapOnUniswapV2Fork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('buyOnUniswap', () => {
-    //   it('TOKEN -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '700000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('ETH -> TOKEN[BADGER]', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.BADGER,
-    //       holders.ETH,
-    //       '700000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN[USDC] -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '2000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '200000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('buyOnUniswapFork', () => {
-    //   it('TOKEN -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '700000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswapFork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('ETH -> TOKEN[BADGER]', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.BADGER,
-    //       holders.ETH,
-    //       '700000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswapFork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN[USDC] -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '2000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswapFork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '200000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswapFork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('buyOnUniswapV2Fork', () => {
-    //   it('TOKEN -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '700000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswapV2Fork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('ETH -> TOKEN[BADGER]', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.BADGER,
-    //       holders.ETH,
-    //       '700000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswapV2Fork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN[USDC] -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '2000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswapV2Fork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '200000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buyOnUniswapV2Fork,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('simpleBuy', () => {
-    //   it('TOKEN -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '700000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.simpleBuy,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('ETH -> TOKEN[BADGER]', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.BADGER,
-    //       holders.ETH,
-    //       '700000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.simpleBuy,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN[USDC] -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '2000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.simpleBuy,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '20000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.simpleBuy,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('BuyMethod', () => {
-    //   it('TOKEN -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '700000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buy,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('ETH -> TOKEN[BADGER]', async () => {
-    //     await testE2E(
-    //       tokens.ETH,
-    //       tokens.BADGER,
-    //       holders.ETH,
-    //       '700000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buy,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN[USDC] -> ETH', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.ETH,
-    //       holders.USDT,
-    //       '2000000000000000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buy,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('TOKEN -> TOKEN', async () => {
-    //     await testE2E(
-    //       tokens.USDT,
-    //       tokens.WBTC,
-    //       holders.USDT,
-    //       '20000000',
-    //       SwapSide.BUY,
-    //       dexKey,
-    //       ContractMethod.buy,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
-
-    // describe('STETH->ETH', () => {
-    //   it('simpleSwap', async () => {
-    //     await testE2E(
-    //       tokens.STETH,
-    //       tokens.ETH,
-    //       holders.STETH,
-    //       '1000000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.simpleSwap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('multiSwap', async () => {
-    //     await testE2E(
-    //       tokens.STETH,
-    //       tokens.ETH,
-    //       holders.STETH,
-    //       '1000000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.multiSwap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    //   it('megaSwap', async () => {
-    //     await testE2E(
-    //       tokens.STETH,
-    //       tokens.ETH,
-    //       holders.STETH,
-    //       '1000000000000000000',
-    //       SwapSide.SELL,
-    //       dexKey,
-    //       ContractMethod.megaSwap,
-    //       network,
-    //       provider,
-    //     );
-    //   });
-    // });
   });
 });
