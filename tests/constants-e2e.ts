@@ -579,10 +579,6 @@ export const Tokens: {
       address: '0xFdc66A08B0d0Dc44c17bbd471B88f49F50CdD20F',
       decimals: 18,
     },
-    RVF: {
-      address: '0x872a34Ebb2d54Af86827810EeBC7b9dC6B2144aA',
-      decimals: 18,
-    },
   },
   [Network.AVALANCHE]: {
     USDCe: {

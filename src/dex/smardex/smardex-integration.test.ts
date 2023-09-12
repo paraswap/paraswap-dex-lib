@@ -110,12 +110,6 @@ const networkConfigs: Array<NetworkConfig> = [
         sell: [0, 2_000, 4_000, 6_000],
         buy: [0, 10, 20, 30],
       },
-      {
-        src: 'RVF',
-        dest: 'SDEX',
-        sell: [0, 2_000, 4_000, 6_000],
-        buy: [0, 1_000, 2_000],
-      },
     ],
   },
   {
