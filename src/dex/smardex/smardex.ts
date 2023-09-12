@@ -1,5 +1,4 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import { BigNumber, utils } from 'ethers';
 import _ from 'lodash';
 import { DeepReadonly } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
@@ -36,7 +35,6 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   isETHAddress,
-  prependWithOx,
 } from '../../utils';
 import SmardexFactoryLayerOneABI from '../../abi/smardex/layer-1/smardex-factory.json';
 import SmardexFactoryLayerTwoABI from '../../abi/smardex/layer-2/smardex-factory.json';
