@@ -445,6 +445,10 @@ export const Tokens: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
       decimals: 18,
     },
+    SDEX: {
+      address: '0x6899fAcE15c14348E1759371049ab64A3a06bFA6',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -570,6 +574,10 @@ export const Tokens: {
     axlUSD: {
       address: '0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3',
       decimals: 6,
+    },
+    SDEX: {
+      address: '0xFdc66A08B0d0Dc44c17bbd471B88f49F50CdD20F',
+      decimals: 18,
     },
   },
   [Network.AVALANCHE]: {
@@ -807,6 +815,10 @@ export const Tokens: {
     },
     GRAIL: {
       address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
+      decimals: 18,
+    },
+    SDEX: {
+      address: '0xabD587f2607542723b17f14d00d99b987C29b074',
       decimals: 18,
     },
   },

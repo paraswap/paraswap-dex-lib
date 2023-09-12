@@ -9,12 +9,152 @@ import { Smardex } from './smardex';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
-describe('Smardex', function () {
-  const dexKey = 'Smardex';
-  const network = Network.MAINNET;
-  const tokens = Tokens[network];
+interface NetworkConfig {
+  name: 'ethereum' | 'bsc' | 'polygon' | 'arbitrum';
+  network: Network;
+  tokens: typeof Tokens[Network];
+  tokenPairs: { src: string; dest: string; sell: number[]; buy: number[] }[];
+}
 
-  describe('Ethereum', () => {
+const networkConfigs: Array<NetworkConfig> = [
+  {
+    name: 'ethereum',
+    network: Network.MAINNET,
+    tokens: Tokens[Network.MAINNET],
+    tokenPairs: [
+      {
+        src: 'SDEX',
+        dest: 'USDT',
+        sell: [0, 10_000, 20_000, 30_000],
+        buy: [0, 1_000, 2_000],
+      },
+      {
+        src: 'SDEX',
+        dest: 'WETH',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 1, 2, 3],
+      },
+      {
+        src: 'SDEX',
+        dest: 'ETH',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 1, 2, 3],
+      },
+      { src: 'WETH', dest: 'WBTC', sell: [0, 2, 4, 6], buy: [0, 1, 2, 3] },
+    ],
+  },
+  {
+    name: 'arbitrum',
+    network: Network.ARBITRUM,
+    tokens: Tokens[Network.ARBITRUM],
+    tokenPairs: [
+      {
+        src: 'SDEX',
+        dest: 'USDC',
+        sell: [0, 10_000, 20_000, 30_000],
+        buy: [0, 1_000, 2_000],
+      },
+      {
+        src: 'SDEX',
+        dest: 'WETH',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 1, 2, 3],
+      },
+      {
+        src: 'SDEX',
+        dest: 'ETH',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 1, 2, 3],
+      },
+      {
+        src: 'SDEX',
+        dest: 'WBTC',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 1, 2, 3],
+      },
+      {
+        src: 'ARB',
+        dest: 'USDC',
+        sell: [0, 2_000, 4_000, 6_000],
+        buy: [0, 1_000, 2_000],
+      },
+    ],
+  },
+  {
+    name: 'bsc',
+    network: Network.BSC,
+    tokens: Tokens[Network.BSC],
+    tokenPairs: [
+      {
+        src: 'SDEX',
+        dest: 'USDT',
+        sell: [0, 10_000, 20_000, 30_000],
+        buy: [0, 1_000, 2_000],
+      },
+      {
+        src: 'bBTC',
+        dest: 'SDEX',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 1, 2, 3],
+      },
+      {
+        src: 'USDT',
+        dest: 'WBNB',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 10, 20, 30],
+      },
+      { src: 'ETH', dest: 'SDEX', sell: [0, 2, 4, 6], buy: [0, 1, 2, 3] },
+      {
+        src: 'USDT',
+        dest: 'BNB',
+        sell: [0, 2_000, 4_000, 6_000],
+        buy: [0, 10, 20, 30],
+      },
+    ],
+  },
+  {
+    name: 'polygon',
+    network: Network.POLYGON,
+    tokens: Tokens[Network.POLYGON],
+    tokenPairs: [
+      {
+        src: 'USDC',
+        dest: 'SDEX',
+        sell: [0, 10_000, 20_000, 30_000],
+        buy: [0, 100_000, 200_000],
+      },
+      {
+        src: 'SDEX',
+        dest: 'WETH',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 2, 4, 6, 8, 10],
+      },
+      {
+        src: 'USDC',
+        dest: 'WMATIC',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 20_000, 40_000, 60_000],
+      },
+      {
+        src: 'USDC',
+        dest: 'MATIC',
+        sell: [0, 100_000, 200_000, 300_000],
+        buy: [0, 20_000, 40_000, 60_000],
+      },
+      {
+        src: 'WBTC',
+        dest: 'SDEX',
+        sell: [0, 1, 2, 3],
+        buy: [0, 500_000, 1_000_000, 1_500_000],
+      },
+    ],
+  },
+];
+
+networkConfigs.forEach(({ name, network, tokens, tokenPairs }) => {
+  describe(`Smardex Integration Tests on ${name}`, () => {
+    const dexKey = 'Smardex';
+
     let dexHelper: DummyDexHelper;
     let blocknumber: number;
 
@@ -23,67 +163,19 @@ describe('Smardex', function () {
       blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     });
 
-    // Token pairs to test
-    const tokenPairs = [
-      { src: 'SDEX', dest: 'USDT' },
-      { src: 'SDEX', dest: 'WETH' },
-      { src: 'SDEX', dest: 'ETH' },
-      { src: 'WETH', dest: 'WBTC' },
-    ] as { src: string; dest: string }[];
-
-    /**
-     * Allow to generate amounts for a pair of tokens according to the decimals of each token
-     * Note: The amounts must increase at the same interval (e.g. 1000, 2000, 3000, 4000)
-     */
-    const generateAmountsForPair = (
-      sellToken: string,
-      buyToken: string,
-      sellMultipliers: number[],
-      buyMultipliers: number[],
-    ) => {
-      const sell = sellMultipliers.map(
-        multiplier => BigInt(multiplier) * BI_POWS[tokens[sellToken].decimals],
-      );
-      const buy = buyMultipliers.map(
-        multiplier => BigInt(multiplier) * BI_POWS[tokens[buyToken].decimals],
-      );
-      return { sell, buy };
-    };
-
-    const amounts = {
-      'SDEX-USDT': generateAmountsForPair(
-        'SDEX',
-        'USDT',
-        [0, 10_000, 20_000, 30_000],
-        [0, 1_000, 2_000, 3_000],
-      ),
-      'SDEX-WETH': generateAmountsForPair(
-        'SDEX',
-        'WETH',
-        [0, 100_000, 200_000, 300_000],
-        [0, 1, 2, 3],
-      ),
-      'SDEX-ETH': generateAmountsForPair(
-        'SDEX',
-        'WETH',
-        [0, 100_000, 200_000, 300_000],
-        [0, 1, 2, 3],
-      ),
-      'WETH-WBTC': generateAmountsForPair(
-        'WETH',
-        'WBTC',
-        [0, 2, 4, 6],
-        [0, 1, 2, 3],
-      ),
-    } as { [key: string]: { sell: bigint[]; buy: bigint[] } };
-
     // Help us to test the pool prices and volume for a given amount of tokens to swap
     const testPoolPricesVolume = async (swapSide: SwapSide, pair: any) => {
       const smardex = new Smardex(network, dexKey, dexHelper);
       const currentAmounts =
         swapSide === SwapSide.SELL
-          ? amounts[`${pair.src}-${pair.dest}`].sell
-          : amounts[`${pair.src}-${pair.dest}`].buy;
+          ? pair.sell.map(
+              (amount: number) =>
+                BigInt(amount) * BI_POWS[tokens[pair.src].decimals],
+            )
+          : pair.buy.map(
+              (amount: number) =>
+                BigInt(amount) * BI_POWS[tokens[pair.dest].decimals],
+            );
 
       const pools = await smardex.getPoolIdentifiers(
         tokens[pair.src],
