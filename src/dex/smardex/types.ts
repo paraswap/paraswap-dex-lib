@@ -7,7 +7,7 @@ import {
 import { UniswapV2Pair } from '../uniswap-v2/uniswap-v2';
 import { type SmardexEventPool } from './smardex';
 
-export interface SmardexPoolState {
+export interface SmardexPoolState extends SmardexFees {
   reserves0: string;
   reserves1: string;
   fictiveReserves0: string;
@@ -15,8 +15,6 @@ export interface SmardexPoolState {
   priceAverage0: string;
   priceAverage1: string;
   priceAverageLastTimestamp: number;
-  feesLp: number;
-  feesPool: number;
 }
 
 // export interface SmardexData extends UniswapV2Data {
@@ -45,7 +43,11 @@ export type SmardexParam = SellOnSmardexParam | BuyOnSmardexParam;
 
 export type DexParams = Omit<UniswapV2DexParams, 'feeCode'>;
 
-export interface SmardexPoolOrderedParams {
+export type SmardexFees = {
+  feesLP: bigint;
+  feesPool: bigint;
+};
+export interface SmardexPoolOrderedParams extends SmardexFees {
   fromToken: string;
   toToken: string;
   token0: string;
@@ -58,8 +60,6 @@ export interface SmardexPoolOrderedParams {
   priceAverage1: bigint;
   priceAverageLastTimestamp: number;
   exchange: string;
-  feesLp: bigint;
-  feesPool: bigint;
 }
 
 export interface SmardexPair extends Omit<UniswapV2Pair, 'pool'> {
