@@ -26,7 +26,7 @@ export type ReservoirPoolState = {
 };
 
 export type ReservoirData = {
-  // TODO: ReservoirFinanceData is the dex data that is
+  // TODO: ReservoirData is the dex data that is
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   router: Address;

@@ -126,7 +126,7 @@ function testForNetwork(
 }
 
 describe('Reservoir E2E', () => {
-  const dexKey = 'ReservoirFinance';
+  const dexKey = 'Reservoir';
 
   describe('AVAX', () => {
     const network = Network.AVALANCHE;

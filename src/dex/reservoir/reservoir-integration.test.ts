@@ -58,7 +58,7 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
-  reservoirFinance: Reservoir,
+  reservoir: Reservoir,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
@@ -67,7 +67,7 @@ async function checkOnChainPricing(
   const exchangeAddress = ''; // TODO: Put here the real exchange address
 
   // TODO: Replace dummy interface with the real one
-  // Normally you can get it from reservoirFinance.Iface or from eventPool.
+  // Normally you can get it from reservoir.Iface or from eventPool.
   // It depends on your implementation
   const readerIface = new Interface('');
 
@@ -78,7 +78,7 @@ async function checkOnChainPricing(
     funcName,
   );
   const readerResult = (
-    await reservoirFinance.dexHelper.multiContract.methods
+    await reservoir.dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
@@ -91,7 +91,7 @@ async function checkOnChainPricing(
 }
 
 async function testPricingOnNetwork(
-  reservoirFinance: Reservoir,
+  reservoir: Reservoir,
   network: Network,
   dexKey: string,
   blockNumber: number,
@@ -103,7 +103,7 @@ async function testPricingOnNetwork(
 ) {
   const networkTokens = Tokens[network];
 
-  const pools = await reservoirFinance.getPoolIdentifiers(
+  const pools = await reservoir.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     side,
@@ -116,7 +116,7 @@ async function testPricingOnNetwork(
 
   expect(pools.length).toBeGreaterThan(0);
 
-  const poolPrices = await reservoirFinance.getPricesVolume(
+  const poolPrices = await reservoir.getPricesVolume(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     amounts,
@@ -130,7 +130,7 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
-  if (reservoirFinance.hasConstantPriceLargeAmounts) {
+  if (reservoir.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
@@ -138,7 +138,7 @@ async function testPricingOnNetwork(
 
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
-    reservoirFinance,
+    reservoir,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
@@ -146,10 +146,10 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('ReservoirFinance', function () {
-  const dexKey = 'ReservoirFinance';
+describe('Reservoir', function () {
+  const dexKey = 'Reservoir';
   let blockNumber: number;
-  let reservoirFinance: Reservoir;
+  let reservoir: Reservoir;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -192,15 +192,15 @@ describe('ReservoirFinance', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      reservoirFinance = new Reservoir(network, dexKey, dexHelper);
-      if (reservoirFinance.initializePricing) {
-        await reservoirFinance.initializePricing(blockNumber);
+      reservoir = new Reservoir(network, dexKey, dexHelper);
+      if (reservoir.initializePricing) {
+        await reservoir.initializePricing(blockNumber);
       }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
-        reservoirFinance,
+        reservoir,
         network,
         dexKey,
         blockNumber,
@@ -214,7 +214,7 @@ describe('ReservoirFinance', function () {
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       await testPricingOnNetwork(
-        reservoirFinance,
+        reservoir,
         network,
         dexKey,
         blockNumber,
@@ -229,17 +229,17 @@ describe('ReservoirFinance', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newReservoirFinance = new Reservoir(network, dexKey, dexHelper);
-      if (newReservoirFinance.updatePoolState) {
-        await newReservoirFinance.updatePoolState();
+      const newReservoir = new Reservoir(network, dexKey, dexHelper);
+      if (newReservoir.updatePoolState) {
+        await newReservoir.updatePoolState();
       }
-      const poolLiquidity = await newReservoirFinance.getTopPoolsForToken(
+      const poolLiquidity = await newReservoir.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newReservoirFinance.hasConstantPriceLargeAmounts) {
+      if (!newReservoir.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,

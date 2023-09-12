@@ -45,6 +45,7 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
     state: DeepReadonly<ReservoirPoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<ReservoirPoolState> | null {
+    this.logger.error('processLog', log);
     if (LogCallTopics.includes(log.topics[0])) return null;
 
     const event = this.decoder(log);

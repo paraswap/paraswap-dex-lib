@@ -3,7 +3,7 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
 export const ReservoirConfig: DexConfigMap<DexParams> = {
-  ReservoirFinance: {
+  Reservoir: {
     [Network.AVALANCHE]: {
       subgraphURL:
         'https://data.staging.arkiver.net/robolabs/reservoir-mainnet-v2/graphql',

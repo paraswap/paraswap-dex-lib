@@ -45,14 +45,14 @@ dotenv.config();
 jest.setTimeout(50 * 1000);
 
 async function fetchPoolState(
-  reservoirFinancePools: ReservoirEventPool,
+  reservoirEventPool: ReservoirEventPool,
   blockNumber: number,
   poolAddress: string,
 ): Promise<ReservoirPoolState> {
   const message = `Reservoir: ${poolAddress} blockNumber ${blockNumber}`;
   console.log(`Fetching state ${message}`);
 
-  const state = reservoirFinancePools.generateState(blockNumber);
+  const state = reservoirEventPool.generateState(blockNumber);
   console.log(`fetchPoolState done ${message}`);
   return state;
 }
@@ -65,19 +65,24 @@ describe('Reservoir EventPool AVAX Mainnet', function () {
   const network = Network.AVALANCHE;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let reservoirFinancePool: ReservoirEventPool;
+  let reservoirEventPool: ReservoirEventPool;
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     '0x146D00567Cef404c1c0aAF1dfD2abEa9F260B8C7': {
       // these blocks are one before the event happening
       // if I add 1 to those block numbers the test fails
-      Sync: [33021202, 33051183, 33754995],
+      Sync: [
+        33021202, // event emitted at block
+        33051183, // event emitted at block
+        33754995, // event emitted at block
+      ],
     },
   };
 
   beforeEach(async () => {
-    reservoirFinancePool = new ReservoirEventPool(
+    // move this out of beforeEach
+    reservoirEventPool = new ReservoirEventPool(
       dexKey,
       dexHelper,
       '0x146D00567Cef404c1c0aAF1dfD2abEa9F260B8C7',
@@ -103,11 +108,11 @@ describe('Reservoir EventPool AVAX Mainnet', function () {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
                   await testEventSubscriber(
-                    reservoirFinancePool,
-                    reservoirFinancePool.addressesSubscribed,
+                    reservoirEventPool,
+                    reservoirEventPool.addressesSubscribed,
                     (_blockNumber: number) =>
                       fetchPoolState(
-                        reservoirFinancePool,
+                        reservoirEventPool,
                         _blockNumber,
                         poolAddress,
                       ),
