@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 import dotenv from 'dotenv';
-dotenv.config();
-
 import { ReservoirEventPool } from './reservoir-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { ReservoirPoolState } from './types';
+import { ReservoirPoolState, ReservoirPoolTypes } from './types';
+
+dotenv.config();
 
 /*
   README
@@ -49,8 +49,12 @@ async function fetchPoolState(
   blockNumber: number,
   poolAddress: string,
 ): Promise<ReservoirPoolState> {
-  // TODO: complete me!
-  return {};
+  const message = `Reservoir: ${poolAddress} blockNumber ${blockNumber}`;
+  console.log(`Fetching state ${message}`);
+
+  const state = reservoirFinancePools.generateState(blockNumber);
+  console.log(`fetchPoolState done ${message}`);
+  return state;
 }
 
 // eventName -> blockNumbers
@@ -65,16 +69,28 @@ describe('Reservoir EventPool AVAX Mainnet', function () {
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
+    '0x146D00567Cef404c1c0aAF1dfD2abEa9F260B8C7': {
+      // these blocks are one before the event happening
+      // if I add 1 to those block numbers the test fails
+      Sync: [33021202, 33051183, 33754995],
+    },
   };
 
   beforeEach(async () => {
     reservoirFinancePool = new ReservoirEventPool(
       dexKey,
-      network,
       dexHelper,
+      '0x146D00567Cef404c1c0aAF1dfD2abEa9F260B8C7',
+      {
+        address: '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7',
+        decimals: 6,
+      },
+      {
+        address: '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
+        decimals: 6,
+      },
+      ReservoirPoolTypes.Stable,
       logger,
-      /* TODO: Put here additional constructor arguments if needed */
     );
   });
 
