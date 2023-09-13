@@ -67,11 +67,11 @@ describe('Reservoir EventPool AVAX Mainnet', function () {
   const logger = dexHelper.getLogger(dexKey);
   let reservoirEventPool: ReservoirEventPool;
 
-  const USDT_USDC_STABLE_POOL = '0x146D00567Cef404c1c0aAF1dfD2abEa9F260B8C7';
+  const USDT_USDC_STABLE_PAIR = '0x146D00567Cef404c1c0aAF1dfD2abEa9F260B8C7';
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    USDT_USDC_STABLE_POOL: {
+    USDT_USDC_STABLE_PAIR: {
       Sync: [
         33021203, // event emitted at block 33021203 swap event
         33051184, // event emitted at block 33051184 swap event
@@ -91,7 +91,7 @@ describe('Reservoir EventPool AVAX Mainnet', function () {
                   reservoirEventPool = new ReservoirEventPool(
                     dexKey,
                     dexHelper,
-                    USDT_USDC_STABLE_POOL,
+                    USDT_USDC_STABLE_PAIR,
                     {
                       address: '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7',
                       decimals: 6,
@@ -104,7 +104,7 @@ describe('Reservoir EventPool AVAX Mainnet', function () {
                     logger,
                   );
                   reservoirEventPool.addressesSubscribed.push(
-                    USDT_USDC_STABLE_POOL,
+                    USDT_USDC_STABLE_PAIR,
                   );
 
                   await testEventSubscriber(
