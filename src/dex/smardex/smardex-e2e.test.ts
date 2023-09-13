@@ -240,17 +240,21 @@ describe('Smardex E2E', () => {
   };
 
   // TODO add Base network when available
-  const networkKeys = [Network.MAINNET, Network.ARBITRUM, Network.BSC, Network.POLYGON];
-  networkKeys.forEach(
-    network => {
-      const tokens = Tokens[network];
-      const holders = Holders[network];
-      const provider = new StaticJsonRpcProvider(
-        generateConfig(network).privateHttpProvider,
-        network,
-      );
-      describe(`Smardex Swap on Chain ${network}`, () => {
-        const dexKey = 'Smardex';
+  const networkKeys = [
+    Network.MAINNET,
+    Network.ARBITRUM,
+    Network.BSC,
+    Network.POLYGON,
+  ];
+  networkKeys.forEach(network => {
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+    describe(`Smardex Swap on Chain ${network}`, () => {
+      const dexKey = 'Smardex';
 
       const sideToContractMethods = new Map([
         [
