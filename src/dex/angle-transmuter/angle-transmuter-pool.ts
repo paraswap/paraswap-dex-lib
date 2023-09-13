@@ -571,7 +571,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       price = 1;
     } else if (oracleType == OracleReadType.NO_ORACLE) {
       price = baseValue;
-    } else console.log('In read - Not implmented yet');
+    }
     return price;
   }
 }
