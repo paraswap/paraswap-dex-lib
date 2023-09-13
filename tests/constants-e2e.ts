@@ -61,6 +61,10 @@ export const Tokens: {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
       decimals: 18,
     },
+    SDEX: {
+      address: '0x5DE8ab7E27f6E7A1fFf3E5B337584Aa43961BEeF',
+      decimals: 18,
+    },
     wstETH: {
       address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
       decimals: 18,
@@ -441,6 +445,10 @@ export const Tokens: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
       decimals: 18,
     },
+    SDEX: {
+      address: '0x6899fAcE15c14348E1759371049ab64A3a06bFA6',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -570,6 +578,10 @@ export const Tokens: {
     axlUSD: {
       address: '0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3',
       decimals: 6,
+    },
+    SDEX: {
+      address: '0xFdc66A08B0d0Dc44c17bbd471B88f49F50CdD20F',
+      decimals: 18,
     },
   },
   [Network.AVALANCHE]: {
@@ -809,6 +821,10 @@ export const Tokens: {
       address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
       decimals: 18,
     },
+    SDEX: {
+      address: '0xabD587f2607542723b17f14d00d99b987C29b074',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -949,6 +965,7 @@ export const Holders: {
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
     GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
     wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
+    SDEX: '0xE03c726340ccB2FbBAF6ca91533Ab64e64Fb9d4A',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -984,6 +1001,7 @@ export const Holders: {
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
+    SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
@@ -1021,6 +1039,7 @@ export const Holders: {
     anyBTC: '0x4ffef8e8a75c20ab0ddf96c50d2457277d27923c',
     nUSD: '0x28ec0b36f0819ecb5005cab836f4ed5a2eca4d13',
     axlUSD: '0xc03fbeda9069b22a120ae6a09349a0b5eea5570a',
+    SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
   },
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
@@ -1077,6 +1096,7 @@ export const Holders: {
     ZYB: '0x3ec0eddcd1e25025077327886a78133589082fb2',
     WBTC: '0xd9d611c6943585bc0e18e51034af8fa28778f7da',
     RDNT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    SDEX: '0xb0470cf15b22a6a32c49a7c20e3821b944a76058',
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',

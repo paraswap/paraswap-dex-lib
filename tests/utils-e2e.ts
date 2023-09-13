@@ -376,6 +376,8 @@ export async function testE2E(
       poolIdentifiers,
       transferFees,
     );
+    // uncomment to avoid tenderly simulation
+    // process.exit()
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Calculate slippage. Default is 1%
