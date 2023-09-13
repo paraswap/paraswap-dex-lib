@@ -33,8 +33,9 @@ export type TransmuterState = {
 };
 
 export type ChainlinkConfig = {
-  [address: string]: { proxy: Address; aggregator: Address };
+  [address: string]: { proxy: Address; aggregator: Address; decimals: number };
 };
+
 export type PythConfig = { proxy: Address; ids: string[] };
 
 export type PoolConfig = {
@@ -43,6 +44,8 @@ export type PoolConfig = {
   collaterals: Address[];
   oracles: {
     chainlink: ChainlinkConfig;
+    backed: ChainlinkConfig;
+    redstone: ChainlinkConfig;
     pyth: PythConfig;
   };
 };

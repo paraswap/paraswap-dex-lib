@@ -307,6 +307,10 @@ export const Tokens: {
       address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c',
       decimals: 6,
     },
+    bC3M: {
+      address: '0x2F123cF3F37CE3328CC9B5b8415f9EC5109b45e7',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {

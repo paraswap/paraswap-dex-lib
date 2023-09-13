@@ -51,6 +51,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     try {
       const parsed = TransmuterSubscriber.interface.parseLog(log);
       const _state: TransmuterState = _.cloneDeep(state) as TransmuterState;
+      // TODO support add collaterals
       switch (parsed.name) {
         case 'FeesSet':
           return this._handleFeesSet(parsed, _state);

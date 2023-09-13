@@ -97,7 +97,16 @@ async function checkOnChainPricing(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
 
-  expect(prices).toEqual(expectedPrices);
+  // No exact computation because of the bigInt approx
+  for (let i = 0; i < expectedPrices.length; ++i) {
+    expect(prices[i]).toBeGreaterThanOrEqual(
+      (expectedPrices[i] * 99999n) / 100000n,
+    );
+    expect(prices[i]).toBeLessThanOrEqual(
+      (expectedPrices[i] * 100001n) / 100000n,
+    );
+  }
+  // expect(prices).toEqual(expectedPrices);
 }
 
 async function testPricingOnNetwork(
@@ -171,8 +180,8 @@ describe('AngleTransmuter', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'EUROC';
-    const destTokenSymbol = 'agEUR';
+    const srcTokenSymbol = 'agEUR';
+    const destTokenSymbol = 'bC3M';
 
     const amountsForSell = [
       0n,
@@ -224,44 +233,44 @@ describe('AngleTransmuter', function () {
       );
     });
 
-    // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    //   await testPricingOnNetwork(
-    //     angleTransmuter,
-    //     network,
-    //     dexKey,
-    //     blockNumber,
-    //     srcTokenSymbol,
-    //     destTokenSymbol,
-    //     SwapSide.BUY,
-    //     amountsForBuy,
-    //     'quoteOut', // TODO: Put here proper function name to check pricing
-    //   );
-    // });
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        angleTransmuter,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        'quoteOut', // TODO: Put here proper function name to check pricing
+      );
+    });
 
-    // it('getTopPoolsForToken', async function () {
-    //   // We have to check without calling initializePricing, because
-    //   // pool-tracker is not calling that function
-    //   const newAngleTransmuter = new AngleTransmuter(
-    //     network,
-    //     dexKey,
-    //     dexHelper,
-    //   );
-    //   if (newAngleTransmuter.updatePoolState) {
-    //     await newAngleTransmuter.updatePoolState();
-    //   }
-    //   const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
-    //     tokens[srcTokenSymbol].address,
-    //     10,
-    //   );
-    //   console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAngleTransmuter = new AngleTransmuter(
+        network,
+        dexKey,
+        dexHelper,
+      );
+      if (newAngleTransmuter.updatePoolState) {
+        await newAngleTransmuter.updatePoolState();
+      }
+      const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-    //   if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
-    //     checkPoolsLiquidity(
-    //       poolLiquidity,
-    //       Tokens[network][srcTokenSymbol].address,
-    //       dexKey,
-    //     );
-    //   }
-    // });
+      if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
   });
 });

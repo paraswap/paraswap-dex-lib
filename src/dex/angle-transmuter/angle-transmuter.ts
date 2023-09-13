@@ -21,6 +21,7 @@ import { AngleTransmuterEventPool } from './angle-transmuter-pool';
 import { Interface, formatUnits, parseUnits } from 'ethers/lib/utils';
 import { TransmuterSubscriber } from './transmuter';
 import ERC20ABI from '../../abi/erc20.json';
+import _ from 'lodash';
 
 const TransmuterGasCost = 0;
 
@@ -56,7 +57,7 @@ export class AngleTransmuter
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.supportedTokensMap[params.agEUR.address] = true;
+    this.supportedTokensMap[params.agEUR.address.toLowerCase()] = true;
   }
 
   // Initialize pricing is called once in the start of
@@ -71,7 +72,7 @@ export class AngleTransmuter
       this.dexHelper.multiContract,
     );
     config.collaterals.forEach(
-      (token: Address) => (this.supportedTokensMap[token] = true),
+      (token: Address) => (this.supportedTokensMap[token.toLowerCase()] = true),
     );
     this.eventPools = new AngleTransmuterEventPool(
       this.dexKey,
@@ -101,7 +102,7 @@ export class AngleTransmuter
   ): Promise<string[]> {
     // TODO: complete me!
     if (this._knownAddress(srcToken, destToken))
-      return [`${this.dexKey}_${this.params.agEUR.address}`];
+      return [`${this.dexKey}_${this.params.agEUR.address.toLowerCase()}`];
     else return [];
   }
 
@@ -118,20 +119,27 @@ export class AngleTransmuter
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AngleTransmuterData>> {
     // TODO: complete me!
-    const uniquePool = `${this.dexKey}_${this.params.agEUR.address}`;
+    const uniquePool = `${
+      this.dexKey
+    }_${this.params.agEUR.address.toLowerCase()}`;
     if (
-      this._knownAddress(srcToken, destToken) ||
+      !this._knownAddress(srcToken, destToken) ||
       (limitPools && limitPools.length > 0 && !limitPools.includes(uniquePool))
     )
       return null;
 
+    const preProcessDecimals =
+      side == SwapSide.SELL ? srcToken.decimals : destToken.decimals;
+    const postProcessDecimals =
+      side == SwapSide.SELL ? destToken.decimals : srcToken.decimals;
     const unitVolume = 1;
     const amountsFloat = amounts.map(amount =>
-      parseFloat(formatUnits(amount.toString(), srcToken.decimals)),
+      parseFloat(formatUnits(amount.toString(), preProcessDecimals)),
     );
     const prices = await this.eventPools!.getAmountOut(
       srcToken.address,
       destToken.address,
+      side,
       [unitVolume, ...amountsFloat],
       blockNumber,
     );
@@ -139,7 +147,12 @@ export class AngleTransmuter
     if (!prices) return null;
 
     const pricesBigInt = prices.map(price =>
-      BigInt(parseUnits(price.toString(), destToken.decimals).toString()),
+      BigInt(
+        parseUnits(
+          price.toFixed(postProcessDecimals).toString(),
+          postProcessDecimals,
+        ).toString(),
+      ),
     );
 
     return [
@@ -232,12 +245,12 @@ export class AngleTransmuter
   async updatePoolState(): Promise<void> {
     // TODO: complete me!
     if (!this.supportedTokens.length) {
-      const tokenAddresses = await AngleTransmuterEventPool.getCollateralsList(
+      let tokenAddresses = await AngleTransmuterEventPool.getCollateralsList(
         this.params.transmuter,
         'latest',
         this.dexHelper.multiContract,
       );
-      tokenAddresses.push(this.params.agEUR.address);
+      tokenAddresses = tokenAddresses.concat([this.params.agEUR.address]);
 
       const decimalsCallData =
         AngleTransmuter.erc20Interface.encodeFunctionData('decimals');
@@ -286,6 +299,8 @@ export class AngleTransmuter
           .toString(),
       ),
     );
+
+    // TODO bC3M price not detected
     const tokenBalancesUSD = await Promise.all(
       this.supportedTokens.map((t, i) =>
         this.dexHelper.getTokenUSDPrice(t, tokenBalances[i]),
@@ -299,20 +314,26 @@ export class AngleTransmuter
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
-    _tokenAddress: Address,
+    tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
     //TODO: complete me!
-    const tokenAddress = _tokenAddress.toLowerCase();
     if (!this.supportedTokens.some(t => t.address === tokenAddress)) return [];
+
+    const connectorTokens =
+      tokenAddress === this.params.agEUR.address
+        ? this.supportedTokens.filter(
+            token => token.address !== this.params.agEUR.address,
+          )
+        : [this.params.agEUR];
     return [
       {
         exchange: this.dexKey,
         address: this.params.transmuter,
-        connectorTokens: limit > 0 ? [this.params.agEUR] : [],
+        connectorTokens: connectorTokens.slice(0, limit),
         // liquidity is potentially infinite if swapping for agXXX, otherwise at most reserves value
         liquidityUSD:
-          _tokenAddress == this.params.agEUR.address
+          tokenAddress == this.params.agEUR.address
             ? this.transmuterUSDLiquidity
             : 1e9,
       },

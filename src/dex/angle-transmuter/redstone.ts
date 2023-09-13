@@ -11,15 +11,11 @@ import {
 import { Lens } from '../../lens';
 import { Interface } from '@ethersproject/abi';
 import ProxyABI from '../../abi/Redstone.json';
-
-export type RedstoneState = {
-  answer: bigint;
-  timestamp: bigint;
-};
+import { ChainLinkState } from '../../lib/chainlink';
 
 export class RedstoneSubscriber<State> extends PartialEventSubscriber<
   State,
-  RedstoneState
+  ChainLinkState
 > {
   static readonly proxyInterface = new Interface(ProxyABI);
   // static readonly ANSWER_UPDATED_TOPIC =
@@ -28,7 +24,7 @@ export class RedstoneSubscriber<State> extends PartialEventSubscriber<
   constructor(
     private proxy: Address,
     private aggregator: Address,
-    lens: Lens<DeepReadonly<State>, DeepReadonly<RedstoneState>>,
+    lens: Lens<DeepReadonly<State>, DeepReadonly<ChainLinkState>>,
     logger: Logger,
   ) {
     super([aggregator], lens, logger);
@@ -66,10 +62,10 @@ export class RedstoneSubscriber<State> extends PartialEventSubscriber<
   }
 
   public processLog(
-    state: DeepReadonly<RedstoneState>,
+    state: DeepReadonly<ChainLinkState>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
-  ): DeepReadonly<RedstoneState> | null {
+  ): DeepReadonly<ChainLinkState> | null {
     // if (log.topics[0] !== RedstoneSubscriber.ANSWER_UPDATED_TOPIC) return null; // Ignore other events
     // const decoded = RedstoneSubscriber.proxyInterface.decodeEventLog(
     //     'AnswerUpdated',
@@ -101,7 +97,7 @@ export class RedstoneSubscriber<State> extends PartialEventSubscriber<
   public generateState(
     multicallOutputs: MultiCallOutput[],
     blockNumber?: number | 'latest',
-  ): DeepReadonly<RedstoneState> {
+  ): DeepReadonly<ChainLinkState> {
     const decoded = RedstoneSubscriber.proxyInterface.decodeFunctionResult(
       'latestRoundData',
       multicallOutputs[0],
