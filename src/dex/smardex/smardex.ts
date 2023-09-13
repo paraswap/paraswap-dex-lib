@@ -990,7 +990,7 @@ export class Smardex
         variables: { token: tokenAddress.toLowerCase(), limit },
       },
       SUBGRAPH_TIMEOUT,
-      { 'x-api-key': process.env.SDEX_SUBGRAPH_APIKEY! },
+      { 'x-api-key': process.env.API_KEY_SMARDEX_SUBGRAPH! },
     );
 
     if (!(data && data.pools0 && data.pools1))
