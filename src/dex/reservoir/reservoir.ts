@@ -34,8 +34,8 @@ import { Adapters, ReservoirConfig } from './config';
 import { ReservoirEventPool } from './reservoir-pool';
 import GenericFactoryABI from '../../abi/reservoir/GenericFactory.json';
 import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
-import { Contract } from '@ethersproject/contracts';
 import { AbiCoder, Interface } from '@ethersproject/abi';
+import { Contract } from 'web3-eth-contract';
 import _ from 'lodash';
 import { SwapSide } from '@paraswap/core';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
@@ -81,7 +81,10 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.factory = new Contract(factoryAddress, GenericFactoryABI);
+    this.factory = new dexHelper.web3Provider.eth.Contract(
+      GenericFactoryABI as any,
+      factoryAddress,
+    );
     this.reservoirRouterInterface = new Interface(ReservoirRouterABI);
   }
 
