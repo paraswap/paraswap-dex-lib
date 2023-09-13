@@ -72,6 +72,17 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 2,
     },
   },
+  VelodromeV2: {
+    [Network.OPTIMISM]: {
+      // There is no subgraph for VelodromeV2
+      factoryAddress: '0xF1046053aa5682b4F9a81b5481394DA16BE5FF5a',
+      router: '0xa2f581b012E0f2dcCDe86fCbfb529f4aC5dD4983',
+      initCode:
+        '0x1a8f01f7eab324003d9388f229ea17991eee9c9d14586f429799f3656790eba0',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
   Cone: {
     [Network.BSC]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/cone-exchange/cone',
@@ -137,6 +148,16 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0,
     },
   },
+  Equalizer: {
+    [Network.FANTOM]: {
+      factoryAddress: '0xc6366EFD0AF1d09171fe0EBF32c7943BB310832a',
+      router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
+      initCode:
+        '0x02ada2a0163cd4f7e0f0c9805f5230716a95b174140e4c84c14883de216cc6a3',
+      feeCode: 0,
+      poolGasCost: 180 * 1000,
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -144,7 +165,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }], // dystopia
   },
   [Network.FANTOM]: {
-    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly + spiritSwapV2
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly + spiritSwapV2 + Equalizer
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
