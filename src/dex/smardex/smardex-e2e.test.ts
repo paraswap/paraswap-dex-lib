@@ -106,13 +106,13 @@ describe('Smardex E2E', () => {
       [
         {
           name: 'WBTC',
-          sellAmount: '30000000', // 0.3 WBTC
-          buyAmount: '110000000000000000000', // 110 SDEX
+          sellAmount: '5000000', // 0.05 WBTC
+          buyAmount: '31000000000000000000000', // 31K SDEX
         },
         {
           name: 'SDEX',
-          sellAmount: '110000000000000000000', // 110 SDEX
-          buyAmount: '30000000', // 0.3 WBTC
+          sellAmount: '31000000000000000000000', // 31K SDEX
+          buyAmount: '5000000', // 0.05 WBTC
         },
       ],
     ]
@@ -143,13 +143,13 @@ describe('Smardex E2E', () => {
       [
         {
           name: 'SDEX',
-          sellAmount: '5000000', // 005 WBTC
-          buyAmount: '300000000000000000000000', // 300K SDEX
+          sellAmount: '300000000000000000000000', // 300K SDEX
+          buyAmount: '50000000000000000', // 0.05 bBTC
         },
         {
           name: 'bBTC',
-          sellAmount: '300000000000000000000000', // 300K SDEX
-          buyAmount: '5000000', // 0.05 WBTC
+          sellAmount: '50000000000000000', // 0.05 bBTC
+          buyAmount: '300000000000000000000000', // 300K SDEX
         },
       ],
       [
@@ -216,13 +216,13 @@ describe('Smardex E2E', () => {
       [
         {
           name: 'SDEX',
-          sellAmount: '9000000', // 0.09 WBTC
-          buyAmount: '190000000000000000000000', // 190K SDEX
+          sellAmount: '190000000000000000000000', // 190K SDEX
+          buyAmount: '8000000', // 0.08 WBTC
         },
         {
           name: 'WBTC',
-          sellAmount: '190000000000000000000000', // 190K SDEX
-          buyAmount: '9000000', // 0.09 WBTC
+          sellAmount: '8000000', // 0.08 WBTC
+          buyAmount: '190000000000000000000000', // 190K SDEX
         },
       ],
     ]
