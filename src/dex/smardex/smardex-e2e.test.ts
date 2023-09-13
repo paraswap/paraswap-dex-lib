@@ -78,171 +78,171 @@ describe('Smardex E2E', () => {
         ],
       ])
       .flat(2),
-    // [Network.ARBITRUM]: [
-    //   [
-    //     {
-    //       name: 'WETH',
-    //       sellAmount: '1500000000000000000', // 1.5 WETH
-    //       buyAmount: '250000000000000000000000', // 250K SDEX
-    //     },
-    //     {
-    //       name: 'SDEX',
-    //       sellAmount: '250000000000000000000000', // 250K SDEX
-    //       buyAmount: '1500000000000000000', // 1.5 WETH
-    //     },
-    //   ],
-    //   [
-    //     {
-    //       name: 'USDT',
-    //       sellAmount: '1200000000', // 1200 USDT
-    //       buyAmount: '300000000000000000000000', // 300K SDEX
-    //     },
-    //     {
-    //       name: 'SDEX',
-    //       sellAmount: '300000000000000000000000', // 300K SDEX
-    //       buyAmount: '1200000000', // 1200 USDT
-    //     },
-    //   ],
-    //   [
-    //     {
-    //       name: 'WBTC',
-    //       sellAmount: '30000000', // 0.3 WBTC
-    //       buyAmount: '2500000000000000000', // 2.5 WETH
-    //     },
-    //     {
-    //       name: 'WETH',
-    //       sellAmount: '2500000000000000000', // 2.5 WETH
-    //       buyAmount: '30000000', // 0.3 WBTC
-    //     },
-    //   ],
-    // ]
-    //   .map((pair, i, arr) => [
-    //     [pair],
-    //     [
-    //       arr[i].map(token => ({
-    //         ...token,
-    //         sellAmount: token.sellAmount + '0',
-    //         buyAmount: token.buyAmount + '0',
-    //       })),
-    //     ],
-    //   ])
-    //   .flat(2),
-    // [Network.BSC]: [
-    //   [
-    //     {
-    //       name: 'USDT',
-    //       sellAmount: '1200000000', // 1200 USDT
-    //       buyAmount: '300000000000000000000000', // 300K SDEX
-    //     },
-    //     {
-    //       name: 'SDEX',
-    //       sellAmount: '300000000000000000000000', // 300K SDEX
-    //       buyAmount: '1200000000', // 1200 USDT
-    //     },
-    //   ],
-    //   [
-    //     {
-    //       name: 'SDEX',
-    //       sellAmount: '5000000', // 005 WBTC
-    //       buyAmount: '300000000000000000000000', // 300K SDEX
-    //     },
-    //     {
-    //       name: 'bBTC',
-    //       sellAmount: '300000000000000000000000', // 300K SDEX
-    //       buyAmount: '5000000', // 0.05 WBTC
-    //     },
-    //   ],
-    //   [
-    //     {
-    //       name: 'USDT',
-    //       sellAmount: '1500000000', // 1500 USDT
-    //       buyAmount: '20000000000000000000', // 20 BNB
-    //     },
-    //     {
-    //       name: 'BNB',
-    //       sellAmount: '20000000000000000000', // 20 BNB
-    //       buyAmount: '1500000000', // 1500 USDT
-    //     },
-    //   ],
-    // ]
-    //   .map((pair, i, arr) => [
-    //     [pair],
-    //     [
-    //       arr[i].map(token => ({
-    //         ...token,
-    //         sellAmount: token.sellAmount + '0',
-    //         buyAmount: token.buyAmount + '0',
-    //       })),
-    //     ],
-    //   ])
-    //   .flat(2),
-    // [Network.POLYGON]: [
-    //   [
-    //     {
-    //       name: 'WETH',
-    //       sellAmount: '1500000000000000000', // 1.5 WETH
-    //       buyAmount: '250000000000000000000000', // 250K SDEX
-    //     },
-    //     {
-    //       name: 'SDEX',
-    //       sellAmount: '250000000000000000000000', // 250K SDEX
-    //       buyAmount: '1500000000000000000', // 1.5 WETH
-    //     },
-    //   ],
-    //   [
-    //     {
-    //       name: 'USDC',
-    //       sellAmount: '2500000000', // 2500 USDC
-    //       buyAmount: '300000000000000000000000', // 300K SDEX
-    //     },
-    //     {
-    //       name: 'SDEX',
-    //       sellAmount: '300000000000000000000000', // 300K SDEX
-    //       buyAmount: '2500000000', // 2500 USDC
-    //     },
-    //   ],
-    //   [
-    //     {
-    //       name: 'USDC',
-    //       sellAmount: '2500000000', // 2500 USDC
-    //       buyAmount: '8000000000000000000000', // 8000 MATIC
-    //     },
-    //     {
-    //       name: 'MATIC',
-    //       sellAmount: '8000000000000000000000', // 8000 MATIC
-    //       buyAmount: '2500000000', // 2500 USDC
-    //     },
-    //   ],
-    //   [
-    //     {
-    //       name: 'SDEX',
-    //       sellAmount: '9000000', // 0.09 WBTC
-    //       buyAmount: '190000000000000000000000', // 190K SDEX
-    //     },
-    //     {
-    //       name: 'WBTC',
-    //       sellAmount: '190000000000000000000000', // 190K SDEX
-    //       buyAmount: '9000000', // 0.09 WBTC
-    //     },
-    //   ],
-    // ]
-    //   .map((pair, i, arr) => [
-    //     [pair],
-    //     [
-    //       arr[i].map(token => ({
-    //         ...token,
-    //         sellAmount: token.sellAmount + '0',
-    //         buyAmount: token.buyAmount + '0',
-    //       })),
-    //     ],
-    //   ])
-    //   .flat(2),
+    [Network.ARBITRUM]: [
+      [
+        {
+          name: 'WETH',
+          sellAmount: '1500000000000000000', // 1.5 WETH
+          buyAmount: '250000000000000000000000', // 250K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '250000000000000000000000', // 250K SDEX
+          buyAmount: '1500000000000000000', // 1.5 WETH
+        },
+      ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '1200000000', // 1200 USDC
+          buyAmount: '300000000000000000000000', // 300K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '300000000000000000000000', // 300K SDEX
+          buyAmount: '1200000000', // 1200 USDC
+        },
+      ],
+      [
+        {
+          name: 'WBTC',
+          sellAmount: '30000000', // 0.3 WBTC
+          buyAmount: '110000000000000000000', // 110 SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '110000000000000000000', // 110 SDEX
+          buyAmount: '30000000', // 0.3 WBTC
+        },
+      ],
+    ]
+      .map((pair, i, arr) => [
+        [pair],
+        [
+          arr[i].map(token => ({
+            ...token,
+            sellAmount: token.sellAmount + '0',
+            buyAmount: token.buyAmount + '0',
+          })),
+        ],
+      ])
+      .flat(2),
+    [Network.BSC]: [
+      [
+        {
+          name: 'USDT',
+          sellAmount: '1200000000', // 1200 USDT
+          buyAmount: '300000000000000000000000', // 300K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '300000000000000000000000', // 300K SDEX
+          buyAmount: '1200000000', // 1200 USDT
+        },
+      ],
+      [
+        {
+          name: 'SDEX',
+          sellAmount: '5000000', // 005 WBTC
+          buyAmount: '300000000000000000000000', // 300K SDEX
+        },
+        {
+          name: 'bBTC',
+          sellAmount: '300000000000000000000000', // 300K SDEX
+          buyAmount: '5000000', // 0.05 WBTC
+        },
+      ],
+      [
+        {
+          name: 'USDT',
+          sellAmount: '1500000000', // 1500 USDT
+          buyAmount: '20000000000000000000', // 20 BNB
+        },
+        {
+          name: 'BNB',
+          sellAmount: '20000000000000000000', // 20 BNB
+          buyAmount: '1500000000', // 1500 USDT
+        },
+      ],
+    ]
+      .map((pair, i, arr) => [
+        [pair],
+        [
+          arr[i].map(token => ({
+            ...token,
+            sellAmount: token.sellAmount + '0',
+            buyAmount: token.buyAmount + '0',
+          })),
+        ],
+      ])
+      .flat(2),
+    [Network.POLYGON]: [
+      [
+        {
+          name: 'WETH',
+          sellAmount: '1500000000000000000', // 1.5 WETH
+          buyAmount: '250000000000000000000000', // 250K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '250000000000000000000000', // 250K SDEX
+          buyAmount: '1500000000000000000', // 1.5 WETH
+        },
+      ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '2500000000', // 2500 USDC
+          buyAmount: '300000000000000000000000', // 300K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '300000000000000000000000', // 300K SDEX
+          buyAmount: '2500000000', // 2500 USDC
+        },
+      ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '2500000000', // 2500 USDC
+          buyAmount: '8000000000000000000000', // 8000 MATIC
+        },
+        {
+          name: 'MATIC',
+          sellAmount: '8000000000000000000000', // 8000 MATIC
+          buyAmount: '2500000000', // 2500 USDC
+        },
+      ],
+      [
+        {
+          name: 'SDEX',
+          sellAmount: '9000000', // 0.09 WBTC
+          buyAmount: '190000000000000000000000', // 190K SDEX
+        },
+        {
+          name: 'WBTC',
+          sellAmount: '190000000000000000000000', // 190K SDEX
+          buyAmount: '9000000', // 0.09 WBTC
+        },
+      ],
+    ]
+      .map((pair, i, arr) => [
+        [pair],
+        [
+          arr[i].map(token => ({
+            ...token,
+            sellAmount: token.sellAmount + '0',
+            buyAmount: token.buyAmount + '0',
+          })),
+        ],
+      ])
+      .flat(2),
   };
 
   // TODO add Base network when available
-  Object.keys(allPairs).forEach(
-    netKey => {
-      const network = Number(netKey);
+  const networkKeys = [Network.MAINNET, Network.ARBITRUM, Network.BSC, Network.POLYGON];
+  networkKeys.forEach(
+    network => {
       const tokens = Tokens[network];
       const holders = Holders[network];
       const provider = new StaticJsonRpcProvider(
