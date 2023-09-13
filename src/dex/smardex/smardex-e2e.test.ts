@@ -311,5 +311,3 @@ describe('Smardex E2E', () => {
     });
   });
 });
-/*
-# What's changed
