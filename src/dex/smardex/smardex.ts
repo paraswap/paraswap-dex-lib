@@ -379,7 +379,7 @@ export class Smardex
 
       const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
 
-      // TODO SMARDEX does not support Fees on Transfer Tokens
+      // SmarDex does not support Fees on Transfer Tokens
       const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
         [unitAmount, ...amounts],
         side,
