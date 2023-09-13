@@ -131,13 +131,13 @@ describe('Smardex E2E', () => {
       [
         {
           name: 'USDT',
-          sellAmount: '1200000000', // 1200 USDT
+          sellAmount: '1200000000000000000000', // 1200 USDT
           buyAmount: '300000000000000000000000', // 300K SDEX
         },
         {
           name: 'SDEX',
           sellAmount: '300000000000000000000000', // 300K SDEX
-          buyAmount: '1200000000', // 1200 USDT
+          buyAmount: '120000000000000000000', // 1200 USDT
         },
       ],
       [
@@ -155,13 +155,13 @@ describe('Smardex E2E', () => {
       [
         {
           name: 'USDT',
-          sellAmount: '1500000000', // 1500 USDT
+          sellAmount: '1500000000000000000000', // 1500 USDT
           buyAmount: '20000000000000000000', // 20 BNB
         },
         {
           name: 'BNB',
           sellAmount: '20000000000000000000', // 20 BNB
-          buyAmount: '1500000000', // 1500 USDT
+          buyAmount: '1500000000000000000000', // 1500 USDT
         },
       ],
     ]
@@ -311,3 +311,5 @@ describe('Smardex E2E', () => {
     });
   });
 });
+/*
+# What's changed
