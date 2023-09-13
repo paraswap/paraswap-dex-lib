@@ -252,59 +252,58 @@ describe('Smardex E2E', () => {
       describe(`Smardex Swap on Chain ${network}`, () => {
         const dexKey = 'Smardex';
 
-        const sideToContractMethods = new Map([
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
           [
-            SwapSide.SELL,
-            [
-              ContractMethod.simpleSwap,
-              // ContractMethod.multiSwap, // TODO: uncomment when Adapter is ready to enable Multiswap
-              // ContractMethod.megaSwap, // TODO: uncomment when Adapter is ready to enable Megaswap
-            ],
+            ContractMethod.simpleSwap,
+            // ContractMethod.multiSwap, // TODO: uncomment when Adapter is ready to enable Multiswap
+            // ContractMethod.megaSwap, // TODO: uncomment when Adapter is ready to enable Megaswap
           ],
-          [SwapSide.BUY, [ContractMethod.simpleBuy]],
-        ]);
+        ],
+        [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      ]);
 
-        sideToContractMethods.forEach((contractMethods, side) =>
-          describe(`${side}`, () => {
-            contractMethods.forEach((contractMethod: ContractMethod) => {
-              allPairs[network].forEach(pair => {
-                describe(`${contractMethod}`, () => {
-                  it(`${pair[0].name} -> ${pair[1].name}`, async () => {
-                    await testE2E(
-                      tokens[pair[0].name],
-                      tokens[pair[1].name],
-                      holders[pair[0].name],
-                      side === SwapSide.SELL
-                        ? pair[0].sellAmount
-                        : pair[0].buyAmount,
-                      side,
-                      dexKey,
-                      contractMethod,
-                      network,
-                      provider,
-                    );
-                  });
-                  it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-                    await testE2E(
-                      tokens[pair[1].name],
-                      tokens[pair[0].name],
-                      holders[pair[1].name],
-                      side === SwapSide.SELL
-                        ? pair[1].sellAmount
-                        : pair[1].buyAmount,
-                      side,
-                      dexKey,
-                      contractMethod,
-                      network,
-                      provider,
-                    );
-                  });
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            allPairs[network].forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    side === SwapSide.SELL
+                      ? pair[0].sellAmount
+                      : pair[0].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
                 });
               });
             });
-          }),
-        );
-      });
-    },
-  );
+          });
+        }),
+      );
+    });
+  });
 });
