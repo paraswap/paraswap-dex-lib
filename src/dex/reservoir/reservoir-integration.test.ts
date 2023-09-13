@@ -6,7 +6,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { ReservoirFinance } from './reservoir-finance';
+import { Reservoir } from './reservoir';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -18,9 +18,9 @@ import { Tokens } from '../../../tests/constants-e2e';
   README
   ======
 
-  This test script adds tests for ReservoirFinance general integration
+  This test script adds tests for Reservoir general integration
   with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover ReservoirFinance specific
+  It is recommended to add tests which cover Reservoir specific
   logic.
 
   You can run this individual test script by running:
@@ -58,7 +58,7 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
-  reservoirFinance: ReservoirFinance,
+  reservoirFinance: Reservoir,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
@@ -91,7 +91,7 @@ async function checkOnChainPricing(
 }
 
 async function testPricingOnNetwork(
-  reservoirFinance: ReservoirFinance,
+  reservoirFinance: Reservoir,
   network: Network,
   dexKey: string,
   blockNumber: number,
@@ -149,7 +149,7 @@ async function testPricingOnNetwork(
 describe('ReservoirFinance', function () {
   const dexKey = 'ReservoirFinance';
   let blockNumber: number;
-  let reservoirFinance: ReservoirFinance;
+  let reservoirFinance: Reservoir;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -192,7 +192,7 @@ describe('ReservoirFinance', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      reservoirFinance = new ReservoirFinance(network, dexKey, dexHelper);
+      reservoirFinance = new Reservoir(network, dexKey, dexHelper);
       if (reservoirFinance.initializePricing) {
         await reservoirFinance.initializePricing(blockNumber);
       }
@@ -229,11 +229,7 @@ describe('ReservoirFinance', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newReservoirFinance = new ReservoirFinance(
-        network,
-        dexKey,
-        dexHelper,
-      );
+      const newReservoirFinance = new Reservoir(network, dexKey, dexHelper);
       if (newReservoirFinance.updatePoolState) {
         await newReservoirFinance.updatePoolState();
       }

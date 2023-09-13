@@ -8,14 +8,17 @@ export type PoolState = {
   reserve0: bigint;
   reserve1: bigint;
   curveId: number;
+  swapFee: bigint;
 };
 
-export type ReservoirFinanceData = {
+export type ReservoirData = {
   // TODO: ReservoirFinanceData is the dex data that is
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
   exchange: Address;
+
+  // do we need the router here instead
 };
 
 export type DexParams = {

@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { ReservoirFinanceEventPool } from './reservoir-finance-pool';
+import { ReservoirFinanceEventPool } from './reservoir-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -13,7 +13,7 @@ import { PoolState } from './types';
   README
   ======
 
-  This test script adds unit tests for ReservoirFinance event based
+  This test script adds unit tests for Reservoir event based
   system. This is done by fetching the state on-chain before the
   event block, manually pushing the block logs to the event-subscriber,
   comparing the local state with on-chain state.
@@ -56,8 +56,8 @@ async function fetchPoolState(
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('ReservoirFinance EventPool Mainnet', function () {
-  const dexKey = 'ReservoirFinance';
+describe('Reservoir EventPool Mainnet', function () {
+  const dexKey = 'Reservoir';
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);

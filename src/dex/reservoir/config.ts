@@ -2,7 +2,7 @@ import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
-export const ReservoirFinanceConfig: DexConfigMap<DexParams> = {
+export const ReservoirConfig: DexConfigMap<DexParams> = {
   ReservoirFinance: {
     [Network.AVALANCHE]: {
       subgraphURL:

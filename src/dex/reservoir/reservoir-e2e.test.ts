@@ -16,7 +16,7 @@ import { generateConfig } from '../../config';
   README
   ======
 
-  This test script should add e2e tests for ReservoirFinance. The tests
+  This test script should add e2e tests for Reservoir. The tests
   should cover as many cases as possible. Most of the DEXes follow
   the following test structure:
     - DexName
@@ -29,13 +29,13 @@ import { generateConfig } from '../../config';
   The template already enumerates the basic structure which involves
   testing simpleSwap, multiSwap, megaSwap contract methods for
   ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace tokenA and
-  tokenB with any two highly liquid tokens on ReservoirFinance for the tests
+  tokenB with any two highly liquid tokens on Reservoir for the tests
   to work. If the tokens that you would like to use are not defined in
   Tokens or Holders map, you can update the './tests/constants-e2e'
 
   Other than the standard cases that are already added by the template
   it is highly recommended to add test cases which could be specific
-  to testing ReservoirFinance (Eg. Tests based on poolType, special tokens,
+  to testing Reservoir (Eg. Tests based on poolType, special tokens,
   etc).
 
   You can run this individual test script by running:
@@ -133,7 +133,7 @@ function testForNetwork(
   });
 }
 
-describe('ReservoirFinance E2E', () => {
+describe('Reservoir E2E', () => {
   const dexKey = 'ReservoirFinance';
 
   describe('Mainnet', () => {
@@ -157,6 +157,6 @@ describe('ReservoirFinance E2E', () => {
       nativeTokenAmount,
     );
 
-    // TODO: Add any additional test cases required to test ReservoirFinance
+    // TODO: Add any additional test cases required to test Reservoir
   });
 });

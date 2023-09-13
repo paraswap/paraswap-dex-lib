@@ -1,4 +1,4 @@
-export class ReservoirFinanceStablePool {
+export class ReservoirStablePool {
   static getSellPrice(): bigint {
     return 0n;
   }

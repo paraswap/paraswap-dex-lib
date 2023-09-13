@@ -7,7 +7,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
 import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
 
-export class ReservoirFinanceEventPool extends StatefulEventSubscriber<PoolState> {
+export class ReservoirEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
@@ -25,13 +25,13 @@ export class ReservoirFinanceEventPool extends StatefulEventSubscriber<PoolState
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected reservoirFinanceIface = new Interface(ReservoirRouterABI), // TODO: add any additional params required for event subscriber
+    protected reservoirIface = new Interface(ReservoirRouterABI), // TODO: add any additional params required for event subscriber
   ) {
     // TODO: Add pool name
     super(parentName, 'POOL_NAME', dexHelper, logger);
 
     // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.reservoirFinanceIface.parseLog(log);
+    this.logDecoder = (log: Log) => this.reservoirIface.parseLog(log);
     this.addressesSubscribed = [
       /* subscribed addresses */
     ];

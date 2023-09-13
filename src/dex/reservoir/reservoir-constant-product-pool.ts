@@ -1,4 +1,4 @@
-export class ReservoirFinanceConstantProductPool {
+export class ReservoirConstantProductPool {
   static getSellPrice(): bigint {
     return 0n;
   }

@@ -1,38 +1,40 @@
 import { AsyncOrSync } from 'ts-essentials';
 import {
-  Token,
+  AdapterExchangeParam,
   Address,
   ExchangePrices,
-  PoolPrices,
-  AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
   Logger,
+  PoolLiquidity,
+  PoolPrices,
+  SimpleExchangeParam,
+  Token,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { ReservoirFinanceData } from './types';
+import { ReservoirData } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { ReservoirFinanceConfig, Adapters } from './config';
-import { ReservoirFinanceEventPool } from './reservoir-finance-pool';
+import { Adapters, ReservoirConfig } from './config';
+import { ReservoirEventPool } from './reservoir-pool';
 
-export class ReservoirFinance
-  extends SimpleExchange
-  implements IDex<ReservoirFinanceData>
-{
-  protected eventPools: ReservoirFinanceEventPool;
+enum ReservoirSwapFunctions {
+  exactInput = 'swapExactForVariable',
+  exactOutput = 'swapVariableForExact',
+}
+
+export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
+  protected eventPools: ReservoirEventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
 
-  readonly needWrapNative = false;
+  readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(ReservoirFinanceConfig);
+    getDexKeysWithNetwork(ReservoirConfig);
 
   logger: Logger;
 
@@ -44,7 +46,7 @@ export class ReservoirFinance
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new ReservoirFinanceEventPool(
+    this.eventPools = new ReservoirEventPool(
       dexKey,
       network,
       dexHelper,
@@ -91,15 +93,13 @@ export class ReservoirFinance
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<ReservoirFinanceData>> {
+  ): Promise<null | ExchangePrices<ReservoirData>> {
     // TODO: complete me!
     return null;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(
-    poolPrices: PoolPrices<ReservoirFinanceData>,
-  ): number | number[] {
+  getCalldataGasCost(poolPrices: PoolPrices<ReservoirData>): number | number[] {
     // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
@@ -112,7 +112,7 @@ export class ReservoirFinance
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: ReservoirFinanceData,
+    data: ReservoirData,
     side: SwapSide,
   ): AdapterExchangeParam {
     // TODO: complete me!
@@ -137,11 +137,16 @@ export class ReservoirFinance
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: ReservoirFinanceData,
+    data: ReservoirData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     // TODO: complete me!
     const { exchange } = data;
+
+    const swapFunction =
+      side == SwapSide.SELL
+        ? ReservoirSwapFunctions.exactInput
+        : ReservoirSwapFunctions.exactOutput;
 
     // Encode here the transaction arguments
     const swapData = '';
