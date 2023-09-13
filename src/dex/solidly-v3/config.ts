@@ -4,7 +4,11 @@ import { Network, SwapSide } from '../../constants';
 
 export const SolidlyV3Config: DexConfigMap<DexParams> = {
   SolidlyV3: {
-    // TODO: complete me!
+    [Network.MAINNET]: {
+      factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
+      subgraphURL:
+        'https://thegraph.com/hosted-service/subgraph/fromif/solidly-v3',
+    },
   },
 };
 
