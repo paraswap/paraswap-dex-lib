@@ -104,6 +104,7 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     const evenState = this.getState(blockNumber);
     if (evenState) return evenState;
     const onChainState = await this.generateState(blockNumber);
+    this.logger.warn(`State is generated in RPC fallback call`);
     this.setState(onChainState, blockNumber);
     return onChainState;
   }
