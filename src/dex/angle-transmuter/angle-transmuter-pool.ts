@@ -448,8 +448,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   _readMint(config: PoolConfig, state: PoolState, collateral: Address): number {
-    const configOracle =
-      state.transmuter.collaterals[collateral].oracles.config;
+    const configOracle = state.transmuter.collaterals[collateral].config;
     if (configOracle.oracleType == OracleReadType.EXTERNAL) {
       return 1;
     } else {
@@ -505,8 +504,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     state: PoolState,
     collateral: Address,
   ): { oracleValue: number; ratio: number } {
-    const configOracle =
-      state.transmuter.collaterals[collateral].oracles.config;
+    const configOracle = state.transmuter.collaterals[collateral].config;
     if (configOracle.oracleType == OracleReadType.EXTERNAL) {
       return { oracleValue: 1, ratio: 1 };
     } else {

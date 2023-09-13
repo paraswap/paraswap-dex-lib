@@ -216,7 +216,7 @@ export class AngleTransmuter
 
     // Encode here the transaction arguments
     const swapData = TransmuterSubscriber.interface.encodeFunctionData(
-      'swapExactInput',
+      side == SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
       [
         srcAmount,
         destAmount,

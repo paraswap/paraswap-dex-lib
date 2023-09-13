@@ -70,16 +70,8 @@ function testForNetwork(
 
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-      ],
-    ],
+    [SwapSide.SELL, [ContractMethod.simpleSwap]],
     // TODO: If buy is not supported remove the buy contract methods
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     [SwapSide.BUY, [ContractMethod.simpleBuy]],
   ]);
 

@@ -15,17 +15,19 @@ export type PoolState = {
   };
 };
 
+export type CollateralState = {
+  whitelist: { status: boolean; data: string };
+  fees: Fees;
+  stablecoinsIssued: number;
+  config: Oracle;
+};
+
 export type TransmuterState = {
   collaterals: {
-    [token: string]: {
-      fees: Fees;
-      stablecoinsIssued: number;
-      oracles: {
-        collateralMintPrice: number; // Mint oracle collat --> EUR
-        collateralBurnPrice: number; // Burn oracle EUR --> collat
-        config: Oracle;
-      };
-    };
+    [token: string]: CollateralState;
+  };
+  isWhitelisted: {
+    [type: number]: Set<string>;
   };
   xRedemptionCurve: number[];
   yRedemptionCurve: number[];

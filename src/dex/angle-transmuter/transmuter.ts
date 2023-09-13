@@ -21,6 +21,7 @@ import {
   TransmuterState,
   Fees,
   Oracle,
+  CollateralState,
 } from './types';
 import _ from 'lodash';
 import { BigNumber, ethers } from 'ethers';
@@ -63,6 +64,16 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
           return this._handleSwap(parsed, _state);
         case 'Redeemed':
           return this._handleRedeem(parsed, _state);
+        case 'ReservesAdjusted':
+          return this._handleAdjustStablecoins(parsed, _state);
+        case 'CollateralAdded':
+          return this._handleAddCollateral(parsed, _state);
+        case 'CollateralRevoked':
+          return this._handleRevokeCollateral(parsed, _state);
+        case 'CollateralWhitelistStatusUpdated':
+          return this._handleSetWhitelistedStatus(parsed, _state);
+        case 'WhitelistStatusToggled':
+          return this._handleIsWhitelistedForType(parsed, _state);
         default:
           return null;
       }
@@ -102,6 +113,20 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
           [collat],
         ),
       })),
+      ...this.collaterals.map(collat => ({
+        target: this.transmuter,
+        callData: TransmuterSubscriber.interface.encodeFunctionData(
+          'isWhitelistedCollateral',
+          [collat],
+        ),
+      })),
+      ...this.collaterals.map(collat => ({
+        target: this.transmuter,
+        callData: TransmuterSubscriber.interface.encodeFunctionData(
+          'getCollateralWhitelistData',
+          [collat],
+        ),
+      })),
       {
         target: this.transmuter,
         callData:
@@ -122,7 +147,12 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     blockNumber?: number | 'latest',
   ): DeepReadonly<TransmuterState> {
     let transmuterState = {
-      collaterals: {},
+      collaterals: {} as {
+        [token: string]: CollateralState;
+      },
+      isWhitelisted: {} as {
+        [token: string]: Set<string>;
+      },
       totalStablecoinIssued: 0,
       xRedemptionCurve: [],
       yRedemptionCurve: [],
@@ -133,6 +163,8 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const indexOracleFees = 1;
     const indexMintFees = 2;
     const indexBurnFees = 3;
+    const indexWhitelistStatus = 4;
+    const indexWhitelistData = 5;
 
     this.collaterals.forEach(
       (collat: Address, i: number) =>
@@ -172,12 +204,18 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
               18,
             ),
           ),
-          oracles: {
-            collateralMintPrice: 0,
-            collateralBurnPrice: 0,
-            config: this._setOracleConfig(
-              multicallOutputs[indexOracleFees * nbrCollaterals + i],
-            ),
+          config: this._setOracleConfig(
+            multicallOutputs[indexOracleFees * nbrCollaterals + i],
+          ),
+          whitelist: {
+            status: TransmuterSubscriber.interface.decodeFunctionResult(
+              'isWhitelistedCollateral',
+              multicallOutputs[indexWhitelistStatus * nbrCollaterals + i],
+            )[0] as boolean,
+            data: TransmuterSubscriber.interface.decodeFunctionResult(
+              'getCollateralWhitelistData',
+              multicallOutputs[indexWhitelistData * nbrCollaterals + i],
+            )[0] as string,
           },
         }),
     );
@@ -289,6 +327,69 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     return state;
   }
 
+  _handleAddCollateral(
+    event: ethers.utils.LogDescription,
+    state: TransmuterState,
+  ): Readonly<TransmuterState> | null {
+    this.collaterals.push(event.args.collateral);
+    state.collaterals[event.args.collateral] = {} as CollateralState;
+    return state;
+  }
+
+  _handleRevokeCollateral(
+    event: ethers.utils.LogDescription,
+    state: TransmuterState,
+  ): Readonly<TransmuterState> | null {
+    const index = this.collaterals.indexOf(event.args.collateral);
+    if (index > -1) this.collaterals.splice(index, 1);
+    delete state.collaterals[event.args.collateral];
+
+    return state;
+  }
+
+  _handleAdjustStablecoins(
+    event: ethers.utils.LogDescription,
+    state: TransmuterState,
+  ): Readonly<TransmuterState> | null {
+    const collateral = event.args.collateral;
+    const isIncrease: boolean = event.args.increase;
+    const amount: number =
+      parseFloat(formatUnits(event.args.amount, 18)) * Number(isIncrease);
+    state.totalStablecoinIssued += amount;
+    state.collaterals[collateral].stablecoinsIssued += amount;
+    return state;
+  }
+
+  _handleSetWhitelistedStatus(
+    event: ethers.utils.LogDescription,
+    state: TransmuterState,
+  ): Readonly<TransmuterState> | null {
+    const status: number = event.args.whitelistStatus;
+    const collateral: string = event.args.collateral;
+    const data: string = event.args.whitelistData;
+    if (!state.collaterals[collateral])
+      state.collaterals[collateral] = {} as CollateralState;
+    if (status == 1) state.collaterals[collateral].whitelist.data = data;
+    state.collaterals[collateral].whitelist.status = status > 0 ? true : false;
+    return state;
+  }
+
+  _handleIsWhitelistedForType(
+    event: ethers.utils.LogDescription,
+    state: TransmuterState,
+  ): Readonly<TransmuterState> | null {
+    const status: number = event.args.whitelistStatus;
+    const who: string = event.args.who;
+    const whitelistType: number = event.args.whitelistType;
+    if (!state.isWhitelisted[whitelistType])
+      state.isWhitelisted[whitelistType] = new Set();
+    if (status == 0 && state.isWhitelisted[whitelistType].has(who))
+      state.isWhitelisted[whitelistType].delete(who);
+    else if (status !== 0 && !state.isWhitelisted[whitelistType].has(who))
+      state.isWhitelisted[whitelistType].add(who);
+    return state;
+  }
+
   /**
    * Keep track of used oracles for each collaterals
    */
@@ -299,8 +400,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const collateral: string = event.args.collateral;
     const oracleConfig: string = event.args.oracleConfig;
 
-    state.collaterals[collateral].oracles.config =
-      this._setOracleConfig(oracleConfig);
+    state.collaterals[collateral].config = this._setOracleConfig(oracleConfig);
     return state;
   }
 
