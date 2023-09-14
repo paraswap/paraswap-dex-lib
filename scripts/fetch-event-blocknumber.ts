@@ -7,7 +7,7 @@ import { Network } from '../src/constants';
 import { Address } from '../src/types';
 import { generateConfig } from '../src/config';
 // TODO: Import correct ABI
-import ABI from '../src/abi/chainlink.json';
+import ABI from '../src/abi/angle-transmuter/Transmuter.json';
 
 // This is a helper script to fetch blockNumbers where a certain
 // event was released by a certain contract
@@ -41,8 +41,8 @@ async function getBlockNumbersForEvents(
 
 // TODO: Set your values here
 const network = Network.MAINNET;
-const eventNames = ['AnswerUpdated'];
-const address = '0x83Ec02059F686E747392A22ddfED7833bA0d7cE3';
+const eventNames = ['WhitelistStatusToggled'];
+const address = '0x00253582b2a3FE112feEC532221d9708c64cEFAb';
 const provider = new StaticJsonRpcProvider(
   generateConfig(network).privateHttpProvider,
   network,

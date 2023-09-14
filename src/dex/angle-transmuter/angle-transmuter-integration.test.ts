@@ -36,14 +36,12 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
   tokenIn: Address,
   tokenOut: Address,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
       amount,
       tokenIn,
       tokenOut,
@@ -56,7 +54,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -72,11 +69,7 @@ async function checkOnChainPricing(
   tokenIn: Address,
   tokenOut: Address,
 ) {
-  const exchangeAddress = '0x00253582b2a3FE112feEC532221d9708c64cEFAb'; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from angleTransmuter.Iface or from eventPool.
-  // It depends on your implementation
+  const exchangeAddress = '0x00253582b2a3FE112feEC532221d9708c64cEFAb';
   const readerIface = AngleTransmuterEventPool.angleTransmuterIface;
 
   const readerCallData = getReaderCalldata(
@@ -106,7 +99,6 @@ async function checkOnChainPricing(
       (expectedPrices[i] * 100001n) / 100000n,
     );
   }
-  // expect(prices).toEqual(expectedPrices);
 }
 
 async function testPricingOnNetwork(
@@ -178,10 +170,8 @@ describe('AngleTransmuter', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'agEUR';
-    const destTokenSymbol = 'bC3M';
+    const srcTokenSymbol = 'EUROC';
+    const destTokenSymbol = 'agEUR';
 
     const amountsForSell = [
       0n,
@@ -229,7 +219,7 @@ describe('AngleTransmuter', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'quoteIn', // TODO: Put here proper function name to check pricing
+        'quoteIn',
       );
     });
 
@@ -243,7 +233,7 @@ describe('AngleTransmuter', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        'quoteOut', // TODO: Put here proper function name to check pricing
+        'quoteOut',
       );
     });
 

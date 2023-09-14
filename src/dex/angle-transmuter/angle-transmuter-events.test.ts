@@ -50,7 +50,6 @@ async function fetchPoolState(
   blockNumber: number,
   poolAddress: string,
 ): Promise<DeepReadonly<PoolState>> {
-  // TODO: complete me!
   return angleTransmuterPools.generateState(blockNumber);
 }
 
@@ -66,7 +65,6 @@ describe('AngleTransmuter EventPool Mainnet', function () {
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
     //Transmuter Events
     '0x00253582b2a3FE112feEC532221d9708c64cEFAb': {
       FeesSet: [],
@@ -74,6 +72,11 @@ describe('AngleTransmuter EventPool Mainnet', function () {
       OracleSet: [],
       Swap: [18012837],
       Redeemed: [],
+      ReservesAdjusted: [],
+      CollateralAdded: [],
+      CollateralRevoked: [],
+      CollateralWhitelistStatusUpdated: [],
+      WhitelistStatusToggled: [],
     },
     // Pyth Events
     '0x4305FB66699C3B2702D4d05CF36551390A4c69C6': {
@@ -106,7 +109,6 @@ describe('AngleTransmuter EventPool Mainnet', function () {
       network,
       dexHelper,
       logger,
-      /* TODO: Put here additional constructor arguments if needed */
       {
         agEUR: {
           address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',

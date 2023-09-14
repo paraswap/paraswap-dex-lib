@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { lens } from '../../lens';
-import { Address, Logger, Token } from '../../types';
+import { Address, Logger } from '../../types';
 import { ComposedEventSubscriber } from '../../composed-event-subscriber';
 import { ChainLinkSubscriber } from '../../lib/chainlink';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -9,7 +9,6 @@ import {
   ChainlinkConfig,
   DecodedOracleConfig,
   DexParams,
-  Oracle,
   OracleFeed,
   OracleQuoteType,
   OracleReadType,
@@ -19,7 +18,6 @@ import {
   TransmuterState,
 } from './types';
 import TransmuterABI from '../../abi/angle-transmuter/Transmuter.json';
-import { CBETH, RETH, SFRXETH, STETH } from './constants';
 import { Contract } from 'web3-eth-contract';
 import { TransmuterSubscriber } from './transmuter';
 import { PythSubscriber } from './pyth';
@@ -121,10 +119,6 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         pythListener,
       ],
       {
-        // TODO: poolState is the state of event
-        // subscriber. This should be the minimum
-        // set of parameters required to compute
-        // pool prices. Complete me!
         stablecoin: config.agEUR,
         transmuter: {} as TransmuterState,
         oracles: { chainlink: {}, pyth: {} },
@@ -156,11 +150,10 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     _amounts: number[],
     blockNumber: number,
   ): Promise<number[] | null> {
-    // TODO
     const state = await this.getStateOrGenerate(blockNumber);
     const isMint = _tokenOut == state.stablecoin.address;
     let oracleValue: number;
-    let minRatio: number;
+    let minRatio: number = 0;
     let collateral = _tokenIn;
     if (isMint)
       oracleValue = await this._readMint(this.config, state, _tokenIn);
@@ -178,6 +171,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     const otherStablecoinIssued =
       state.transmuter.totalStablecoinIssued - collatStablecoinIssued;
     const fees = state.transmuter.collaterals[collateral].fees;
+
     return _amounts.map(_amount => {
       if (isMint && side == SwapSide.SELL)
         return _quoteMintExactInput(
@@ -324,7 +318,6 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     } else if (oracleFeed.isPyth) {
       pythIds.ids = pythIds.ids.concat(oracleFeed.pyth!.feedIds);
     } else {
-      // TODO fill the staked ETH feed
       throw new Error('Unknown oracle feed');
     }
     return { chainlinkMap, backedMap, redstoneMap, pythIds };
@@ -523,7 +516,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         targetPrice,
       );
       let ratio = 1;
-      if (targetPrice < oracleValue) ratio = oracleValue / targetPrice;
+      if (oracleValue < targetPrice) ratio = oracleValue / targetPrice;
       return { oracleValue, ratio };
     }
   }

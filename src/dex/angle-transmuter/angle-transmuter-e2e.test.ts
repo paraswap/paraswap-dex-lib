@@ -68,10 +68,8 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.simpleSwap]],
-    // TODO: If buy is not supported remove the buy contract methods
     [SwapSide.BUY, [ContractMethod.simpleBuy]],
   ]);
 
@@ -106,25 +104,24 @@ describe('AngleTransmuter E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // describe('EUROC', () => {
+    describe('EUROC', () => {
+      const tokenASymbol: string = 'EUROC';
+      const tokenBSymbol: string = 'agEUR';
 
-    //   const tokenASymbol: string = 'EUROC';
-    //   const tokenBSymbol: string = 'agEUR';
+      const tokenAAmount: string = '1000000';
+      const tokenBAmount: string = '1000000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
 
-    //   const tokenAAmount: string = '1000000';
-    //   const tokenBAmount: string = '1000000000000000000';
-    //   const nativeTokenAmount = '1000000000000000000';
-
-    //   testForNetwork(
-    //     network,
-    //     dexKey,
-    //     tokenASymbol,
-    //     tokenBSymbol,
-    //     tokenAAmount,
-    //     tokenBAmount,
-    //     nativeTokenAmount,
-    //   );
-    // });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
     describe('BC3M', () => {
       const tokenASymbol: string = 'bC3M';
       const tokenBSymbol: string = 'agEUR';

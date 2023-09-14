@@ -38,7 +38,6 @@ export class AngleTransmuter
   public static erc20Interface = new Interface(ERC20ABI);
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
@@ -52,7 +51,7 @@ export class AngleTransmuter
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
     protected params: DexParams = AngleTransmuterConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
@@ -65,7 +64,6 @@ export class AngleTransmuter
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
     const config = await AngleTransmuterEventPool.getConfig(
       this.params,
       blockNumber,
@@ -100,7 +98,6 @@ export class AngleTransmuter
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
     if (this._knownAddress(srcToken, destToken))
       return [`${this.dexKey}_${this.params.agEUR.address.toLowerCase()}`];
     else return [];
@@ -118,7 +115,6 @@ export class AngleTransmuter
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AngleTransmuterData>> {
-    // TODO: complete me!
     const uniquePool = `${
       this.dexKey
     }_${this.params.agEUR.address.toLowerCase()}`;
@@ -136,6 +132,7 @@ export class AngleTransmuter
     const amountsFloat = amounts.map(amount =>
       parseFloat(formatUnits(amount.toString(), preProcessDecimals)),
     );
+
     const prices = await this.eventPools!.getAmountOut(
       srcToken.address,
       destToken.address,
@@ -171,7 +168,6 @@ export class AngleTransmuter
   getCalldataGasCost(
     poolPrices: PoolPrices<AngleTransmuterData>,
   ): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -186,7 +182,6 @@ export class AngleTransmuter
     data: AngleTransmuterData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     const { exchange } = data;
 
     // Encode here the payload for adapter
@@ -211,15 +206,14 @@ export class AngleTransmuter
     data: AngleTransmuterData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
     const { exchange } = data;
 
     // Encode here the transaction arguments
     const swapData = TransmuterSubscriber.interface.encodeFunctionData(
       side == SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
       [
-        srcAmount,
-        destAmount,
+        side == SwapSide.SELL ? srcAmount : destAmount,
+        side == SwapSide.SELL ? destAmount : srcAmount,
         srcToken,
         destToken,
         this.augustusAddress,
@@ -243,7 +237,6 @@ export class AngleTransmuter
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
     if (!this.supportedTokens.length) {
       let tokenAddresses = await AngleTransmuterEventPool.getCollateralsList(
         this.params.transmuter,
@@ -317,7 +310,6 @@ export class AngleTransmuter
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
     if (!this.supportedTokens.some(t => t.address === tokenAddress)) return [];
 
     const connectorTokens =
@@ -342,12 +334,9 @@ export class AngleTransmuter
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
-  }
+  releaseResources(): AsyncOrSync<void> {}
 
   _knownAddress(srcToken: Token, destToken: Token): boolean {
-    // TODO: complete me!
     const srcAddress = this.dexHelper.config
       .wrapETH(srcToken)
       .address.toLowerCase();
