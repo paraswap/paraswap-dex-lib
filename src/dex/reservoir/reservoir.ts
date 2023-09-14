@@ -41,6 +41,7 @@ import { SwapSide } from '@paraswap/core';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { ReservoirStablePool } from './reservoir-stable-pool';
 import { ReservoirConstantProductPool } from './reservoir-constant-product-pool';
+import { reservoirPairIface } from './constants';
 
 export interface ReservoirPair {
   token0: Token;
@@ -186,8 +187,13 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
           let calldata = [
             {
               target: pair.exchange,
+              callData: reservoirPairIface.encodeFunctionData(
+                'getReserves()',
+                [],
+              ),
             },
           ];
+          return calldata;
         })
         .flat();
 
@@ -196,15 +202,22 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
           .aggregate(calldata)
           .call({}, blockNumber);
 
-      const returnData = _.chunk(data.returnData);
+      const returnData = _.chunk(data.returnData, 1);
 
-      return pairs.map((pair, i) => ({
-        reserve0: coder.decode(['uint104'], returnData[i][0])[0].toString(),
-        reserve1: coder.decode(['uint104'], returnData[i][1])[0].toString(),
-        curveId: 0,
-        swapFee: 0n,
-        ampCoefficient: null,
-      }));
+      return pairs.map((pair, i) => {
+        const decoded = coder.decode(
+          ['uint104', 'uint104', 'uint32', 'uint16'],
+          returnData[i][0],
+        );
+
+        return {
+          reserve0: decoded[0].toString(),
+          reserve1: decoded[1].toString(),
+          curveId: 0,
+          swapFee: 0n,
+          ampCoefficient: null,
+        };
+      });
     } catch (e) {
       this.logger.error(
         `Error_getManyPoolReserves could not get reserves with error:`,
