@@ -50,7 +50,7 @@ export class PythSubscriber<State> extends PartialEventSubscriber<
     _state[decoded.id] = {
       answer: this._processPrice(decoded.price, expo),
       expo: expo,
-      timestamp: Number(decoded.publishTime.toString()),
+      timestamp: Number(decoded.publishTime),
     };
     return _state;
   }
@@ -84,7 +84,7 @@ export class PythSubscriber<State> extends PartialEventSubscriber<
       _state[id] = {
         answer: this._processPrice(decodedOracle[index].price, expo),
         expo: expo,
-        timestamp: Number(decodedOracle[index].publishTime.toString()),
+        timestamp: Number(decodedOracle[index].publishTime),
       };
     });
     return _state;
