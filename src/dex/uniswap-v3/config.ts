@@ -117,7 +117,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/lynnshaoyu/uniswap-v3-base',
+        'https://api.studio.thegraph.com/query/48211/uniswap-v3-base/version/latest',
     },
   },
   SushiSwapV3: {
