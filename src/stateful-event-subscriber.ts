@@ -51,8 +51,6 @@ export abstract class StatefulEventSubscriber<State>
 
   private _lastPublishedTimeMs: number = 0;
 
-  private isForcedGenerateStateIsRunning = false;
-
   constructor(
     public readonly parentName: string,
     _name: string,
@@ -97,16 +95,8 @@ export abstract class StatefulEventSubscriber<State>
       this.logger.debug(
         `${this.parentName}: ${this.name}: forced to regenerate state`,
       );
-      if (this.isForcedGenerateStateIsRunning) {
-        return;
-      }
-      this.isForcedGenerateStateIsRunning = true;
-      try {
-        const state = await this.generateState(blockNumber);
-        this.setState(state, blockNumber);
-      } finally {
-        this.isForcedGenerateStateIsRunning = false;
-      }
+      const state = await this.generateState(blockNumber);
+      this.setState(state, blockNumber);
     } else {
       if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
         let stateAsString = await this.dexHelper.cache.hget(
