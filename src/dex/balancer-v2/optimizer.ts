@@ -3,22 +3,20 @@ import { BalancerSwapV2 } from './types';
 import { SwapSide } from '../../constants';
 import { BalancerConfig } from './config';
 
-const MAX_UINT256 =
-  '115792089237316195423570985008687907853269984665640564039457584007913129639935';
-
-const AllBalancerV2Forks = Object.keys(BalancerConfig);
+export const AllBalancerV2Forks = Object.keys(BalancerConfig);
 
 export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
   const fixSwap = (
     rawSwap: OptimalSwapExchange<any>[],
+    accumulatedBalancers: { [key: string]: OptimalSwapExchange<any> },
     side: SwapSide,
   ): OptimalSwapExchange<any>[] => {
-    const newBalancers: { [key: string]: OptimalSwapExchange<any> } = {};
     let optimizedSwap = new Array<OptimalSwapExchange<any>>();
+    const newBalancers: { [key: string]: OptimalSwapExchange<any> } = {};
     rawSwap.forEach((s: OptimalSwapExchange<any>) => {
       const exchangeKey = s.exchange.toLowerCase();
       if (AllBalancerV2Forks.some(d => d.toLowerCase() === exchangeKey)) {
-        if (!(exchangeKey in newBalancers)) {
+        if (!(exchangeKey in accumulatedBalancers)) {
           newBalancers[exchangeKey] = {
             exchange: s.exchange,
             srcAmount: '0',
@@ -30,27 +28,31 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
               gasUSD: '0',
             },
           };
+          accumulatedBalancers[exchangeKey] = newBalancers[exchangeKey];
         }
-        newBalancers[exchangeKey].srcAmount = (
-          BigInt(newBalancers[exchangeKey].srcAmount) + BigInt(s.srcAmount)
+        accumulatedBalancers[exchangeKey].srcAmount = (
+          BigInt(accumulatedBalancers[exchangeKey].srcAmount) +
+          BigInt(s.srcAmount)
         ).toString();
 
-        newBalancers[exchangeKey].destAmount = (
-          BigInt(newBalancers[exchangeKey].destAmount) + BigInt(s.destAmount)
+        accumulatedBalancers[exchangeKey].destAmount = (
+          BigInt(accumulatedBalancers[exchangeKey].destAmount) +
+          BigInt(s.destAmount)
         ).toString();
 
-        newBalancers[exchangeKey].percent += s.percent;
-        newBalancers[exchangeKey].data.exchangeProxy = s.data.exchangeProxy;
-        newBalancers[exchangeKey].data.gasUSD = (
-          parseFloat(newBalancers[exchangeKey].data.gasUSD) +
+        accumulatedBalancers[exchangeKey].percent += s.percent;
+        accumulatedBalancers[exchangeKey].data.gasUSD = (
+          parseFloat(accumulatedBalancers[exchangeKey].data.gasUSD) +
           parseFloat(s.data.gasUSD)
         ).toFixed(6);
 
-        newBalancers[exchangeKey].data.swaps.push({
+        accumulatedBalancers[exchangeKey].data.swaps.push({
           poolId: s.data.poolId,
           amount: side === SwapSide.SELL ? s.srcAmount : s.destAmount,
         });
-        newBalancers[exchangeKey].poolAddresses!.push(s.poolAddresses![0]);
+        accumulatedBalancers[exchangeKey].poolAddresses!.push(
+          s.poolAddresses![0],
+        );
       } else {
         optimizedSwap.push(s);
       }
@@ -59,12 +61,23 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
     return optimizedSwap;
   };
 
-  or.bestRoute = or.bestRoute.map(r => ({
-    ...r,
-    swaps: r.swaps.map(s => ({
-      ...s,
-      swapExchanges: fixSwap(s.swapExchanges, or.side),
-    })),
-  }));
+  or.bestRoute = or.bestRoute.map(r => {
+    const accumulatedBalancers: {
+      [key: string]: OptimalSwapExchange<any>;
+    } = {};
+    return {
+      ...r,
+      swaps: r.swaps
+        .map(s => ({
+          ...s,
+          swapExchanges: fixSwap(
+            s.swapExchanges,
+            accumulatedBalancers,
+            or.side,
+          ),
+        }))
+        .filter(s => s.swapExchanges.length > 0),
+    };
+  });
   return or;
 }
