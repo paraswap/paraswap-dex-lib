@@ -401,7 +401,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       }
     }
 
-    return orderedParamsResult.length > 0 ? null : orderedParamsResult;
+    return orderedParamsResult.length > 0 ? orderedParamsResult : null;
   }
 
   // Returns pool prices for amounts.
@@ -465,12 +465,25 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
         ? this.getSellPricePath(unitVolumeWithFee, pairsParam)
         : this.getBuyPricePath(unitVolumeWithFee, pairsParam);
 
+      // clone the amountsWithFees according to how many relevant pairs we have
+      const amountsWithFeeForEachCurve = pairsParam.map(pairParam => {
+        return [...amountsWithFee];
+      });
+
       const prices = isSell
-        ? amountsWithFee.map(amount =>
-            this.getSellPricePath(amount, pairsParam),
+        ? amountsWithFeeForEachCurve.map((amounts, outerIndex) =>
+            amounts
+              .map(amount => {
+                return this.getSellPricePath(amount, [pairsParam[outerIndex]]);
+              })
+              .flat(),
           )
-        : amountsWithFee.map(amount =>
-            this.getBuyPricePath(amount, pairsParam),
+        : amountsWithFeeForEachCurve.map((amounts, outerIndex) =>
+            amounts
+              .map(amount => {
+                return this.getBuyPricePath(amount, [pairsParam[outerIndex]]);
+              })
+              .flat(),
           );
 
       const unitOutWithfee = applyTransferFee(
@@ -489,7 +502,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
         ),
       );
 
-      // we return up to ReservoirPoolTypes.length pairs for each srcToken -> destToken query as we have 2 curve types
+      // we return up to ${ReservoirPoolTypes.length} pairs for each srcToken -> destToken query as we have 2 curve types
       // if we increase the types of curves in the future this will go up as well
       return pairsParam.map((pair, index) => {
         return {
