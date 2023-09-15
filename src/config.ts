@@ -317,6 +317,36 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingBlocksBackToTriggerUpdate: 3,
     forceRpcFallbackDexs: [],
   },
+
+  [Network.ZKEVM]: {
+    network: Network.ZKEVM,
+    networkName: 'Polygon zkEVM',
+    isTestnet: false,
+    nativeTokenName: 'Ether',
+    nativeTokenSymbol: 'ETH',
+    wrappedNativeTokenAddress: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
+    hasEIP1559: true,
+    augustusAddress: '0xB83B554730d29cE4Cb55BB42206c3E2c03E4A40A',
+    augustusRFQAddress: '0x7Ee1F7fa4C0b2eDB0Fdd5944c14A07167700486E',
+    tokenTransferProxyAddress: '0xc8a21fcd5a100c3ecc037c97e2f9c53a8d3a02a1',
+    multicallV2Address: '0x6cA478C852DfA8941FC819fDf248606eA04780B6',
+    privateHttpProvider: process.env.HTTP_PROVIDER_1101,
+    adapterAddresses: {
+      PolygonZkEvmAdapter01: '0xd63B7691dD98fa89A2ea5e1604700489c585aa7B',
+      PolygonZkEvmBuyAdapter: '0xe2137168CdA486a2555E16c597905854C84F9127',
+    },
+
+    rpcPollingMaxAllowedStateDelayInBlocks: 0,
+    rpcPollingBlocksBackToTriggerUpdate: 0,
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
+    hashFlowDisabledMMs:
+      process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
+    uniswapV3EventLoggingSampleRate: 0,
+    rfqConfigs: {},
+    forceRpcFallbackDexs: [],
+    // FIXME: Not set properly
+    uniswapV2ExchangeRouterAddress: '',
+  },
 };
 
 // Should not be used, except by internal test code

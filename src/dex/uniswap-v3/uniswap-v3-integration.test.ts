@@ -629,15 +629,10 @@ describe('ChronosV3', () => {
   beforeEach(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
-    uniswapV3Mainnet = new UniswapV3(
-      Network.ARBITRUM,
-      dexKey,
-      dexHelper,
-    );
+    uniswapV3Mainnet = new UniswapV3(Network.ARBITRUM, dexKey, dexHelper);
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-
     const amounts = [0n, BI_POWS[6], 2000000n];
 
     const pools = await uniswapV3.getPoolIdentifiers(
@@ -687,7 +682,6 @@ describe('ChronosV3', () => {
   });
 
   it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-
     const amounts = [0n, BI_POWS[6], 2000000n];
 
     const pools = await uniswapV3.getPoolIdentifiers(
@@ -964,7 +958,5 @@ describe('SushiSwapV3', () => {
 
       expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
     });
-
   });
 });
-

@@ -113,7 +113,6 @@ function testForNetwork(
 }
 
 describe('UniswapV3 E2E', () => {
-
   describe('UniswapV3', () => {
     const dexKey = 'UniswapV3';
 
@@ -790,32 +789,33 @@ describe('UniswapV3 E2E', () => {
         ],
       ]);
 
-      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
         [
-          {
-            name: 'USDC',
-            sellAmount: '100000000000000000000',
-            buyAmount: '100000000000000000000',
-          },
-          {
-            name: 'USDT',
-            sellAmount: '100000000000000000000',
-            buyAmount: '100000000000000000000',
-          },
-        ],
-        [
-          {
-            name: 'BNB',
-            sellAmount: '1000000000000000000',
-            buyAmount: '10000000000000000000',
-          },
-          {
-            name: 'USDT',
-            sellAmount: '1000000000000000000000',
-            buyAmount: '20000000000000000',
-          },
-        ],
-      ];
+          [
+            {
+              name: 'USDC',
+              sellAmount: '100000000000000000000',
+              buyAmount: '100000000000000000000',
+            },
+            {
+              name: 'USDT',
+              sellAmount: '100000000000000000000',
+              buyAmount: '100000000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'BNB',
+              sellAmount: '1000000000000000000',
+              buyAmount: '10000000000000000000',
+            },
+            {
+              name: 'USDT',
+              sellAmount: '1000000000000000000000',
+              buyAmount: '20000000000000000',
+            },
+          ],
+        ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
@@ -909,28 +909,33 @@ describe('UniswapV3 E2E', () => {
         ],
       ]);
 
-      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
         [
-          {
-            name: 'FTM',
-            sellAmount: '100000000000000000',
-            buyAmount: '100000000',
-          },
-          {
-            name: 'USDC',
-            sellAmount: '100000000',
-            buyAmount: '100000000000000000',
-          },
-        ],
-        [
-          {
-            name: 'WFTM',
-            sellAmount: '100000000000000',
-            buyAmount: '1000000000000000',
-          },
-          { name: 'WETH', sellAmount: '1000000000000000', buyAmount: '100000000000000' },
-        ],
-      ];
+          [
+            {
+              name: 'FTM',
+              sellAmount: '100000000000000000',
+              buyAmount: '100000000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '100000000',
+              buyAmount: '100000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'WFTM',
+              sellAmount: '100000000000000',
+              buyAmount: '1000000000000000',
+            },
+            {
+              name: 'WETH',
+              sellAmount: '1000000000000000',
+              buyAmount: '100000000000000',
+            },
+          ],
+        ];
 
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
