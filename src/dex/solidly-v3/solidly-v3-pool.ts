@@ -5,6 +5,7 @@ import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
+import SolidlyV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 
 export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
