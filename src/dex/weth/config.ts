@@ -25,6 +25,9 @@ export const WethConfig: DexConfigMap<DexParams> = {
     [Network.ZKEVM]: {
       poolGasCost: WethGasCost,
     },
+    [Network.BASE]: {
+      poolGasCost: WethGasCost,
+    },
   },
   Wbnb: {
     [Network.BSC]: {

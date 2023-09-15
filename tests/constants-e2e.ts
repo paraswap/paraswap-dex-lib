@@ -883,6 +883,17 @@ export const Tokens: {
       decimals: 6,
     },
   },
+  [Network.BASE]: {
+    PRIME: {
+      address: '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b',
+      decimals: 18,
+    },
+    WETH: {
+      address: '0x4200000000000000000000000000000000000006',
+      decimals: 18,
+    },
+    ETH: { address: ETHER_ADDRESS, decimals: 18 },
+  },
 };
 
 export const Holders: {
@@ -1102,6 +1113,11 @@ export const Holders: {
     WBTC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
   },
+  [Network.BASE]: {
+    WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
+    PRIME: '0x956bcc6b56c99db382d9d97a30ba5f1402144b3e',
+    ETH: '0xdd9176ea3e7559d6b68b537ef555d3e89403f742',
+  },
 };
 
 export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
@@ -1126,4 +1142,5 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.FANTOM]: 'FTM',
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
+  [Network.BASE]: 'ETH',
 };
