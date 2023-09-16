@@ -579,6 +579,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       swapFunction,
       // doesn't consider the multi hop at the moment?
       // we don't calculate the slippage here ourselves?
+      // TODO: encode it with our router arg format?
       [srcAmount, destAmount, srcToken, destToken, data.curveIds],
     );
 
@@ -602,7 +603,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     // query graphQL and return pools with that particular token
     const query = `
       query TopPools ($token: String!) { 
-        Pairs(filter: { OR: [{token0: $token}, {token1: $token} ]}) {
+        Pairs(filter: { OR: [{token0: $token}, {token1: $token} ]}, sort: TVLUSD_DESC) {
           address
           swapFee
           curveId
@@ -622,16 +623,8 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       SUBGRAPH_TIMEOUT,
     );
 
-    // TODO: need to sort by tvlUSD
-    // Not possible to do with graphQL for now cuz we're not indexing things I think
-    // need to change the endpoint with robo's support to achieve this
-
-    // console.log('data', data);
-
-    // return all pools with the query as there is no need to do further processing
-    // cuz it is impossible to have overlaps
-
-    return data;
+    // return the top `limit` number of pairs
+    return data.slice(0, limit);
   }
 
   // This is optional function in case if your implementation has acquired any resources
