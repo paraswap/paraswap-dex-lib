@@ -151,16 +151,16 @@ describe('Reservoir', function () {
   let blockNumber: number;
   let reservoir: Reservoir;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('AVAX Mainnet', () => {
+    const network = Network.AVALANCHE;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'USDT';
 
     const amountsForSell = [
       0n,
@@ -190,13 +190,13 @@ describe('Reservoir', function () {
       10n * BI_POWS[tokens[destTokenSymbol].decimals],
     ];
 
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      reservoir = new Reservoir(network, dexKey, dexHelper);
-      if (reservoir.initializePricing) {
-        await reservoir.initializePricing(blockNumber);
-      }
-    });
+    // beforeAll(async () => {
+    //   blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    //   reservoir = new Reservoir(network, dexKey, dexHelper);
+    //   if (reservoir.initializePricing) {
+    //     await reservoir.initializePricing(blockNumber);
+    //   }
+    // });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
