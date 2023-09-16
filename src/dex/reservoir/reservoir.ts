@@ -215,7 +215,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
       for (let i = 0, index = 0; i < calldataSizes.length; ++i) {
         const size = calldataSizes[i];
-        returnData.push(data.returnData.slice(index, size));
+        returnData.push(data.returnData.slice(index, index + size));
         index += size;
       }
 
@@ -228,13 +228,13 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
 
         // TODO: calculate the intermediate amp coefficient
         // if it's in the process of ramping up / down
-        let ampCoeffDecoded;
-        if (pair.curveId === ReservoirPoolTypes.Stable) {
-          ampCoeffDecoded = coder.decode(
-            ['uint64', 'uint64', 'uint64', 'uint64'],
-            returnData[i][2],
-          );
-        }
+        const ampCoeffDecoded =
+          pair.curveId === ReservoirPoolTypes.Stable
+            ? coder.decode(
+                ['uint64', 'uint64', 'uint64', 'uint64'],
+                returnData[i][2],
+              )
+            : null;
 
         return {
           reserve0: getReservesDecoded[0].toString(),
