@@ -67,11 +67,9 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
-    return [
-      `${this.dexKey}_${_srcToken.address}_${_destToken.address}`.toLowerCase(),
-    ];
+    // Keep only destination token in order to prevent taping into the same market maker liquidity during same swap (double spending)
+    return [`${this.dexKey}_${_destToken.address}`.toLowerCase()];
   }
 
   calcOutsFromAmounts(
