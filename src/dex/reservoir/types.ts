@@ -1,6 +1,7 @@
-import { Address } from '../../types';
+import { Address, Token } from '../../types';
 import { SwapSide } from '@paraswap/core';
 import { UniswapV2PoolOrderedParams } from '../uniswap-v2/types';
+import { ReservoirEventPool } from './reservoir-pool';
 
 export enum ReservoirPoolTypes {
   ConstantProduct = 0,
@@ -12,11 +13,15 @@ export enum ReservoirSwapFunctions {
   exactOutput = 'swapVariableForExact',
 }
 
+export interface ReservoirPair {
+  token0: Token;
+  token1: Token;
+  curveId: ReservoirPoolTypes;
+  exchange?: Address;
+  pool?: ReservoirEventPool;
+}
+
 export type ReservoirPoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
   reserve0: string;
   reserve1: string;
   curveId: ReservoirPoolTypes;
@@ -38,9 +43,6 @@ export type ReservoirData = {
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
   subgraphURL?: string;
   factory: Address;
   router: Address;

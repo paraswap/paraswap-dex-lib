@@ -25,6 +25,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   ReservoirData,
   ReservoirOrderedParams,
+  ReservoirPair,
   ReservoirPoolState,
   ReservoirPoolTypes,
   ReservoirSwapFunctions,
@@ -41,14 +42,7 @@ import { SwapSide } from '@paraswap/core';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { ReservoirStablePool } from './reservoir-stable-pool';
 import { ReservoirConstantProductPool } from './reservoir-constant-product-pool';
-import { reservoirPairIface } from './constants';
-
-export interface ReservoirPair {
-  token0: Token;
-  token1: Token;
-  exchange?: Address;
-  pool?: ReservoirEventPool;
-}
+import { reservoirPairIface, stablePairIface } from './constants';
 
 const coder = new AbiCoder();
 
@@ -131,6 +125,8 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     reserve0: string,
     reserve1: string,
     curveId: ReservoirPoolTypes,
+    swapFee: bigint,
+    ampCoefficient: bigint | null,
     blockNumber: number,
   ): Promise<void> {
     pair.pool = new ReservoirEventPool(
@@ -145,7 +141,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     pair.pool.addressesSubscribed.push(pair.exchange!);
 
     await pair.pool.initialize(blockNumber, {
-      state: { reserve0, reserve1, curveId, swapFee: 0n, ampCoefficient: 0n },
+      state: { reserve0, reserve1, curveId, swapFee, ampCoefficient },
     });
   }
 
@@ -168,9 +164,9 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       .call();
 
     if (exchange === NULL_ADDRESS) {
-      pair = { token0, token1 };
+      pair = { token0, token1, curveId };
     } else {
-      pair = { token0, token1, exchange };
+      pair = { token0, token1, curveId, exchange };
     }
 
     this.pairs[key] = pair;
@@ -192,6 +188,14 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
                 [],
               ),
             },
+            {
+              target: pair.exchange,
+              callData: reservoirPairIface.encodeFunctionData('swapFee()', []),
+            },
+            {
+              target: pair.exchange,
+              callData: stablePairIface.encodeFunctionData('ampData()', []),
+            },
           ];
           return calldata;
         })
@@ -202,20 +206,28 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
           .aggregate(calldata)
           .call({}, blockNumber);
 
-      const returnData = _.chunk(data.returnData, 1);
+      const returnData = _.chunk(data.returnData, 3);
 
       return pairs.map((pair, i) => {
-        const decoded = coder.decode(
+        const getReservesDecoded = coder.decode(
           ['uint104', 'uint104', 'uint32', 'uint16'],
           returnData[i][0],
         );
+        const swapFeeDecoded = coder.decode(['uint256'], returnData[i][1]);
+        const ampCoeffDecoded = coder.decode(
+          ['uint64', 'uint64', 'uint64', 'uint64'],
+          returnData[i][2],
+        );
 
         return {
-          reserve0: decoded[0].toString(),
-          reserve1: decoded[1].toString(),
-          curveId: 0,
-          swapFee: 0n,
-          ampCoefficient: null,
+          reserve0: getReservesDecoded[0].toString(),
+          reserve1: getReservesDecoded[1].toString(),
+          curveId: pair.curveId,
+          swapFee: BigInt(swapFeeDecoded[0]),
+          ampCoefficient:
+            pair.curveId === ReservoirPoolTypes.Stable
+              ? BigInt(ampCoeffDecoded[1])
+              : null,
         };
       });
     } catch (e) {
@@ -267,6 +279,8 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
           pairState.reserve0,
           pairState.reserve1,
           pairState.curveId,
+          pairState.swapFee,
+          pairState.ampCoefficient,
           blockNumber,
         );
       } else {
@@ -330,7 +344,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
             reservesIn: pairState.reserve1,
             reservesOut: pairState.reserve0,
             stable: null,
-            fee: '0',
+            fee: pairState.swapFee.toString(),
             direction: false,
             exchange: constantProduct.exchange,
           });
@@ -341,7 +355,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
             reservesIn: pairState.reserve0,
             reservesOut: pairState.reserve1,
             stable: null,
-            fee: '0',
+            fee: pairState.swapFee.toString(),
             direction: true,
             exchange: constantProduct.exchange,
           });
@@ -360,7 +374,9 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
       if (pairState) {
         const pairReversed =
           stable.token1.address.toLowerCase() == from.address.toLowerCase();
-
+        if (!pairState.ampCoefficient) {
+          throw new Error('ampCoefficient null');
+        }
         if (pairReversed) {
           orderedParamsResult.push({
             tokenIn: from.address,
@@ -368,11 +384,11 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
             reservesIn: pairState.reserve1,
             reservesOut: pairState.reserve0,
             stable: {
-              decimalsIn: 0n,
-              decimalsOut: 0n,
-              ampCoefficient: 0n,
+              decimalsIn: BigInt(from.decimals),
+              decimalsOut: BigInt(to.decimals),
+              ampCoefficient: pairState.ampCoefficient,
             },
-            fee: '0',
+            fee: pairState.swapFee.toString(),
             direction: false,
             exchange: stable.exchange,
           });
@@ -383,11 +399,11 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
             reservesIn: pairState.reserve0,
             reservesOut: pairState.reserve1,
             stable: {
-              decimalsIn: 0n,
-              decimalsOut: 0n,
-              ampCoefficient: 0n,
+              decimalsIn: BigInt(from.decimals),
+              decimalsOut: BigInt(to.decimals),
+              ampCoefficient: pairState.ampCoefficient,
             },
-            fee: '0',
+            fee: pairState.swapFee.toString(),
             direction: true,
             exchange: stable.exchange,
           });
