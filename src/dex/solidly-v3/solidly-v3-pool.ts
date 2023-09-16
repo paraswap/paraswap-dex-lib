@@ -14,7 +14,7 @@ import {
   DecodedStateMultiCallResultWithRelativeBitmaps,
   DecodeStateMultiCallFunc,
 } from './types';
-import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
+import SolidlyV3PoolABI from '../../abi/solidly-v3/SolidlyV3Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { MultiCallParams } from '../../lib/multi-wrapper';
@@ -50,7 +50,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
 
-  public readonly poolIface = new Interface(UniswapV3PoolABI);
+  public readonly poolIface = new Interface(SolidlyV3PoolABI);
 
   public initFailed = false;
   public initRetryAttemptCount = 0;
