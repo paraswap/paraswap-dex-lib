@@ -5,6 +5,7 @@ import { MathUtil } from '../nerve/utils';
 export class ReservoirStablePool {
   static readonly CONVERGENCE_ERROR_PREFIX = 'didnt_converge';
   static readonly STABLE_DATA_ERROR = 'stable_data_absent';
+  static readonly AMP_COEFFICIENT_ZERO = 'amp_coeff_zero';
   static readonly MAX_LOOP_LIMIT = 256;
 
   static getSellPrice(
@@ -12,6 +13,8 @@ export class ReservoirStablePool {
     amount: bigint,
   ): bigint {
     if (!priceParams.stable) throw new Error(this.STABLE_DATA_ERROR);
+    if (priceParams.stable.ampCoefficient === 0n)
+      throw new Error(this.AMP_COEFFICIENT_ZERO);
     if (BigInt(priceParams.reservesIn) + amount > RESERVE_LIMIT) {
       return 0n;
     }
@@ -43,6 +46,8 @@ export class ReservoirStablePool {
     amount: bigint,
   ): bigint {
     if (!priceParams.stable) throw new Error(this.STABLE_DATA_ERROR);
+    if (priceParams.stable.ampCoefficient === 0n)
+      throw new Error(this.AMP_COEFFICIENT_ZERO);
     const N_A = 2n * priceParams.stable.ampCoefficient;
 
     const adjustedReservesIn =
