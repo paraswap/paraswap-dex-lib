@@ -37,7 +37,6 @@ import GenericFactoryABI from '../../abi/reservoir/GenericFactory.json';
 import ReservoirRouterABI from '../../abi/reservoir/ReservoirRouter.json';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { Contract } from 'web3-eth-contract';
-import _ from 'lodash';
 import { SwapSide } from '@paraswap/core';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { ReservoirStablePool } from './reservoir-stable-pool';
@@ -178,35 +177,47 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     blockNumber: number,
   ): Promise<ReservoirPoolState[]> {
     try {
-      const calldata = pairs
-        .map((pair, i) => {
-          let calldata = [
-            {
-              target: pair.exchange,
-              callData: reservoirPairIface.encodeFunctionData(
-                'getReserves()',
-                [],
-              ),
-            },
-            {
-              target: pair.exchange,
-              callData: reservoirPairIface.encodeFunctionData('swapFee()', []),
-            },
-            {
-              target: pair.exchange,
-              callData: stablePairIface.encodeFunctionData('ampData()', []),
-            },
-          ];
-          return calldata;
-        })
-        .flat();
+      const calldatas = pairs.map((pair, i) => {
+        let calldata = [
+          {
+            target: pair.exchange,
+            callData: reservoirPairIface.encodeFunctionData(
+              'getReserves()',
+              [],
+            ),
+          },
+          {
+            target: pair.exchange,
+            callData: reservoirPairIface.encodeFunctionData('swapFee()', []),
+          },
+        ];
 
+        if (pair.curveId === ReservoirPoolTypes.Stable) {
+          calldata.push({
+            target: pair.exchange,
+            callData: stablePairIface.encodeFunctionData('ampData()', []),
+          });
+        }
+
+        return calldata;
+      });
+
+      // to rmb the size of calldata according to the curve type, as stable pairs have one more call than constant product
+      const calldataSizes = calldatas.map(calldata => calldata.length);
+
+      const flattenedCalldata = calldatas.flat();
       const data: { returnData: any[] } =
         await this.dexHelper.multiContract.methods
-          .aggregate(calldata)
+          .aggregate(flattenedCalldata)
           .call({}, blockNumber);
 
-      const returnData = _.chunk(data.returnData, 3);
+      const returnData: any[] = [];
+
+      for (let i = 0, index = 0; i < calldataSizes.length; ++i) {
+        const size = calldataSizes[i];
+        returnData.push(data.returnData.slice(index, size));
+        index += size;
+      }
 
       return pairs.map((pair, i) => {
         const getReservesDecoded = coder.decode(
@@ -214,20 +225,23 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
           returnData[i][0],
         );
         const swapFeeDecoded = coder.decode(['uint256'], returnData[i][1]);
-        const ampCoeffDecoded = coder.decode(
-          ['uint64', 'uint64', 'uint64', 'uint64'],
-          returnData[i][2],
-        );
+
+        // TODO: calculate the intermediate amp coefficient
+        // if it's in the process of ramping up / down
+        let ampCoeffDecoded;
+        if (pair.curveId === ReservoirPoolTypes.Stable) {
+          ampCoeffDecoded = coder.decode(
+            ['uint64', 'uint64', 'uint64', 'uint64'],
+            returnData[i][2],
+          );
+        }
 
         return {
           reserve0: getReservesDecoded[0].toString(),
           reserve1: getReservesDecoded[1].toString(),
           curveId: pair.curveId,
           swapFee: BigInt(swapFeeDecoded[0]),
-          ampCoefficient:
-            pair.curveId === ReservoirPoolTypes.Stable
-              ? BigInt(ampCoeffDecoded[1])
-              : null,
+          ampCoefficient: ampCoeffDecoded ? BigInt(ampCoeffDecoded[1]) : null,
         };
       });
     } catch (e) {

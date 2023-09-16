@@ -157,8 +157,6 @@ describe('Reservoir', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'USDC';
     const destTokenSymbol = 'USDT';
 
@@ -190,13 +188,13 @@ describe('Reservoir', function () {
       10n * BI_POWS[tokens[destTokenSymbol].decimals],
     ];
 
-    // beforeAll(async () => {
-    //   blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    //   reservoir = new Reservoir(network, dexKey, dexHelper);
-    //   if (reservoir.initializePricing) {
-    //     await reservoir.initializePricing(blockNumber);
-    //   }
-    // });
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      reservoir = new Reservoir(network, dexKey, dexHelper);
+      // if (reservoir.initializePricing) {
+      //   await reservoir.initializePricing(blockNumber);
+      // }
+    });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
