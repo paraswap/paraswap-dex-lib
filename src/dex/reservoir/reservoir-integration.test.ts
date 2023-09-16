@@ -230,9 +230,9 @@ describe('Reservoir', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newReservoir = new Reservoir(network, dexKey, dexHelper);
-      if (newReservoir.updatePoolState) {
-        await newReservoir.updatePoolState();
-      }
+      // if (newReservoir.updatePoolState) {
+      //   await newReservoir.updatePoolState();
+      // }
       const poolLiquidity = await newReservoir.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,

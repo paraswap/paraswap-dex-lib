@@ -618,13 +618,35 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     const { data } = await this.dexHelper.httpRequest.post(
       this.subgraphURL,
       {
+        query,
         variables: { token: tokenAddress },
       },
       SUBGRAPH_TIMEOUT,
     );
 
-    // return the top `limit` number of pairs
-    return data.slice(0, limit);
+    // the top `limit` number of pairs
+    const limitedPools = data.Pairs.slice(0, limit);
+
+    // TODO: gotta format this data into the PoolLiquidity type as expected by paraswap
+    // it's a standard interface we all have to conform to
+    return limitedPools.map((pool: any) => ({
+      exchange: this.dexKey,
+      address: pool.address,
+      // connector tokens are the tokens that are NOT the ones queried by the engine
+      connectorTokens: [
+        {
+          address:
+            pool.token0.toLowerCase() === tokenAddress.toLowerCase()
+              ? pool.token1
+              : pool.token0,
+          decimals:
+            pool.token0.toLowerCase() === tokenAddress.toLowerCase()
+              ? pool.token1Decimals
+              : pool.token0Decimals,
+        },
+      ],
+      liquidityUSD: pool.tvlUSD,
+    }));
   }
 
   // This is optional function in case if your implementation has acquired any resources
