@@ -588,13 +588,9 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
-    srcToken: string,
-    destToken: string,
+    srcToken: Address,
+    destToken: Address,
     srcAmount: string,
     destAmount: string,
     data: ReservoirData,
@@ -608,10 +604,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     // Encode here the transaction arguments
     const swapData = this.reservoirRouterInterface.encodeFunctionData(
       swapFunction,
-      // doesn't consider the multi hop at the moment?
-      // we don't calculate the slippage here ourselves?
-      // TODO: encode it with our router arg format?
-      [srcAmount, destAmount, srcToken, destToken, data.curveIds],
+      [srcAmount, destAmount, data.path, data.curveIds, data.router],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(

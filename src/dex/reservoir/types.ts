@@ -35,7 +35,6 @@ export type ReservoirData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   router: Address;
-  // denominated in basis points, should be a positive number
   type: SwapSide;
   curveIds: ReservoirPoolTypes[];
   path: Address[];
