@@ -4,6 +4,7 @@ import { Network, SwapSide } from '../../constants';
 import { Address } from '../../types';
 
 const SUPPORTED_FEES = [3000n];
+// const SUPPORTED_FEES = [500n];
 
 // Pools that will be initialized on app startup
 // They are added for testing
@@ -28,6 +29,7 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
   SolidlyV3: {
     [Network.MAINNET]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
+      // factory: '0x735bb16affe83a3dc4dc418abccf179617cf9ff2',
       quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
