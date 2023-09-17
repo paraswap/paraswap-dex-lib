@@ -91,9 +91,6 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
     this.handlers['Burn'] = this.handleBurnEvent.bind(this);
     this.handlers['Mint'] = this.handleMintEvent.bind(this);
-    this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
-    this.handlers['IncreaseObservationCardinalityNext'] =
-      this.handleIncreaseObservationCardinalityNextEvent.bind(this);
 
     // Wen need them to keep balance of the pool up to date
     this.handlers['Collect'] = this.handleCollectEvent.bind(this);
@@ -437,20 +434,6 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     return pool;
   }
 
-  handleSetFeeProtocolEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    const feeProtocol0 = bigIntify(event.args.feeProtocol0New);
-    const feeProtocol1 = bigIntify(event.args.feeProtocol1New);
-    pool.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4n);
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
-
-    return pool;
-  }
-
   handleCollectEvent(
     event: any,
     pool: PoolState,
@@ -478,20 +461,6 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     pool.balance1 += paid1;
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
-    return pool;
-  }
-
-  handleIncreaseObservationCardinalityNextEvent(
-    event: any,
-    pool: PoolState,
-    log: Log,
-    blockHeader: BlockHeader,
-  ) {
-    pool.slot0.observationCardinalityNext = parseInt(
-      event.args.observationCardinalityNextNew,
-      10,
-    );
-    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
     return pool;
   }
 
