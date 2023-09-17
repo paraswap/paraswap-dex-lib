@@ -3,7 +3,7 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { Address } from '../../types';
 
-const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
+const SUPPORTED_FEES = [3000n];
 
 // Pools that will be initialized on app startup
 // They are added for testing
