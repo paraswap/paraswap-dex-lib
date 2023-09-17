@@ -203,6 +203,26 @@ describe('SolidlyV3', function () {
       console.log('base case');
     });
 
+    it('WETH -> USDT getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const network = Network.MAINNET;
+      const dexHelper = new DummyDexHelper(network);
+      const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const solidlyV3 = new SolidlyV3(network, dexKey, dexHelper);
+
+      const WETH = Tokens[network]['WETH'];
+      const USDT = Tokens[network]['USDT'];
+
+      const amounts = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18]];
+
+      const pools = await solidlyV3.getPoolIdentifiers(
+        WETH,
+        USDT,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log(`WBNB <> USDT Pool Identifiers: `, pools);
+    });
+
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
         solidlyV3,
