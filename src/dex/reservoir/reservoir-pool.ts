@@ -4,9 +4,8 @@ import { Log, Logger, Token } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { ReservoirPoolState, ReservoirPoolTypes } from './types';
-import ReservoirPairABI from '../../abi/reservoir/ReservoirPair.json';
-import StablePairABI from '../../abi/reservoir/StablePair.json';
 import { Address } from '@paraswap/core';
+import { reservoirPairIface, stablePairIface } from './constants';
 
 const LogCallTopics = [
   // sync(uint104, uint104)
@@ -14,7 +13,7 @@ const LogCallTopics = [
 ];
 
 export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolState> {
-  decoder = (log: Log) => this.reservoirIface.parseLog(log);
+  decoder = (log: Log) => reservoirPairIface.parseLog(log);
   coder = new AbiCoder();
 
   constructor(
@@ -25,8 +24,6 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
     private token1: Token,
     private curveId: ReservoirPoolTypes,
     logger: Logger,
-    protected reservoirIface = new Interface(ReservoirPairABI),
-    protected stablePairIface = new Interface(StablePairABI),
   ) {
     const poolName = token0.address + '-' + token1.address + '-' + curveId;
     super(parentName, poolName, dexHelper, logger);
@@ -79,21 +76,21 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
     let calldata = [
       {
         target: this.poolAddress,
-        callData: this.reservoirIface.encodeFunctionData('getReserves', []),
+        callData: reservoirPairIface.encodeFunctionData('getReserves', []),
       },
     ];
 
     // get swap fee
     calldata.push({
       target: this.poolAddress,
-      callData: this.reservoirIface.encodeFunctionData('swapFee', []),
+      callData: reservoirPairIface.encodeFunctionData('swapFee', []),
     });
 
     // get amp coefficient(if applicable)
     if (this.curveId == ReservoirPoolTypes.Stable) {
       calldata.push({
         target: this.poolAddress,
-        callData: this.stablePairIface.encodeFunctionData('ampData', []),
+        callData: stablePairIface.encodeFunctionData('ampData', []),
       });
     }
 

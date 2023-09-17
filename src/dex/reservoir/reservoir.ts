@@ -658,8 +658,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     // the top `limit` number of pairs
     const limitedPools = data.Pairs.slice(0, limit);
 
-    // TODO: gotta format this data into the PoolLiquidity type as expected by paraswap
-    // it's a standard interface we all have to conform to
     return limitedPools.map((pool: any) => ({
       exchange: this.dexKey,
       address: pool.address,
