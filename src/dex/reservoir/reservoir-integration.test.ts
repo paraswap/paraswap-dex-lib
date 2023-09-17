@@ -13,34 +13,25 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for Reservoir general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Reservoir specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import QuoterABI from '../../abi/reservoir/Quoter.json';
+import { ReservoirPoolState } from './types';
 
 function getReaderCalldata(
-  exchangeAddress: string,
+  quoterAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  poolState: ReservoirPoolState,
 ) {
   return amounts.map(amount => ({
-    target: exchangeAddress,
+    target: quoterAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
       amount,
+      poolState.reserve1,
+      poolState.reserve0,
+      poolState.curveId,
+      poolState.swapFee,
+      [1000000000000n, 1000000000000n, poolState.ampCoefficient],
     ]),
   }));
 }
@@ -50,7 +41,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -63,28 +53,27 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  poolIdentifier: string,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const quoterAddress = '0x95222f1dba54b87f1d71186775a38ffae9fbfdd1';
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from reservoir.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = new Interface(QuoterABI);
 
   const readerCallData = getReaderCalldata(
-    exchangeAddress,
+    quoterAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    reservoir.pairs[
+      '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7-0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e-1'
+    ].pool!.getState(blockNumber)!,
   );
-  const readerResult = (
-    await reservoir.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
+  const readerResult = await reservoir.dexHelper.multiContract.methods
+    .aggregate(readerCallData)
+    .call({}, blockNumber);
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
+    decodeReaderResult(readerResult.returnData, readerIface, funcName),
   );
 
   expect(prices).toEqual(expectedPrices);
@@ -143,6 +132,7 @@ async function testPricingOnNetwork(
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    pools[0],
   );
 }
 
@@ -191,9 +181,6 @@ describe('Reservoir', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       reservoir = new Reservoir(network, dexKey, dexHelper);
-      // if (reservoir.initializePricing) {
-      //   await reservoir.initializePricing(blockNumber);
-      // }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -206,7 +193,7 @@ describe('Reservoir', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'getAmountOut',
       );
     });
 
@@ -220,7 +207,7 @@ describe('Reservoir', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        'getAmountIn',
       );
     });
 
