@@ -220,7 +220,19 @@ describe('SolidlyV3', function () {
         SwapSide.SELL,
         blockNumber,
       );
-      console.log(`WBNB <> USDT Pool Identifiers: `, pools);
+      console.log(`WETH <> USDT Pool Identifiers: `, pools);
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await solidlyV3.getPricesVolume(
+        WETH,
+        USDT,
+        amounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log(`WETH <> USDT Pool Prices: `, poolPrices);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
