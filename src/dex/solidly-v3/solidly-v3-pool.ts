@@ -28,6 +28,10 @@ import { uint256ToBigInt } from '../../lib/decoders';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 import { _reduceTickBitmap, _reduceTicks } from './contract-math/utils';
 
+const FEES_TO_TICK_SPACING: Record<number, bigint> = {
+  500: 10n,
+};
+
 export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
@@ -475,8 +479,8 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     const encodedKey = ethers.utils.keccak256(
       ethers.utils.defaultAbiCoder.encode(
         ['address', 'address', 'uint24'],
-        [token0, token1, BigInt.asUintN(24, fee)],
-        // [token0, token1, BigInt.asUintN(24, 10n)],
+        // [token0, token1, BigInt.asUintN(24, fee)],
+        [token0, token1, BigInt.asUintN(24, FEES_TO_TICK_SPACING[Number(fee)])],
       ),
     );
 
