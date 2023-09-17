@@ -38,6 +38,7 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      // initHash: `0x2d6541efe1e24667ba5408a35ae420462924d43db1251d7580804ac81545109b`,
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
     },
   },

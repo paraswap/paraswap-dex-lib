@@ -476,6 +476,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
       ethers.utils.defaultAbiCoder.encode(
         ['address', 'address', 'uint24'],
         [token0, token1, BigInt.asUintN(24, fee)],
+        // [token0, token1, BigInt.asUintN(24, 10n)],
       ),
     );
 
