@@ -18,11 +18,15 @@ export class ReservoirStablePool {
     if (BigInt(priceParams.reservesIn) + amount > RESERVE_LIMIT) {
       return 0n;
     }
+    const tokenInPrecisionMultiplier =
+      10n ** (18n - priceParams.stable.decimalsIn);
+    const tokenOutPrecisionMultiplier =
+      10n ** (18n - priceParams.stable.decimalsOut);
     const N_A = 2n * priceParams.stable.ampCoefficient;
     const adjustedReservesIn =
-      BigInt(priceParams.reservesIn) * priceParams.stable.decimalsIn;
+      BigInt(priceParams.reservesIn) * tokenInPrecisionMultiplier;
     const adjustedReservesOut =
-      BigInt(priceParams.reservesOut) * priceParams.stable.decimalsOut;
+      BigInt(priceParams.reservesOut) * tokenOutPrecisionMultiplier;
     const feeDeductedAmountIn =
       amount - (amount * BigInt(priceParams.fee)) / FEE_ACCURACY;
     const d = ReservoirStablePool.computeLiquidity(
@@ -32,11 +36,11 @@ export class ReservoirStablePool {
     );
 
     const x =
-      adjustedReservesIn + feeDeductedAmountIn * priceParams.stable.decimalsIn;
+      adjustedReservesIn + feeDeductedAmountIn * tokenInPrecisionMultiplier;
     const y = ReservoirStablePool.getY(x, d, N_A);
 
     let dy = adjustedReservesOut - y - 1n;
-    dy /= priceParams.stable.decimalsOut;
+    dy /= tokenOutPrecisionMultiplier;
 
     return dy;
   }
@@ -49,21 +53,25 @@ export class ReservoirStablePool {
     if (priceParams.stable.ampCoefficient === 0n)
       throw new Error(this.AMP_COEFFICIENT_ZERO);
     const N_A = 2n * priceParams.stable.ampCoefficient;
+    const tokenInPrecisionMultiplier =
+      10n ** (18n - priceParams.stable.decimalsIn);
+    const tokenOutPrecisionMultiplier =
+      10n ** (18n - priceParams.stable.decimalsOut);
 
     const adjustedReservesIn =
-      BigInt(priceParams.reservesIn) * priceParams.stable.decimalsIn;
+      BigInt(priceParams.reservesIn) * tokenInPrecisionMultiplier;
     const adjustedReservesOut =
-      BigInt(priceParams.reservesOut) * priceParams.stable.decimalsOut;
+      BigInt(priceParams.reservesOut) * tokenOutPrecisionMultiplier;
     const d = ReservoirStablePool.computeLiquidity(
       adjustedReservesIn,
       adjustedReservesOut,
       N_A,
     );
 
-    const y = adjustedReservesOut - amount * priceParams.stable.decimalsOut;
+    const y = adjustedReservesOut - amount * tokenOutPrecisionMultiplier;
     const x = this.getY(y, d, N_A);
     let dx = x - adjustedReservesIn + 1n;
-    dx /= priceParams.stable.decimalsIn;
+    dx /= tokenInPrecisionMultiplier;
 
     dx = (dx * (FEE_ACCURACY + BigInt(priceParams.fee))) / FEE_ACCURACY;
 
