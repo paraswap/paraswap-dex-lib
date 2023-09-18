@@ -82,10 +82,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     this.reservoirRouterInterface = new Interface(ReservoirRouterABI);
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    // return this.adapters[side] ? this.adapters[side] : null;
     return null;
   }
 
@@ -578,9 +575,7 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     data: ReservoirData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // Encode here the payload for adapter
     const payload = '';
-
     return {
       targetExchange: data.router,
       payload,
@@ -596,16 +591,16 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     data: ReservoirData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapFunction =
-      side == SwapSide.SELL
-        ? ReservoirSwapFunctions.exactInput
-        : ReservoirSwapFunctions.exactOutput;
-
-    // Encode here the transaction arguments
-    const swapData = this.reservoirRouterInterface.encodeFunctionData(
-      swapFunction,
-      [srcAmount, destAmount, data.path, data.curveIds, data.router],
-    );
+    const swapData =
+      side === SwapSide.SELL
+        ? this.reservoirRouterInterface.encodeFunctionData(
+            ReservoirSwapFunctions.exactInput,
+            [srcAmount, destAmount, data.path, data.curveIds, data.router],
+          )
+        : this.reservoirRouterInterface.encodeFunctionData(
+            ReservoirSwapFunctions.exactOutput,
+            [destAmount, srcAmount, data.path, data.curveIds],
+          );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
