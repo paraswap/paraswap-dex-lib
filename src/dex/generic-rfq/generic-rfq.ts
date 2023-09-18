@@ -6,6 +6,7 @@ import {
   PreprocessTransactionOptions,
   Config,
   PoolLiquidity,
+  Address,
 } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
@@ -61,6 +62,11 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     return;
   }
 
+  getIdentifier(srcToken: Address, destToken: Address) {
+    // Keep only destination token in order to prevent taping into the same market maker liquidity during same swap (double spending)
+    return `${this.dexKey}_${destToken}`.toLowerCase();
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -68,8 +74,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     blockNumber: number,
   ): Promise<string[]> {
     const _destToken = this.dexHelper.config.wrapETH(destToken);
-    // Keep only destination token in order to prevent taping into the same market maker liquidity during same swap (double spending)
-    return [`${this.dexKey}_${_destToken.address}`.toLowerCase()];
+    return [this.getIdentifier(srcToken.address, _destToken.address)];
   }
 
   calcOutsFromAmounts(
