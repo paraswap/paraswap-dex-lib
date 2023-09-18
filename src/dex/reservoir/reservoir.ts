@@ -86,10 +86,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     return null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -432,10 +428,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     return orderedParamsResult.length > 0 ? orderedParamsResult : null;
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -564,9 +556,6 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -666,7 +655,5 @@ export class Reservoir extends SimpleExchange implements IDex<ReservoirData> {
     }));
   }
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {}
 }

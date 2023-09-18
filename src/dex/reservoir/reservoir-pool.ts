@@ -29,15 +29,6 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
     super(parentName, poolName, dexHelper, logger);
   }
 
-  /**
-   * The function is called every time any of the subscribed
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state.
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
   protected processLog(
     state: DeepReadonly<ReservoirPoolState>,
     log: Readonly<Log>,
@@ -61,15 +52,6 @@ export class ReservoirEventPool extends StatefulEventSubscriber<ReservoirPoolSta
     return null;
   }
 
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenerate state if the event based
-   * system fails to fetch events and the local state is no
-   * more correct.
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subscriber at blocknumber
-   */
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<ReservoirPoolState>> {
