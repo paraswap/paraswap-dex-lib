@@ -2,7 +2,7 @@ import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network } from '../../constants';
 
-const gatewaySubgraph = 'https://subgraph.smardex.io/paraswap';
+const gatewaySubgraph = 'https://subgraph.smardex.io';
 const mainnetInitHash =
   '0xb477a06204165d50e6d795c7c216306290eff5d6015f8b65bb46002a8775b548';
 const layer2InitHash =
