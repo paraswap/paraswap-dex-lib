@@ -298,6 +298,7 @@ export async function testE2E(
       ),
     );
     expect(whitelistTx.success).toEqual(true);
+    console.log(`Successfully whitelisted ${deployedTestContractAddress}`);
 
     if (testContractType === 'router') {
       const setImplementationTx = await ts.simulate(
@@ -622,7 +623,7 @@ export async function newTestE2E({
             parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
           }`,
         );
-      console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+      console.log(`Tenderly URL: ${swapTx!.url}`);
       expect(swapTx!.success).toEqual(true);
     }
   } finally {
