@@ -28,10 +28,7 @@ export type TickInfo = {
 export type Slot0 = {
   sqrtPriceX96: bigint;
   tick: bigint;
-  observationIndex: number;
-  observationCardinality: number;
-  observationCardinalityNext: number;
-  feeProtocol: bigint;
+  fee: bigint;
 };
 
 export type PoolState = {
@@ -44,7 +41,6 @@ export type PoolState = {
   maxLiquidityPerTick: bigint;
   tickBitmap: Record<NumberAsString, bigint>;
   ticks: Record<NumberAsString, TickInfo>;
-  observations: Record<number, OracleObservation>;
   isValid: boolean;
   startTickBitmap: bigint;
   lowestKnownTick: bigint;
@@ -72,7 +68,7 @@ export type DexParams = {
   factory: Address;
   stateMulticall: Address;
   uniswapMulticall: Address;
-  supportedFees: bigint[];
+  supportedTickSpacings: bigint[];
   chunksCount: number;
   initRetryFrequency: number;
   deployer?: Address;
@@ -150,9 +146,6 @@ export type TickInfoWithBigNumber = {
   initialized: boolean;
   liquidityGross: BigNumber;
   liquidityNet: BigNumber;
-  secondsOutside: number;
-  secondsPerLiquidityOutsideX128: BigNumber;
-  tickCumulativeOutside: BigNumber;
 };
 
 export type TickInfoMappingsWithBigNumber = {
@@ -164,23 +157,14 @@ export type DecodedStateMultiCallResultWithRelativeBitmaps = {
   pool: Address;
   blockTimestamp: BigNumber;
   slot0: {
-    feeProtocol: number;
-    observationCardinality: number;
-    observationCardinalityNext: number;
-    observationIndex: number;
     sqrtPriceX96: BigNumber;
     tick: number;
+    fee: number;
     unlocked: boolean;
   };
   liquidity: BigNumber;
   tickSpacing: number;
   maxLiquidityPerTick: BigNumber;
-  observation: {
-    blockTimestamp: number;
-    initialized: boolean;
-    secondsPerLiquidityCumulativeX128: BigNumber;
-    tickCumulative: BigNumber;
-  };
   tickBitmap: TickBitMapMappingsWithBigNumber[];
   ticks: TickInfoMappingsWithBigNumber[];
 };

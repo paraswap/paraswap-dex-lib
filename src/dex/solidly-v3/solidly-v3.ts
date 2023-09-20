@@ -140,17 +140,21 @@ export class SolidlyV3
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
   }
 
-  get supportedFees() {
-    return this.config.supportedFees;
+  get supportedTickSpacings() {
+    return this.config.supportedTickSpacings;
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  getPoolIdentifier(srcAddress: Address, destAddress: Address, fee: bigint) {
+  getPoolIdentifier(
+    srcAddress: Address,
+    destAddress: Address,
+    tickSpacing: bigint,
+  ) {
     const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
-    return `${this.dexKey}_${tokenAddresses}_${fee}`;
+    return `${this.dexKey}_${tokenAddresses}_${tickSpacing}`;
   }
 
   async initializePricing(blockNumber: number) {
@@ -159,8 +163,8 @@ export class SolidlyV3
     await Promise.all(
       this.poolsToPreload.map(async pool =>
         Promise.all(
-          this.config.supportedFees.map(async fee =>
-            this.getPool(pool.token0, pool.token1, fee, blockNumber),
+          this.config.supportedTickSpacings.map(async tickSpacing =>
+            this.getPool(pool.token0, pool.token1, tickSpacing, blockNumber),
           ),
         ),
       ),
@@ -187,11 +191,11 @@ export class SolidlyV3
   async getPool(
     srcAddress: Address,
     destAddress: Address,
-    fee: bigint,
+    tickSpacing: bigint,
     blockNumber: number,
   ): Promise<SolidlyV3EventPool | null> {
     let pool = this.eventPools[
-      this.getPoolIdentifier(srcAddress, destAddress, fee)
+      this.getPoolIdentifier(srcAddress, destAddress, tickSpacing)
     ] as SolidlyV3EventPool | null | undefined;
 
     if (pool === null) return null;
@@ -213,7 +217,7 @@ export class SolidlyV3
 
     const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
-    const key = `${token0}_${token1}_${fee}`.toLowerCase();
+    const key = `${token0}_${token1}_${tickSpacing}`.toLowerCase();
 
     if (!pool) {
       const notExistingPoolScore = await this.dexHelper.cache.zscore(
@@ -224,8 +228,9 @@ export class SolidlyV3
       const poolDoesNotExist = notExistingPoolScore !== null;
 
       if (poolDoesNotExist) {
-        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-          null;
+        this.eventPools[
+          this.getPoolIdentifier(srcAddress, destAddress, tickSpacing)
+        ] = null;
         return null;
       }
 
@@ -235,7 +240,7 @@ export class SolidlyV3
         JSON.stringify({
           token0,
           token1,
-          fee: fee.toString(),
+          fee: tickSpacing.toString(),
         }),
       );
     }
@@ -250,7 +255,7 @@ export class SolidlyV3
         this.config.decodeStateMultiCallResultWithRelativeBitmaps,
         this.erc20Interface,
         this.config.factory,
-        fee,
+        tickSpacing,
         token0,
         token1,
         this.logger,
@@ -281,14 +286,14 @@ export class SolidlyV3
         // to prevent more requests for this pool
         pool = null;
         this.logger.trace(
-          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} not found`,
+          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${tickSpacing} not found`,
           e,
         );
       } else {
         // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${tickSpacing} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
@@ -307,8 +312,9 @@ export class SolidlyV3
       );
     }
 
-    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-      pool;
+    this.eventPools[
+      this.getPoolIdentifier(srcAddress, destAddress, tickSpacing)
+    ] = pool;
     return pool;
   }
 
@@ -355,8 +361,8 @@ export class SolidlyV3
 
     const pools = (
       await Promise.all(
-        this.supportedFees.map(async fee =>
-          this.getPool(_srcAddress, _destAddress, fee, blockNumber),
+        this.supportedTickSpacings.map(async tickSpacing =>
+          this.getPool(_srcAddress, _destAddress, tickSpacing, blockNumber),
         ),
       )
     ).filter(pool => pool);
@@ -364,7 +370,7 @@ export class SolidlyV3
     if (pools.length === 0) return [];
 
     return pools.map(pool =>
-      this.getPoolIdentifier(_srcAddress, _destAddress, pool!.feeCode),
+      this.getPoolIdentifier(_srcAddress, _destAddress, pool!.tickSpacing),
     );
   }
 
@@ -439,7 +445,7 @@ export class SolidlyV3
                   from.address,
                   to.address,
                   _amount.toString(),
-                  pool.feeCodeAsString,
+                  pool.tickSpacingAsString,
                   0, //sqrtPriceLimitX96
                 ],
               ])
@@ -448,7 +454,7 @@ export class SolidlyV3
                   from.address,
                   to.address,
                   _amount.toString(),
-                  pool.feeCodeAsString,
+                  pool.tickSpacingAsString,
                   0, //sqrtPriceLimitX96
                 ],
               ]),
@@ -490,7 +496,7 @@ export class SolidlyV3
             {
               tokenIn: from.address,
               tokenOut: to.address,
-              fee: pool.feeCodeAsString,
+              fee: pool.tickSpacingAsString,
             },
           ],
           exchange: pool.poolAddress,
@@ -498,7 +504,7 @@ export class SolidlyV3
         poolIdentifier: this.getPoolIdentifier(
           pool.token0,
           pool.token1,
-          pool.feeCode,
+          pool.tickSpacing,
         ),
         exchange: this.dexKey,
         gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
@@ -533,17 +539,17 @@ export class SolidlyV3
       if (!limitPools) {
         selectedPools = (
           await Promise.all(
-            this.supportedFees.map(async fee => {
+            this.supportedTickSpacings.map(async tickSpacing => {
               const locallyFoundPool =
                 this.eventPools[
-                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
+                  this.getPoolIdentifier(_srcAddress, _destAddress, tickSpacing)
                 ];
               if (locallyFoundPool) return locallyFoundPool;
 
               const newlyFetchedPool = await this.getPool(
                 _srcAddress,
                 _destAddress,
-                fee,
+                tickSpacing,
                 blockNumber,
               );
               return newlyFetchedPool;
@@ -568,11 +574,12 @@ export class SolidlyV3
               let locallyFoundPool = this.eventPools[identifier];
               if (locallyFoundPool) return locallyFoundPool;
 
-              const [, srcAddress, destAddress, fee] = identifier.split('_');
+              const [, srcAddress, destAddress, tickSpacing] =
+                identifier.split('_');
               const newlyFetchedPool = await this.getPool(
                 srcAddress,
                 destAddress,
-                BigInt(fee),
+                BigInt(tickSpacing),
                 blockNumber,
               );
               return newlyFetchedPool;
@@ -684,14 +691,14 @@ export class SolidlyV3
                 {
                   tokenIn: _srcAddress,
                   tokenOut: _destAddress,
-                  fee: pool.feeCode.toString(),
+                  fee: pool.tickSpacing.toString(),
                 },
               ],
             },
             poolIdentifier: this.getPoolIdentifier(
               pool.token0,
               pool.token1,
-              pool.feeCode,
+              pool.tickSpacing,
             ),
             exchange: this.dexKey,
             gasCost: gasCost,
@@ -1056,7 +1063,7 @@ export class SolidlyV3
       router: this.config.router.toLowerCase(),
       quoter: this.config.quoter.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
-      supportedFees: this.config.supportedFees,
+      supportedTickSpacings: this.config.supportedTickSpacings,
       stateMulticall: this.config.stateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
       initRetryFrequency: this.config.initRetryFrequency,

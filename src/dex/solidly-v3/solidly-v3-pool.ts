@@ -59,7 +59,8 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
   public initFailed = false;
   public initRetryAttemptCount = 0;
 
-  public readonly feeCodeAsString;
+  // public readonly feeCodeAsString;
+  public readonly tickSpacingAsString: string;
 
   constructor(
     readonly dexHelper: IDexHelper,
@@ -70,7 +71,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
       | undefined,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
-    public readonly feeCode: bigint,
+    public readonly tickSpacing: bigint,
     token0: Address,
     token1: Address,
     logger: Logger,
@@ -79,13 +80,14 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     super(
       parentName,
-      `${token0}_${token1}_${feeCode}`,
+      `${token0}_${token1}_${tickSpacing}`,
       dexHelper,
       logger,
       true,
       mapKey,
     );
-    this.feeCodeAsString = feeCode.toString();
+    // this.feeCodeAsString = feeCode.toString();
+    this.tickSpacingAsString = tickSpacing.toString();
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
@@ -108,7 +110,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
       this._poolAddress = this._computePoolAddress(
         this.token0,
         this.token1,
-        this.feeCode,
+        this.tickSpacing,
       );
     }
     return this._poolAddress;
@@ -226,7 +228,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
               this.factoryAddress,
               this.token0,
               this.token1,
-              this.feeCode,
+              this.tickSpacing,
               this.getBitmapRangeToRequest(),
               this.getBitmapRangeToRequest(),
             )
@@ -278,19 +280,9 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     _reduceTickBitmap(tickBitmap, _state.tickBitmap);
     _reduceTicks(ticks, _state.ticks);
 
-    const observations = {
-      [_state.slot0.observationIndex]: {
-        blockTimestamp: bigIntify(_state.observation.blockTimestamp),
-        tickCumulative: bigIntify(_state.observation.tickCumulative),
-        secondsPerLiquidityCumulativeX128: bigIntify(
-          _state.observation.secondsPerLiquidityCumulativeX128,
-        ),
-        initialized: _state.observation.initialized,
-      },
-    };
-
     const currentTick = bigIntify(_state.slot0.tick);
     const tickSpacing = bigIntify(_state.tickSpacing);
+    const fee = bigIntify(_state.slot0.fee)
 
     const startTickBitmap = TickBitMap.position(currentTick / tickSpacing)[0];
     const requestedRange = this.getBitmapRangeToRequest();
@@ -301,18 +293,14 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
       slot0: {
         sqrtPriceX96: bigIntify(_state.slot0.sqrtPriceX96),
         tick: currentTick,
-        observationIndex: +_state.slot0.observationIndex,
-        observationCardinality: +_state.slot0.observationCardinality,
-        observationCardinalityNext: +_state.slot0.observationCardinalityNext,
-        feeProtocol: bigIntify(_state.slot0.feeProtocol),
+        fee: bigIntify(_state.slot0.fee),
       },
       liquidity: bigIntify(_state.liquidity),
-      fee: this.feeCode,
+      fee: fee,
       tickSpacing,
       maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,
       ticks,
-      observations,
       isValid: true,
       startTickBitmap,
       lowestKnownTick:
@@ -471,16 +459,16 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
   private _computePoolAddress(
     token0: Address,
     token1: Address,
-    fee: bigint,
+    tickSpacing: bigint,
   ): Address {
     // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/PoolAddress.sol
     if (token0 > token1) [token0, token1] = [token1, token0];
 
     const encodedKey = ethers.utils.keccak256(
       ethers.utils.defaultAbiCoder.encode(
-        ['address', 'address', 'uint24'],
+        ['address', 'address', 'int24'],
         // [token0, token1, BigInt.asUintN(24, fee)],
-        [token0, token1, BigInt.asUintN(24, FEES_TO_TICK_SPACING[Number(fee)])],
+        [token0, token1, BigInt.asUintN(24, tickSpacing)],
       ),
     );
 
