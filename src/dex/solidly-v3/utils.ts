@@ -42,21 +42,12 @@ export function decodeStateMultiCallResultWithRelativeBitmaps(
         tuple(
           uint160 sqrtPriceX96,
           int24 tick,
-          uint16 observationIndex,
-          uint16 observationCardinality,
-          uint16 observationCardinalityNext,
-          uint8 feeProtocol,
+          uint24 fee,
           bool unlocked,
         ) slot0,
         uint128 liquidity,
         int24 tickSpacing,
         uint128 maxLiquidityPerTick,
-        tuple(
-          uint32 blockTimestamp,
-          int56 tickCumulative,
-          uint160 secondsPerLiquidityCumulativeX128,
-          bool initialized,
-        ) observation,
         tuple(
           int16 index,
           uint256 value,
@@ -66,9 +57,6 @@ export function decodeStateMultiCallResultWithRelativeBitmaps(
           tuple(
             uint128 liquidityGross,
             int128 liquidityNet,
-            int56 tickCumulativeOutside,
-            uint160 secondsPerLiquidityOutsideX128,
-            uint32 secondsOutside,
             bool initialized,
           ) value,
         )[] ticks
