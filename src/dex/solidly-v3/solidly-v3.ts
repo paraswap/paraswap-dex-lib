@@ -45,7 +45,7 @@ import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
-import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
+import SolidlyV3StateMulticallABI from '../../abi/solidly-v3/SolidlyV3StateMulticall.abi.json';
 import {
   DirectMethods,
   UNISWAPV3_EFFICIENCY_FACTOR,
@@ -126,7 +126,7 @@ export class SolidlyV3
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
       this.config.stateMultiCallAbi !== undefined
         ? this.config.stateMultiCallAbi
-        : (UniswapV3StateMulticallABI as AbiItem[]),
+        : (SolidlyV3StateMulticallABI as AbiItem[]),
       this.config.stateMulticall,
     );
 
