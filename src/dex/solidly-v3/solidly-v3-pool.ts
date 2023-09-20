@@ -48,7 +48,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   readonly token1: Address;
 
-  private _poolAddress?: Address;
+  public _poolAddress?: Address;
 
   private _stateRequestCallData?: MultiCallParams<
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps

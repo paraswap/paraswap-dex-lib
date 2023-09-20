@@ -436,7 +436,7 @@ export class SolidlyV3
 
     const calldata = pools.map(pool =>
       _amounts.map(_amount => ({
-        target: this.config.quoter,
+        target: pool._poolAddress,
         gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
         callData:
           side === SwapSide.SELL
