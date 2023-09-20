@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import { OutputResult, PoolState, Slot0, TickInfo } from '../types';
 import { LiquidityMath } from './LiquidityMath';
-import { Oracle } from './Oracle';
 import { SqrtPriceMath } from './SqrtPriceMath';
 import { SwapMath } from './SwapMath';
 import { Tick } from './Tick';
@@ -33,12 +32,6 @@ export type PriceComputationState = {
 };
 
 export type PriceComputationCache = {
-  liquidityStart: bigint;
-  blockTimestamp: bigint;
-  feeProtocol: bigint;
-  secondsPerLiquidityCumulativeX128: bigint;
-  tickCumulative: bigint;
-  computedLatestObservation: boolean;
   tickCount: number;
 };
 
@@ -147,7 +140,7 @@ function _priceComputationCycles(
         : step.sqrtPriceNextX96,
       state.liquidity,
       state.amountSpecifiedRemaining,
-      poolState.fee,
+      poolState.slot0.fee,
     );
 
     state.sqrtPriceX96 = swapStepResult.sqrtRatioNextX96;
@@ -164,27 +157,8 @@ function _priceComputationCycles(
         state.amountCalculated + step.amountIn + step.feeAmount;
     }
 
-    if (cache.feeProtocol > 0n) {
-      const delta = step.feeAmount / cache.feeProtocol;
-      step.feeAmount -= delta;
-      state.protocolFee += delta;
-    }
-
     if (state.sqrtPriceX96 === step.sqrtPriceNextX96) {
       if (step.initialized) {
-        if (!cache.computedLatestObservation) {
-          [cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128] =
-            Oracle.observeSingle(
-              poolState,
-              cache.blockTimestamp,
-              0n,
-              slot0Start.tick,
-              slot0Start.observationIndex,
-              cache.liquidityStart,
-              slot0Start.observationCardinality,
-            );
-          cache.computedLatestObservation = true;
-        }
 
         if (state.amountSpecifiedRemaining === 0n) {
           const castTickNext = Number(step.tickNext);
@@ -197,9 +171,6 @@ function _priceComputationCycles(
         let liquidityNet = Tick.cross(
           ticksCopy,
           step.tickNext,
-          cache.secondsPerLiquidityCumulativeX128,
-          cache.tickCumulative,
-          cache.blockTimestamp,
         );
         if (zeroForOne) liquidityNet = -liquidityNet;
 
@@ -254,14 +225,6 @@ class UniswapV3Math {
       : TickMath.MAX_SQRT_RATIO - 1n;
 
     const cache: PriceComputationCache = {
-      liquidityStart: poolState.liquidity,
-      blockTimestamp: this._blockTimestamp(poolState),
-      feeProtocol: zeroForOne
-        ? slot0Start.feeProtocol % 16n
-        : slot0Start.feeProtocol >> 4n,
-      secondsPerLiquidityCumulativeX128: 0n,
-      tickCumulative: 0n,
-      computedLatestObservation: false,
       tickCount: 0,
     };
 
@@ -272,7 +235,7 @@ class UniswapV3Math {
       sqrtPriceX96: slot0Start.sqrtPriceX96,
       tick: slot0Start.tick,
       protocolFee: 0n,
-      liquidity: cache.liquidityStart,
+      liquidity: poolState.liquidity,
       isFirstCycleState: true,
     };
 
@@ -454,33 +417,17 @@ class UniswapV3Math {
           : step.sqrtPriceNextX96,
         state.liquidity,
         state.amountSpecifiedRemaining,
-        poolState.fee,
+        poolState.slot0.fee,
       );
 
       state.sqrtPriceX96 = swapStepResult.sqrtRatioNextX96;
 
       if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
         if (step.initialized) {
-          if (!cache.computedLatestObservation) {
-            [cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128] =
-              Oracle.observeSingle(
-                poolState,
-                cache.blockTimestamp,
-                0n,
-                slot0Start.tick,
-                slot0Start.observationIndex,
-                cache.liquidityStart,
-                slot0Start.observationCardinality,
-              );
-            cache.computedLatestObservation = true;
-          }
 
           let liquidityNet = Tick.cross(
             poolState.ticks,
             step.tickNext,
-            cache.secondsPerLiquidityCumulativeX128,
-            cache.tickCumulative,
-            cache.blockTimestamp,
           );
 
           if (zeroForOne) liquidityNet = -liquidityNet;
@@ -497,26 +444,7 @@ class UniswapV3Math {
       }
     }
 
-    if (slot0Start.tick !== newTick) {
-      const [observationIndex, observationCardinality] = Oracle.write(
-        poolState,
-        slot0Start.observationIndex,
-        this._blockTimestamp(poolState),
-        slot0Start.tick,
-        poolState.liquidity,
-        slot0Start.observationCardinality,
-        slot0Start.observationCardinalityNext,
-      );
-
-      [
-        poolState.slot0.sqrtPriceX96,
-        poolState.slot0.tick,
-        poolState.slot0.observationIndex,
-        poolState.slot0.observationCardinality,
-      ] = [newSqrtPriceX96, newTick, observationIndex, observationCardinality];
-    } else {
-      poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
-    }
+    poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
 
     if (poolState.liquidity !== newLiquidity)
       poolState.liquidity = newLiquidity;
@@ -533,7 +461,6 @@ class UniswapV3Math {
       params.tickLower,
       params.tickUpper,
       params.liquidityDelta,
-      _slot0.tick,
     );
 
     let amount0 = 0n;
@@ -547,17 +474,6 @@ class UniswapV3Math {
         );
       } else if (_slot0.tick < params.tickUpper) {
         const liquidityBefore = state.liquidity;
-
-        [state.slot0.observationIndex, state.slot0.observationCardinality] =
-          Oracle.write(
-            state,
-            _slot0.observationIndex,
-            this._blockTimestamp(state),
-            _slot0.tick,
-            liquidityBefore,
-            _slot0.observationCardinality,
-            _slot0.observationCardinalityNext,
-          );
 
         amount0 = SqrtPriceMath._getAmount0DeltaO(
           _slot0.sqrtPriceX96,
@@ -594,33 +510,18 @@ class UniswapV3Math {
     tickLower: bigint,
     tickUpper: bigint,
     liquidityDelta: bigint,
-    tick: bigint,
   ): void {
     // if we need to update the ticks, do it
     let flippedLower = false;
     let flippedUpper = false;
     if (liquidityDelta !== 0n) {
       const time = this._blockTimestamp(state);
-      const [tickCumulative, secondsPerLiquidityCumulativeX128] =
-        Oracle.observeSingle(
-          state,
-          time,
-          0n,
-          state.slot0.tick,
-          state.slot0.observationIndex,
-          state.liquidity,
-          state.slot0.observationCardinality,
-        );
 
       if (this._isTickToProcess(state, tickLower)) {
         flippedLower = Tick.update(
           state,
           tickLower,
-          tick,
           liquidityDelta,
-          secondsPerLiquidityCumulativeX128,
-          tickCumulative,
-          time,
           false,
           state.maxLiquidityPerTick,
         );
@@ -629,11 +530,7 @@ class UniswapV3Math {
         flippedUpper = Tick.update(
           state,
           tickUpper,
-          tick,
           liquidityDelta,
-          secondsPerLiquidityCumulativeX128,
-          tickCumulative,
-          time,
           true,
           state.maxLiquidityPerTick,
         );
