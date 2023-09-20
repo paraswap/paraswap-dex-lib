@@ -296,7 +296,6 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
         fee: bigIntify(_state.slot0.fee),
       },
       liquidity: bigIntify(_state.liquidity),
-      fee: fee,
       tickSpacing,
       maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,
