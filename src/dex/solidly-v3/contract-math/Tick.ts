@@ -8,11 +8,7 @@ export class Tick {
   static update(
     state: Pick<PoolState, 'ticks'>,
     tick: bigint,
-    tickCurrent: bigint,
     liquidityDelta: bigint,
-    secondsPerLiquidityCumulativeX128: bigint,
-    tickCumulative: bigint,
-    time: bigint,
     upper: boolean,
     maxLiquidity: bigint,
   ): boolean {
@@ -39,11 +35,6 @@ export class Tick {
     const flipped = (liquidityGrossAfter == 0n) != (liquidityGrossBefore == 0n);
 
     if (liquidityGrossBefore == 0n) {
-      if (tick <= tickCurrent) {
-        info.secondsPerLiquidityOutsideX128 = secondsPerLiquidityCumulativeX128;
-        info.tickCumulativeOutside = tickCumulative;
-        info.secondsOutside = time;
-      }
       info.initialized = true;
     }
 
@@ -68,15 +59,8 @@ export class Tick {
   static cross(
     ticks: Record<NumberAsString, TickInfo>,
     tick: bigint,
-    secondsPerLiquidityCumulativeX128: bigint,
-    tickCumulative: bigint,
-    time: bigint,
   ): bigint {
     const info = ticks[Number(tick)];
-    info.secondsPerLiquidityOutsideX128 =
-      secondsPerLiquidityCumulativeX128 - info.secondsPerLiquidityOutsideX128;
-    info.tickCumulativeOutside = tickCumulative - info.tickCumulativeOutside;
-    info.secondsOutside = time - info.secondsOutside;
     return info.liquidityNet;
   }
 }

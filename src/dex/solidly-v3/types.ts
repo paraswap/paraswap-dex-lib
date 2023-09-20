@@ -4,24 +4,9 @@ import { Address } from '../../types';
 import { AbiItem } from 'web3-utils';
 import { MultiResult } from '../../lib/multi-wrapper';
 
-export type OracleObservation = {
-  blockTimestamp: bigint;
-  tickCumulative: bigint;
-  secondsPerLiquidityCumulativeX128: bigint;
-  initialized: boolean;
-};
-
-export type OracleObservationCandidates = {
-  beforeOrAt: OracleObservation;
-  atOrAfter: OracleObservation;
-};
-
 export type TickInfo = {
   liquidityGross: bigint;
   liquidityNet: bigint;
-  tickCumulativeOutside: bigint;
-  secondsPerLiquidityOutsideX128: bigint;
-  secondsOutside: bigint;
   initialized: boolean;
 };
 
@@ -35,7 +20,6 @@ export type PoolState = {
   pool: string;
   blockTimestamp: bigint;
   tickSpacing: bigint;
-  fee: bigint;
   slot0: Slot0;
   liquidity: bigint;
   maxLiquidityPerTick: bigint;
