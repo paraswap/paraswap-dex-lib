@@ -33,7 +33,7 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
       quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedFees: SUPPORTED_FEES,
-      stateMulticall: '0x9c764D2e92dA68E4CDfD784B902283A095ff8b63',
+      stateMulticall: '0xb229563028302AA693EEaD62F80CC331aEDE4e26',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
