@@ -32,6 +32,14 @@ import SolidlyV3PoolABI from '../../abi/solidly-v3/SolidlyV3Pool.abi.json';
   (This comment should be removed from the final implementation)
 */
 
+const network = Network.MAINNET;
+const dexHelper = new DummyDexHelper(network);
+
+const WETH = Tokens[network]['WETH'];
+const USDT = Tokens[network]['USDT'];
+
+const amounts = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18]];
+
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
@@ -184,6 +192,11 @@ describe('SolidlyV3', function () {
   let blockNumber: number;
   let solidlyV3: SolidlyV3;
 
+  beforeEach(async () => {
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const solidlyV3 = new SolidlyV3(network, dexKey, dexHelper);
+  });
+
   describe('Mainnet', () => {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
@@ -236,15 +249,6 @@ describe('SolidlyV3', function () {
     });
 
     it('WETH -> USDT getPoolIdentifiers and getPricesVolume SELL', async function () {
-      const network = Network.MAINNET;
-      const dexHelper = new DummyDexHelper(network);
-      const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      const solidlyV3 = new SolidlyV3(network, dexKey, dexHelper);
-
-      const WETH = Tokens[network]['WETH'];
-      const USDT = Tokens[network]['USDT'];
-
-      const amounts = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18]];
 
       const pools = await solidlyV3.getPoolIdentifiers(
         WETH,
