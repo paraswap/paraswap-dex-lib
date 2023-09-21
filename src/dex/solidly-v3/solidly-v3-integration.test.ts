@@ -3,16 +3,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Interface, Result } from '@ethersproject/abi';
-import { DummyDexHelper } from '../../dex-helper/index';
+import {DummyDexHelper, IDexHelper} from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { SolidlyV3 } from './solidly-v3';
+import { MIN_SQRT_RATIO, MAX_SQRT_RATIO } from "./constants";
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import {Address} from "@paraswap/core";
+import SolidlyV3PoolABI from '../../abi/solidly-v3/SolidlyV3Pool.abi.json';
 
 /*
   README
@@ -34,14 +37,12 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  zeroForOne: boolean,
+  sqrtPriceLimitX96: bigint,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [zeroForOne, amount.toString(), sqrtPriceLimitX96.toString()]),
   }));
 }
 
@@ -58,37 +59,68 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
-  solidlyV3: SolidlyV3,
-  funcName: string,
+  dexHelper: IDexHelper,
   blockNumber: number,
+  poolAddress: string,
   prices: bigint[],
-  amounts: bigint[],
+  tokenIn: Address,
+  tokenOut: Address,
+  tickSpacing: bigint,
+  _amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  // Quoter address
+  // const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
+  const readerIface = new Interface(SolidlyV3PoolABI);
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from solidlyV3.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
+
+  if (sum === 0n) {
+    console.log(
+      `Prices were not calculated for tokenIn=${tokenIn}, tokenOut=${tokenOut}, tickSpacing=${tickSpacing.toString()}. Most likely price impact is too big for requested amount`,
+    );
+    return false;
+  }
 
   const readerCallData = getReaderCalldata(
-    exchangeAddress,
+    poolAddress,
     readerIface,
-    amounts.slice(1),
-    funcName,
+    _amounts.slice(1),
+    'quoteSwap',
+    true,
+    MIN_SQRT_RATIO + BigInt(1),
   );
-  // const readerResult = (
-  //   await solidlyV3.dexHelper.multiContract.methods
-  //     .aggregate(readerCallData)
-  //     .call({}, blockNumber)
-  // ).returnData;
-  const readerResult: any[] = [];
+
+  let readerResult;
+  try {
+    readerResult = (
+      await dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blockNumber)
+    ).returnData;
+  } catch (e) {
+    console.log(
+      `Can not fetch on-chain pricing for tickSpacing ${tickSpacing}. It happens for low liquidity pools`,
+      e,
+    );
+    return false;
+  }
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
+    decodeReaderResult(readerResult, readerIface, 'quoteSwap'),
   );
 
-  expect(prices).toEqual(expectedPrices);
+  console.log('EXPECTED PRICES: ', expectedPrices);
+
+  let firstZeroIndex = prices.slice(1).indexOf(0n);
+
+  // we skipped first, so add +1 on result
+  firstZeroIndex = firstZeroIndex === -1 ? prices.length : firstZeroIndex;
+
+  // Compare only the ones for which we were able to calculate prices
+  expect(prices.slice(0, firstZeroIndex)).toEqual(
+    expectedPrices.slice(0, firstZeroIndex),
+  );
+  return true;
 }
 
 async function testPricingOnNetwork(
@@ -138,13 +170,13 @@ async function testPricingOnNetwork(
   }
 
   // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    solidlyV3,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
+  // await checkOnChainPricing(
+  //   solidlyV3,
+  //   funcNameToCheck,
+  //   blockNumber,
+  //   poolPrices![0].prices,
+  //   amounts,
+  // );
 }
 
 describe('SolidlyV3', function () {
@@ -236,6 +268,27 @@ describe('SolidlyV3', function () {
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const tickSpacing = solidlyV3.eventPools[price.poolIdentifier!]!.tickSpacing;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            blockNumber,
+            solidlyV3.eventPools[price.poolIdentifier!]!.poolAddress,
+            price.prices,
+            // TODO: don't hardcode tokens
+            '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+            '0xdac17f958d2ee523a2206206994597c13d831ec7',
+            tickSpacing,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {

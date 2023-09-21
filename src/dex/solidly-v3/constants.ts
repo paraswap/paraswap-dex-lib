@@ -39,3 +39,5 @@ export enum DirectMethods {
   directSell = 'directUniV3Swap',
   directBuy = 'directUniV3Buy',
 }
+export const MIN_SQRT_RATIO = BigInt(4295128739);
+export const MAX_SQRT_RATIO = BigInt(1461446703485210103287273052203988822378723970342);
