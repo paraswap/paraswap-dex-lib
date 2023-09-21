@@ -96,8 +96,8 @@ async function checkOnChainPricing(
     readerIface,
     _amounts.slice(1),
     'quoteSwap',
-    true,
-    MIN_SQRT_RATIO + BigInt(1),
+    tokenIn < tokenOut,
+    tokenIn < tokenOut ? MIN_SQRT_RATIO + BigInt(1) : MAX_SQRT_RATIO - BigInt(1),
   );
 
   let readerResult;
@@ -328,7 +328,7 @@ describe('SolidlyV3', function () {
             WETH.address,
             USDT.address,
             tickSpacing,
-            amounts,
+            amountsBuy,
           );
           if (res === false) falseChecksCounter++;
         }),
