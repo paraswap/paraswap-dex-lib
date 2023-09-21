@@ -49,10 +49,15 @@ function getReaderCalldata(
   funcName: string,
   zeroForOne: boolean,
   sqrtPriceLimitX96: bigint,
+  exactInput: boolean
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [zeroForOne, amount.toString(), sqrtPriceLimitX96.toString()]),
+    callData: readerIface.encodeFunctionData(funcName, [
+      zeroForOne,
+      exactInput ? amount.toString() : `-${amount.toString()}`,
+      sqrtPriceLimitX96.toString()
+    ]),
   }));
 }
 
@@ -60,11 +65,13 @@ function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
+  exactInput: boolean
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return parsed[1]._hex[0] == '-' ? BigInt(parsed[1]._hex.slice(1)) : BigInt(parsed[1]._hex);
+    // exactInput determines whether we want to get amount0 or amount1
+    const index = exactInput ? 1 : 0;
+    return parsed[index]._hex[0] == '-' ? BigInt(parsed[index]._hex.slice(1)) : BigInt(parsed[index]._hex);
   });
 }
 
@@ -77,6 +84,7 @@ async function checkOnChainPricing(
   tokenOut: Address,
   tickSpacing: bigint,
   _amounts: bigint[],
+  exactInput: boolean
 ) {
   // Quoter address
   // const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
@@ -98,6 +106,7 @@ async function checkOnChainPricing(
     'quoteSwap',
     tokenIn < tokenOut,
     tokenIn < tokenOut ? MIN_SQRT_RATIO + BigInt(1) : MAX_SQRT_RATIO - BigInt(1),
+    exactInput
   );
 
   let readerResult;
@@ -116,7 +125,7 @@ async function checkOnChainPricing(
   }
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, 'quoteSwap'),
+    decodeReaderResult(readerResult, readerIface, 'quoteSwap', exactInput),
   );
 
   console.log('EXPECTED PRICES: ', expectedPrices);
@@ -284,6 +293,7 @@ describe('SolidlyV3', function () {
             USDT.address,
             tickSpacing,
             amounts,
+            true
           );
           if (res === false) falseChecksCounter++;
         }),
@@ -329,6 +339,7 @@ describe('SolidlyV3', function () {
             USDT.address,
             tickSpacing,
             amountsBuy,
+            false
           );
           if (res === false) falseChecksCounter++;
         }),
