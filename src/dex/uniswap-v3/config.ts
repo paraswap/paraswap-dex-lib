@@ -233,7 +233,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       deployer: '0xb3e423ab9cE6C03D98326A3A2a0D7D96b0829f22',
       quoter: '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
       router: '0xAA23611badAFB62D37E7295A682D21960ac85A90',
-      supportedFees: SUPPORTED_FEES,
+      supportedFees: [...SUPPORTED_FEES, 50n],
       stateMulticall: '0x50EE4112Cab9c79812F23bE079aB3911395ACc8e',
       stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
