@@ -233,6 +233,9 @@ describe('SolidlyV3', function () {
         pools,
       );
       console.log(`WETH <> USDT Pool Prices: `, poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
