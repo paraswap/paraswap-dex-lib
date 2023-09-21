@@ -86,8 +86,6 @@ async function checkOnChainPricing(
   _amounts: bigint[],
   exactInput: boolean
 ) {
-  // Quoter address
-  // const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
   const readerIface = new Interface(SolidlyV3PoolABI);
 
   const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
@@ -187,15 +185,6 @@ async function testPricingOnNetwork(
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
-
-  // Check if onchain pricing equals to calculated ones
-  // await checkOnChainPricing(
-  //   solidlyV3,
-  //   funcNameToCheck,
-  //   blockNumber,
-  //   poolPrices![0].prices,
-  //   amounts,
-  // );
 }
 
 describe('SolidlyV3', function () {
@@ -218,34 +207,6 @@ describe('SolidlyV3', function () {
     // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'WETH';
     const destTokenSymbol = 'USDT';
-
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
-
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
