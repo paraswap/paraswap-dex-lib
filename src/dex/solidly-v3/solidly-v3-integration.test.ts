@@ -54,7 +54,7 @@ function decodeReaderResult(
   // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
+    return parsed[1]._hex[0] == '-' ? BigInt(parsed[1]._hex.slice(1)) : BigInt(parsed[1]._hex);
   });
 }
 
