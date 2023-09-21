@@ -149,13 +149,13 @@ export class TenderlySimulation implements TransactionSimulator {
         return {
           success: true,
           gasUsed: data.transaction.gas_used,
-          tenderlyUrl: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
+          url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
           transaction: data.transaction,
         };
       } else {
         return {
           success: false,
-          tenderlyUrl: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
+          url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
           error: `Simulation failed: ${data.transaction.error_info.error_message} at ${data.transaction.error_info.address}`,
         };
       }
