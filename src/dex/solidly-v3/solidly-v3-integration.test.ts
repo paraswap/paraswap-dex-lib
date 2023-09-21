@@ -244,11 +244,7 @@ describe('SolidlyV3', function () {
       }
     });
 
-    it('base case', async function () {
-      console.log('base case');
-    });
-
-    it('WETH -> USDT getPoolIdentifiers and getPricesVolume SELL', async function () {
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
 
       const pools = await solidlyV3.getPoolIdentifiers(
         WETH,
@@ -292,20 +288,6 @@ describe('SolidlyV3', function () {
       );
 
       expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
-    });
-
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        solidlyV3,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
-      );
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
