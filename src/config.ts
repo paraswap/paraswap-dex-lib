@@ -31,6 +31,7 @@ type BaseConfig = {
   hashFlowDisabledMMs: string[];
   swaapV2AuthToken?: string;
   forceRpcFallbackDexs: string[];
+  nativeAuthToken?: string;
 };
 
 const baseConfigs: { [network: number]: BaseConfig } = {
@@ -62,6 +63,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
+    nativeAuthToken: process.env.API_KEY_NATIVE_AUTH_TOKEN || '',
     uniswapV3EventLoggingSampleRate: 0,
     rfqConfigs: {
       DummyParaSwapPool: {
@@ -201,6 +203,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
+    nativeAuthToken: process.env.API_KEY_NATIVE_AUTH_TOKEN || '',
     forceRpcFallbackDexs: [],
   },
   [Network.AVALANCHE]: {
@@ -360,6 +363,7 @@ export function generateConfig(network: number): Config {
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
+    nativeAuthToken: baseConfig.nativeAuthToken,
   };
 }
 

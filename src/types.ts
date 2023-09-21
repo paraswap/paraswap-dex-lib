@@ -277,6 +277,7 @@ export type Config = {
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
   forceRpcFallbackDexs: string[];
+  nativeAuthToken?: string;
 };
 
 export type BigIntAsString = string;
