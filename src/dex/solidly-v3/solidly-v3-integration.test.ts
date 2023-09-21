@@ -39,6 +39,8 @@ const WETH = Tokens[network]['WETH'];
 const USDT = Tokens[network]['USDT'];
 
 const amounts = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18]];
+// Sell WETH to receive 1000 USDT, 2000 UDST, and 3000 USDT
+const amountsBuy = [0n, 1000n * BI_POWS[6], 2000n * BI_POWS[6], 3000n * BI_POWS[6]];
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -291,17 +293,48 @@ describe('SolidlyV3', function () {
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        solidlyV3,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
+      const pools = await solidlyV3.getPoolIdentifiers(
+        WETH,
+        USDT,
         SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        blockNumber,
       );
+      console.log(`WETH <> USDT Pool Identifiers: `, pools);
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await solidlyV3.getPricesVolume(
+        WETH,
+        USDT,
+        amountsBuy,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(`WETH <> USDT Pool Prices: `, poolPrices);
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const tickSpacing = solidlyV3.eventPools[price.poolIdentifier!]!.tickSpacing;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            blockNumber,
+            solidlyV3.eventPools[price.poolIdentifier!]!.poolAddress,
+            price.prices,
+            WETH.address,
+            USDT.address,
+            tickSpacing,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
     });
 
     it('getTopPoolsForToken', async function () {
