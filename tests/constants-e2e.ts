@@ -892,6 +892,18 @@ export const Tokens: {
       address: '0x4200000000000000000000000000000000000006',
       decimals: 18,
     },
+    MAV: {
+      address: '0x64b88c73A5DfA78D1713fE1b4c69a22d7E0faAa7',
+      decimals: 18,
+    },
+    USDC: {
+      address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+      decimals: 6,
+    },
+    USDbC: {
+      address: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA',
+      decimals: 6,
+    },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
   },
 };
@@ -1117,6 +1129,9 @@ export const Holders: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
     PRIME: '0x956bcc6b56c99db382d9d97a30ba5f1402144b3e',
     ETH: '0xdd9176ea3e7559d6b68b537ef555d3e89403f742',
+    MAV: '0x7499785aa5d1bdf0a0ac862c1ef3698d3cba6568',
+    USDC: '0xaac391f166f33cdaefaa4afa6616a3bea66b694d',
+    USDbC: '0xc9d05a1c3c8e01dcb701d6185cdc21a5bb94becb',
   },
 };
 
