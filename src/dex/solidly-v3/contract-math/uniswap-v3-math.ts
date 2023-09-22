@@ -444,7 +444,14 @@ class UniswapV3Math {
       }
     }
 
-    poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
+    if (slot0Start.tick !== newTick) {
+      [
+        poolState.slot0.sqrtPriceX96,
+        poolState.slot0.tick,
+      ] = [newSqrtPriceX96, newTick];
+    } else {
+      poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
+    }
 
     if (poolState.liquidity !== newLiquidity)
       poolState.liquidity = newLiquidity;
