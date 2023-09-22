@@ -83,6 +83,17 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0,
     },
   },
+  Aerodrome: {
+    [Network.BASE]: {
+      // There is no subgraph for Aerodrome
+      factoryAddress: '0x420DD381b31aEf6683db6B902084cB0FFECe40Da',
+      router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
+      initCode:
+        '0x1a8f01f7eab324003d9388f229ea17991eee9c9d14586f429799f3656790eba0',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
   Cone: {
     [Network.BSC]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/cone-exchange/cone',
@@ -182,4 +193,7 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses
   },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome
+  }
 };

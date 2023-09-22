@@ -129,15 +129,18 @@ export class MaverickV1EventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
+    console.log('BEFORE RAW BINS');
     const rawBins = await this.poolInspectorContract.methods['getActiveBins'](
       this.address,
       0,
       0,
     ).call({}, blockNumber);
+    console.log('RAW BINS: ', rawBins);
     const rawState = await this.poolContract.methods['getState']().call(
       {},
       blockNumber,
     );
+    console.log('RAW STATE: ', rawState);
     let binPositions: { [tick: string]: { [kind: string]: bigint } } = {};
     let bins: { [id: string]: Bin } = {};
     let binMap: { [id: string]: bigint } = {};

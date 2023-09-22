@@ -424,16 +424,16 @@ describe('UniswapV3 E2E', () => {
         [
           SwapSide.SELL,
           [
-            // ContractMethod.simpleSwap,
+            ContractMethod.simpleSwap,
             ContractMethod.multiSwap,
-            // ContractMethod.megaSwap,
+            ContractMethod.megaSwap,
           ],
         ],
         [
           SwapSide.BUY,
           [
-            // ContractMethod.simpleBuy,
-            // ContractMethod.buy
+            ContractMethod.simpleBuy,
+            ContractMethod.buy
           ],
         ],
       ]);
@@ -1083,6 +1083,27 @@ describe('UniswapV3 E2E', () => {
       const tokenAAmount: string = '111110000';
       const tokenBAmount: string = '10000000';
       const nativeTokenAmount = '11000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+
+    describe('BASE', () => {
+      const network = Network.BASE;
+
+      const tokenASymbol: string = 'USDbC';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '111110000';
+      const tokenBAmount: string = '110000000000000000';
+      const nativeTokenAmount = '1100000000000000000';
 
       testForNetwork(
         network,

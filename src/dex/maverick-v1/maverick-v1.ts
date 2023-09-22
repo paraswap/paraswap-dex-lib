@@ -78,6 +78,7 @@ export class MaverickV1
 
   async setupEventPools(blockNumber: number) {
     const pools = await this.fetchAllSubgraphPools();
+
     await Promise.all(
       pools.map(async (pool: any) => {
         const eventPool = new MaverickV1EventPool(
@@ -114,6 +115,8 @@ export class MaverickV1
         this.pools[eventPool.address] = eventPool;
       }),
     );
+
+    console.log('THIS POOLS: ', this.pools);
   }
 
   // Initialize pricing is called once in the start of

@@ -1404,4 +1404,28 @@ describe('Solidly E2E', () => {
       );
     });
   });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    describe('Aerodrome', () => {
+      const dexKey = 'Aerodrome';
+      const tokenASymbol: string = 'USDbC';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '1111100000';
+      const tokenBAmount: string = '100000000000000000';
+      const nativeTokenAmount = '100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    })
+  });
 });

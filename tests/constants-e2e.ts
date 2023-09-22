@@ -904,6 +904,10 @@ export const Tokens: {
       address: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA',
       decimals: 6,
     },
+    DAI: {
+      address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
+      decimals: 18,
+    },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
   },
 };
@@ -1132,6 +1136,7 @@ export const Holders: {
     MAV: '0x7499785aa5d1bdf0a0ac862c1ef3698d3cba6568',
     USDC: '0xaac391f166f33cdaefaa4afa6616a3bea66b694d',
     USDbC: '0xc9d05a1c3c8e01dcb701d6185cdc21a5bb94becb',
+    DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
   },
 };
 
