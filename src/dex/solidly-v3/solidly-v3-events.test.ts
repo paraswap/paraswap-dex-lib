@@ -9,6 +9,11 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
 import {SolidlyV3Config} from "./config";
+import {AbiItem} from "web3-utils";
+import {Interface} from "@ethersproject/abi";
+import StateMulticallABI from '../../abi/solidly-v3/SolidlyV3StateMulticall.abi.json';
+import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
+import ERC20ABI from '../../abi/erc20.json';
 
 /*
   README
@@ -68,51 +73,72 @@ async function fetchPoolStateFromContract(
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('SolidlyV3 EventPool Mainnet', function () {
-  const dexKey = 'SolidlyV3';
-  const network = Network.MAINNET;
-  const dexHelper = new DummyDexHelper(network);
-  const logger = dexHelper.getLogger(dexKey);
-  let solidlyV3Pool: SolidlyV3EventPool;
+describe('SolidlyV3 Event', function () {
+  const poolAddress = '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640';
+  const poolFeeCode = 500n;
+  const token0 = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+  const token1 = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 
-  // poolAddress -> EventMappings
-  const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
-  };
+  const blockNumbers: { [eventName: string]: number[] } = {
+    // topic0 - 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
+    ['Swap']: [
+      15846349,
+      // 15846351, 15846352, 15846353, 15846355, 15846357, 15846358,
+      // 15846360, 15846360, 15846361, 15846362, 15846364, 15846365, 15846366,
+      // 15846367, 15846368, 15846369, 15846370, 15846372, 15846373, 15846374,
+      // 15846375, 15846376, 15846381, 15846382, 15846383, 15846386, 15846387,
+      // 15846388, 15846390, 15846391, 15846392, 15846393, 15846398, 15846400,
+      // 15846403, 15846405, 15846407, 15846408, 15846411, 15846412, 15846413,
+      // 15846415,
+    ],
+  }
 
-  beforeEach(async () => {
-    solidlyV3Pool = new SolidlyV3EventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      /* TODO: Put here additional constructor arguments if needed */
-    );
-  });
+  describe('SolidlyV3EventPool', function () {
+    Object.keys(blockNumbers).forEach((event: string) => {
+      blockNumbers[event].forEach((blockNumber: number) => {
+        it(`${event}:${blockNumber} - should return correct state`, async function () {
+          const dexHelper = new DummyDexHelper(network);
+          // await dexHelper.init();
 
-  Object.entries(eventsToTest).forEach(
-    ([poolAddress, events]: [string, EventMappings]) => {
-      describe(`Events for ${poolAddress}`, () => {
-        Object.entries(events).forEach(
-          ([eventName, blockNumbers]: [string, number[]]) => {
-            describe(`${eventName}`, () => {
-              blockNumbers.forEach((blockNumber: number) => {
-                it(`State after ${blockNumber}`, async function () {
-                  await testEventSubscriber(
-                    solidlyV3Pool,
-                    solidlyV3Pool.addressesSubscribed,
-                    (_blockNumber: number) =>
-                      fetchPoolState(solidlyV3Pool, _blockNumber, poolAddress),
-                    blockNumber,
-                    `${dexKey}_${poolAddress}`,
-                    dexHelper.provider,
-                  );
-                });
-              });
-            });
-          },
-        );
+          const logger = dexHelper.getLogger(dexKey);
+
+          const solidlyV3Pool = new SolidlyV3EventPool(
+            dexHelper,
+            dexKey,
+            new dexHelper.web3Provider.eth.Contract(
+              StateMulticallABI as AbiItem[],
+              config.stateMulticall,
+            ),
+            decodeStateMultiCallResultWithRelativeBitmaps,
+            new Interface(ERC20ABI),
+            config.factory,
+            poolFeeCode,
+            token0,
+            token1,
+            logger,
+            undefined,
+            config.initHash,
+          );
+
+          // It is done in generateState. But here have to make it manually
+          solidlyV3Pool.poolAddress = poolAddress.toLowerCase();
+          solidlyV3Pool.addressesSubscribed[0] = poolAddress;
+
+          await testEventSubscriber(
+            solidlyV3Pool,
+            solidlyV3Pool.addressesSubscribed,
+            (_blockNumber: number) =>
+              fetchPoolStateFromContract(
+                solidlyV3Pool,
+                _blockNumber,
+                poolAddress,
+              ),
+            blockNumber,
+            `${dexKey}_${poolAddress}`,
+            dexHelper.provider,
+          );
+        });
       });
-    },
-  );
+    });
+  });
 });
