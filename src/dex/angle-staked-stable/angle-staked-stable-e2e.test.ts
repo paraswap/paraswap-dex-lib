@@ -140,7 +140,5 @@ describe('AngleStakedStable E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
-
-    // TODO: Add any additional test cases required to test AngleStakedStable
   });
 });

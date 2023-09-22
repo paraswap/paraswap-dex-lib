@@ -50,7 +50,6 @@ async function fetchPoolState(
   blockNumber: number,
   poolAddress: string,
 ): Promise<PoolState> {
-  // TODO: complete me!
   return angleStakedStablePools.generateState(blockNumber);
 }
 

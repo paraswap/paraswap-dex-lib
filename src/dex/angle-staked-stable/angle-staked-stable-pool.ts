@@ -36,12 +36,10 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected config: DexParams, // TODO: add any additional params required for event subscriber
+    protected config: DexParams,
   ) {
-    // TODO: Add pool name
     super(parentName, 'Staked_Stable', dexHelper, logger);
 
-    // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) =>
       AngleStakedStableEventPool.angleStakedStableIface.parseLog(log);
     this.addressesSubscribed = [config.stEUR];
@@ -90,7 +88,6 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // TODO: complete me!
     let poolState = {
       totalAssets: 0n,
       totalSupply: 0n,
@@ -166,7 +163,6 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
   }
 
   getRateDeposit(amount: bigint, state: PoolState): bigint {
-    // TODO should not be needed if events are taken in the order triggered
     const newTotalAssets = this._accrue(state);
     return amount == 0n || state.totalSupply == 0n
       ? amount
@@ -174,7 +170,6 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
   }
 
   getRateMint(shares: bigint, state: PoolState): bigint {
-    // TODO should not be needed
     const newTotalAssets = this._accrue(state);
     const roundUp =
       (shares * newTotalAssets) % state.totalSupply > 0n ? 1n : 0n;
@@ -184,7 +179,6 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
   }
 
   getRateRedeem(shares: bigint, state: PoolState): bigint {
-    // TODO should not be needed
     const newTotalAssets = this._accrue(state);
     return state.totalSupply == 0n
       ? shares
@@ -192,7 +186,6 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
   }
 
   getRateWithdraw(amount: bigint, state: PoolState): bigint {
-    // TODO should not be needed
     const newTotalAssets = this._accrue(state);
     const roundUp =
       (amount * state.totalSupply) % newTotalAssets > 0n ? 1n : 0n;

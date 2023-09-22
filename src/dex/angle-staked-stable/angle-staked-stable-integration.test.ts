@@ -35,7 +35,6 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
@@ -48,7 +47,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -62,9 +60,8 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = '0x004626a008b1acdc4c74ab51644093b155e59a23'; // TODO: Put here the real exchange address
+  const exchangeAddress = '0x004626a008b1acdc4c74ab51644093b155e59a23';
 
-  // TODO: Replace dummy interface with the real one
   // Normally you can get it from angleStakedStable.Iface or from eventPool.
   // It depends on your implementation
   const readerIface = AngleStakedStableEventPool.angleStakedStableIface;
@@ -161,7 +158,6 @@ describe('AngleStakedStable', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'agEUR';
     const destTokenSymbol = 'stEUR';
@@ -219,7 +215,7 @@ describe('AngleStakedStable', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        funcNameSell, // TODO: Put here proper function name to check pricing
+        funcNameSell,
       );
     });
 
@@ -233,7 +229,7 @@ describe('AngleStakedStable', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        funcNameBuy, // TODO: Put here proper function name to check pricing
+        funcNameBuy,
       );
     });
 

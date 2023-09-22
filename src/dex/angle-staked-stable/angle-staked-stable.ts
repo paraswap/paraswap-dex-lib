@@ -47,7 +47,7 @@ export class AngleStakedStable
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     const config = AngleStakedStableConfig[dexKey][network];
@@ -63,7 +63,6 @@ export class AngleStakedStable
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
     this.eventPools = new AngleStakedStableEventPool(
       this.dexKey,
       this.network,
@@ -90,7 +89,6 @@ export class AngleStakedStable
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
     if (!this._knownAddress(srcToken, destToken)) return [];
     else return [this.dexKey];
   }
@@ -107,7 +105,6 @@ export class AngleStakedStable
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AngleStakedStableData>> {
-    // TODO: complete me!
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
     if (!this._knownAddress(srcToken, destToken)) return null;
@@ -173,7 +170,6 @@ export class AngleStakedStable
   getCalldataGasCost(
     poolPrices: PoolPrices<AngleStakedStableData>,
   ): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -188,7 +184,6 @@ export class AngleStakedStable
     data: AngleStakedStableData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     const { exchange } = data;
 
     // Encode here the payload for adapter
@@ -250,7 +245,6 @@ export class AngleStakedStable
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
     const tokenBalanceMultiCall = [
       {
         target: this.config.stEUR,
