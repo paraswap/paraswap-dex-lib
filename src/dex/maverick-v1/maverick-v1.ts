@@ -115,8 +115,6 @@ export class MaverickV1
         this.pools[eventPool.address] = eventPool;
       }),
     );
-
-    console.log('THIS POOLS: ', this.pools);
   }
 
   // Initialize pricing is called once in the start of
