@@ -311,6 +311,14 @@ export const Tokens: {
       address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
       decimals: 18,
     },
+    agEUR: {
+      address: '0x1a7e4e63778b4f12a199c062f3efdd288afcbce8',
+      decimals: 18,
+    },
+    stEUR: {
+      address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -439,6 +447,14 @@ export const Tokens: {
     },
     MAI: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
+      decimals: 18,
+    },
+    agEUR: {
+      address: '0xe0b52e49357fd4daf2c15e02058dce6bc0057db4',
+      decimals: 18,
+    },
+    stEUR: {
+      address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
       decimals: 18,
     },
   },
@@ -809,6 +825,14 @@ export const Tokens: {
       address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
       decimals: 18,
     },
+    agEUR: {
+      address: '0xfa5ed56a203466cbbc2430a43c66b9d8723528e7',
+      decimals: 18,
+    },
+    stEUR: {
+      address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -859,6 +883,14 @@ export const Tokens: {
     WBTC: {
       address: '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
       decimals: 8,
+    },
+    agEUR: {
+      address: '0x9485aca5bbbe1667ad97c7fe7c4531a624c8b1ed',
+      decimals: 18,
+    },
+    stEUR: {
+      address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
+      decimals: 18,
     },
   },
   [Network.ZKEVM]: {
@@ -960,6 +992,8 @@ export const Holders: {
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
     GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
     wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
+    agEUR: '0xa116f421ff82a9704428259fd8cc63347127b777',
+    stEUR: '0xfda462548ce04282f4b6d6619823a7c64fdc0185',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
