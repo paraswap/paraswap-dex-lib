@@ -74,15 +74,14 @@ async function fetchPoolStateFromContract(
 type EventMappings = Record<string, number[]>;
 
 describe('SolidlyV3 Event', function () {
-  const poolAddress = '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640';
-  const poolFeeCode = 500n;
-  const token0 = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-  const token1 = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+  const poolAddress = '0x3198EAdB777b9b6C789bfc89491774644E95eD7e';
+  const token0 = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+  const token1 = '0xdac17f958d2ee523a2206206994597c13d831ec7';
 
   const blockNumbers: { [eventName: string]: number[] } = {
     // topic0 - 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
     ['Swap']: [
-      15846349,
+      18185415,
       // 15846351, 15846352, 15846353, 15846355, 15846357, 15846358,
       // 15846360, 15846360, 15846361, 15846362, 15846364, 15846365, 15846366,
       // 15846367, 15846368, 15846369, 15846370, 15846372, 15846373, 15846374,
@@ -112,7 +111,7 @@ describe('SolidlyV3 Event', function () {
             decodeStateMultiCallResultWithRelativeBitmaps,
             new Interface(ERC20ABI),
             config.factory,
-            poolFeeCode,
+            10n,
             token0,
             token1,
             logger,
