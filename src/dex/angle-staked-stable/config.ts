@@ -5,7 +5,7 @@ import { Network, SwapSide } from '../../constants';
 export const AngleStakedStableConfig: DexConfigMap<DexParams> = {
   AngleStakedStable: {
     [Network.ARBITRUM]: {
-      agEUR: '0x',
+      agEUR: '0xfa5ed56a203466cbbc2430a43c66b9d8723528e7',
       stEUR: '0x004626A008B1aCdC4c74ab51644093b155e59A23',
     },
     [Network.MAINNET]: {
@@ -13,11 +13,11 @@ export const AngleStakedStableConfig: DexConfigMap<DexParams> = {
       stEUR: '0x004626A008B1aCdC4c74ab51644093b155e59A23',
     },
     [Network.OPTIMISM]: {
-      agEUR: '0x',
+      agEUR: '0x9485aca5bbbe1667ad97c7fe7c4531a624c8b1ed',
       stEUR: '0x004626A008B1aCdC4c74ab51644093b155e59A23',
     },
     [Network.POLYGON]: {
-      agEUR: '0x',
+      agEUR: '0xe0b52e49357fd4daf2c15e02058dce6bc0057db4',
       stEUR: '0x004626A008B1aCdC4c74ab51644093b155e59A23',
     },
   },
