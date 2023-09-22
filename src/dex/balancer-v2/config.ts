@@ -71,5 +71,9 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.AVALANCHE]: {
     [SwapSide.SELL]: [{ name: 'AvalancheAdapter01', index: 8 }],
     [SwapSide.BUY]: [{ name: 'AvalancheBuyAdapter', index: 7 }],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 4 }],
+    [SwapSide.BUY]: [{ name: 'BaseBuyAdapter', index: 3 }],
   }
 };
