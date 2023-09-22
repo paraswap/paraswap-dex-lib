@@ -92,11 +92,7 @@ export class SolidlyV3
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
       _.pick(SolidlyV3Config, [
-        'UniswapV3',
-        'SushiSwapV3',
-        'QuickSwapV3.1',
-        'RamsesV2',
-        'ChronosV3',
+        'SolidlyV3',
       ]),
     );
 

@@ -42,6 +42,7 @@ import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
+import { SolidlyV3} from "./solidly-v3/solidly-v3";
 import { Ramses } from './solidly/forks-override/ramses';
 import { Thena } from './solidly/forks-override/thena';
 import { Chronos } from './solidly/forks-override/chronos';
@@ -147,6 +148,7 @@ const Dexes = [
   SwaapV2,
   QuickPerps,
   NomiswapV2,
+  SolidlyV3,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
