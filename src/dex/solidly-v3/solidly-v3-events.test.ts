@@ -8,6 +8,7 @@ import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
+import {SolidlyV3Config} from "./config";
 
 /*
   README
@@ -43,14 +44,25 @@ import { PoolState } from './types';
 */
 
 jest.setTimeout(50 * 1000);
+const dexKey = 'SolidlyV3';
+const network = Network.MAINNET;
+const config = SolidlyV3Config[dexKey][network];
 
-async function fetchPoolState(
-  solidlyV3Pools: SolidlyV3EventPool,
+async function fetchPoolStateFromContract(
+  solidlyV3Pool: SolidlyV3EventPool,
   blockNumber: number,
   poolAddress: string,
 ): Promise<PoolState> {
-  // TODO: complete me!
-  return {};
+  const message = `SolidlyV3: ${poolAddress} blockNumber ${blockNumber}`;
+  console.log(`Fetching state ${message}`);
+  // Be careful to not request state prior to contract deployment
+  // Otherwise need to use manual state sourcing from multicall
+  // We had that mechanism, but removed it with this commit
+  // You can restore it, but better just to find block after state multicall
+  // deployment
+  const state = solidlyV3Pool.generateState(blockNumber);
+  console.log(`Done ${message}`);
+  return state;
 }
 
 // eventName -> blockNumbers
