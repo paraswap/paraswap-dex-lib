@@ -87,6 +87,8 @@ describe('SolidlyV3 Event', function () {
     ['Burn']: [18185393],
     ['Mint']: [18189645, 18189685, 18190653],
     ['Collect']: [18185393],
+    //topic0 0x0eb63f4a36d6bdeee05aa00020a97d80c3e84f1b5b3ebf345fb67262e62b0f33
+    ['SetFee']: [18180677, 18181047, 18182317, 18185660, 18186351, 18188882, 18193229]
   }
 
   describe('SolidlyV3EventPool', function () {

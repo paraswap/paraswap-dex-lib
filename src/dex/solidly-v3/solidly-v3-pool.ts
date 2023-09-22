@@ -103,6 +103,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     // Almost the same as Collect, but for pool owners
     this.handlers['CollectProtocol'] = this.handleCollectEvent.bind(this);
     this.handlers['Flash'] = this.handleFlashEvent.bind(this);
+    this.handlers['SetFee'] = this.handleSetFeeEvent.bind(this);
   }
 
   get poolAddress() {
@@ -450,6 +451,19 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     const paid1 = bigIntify(event.args.paid1);
     pool.balance0 += paid0;
     pool.balance1 += paid1;
+    pool.blockTimestamp = bigIntify(blockHeader.timestamp);
+
+    return pool;
+  }
+
+  handleSetFeeEvent(
+    event: any,
+    pool: PoolState,
+    log: Log,
+    blockHeader: BlockHeader
+  ) {
+    const feeNew = bigIntify(event.args.feeNew);
+    pool.slot0.fee = feeNew;
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     return pool;
