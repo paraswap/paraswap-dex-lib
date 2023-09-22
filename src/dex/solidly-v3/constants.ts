@@ -18,9 +18,6 @@ export const UNISWAPV3_EFFICIENCY_FACTOR = 3;
 export const ZERO_TICK_INFO = {
   liquidityGross: 0n,
   liquidityNet: 0n,
-  tickCumulativeOutside: 0n,
-  secondsPerLiquidityOutsideX128: 0n,
-  secondsOutside: 0n,
   initialized: false,
 };
 
