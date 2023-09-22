@@ -299,6 +299,14 @@ export const Tokens: {
       address: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
       decimals: 6,
     },
+    agEUR: {
+      address: '0x1a7e4e63778b4f12a199c062f3efdd288afcbce8',
+      decimals: 18,
+    },
+    stEUR: {
+      address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -427,6 +435,14 @@ export const Tokens: {
     },
     MAI: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
+      decimals: 18,
+    },
+    agEUR: {
+      address: '0xe0b52e49357fd4daf2c15e02058dce6bc0057db4',
+      decimals: 18,
+    },
+    stEUR: {
+      address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
       decimals: 18,
     },
   },
@@ -785,12 +801,16 @@ export const Tokens: {
       address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
       decimals: 8,
     },
-    USDCe: {
-      address: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
-      decimals: 6,
-    },
     LEX: {
       address: '0x6bB7A17AcC227fd1F6781D1EEDEAE01B42047eE0',
+      decimals: 18,
+    },
+    agEUR: {
+      address: '0xfa5ed56a203466cbbc2430a43c66b9d8723528e7',
+      decimals: 18,
+    },
+    stEUR: {
+      address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
       decimals: 18,
     },
   },
@@ -843,6 +863,14 @@ export const Tokens: {
     WBTC: {
       address: '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
       decimals: 8,
+    },
+    agEUR: {
+      address: '0x9485aca5bbbe1667ad97c7fe7c4531a624c8b1ed',
+      decimals: 18,
+    },
+    stEUR: {
+      address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
+      decimals: 18,
     },
   },
 };
@@ -908,6 +936,8 @@ export const Holders: {
     aEthWETH: '0x645C4c0c95C1Aa6EF25d12f4a25038cA9b0C6Cc7',
     dUSDC: '0x2FC2F705110A7F46Ce85F701d7217EF1018f01A3',
     PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
+    agEUR: '0xa116f421ff82a9704428259fd8cc63347127b777',
+    stEUR: '0xfda462548ce04282f4b6d6619823a7c64fdc0185',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
