@@ -81,16 +81,17 @@ describe('SolidlyV3 E2E', () => {
           // ContractMethod.directUniV3Swap,
         ],
       ],
-      // [
-      //   SwapSide.BUY,
-      //   [
-      //     ContractMethod.simpleBuy,
-      //     ContractMethod.buy,
-      //     ContractMethod.directUniV3Buy,
-      //   ],
-      // ],
+      [
+        SwapSide.BUY,
+        [
+          ContractMethod.simpleBuy,
+          // ContractMethod.buy,
+          // ContractMethod.directUniV3Buy,
+        ],
+      ],
     ]);
 
+    // tokenA -> tokenB
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
@@ -100,6 +101,27 @@ describe('SolidlyV3 E2E', () => {
               tokens[tokenBSymbol],
               holders[tokenASymbol],
               side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+        });
+      }),
+    );
+
+    // tokenB -> tokenA
+    sideToContractMethods.forEach((contractMethods, side) =>
+      contractMethods.forEach((contractMethod: ContractMethod) => {
+        describe(`${contractMethod}`, () => {
+          it(`${network} ${side} ${contractMethod} ${tokenBSymbol} -> ${tokenBSymbol}`, async () => {
+            await testE2E(
+              tokens[tokenBSymbol],
+              tokens[tokenASymbol],
+              holders[tokenBSymbol],
+              side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
               side,
               dexKey,
               contractMethod,
