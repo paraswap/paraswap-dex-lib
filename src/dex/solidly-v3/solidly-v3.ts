@@ -30,7 +30,7 @@ import {
   DexParams,
   OutputResult,
   PoolState,
-  SolidlyV3Data,
+  SolidlyV3Data, SolidlyV3SimpleSwapParams,
   UniswapV3Functions,
   UniswapV3Param,
   UniswapV3SimpleSwapParams,
@@ -46,6 +46,7 @@ import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.jso
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import SolidlyV3StateMulticallABI from '../../abi/solidly-v3/SolidlyV3StateMulticall.abi.json';
+import SolidlyV3PoolABI from '../../abi/solidly-v3/SolidlyV3Pool.abi.json';
 import {
   DirectMethods,
   UNISWAPV3_EFFICIENCY_FACTOR,
@@ -64,6 +65,7 @@ import {
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
+import { TickMath } from "./contract-math/TickMath";
 
 type PoolPairsInfo = {
   token0: Address;
@@ -108,7 +110,7 @@ export class SolidlyV3
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerIface = new Interface(UniswapV3RouterABI),
+    readonly poolIface = new Interface(SolidlyV3PoolABI),
     readonly quoterIface = new Interface(UniswapV3QuoterV2ABI),
     protected config = SolidlyV3Config[dexKey][network],
     protected poolsToPreload = PoolsToPreload[dexKey]?.[network] || [],
@@ -488,14 +490,8 @@ export class SolidlyV3
         prices,
         unit,
         data: {
-          path: [
-            {
-              tokenIn: from.address,
-              tokenOut: to.address,
-              fee: pool.tickSpacingAsString,
-            },
-          ],
-          exchange: pool.poolAddress,
+          zeroForOne: pool.token0.toLowerCase() == from.address.toLowerCase() ? true: false,
+          poolAddress: pool.poolAddress
         },
         poolIdentifier: this.getPoolIdentifier(
           pool.token0,
@@ -683,13 +679,8 @@ export class SolidlyV3
             unit: unitResult.outputs[0],
             prices,
             data: {
-              path: [
-                {
-                  tokenIn: _srcAddress,
-                  tokenOut: _destAddress,
-                  fee: pool.tickSpacing.toString(),
-                },
-              ],
+              zeroForOne,
+              poolAddress: pool.poolAddress
             },
             poolIdentifier: this.getPoolIdentifier(
               pool.token0,
@@ -736,8 +727,9 @@ export class SolidlyV3
     data: SolidlyV3Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { path: rawPath } = data;
-    const path = this._encodePath(rawPath, side);
+    // const { path: rawPath } = data;
+    // const path = this._encodePath(rawPath, side);
+    const path = '';
 
     const payload = this.abiCoder.encodeParameter(
       {
@@ -869,7 +861,8 @@ export class SolidlyV3
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
-    const path = this._encodePath(data.path, side);
+    // const path = this._encodePath(data.path, side);
+    const path = '';
 
     const swapParams: UniswapV3Param = [
       srcToken,
@@ -916,30 +909,40 @@ export class SolidlyV3
     data: SolidlyV3Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapFunction =
-      side === SwapSide.SELL
-        ? UniswapV3Functions.exactInput
-        : UniswapV3Functions.exactOutput;
+    const swapFunction = this.poolIface.getFunction('swap(address,bool,int256,uint160,uint256,uint256)');
 
-    const path = this._encodePath(data.path, side);
-    const swapFunctionParams: UniswapV3SimpleSwapParams =
-      side === SwapSide.SELL
-        ? {
-            recipient: this.augustusAddress,
-            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-            amountIn: srcAmount,
-            amountOutMinimum: destAmount,
-            path,
-          }
-        : {
-            recipient: this.augustusAddress,
-            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-            amountOut: destAmount,
-            amountInMaximum: srcAmount,
-            path,
-          };
-    const swapData = this.routerIface.encodeFunctionData(swapFunction, [
-      swapFunctionParams,
+    // const path = this._encodePath(data.path, side);
+    // const swapFunctionParams: UniswapV3SimpleSwapParams =
+    //   side === SwapSide.SELL
+    //     ? {
+    //         recipient: this.augustusAddress,
+    //         deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+    //         amountIn: srcAmount,
+    //         amountOutMinimum: destAmount,
+    //         path,
+    //       }
+    //     : {
+    //         recipient: this.augustusAddress,
+    //         deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+    //         amountOut: destAmount,
+    //         amountInMaximum: srcAmount,
+    //         path,
+    //       };
+    const swapFunctionParams: SolidlyV3SimpleSwapParams = {
+      recipient: this.augustusAddress,
+      zeroForOne: data.zeroForOne,
+      amountSpecified: side === SwapSide.SELL ? srcAmount.toString() : (-destAmount).toString(),
+      sqrtPriceLimitX96: data.zeroForOne ? (TickMath.MIN_SQRT_RATIO + BigInt(1)).toString() : (TickMath.MAX_SQRT_RATIO - BigInt(1)).toString(),
+      amountLimit: '1',
+      deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+    }
+    const swapData = this.poolIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams.recipient,
+      swapFunctionParams.zeroForOne,
+      swapFunctionParams.amountSpecified,
+      swapFunctionParams.sqrtPriceLimitX96,
+      swapFunctionParams.amountLimit,
+      swapFunctionParams.deadline,
     ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -948,7 +951,7 @@ export class SolidlyV3
       destToken,
       destAmount,
       swapData,
-      this.config.router,
+      data.poolAddress,
     );
   }
 

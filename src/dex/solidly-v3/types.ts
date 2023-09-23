@@ -34,11 +34,8 @@ export type PoolState = {
 };
 
 export type SolidlyV3Data = {
-  path: {
-    tokenIn: Address;
-    tokenOut: Address;
-    fee: NumberAsString;
-  }[];
+  zeroForOne: boolean;
+  poolAddress: string;
   isApproved?: boolean;
 };
 
@@ -81,6 +78,15 @@ export type UniswapV3SimpleSwapBuyParam = {
 export type UniswapV3SimpleSwapParams =
   | UniswapV3SimpleSwapSellParam
   | UniswapV3SimpleSwapBuyParam;
+
+export type SolidlyV3SimpleSwapParams = {
+  recipient: string;
+  zeroForOne: boolean;
+  amountSpecified: NumberAsString;
+  sqrtPriceLimitX96: NumberAsString;
+  amountLimit: NumberAsString;
+  deadline: string;
+}
 
 export type UniswapV3Param = [
   fromToken: Address,
