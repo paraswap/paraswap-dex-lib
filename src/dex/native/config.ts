@@ -22,6 +22,7 @@ export const NativeConfig: DexConfigMap<DexParams> = {
   },
 };
 
+// The Adapters are just place holders for now. Will replace with new ones after deplyoed by Paraswap team
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter03', index: 14 }],

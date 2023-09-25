@@ -85,4 +85,5 @@ export type NativeQuoteRequest = {
   quoteToken: string;
   taker: string;
   chain: string;
+  fee: number;
 };

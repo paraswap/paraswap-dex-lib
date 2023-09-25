@@ -12,9 +12,7 @@ export const NATIVE_TOKENS_CACHES_TTL_S = 7200; // 2 hours
 
 export const NATIVE_TOKENS_CACHE_KEY = 'tokens';
 
-export const NATIVE_API_URL =
-  // 'https://newapi.native.org/v1';
-  'https://newapi.beyourowndex.com/v1';
+export const NATIVE_API_URL = 'https://newapi.native.org/v1';
 
 export const NATIVE_PRICES_ENDPOINT = 'levels';
 

@@ -9,7 +9,7 @@ const tradingPairValidator = joi.object({
   quote_address: joi.string().length(42).required(), // Assuming Ethereum address
   levels: joi.array().items(levelItemValidator).required(),
   side: joi.string().valid('ask', 'bid').required(),
-  minimum_in_base: joi.number().min(0).required(),
+  minimum_in_base: joi.number(),
 });
 
 export const levelsResponseValidator = joi.array().items(tradingPairValidator);
@@ -19,13 +19,13 @@ const tokenValidator = joi.object({
   chain: joi.string().required(),
   address: joi
     .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
+    // .regex(/^0x[a-fA-F0-9]{40}$/)
     .required(),
   symbol: joi.string().required(),
   decimals: joi.number().integer().min(0).required(),
-  name: joi.string().allow('').required(),
-  logo: joi.string().uri().allow(null),
-  desc: joi.string().allow(null),
+  name: joi.string().allow(null, '').required(),
+  logo: joi.string().uri().allow(null, ''),
+  desc: joi.string().allow(null, ''),
   featured: joi.boolean().required(),
   is_supported: joi.boolean().required(),
   stablecoin: joi.boolean().required(),

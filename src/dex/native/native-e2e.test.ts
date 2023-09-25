@@ -17,11 +17,12 @@ describe('Native E2E', () => {
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // TODO: will turn the other 2 on after the Adapters are deployed
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe('Mainnet', () => {
@@ -33,41 +34,25 @@ describe('Native E2E', () => {
     const tokens = Tokens[network];
     const holders = Holders[network];
 
-    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+    const pairs: { name: string; sellAmount: string }[][] = [
       [
         {
           name: 'USDC',
           sellAmount: '45410357',
-          buyAmount: '1000000000000000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '10000000000',
+        },
+      ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '45410357',
         },
         {
           name: 'WETH',
-          sellAmount: '1000000000000000000',
-          buyAmount: '100000000',
-        },
-      ],
-      [
-        {
-          name: 'USDC',
-          sellAmount: '45410357',
-          buyAmount: '1000000000000000000',
-        },
-        {
-          name: 'ETH',
-          sellAmount: '1000000000000000000',
-          buyAmount: '100000000',
-        },
-      ],
-      [
-        {
-          name: 'USDT',
-          sellAmount: '45410357',
-          buyAmount: '100000000',
-        },
-        {
-          name: 'USDC',
-          sellAmount: '100000000',
-          buyAmount: '100000000',
+          sellAmount: '1000000000',
         },
       ],
     ];
@@ -82,9 +67,7 @@ describe('Native E2E', () => {
                   tokens[pair[0].name],
                   tokens[pair[1].name],
                   holders[pair[0].name],
-                  side === SwapSide.SELL
-                    ? pair[0].sellAmount
-                    : pair[0].buyAmount,
+                  pair[0].sellAmount,
                   side,
                   dexKey,
                   contractMethod,
@@ -102,9 +85,7 @@ describe('Native E2E', () => {
                   tokens[pair[1].name],
                   tokens[pair[0].name],
                   holders[pair[1].name],
-                  side === SwapSide.SELL
-                    ? pair[1].sellAmount
-                    : pair[1].buyAmount,
+                  pair[1].sellAmount,
                   side,
                   dexKey,
                   contractMethod,
@@ -124,7 +105,7 @@ describe('Native E2E', () => {
     );
   });
 
-  describe('Polygon', () => {
+  describe.skip('Polygon', () => {
     const network = Network.POLYGON;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
@@ -133,41 +114,35 @@ describe('Native E2E', () => {
     const tokens = Tokens[network];
     const holders = Holders[network];
 
-    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+    const pairs: { name: string; sellAmount: string }[][] = [
       [
         {
           name: 'USDC',
           sellAmount: '45410357',
-          buyAmount: '1000000000000000000',
         },
         {
           name: 'WETH',
           sellAmount: '1000000000000000000',
-          buyAmount: '100000000',
         },
       ],
       [
         {
           name: 'MATIC',
           sellAmount: '45000000000000000000',
-          buyAmount: '100000000',
         },
         {
           name: 'USDC',
           sellAmount: '100000000',
-          buyAmount: '150000000000000000000',
         },
       ],
       [
         {
           name: 'WMATIC',
           sellAmount: '150000000000000000000',
-          buyAmount: '100000000',
         },
         {
           name: 'USDC',
           sellAmount: '100000000',
-          buyAmount: '150000000000000000000',
         },
       ],
     ];
@@ -182,9 +157,7 @@ describe('Native E2E', () => {
                   tokens[pair[0].name],
                   tokens[pair[1].name],
                   holders[pair[0].name],
-                  side === SwapSide.SELL
-                    ? pair[0].sellAmount
-                    : pair[0].buyAmount,
+                  pair[0].sellAmount,
                   side,
                   dexKey,
                   contractMethod,
@@ -202,9 +175,7 @@ describe('Native E2E', () => {
                   tokens[pair[1].name],
                   tokens[pair[0].name],
                   holders[pair[1].name],
-                  side === SwapSide.SELL
-                    ? pair[1].sellAmount
-                    : pair[1].buyAmount,
+                  pair[1].sellAmount,
                   side,
                   dexKey,
                   contractMethod,

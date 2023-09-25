@@ -83,7 +83,7 @@ export class RateFetcher {
 
   stop() {
     this.rateFetcher.stopPolling();
-    this.tokensFetcher.startPolling();
+    this.tokensFetcher.stopPolling();
   }
 
   private handleTokensResponse(resp: NativeTokensResponse): void {
@@ -95,9 +95,6 @@ export class RateFetcher {
       };
       return acc;
     }, {} as TokensMap);
-
-    this.logger.debug('tms', tokensMap);
-    this.logger.debug(this.tokenCacheKey);
 
     this.dexHelper.cache.setex(
       this.dexKey,
@@ -164,6 +161,7 @@ export class RateFetcher {
       baseToken: srcToken.address,
       quoteToken: destToken.address,
       amount: srcAmount,
+      fee: 0,
     };
 
     try {

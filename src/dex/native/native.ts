@@ -302,7 +302,6 @@ export class Native extends SimpleExchange implements IDex<NativeData> {
     return null;
   }
 
-  // **
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -639,7 +638,6 @@ export class Native extends SimpleExchange implements IDex<NativeData> {
     const normalizedTokenAddress = tokenAddress.toLowerCase();
 
     const pLevels = await this.getCachedLevels();
-    this.logger.debug(pLevels);
 
     if (pLevels === null) {
       return [];
