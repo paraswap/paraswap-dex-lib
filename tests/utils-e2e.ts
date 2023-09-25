@@ -5,7 +5,11 @@ import {
   IParaSwapSDK,
   LocalParaswapSDK,
 } from '../src/implementations/local-paraswap-sdk';
-import { TenderlySimulation } from './tenderly-simulation';
+import {
+  EstimateGasSimulation,
+  TenderlySimulation,
+  TransactionSimulator,
+} from './tenderly-simulation';
 import {
   SwapSide,
   ETHER_ADDRESS,
@@ -24,7 +28,7 @@ import {
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
-import { DummyLimitOrderProvider } from '../src/dex-helper';
+import { DummyDexHelper, DummyLimitOrderProvider } from '../src/dex-helper';
 import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
@@ -268,16 +272,20 @@ export async function testE2E(
   // Specified in BPS: part of 10000
   slippage?: number,
   sleepMs?: number,
+  replaceTenderlyWithEstimateGas?: boolean,
 ) {
   const amount = BigInt(_amount);
-  const ts = new TenderlySimulation(network);
+
+  const ts: TransactionSimulator = replaceTenderlyWithEstimateGas
+    ? new EstimateGasSimulation(new DummyDexHelper(network).provider)
+    : new TenderlySimulation(network);
   await ts.setup();
 
   if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
     const allowanceTx = await ts.simulate(
       allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
     );
-    if (!allowanceTx.success) console.log(allowanceTx.tenderlyUrl);
+    if (!allowanceTx.success) console.log(allowanceTx.url);
     expect(allowanceTx!.success).toEqual(true);
   }
 
@@ -290,6 +298,7 @@ export async function testE2E(
       ),
     );
     expect(whitelistTx.success).toEqual(true);
+    console.log(`Successfully whitelisted ${deployedTestContractAddress}`);
 
     if (testContractType === 'router') {
       const setImplementationTx = await ts.simulate(
@@ -309,7 +318,7 @@ export async function testE2E(
     expect(deployTx.success).toEqual(true);
 
     const contractAddress =
-      deployTx.transaction.transaction_info.contract_address;
+      deployTx.transaction?.transaction_info.contract_address;
     console.log(
       formatDeployMessage(
         'adapter',
@@ -384,15 +393,15 @@ export async function testE2E(
 
     const swapTx = await ts.simulate(swapParams);
     // Only log gas estimate if testing against API
-    if (useAPI)
+    if (useAPI) {
+      const gasUsed = swapTx.gasUsed || '0';
       console.log(
         `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
           swapTx!.gasUsed
-        }, Difference: ${
-          parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
-        }`,
+        }, Difference: ${parseInt(priceRoute.gasCost) - parseInt(gasUsed)}`,
       );
-    console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+    }
+    console.log(`Tenderly URL: ${swapTx!.url}`);
     expect(swapTx!.success).toEqual(true);
   } finally {
     if (paraswap.releaseResources) {
@@ -614,7 +623,7 @@ export async function newTestE2E({
             parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
           }`,
         );
-      console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+      console.log(`Tenderly URL: ${swapTx!.url}`);
       expect(swapTx!.success).toEqual(true);
     }
   } finally {
