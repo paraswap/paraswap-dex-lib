@@ -182,8 +182,17 @@ export class MaverickV1
   getCalldataGasCost(
     poolPrices: PoolPrices<MaverickV1Data>,
   ): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    const gasCost = CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+
+    const arr = new Array(poolPrices.prices.length);
+    poolPrices.prices.forEach((p, index) => {
+      if (p == 0n) {
+        arr[index] = 0;
+      } else {
+        arr[index] = gasCost;
+      }
+    });
+    return arr;
   }
 
   // Returns pool prices for amounts.
