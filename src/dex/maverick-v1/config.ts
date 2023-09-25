@@ -14,12 +14,12 @@ export const MaverickV1Config: DexConfigMap<DexParams> = {
       routerAddress: '0x4a585e0f7c18e2c414221d6402652d5e0990e5f8',
       poolInspectorAddress: '0xaA5BF61a664109e959D69C38734d4EA7dF74e456',
     },
-    [Network.BASE]: {
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/42519/maverick-base/version/latest',
-      routerAddress: '0x32AED3Bce901DA12ca8489788F3A99fCe1056e14',
-      poolInspectorAddress: '0x550056A68cB155b6Cc3DeF4A7FA656260e7842e2',
-    },
+    // [Network.BASE]: {
+    //   subgraphURL:
+    //     'https://api.studio.thegraph.com/query/42519/maverick-base/version/latest',
+    //   routerAddress: '0x32AED3Bce901DA12ca8489788F3A99fCe1056e14',
+    //   poolInspectorAddress: '0x550056A68cB155b6Cc3DeF4A7FA656260e7842e2',
+    // },
   },
 };
 
