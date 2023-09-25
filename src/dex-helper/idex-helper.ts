@@ -9,6 +9,7 @@ import { Token } from '../types';
 import { ConfigHelper } from '../config';
 import { MultiWrapper } from '../lib/multi-wrapper';
 import { PromiseScheduler } from '../lib/promise-scheduler';
+import { AsyncOrSync } from 'ts-essentials';
 
 export interface IDexHelper {
   config: ConfigHelper;
@@ -21,5 +22,11 @@ export interface IDexHelper {
   web3Provider: Web3;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
+  executeOnWorkerPool: <R>(
+    dexKeys: string,
+    methodSelector: string,
+    // For POC it is ok to have any
+    payload: any[],
+  ) => Promise<R>;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 }

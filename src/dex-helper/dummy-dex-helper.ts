@@ -246,6 +246,11 @@ export class DummyDexHelper implements IDexHelper {
   getLogger: LoggerConstructor;
   web3Provider: Web3;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
+  executeOnWorkerPool: <R>(
+    dexKeys: string,
+    methodSelector: string,
+    payload: any[],
+  ) => Promise<R>;
 
   constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
@@ -281,6 +286,14 @@ export class DummyDexHelper implements IDexHelper {
       5,
       this.getLogger(`PromiseScheduler-${network}`),
     );
+
+    this.executeOnWorkerPool = async <R>(
+      dexKeys: string,
+      methodSelector: string,
+      payload: any[],
+    ): Promise<R> => {
+      return undefined as any;
+    };
   }
 
   replaceProviderWithRPC(rpcUrl: string) {
