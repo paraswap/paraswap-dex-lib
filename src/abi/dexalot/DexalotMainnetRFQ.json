@@ -367,24 +367,6 @@
     "stateMutability": "nonpayable"
   },
   {
-    "name": "addTrustedContract",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "_contract",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_organization",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
     "name": "batchClaimBalance",
     "type": "function",
     "inputs": [
@@ -576,25 +558,6 @@
     "stateMutability": "view"
   },
   {
-    "name": "isTrustedContract",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "_contract",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
     "name": "isValidSignature",
     "type": "function",
     "inputs": [
@@ -695,19 +658,6 @@
     "inputs": [
       {
         "name": "_address",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "name": "removeTrustedContract",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "_contract",
         "type": "address",
         "internalType": "address"
       }
@@ -878,44 +828,6 @@
         "name": "",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "name": "trustedContractToIntegrator",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "name": "trustedContracts",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
       }
     ],
     "stateMutability": "view"

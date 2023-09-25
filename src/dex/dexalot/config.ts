@@ -5,7 +5,7 @@ import { Network } from '../../constants';
 export const DexalotConfig: DexConfigMap<DexParams> = {
   Dexalot: {
     [Network.AVALANCHE]: {
-      mainnetRFQAddress: '0xd62f9E53Be8884C21f5aa523B3c7D6F9a0050af5',
+      mainnetRFQAddress: '0xEed3c159F3A96aB8d41c8B9cA49EE1e5071A7cdD',
     },
   },
 };
