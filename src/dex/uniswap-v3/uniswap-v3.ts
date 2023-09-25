@@ -641,20 +641,19 @@ export class UniswapV3
           const balanceDestToken =
             _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
-          const unitResult = this._getOutputs(
-            state,
-            [unitAmount],
-            zeroForOne,
-            side,
-            balanceDestToken,
-          );
-          const pricesResult = this._getOutputs(
-            state,
-            _amounts,
-            zeroForOne,
-            side,
-            balanceDestToken,
-          );
+          const unitResult = (await this.dexHelper.executeOnWorkerPool(
+            this.network,
+            this.dexKey,
+            'getOutputs',
+            [state, [unitAmount], zeroForOne, side, balanceDestToken],
+          )) as ReturnType<typeof this.getOutputs>;
+
+          const pricesResult = (await this.dexHelper.executeOnWorkerPool(
+            this.network,
+            this.dexKey,
+            'getOutputs',
+            [state, _amounts, zeroForOne, side, balanceDestToken],
+          )) as ReturnType<typeof this.getOutputs>;
 
           if (!unitResult || !pricesResult) {
             this.logger.debug('Prices or unit is not calculated');
@@ -1071,7 +1070,7 @@ export class UniswapV3
     return newConfig;
   }
 
-  private _getOutputs(
+  getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,

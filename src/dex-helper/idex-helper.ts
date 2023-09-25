@@ -21,5 +21,12 @@ export interface IDexHelper {
   web3Provider: Web3;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
+  executeOnWorkerPool: (
+    network: number,
+    dexKey: string,
+    methodSelector: string,
+    // For POC it is ok to have any
+    payload: any[],
+  ) => Promise<any>;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 }
