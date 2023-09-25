@@ -678,74 +678,6 @@ export class SolidlyV3
     ];
   }
 
-  getDirectParam(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    expectedAmount: NumberAsString,
-    data: SolidlyV3Data,
-    side: SwapSide,
-    permit: string,
-    uuid: string,
-    feePercent: NumberAsString,
-    deadline: NumberAsString,
-    partner: string,
-    beneficiary: string,
-    contractMethod?: string,
-  ): TxInfo<UniswapV3Param> {
-    if (
-      contractMethod !== DirectMethods.directSell &&
-      contractMethod !== DirectMethods.directBuy
-    ) {
-      throw new Error(`Invalid contract method ${contractMethod}`);
-    }
-
-    let isApproved: boolean = !!data.isApproved;
-    if (data.isApproved === undefined) {
-      this.logger.warn(`isApproved is undefined, defaulting to false`);
-    }
-
-    // const path = this._encodePath(data.path, side);
-    const path = '';
-
-    const swapParams: UniswapV3Param = [
-      srcToken,
-      destToken,
-      this.config.router,
-      srcAmount,
-      destAmount,
-      expectedAmount,
-      feePercent,
-      deadline,
-      partner,
-      isApproved,
-      beneficiary,
-      path,
-      permit,
-      uuidToBytes16(uuid),
-    ];
-
-    const encoder = (...params: UniswapV3Param) => {
-      return this.directSwapIface.encodeFunctionData(
-        side === SwapSide.SELL
-          ? DirectMethods.directSell
-          : DirectMethods.directBuy,
-        [params],
-      );
-    };
-
-    return {
-      params: swapParams,
-      encoder,
-      networkFee: '0',
-    };
-  }
-
-  static getDirectFunctionName(): string[] {
-    return [DirectMethods.directSell, DirectMethods.directBuy];
-  }
-
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -756,23 +688,6 @@ export class SolidlyV3
   ): Promise<SimpleExchangeParam> {
     const swapFunction = this.poolIface.getFunction('swap(address,bool,int256,uint160,uint256,uint256)');
 
-    // const path = this._encodePath(data.path, side);
-    // const swapFunctionParams: UniswapV3SimpleSwapParams =
-    //   side === SwapSide.SELL
-    //     ? {
-    //         recipient: this.augustusAddress,
-    //         deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-    //         amountIn: srcAmount,
-    //         amountOutMinimum: destAmount,
-    //         path,
-    //       }
-    //     : {
-    //         recipient: this.augustusAddress,
-    //         deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-    //         amountOut: destAmount,
-    //         amountInMaximum: srcAmount,
-    //         path,
-    //       };
     const swapFunctionParams: SolidlyV3SimpleSwapParams = {
       recipient: this.augustusAddress,
       zeroForOne: data.zeroForOne,
