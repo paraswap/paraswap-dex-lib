@@ -221,7 +221,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-base', // incorrect url
+        'https://api.studio.thegraph.com/query/32073/v3-base/v0.0.1',
     },
   },
   ChronosV3: {

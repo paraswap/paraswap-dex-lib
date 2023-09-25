@@ -23,7 +23,12 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-avalanche-v2',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-    }
+    },
+    [Network.BASE]: {
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    },
   },
   BeetsFi: {
     [Network.FANTOM]: {

@@ -908,6 +908,14 @@ export const Tokens: {
       address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
       decimals: 18,
     },
+    BAL: {
+      address: '0x4158734d47fc9692176b5085e0f52ee0da5d47f1',
+      decimals: 18,
+    },
+    GOLD: {
+      address: '0xbeFD5C25A59ef2C1316c5A4944931171F30Cd3E4',
+      decimals: 18,
+    },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
   },
 };
@@ -1137,6 +1145,8 @@ export const Holders: {
     USDC: '0xaac391f166f33cdaefaa4afa6616a3bea66b694d',
     USDbC: '0xc9d05a1c3c8e01dcb701d6185cdc21a5bb94becb',
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
+    BAL: '0x854b004700885a61107b458f11ecc169a019b764',
+    GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
   },
 };
 
