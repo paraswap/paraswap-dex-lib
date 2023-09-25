@@ -168,6 +168,15 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0,
       poolGasCost: 180 * 1000,
     },
+    [Network.BASE]: {
+      factoryAddress: '0xed8db60acc29e14bc867a497d94ca6e3ceb5ec04',
+      router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
+      initCode:
+        '0x7ba31a081e879b8e7f06d4e8bf5ee26b5c2680669c5701f4cdbdcde51727b275',
+      feeCode: 0,
+      feeFactor: 1e18,
+      poolGasCost: 180 * 1000,
+    },
   },
 };
 
@@ -176,7 +185,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }], // dystopia
   },
   [Network.FANTOM]: {
-    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly + spiritSwapV2 + Equalizer
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly, spiritSwapV2, equalizer
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
@@ -194,6 +203,6 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses
   },
   [Network.BASE]: {
-    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome, equalizer
   }
 };

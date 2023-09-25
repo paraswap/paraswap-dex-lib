@@ -3,7 +3,7 @@ import { Network, NULL_ADDRESS } from '../../../constants';
 import { getDexKeysWithNetwork } from '../../../utils';
 import _ from 'lodash';
 import { SolidlyConfig } from '../config';
-import { Address, Token } from '../../../types';
+import { Token } from '../../../types';
 import { IDexHelper } from '../../../dex-helper';
 import AerodromeFactoryABI from '../../../abi/aerodrome/aerodrome-pool-factory.json';
 
