@@ -362,8 +362,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs: [],
     adapterAddresses: {
-      BaseAdapter01: '0x77b1E160ABD2276D5741B4419A66ab34DbF0294d',
-      BaseBuyAdapter: '0x28c1F8948e9D18a6850832dDc966f36428fc5892',
+      BaseAdapter01: '0x5F23023f66eFbC55ffC86E62f0f7898D9Ac9FD38',
+      BaseBuyAdapter: '0x683778fAc3144eb6bE0df14325036c5a0DD81F92',
     },
     uniswapV2ExchangeRouterAddress:
       '0x75d199EfB540e47D27D52c62Da3E7daC2B9e834F',

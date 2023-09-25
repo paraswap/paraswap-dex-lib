@@ -293,7 +293,6 @@ export class UniswapV2
     priceParams: UniswapV2PoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
-    console.log('GET SELL PRICE');
     return Uniswapv2ConstantProductPool.getSellPrice(
       priceParams,
       srcAmount,
