@@ -528,25 +528,17 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
       const outputFunc = this.getOutputs;
-      const unitResult = await this.dexHelper.executeOnWorkerPool<
-        ReturnType<typeof outputFunc>
-      >(this.dexKey, 'getOutputs', [
-        state,
-        [unitAmount],
-        zeroForOne,
-        side,
-        balanceDestToken,
-      ]);
+      const unitResult = (await this.dexHelper.executeOnWorkerPool(
+        this.dexKey,
+        'getOutputs',
+        [state, [unitAmount], zeroForOne, side, balanceDestToken],
+      )) as ReturnType<typeof outputFunc>;
 
-      const pricesResult = await this.dexHelper.executeOnWorkerPool<
-        ReturnType<typeof outputFunc>
-      >(this.dexKey, 'getOutputs', [
-        state,
-        _amounts,
-        zeroForOne,
-        side,
-        balanceDestToken,
-      ]);
+      const pricesResult = (await this.dexHelper.executeOnWorkerPool(
+        this.dexKey,
+        'getOutputs',
+        [state, _amounts, zeroForOne, side, balanceDestToken],
+      )) as ReturnType<typeof outputFunc>;
 
       if (!unitResult || !pricesResult) {
         this.logger.debug('Prices or unit is not calculated');

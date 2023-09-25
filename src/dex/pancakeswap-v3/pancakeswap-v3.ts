@@ -608,26 +608,17 @@ export class PancakeswapV3
           const balanceDestToken =
             _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
-          const unitResult = await this.dexHelper.executeOnWorkerPool<
-            ReturnType<typeof this.getOutputs>
-          >(this.dexKey, 'getOutputs', [
-            state,
-            [unitAmount],
-            zeroForOne,
-            side,
-            balanceDestToken,
-          ]);
+          const unitResult = (await this.dexHelper.executeOnWorkerPool(
+            this.dexKey,
+            'getOutputs',
+            [state, [unitAmount], zeroForOne, side, balanceDestToken],
+          )) as ReturnType<typeof this.getOutputs>;
 
-          const pricesResult = await this.dexHelper.executeOnWorkerPool<
-            ReturnType<typeof this.getOutputs>
-          >(this.dexKey, 'getOutputs', [
-            state,
-            _amounts,
-            zeroForOne,
-            side,
-            balanceDestToken,
-          ]);
-
+          const pricesResult = (await this.dexHelper.executeOnWorkerPool(
+            this.dexKey,
+            'getOutputs',
+            [state, _amounts, zeroForOne, side, balanceDestToken],
+          )) as ReturnType<typeof this.getOutputs>;
           if (!pricesResult) {
             this.logger.debug('Prices or unit is not calculated');
             return null;
