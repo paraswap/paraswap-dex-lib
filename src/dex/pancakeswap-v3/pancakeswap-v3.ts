@@ -609,12 +609,14 @@ export class PancakeswapV3
             _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
           const unitResult = (await this.dexHelper.executeOnWorkerPool(
+            this.network,
             this.dexKey,
             'getOutputs',
             [state, [unitAmount], zeroForOne, side, balanceDestToken],
           )) as ReturnType<typeof this.getOutputs>;
 
           const pricesResult = (await this.dexHelper.executeOnWorkerPool(
+            this.network,
             this.dexKey,
             'getOutputs',
             [state, _amounts, zeroForOne, side, balanceDestToken],

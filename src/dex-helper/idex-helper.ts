@@ -9,7 +9,6 @@ import { Token } from '../types';
 import { ConfigHelper } from '../config';
 import { MultiWrapper } from '../lib/multi-wrapper';
 import { PromiseScheduler } from '../lib/promise-scheduler';
-import { AsyncOrSync } from 'ts-essentials';
 
 export interface IDexHelper {
   config: ConfigHelper;
@@ -23,6 +22,7 @@ export interface IDexHelper {
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
   executeOnWorkerPool: (
+    network: number,
     dexKey: string,
     methodSelector: string,
     // For POC it is ok to have any

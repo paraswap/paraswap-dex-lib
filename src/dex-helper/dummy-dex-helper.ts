@@ -247,6 +247,7 @@ export class DummyDexHelper implements IDexHelper {
   web3Provider: Web3;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
   executeOnWorkerPool: (
+    network: number,
     dexKeys: string,
     methodSelector: string,
     payload: any[],
@@ -288,6 +289,7 @@ export class DummyDexHelper implements IDexHelper {
     );
 
     this.executeOnWorkerPool = async (
+      network: number,
       dexKey: string,
       methodSelector: string,
       payload: any[],
