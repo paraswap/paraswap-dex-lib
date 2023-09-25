@@ -372,141 +372,6 @@ export class SolidlyV3
     );
   }
 
-  async getPricingFromRpc(
-    from: Token,
-    to: Token,
-    amounts: bigint[],
-    side: SwapSide,
-    pools: SolidlyV3EventPool[],
-  ): Promise<ExchangePrices<SolidlyV3Data> | null> {
-    if (pools.length === 0) {
-      return null;
-    }
-    this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
-
-    const requests = pools.map<BalanceRequest>(
-      pool => ({
-        owner: pool.poolAddress,
-        asset: side == SwapSide.SELL ? from.address : to.address,
-        assetType: AssetType.ERC20,
-        ids: [
-          {
-            id: DEFAULT_ID_ERC20,
-            spenders: [],
-          },
-        ],
-      }),
-      [],
-    );
-
-    const balances = await getBalances(this.dexHelper.multiWrapper, requests);
-
-    pools = pools.filter((pool, index) => {
-      const balance = balances[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
-      if (balance >= amounts[amounts.length - 1]) {
-        return true;
-      }
-      this.logger.warn(
-        `[${this.network}][${pool.parentName}] have no balance ${pool.poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
-      );
-      return false;
-    });
-
-    pools.forEach(pool => {
-      this.logger.warn(
-        `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
-      );
-    });
-
-    const unitVolume = getBigIntPow(
-      (side === SwapSide.SELL ? from : to).decimals,
-    );
-
-    const chunks = amounts.length - 1;
-
-    const _width = Math.floor(chunks / this.config.chunksCount);
-
-    const _amounts = [unitVolume].concat(
-      Array.from(Array(this.config.chunksCount).keys()).map(
-        i => amounts[(i + 1) * _width],
-      ),
-    );
-
-    const calldata = pools.map(pool =>
-      _amounts.map(_amount => ({
-        target: pool._poolAddress,
-        gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
-        callData:
-          side === SwapSide.SELL
-            ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
-                [
-                  from.address,
-                  to.address,
-                  _amount.toString(),
-                  pool.tickSpacingAsString,
-                  0, //sqrtPriceLimitX96
-                ],
-              ])
-            : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
-                [
-                  from.address,
-                  to.address,
-                  _amount.toString(),
-                  pool.tickSpacingAsString,
-                  0, //sqrtPriceLimitX96
-                ],
-              ]),
-      })),
-    );
-
-    const data = await this.uniswapMulti.methods
-      .multicall(calldata.flat())
-      .call();
-
-    const decode = (j: number): bigint => {
-      if (!data.returnData[j].success) {
-        return 0n;
-      }
-      const decoded = defaultAbiCoder.decode(
-        ['uint256'],
-        data.returnData[j].returnData,
-      );
-      return BigInt(decoded[0].toString());
-    };
-
-    let i = 0;
-    const result = pools.map(pool => {
-      const _rates = _amounts.map(() => decode(i++));
-      const unit: bigint = _rates[0];
-
-      const prices = interpolate(
-        _amounts.slice(1),
-        _rates.slice(1),
-        amounts,
-        side,
-      );
-
-      return {
-        prices,
-        unit,
-        data: {
-          zeroForOne: pool.token0.toLowerCase() == from.address.toLowerCase() ? true: false,
-          poolAddress: pool.poolAddress
-        },
-        poolIdentifier: this.getPoolIdentifier(
-          pool.token0,
-          pool.token1,
-          pool.tickSpacing,
-        ),
-        exchange: this.dexKey,
-        gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
-        poolAddresses: [pool.poolAddress],
-      };
-    });
-
-    return result;
-  }
-
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -586,10 +451,7 @@ export class SolidlyV3
         (acc, pool) => {
           let state = pool.getState(blockNumber);
           if (state === null) {
-            this.logger.trace(
-              `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
-            );
-            acc.poolWithoutState.push(pool);
+            throw new Error("Unable to retrieve pool state.");
           } else {
             acc.poolWithState.push(pool);
           }
@@ -599,14 +461,6 @@ export class SolidlyV3
           poolWithState: [] as SolidlyV3EventPool[],
           poolWithoutState: [] as SolidlyV3EventPool[],
         },
-      );
-
-      const rpcResultsPromise = this.getPricingFromRpc(
-        _srcToken,
-        _destToken,
-        amounts,
-        side,
-        this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
       );
 
       const states = poolsToUse.poolWithState.map(
@@ -693,19 +547,10 @@ export class SolidlyV3
           };
         }),
       );
-      const rpcResults = await rpcResultsPromise;
 
       const notNullResult = result.filter(
         res => res !== null,
       ) as ExchangePrices<SolidlyV3Data>;
-
-      if (rpcResults) {
-        rpcResults.forEach(r => {
-          if (r) {
-            notNullResult.push(r);
-          }
-        });
-      }
 
       return notNullResult;
     } catch (e) {
