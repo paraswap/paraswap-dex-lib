@@ -959,4 +959,146 @@ describe('SushiSwapV3', () => {
       expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
     });
   });
+
+  describe('Base', () => {
+    let blockNumber: number;
+    let sushiSwapV3: UniswapV3;
+    let sushiSwapV3Mainnet: UniswapV3;
+
+    const network = Network.BASE;
+    const dexHelper = new DummyDexHelper(network);
+    const TokenASymbol = 'USDbC';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'DAI';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    beforeEach(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      sushiSwapV3 = new UniswapV3(network, dexKey, dexHelper);
+      sushiSwapV3Mainnet = new UniswapV3(Network.MAINNET, dexKey, dexHelper);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await sushiSwapV3.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await sushiSwapV3.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = sushiSwapV3.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            sushiSwapV3,
+            'quoteExactInputSingle',
+            blockNumber,
+            '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await sushiSwapV3.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await sushiSwapV3.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = sushiSwapV3.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            sushiSwapV3,
+            'quoteExactOutputSingle',
+            blockNumber,
+            '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getTopPoolsForToken', async function () {
+      const poolLiquidity = await sushiSwapV3.getTopPoolsForToken(
+        TokenB.address,
+        10,
+      );
+      console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+      checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+    });
+  });
+
 });
+

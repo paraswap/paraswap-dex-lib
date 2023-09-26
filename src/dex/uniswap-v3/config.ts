@@ -210,6 +210,19 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-optimism',
     },
+    [Network.BASE]: {
+      factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+      quoter: '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e',
+      router: '0xCc0e85901f33D375FcdD9a888B05Df9616F68277',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/32073/v3-base/v0.0.1',
+    },
   },
   ChronosV3: {
     [Network.ARBITRUM]: {
