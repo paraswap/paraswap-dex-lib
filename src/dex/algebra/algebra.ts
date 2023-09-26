@@ -527,20 +527,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const balanceDestToken =
         _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
-      const outputFunc = this.getOutputs;
-      const unitResult = (await this.dexHelper.executeOnWorkerPool(
-        this.network,
-        this.dexKey,
-        'getOutputs',
-        [state, [unitAmount], zeroForOne, side, balanceDestToken],
-      )) as ReturnType<typeof outputFunc>;
-
-      const pricesResult = (await this.dexHelper.executeOnWorkerPool(
-        this.network,
-        this.dexKey,
-        'getOutputs',
-        [state, _amounts, zeroForOne, side, balanceDestToken],
-      )) as ReturnType<typeof outputFunc>;
+      const unitResult = await this._getOutputs(
+        state,
+        [unitAmount],
+        zeroForOne,
+        side,
+        balanceDestToken,
+      );
+      const pricesResult = await this._getOutputs(
+        state,
+        _amounts,
+        zeroForOne,
+        side,
+        balanceDestToken,
+      );
 
       if (!unitResult || !pricesResult) {
         this.logger.debug('Prices or unit is not calculated');
@@ -800,20 +800,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     return newConfig;
   }
 
-  getOutputs(
+  private async _getOutputs(
     state: DeepReadonly<IAlgebraPoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
     destTokenBalance: bigint,
-  ): OutputResult | null {
+  ): Promise<OutputResult | null> {
     try {
-      const outputsResult = AlgebraMath.queryOutputs(
-        state,
-        amounts,
-        zeroForOne,
-        side,
-      );
+      const outputsResult = (await this.dexHelper.executeOnWorkerPool(
+        this.network,
+        this.dexKey,
+        'queryOutputs',
+        [state, amounts, zeroForOne, side],
+      )) as ReturnType<typeof AlgebraMath.queryOutputs>;
 
       if (side === SwapSide.SELL) {
         if (outputsResult.outputs[0] > destTokenBalance) {

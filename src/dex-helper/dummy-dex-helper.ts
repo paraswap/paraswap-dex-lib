@@ -250,8 +250,8 @@ export class DummyDexHelper implements IDexHelper {
     network: number,
     dexKeys: string,
     methodSelector: string,
-    payload: any[],
-  ) => Promise<any>;
+    payload: unknown[],
+  ) => Promise<unknown>;
 
   constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
@@ -292,7 +292,7 @@ export class DummyDexHelper implements IDexHelper {
       network: number,
       dexKey: string,
       methodSelector: string,
-      payload: any[],
+      payload: unknown[],
     ) => {
       return null;
     };

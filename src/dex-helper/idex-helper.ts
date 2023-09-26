@@ -25,8 +25,8 @@ export interface IDexHelper {
     network: number,
     dexKey: string,
     methodSelector: string,
-    // For POC it is ok to have any
-    payload: any[],
-  ) => Promise<any>;
+    payload: unknown[],
+    // For POC it is ok to have this unknown
+  ) => Promise<unknown>;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
 }

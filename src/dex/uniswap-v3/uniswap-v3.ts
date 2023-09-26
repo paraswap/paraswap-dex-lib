@@ -641,19 +641,20 @@ export class UniswapV3
           const balanceDestToken =
             _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
-          const unitResult = (await this.dexHelper.executeOnWorkerPool(
-            this.network,
-            this.dexKey,
-            'getOutputs',
-            [state, [unitAmount], zeroForOne, side, balanceDestToken],
-          )) as ReturnType<typeof this.getOutputs>;
-
-          const pricesResult = (await this.dexHelper.executeOnWorkerPool(
-            this.network,
-            this.dexKey,
-            'getOutputs',
-            [state, _amounts, zeroForOne, side, balanceDestToken],
-          )) as ReturnType<typeof this.getOutputs>;
+          const unitResult = await this._getOutputs(
+            state,
+            [unitAmount],
+            zeroForOne,
+            side,
+            balanceDestToken,
+          );
+          const pricesResult = await this._getOutputs(
+            state,
+            _amounts,
+            zeroForOne,
+            side,
+            balanceDestToken,
+          );
 
           if (!unitResult || !pricesResult) {
             this.logger.debug('Prices or unit is not calculated');
@@ -1070,20 +1071,20 @@ export class UniswapV3
     return newConfig;
   }
 
-  getOutputs(
+  private async _getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
     destTokenBalance: bigint,
-  ): OutputResult | null {
+  ): Promise<OutputResult | null> {
     try {
-      const outputsResult = uniswapV3Math.queryOutputs(
-        state,
-        amounts,
-        zeroForOne,
-        side,
-      );
+      const outputsResult = (await this.dexHelper.executeOnWorkerPool(
+        this.network,
+        this.dexKey,
+        'queryOutputs',
+        [state, amounts, zeroForOne, side],
+      )) as ReturnType<typeof uniswapV3Math.queryOutputs>;
 
       if (side === SwapSide.SELL) {
         if (outputsResult.outputs[0] > destTokenBalance) {
