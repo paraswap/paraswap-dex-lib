@@ -371,7 +371,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         return null;
       }
 
-      if (limitPools && limitPools.length != 1) {
+      if (limitPools && limitPools.length !== 1) {
         return null;
       }
 
@@ -438,7 +438,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         },
       ];
     } catch (e: unknown) {
-      this.logger.error(e);
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
           destToken.symbol || destToken.address
