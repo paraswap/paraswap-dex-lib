@@ -204,5 +204,5 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.BASE]: {
     [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome, equalizer
-  }
+  },
 };

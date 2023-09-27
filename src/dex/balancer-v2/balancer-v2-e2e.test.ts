@@ -2,7 +2,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Holders, NativeTokenSymbols, Tokens } from '../../../tests/constants-e2e';
+import {
+  Holders,
+  NativeTokenSymbols,
+  Tokens,
+} from '../../../tests/constants-e2e';
 import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
@@ -37,13 +41,7 @@ function testForNetwork(
         ContractMethod.megaSwap,
       ],
     ],
-    [
-      SwapSide.BUY,
-      [
-        ContractMethod.simpleBuy,
-        ContractMethod.buy,
-      ],
-    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {

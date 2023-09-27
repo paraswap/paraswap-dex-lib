@@ -81,7 +81,6 @@ describe('QuickPerps Event', function () {
             dexKey,
             network,
             dexHelper,
-            logger,
             config,
           );
           await testEventSubscriber(

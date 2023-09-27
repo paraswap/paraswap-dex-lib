@@ -429,13 +429,7 @@ describe('UniswapV3 E2E', () => {
             ContractMethod.megaSwap,
           ],
         ],
-        [
-          SwapSide.BUY,
-          [
-            ContractMethod.simpleBuy,
-            ContractMethod.buy
-          ],
-        ],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       sideToContractMethods.forEach((contractMethods, side) =>

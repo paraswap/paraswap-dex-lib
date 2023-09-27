@@ -16,11 +16,7 @@ export class Aerodrome extends VelodromeV2 {
     dexKey: string,
     protected dexHelper: IDexHelper,
   ) {
-    super(
-      network,
-      dexKey,
-      dexHelper,
-    );
+    super(network, dexKey, dexHelper);
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
       AerodromeFactoryABI as any,
