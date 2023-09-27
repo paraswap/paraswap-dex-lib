@@ -8,13 +8,11 @@ import {
   PairDataMap,
   DexalotPricesResponse,
   PriceDataMap,
-  DexalotTokensResponse,
   DexalotBlacklistResponse,
 } from './types';
 import {
   pricesResponseValidator,
   pairsResponseValidator,
-  tokensResponseValidator,
   blacklistResponseValidator,
 } from './validators';
 import { Network } from '../../constants';
@@ -28,7 +26,6 @@ export class RateFetcher {
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
-  private tokensFetcher: Fetcher<DexalotTokensResponse>;
   private tokensAddrCacheKey: string;
   private tokensCacheKey: string;
   private tokensCacheTTL: number;
@@ -88,24 +85,6 @@ export class RateFetcher {
       logger,
     );
 
-    this.tokensFetcher = new Fetcher<DexalotTokensResponse>(
-      dexHelper.httpRequest,
-      {
-        info: {
-          requestOptions: config.rateConfig.tokensReqParams,
-          caster: (data: unknown) => {
-            return validateAndCast<DexalotTokensResponse>(
-              data,
-              tokensResponseValidator,
-            );
-          },
-        },
-        handler: this.handleTokensResponse.bind(this),
-      },
-      config.rateConfig.tokensIntervalMs,
-      logger,
-    );
-
     this.blacklistFetcher = new Fetcher<DexalotBlacklistResponse>(
       dexHelper.httpRequest,
       {
@@ -128,22 +107,36 @@ export class RateFetcher {
   start() {
     this.pairsFetcher.startPolling();
     this.rateFetcher.startPolling();
-    this.tokensFetcher.startPolling();
     this.blacklistFetcher.startPolling();
   }
 
   stop() {
     this.pairsFetcher.stopPolling();
     this.rateFetcher.stopPolling();
-    this.tokensFetcher.stopPolling();
     this.blacklistFetcher.stopPolling();
   }
 
   private handlePairsResponse(resp: DexalotPairsResponse): void {
-    const { pairs } = resp;
+    const pairs = resp;
     const dexPairs: PairDataMap = {};
+    const tokenMap: { [address: string]: Token } = {};
+    const tokenAddrMap: { [symbol: string]: string } = {};
     Object.keys(pairs).forEach(pair => {
       dexPairs[pair.toLowerCase()] = pairs[pair];
+      tokenAddrMap[pairs[pair].base.toLowerCase()] =
+        pairs[pair].baseAddress.toLowerCase();
+      tokenAddrMap[pairs[pair].quote.toLowerCase()] =
+        pairs[pair].quoteAddress.toLowerCase();
+      tokenMap[pairs[pair].baseAddress.toLowerCase()] = {
+        address: pairs[pair].baseAddress.toLowerCase(),
+        symbol: pairs[pair].base,
+        decimals: pairs[pair].baseDecimals,
+      };
+      tokenMap[pairs[pair].quoteAddress.toLowerCase()] = {
+        address: pairs[pair].quoteAddress.toLowerCase(),
+        symbol: pairs[pair].quote,
+        decimals: pairs[pair].quoteDecimals,
+      };
     });
     this.dexHelper.cache.setex(
       this.dexKey,
@@ -151,6 +144,20 @@ export class RateFetcher {
       this.pairsCacheKey,
       this.pairsCacheTTL,
       JSON.stringify(dexPairs),
+    );
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.tokensCacheKey,
+      this.tokensCacheTTL,
+      JSON.stringify(tokenMap),
+    );
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.tokensAddrCacheKey,
+      this.tokensCacheTTL,
+      JSON.stringify(tokenAddrMap),
     );
   }
 
@@ -166,35 +173,6 @@ export class RateFetcher {
       this.pricesCacheKey,
       this.pricesCacheTTL,
       JSON.stringify(dexPrices),
-    );
-  }
-
-  private handleTokensResponse(resp: DexalotTokensResponse): void {
-    const { tokens } = resp;
-    const tokenMap: { [address: string]: Token } = {};
-    const tokenAddrMap: { [pair: string]: string } = {};
-    Object.keys(tokens).forEach(symbol => {
-      const token = tokens[symbol];
-      tokenMap[token.address.toLowerCase()] = {
-        address: token.address.toLowerCase(),
-        symbol: token.symbol,
-        decimals: token.decimals,
-      };
-      tokenAddrMap[token.symbol.toLowerCase()] = token.address.toLowerCase();
-    });
-    this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      this.tokensCacheKey,
-      this.tokensCacheTTL,
-      JSON.stringify(tokenMap),
-    );
-    this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      this.tokensAddrCacheKey,
-      this.tokensCacheTTL,
-      JSON.stringify(tokenAddrMap),
     );
   }
 

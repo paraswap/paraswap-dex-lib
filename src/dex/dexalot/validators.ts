@@ -4,17 +4,20 @@ const pairValidator = joi.object({
   base: joi.string().min(1).required(),
   quote: joi.string().min(1).required(),
   liquidityUSD: joi.number().min(0).required(),
+  baseAddress: joi.string().min(1).required(),
+  quoteAddress: joi.string().min(1).required(),
+  baseDecimals: joi.number().min(0).required(),
+  quoteDecimals: joi.number().min(0).required(),
 });
 
-export const pairsResponseValidator = joi.object({
-  pairs: joi.object().pattern(joi.string(), pairValidator),
-});
+export const pairsResponseValidator = joi
+  .object()
+  .pattern(joi.string(), pairValidator);
 
 const orderbookRecordValidator = joi
   .array()
   .items(joi.string().min(1))
-  .length(2)
-  .required();
+  .length(2);
 
 const orderbookValidator = joi.object({
   bids: joi.array().items(orderbookRecordValidator).required(),
