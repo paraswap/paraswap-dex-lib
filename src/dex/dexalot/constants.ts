@@ -10,8 +10,6 @@ export const DEXALOT_API_PRICES_POLLING_INTERVAL_MS = 1000;
 
 export const DEXALOT_API_PAIRS_POLLING_INTERVAL_MS = 1000 * 60 * 10; // 10 mins
 
-export const DEXALOT_API_TOKENS_POLLING_INTERVAL_MS = 1000 * 60 * 10; // 10 mins
-
 export const DEXALOT_API_BLACKLIST_POLLING_INTERVAL_MS = 1000 * 60 * 60; // 1 hour
 
 export const DEXALOT_API_URL = 'https://api.dexalot.com';
