@@ -10,11 +10,12 @@ type RFQOrder = {
   taker: string;
   makerAmount: string;
   takerAmount: string;
-  signature: string;
+  signature?: string;
 };
 
 export type RFQResponse = {
   order: RFQOrder;
+  signature: string;
 };
 
 export type RFQResponseError = {
@@ -52,8 +53,18 @@ export type PairDataMap = {
   [pair: string]: PairData;
 };
 
+export type PairDataResp = {
+  base: string;
+  quote: string;
+  liquidityUSD: number;
+  baseAddress: string;
+  quoteAddress: string;
+  baseDecimals: number;
+  quoteDecimals: number;
+};
+
 export type DexalotPairsResponse = {
-  pairs: PairDataMap;
+  [pair: string]: PairDataResp;
 };
 
 type PriceData = {
@@ -73,23 +84,8 @@ export type TokenAddrDataMap = {
   [symbol: string]: string;
 };
 
-type TokenData = {
-  symbol: string;
-  name: string;
-  description: string;
-  address: any;
-  decimals: number;
-  type: string;
-};
-
 export type TokenDataMap = {
   [address: string]: Token;
-};
-
-export type DexalotTokensResponse = {
-  tokens: {
-    [token: string]: TokenData;
-  };
 };
 
 export type DexalotBlacklistResponse = {
@@ -108,11 +104,6 @@ export type DexalotRateFetcherConfig = {
       headers?: RequestHeaders;
       params?: any;
     };
-    tokensReqParams: {
-      url: string;
-      headers?: RequestHeaders;
-      params?: any;
-    };
     blacklistReqParams: {
       url: string;
       headers?: RequestHeaders;
@@ -120,7 +111,6 @@ export type DexalotRateFetcherConfig = {
     };
     pairsIntervalMs: number;
     pricesIntervalMs: number;
-    tokensIntervalMs: number;
     blacklistIntervalMs: number;
     pairsCacheKey: string;
     pricesCacheKey: string;

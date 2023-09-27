@@ -47,13 +47,11 @@ import {
   DEXALOT_GAS_COST,
   DEXALOT_PAIRS_CACHES_TTL_S,
   DEXALOT_API_PAIRS_POLLING_INTERVAL_MS,
-  DEXALOT_API_TOKENS_POLLING_INTERVAL_MS,
   DEXALOT_TOKENS_CACHES_TTL_S,
   DEXALOT_API_BLACKLIST_POLLING_INTERVAL_MS,
   DEXALOT_RATE_LIMITED_TTL_S,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
-import { TooStrictSlippageCheckError } from '../generic-rfq/types';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 
@@ -111,12 +109,14 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         rateConfig: {
           pairsIntervalMs: DEXALOT_API_PAIRS_POLLING_INTERVAL_MS,
           pricesIntervalMs: DEXALOT_API_PRICES_POLLING_INTERVAL_MS,
-          tokensIntervalMs: DEXALOT_API_TOKENS_POLLING_INTERVAL_MS,
           blacklistIntervalMs: DEXALOT_API_BLACKLIST_POLLING_INTERVAL_MS,
           pairsReqParams: {
             url: `${DEXALOT_API_URL}/api/rfq/pairs`,
             headers: {
               'x-apikey': this.dexalotAuthToken,
+            },
+            params: {
+              chainid: this.network,
             },
           },
           pricesReqParams: {
@@ -124,11 +124,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             headers: {
               'x-apikey': this.dexalotAuthToken,
             },
-          },
-          tokensReqParams: {
-            url: `${DEXALOT_API_URL}/api/rfq/tokens`,
-            headers: {
-              'x-apikey': this.dexalotAuthToken,
+            params: {
+              chainid: this.network,
             },
           },
           blacklistReqParams: {
@@ -505,6 +502,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         takerAmount:
           side === SwapSide.SELL ? optimalSwapExchange.srcAmount : undefined,
         userAddress: options.txOrigin,
+        chainid: this.network,
       };
 
       const rfq: RFQResponse = await this.dexHelper.httpRequest.post(
@@ -518,9 +516,10 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           'Missing quote data',
           `RFQ ${swapIdentifier} ${JSON.stringify(rfq)}`,
         );
-      } else if (!rfq.order.signature) {
+      } else if (!rfq.signature) {
         this.generateRFQError('Missing signature', swapIdentifier);
       }
+      rfq.order.signature = rfq.signature;
 
       const { order } = rfq;
 
