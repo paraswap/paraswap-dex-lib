@@ -60,6 +60,7 @@ const MAX_STALE_STATE_BLOCK_AGE = {
 type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
+  private readonly factory: AlgebraFactory;
   readonly isFeeOnTransferSupported: boolean = false;
   protected eventPools: Record<string, IAlgebraEventPool | null> = {};
 
@@ -116,12 +117,12 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     this.AlgebraPoolImplem =
       config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
 
-    new AlgebraFactory(
+    this.factory = new AlgebraFactory(
       dexHelper,
       dexKey,
       this.config.factory,
       this.logger,
-      this.onPoolCreatedDeleteFromNonExistingSet,
+      this.onPoolCreatedDeleteFromNonExistingSet.bind(this),
     );
   }
 
@@ -135,6 +136,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    this.factory.initialize(blockNumber);
+
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
         const maxTimestamp =
@@ -154,7 +158,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   /*
-   * When a non exisiting pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
    *  Once the pool is created, it gets immediately flagged
    */
   onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({

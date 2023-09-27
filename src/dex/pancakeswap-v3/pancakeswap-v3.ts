@@ -56,6 +56,10 @@ import {
   DEFAULT_ID_ERC20,
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
+import {
+  OnPoolCreatedCallback,
+  PancakeswapV3Factory,
+} from './pancakeswap-v3-factory';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -71,6 +75,7 @@ export class PancakeswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data>
 {
+  private readonly factory: PancakeswapV3Factory;
   readonly isFeeOnTransferSupported: boolean = false;
   readonly eventPools: Record<string, PancakeSwapV3EventPool | null> = {};
 
@@ -117,6 +122,14 @@ export class PancakeswapV3
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
+
+    this.factory = new PancakeswapV3Factory(
+      dexHelper,
+      dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet.bind(this),
+    );
   }
 
   get supportedFees() {
@@ -133,6 +146,9 @@ export class PancakeswapV3
   }
 
   async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    this.factory.initialize(blockNumber);
+
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
         const maxTimestamp =
@@ -150,6 +166,29 @@ export class PancakeswapV3
       );
     }
   }
+
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   *  Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+    fee,
+  }) => {
+    const [_token0, _token1] = this._sortTokens(token0, token1);
+    const poolKey = `${token0}_${token1}_${fee}`.toLowerCase();
+
+    // consider doing it only from master pool for less calls to distant cache
+
+    try {
+      // delete pool record from set
+      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+    } catch (e) {}
+
+    // delete entry locally to let local instance discover the pool
+    delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];
+  };
 
   async getPool(
     srcAddress: Address,
