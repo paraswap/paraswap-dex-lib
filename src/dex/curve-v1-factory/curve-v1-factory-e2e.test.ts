@@ -111,6 +111,25 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
+
+  describe('Mainnet crvUSD', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'crvUSD';
+    const tokenBSymbol: string = 'USDT';
+
+    const tokenAAmount: string = '10000000000000000000';
+    const tokenBAmount: string = '10000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
   describe('Mainnet ng pool', () => {
     const network = Network.MAINNET;
 

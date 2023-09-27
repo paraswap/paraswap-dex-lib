@@ -42,13 +42,17 @@ import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
+import { Ramses } from './solidly/forks-override/ramses';
 import { Thena } from './solidly/forks-override/thena';
 import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
+import { VelodromeV2 } from './solidly/forks-override/velodromeV2';
+import { Aerodrome } from './solidly/forks-override/aerodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { SoliSnek } from './solidly/forks-override/solisnek';
+import { Equalizer } from './solidly/forks-override/equalizer';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -70,6 +74,8 @@ import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { QuickPerps } from './quick-perps/quick-perps';
+import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
 
 const LegacyDexes = [
@@ -126,11 +132,15 @@ const Dexes = [
   Solidly,
   SolidlyEthereum,
   SpiritSwapV2,
+  Ramses,
   Thena,
   Chronos,
   Velodrome,
+  VelodromeV2,
+  Aerodrome,
   Cone,
   SoliSnek,
+  Equalizer,
   Synthetix,
   CurveV1Factory,
   SwaapV1,
@@ -139,6 +149,8 @@ const Dexes = [
   MaverickV1,
   Camelot,
   SwaapV2,
+  QuickPerps,
+  NomiswapV2,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

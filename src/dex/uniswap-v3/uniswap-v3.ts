@@ -91,7 +91,13 @@ export class UniswapV3
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.pick(UniswapV3Config, ['UniswapV3', 'QuickSwapV3.1']),
+      _.pick(UniswapV3Config, [
+        'UniswapV3',
+        'SushiSwapV3',
+        'QuickSwapV3.1',
+        'RamsesV2',
+        'ChronosV3',
+      ]),
     );
 
   logger: Logger;
@@ -118,7 +124,9 @@ export class UniswapV3
       this.config.uniswapMulticall,
     );
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapV3StateMulticallABI as AbiItem[],
+      this.config.stateMultiCallAbi !== undefined
+        ? this.config.stateMultiCallAbi
+        : (UniswapV3StateMulticallABI as AbiItem[]),
       this.config.stateMulticall,
     );
 
@@ -239,6 +247,7 @@ export class UniswapV3
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
+        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
         this.erc20Interface,
         this.config.factory,
         fee,
@@ -1055,6 +1064,9 @@ export class UniswapV3
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
+      stateMultiCallAbi: this.config.stateMultiCallAbi,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
     };
     return newConfig;
   }
