@@ -67,8 +67,8 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
-const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const PANCAKESWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class PancakeswapV3
