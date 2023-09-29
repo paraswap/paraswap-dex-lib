@@ -20,7 +20,12 @@ export const DEXALOT_GAS_COST = 120_000;
 
 export const DEXALOT_RESTRICT_TTL_S = 60 * 30; // 30 minutes
 
+export const DEXALOT_BLACKLIST_TTL_S = 60 * 60 * 24; // 24 hours
+
+export const DEXALOT_BLACKLIST_CACHE_VALUE = 'blacklisted';
+
+export const DEXALOT_RATELIMIT_CACHE_VALUE = 'limited';
+
 export const DEXALOT_RESTRICTED_CACHE_KEY = 'restricted';
 
-export const DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION =
-  new BigNumber('0.001');
+export const DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION = new BigNumber('0.001');

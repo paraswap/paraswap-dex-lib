@@ -53,6 +53,9 @@ import {
   DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
   DEXALOT_RESTRICTED_CACHE_KEY,
   DEXALOT_RESTRICT_TTL_S,
+  DEXALOT_BLACKLIST_TTL_S,
+  DEXALOT_BLACKLIST_CACHE_VALUE,
+  DEXALOT_RATELIMIT_CACHE_VALUE,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
@@ -631,6 +634,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           );
           await this.setRateLimited(options.txOrigin, errorData.RetryAfter);
         } else {
+          await this.setBlacklist(options.txOrigin);
           this.logger.error(
             `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}: ${errorData.Reason}`,
           );
@@ -751,19 +755,29 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     return result === 'true';
   }
 
-  async setBlacklist(txOrigin: Address): Promise<boolean> {
-    await this.dexHelper.cache.sadd(
-      this.blacklistCacheKey,
-      txOrigin.toLowerCase(),
+  async setBlacklist(txOrigin: Address, ttl: number = DEXALOT_BLACKLIST_TTL_S,
+  ): Promise<boolean> {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+      ttl,
+      DEXALOT_BLACKLIST_CACHE_VALUE,
     );
     return true;
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    return this.dexHelper.cache.sismember(
-      this.blacklistCacheKey,
-      txOrigin.toLowerCase(),
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
     );
+    return result === DEXALOT_BLACKLIST_CACHE_VALUE;
+  }
+
+  getBlackListKey(address: Address) {
+    return `blacklist_${address}`.toLowerCase();
   }
 
   getRateLimitedKey(address: Address) {
@@ -776,16 +790,16 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       this.network,
       this.getRateLimitedKey(txOrigin),
     );
-    return result === 'limited';
+    return result === DEXALOT_RATELIMIT_CACHE_VALUE;
   }
 
-  async setRateLimited(txOrigin: Address, ttl?: number) {
+  async setRateLimited(txOrigin: Address, ttl = DEXALOT_RATE_LIMITED_TTL_S) {
     await this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
       this.getRateLimitedKey(txOrigin),
-      ttl || DEXALOT_RATE_LIMITED_TTL_S,
-      'limited',
+      ttl,
+      DEXALOT_RATELIMIT_CACHE_VALUE,
     );
     return true;
   }
