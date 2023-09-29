@@ -59,6 +59,8 @@ import {
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
+import { Method } from '../../dex-helper/irequest-wrapper';
+import { SwaapV2APIParameters } from '../swaap-v2/types';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -116,30 +118,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           pairsIntervalMs: DEXALOT_API_PAIRS_POLLING_INTERVAL_MS,
           pricesIntervalMs: DEXALOT_API_PRICES_POLLING_INTERVAL_MS,
           blacklistIntervalMs: DEXALOT_API_BLACKLIST_POLLING_INTERVAL_MS,
-          pairsReqParams: {
-            url: `${DEXALOT_API_URL}/api/rfq/pairs`,
-            headers: {
-              'x-apikey': this.dexalotAuthToken,
-            },
-            params: {
-              chainid: this.network,
-            },
-          },
-          pricesReqParams: {
-            url: `${DEXALOT_API_URL}/api/rfq/prices`,
-            headers: {
-              'x-apikey': this.dexalotAuthToken,
-            },
-            params: {
-              chainid: this.network,
-            },
-          },
-          blacklistReqParams: {
-            url: `${DEXALOT_API_URL}/api/rfq/blacklist`,
-            headers: {
-              'x-apikey': this.dexalotAuthToken,
-            },
-          },
+          pairsReqParams: this.getAPIReqParams('api/rfq/pairs', 'GET'),
+          pricesReqParams: this.getAPIReqParams('api/rfq/prices', 'GET'),
+          blacklistReqParams: this.getAPIReqParams('api/rfq/blacklist', 'GET'),
           pairsCacheKey: this.pairsCacheKey,
           pairsCacheTTLSecs: DEXALOT_PAIRS_CACHES_TTL_S,
           pricesCacheKey: this.pricesCacheKey,
@@ -915,6 +896,17 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     );
 
     return pairsByLiquidity.slice(0, limit);
+  }
+
+  getAPIReqParams(endpoint: string, method: Method): SwaapV2APIParameters {
+    return {
+      url: `${DEXALOT_API_URL}/${endpoint}`,
+      headers: { 'x-apikey': this.dexalotAuthToken },
+      params: {
+        chainid: this.network,
+      },
+      method: method,
+    };
   }
 
   releaseResources(): void {
