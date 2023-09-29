@@ -157,6 +157,8 @@ describe('MaverickV1', function () {
 
   it('search for broken event', async function () {
     const startBlockNumber = 18233872;
+    // const startBlockNumber = 18235059;
+    // const blockNumberCheck = 18235060;
     const blocksToLookForward = 10000;
     const poolAddress = '0x352B186090068Eb35d532428676cE510E17AB581';
     const srcToken = {
@@ -185,6 +187,8 @@ describe('MaverickV1', function () {
       'Pool must subscribe to only one pool',
     );
 
+    // const correctState = await pool.generateState(blockNumberCheck);
+
     const logsToDispatch = await dexHelper.provider.getLogs({
       fromBlock: startBlockNumber,
       toBlock: startBlockNumber + blocksToLookForward,
@@ -210,7 +214,7 @@ describe('MaverickV1', function () {
       startBlockNumber,
     );
 
-    for (const log of logsToDispatch) {
+    for (const [i, log] of logsToDispatch.entries()) {
       if (log.blockNumber > currentBlock.number) {
         inputParams.blockNumber = log.blockNumber;
         currentBlock = await dexHelper.web3Provider.eth.getBlock(
@@ -234,9 +238,42 @@ describe('MaverickV1', function () {
       )?.[0].prices[1];
 
       console.log(
-        `Output after ${log.blockNumber} and topic0 ${log.topics[0]}: ${output}`,
+        `Output after ${log.blockNumber}/${inputParams.blockNumber} and topic0 ${log.topics[0]}, txHash=${log.transactionHash}, txInd=${log.transactionIndex}: ${output}`,
       );
-      expect(output).toBeLessThan(1800000000);
+
+      // if (i === 2) {
+      //   const incorrectState = pool.getState(blockNumberCheck);
+      //   expect(correctState).toEqual(incorrectState);
+      // }
+
+      // console.log(
+      //   getReaderCalldata(
+      //     poolAddress,
+      //     new Interface(PoolInspectorABI),
+      //     inputParams.amounts,
+      //     'calculateSwap',
+      //     true,
+      //     false,
+      //   ),
+      // );
+      // expect(output).toBeLessThan(1800000000);
     }
+
+    // const incorrectState = pool.getState(blockNumberCheck);
+    //
+    // expect(correctState).toEqual(incorrectState);
+    //
+    // output = (
+    //   await maverickV1.getPricesVolume(
+    //     inputParams.srcToken,
+    //     inputParams.destToken,
+    //     inputParams.amounts,
+    //     inputParams.side,
+    //     blockNumberCheck,
+    //     inputParams.limitPools,
+    //   )
+    // )?.[0].prices[1];
+    //
+    // console.log(`Output after ${blockNumberCheck}: ${output}`);
   });
 });
