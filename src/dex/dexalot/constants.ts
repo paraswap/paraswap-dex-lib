@@ -6,7 +6,7 @@ export const DEXALOT_PRICES_CACHES_TTL_S = 3;
 
 export const DEXALOT_PAIRS_CACHES_TTL_S = 21 * 60; // 21 mins
 
-export const DEXALOT_TOKENS_CACHES_TTL_S = 11;
+export const DEXALOT_TOKENS_CACHES_TTL_S = 21 * 60; // 21 mins
 
 export const DEXALOT_BLACKLIST_CACHES_TTL_S = 3 * 60; // 3 hours
 
