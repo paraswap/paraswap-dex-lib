@@ -32,6 +32,7 @@ export class RateFetcher {
 
   private blacklistFetcher: Fetcher<DexalotBlacklistResponse>;
   private blacklistCacheKey: string;
+  private blacklistCacheTTL: number;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -48,6 +49,7 @@ export class RateFetcher {
     this.tokensCacheKey = config.rateConfig.tokensCacheKey;
     this.tokensCacheTTL = config.rateConfig.tokensCacheTTLSecs;
     this.blacklistCacheKey = config.rateConfig.blacklistCacheKey;
+    this.blacklistCacheTTL = config.rateConfig.blacklistCacheTTLSecs;
 
     this.pairsFetcher = new Fetcher<DexalotPairsResponse>(
       dexHelper.httpRequest,
@@ -138,6 +140,7 @@ export class RateFetcher {
         decimals: pairs[pair].quoteDecimals,
       };
     });
+
     this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
@@ -145,6 +148,7 @@ export class RateFetcher {
       this.pairsCacheTTL,
       JSON.stringify(dexPairs),
     );
+
     this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
@@ -152,6 +156,7 @@ export class RateFetcher {
       this.tokensCacheTTL,
       JSON.stringify(tokenMap),
     );
+
     this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
@@ -167,6 +172,7 @@ export class RateFetcher {
     Object.keys(prices).forEach(pair => {
       dexPrices[pair.toLowerCase()] = prices[pair];
     });
+
     this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
@@ -180,8 +186,12 @@ export class RateFetcher {
     resp: DexalotBlacklistResponse,
   ): Promise<void> {
     const { blacklist } = resp;
-    for (const address of blacklist) {
-      this.dexHelper.cache.sadd(this.blacklistCacheKey, address.toLowerCase());
-    }
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.blacklistCacheKey,
+      this.blacklistCacheTTL,
+      JSON.stringify(blacklist.map((item) => item.toLowerCase())),
+    );
   }
 }

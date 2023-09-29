@@ -15,7 +15,6 @@ import {
   SwapSide,
   Network,
   ETHER_ADDRESS,
-  CACHE_PREFIX,
   NULL_ADDRESS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -54,9 +53,8 @@ import {
   DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
   DEXALOT_RESTRICTED_CACHE_KEY,
   DEXALOT_RESTRICT_TTL_S,
-  DEXALOT_BLACKLIST_TTL_S,
-  DEXALOT_BLACKLIST_CACHE_VALUE,
   DEXALOT_RATELIMIT_CACHE_VALUE,
+  DEXALOT_BLACKLIST_CACHES_TTL_S,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
@@ -102,11 +100,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     );
     this.dexalotAuthToken = authToken;
 
-    this.pricesCacheKey = `${CACHE_PREFIX}_prices`;
-    this.pairsCacheKey = `${CACHE_PREFIX}_pairs`;
-    this.tokensAddrCacheKey = `${CACHE_PREFIX}_tokens_addr`;
-    this.tokensCacheKey = `${CACHE_PREFIX}_tokens`;
-    this.blacklistCacheKey = `${CACHE_PREFIX}_blacklist`;
+    this.pricesCacheKey = 'prices';
+    this.pairsCacheKey = 'pairs';
+    this.tokensAddrCacheKey = 'tokens_addr';
+    this.tokensCacheKey = 'tokens';
+    this.blacklistCacheKey = 'blacklist';
 
     this.rateFetcher = new RateFetcher(
       this.dexHelper,
@@ -150,6 +148,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           tokensCacheKey: this.tokensCacheKey,
           tokensCacheTTLSecs: DEXALOT_TOKENS_CACHES_TTL_S,
           blacklistCacheKey: this.blacklistCacheKey,
+          blacklistCacheTTLSecs: DEXALOT_BLACKLIST_CACHES_TTL_S,
         },
       },
     );
@@ -755,29 +754,44 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     return result === 'true';
   }
 
-  async setBlacklist(txOrigin: Address, ttl: number = DEXALOT_BLACKLIST_TTL_S,
-  ): Promise<boolean> {
-    await this.dexHelper.cache.setex(
+  async setBlacklist(txOrigin: Address, ttl: number = DEXALOT_BLACKLIST_CACHES_TTL_S,): Promise<boolean> {
+    const cachedBlacklist = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
-      this.getBlackListKey(txOrigin),
-      ttl,
-      DEXALOT_BLACKLIST_CACHE_VALUE,
+      this.blacklistCacheKey,
     );
+
+    let blacklist: string[] = [];
+    if (cachedBlacklist) {
+      blacklist = JSON.parse(cachedBlacklist);
+    }
+
+    blacklist.push(txOrigin.toLowerCase());
+
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.blacklistCacheKey,
+      ttl,
+      JSON.stringify(blacklist),
+    );
+
     return true;
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
+    const cachedBlacklist = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
-      this.getBlackListKey(txOrigin),
+      this.blacklistCacheKey,
     );
-    return result === DEXALOT_BLACKLIST_CACHE_VALUE;
-  }
 
-  getBlackListKey(address: Address) {
-    return `blacklist_${address}`.toLowerCase();
+    if (cachedBlacklist) {
+      const blacklist = JSON.parse(cachedBlacklist) as string[];
+      return blacklist.includes(txOrigin.toLowerCase());
+    }
+
+    return false;
   }
 
   getRateLimitedKey(address: Address) {

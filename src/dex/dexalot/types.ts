@@ -115,6 +115,7 @@ export type DexalotRateFetcherConfig = {
     tokensAddrCacheKey: string;
     tokensCacheKey: string;
     blacklistCacheKey: string;
+    blacklistCacheTTLSecs: number;
     pairsCacheTTLSecs: number;
     pricesCacheTTLSecs: number;
     tokensCacheTTLSecs: number;
