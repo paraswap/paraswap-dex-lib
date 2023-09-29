@@ -1,7 +1,5 @@
 import BigNumber from 'bignumber.js';
 
-export const DEXALOT_RATE_LIMITED_TTL_S = 60 * 60; // 1 hour
-
 export const DEXALOT_PRICES_CACHES_TTL_S = 3;
 
 export const DEXALOT_PAIRS_CACHES_TTL_S = 21 * 60; // 21 mins
@@ -20,9 +18,11 @@ export const DEXALOT_API_URL = 'https://api.dexalot.com';
 
 export const DEXALOT_GAS_COST = 120_000;
 
-export const DEXALOT_RESTRICT_TTL_S = 60 * 30; // 30 minutes
+export const DEXALOT_RATE_LIMITED_TTL_S = 60 * 60; // 1 hour
 
 export const DEXALOT_RATELIMIT_CACHE_VALUE = 'limited';
+
+export const DEXALOT_RESTRICT_TTL_S = 60 * 30; // 30 minutes
 
 export const DEXALOT_RESTRICTED_CACHE_KEY = 'restricted';
 
