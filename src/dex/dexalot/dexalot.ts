@@ -27,13 +27,13 @@ import {
   PairData,
   PairDataMap,
   PriceDataMap,
-  RfqError,
+  DexalotRfqError,
   RFQResponse,
   RFQResponseError,
-  SlippageCheckError,
   TokenAddrDataMap,
   TokenDataMap,
 } from './types';
+import { SlippageCheckError, TooStrictSlippageCheckError } from '../generic-rfq/types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, DexalotConfig } from './config';
 import { RateFetcher } from './rate-fetcher';
@@ -50,10 +50,15 @@ import {
   DEXALOT_TOKENS_CACHES_TTL_S,
   DEXALOT_API_BLACKLIST_POLLING_INTERVAL_MS,
   DEXALOT_RATE_LIMITED_TTL_S,
+  DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
+  DEXALOT_RESTRICTED_CACHE_KEY,
+  DEXALOT_RESTRICT_TTL_S,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
+import { TokensMap } from '../swaap-v2/types';
+import { normalizeTokenAddress } from '../swaap-v2/utils';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -69,6 +74,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   private tokensAddrCacheKey: string;
   private tokensCacheKey: string;
   private blacklistCacheKey: string;
+  private tokensMap: TokensMap = {};
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DexalotConfig);
@@ -361,9 +367,14 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<DexalotData>> {
     try {
+      if (await this.isRestricted()) {
+        return null;
+      }
+
       const normalizedSrcToken = this.normalizeToken(srcToken);
       const normalizedDestToken = this.normalizeToken(destToken);
 
+      this.tokensMap = (await this.getCachedTokens()) || {};
       if (normalizedSrcToken.address === normalizedDestToken.address) {
         return null;
       }
@@ -448,7 +459,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   generateRFQError(errorStr: string, swapIdentifier: string) {
     const message = `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}. ${errorStr}`;
     this.logger.warn(message);
-    throw new RfqError(message);
+    throw new DexalotRfqError(message);
   }
 
   async preProcessTransaction(
@@ -479,7 +490,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       );
     }
     if (BigInt(optimalSwapExchange.srcAmount) === 0n) {
-      throw new Error('getFirmRate failed with srcAmount == 0');
+      throw new Error('getFirmRate failed with srcAmount === 0');
     }
 
     const normalizedSrcToken = this.normalizeToken(srcToken);
@@ -546,36 +557,60 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
 
       const slippageFactor = options.slippageFactor;
+      let isFailOnSlippage = false;
+      let slippageErrorMessage = '';
+
       if (side === SwapSide.SELL) {
         if (
           BigInt(order.makerAmount) <
           BigInt(
-            new BigNumber(optimalSwapExchange.destAmount)
+            new BigNumber(optimalSwapExchange.destAmount.toString())
               .times(slippageFactor)
               .toFixed(0),
           )
         ) {
+          isFailOnSlippage = true;
           const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${order.makerAmount} / destAmount ${optimalSwapExchange.destAmount} < ${slippageFactor}`;
-          throw new SlippageCheckError(message);
+          slippageErrorMessage = message;
+          this.logger.warn(message);
         }
       } else {
         if (
           BigInt(order.takerAmount) >
-          BigInt(
-            new BigNumber(optimalSwapExchange.srcAmount)
-              .times(slippageFactor)
-              .toFixed(0),
-          )
+          BigInt(slippageFactor.times(optimalSwapExchange.srcAmount.toString()).toFixed(0))
         ) {
+          isFailOnSlippage = true;
           const message = `${this.dexKey}-${
             this.network
-          }: too much slippage on quote ${side} baseTokenAmount ${
-            order.takerAmount
-          } / srcAmount ${
-            optimalSwapExchange.srcAmount
-          } > ${slippageFactor.toFixed()}`;
-          throw new SlippageCheckError(message);
+          }: too much slippage on quote ${side} baseTokenAmount ${order.takerAmount} / srcAmount ${optimalSwapExchange.srcAmount} > ${slippageFactor.toFixed()}`;
+          slippageErrorMessage = message;
+          this.logger.warn(message);
         }
+      }
+
+      let isTooStrictSlippage = false;
+      if (
+        isFailOnSlippage &&
+        side === SwapSide.SELL &&
+        new BigNumber(1)
+          .minus(slippageFactor)
+          .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      } else if (
+        isFailOnSlippage &&
+        side === SwapSide.BUY &&
+        slippageFactor
+          .minus(1)
+          .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      }
+
+      if (isFailOnSlippage && isTooStrictSlippage) {
+        throw new TooStrictSlippageCheckError(slippageErrorMessage);
+      } else if (isFailOnSlippage && !isTooStrictSlippage) {
+        throw new SlippageCheckError(slippageErrorMessage);
       }
 
       return [
@@ -600,13 +635,17 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}: ${errorData.Reason}`,
           );
         }
-      } else if (e instanceof SlippageCheckError) {
-        this.logger.warn(e.message);
       } else {
-        this.logger.error(
-          `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}:`,
-          JSON.stringify(e),
-        );
+        if(e instanceof TooStrictSlippageCheckError) {
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
+          );
+        } else {
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: protocol is restricted`,
+          );
+          await this.restrict();
+        }
       }
 
       throw e;
@@ -628,10 +667,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     );
   }
 
-  getTokenFromAddress?(address: Address): Token {
-    // We don't have predefined set of tokens with decimals
-    // Anyway we don't use decimals, so it is fine to do this
-    return { address, decimals: 0 };
+  getTokenFromAddress(address: Address): Token {
+    return this.tokensMap[normalizeTokenAddress(address)];
+
   }
 
   getAdapterParam(
@@ -649,24 +687,40 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       `${this.dexKey}-${this.network}: quoteData undefined`,
     );
 
-    const swapFunction = 'simpleSwap';
-    const swapFunctionParams = [
-      [
-        quoteData.nonceAndMeta,
-        quoteData.expiry,
-        quoteData.makerAsset,
-        quoteData.takerAsset,
-        quoteData.maker,
-        quoteData.taker,
-        quoteData.makerAmount,
-        quoteData.takerAmount,
-      ],
+    const params = [
+      {
+        nonceAndMeta: quoteData.nonceAndMeta,
+        expiry: quoteData.expiry,
+        makerAsset: quoteData.makerAsset,
+        takerAsset: quoteData.takerAsset,
+        maker: quoteData.maker,
+        taker: quoteData.taker,
+        makerAmount: quoteData.makerAmount,
+        takerAmount: quoteData.takerAmount,
+      },
       quoteData.signature,
     ];
 
-    const payload = this.rfqInterface.encodeFunctionData(
-      swapFunction,
-      swapFunctionParams,
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          order: {
+            nonceAndMeta: 'uint256',
+            expiry: 'uint128',
+            makerAsset: 'address',
+            takerAsset: 'address',
+            maker: 'address',
+            taker: 'address',
+            makerAmount: 'uint256',
+            takerAmount: 'uint256',
+          },
+          signature: 'bytes',
+        },
+      },
+      {
+        order: params[0],
+        signature: params[1],
+      },
     );
 
     return {
@@ -674,6 +728,27 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       payload,
       networkFee: '0',
     };
+  }
+
+  async restrict(ttl: number = DEXALOT_RESTRICT_TTL_S): Promise<boolean> {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      DEXALOT_RESTRICTED_CACHE_KEY,
+      ttl,
+      'true',
+    );
+    return true;
+  }
+
+  async isRestricted(): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      DEXALOT_RESTRICTED_CACHE_KEY,
+    );
+
+    return result === 'true';
   }
 
   async setBlacklist(txOrigin: Address): Promise<boolean> {
@@ -764,16 +839,18 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const normalizedAddress = this.normalizeAddress(tokenAddress);
-
-    const pairs = (await this.getCachedPairs()) || {};
-    const tokens = (await this.getCachedTokens()) || {};
-    const tokensAddr = (await this.getCachedTokensAddr()) || {};
-    if (!tokens[normalizedAddress]) {
+    if (await this.isRestricted()) {
       return [];
     }
 
-    const token = tokens[normalizedAddress];
+    const pairs = (await this.getCachedPairs()) || {};
+    this.tokensMap = (await this.getCachedTokens()) || {};
+    const tokensAddr = (await this.getCachedTokensAddr()) || {};
+    const token = this.getTokenFromAddress(tokenAddress);
+    if (!token) {
+      return [];
+    }
+
     const tokenSymbol = token.symbol?.toLowerCase() || '';
 
     let pairsByLiquidity = [];
@@ -785,10 +862,10 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         }
 
         const addr = tokensAddr[tokensInPair[0].toLowerCase()];
-        let outputToken = tokens[addr];
+        let outputToken = this.getTokenFromAddress(addr);
         if (tokensInPair[0] === tokenSymbol) {
           const addr = tokensAddr[tokensInPair[1].toLowerCase()];
-          outputToken = tokens[addr];
+          outputToken = this.getTokenFromAddress(addr);
         }
 
         const connectorToken = {

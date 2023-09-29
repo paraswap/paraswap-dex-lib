@@ -38,9 +38,7 @@ export enum ClobSide {
   ASK = 'ASK',
 }
 
-export class RfqError extends Error {}
-
-export class SlippageCheckError extends Error {}
+export class DexalotRfqError extends Error {}
 
 export type PairData = {
   base: string;
