@@ -34,12 +34,12 @@ function testForNetwork(
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [
       ContractMethod.simpleSwap,
-      ContractMethod.megaSwap,
-      ContractMethod.multiSwap
+      // ContractMethod.megaSwap,
+      // ContractMethod.multiSwap
     ]],
     [SwapSide.BUY, [
       ContractMethod.simpleBuy,
-      ContractMethod.buy
+      // ContractMethod.buy
     ]],
   ]);
 

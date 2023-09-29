@@ -16,6 +16,7 @@ import {
   Network,
   ETHER_ADDRESS,
   CACHE_PREFIX,
+  NULL_ADDRESS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, isAxiosError } from '../../utils';
@@ -60,8 +61,6 @@ import {
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
-import { TokensMap } from '../swaap-v2/types';
-import { normalizeTokenAddress } from '../swaap-v2/utils';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -77,7 +76,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   private tokensAddrCacheKey: string;
   private tokensCacheKey: string;
   private blacklistCacheKey: string;
-  private tokensMap: TokensMap = {};
+  private tokensMap: TokenDataMap = {};
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DexalotConfig);
@@ -217,7 +216,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   getIdentifier(baseSymbol: string, quoteSymbol: string) {
-    return `${this.dexKey}_${baseSymbol}_${quoteSymbol}`.toLowerCase();
+    // return `${this.dexKey}_${baseSymbol}_${quoteSymbol}`.toLowerCase();
+    // To disable Dexalot in multi/mega routes
+    return this.dexKey;
   }
 
   async getPoolIdentifiers(
@@ -294,7 +295,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
 
   normalizeAddress(address: string): string {
     return address.toLowerCase() === ETHER_ADDRESS
-      ? ethers.constants.AddressZero.toLowerCase()
+      ? NULL_ADDRESS
       : address.toLowerCase();
   }
 
@@ -672,8 +673,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   getTokenFromAddress(address: Address): Token {
-    return this.tokensMap[normalizeTokenAddress(address)];
-
+    return this.tokensMap[this.normalizeAddress(address)];
   }
 
   getAdapterParam(
