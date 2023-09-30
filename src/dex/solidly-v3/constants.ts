@@ -1,6 +1,6 @@
-export const UNISWAPV3_TICK_GAS_COST = 24_000; // Ceiled
-export const UNISWAPV3_TICK_BASE_OVERHEAD = 75_000;
-export const UNISWAPV3_POOL_SEARCH_OVERHEAD = 10_000;
+export const UNISWAPV3_TICK_GAS_COST = 10_000; // Ceiled
+export const UNISWAPV3_TICK_BASE_OVERHEAD = 50_000;
+export const UNISWAPV3_POOL_SEARCH_OVERHEAD = 0;
 
 // This is used for price calculation. If out of scope, return 0n
 export const TICK_BITMAP_TO_USE = 4n;
@@ -37,4 +37,5 @@ export enum DirectMethods {
   directBuy = 'directUniV3Buy',
 }
 export const MIN_SQRT_RATIO = BigInt(4295128739);
-export const MAX_SQRT_RATIO = BigInt(1461446703485210103287273052203988822378723970342);
+export const MAX_SQRT_RATIO =
+  BigInt(1461446703485210103287273052203988822378723970342);
