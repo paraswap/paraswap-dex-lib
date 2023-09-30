@@ -206,15 +206,21 @@ export class UniswapV3
     token1,
     fee,
   }) => {
+    const logPrefix = '[UniswapV3.onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
     const poolKey = `${token0}_${token1}_${fee}`.toLowerCase();
 
     // consider doing it only from master pool for less calls to distant cache
 
     try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+      );
       // delete pool record from set
       await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
-    } catch (e) {}
+    } catch (e) {
+      this.logger.error(`${logPrefix} ERROR deleting pool: ${poolKey}`);
+    }
 
     // delete entry locally to let local instance discover the pool
     delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];

@@ -165,15 +165,21 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     token0,
     token1,
   }) => {
+    const logPrefix = '[Algebra.onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
     const poolKey = `${token0}_${token1}`.toLowerCase();
 
     // consider doing it only from master pool for less calls to distant cache
 
     try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+      );
       // delete pool record from set
       await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
-    } catch (e) {}
+    } catch (e) {
+      this.logger.error(`${logPrefix} ERROR deleting pool: ${poolKey}`);
+    }
 
     // delete entry locally to let local instance discover the pool
     delete this.eventPools[this.getPoolIdentifier(_token0, _token1)];
