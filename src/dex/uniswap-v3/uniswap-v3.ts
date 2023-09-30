@@ -165,7 +165,7 @@ export class UniswapV3
 
   async initializePricing(blockNumber: number) {
     // Init listening to new pools creation
-    this.factory.initialize(blockNumber);
+    await this.factory.initialize(blockNumber);
 
     // This is only for testing, because cold pool fetching is goes out of
     // FETCH_POOL_INDENTIFIER_TIMEOUT range

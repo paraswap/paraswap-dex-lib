@@ -137,7 +137,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
   async initializePricing(blockNumber: number) {
     // Init listening to new pools creation
-    this.factory.initialize(blockNumber);
+    await this.factory.initialize(blockNumber);
 
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
