@@ -61,6 +61,7 @@ import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { Method } from '../../dex-helper/irequest-wrapper';
+import { normalizeTokenAddress } from '../swaap-v2/utils';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -865,10 +866,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       return [];
     }
 
+    const normalizedTokenAddress = normalizeTokenAddress(tokenAddress);
     const pairs = (await this.getCachedPairs()) || {};
     this.tokensMap = (await this.getCachedTokens()) || {};
     const tokensAddr = (await this.getCachedTokensAddr()) || {};
-    const token = this.getTokenFromAddress(tokenAddress);
+    const token = this.getTokenFromAddress(normalizedTokenAddress);
     if (!token) {
       return [];
     }
