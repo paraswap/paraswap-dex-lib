@@ -897,13 +897,14 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       }
 
       const denormalizedToken = this.denormalizeToken(outputToken);
+      const wrappedToken = this.dexHelper.config.wrapETH(denormalizedToken);
 
       pairsByLiquidity.push({
         exchange: this.dexKey,
         address: this.mainnetRFQAddress,
         connectorTokens: [{
-          address: denormalizedToken.address,
-          decimals: denormalizedToken.decimals,
+          address: wrappedToken.address,
+          decimals: wrappedToken.decimals,
         }],
         liquidityUSD: pairs[pairName].liquidityUSD,
       });
