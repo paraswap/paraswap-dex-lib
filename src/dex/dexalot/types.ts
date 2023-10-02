@@ -1,5 +1,6 @@
 import { RequestHeaders } from '../../dex-helper';
 import { Token } from '../../types';
+import { Method } from '../../dex-helper/irequest-wrapper';
 
 type RFQOrder = {
   nonceAndMeta: string;
@@ -120,4 +121,11 @@ export type DexalotRateFetcherConfig = {
     pricesCacheTTLSecs: number;
     tokensCacheTTLSecs: number;
   };
+};
+
+export type DexalotAPIParameters = {
+  url: string;
+  headers?: RequestHeaders;
+  params?: any;
+  method?: Method;
 };

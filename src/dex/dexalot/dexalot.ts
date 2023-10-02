@@ -28,6 +28,7 @@ import {
   PairDataMap,
   PriceDataMap,
   DexalotRfqError,
+  DexalotAPIParameters,
   RFQResponse,
   RFQResponseError,
   TokenAddrDataMap,
@@ -60,7 +61,6 @@ import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { Method } from '../../dex-helper/irequest-wrapper';
-import { SwaapV2APIParameters } from '../swaap-v2/types';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -895,14 +895,13 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       }
 
       const denormalizedToken = this.denormalizeToken(outputToken);
-      const wrappedToken = this.dexHelper.config.wrapETH(denormalizedToken);
 
       pairsByLiquidity.push({
         exchange: this.dexKey,
         address: this.mainnetRFQAddress,
         connectorTokens: [{
-          address: wrappedToken.address,
-          decimals: wrappedToken.decimals,
+          address: denormalizedToken.address,
+          decimals: denormalizedToken.decimals,
         }],
         liquidityUSD: pairs[pairName].liquidityUSD,
       });
@@ -915,7 +914,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     return pairsByLiquidity.slice(0, limit);
   }
 
-  getAPIReqParams(endpoint: string, method: Method): SwaapV2APIParameters {
+  getAPIReqParams(endpoint: string, method: Method): DexalotAPIParameters {
     return {
       url: `${DEXALOT_API_URL}/${endpoint}`,
       headers: { 'x-apikey': this.dexalotAuthToken },
