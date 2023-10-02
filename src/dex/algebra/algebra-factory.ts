@@ -1,10 +1,11 @@
 import { Interface } from '@ethersproject/abi';
-import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
+import { DeepReadonly } from 'ts-essentials';
 import FactoryABI from '../../abi/algebra/AlgebraFactory-v1_1.abi.json';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, Log, Logger } from '../../types';
 import { LogDescription } from 'ethers/lib/utils';
+import { FactoryState } from './types';
 
 export type OnPoolCreatedCallback = ({
   token0,
@@ -12,14 +13,15 @@ export type OnPoolCreatedCallback = ({
 }: {
   token0: string;
   token1: string;
-}) => AsyncOrSync<void>;
+}) => FactoryState | null;
 
 /*
- * Stateless event subscriber in order to capture "Pool" event on new pools created.
+ * "Stateless" event subscriber in order to capture "PoolCreated" event on new pools created.
+ * State is present, but it's a placeholder to actually make the events reach handlers (if there's no previous state - `processBlockLogs` is not called)
  */
-export class AlgebraFactory extends StatefulEventSubscriber<void> {
+export class AlgebraFactory extends StatefulEventSubscriber<FactoryState> {
   handlers: {
-    [event: string]: (event: any) => DeepReadonly<void> | null;
+    [event: string]: (event: any) => DeepReadonly<FactoryState> | null;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -34,7 +36,7 @@ export class AlgebraFactory extends StatefulEventSubscriber<void> {
     protected readonly onPoolCreated: OnPoolCreatedCallback,
     mapKey: string = '',
   ) {
-    super(parentName, `factory`, dexHelper, logger, true, mapKey);
+    super(parentName, `${parentName} Factory`, dexHelper, logger, true, mapKey);
 
     this.addressesSubscribed = [factoryAddress];
 
@@ -43,15 +45,20 @@ export class AlgebraFactory extends StatefulEventSubscriber<void> {
     this.handlers['Pool'] = this.handleNewPool.bind(this);
   }
 
-  generateState(): AsyncOrSync<void> {}
+  generateState(): FactoryState {
+    return {
+      token0: '',
+      token1: '',
+    };
+  }
 
   protected processLog(
-    _: DeepReadonly<void>,
+    _: DeepReadonly<FactoryState>,
     log: Readonly<Log>,
-  ): DeepReadonly<void> | null {
+  ): DeepReadonly<FactoryState> | null {
     const event = this.logDecoder(log);
     if (event.name in this.handlers) {
-      this.handlers[event.name](event);
+      return this.handlers[event.name](event);
     }
 
     return null;
@@ -61,6 +68,6 @@ export class AlgebraFactory extends StatefulEventSubscriber<void> {
     const token0 = event.args.token0;
     const token1 = event.args.token1;
 
-    this.onPoolCreated({ token0, token1 });
+    return this.onPoolCreated({ token0, token1 });
   }
 }

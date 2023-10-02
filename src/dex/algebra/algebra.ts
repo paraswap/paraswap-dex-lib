@@ -159,9 +159,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
   /*
    * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
-   *  Once the pool is created, it gets immediately flagged
+   * Once the pool is created, it gets immediately flagged
    */
-  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = ({
     token0,
     token1,
   }) => {
@@ -171,18 +171,19 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     // consider doing it only from master pool for less calls to distant cache
 
-    try {
-      this.logger.info(
-        `${logPrefix} delete pool from not existing set: ${poolKey}`,
-      );
-      // delete pool record from set
-      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
-    } catch (e) {
-      this.logger.error(`${logPrefix} ERROR deleting pool: ${poolKey}`);
-    }
-
     // delete entry locally to let local instance discover the pool
     delete this.eventPools[this.getPoolIdentifier(_token0, _token1)];
+
+    this.logger.info(
+      `${logPrefix} delete pool from not existing set: ${poolKey}`,
+    );
+    // delete pool record from set, not waiting for result
+    this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+
+    return {
+      token0: _token0,
+      token1: _token1,
+    };
   };
 
   async getPool(
