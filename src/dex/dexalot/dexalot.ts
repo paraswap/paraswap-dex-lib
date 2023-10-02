@@ -279,10 +279,23 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       : address.toLowerCase();
   }
 
+  denormalizeAddress(address: string): string {
+    return address.toLowerCase() === NULL_ADDRESS
+      ? ETHER_ADDRESS
+      : address.toLowerCase();
+  }
+
   // Dexalot protocol for native token expects 0x00000... instead of 0xeeeee...
   normalizeToken(token: Token): Token {
     return {
       address: this.normalizeAddress(token.address),
+      decimals: token.decimals,
+    };
+  }
+
+  denormalizeToken(token: Token): Token {
+    return {
+      address: this.denormalizeAddress(token.address),
       decimals: token.decimals,
     };
   }
@@ -864,31 +877,35 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
 
     let pairsByLiquidity = [];
     for (const pairName of Object.keys(pairs)) {
-      if (pairName.includes(tokenSymbol)) {
-        const tokensInPair = pairName.split('/');
-        if (tokensInPair.length !== 2) {
-          continue;
-        }
-
-        const addr = tokensAddr[tokensInPair[0].toLowerCase()];
-        let outputToken = this.getTokenFromAddress(addr);
-        if (tokensInPair[0] === tokenSymbol) {
-          const addr = tokensAddr[tokensInPair[1].toLowerCase()];
-          outputToken = this.getTokenFromAddress(addr);
-        }
-
-        const connectorToken = {
-          address: outputToken.address,
-          decimals: outputToken.decimals,
-        };
-        const pairData: PoolLiquidity = {
-          exchange: this.dexKey,
-          address: this.mainnetRFQAddress,
-          connectorTokens: [connectorToken],
-          liquidityUSD: pairs[pairName].liquidityUSD,
-        };
-        pairsByLiquidity.push(pairData);
+      if (!pairName.includes(tokenSymbol)) {
+        continue;
       }
+
+      const tokensInPair = pairName.split('/');
+      if (tokensInPair.length !== 2) {
+        continue;
+      }
+
+      const [ baseToken, quoteToken ] = tokensInPair;
+      const addr = tokensAddr[baseToken.toLowerCase()];
+      let outputToken = this.getTokenFromAddress(addr);
+      if (baseToken === tokenSymbol) {
+        const addr = tokensAddr[quoteToken.toLowerCase()];
+        outputToken = this.getTokenFromAddress(addr);
+      }
+
+      const denormalizedToken = this.denormalizeToken(outputToken);
+      const wrappedToken = this.dexHelper.config.wrapETH(denormalizedToken);
+
+      pairsByLiquidity.push({
+        exchange: this.dexKey,
+        address: this.mainnetRFQAddress,
+        connectorTokens: [{
+          address: wrappedToken.address,
+          decimals: wrappedToken.decimals,
+        }],
+        liquidityUSD: pairs[pairName].liquidityUSD,
+      });
     }
 
     pairsByLiquidity.sort(
