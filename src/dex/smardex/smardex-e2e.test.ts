@@ -251,19 +251,18 @@ describe('Smardex E2E', () => {
           buyAmount: '1500000000000000000', // 1.5 WETH
         },
       ],
-      //  TenderlySimulation_simulate: Error: Request failed with status code 400
-      // [
-      //   {
-      //     name: 'WETH',
-      //     sellAmount: '1500000000000000000', // 1.5 WETH
-      //     buyAmount: '250000000000000000000000', // 250K SDEX
-      //   },
-      //   {
-      //     name: 'SDEX',
-      //     sellAmount: '250000000000000000000000', // 250K SDEX
-      //     buyAmount: '1500000000000000000', // 1.5 WETH
-      //   },
-      // ],
+      [
+        {
+          name: 'WETH',
+          sellAmount: '1500000000000000000', // 1.5 WETH
+          buyAmount: '250000000000000000000000', // 250K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '250000000000000000000000', // 250K SDEX
+          buyAmount: '1500000000000000000', // 1.5 WETH
+        },
+      ],
     ]
       .map((pair, i, arr) => [
         [pair],
