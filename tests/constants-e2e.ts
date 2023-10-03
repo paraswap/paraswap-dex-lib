@@ -932,6 +932,10 @@ export const Tokens: {
       address: '0xbeFD5C25A59ef2C1316c5A4944931171F30Cd3E4',
       decimals: 18,
     },
+    SDEX: {
+      address: '0xFd4330b0312fdEEC6d4225075b82E00493FF2e3f',
+      decimals: 18,
+    },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
   },
 };
@@ -1000,7 +1004,7 @@ export const Holders: {
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
     GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
     wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
-    SDEX: '0xE03c726340ccB2FbBAF6ca91533Ab64e64Fb9d4A',
+    SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -1167,6 +1171,7 @@ export const Holders: {
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
     BAL: '0x854b004700885a61107b458f11ecc169a019b764',
     GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
+    SDEX: '0xa5d378c05192e3f1f365d6298921879c4d51c5a3',
   },
 };
 

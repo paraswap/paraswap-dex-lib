@@ -237,14 +237,52 @@ describe('Smardex E2E', () => {
         ],
       ])
       .flat(2),
+
+    [Network.BASE]: [
+      [
+        {
+          name: 'WETH',
+          sellAmount: '1500000000000000000', // 1.5 WETH
+          buyAmount: '2500000000', // 2.5k USDbC
+        },
+        {
+          name: 'USDbC',
+          sellAmount: '2500000000', // 2.5k USDbC
+          buyAmount: '1500000000000000000', // 1.5 WETH
+        },
+      ],
+      [
+        {
+          name: 'WETH',
+          sellAmount: '1500000000000000000', // 1.5 WETH
+          buyAmount: '250000000000000000000000', // 250K SDEX
+        },
+        {
+          name: 'SDEX',
+          sellAmount: '250000000000000000000000', // 250K SDEX
+          buyAmount: '1500000000000000000', // 1.5 WETH
+        },
+      ],
+    ]
+      .map((pair, i, arr) => [
+        [pair],
+        [
+          arr[i].map(token => ({
+            ...token,
+            sellAmount: token.sellAmount + '0',
+            buyAmount: token.buyAmount + '0',
+          })),
+        ],
+      ])
+      .flat(2),
   };
 
-  // TODO add Base network when available
   const networkKeys = [
     Network.MAINNET,
     Network.ARBITRUM,
     Network.BSC,
     Network.POLYGON,
+    Network.BASE,
   ];
   networkKeys.forEach(network => {
     const tokens = Tokens[network];

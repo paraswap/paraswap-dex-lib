@@ -38,6 +38,13 @@ export const SmardexConfig: DexConfigMap<DexParams> = {
       subgraphURL: `${gatewaySubgraph}/polygon`,
       // feeCode: 0, // this is ignored as Smardex uses dynamic fees
     },
+    [Network.BASE]: {
+      factoryAddress: '0xdd4536dD9636564D891c919416880a3e250f975A',
+      router: '0x5C622Dcc96b6D96ac6c154f99CF081815094CBC9',
+      initCode: layer2InitHash,
+      subgraphURL: `${gatewaySubgraph}/base`,
+      // feeCode: 0, // this is ignored as Smardex uses dynamic fees
+    },
   },
 };
 
