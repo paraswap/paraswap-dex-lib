@@ -53,11 +53,7 @@ export type PoolState = {
   balance1: bigint;
 };
 
-export type FactoryState = {
-  token0: string;
-  token1: string;
-  fee: bigint;
-};
+export type FactoryState = Record<string, never>;
 
 export type UniswapV3Data = {
   path: {

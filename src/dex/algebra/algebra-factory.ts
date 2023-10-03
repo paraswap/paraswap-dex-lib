@@ -13,7 +13,7 @@ export type OnPoolCreatedCallback = ({
 }: {
   token0: string;
   token1: string;
-}) => FactoryState | null;
+}) => Promise<void>;
 
 /*
  * "Stateless" event subscriber in order to capture "PoolCreated" event on new pools created.
@@ -21,7 +21,7 @@ export type OnPoolCreatedCallback = ({
  */
 export class AlgebraFactory extends StatefulEventSubscriber<FactoryState> {
   handlers: {
-    [event: string]: (event: any) => DeepReadonly<FactoryState> | null;
+    [event: string]: (event: any) => Promise<void>;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -46,28 +46,25 @@ export class AlgebraFactory extends StatefulEventSubscriber<FactoryState> {
   }
 
   generateState(): FactoryState {
-    return {
-      token0: '',
-      token1: '',
-    };
+    return {};
   }
 
-  protected processLog(
+  protected async processLog(
     _: DeepReadonly<FactoryState>,
     log: Readonly<Log>,
-  ): DeepReadonly<FactoryState> | null {
+  ): Promise<FactoryState> {
     const event = this.logDecoder(log);
     if (event.name in this.handlers) {
-      return this.handlers[event.name](event);
+      await this.handlers[event.name](event);
     }
 
-    return null;
+    return {};
   }
 
-  handleNewPool(event: LogDescription) {
+  async handleNewPool(event: LogDescription) {
     const token0 = event.args.token0;
     const token1 = event.args.token1;
 
-    return this.onPoolCreated({ token0, token1 });
+    await this.onPoolCreated({ token0, token1 });
   }
 }

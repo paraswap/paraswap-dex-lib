@@ -201,7 +201,7 @@ export class UniswapV3
    * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
    * Once the pool is created, it gets immediately flagged
    */
-  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = ({
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
     token0,
     token1,
     fee,
@@ -215,17 +215,18 @@ export class UniswapV3
     // delete entry locally to let local instance discover the pool
     delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];
 
-    this.logger.info(
-      `${logPrefix} delete pool from not existing set: ${poolKey}`,
-    );
-    // delete pool record from set, not waiting for result
-    this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
-
-    return {
-      token0: _token0,
-      token1: _token1,
-      fee,
-    };
+    try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+      );
+      // delete pool record from set
+      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+    } catch (error) {
+      this.logger.error(
+        `${logPrefix} failed to delete pool from set: ${poolKey}`,
+        error,
+      );
+    }
   };
 
   async getPool(

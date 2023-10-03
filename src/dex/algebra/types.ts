@@ -51,10 +51,7 @@ export type PoolState_v1_9 = {
   areTicksCompressed: boolean;
 };
 
-export type FactoryState = {
-  token0: string;
-  token1: string;
-};
+export type FactoryState = Record<string, never>;
 
 export type AlgebraData = {
   path: {

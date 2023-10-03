@@ -15,7 +15,7 @@ export type OnPoolCreatedCallback = ({
   token0: string;
   token1: string;
   fee: bigint;
-}) => FactoryState | null;
+}) => Promise<void>;
 
 /*
  * "Stateless" event subscriber in order to capture "PoolCreated" event on new pools created.
@@ -23,7 +23,7 @@ export type OnPoolCreatedCallback = ({
  */
 export class UniswapV3Factory extends StatefulEventSubscriber<FactoryState> {
   handlers: {
-    [event: string]: (event: any) => DeepReadonly<FactoryState> | null;
+    [event: string]: (event: any) => Promise<void>;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -48,30 +48,26 @@ export class UniswapV3Factory extends StatefulEventSubscriber<FactoryState> {
   }
 
   generateState(): FactoryState {
-    return {
-      token0: '',
-      token1: '',
-      fee: 0n,
-    };
+    return {};
   }
 
-  protected processLog(
+  protected async processLog(
     _: DeepReadonly<FactoryState>,
     log: Readonly<Log>,
-  ): DeepReadonly<FactoryState> | null {
+  ): Promise<FactoryState> {
     const event = this.logDecoder(log);
     if (event.name in this.handlers) {
-      return this.handlers[event.name](event);
+      await this.handlers[event.name](event);
     }
 
-    return null;
+    return {};
   }
 
-  handleNewPool(event: LogDescription) {
+  async handleNewPool(event: LogDescription) {
     const token0 = event.args.token0;
     const token1 = event.args.token1;
     const fee = event.args.fee;
 
-    return this.onPoolCreated({ token0, token1, fee });
+    await this.onPoolCreated({ token0, token1, fee });
   }
 }
