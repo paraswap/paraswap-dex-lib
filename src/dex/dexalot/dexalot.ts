@@ -862,10 +862,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (await this.isRestricted()) {
-      return [];
-    }
-
     const normalizedTokenAddress = normalizeTokenAddress(tokenAddress);
     const pairs = (await this.getCachedPairs()) || {};
     this.tokensMap = (await this.getCachedTokens()) || {};
