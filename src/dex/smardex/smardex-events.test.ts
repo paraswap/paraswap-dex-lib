@@ -16,7 +16,7 @@ jest.setTimeout(120 * 1000);
 const dexKey = 'Smardex';
 
 type NetworkConfig = {
-  name: 'ethereum' | 'polygon' | 'bsc' | 'arbitrum';
+  name: 'ethereum' | 'polygon' | 'bsc' | 'arbitrum' | 'base';
   network: Network;
   tokens: typeof Tokens[Network];
   pools: Array<{
@@ -183,6 +183,39 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
           ['FeesChanged']: [], // Fees didn't change on this pool
           ['Sync']: [31678534, 31675409, 31678534, 31675014, 31674391],
           ['Transfer']: [31666734, 31632200, 31586970],
+        },
+      },
+    ],
+  },
+  {
+    name: 'base',
+    network: Network.BASE,
+    tokens: Tokens[Network.BASE],
+    pools: [
+      {
+        address: '0xd70e1bab713d84c3a110ded11e41714542e604ba',
+        symbol0: 'WETH',
+        symbol1: 'SDEX',
+        events: {
+          ['Swap']: [4761865, 4757945, 4757945, 4757897],
+          ['Burn']: [4692541],
+          ['Mint']: [4757945, 4737306, 4701199],
+          ['FeesChanged']: [], // Fees didn't change on this pool
+          ['Sync']: [4761865, 4757945, 4757945, 4757897],
+          ['Transfer']: [4757966, 4737315, 4736210],
+        },
+      },
+      {
+        address: '0x5a60c797993ee91f012260d995e1e6c6ce3dda6d',
+        symbol0: 'WETH',
+        symbol1: 'USDbC',
+        events: {
+          ['Swap']: [4763447, 4762313, 4762290],
+          ['Burn']: [4716925, 4338322, 4282294],
+          ['Mint']: [4758649, 4649129, 4645429],
+          ['FeesChanged']: [], // Fees didn't change on this pool
+          ['Sync']: [4763447, 4762313, 4762290],
+          ['Transfer']: [4758649, 4716850, 4645429],
         },
       },
     ],
