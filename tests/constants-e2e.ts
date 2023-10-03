@@ -932,6 +932,10 @@ export const Tokens: {
       address: '0xbeFD5C25A59ef2C1316c5A4944931171F30Cd3E4',
       decimals: 18,
     },
+    SDEX: {
+      address: '0xFd4330b0312fdEEC6d4225075b82E00493FF2e3f',
+      decimals: 18,
+    },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
   },
 };
