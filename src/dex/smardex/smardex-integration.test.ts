@@ -10,7 +10,7 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
 interface NetworkConfig {
-  name: 'ethereum' | 'bsc' | 'polygon' | 'arbitrum';
+  name: 'ethereum' | 'bsc' | 'polygon' | 'arbitrum' | 'base';
   network: Network;
   tokens: typeof Tokens[Network];
   tokenPairs: { src: string; dest: string; sell: number[]; buy: number[] }[];
@@ -146,6 +146,25 @@ const networkConfigs: Array<NetworkConfig> = [
         dest: 'SDEX',
         sell: [0, 1, 2, 3],
         buy: [0, 500_000, 1_000_000, 1_500_000],
+      },
+    ],
+  },
+  {
+    name: 'base',
+    network: Network.BASE,
+    tokens: Tokens[Network.BASE],
+    tokenPairs: [
+      {
+        src: 'WETH',
+        dest: 'SDEX',
+        sell: [0, 2, 4, 6, 8, 10],
+        buy: [0, 100_000, 200_000, 300_000],
+      },
+      {
+        src: 'WETH',
+        dest: 'USDbC',
+        sell: [0, 2, 4, 6, 8, 10],
+        buy: [0, 10_000, 20_000, 30_000],
       },
     ],
   },
