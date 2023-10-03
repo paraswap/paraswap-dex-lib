@@ -86,6 +86,7 @@ const MULTISIG: { [nid: number]: string } = {
   [Network.AVALANCHE]: '0x1e2ECA5e812D08D2A7F8664D69035163ff5BfEC2',
   [Network.OPTIMISM]: '0xf01121e808F782d7F34E857c27dA31AD1f151b39',
   [Network.ARBITRUM]: '0x90DfD8a6454CFE19be39EaB42ac93CD850c7f339',
+  [Network.BASE]: '0x6C674c8Df1aC663b822c4B6A56B4E5e889379AE0',
 };
 
 class APIParaswapSDK implements IParaSwapSDK {
@@ -298,6 +299,7 @@ export async function testE2E(
       ),
     );
     expect(whitelistTx.success).toEqual(true);
+    console.log(`Successfully whitelisted ${deployedTestContractAddress}`);
 
     if (testContractType === 'router') {
       const setImplementationTx = await ts.simulate(
@@ -624,7 +626,7 @@ export async function newTestE2E({
             parseInt(priceRoute.gasCost) - parseInt(swapTx!.gasUsed)
           }`,
         );
-      console.log(`Tenderly URL: ${swapTx!.tenderlyUrl}`);
+      console.log(`Tenderly URL: ${swapTx!.url}`);
       expect(swapTx!.success).toEqual(true);
     }
   } finally {

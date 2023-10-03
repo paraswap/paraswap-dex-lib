@@ -899,6 +899,41 @@ export const Tokens: {
       decimals: 6,
     },
   },
+  [Network.BASE]: {
+    PRIME: {
+      address: '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b',
+      decimals: 18,
+    },
+    WETH: {
+      address: '0x4200000000000000000000000000000000000006',
+      decimals: 18,
+    },
+    MAV: {
+      address: '0x64b88c73A5DfA78D1713fE1b4c69a22d7E0faAa7',
+      decimals: 18,
+    },
+    USDC: {
+      address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+      decimals: 6,
+    },
+    USDbC: {
+      address: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA',
+      decimals: 6,
+    },
+    DAI: {
+      address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
+      decimals: 18,
+    },
+    BAL: {
+      address: '0x4158734d47fc9692176b5085e0f52ee0da5d47f1',
+      decimals: 18,
+    },
+    GOLD: {
+      address: '0xbeFD5C25A59ef2C1316c5A4944931171F30Cd3E4',
+      decimals: 18,
+    },
+    ETH: { address: ETHER_ADDRESS, decimals: 18 },
+  },
 };
 
 export const Holders: {
@@ -1122,6 +1157,17 @@ export const Holders: {
     WBTC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
   },
+  [Network.BASE]: {
+    WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
+    PRIME: '0x956bcc6b56c99db382d9d97a30ba5f1402144b3e',
+    ETH: '0xdd9176ea3e7559d6b68b537ef555d3e89403f742',
+    MAV: '0x7499785aa5d1bdf0a0ac862c1ef3698d3cba6568',
+    USDC: '0xaac391f166f33cdaefaa4afa6616a3bea66b694d',
+    USDbC: '0xc9d05a1c3c8e01dcb701d6185cdc21a5bb94becb',
+    DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
+    BAL: '0x854b004700885a61107b458f11ecc169a019b764',
+    GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
+  },
 };
 
 export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
@@ -1146,4 +1192,5 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.FANTOM]: 'FTM',
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
+  [Network.BASE]: 'ETH',
 };
