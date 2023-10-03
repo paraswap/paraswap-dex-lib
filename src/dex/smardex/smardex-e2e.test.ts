@@ -279,10 +279,10 @@ describe('Smardex E2E', () => {
   };
 
   const networkKeys = [
-    // Network.MAINNET,
-    // Network.ARBITRUM,
-    // Network.BSC,
-    // Network.POLYGON,
+    Network.MAINNET,
+    Network.ARBITRUM,
+    Network.BSC,
+    Network.POLYGON,
     Network.BASE,
   ];
   networkKeys.forEach(network => {
