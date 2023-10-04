@@ -313,40 +313,84 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         continue;
       }
 
-      let totalVolume = 0n;
-      let combinedPrice = 0n;
+      let left = 0,
+        right = orderbook.length;
+      let qty = BigInt(0);
 
-      for (let j = 0; j < orderbook.length; j++) {
-        const order = orderbook[j];
-        const priceBN = ethers.utils.parseUnits(order[0], quoteToken.decimals);
-        const price = BigInt(priceBN.toString());
-        const qtyBN = ethers.utils.parseUnits(order[1], baseToken.decimals);
-        const qty = BigInt(qtyBN.toString());
-        let vol = qty;
-        if (side === ClobSide.BID) {
-          vol = (qty * price) / BigInt(10 ** baseToken.decimals);
+      while (left < right) {
+        let mid = Math.floor((left + right) / 2);
+        qty = BigInt(
+          ethers.utils
+            .parseUnits(orderbook[mid][1], quoteToken.decimals)
+            .toString(),
+        );
+        if (side === ClobSide.ASK) {
+          const price = BigInt(
+            ethers.utils
+              .parseUnits(orderbook[mid][0], baseToken.decimals)
+              .toString(),
+          );
+          qty =
+            (qty * BigInt(10 ** (baseToken.decimals * 2))) /
+            (price * BigInt(10 ** quoteToken.decimals));
         }
-        if (amt < vol) {
-          totalVolume += amt;
-          combinedPrice += amt * price;
-          amt = 0n;
+        if (qty <= amt) {
+          left = mid + 1;
         } else {
-          amt -= vol;
-          totalVolume += vol;
-          combinedPrice += vol * price;
-        }
-        if (amt === 0n) {
-          break;
+          right = mid;
         }
       }
-      if (amt > 0n) {
-        return result;
-      }
-      const avgPrice = combinedPrice / totalVolume;
-      if (side === ClobSide.BID) {
-        result.push((amounts[i] * BigInt(10 ** baseToken.decimals)) / avgPrice);
+
+      let price,
+        amount = BigInt(0);
+      if (left === orderbook.length) {
+        price = BigInt(
+          ethers.utils
+            .parseUnits(orderbook[left - 1][0], baseToken.decimals)
+            .toString(),
+        );
+        amount = qty;
+      } else if (amounts[i] === qty) {
+        price = BigInt(
+          ethers.utils
+            .parseUnits(orderbook[left][0], baseToken.decimals)
+            .toString(),
+        );
+        amount = amounts[i];
       } else {
-        result.push((avgPrice * amounts[i]) / BigInt(10 ** baseToken.decimals));
+        const lPrice = BigInt(
+          ethers.utils
+            .parseUnits(orderbook[left][0], baseToken.decimals)
+            .toString(),
+        );
+        const rPrice = BigInt(
+          ethers.utils
+            .parseUnits(orderbook[left + 1][0], baseToken.decimals)
+            .toString(),
+        );
+        const lQty = qty;
+        let rQty = BigInt(
+          ethers.utils
+            .parseUnits(orderbook[left + 1][1], quoteToken.decimals)
+            .toString(),
+        );
+        if (side === ClobSide.ASK) {
+          rQty = (rQty * rPrice) / BigInt(10 ** quoteToken.decimals);
+        }
+        price = lPrice + ((rPrice - lPrice) * (amt - lQty)) / (rQty - lQty);
+        amount = amounts[i];
+      }
+
+      if (side === ClobSide.BID) {
+        result.push(
+          (amount * BigInt(10 ** (baseToken.decimals * 2))) /
+            (price * BigInt(10 ** quoteToken.decimals)),
+        );
+      } else {
+        result.push(
+          (price * amount * BigInt(10 ** quoteToken.decimals)) /
+            BigInt(10 ** (baseToken.decimals * 2)),
+        );
       }
     }
     return result;
