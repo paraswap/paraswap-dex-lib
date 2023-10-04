@@ -196,15 +196,12 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   getIdentifier(srcAddress: Address, destAddress: Address) {
-    // const sortedAddresses =
-    //   srcAddress < destAddress
-    //     ? [srcAddress, destAddress]
-    //     : [destAddress, srcAddress];
-    //
-    // return `${this.dexKey}_${sortedAddresses[0].toLowerCase()}_${sortedAddresses[1].toLowerCase()}`;
+    const sortedAddresses =
+      srcAddress < destAddress
+        ? [srcAddress, destAddress]
+        : [destAddress, srcAddress];
 
-    // To disable Dexalot in multi/mega routes
-    return this.dexKey;
+    return `${this.dexKey}_${sortedAddresses[0].toLowerCase()}_${sortedAddresses[1].toLowerCase()}`;
   }
 
   async getPoolIdentifiers(
