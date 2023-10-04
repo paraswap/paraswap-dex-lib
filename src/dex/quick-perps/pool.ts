@@ -104,6 +104,7 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     const evenState = this.getState(blockNumber);
     if (evenState) return evenState;
     const onChainState = await this.generateState(blockNumber);
+    this.logger.warn(`State is generated in RPC fallback call`);
     this.setState(onChainState, blockNumber);
     return onChainState;
   }
@@ -283,7 +284,8 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
     for (let priceFeed of priceFeeds) {
       const api3ServerAddressCallData =
         Api3FeedSubscriber.getApi3ServerV1MultiCallInput(priceFeed);
-      const dataFeedIdCallData = Api3FeedSubscriber.getDataFeedId(priceFeed);
+      const dataFeedIdCallData =
+        Api3FeedSubscriber.getDapiNameHashMultiCallInput(priceFeed);
       multiCallData.push(...[api3ServerAddressCallData, dataFeedIdCallData]);
       multicallSlices.push([i, i + 2]);
       i += 2;
@@ -315,24 +317,31 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
       await multiContract.methods.aggregate(multiCallData).call({}, blockNumber)
     ).returnData;
 
-    const api3ServerV1: {
+    const api3ServerV1Prep: {
       [address: string]: {
         proxy: Address;
         api3ServerV1: Address;
-        dataFeedId: string;
       };
     } = {};
+    const getFeedIdRequests: MultiCallInput[] = [];
+
     for (let token of tokens) {
-      const [api3ServerAddressRes, dataFeedIdRes] = configResults.slice(
+      const [api3ServerAddressRes, dapiNameHashRes] = configResults.slice(
         ...multicallSlices.shift()!,
       );
       const serverV1Address =
         Api3FeedSubscriber.decodeApi3ServerV1Result(api3ServerAddressRes);
-      const dataFeedId = Api3FeedSubscriber.decodeDataFeedId(dataFeedIdRes);
-      api3ServerV1[token] = {
+      const dapiNameHash =
+        Api3FeedSubscriber.decodeDapiNameHash(dapiNameHashRes);
+      getFeedIdRequests.push(
+        Api3FeedSubscriber.getFeedIdFromDapiNameHash(
+          serverV1Address,
+          dapiNameHash,
+        ),
+      );
+      api3ServerV1Prep[token] = {
         proxy: priceFeeds.shift(),
         api3ServerV1: serverV1Address,
-        dataFeedId,
       };
     }
 
@@ -354,6 +363,32 @@ export class QuickPerpsEventPool extends ComposedEventSubscriber<PoolState> {
 
     const vaultConfigResults = configResults.slice(...multicallSlices.shift()!);
     const vaultConfig = Vault.getConfig(vaultConfigResults, tokens);
+
+    const feedIdResults = (
+      await multiContract.methods
+        .aggregate(getFeedIdRequests)
+        .call({}, blockNumber)
+    ).returnData;
+
+    const api3ServerV1: {
+      [address: string]: {
+        proxy: Address;
+        api3ServerV1: Address;
+        dataFeedId: string;
+      };
+    } = {};
+    for (let [i, token] of tokens.entries()) {
+      const { proxy, api3ServerV1: api3ServerAddress } =
+        api3ServerV1Prep[token];
+      const dataFeedId = Api3FeedSubscriber.decodeFeedIdFromDapiNameHash(
+        feedIdResults[i],
+      );
+      api3ServerV1[token] = {
+        proxy,
+        api3ServerV1: api3ServerAddress,
+        dataFeedId,
+      };
+    }
 
     return {
       vaultAddress: dexParams.vault,

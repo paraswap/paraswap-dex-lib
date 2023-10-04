@@ -1202,4 +1202,70 @@ describe('Solidly integration tests', () => {
       });
     });
   });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+    const dexHelper = new DummyDexHelper(network);
+    const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
+
+    describe('Equalizer', () => {
+      const dexKey = 'Equalizer';
+      const equalizer = new Equalizer(network, dexKey, dexHelper);
+
+      describe('UniswapV2 like pool', function () {
+        const TokenASymbol = 'USDbC';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'ETH';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts18;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await equalizer.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await equalizer.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+
+          for (const poolPrice of poolPrices || []) {
+            await checkOnChainPricing(
+              equalizer,
+              'getAmountOut',
+              blocknumber,
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+      });
+    });
+  });
 });

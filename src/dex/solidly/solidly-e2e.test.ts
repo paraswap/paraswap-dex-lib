@@ -1404,4 +1404,92 @@ describe('Solidly E2E', () => {
       );
     });
   });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    describe('Aerodrome', () => {
+      const dexKey = 'Aerodrome';
+      const tokenASymbol: string = 'USDbC';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '1111100000';
+      const tokenBAmount: string = '100000000000000000';
+      const nativeTokenAmount = '100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+
+    describe('Equalizer', () => {
+      const dexKey = 'Equalizer';
+      const network = Network.BASE;
+
+      const tokenASymbol: string = 'USDbC';
+      const tokenAAmount: string = '1111100000';
+      const nativeTokenAmount = '110000000000000000';
+
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const nativeTokenSymbol = NativeTokenSymbols[network];
+
+      // TODO: Add any direct swap contractMethod name if it exists
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+      ]);
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            describe(`${contractMethod}`, () => {
+              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[nativeTokenSymbol],
+                  tokens[tokenASymbol],
+                  holders[nativeTokenSymbol],
+                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[nativeTokenSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            });
+          });
+        }),
+      );
+    });
+  });
 });
