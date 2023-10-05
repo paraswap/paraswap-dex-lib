@@ -9,7 +9,7 @@ import {
   Logger,
   ExchangeTxInfo,
   OptimalSwapExchange,
-  PreprocessTransactionOptions,
+  PreprocessTransactionOptions, TransferFeeParams,
 } from '../../types';
 import {
   SwapSide,
@@ -415,8 +415,16 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
   ): Promise<null | ExchangePrices<DexalotData>> {
     try {
+
+      // Disable multi/mega routes
+      if(!isFirstSwap) {
+        return null;
+      }
+
       if (await this.isRestricted()) {
         return null;
       }

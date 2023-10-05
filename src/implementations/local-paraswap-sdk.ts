@@ -117,6 +117,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       blockNumber,
       [this.dexKey],
       poolIdentifiers,
+      true,
       transferFees,
     );
 
