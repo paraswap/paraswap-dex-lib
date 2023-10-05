@@ -6,7 +6,7 @@ export type VerifiedData = {
 
 export type DexParams = {
   vaultAddress: Address;
-  subGraph: string;
+  subGraphUrl: string;
 };
 
 export type PoolStateMap = { [address: string]: PoolState };
@@ -24,21 +24,18 @@ export enum VerifiedPoolTypes {
 
 export type TokenState = {
   balance: bigint;
-  scalingFactor?: bigint; // It includes the token priceRate
-  weight?: bigint;
 };
 
 export type PoolState = {
   tokens: {
     [address: string]: TokenState;
   };
+  swapFee: bigint;
+  orderedTokens: string[];
   //both Primary and Secondary issue Pools
-  mainIndex?: number;
-  minimumOrderSize?: bigint;
+  minimumOrderSize: bigint;
   //Primary issue pools
   minimumPrice?: bigint;
-  securityOffered?: bigint;
-  cutoffTime?: bigint;
 };
 
 export type SubgraphToken = {
@@ -59,14 +56,39 @@ export type SubgraphPoolAddressDictionary = {
   [address: string]: SubgraphPoolBase;
 };
 
+export type OrdersState = {
+  id: string;
+  creator: Address;
+  tokenIn: { id: Address };
+  tokenOut: { id: Address };
+  amountOffered: number;
+  priceOffered: number;
+  timestamp: bigint;
+  orderReference: string;
+};
+
+export type SecondaryTradeState = {
+  id: string;
+  party: { id: Address };
+  counterparty: { id: Address };
+  orderType: string;
+  price: number;
+  currency: { id: Address };
+  amount: number;
+  executionDate: bigint;
+  orderReference: string;
+};
+
 export interface SubgraphPoolBase {
   id: string;
   address: string;
   poolType: VerifiedPoolTypes;
   tokens: SubgraphToken[];
-  mainIndex: number; //to get maintokens for now new logic will be added
-  swapFee: number; // might be needed for swap
-  totalShares: number; // might be needed for swap
+  security: Address; //to get primary maintokens for now new logic will be added
+  currency: Address; //to get secondary maintokens for now new logic will be added
+  orders?: OrdersState[]; //secondary pool swap logic
+  secondaryTrades?: SecondaryTradeState[]; //secondary pool swap logic
+  tokensMap: { [tokenAddress: string]: SubgraphToken };
   mainTokens: SubgraphMainToken[];
 }
 
@@ -118,3 +140,18 @@ export interface PoolStateCache {
   blockNumber: number;
   poolState: PoolStateMap;
 }
+
+export type PoolPairData = {
+  tokens: string[];
+  balances: bigint[];
+  decimals: number[];
+  scalingFactors: bigint[];
+  indexIn: number;
+  indexOut: number;
+  bptIndex: number;
+  swapFee: bigint;
+  minOrderSize: bigint;
+  minPrice?: bigint;
+  orders?: OrdersState[];
+  secondaryTrades?: SecondaryTradeState[];
+};

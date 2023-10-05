@@ -47,10 +47,8 @@ export class Verified extends SimpleExchange implements IDex<VerifiedData> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    public vaultAddress: Address = BalancerConfig[dexKey][network]
-      .vaultAddress || VerifiedConfig[dexKey][network].vaultAddress,
-    protected subgraphURL: string = BalancerConfig[dexKey][network]
-      .subgraphURL || VerifiedConfig[dexKey][network].subGraph,
+    public vaultAddress: Address = VerifiedConfig[dexKey][network].vaultAddress,
+    protected subgraphURL: string = VerifiedConfig[dexKey][network].subGraphUrl,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);

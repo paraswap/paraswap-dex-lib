@@ -6,16 +6,19 @@ export const VerifiedConfig: DexConfigMap<DexParams> = {
   Verified: {
     // TODO: complete me!
     [Network.GEORLI]: {
-      vaultAddress: 'ikkk',
-      subGraph: 'hh',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+      subGraphUrl:
+        'https://api.thegraph.com/subgraphs/name/verified-network/balancer',
     },
     [Network.POLYGON]: {
-      vaultAddress: 'i',
-      subGraph: 'oo',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+      subGraphUrl:
+        'https://api.thegraph.com/subgraphs/name/verified-network/vault-matic',
     },
     [Network.GNOSIS]: {
-      vaultAddress: 'uu',
-      subGraph: 'ju',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+      subGraphUrl:
+        'https://api.thegraph.com/subgraphs/name/verified-network/vault-gnosis',
     },
   },
 };
