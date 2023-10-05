@@ -620,6 +620,71 @@
     "stateMutability": "view"
   },
   {
+    "name": "partialSwap",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "_order",
+        "type": "tuple",
+        "components": [
+          {
+            "name": "nonceAndMeta",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "expiry",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "makerAsset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "takerAsset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "maker",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "taker",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "makerAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "takerAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "internalType": "struct MainnetRFQ.Order"
+      },
+      {
+        "name": "_signature",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "_takerAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
     "name": "pause",
     "type": "function",
     "inputs": [],
