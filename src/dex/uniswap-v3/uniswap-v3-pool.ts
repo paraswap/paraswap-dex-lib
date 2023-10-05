@@ -199,7 +199,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return null; // ignore unrecognized event
   }
 
-  private _getStateRequestCallData() {
+  protected _getStateRequestCallData() {
     if (!this._stateRequestCallData) {
       const callData: MultiCallParams<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps

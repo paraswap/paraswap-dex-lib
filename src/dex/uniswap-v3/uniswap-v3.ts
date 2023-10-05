@@ -242,25 +242,29 @@ export class UniswapV3
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
+    const poolImplementation =
+      this.config.eventPoolImplementation !== undefined
+        ? this.config.eventPoolImplementation
+        : UniswapV3EventPool;
     pool =
       pool ||
-      new UniswapV3EventPool(
-        this.dexHelper,
-        this.dexKey,
-        this.stateMultiContract,
-        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
-        this.erc20Interface,
-        this.config.factory,
-        fee,
-        token0,
-        token1,
-        this.logger,
-        this.cacheStateKey,
-        this.config.initHash,
+      new poolImplementation(
+          this.dexHelper,
+          this.dexKey,
+          this.stateMultiContract,
+          this.config.decodeStateMultiCallResultWithRelativeBitmaps,
+          this.erc20Interface,
+          this.config.factory,
+          fee,
+          token0,
+          token1,
+          this.logger,
+          this.cacheStateKey,
+          this.config.initHash,
       );
 
     try {
-      await pool.initialize(blockNumber, {
+      await pool!.initialize(blockNumber, {
         initCallback: (state: DeepReadonly<PoolState>) => {
           //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
           pool!.addressesSubscribed[0] = state.pool;
@@ -289,10 +293,10 @@ export class UniswapV3
         // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool!.initRetryAttemptCount}`,
           e,
         );
-        pool.initFailed = true;
+        pool!.initFailed = true;
       }
     }
 
@@ -309,8 +313,8 @@ export class UniswapV3
     }
 
     this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-      pool;
-    return pool;
+      pool!;
+    return pool!;
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
@@ -1066,6 +1070,7 @@ export class UniswapV3
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
       stateMultiCallAbi: this.config.stateMultiCallAbi,
+      eventPoolImplementation: this.config.eventPoolImplementation,
       decodeStateMultiCallResultWithRelativeBitmaps:
         this.config.decodeStateMultiCallResultWithRelativeBitmaps,
     };

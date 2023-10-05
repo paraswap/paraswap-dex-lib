@@ -5,6 +5,7 @@ import { Address } from '../../types';
 import RamsesV2StateMulticallABI from '../../abi/RamsesV2StateMulticall.abi.json';
 import { AbiItem } from 'web3-utils';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './forks/ramses-v2/utils';
+import { RamsesV2EventPool } from './forks/ramses-v2/ramses-v2-pool';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
 
@@ -251,6 +252,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
+      eventPoolImplementation: RamsesV2EventPool,
       decodeStateMultiCallResultWithRelativeBitmaps,
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
