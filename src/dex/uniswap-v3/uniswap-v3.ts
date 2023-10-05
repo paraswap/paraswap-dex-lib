@@ -146,7 +146,7 @@ export class UniswapV3
       dexKey,
       this.config.factory,
       this.logger,
-      this.onPoolCreatedDeleteFromNonExistingSet.bind(this),
+      this.onPoolCreatedDeleteFromNonExistingSet,
     );
   }
 

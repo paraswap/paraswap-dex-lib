@@ -122,7 +122,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       dexKey,
       this.config.factory,
       this.logger,
-      this.onPoolCreatedDeleteFromNonExistingSet.bind(this),
+      this.onPoolCreatedDeleteFromNonExistingSet,
     );
   }
 
