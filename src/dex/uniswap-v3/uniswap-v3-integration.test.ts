@@ -1101,7 +1101,6 @@ describe('SushiSwapV3', () => {
   });
 });
 
-
 describe('Retro', () => {
   const dexKey = 'Retro';
 
@@ -1233,14 +1232,10 @@ describe('Retro', () => {
     });
 
     it('getTopPoolsForToken', async function () {
-      const poolLiquidity = await retro.getTopPoolsForToken(
-        TokenB.address,
-        10,
-      );
+      const poolLiquidity = await retro.getTopPoolsForToken(TokenB.address, 10);
       console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
     });
   });
-
 });

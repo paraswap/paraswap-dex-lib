@@ -315,4 +315,10 @@ export class DexAdapterService {
       ? this.sellAdapters[specialDexKey]
       : this.buyAdapters[specialDexKey];
   }
+
+  doesPreProcessingRequireSequentiality(dexKey: string): boolean {
+    const dex = this.getDexByKey(dexKey);
+
+    return !!dex.needsSequentialPreprocessing;
+  }
 }
