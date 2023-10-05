@@ -1100,3 +1100,147 @@ describe('SushiSwapV3', () => {
     });
   });
 });
+
+
+describe('Retro', () => {
+  const dexKey = 'Retro';
+
+  describe('Polygon', () => {
+    let blockNumber: number;
+    let retro: UniswapV3;
+
+    const network = Network.POLYGON;
+    const dexHelper = new DummyDexHelper(network);
+    const TokenASymbol = 'USDC';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDT';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    beforeEach(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      retro = new UniswapV3(network, dexKey, dexHelper);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await retro.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await retro.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = retro.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            retro,
+            'quoteExactInputSingle',
+            blockNumber,
+            '0xfe08be075758935cb6cb9318d1fbb60920416d4e',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await retro.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await retro.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = retro.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            retro,
+            'quoteExactOutputSingle',
+            blockNumber,
+            '0xfe08be075758935cb6cb9318d1fbb60920416d4e',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getTopPoolsForToken', async function () {
+      const poolLiquidity = await retro.getTopPoolsForToken(
+        TokenB.address,
+        10,
+      );
+      console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+      checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+    });
+  });
+
+});
