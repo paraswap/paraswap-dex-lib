@@ -18,7 +18,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AlgebraData, DexParams, PoolStateV1_1, PoolState_v1_9 } from './types';
+import { AlgebraData, DexParams, IAlgebraPoolState } from './types';
 import {
   SimpleExchange,
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -57,7 +57,6 @@ const MAX_STALE_STATE_BLOCK_AGE = {
 };
 
 type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
-type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   readonly isFeeOnTransferSupported: boolean = false;
@@ -89,7 +88,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     protected adapters = Adapters[network] || {},
     readonly routerIface = new Interface(UniswapV3RouterABI), // same abi as uniswapV3
     readonly quoterIface = new Interface(AlgebraQuoterABI),
-    protected config = AlgebraConfig[dexKey][network],
+    readonly config = AlgebraConfig[dexKey][network],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
@@ -105,6 +104,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     this.dexHelper.web3Provider.eth.handleRevert = false;
 
     this.config = this._toLowerForAllConfigAddresses();
+    // External configuration has priority over internal
+    this.config.forceRPC = dexHelper.config.data.forceRpcFallbackDexs.includes(
+      dexKey.toLowerCase(),
+    );
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
@@ -123,10 +126,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async initializePricing(blockNumber: number) {
+    const cleanNonExistingPoolTTLMs =
+      this.config.cleanExistingPoolTTLMs ||
+      ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
-        const maxTimestamp =
-          Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+        const maxTimestamp = Date.now() - cleanNonExistingPoolTTLMs;
         await this.dexHelper.cache.zremrangebyscore(
           this.notExistingPoolSetKey,
           0,
@@ -157,14 +163,15 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         if (this.network !== Network.ZKEVM) return pool;
 
         if (
-          pool.getState(blockNumber) === null &&
-          blockNumber - pool.getStateBlockNumber() >
-            MAX_STALE_STATE_BLOCK_AGE[this.network]
+          pool.getStaleState() === null ||
+          (pool.getState(blockNumber) === null &&
+            blockNumber - pool.getStateBlockNumber() >
+              MAX_STALE_STATE_BLOCK_AGE[this.network])
         ) {
           /* reload state, on zkEVM this would most likely timeout during request life
            * but would allow to rely on staleState for couple of min for next requests
            */
-          await pool.initialize(blockNumber);
+          await pool.initialize(blockNumber, { forceRegenerate: true });
         }
 
         return pool;
@@ -223,6 +230,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         this.cacheStateKey,
         this.config.initHash,
         this.config.deployer,
+        this.config.forceManualStateGenerate,
       );
 
     try {
@@ -252,10 +260,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           e,
         );
       } else {
-        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
@@ -447,6 +455,18 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       if (!pool) return null;
 
+      if (this.config.forceRPC) {
+        const rpcPrice = await this.getPricingFromRpc(
+          _srcToken,
+          _destToken,
+          amounts,
+          side,
+          pool,
+        );
+
+        return rpcPrice;
+      }
+
       let state = pool.getState(blockNumber);
 
       if (state === null) {
@@ -495,6 +515,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const zeroForOne = token0 === _srcAddress ? true : false;
 
       if (state.liquidity <= 0n) {
+        if (state.liquidity < 0) {
+          this.logger.error(
+            `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+          );
+        }
         this.logger.trace(`pool have 0 liquidity`);
         return null;
       }
@@ -769,6 +794,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
       version: this.config.version,
+      forceRPC: this.config.forceRPC,
+      forceManualStateGenerate: this.config.forceManualStateGenerate,
     };
     return newConfig;
   }
@@ -793,20 +820,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           return null;
         }
 
-        // TODO buy
-        let lastNonZeroOutput = 0n;
-        let lastNonZeroTickCountsOutputs = 0;
-
         for (let i = 0; i < outputsResult.outputs.length; i++) {
-          // local pricing algo may output 0s at the tail for some out of range amounts, prefer to propagating last amount to appease top algo
-          if (outputsResult.outputs[i] > 0n) {
-            lastNonZeroOutput = outputsResult.outputs[i];
-            lastNonZeroTickCountsOutputs = outputsResult.tickCounts[i];
-          } else {
-            outputsResult.outputs[i] = lastNonZeroOutput;
-            outputsResult.tickCounts[i] = lastNonZeroTickCountsOutputs;
-          }
-
           if (outputsResult.outputs[i] > destTokenBalance) {
             outputsResult.outputs[i] = 0n;
             outputsResult.tickCounts[i] = 0;

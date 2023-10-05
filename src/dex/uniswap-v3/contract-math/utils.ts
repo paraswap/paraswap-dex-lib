@@ -38,16 +38,18 @@ export function _reduceTicks(
 ) {
   return ticksToReduce.reduce<Record<string, TickInfo>>((acc, curr) => {
     const { index, value } = curr;
-    acc[index] = {
-      liquidityGross: bigIntify(value.liquidityGross),
-      liquidityNet: bigIntify(value.liquidityNet),
-      tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
-      secondsPerLiquidityOutsideX128: bigIntify(
-        value.secondsPerLiquidityOutsideX128,
-      ),
-      secondsOutside: bigIntify(value.secondsOutside),
-      initialized: value.initialized,
-    };
+    if (value.initialized) {
+      acc[index] = {
+        liquidityGross: bigIntify(value.liquidityGross),
+        liquidityNet: bigIntify(value.liquidityNet),
+        tickCumulativeOutside: bigIntify(value.tickCumulativeOutside),
+        secondsPerLiquidityOutsideX128: bigIntify(
+          value.secondsPerLiquidityOutsideX128,
+        ),
+        secondsOutside: bigIntify(value.secondsOutside),
+        initialized: value.initialized,
+      };
+    }
     return acc;
   }, ticks);
 }

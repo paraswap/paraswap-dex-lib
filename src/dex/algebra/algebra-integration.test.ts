@@ -14,21 +14,8 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { Address } from '@paraswap/core';
-
-/*
-  README
-  ======
-
-  This test script adds tests for Algebra general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Algebra specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
+import { DecodedStateMultiCallResultWithRelativeBitmapsV1_1 } from './types';
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -70,7 +57,7 @@ async function checkOnChainPricing(
   tokenOut: Address,
   amounts: bigint[],
 ) {
-  const exchangeAddress = '0xa15f0d7377b2a0c0c10db057f641bed21028fc89'; // Quoter address
+  const exchangeAddress = algebra.config.quoter;
 
   const readerIface = algebra.quoterIface;
 
@@ -155,6 +142,199 @@ async function testPricingOnNetwork(
   );
 }
 
+describe('CamelotV3', function () {
+  const dexKey = 'CamelotV3';
+  let blockNumber: number;
+  let algebra: Algebra;
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    describe('GRAIL => USDCe', () => {
+      const srcTokenSymbol = 'GRAIL';
+      const destTokenSymbol = 'USDCe';
+
+      const amountsForSell = [
+        0n,
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        20n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        30n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        40n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        50n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        60n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        70n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        80n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        90n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        100n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        algebra = new Algebra(network, dexKey, dexHelper);
+        if (algebra.initializePricing) {
+          await algebra.initializePricing(blockNumber);
+        }
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          algebra,
+          network,
+          dexKey,
+          dexHelper,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+          'quoteExactInputSingle',
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          algebra,
+          network,
+          dexKey,
+          dexHelper,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'quoteExactOutputSingle',
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newAlgebra = new Algebra(network, dexKey, dexHelper);
+        const poolLiquidity = await newAlgebra.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newAlgebra.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
+
+    describe('USDCe => GRAIL', () => {
+      const srcTokenSymbol = 'USDCe';
+      const destTokenSymbol = 'GRAIL';
+
+      const amountsForSell = [
+        0n,
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        20n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        30n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        40n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        50n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        60n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        70n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        80n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        90n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        100n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        algebra = new Algebra(network, dexKey, dexHelper);
+        if (algebra.initializePricing) {
+          await algebra.initializePricing(blockNumber);
+        }
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          algebra,
+          network,
+          dexKey,
+          dexHelper,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+          'quoteExactInputSingle',
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          algebra,
+          network,
+          dexKey,
+          dexHelper,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'quoteExactOutputSingle',
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newAlgebra = new Algebra(network, dexKey, dexHelper);
+        const poolLiquidity = await newAlgebra.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newAlgebra.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
+  });
+});
+
 describe('Algebra', function () {
   const dexKey = 'QuickSwapV3';
   let blockNumber: number;
@@ -166,8 +346,9 @@ describe('Algebra', function () {
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'USDC';
-    const destTokenSymbol = 'WMATIC';
+    const srcTokenSymbol = 'WMATIC';
+    const destTokenSymbol = 'DAI';
+    // const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,
@@ -252,6 +433,126 @@ describe('Algebra', function () {
           dexKey,
         );
       }
+    });
+
+    it('both generate state result match', async function () {
+      const pool = (await algebra.getPool(
+        tokens[srcTokenSymbol].address,
+        tokens[destTokenSymbol].address,
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const [balance0, balance1, stateMulticallFull] =
+        await pool.fetchPoolStateSingleStep(blockNumber);
+
+      const stateMulticall = {
+        pool: stateMulticallFull.pool.toLowerCase(),
+        globalState: {
+          price: stateMulticallFull.globalState.price,
+          tick: stateMulticallFull.globalState.tick,
+          fee: stateMulticallFull.globalState.fee,
+          communityFeeToken0: stateMulticallFull.globalState.communityFeeToken0,
+          communityFeeToken1: stateMulticallFull.globalState.communityFeeToken1,
+        },
+        liquidity: stateMulticallFull.liquidity,
+        tickSpacing: stateMulticallFull.tickSpacing,
+        maxLiquidityPerTick: stateMulticallFull.maxLiquidityPerTick,
+        tickBitmap: stateMulticallFull.tickBitmap.map(t => ({
+          index: t.index,
+          value: t.value,
+        })),
+        ticks: stateMulticallFull.ticks.map(t => ({
+          index: t.index,
+          value: {
+            liquidityNet: t.value.liquidityNet,
+            liquidityGross: t.value.liquidityGross,
+            secondsOutside: t.value.secondsOutside,
+            secondsPerLiquidityOutsideX128:
+              t.value.secondsPerLiquidityOutsideX128,
+            tickCumulativeOutside: t.value.tickCumulativeOutside,
+            initialized: t.value.initialized,
+          },
+        })),
+      };
+
+      const stateMulticallWithBalance = [balance0, balance1, stateMulticall];
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // @ts-ignore
+      delete stateManually[2]['blockTimestamp'];
+      stateManually[2].pool = stateManually[2].pool.toLowerCase();
+
+      expect(stateMulticallWithBalance).toStrictEqual(stateManually);
+    });
+  });
+
+  describe('ZKEVM', () => {
+    const network = Network.ZKEVM;
+    const dexHelper = new DummyDexHelper(network);
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      algebra = new Algebra(network, dexKey, dexHelper);
+      if (algebra.initializePricing) {
+        await algebra.initializePricing(blockNumber);
+      }
+    });
+
+    it('WETH/DAI generate state is working for problematic pool', async function () {
+      const pool = (await algebra.getPool(
+        '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
+        '0xc5015b9d9161dca7e18e32f6f25c4ad850731fd4',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // We can not compare with usual way, because this pool can not be requested normally
+      expect(Array.isArray(stateManually)).toBeTruthy();
+    });
+
+    it('WETH/MATIC generate state is working for problematic pool', async function () {
+      const pool = (await algebra.getPool(
+        '0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9',
+        '0xa2036f0538221a77a3937f1379699f44945018d0',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // We can not compare with usual way, because this pool can not be requested normally
+      expect(Array.isArray(stateManually)).toBeTruthy();
+    });
+
+    it('stMATIC/WETH generate state is working for problematic pool', async function () {
+      const pool = (await algebra.getPool(
+        '0x83b874c1e09d316059d929da402dcb1a98e92082',
+        '0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // We can not compare with usual way, because this pool can not be requested normally
+      expect(Array.isArray(stateManually)).toBeTruthy();
+    });
+
+    it('WETH/USDC generate state is working for problematic pool', async function () {
+      const pool = (await algebra.getPool(
+        '0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9',
+        '0xa8ce8aee21bc2a48a5ef670afcc9274c7bbbc035',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      const stateManually = await pool.fetchStateManually(blockNumber);
+      // We can not compare with usual way, because this pool can not be requested normally
+      expect(Array.isArray(stateManually)).toBeTruthy();
+    });
+
+    it('recognize pool does not exist error', async function () {
+      const pool = (await algebra.getPool(
+        '0x8aaebb46e1742f4623e6e1621f909f01846ca5e2',
+        '0xf9ed88937b2d82707d0eabd8c3d9aa4870b714d3',
+        blockNumber,
+      )) as AlgebraEventPoolV1_1;
+
+      expect(pool).toBeNull();
     });
   });
 });

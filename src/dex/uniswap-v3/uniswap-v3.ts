@@ -42,7 +42,7 @@ import {
 import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
-import UniswapV3QuoterABI from '../../abi/uniswap-v3/UniswapV3Quoter.abi.json';
+import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
@@ -91,7 +91,13 @@ export class UniswapV3
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.pick(UniswapV3Config, ['UniswapV3', 'QuickSwapV3.1']),
+      _.pick(UniswapV3Config, [
+        'UniswapV3',
+        'SushiSwapV3',
+        'QuickSwapV3.1',
+        'RamsesV2',
+        'ChronosV3',
+      ]),
     );
 
   logger: Logger;
@@ -107,7 +113,7 @@ export class UniswapV3
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly routerIface = new Interface(UniswapV3RouterABI),
-    readonly quoterIface = new Interface(UniswapV3QuoterABI),
+    readonly quoterIface = new Interface(UniswapV3QuoterV2ABI),
     protected config = UniswapV3Config[dexKey][network],
     protected poolsToPreload = PoolsToPreload[dexKey]?.[network] || [],
   ) {
@@ -118,7 +124,9 @@ export class UniswapV3
       this.config.uniswapMulticall,
     );
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapV3StateMulticallABI as AbiItem[],
+      this.config.stateMultiCallAbi !== undefined
+        ? this.config.stateMultiCallAbi
+        : (UniswapV3StateMulticallABI as AbiItem[]),
       this.config.stateMulticall,
     );
 
@@ -239,6 +247,7 @@ export class UniswapV3
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
+        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
         this.erc20Interface,
         this.config.factory,
         fee,
@@ -276,7 +285,7 @@ export class UniswapV3
           e,
         );
       } else {
-        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
           `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
@@ -620,6 +629,11 @@ export class UniswapV3
           const state = states[i];
 
           if (state.liquidity <= 0n) {
+            if (state.liquidity < 0) {
+              this.logger.error(
+                `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+              );
+            }
             this.logger.trace(`pool have 0 liquidity`);
             return null;
           }
@@ -1050,6 +1064,9 @@ export class UniswapV3
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
+      stateMultiCallAbi: this.config.stateMultiCallAbi,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
     };
     return newConfig;
   }

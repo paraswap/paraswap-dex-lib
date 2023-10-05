@@ -1,5 +1,6 @@
 import { Result } from '@ethersproject/abi';
 import BigNumber from 'bignumber.js';
+import { BigNumber as EthersBigNumber } from 'ethers';
 import { BytesLike, defaultAbiCoder } from 'ethers/lib/utils';
 import _, { parseInt } from 'lodash';
 import { BN_0 } from '../bignumber-constants';
@@ -48,6 +49,18 @@ export const uint256ToBigInt = (
   result: MultiResult<BytesLike> | BytesLike,
 ): bigint => {
   return generalDecoder(result, ['uint256'], 0n, value => value[0].toBigInt());
+};
+
+export const uint128ToBigNumber = (
+  result: MultiResult<BytesLike> | BytesLike,
+): EthersBigNumber => {
+  return generalDecoder(result, ['uint128'], 0n, value => value[0]);
+};
+
+export const int24ToNumber = (
+  result: MultiResult<BytesLike> | BytesLike,
+): number => {
+  return generalDecoder(result, ['int24'], 0n, value => value[0]);
 };
 
 export const uint256ArrayDecode = (

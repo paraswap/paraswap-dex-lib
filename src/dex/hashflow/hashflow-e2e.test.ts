@@ -11,6 +11,9 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
+// Give time for rate fetcher to fill the cache
+const sleepMs = 3000;
+
 function testForNetwork(
   network: Network,
   dexKey: string,
@@ -58,6 +61,11 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
                 );
               });
               it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
@@ -71,6 +79,11 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
                 );
               });
             } else {
@@ -85,6 +98,11 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
                 );
               });
               it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
@@ -98,6 +116,11 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
                 );
               });
               it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
@@ -111,6 +134,11 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
                 );
               });
               it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
@@ -124,6 +152,11 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
                 );
               });
             }
@@ -163,9 +196,9 @@ describe('Hashflow E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAI';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000000000000000';
+    const nativeTokenAmount = '100000000000000000000';
 
     testForNetwork(
       network,

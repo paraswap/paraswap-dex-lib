@@ -9,30 +9,46 @@ import {
 } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
+  DecodedGlobalStateV1_1,
   PoolStateV1_1,
   TickBitMapMappingsWithBigNumber,
   TickInfoMappingsWithBigNumber,
+  TickInfoWithBigNumber,
 } from './types';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import AlgebraABI from '../../abi/algebra/AlgebraPool-v1_1.abi.json';
+import FactoryABI from '../../abi/algebra/AlgebraFactory-v1_1.abi.json';
 import { DecodedStateMultiCallResultWithRelativeBitmapsV1_1 } from './types';
 import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
   TICK_BITMAP_TO_USE,
 } from '../uniswap-v3/constants';
-import { uint256ToBigInt } from '../../lib/decoders';
+import {
+  addressDecode,
+  uint256ToBigInt,
+  uint128ToBigNumber,
+  int24ToNumber,
+} from '../../lib/decoders';
 import { MultiCallParams } from '../../lib/multi-wrapper';
-import { decodeStateMultiCallResultWithRelativeBitmapsV1_1 } from './utils';
+import {
+  decodeGlobalStateV1_1,
+  decodeStateMultiCallResultWithRelativeBitmapsV1_1,
+  decodeTicksV1_1,
+} from './utils';
 import { AlgebraMath } from './lib/AlgebraMath';
-import { TickBitMap } from '../uniswap-v3/contract-math/TickBitMap';
 import {
   _reduceTickBitmap,
   _reduceTicks,
 } from '../uniswap-v3/contract-math/utils';
 import { Constants } from './lib/Constants';
-import { Network } from '../../constants';
+import { Network, NULL_ADDRESS } from '../../constants';
+import { TickTable } from './lib/TickTable';
+
+const BN_ZERO = BigNumber.from(0);
+const MAX_BATCH_SIZE = 100;
+const MAX_NUMBER_OF_BATCH_REQUEST_HALVING = 3;
 
 export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1> {
   handlers: {
@@ -53,6 +69,13 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
   readonly token1: Address;
 
   public readonly poolIface = new Interface(AlgebraABI);
+  public readonly factoryIface = new Interface(FactoryABI);
+
+  private readonly cachedStateMultiCalls: MultiCallParams<
+    string | bigint | BigNumber | number | DecodedGlobalStateV1_1
+  >[];
+
+  private optimalTickRequestBatchSize?: number;
 
   public initFailed = false;
   public initRetryAttemptCount = 0;
@@ -69,6 +92,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     mapKey: string = '',
     readonly poolInitCodeHash: string,
     readonly poolDeployer: string,
+    private readonly forceManualStateGeneration: boolean = false,
   ) {
     super(parentName, `${token0}_${token1}`, dexHelper, logger, true, mapKey);
     this.token0 = token0.toLowerCase();
@@ -84,6 +108,8 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     this.handlers['Flash'] = this.handleFlashEvent.bind(this);
     this.handlers['Collect'] = this.handleCollectEvent.bind(this);
     this.handlers['CommunityFee'] = this.handleCommunityFee.bind(this);
+
+    this.cachedStateMultiCalls = this._getStateMulticall();
   }
 
   get poolAddress() {
@@ -174,7 +200,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
-  private async _fetchPoolStateSingleStep(
+  async fetchPoolStateSingleStep(
     blockNumber: number,
   ): Promise<
     [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
@@ -336,7 +362,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
   > {
     try {
-      return await this._fetchPoolStateSingleStep(blockNumber);
+      return await this.fetchPoolStateSingleStep(blockNumber);
     } catch (e) {
       if (e instanceof Error && e.message.includes('Pool does not exist'))
         throw e;
@@ -347,9 +373,234 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     }
   }
 
+  private _getStateMulticall(): MultiCallParams<
+    string | bigint | BigNumber | number | DecodedGlobalStateV1_1
+  >[] {
+    return [
+      {
+        target: this.factoryAddress,
+        callData: this.factoryIface.encodeFunctionData('poolByPair', [
+          this.token0,
+          this.token1,
+        ]),
+        decodeFunction: addressDecode,
+      },
+      {
+        target: this.token0,
+        callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.token1,
+        callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+          this.poolAddress,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.poolAddress,
+        callData: this.poolIface.encodeFunctionData('liquidity', []),
+        decodeFunction: uint128ToBigNumber,
+      },
+      {
+        target: this.poolAddress,
+        callData: this.poolIface.encodeFunctionData('tickSpacing', []),
+        decodeFunction: int24ToNumber,
+      },
+      {
+        target: this.poolAddress,
+        callData: this.poolIface.encodeFunctionData('maxLiquidityPerTick', []),
+        decodeFunction: uint128ToBigNumber,
+      },
+      {
+        target: this.poolAddress,
+        callData: this.poolIface.encodeFunctionData('globalState', []),
+        decodeFunction: decodeGlobalStateV1_1,
+      },
+    ];
+  }
+
+  async fetchStateManually(
+    blockNumber: number,
+  ): Promise<
+    [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmapsV1_1]
+  > {
+    // Unfortunately I can not unite this call with the next one. For some reason even if pool does not exist
+    // call succeeds and makes decoding function to throw. Otherwise, I should rewrite decoders in different which
+    // require some time
+    const [poolAddress] = (await this.dexHelper.multiWrapper.aggregate<
+      string | bigint | BigNumber | number | DecodedGlobalStateV1_1
+    >(this.cachedStateMultiCalls.slice(0, 1), blockNumber, MAX_BATCH_SIZE)) as [
+      string,
+    ];
+
+    if (poolAddress === NULL_ADDRESS) {
+      throw new Error('Pool does not exist');
+    }
+
+    const [
+      balance0,
+      balance1,
+      liquidity,
+      tickSpacing,
+      maxLiquidityPerTick,
+      globalState,
+    ] = (await this.dexHelper.multiWrapper.aggregate<
+      string | bigint | BigNumber | number | DecodedGlobalStateV1_1
+    >(this.cachedStateMultiCalls.slice(1), blockNumber, MAX_BATCH_SIZE)) as [
+      bigint,
+      bigint,
+      BigNumber,
+      number,
+      BigNumber,
+      DecodedGlobalStateV1_1,
+    ];
+
+    assert(
+      poolAddress.toLowerCase() === this.poolAddress.toLowerCase(),
+      `Pool address mismatch: ${poolAddress.toLowerCase()} != ${this.poolAddress.toLowerCase()}`,
+    );
+
+    const currentBitMapIndex = TickTable.position(
+      BigInt(BigInt(globalState.tick) / BigInt(tickSpacing)),
+    )[0];
+
+    const leftBitMapIndex = currentBitMapIndex - this.getBitmapRangeToRequest();
+    const rightBitMapIndex =
+      currentBitMapIndex + this.getBitmapRangeToRequest();
+
+    const allTickBitMaps = await this.dexHelper.multiWrapper.aggregate(
+      _.range(Number(leftBitMapIndex), Number(rightBitMapIndex + 1n)).map(
+        index => {
+          return {
+            target: poolAddress,
+            callData: this.poolIface.encodeFunctionData('tickTable', [
+              int16(BigInt(index)),
+            ]),
+            decodeFunction: uint256ToBigInt,
+          };
+        },
+      ),
+      blockNumber,
+      MAX_BATCH_SIZE,
+    );
+
+    const tickBitmap: TickBitMapMappingsWithBigNumber[] = [];
+
+    let globalIndex = 0;
+    for (let i = leftBitMapIndex; i <= rightBitMapIndex; i++) {
+      const index = Number(int16(i));
+      const bitmap = allTickBitMaps[globalIndex];
+      globalIndex++;
+      if (bitmap == 0n) continue;
+      tickBitmap.push({ index: Number(index), value: BigNumber.from(bitmap) });
+    }
+
+    const tickIndexes: bigint[] = [];
+
+    const tickRequests = tickBitmap
+      .map(tb => {
+        const allBits: MultiCallParams<TickInfoWithBigNumber>[] = [];
+        if (tb.value === BN_ZERO) return allBits;
+
+        _.range(0, 256).forEach(j => {
+          if ((tb.value.toBigInt() & (1n << BigInt(j))) > 0n) {
+            const populatedTick =
+              (BigInt.asIntN(16, BigInt(tb.index) << 8n) + BigInt(j)) *
+              BigInt(tickSpacing);
+
+            tickIndexes.push(populatedTick);
+            allBits.push({
+              target: poolAddress,
+              callData: this.poolIface.encodeFunctionData('ticks', [
+                populatedTick,
+              ]),
+              decodeFunction: decodeTicksV1_1,
+            });
+          }
+        });
+        return allBits;
+      })
+      .flat();
+
+    let ticksValues: TickInfoWithBigNumber[] = [];
+    if (this.optimalTickRequestBatchSize) {
+      ticksValues = await this.dexHelper.multiWrapper.aggregate(
+        tickRequests,
+        blockNumber,
+        this.optimalTickRequestBatchSize,
+      );
+      // If we don't know what is optimal number of requests for this pool, we want to try it experimentally and save it
+      // Maybe later to consider distant caching
+    } else {
+      for (const i of _.range(0, MAX_NUMBER_OF_BATCH_REQUEST_HALVING)) {
+        const currentBatchSize = MAX_BATCH_SIZE / (+i + 1);
+        try {
+          // Some of the pools fails with 100 batch size, for them we want to try additionally with reduced batch size
+          ticksValues = await this.dexHelper.multiWrapper.aggregate(
+            tickRequests,
+            blockNumber,
+            currentBatchSize,
+          );
+          this.optimalTickRequestBatchSize = currentBatchSize;
+          break;
+        } catch (e) {
+          if (+i + 1 === MAX_NUMBER_OF_BATCH_REQUEST_HALVING) {
+            this.logger.warn(
+              `Failed to fetch ticks for pool ${poolAddress} (${this.token0}_${this.token1}) with batch size ${currentBatchSize}`,
+              e,
+            );
+            throw e;
+          }
+        }
+      }
+    }
+
+    assert(
+      tickIndexes.length === ticksValues.length,
+      `Tick indexes mismatch: ${tickIndexes.length} != ${ticksValues.length}`,
+    );
+
+    const ticks: TickInfoMappingsWithBigNumber[] = new Array(
+      tickIndexes.length,
+    );
+
+    tickIndexes.forEach((tickIndex, index) => {
+      ticks[index] = {
+        index: Number(tickIndex),
+        value: ticksValues[index],
+      };
+    });
+
+    return [
+      balance0,
+      balance1,
+      {
+        pool: poolAddress,
+        blockTimestamp: BigNumber.from(Date.now()),
+        globalState,
+        liquidity,
+        tickSpacing,
+        maxLiquidityPerTick,
+        tickBitmap,
+        ticks,
+      },
+    ];
+  }
+
   async generateState(blockNumber: number): Promise<Readonly<PoolStateV1_1>> {
-    const [balance0, balance1, _state] =
-      await this._fetchInitStateMultiStrategies(blockNumber);
+    let balance0 = 0n;
+    let balance1 = 0n;
+    let _state: DecodedStateMultiCallResultWithRelativeBitmapsV1_1;
+    if (this.forceManualStateGeneration) {
+      [balance0, balance1, _state] = await this.fetchStateManually(blockNumber);
+    } else {
+      [balance0, balance1, _state] = await this._fetchInitStateMultiStrategies(
+        blockNumber,
+      );
+    }
 
     const tickBitmap = {};
     const ticks = {};
@@ -364,7 +615,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
       tick: bigIntify(_state.globalState.tick),
     };
     const currentTick = globalState.tick;
-    const startTickBitmap = TickBitMap.position(
+    const startTickBitmap = TickTable.position(
       BigInt(currentTick) / Constants.TICK_SPACING,
     )[0];
 
@@ -381,6 +632,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
       isValid: true,
       balance0,
       balance1,
+      areTicksCompressed: true,
     };
   }
 
