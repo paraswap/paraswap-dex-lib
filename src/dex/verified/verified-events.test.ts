@@ -7,7 +7,8 @@ import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { PoolState } from './types';
+import { PoolState, PoolStateMap, SubgraphPoolBase } from './types';
+import { VerifiedConfig } from './config';
 
 /*
   README
@@ -45,36 +46,40 @@ import { PoolState } from './types';
 jest.setTimeout(50 * 1000);
 
 async function fetchPoolState(
-  verifiedPools: VerifiedEventPool,
+  balancerV1Pool: VerifiedEventPool,
   blockNumber: number,
-  poolAddress: string,
-): Promise<PoolState> {
-  // TODO: complete me!
-  return {};
+): Promise<PoolStateMap> {
+  return await balancerV1Pool.generateState(blockNumber);
 }
 
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
 describe('Verified EventPool Mainnet', function () {
-  const dexKey = 'Verified';
-  const network = Network.MAINNET;
-  const dexHelper = new DummyDexHelper(network);
-  const logger = dexHelper.getLogger(dexKey);
-  let verifiedPool: VerifiedEventPool;
+  const parentName = 'Verified'; //DexKey or DexName
+  const georliNetwork = Network.GEORLI;
+  const georliConfig = VerifiedConfig[parentName][georliNetwork];
+  const dexHelper = new DummyDexHelper(georliNetwork);
+  const logger = dexHelper.getLogger(parentName);
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
+    '0x007dc5733ff3fd01e82a430c82a23d4c5bd40715': {
+      Swap: [9107266],
+    },
+    '0x00ce8ab3940f6bd3555bd34412e8464be3ec12fa': {
+      Swap: [8906384],
+    },
   };
-
+  let verifiedPool: VerifiedEventPool;
   beforeEach(async () => {
     verifiedPool = new VerifiedEventPool(
-      dexKey,
-      network,
+      parentName,
+      georliNetwork,
       dexHelper,
+      georliConfig.vaultAddress,
+      georliConfig.subGraphUrl,
       logger,
-      /* TODO: Put here additional constructor arguments if needed */
     );
   });
 
@@ -90,9 +95,9 @@ describe('Verified EventPool Mainnet', function () {
                     verifiedPool,
                     verifiedPool.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(verifiedPool, _blockNumber, poolAddress),
+                      fetchPoolState(verifiedPool, _blockNumber),
                     blockNumber,
-                    `${dexKey}_${poolAddress}`,
+                    `${parentName}_${poolAddress}`,
                     dexHelper.provider,
                   );
                 });

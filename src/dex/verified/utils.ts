@@ -9,20 +9,28 @@ import {
   SubgraphPoolAddressDictionary,
   SubgraphPoolBase,
   SubgraphToken,
+  OrdersState,
+  PoolState,
+  PoolPairData,
+  TokenState,
+  callData,
 } from './types';
 import { reverse, uniqBy } from 'lodash';
+import { MathSol } from '../balancer-v2/balancer-v2-math';
+import { SwapSide } from '../../constants';
+import { Log } from '../../types';
+import { DeepReadonly } from 'ts-essentials';
+import _ from 'lodash';
+import {
+  PRIMARY_POOL_INTERFACE,
+  SECONDARY_POOL_INTERFACE,
+  VAULT_INTERFACE,
+} from './constants';
 
 interface BalancerPathHop {
   pool: SubgraphPoolBase;
   tokenIn: SubgraphToken;
   tokenOut: SubgraphToken;
-}
-
-export const isSameAddress = (address1: string, address2: string): boolean =>
-  getAddress(address1) === getAddress(address2);
-
-export function getTokenScalingFactor(tokenDecimals: number): bigint {
-  return BI_POWS[18] * getBigIntPow(18 - tokenDecimals);
 }
 
 export function decodeThrowError(
@@ -39,57 +47,20 @@ export function decodeThrowError(
   );
 }
 
-// export function poolGetPathForTokenInOut(
-//   tokenInAddress: string,
-//   tokenOutAddress: string,
-//   pool: SubgraphPoolBase,
-//   poolsMap: SubgraphPoolAddressDictionary,
-// ): BalancerPathHop[] {
-//   const tokenIn = findRequiredMainTokenInPool(tokenInAddress, pool);
-//   const tokenOut = findRequiredMainTokenInPool(tokenOutAddress, pool);
+function isPrimaryPool(poolType: string): boolean {
+  return poolType == VerifiedPoolTypes.PrimaryIssuePool;
+}
 
-//   const tokenInHops: BalancerPathHop[] = reverse([...tokenIn.pathToToken]).map(
-//     hop => ({
-//       pool: poolsMap[hop.poolAddress],
-//       tokenIn: hop.token,
-//       tokenOut: { address: hop.poolAddress, decimals: 18 },
-//     }),
-//   );
+function isSecondaryPool(poolType: string): boolean {
+  return poolType == VerifiedPoolTypes.SecondaryIssuePool;
+}
 
-//   const tokenOutHops: BalancerPathHop[] = tokenOut.pathToToken.map(hop => ({
-//     pool: poolsMap[hop.poolAddress],
-//     tokenIn: { address: hop.poolAddress, decimals: 18 },
-//     tokenOut: hop.token,
-//   }));
-
-//   return [
-//     ...tokenInHops,
-//     { pool, tokenIn: tokenIn.poolToken, tokenOut: tokenOut.poolToken },
-//     ...tokenOutHops,
-//   ];
-// }
-
-// export function getAllPoolsUsedInPaths(
-//   from: string,
-//   to: string,
-//   allowedPools: SubgraphPoolBase[],
-//   poolAddressMap: SubgraphPoolAddressDictionary,
-// ) {
-//   //get all pools from the nested paths
-//   return uniqBy(
-//     allowedPools
-//       .map(pool =>
-//         poolGetPathForTokenInOut(
-//           from.toLowerCase(),
-//           to.toLowerCase(),
-//           pool,
-//           poolAddressMap,
-//         ).map(hop => hop.pool),
-//       )
-//       .flat(),
-//     'address',
-//   );
-// }
+export function isSupportedPool(poolType: string): boolean {
+  return (
+    poolType == VerifiedPoolTypes.PrimaryIssuePool ||
+    poolType == VerifiedPoolTypes.SecondaryIssuePool
+  );
+}
 
 //Todo: confirm this handles both primary and secondary
 export function poolGetMainTokens(
@@ -99,12 +70,12 @@ export function poolGetMainTokens(
   let mainTokens: SubgraphMainToken[] = [];
 
   for (const token of pool.tokens) {
-    //skip
+    //skip bpt token
     if (token.address === pool.address) {
       continue;
     }
     const tokenPool = poolsMap[token.address];
-    if (tokenPool && isPrimaryPool(tokenPool.poolType)) {
+    if (tokenPool && isSupportedPool(tokenPool.poolType)) {
       //since primary main token is the security token used
       const securityToken = pool.tokens.find(token => {
         token.address === tokenPool.security;
@@ -120,22 +91,6 @@ export function poolGetMainTokens(
           },
         ],
       });
-    } else if (tokenPool && isSecondaryPool(tokenPool.poolType)) {
-      //since secondary main token is the currency token used
-      const currency = pool.tokens.find(token => {
-        token.address === tokenPool.currency;
-      })!;
-      mainTokens.push({
-        ...currency,
-        poolToken: token,
-        pathToToken: [
-          {
-            poolId: tokenPool.id,
-            poolAddress: tokenPool.address,
-            token: currency,
-          },
-        ],
-      });
     } else {
       mainTokens.push({
         ...token,
@@ -148,25 +103,233 @@ export function poolGetMainTokens(
   return mainTokens;
 }
 
-function isPrimaryPool(poolType: string): boolean {
-  return poolType == VerifiedPoolTypes.PrimaryIssuePool;
+export function getNewAmount(max: bigint, num: bigint): bigint {
+  return max >= num ? num : 0n;
+}
+//Helper function to parse both primary and secondary issue pools data into params for onSell and onBuy functions.
+export function parsePoolPairData(
+  pool: SubgraphPoolBase,
+  poolState: PoolState,
+  tokenIn: string,
+  tokenOut: string,
+): PoolPairData {
+  let indexIn = 0;
+  let indexOut = 0;
+  let bptIndex = 0;
+  let balances: bigint[] = [];
+  let decimals: number[] = [];
+  let scalingFactors: bigint[] = [];
+  const tokens = poolState.orderedTokens.map((tokenAddress, i) => {
+    const t = pool.tokensMap[tokenAddress.toLowerCase()];
+    if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
+    if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
+    if (t.address.toLowerCase() === pool.address.toLowerCase()) bptIndex = i;
+    balances.push(poolState.tokens[t.address.toLowerCase()].balance);
+    const _decimal = pool.tokens[i].decimals;
+    decimals.push(_decimal);
+    scalingFactors.push(BigInt(10 ** (18 - _decimal)));
+    return t.address;
+  });
+  const orders = pool.orders;
+  const secondaryTrades = pool.secondaryTrades;
+  const poolPairData: PoolPairData = {
+    tokens,
+    balances,
+    decimals,
+    indexIn,
+    indexOut,
+    bptIndex,
+    swapFee: poolState.swapFee,
+    minOrderSize: poolState.minimumOrderSize,
+    minPrice: poolState.minimumPrice,
+    scalingFactors,
+    orders,
+    secondaryTrades,
+  };
+  return poolPairData;
+}
+//helper function that gets amount of token for Secondary issue pool(used when buying and selling) according to calculation from SOR Repo
+export function _getSecondaryTokenAmount(
+  amount: bigint,
+  ordersDataScaled: OrdersState[],
+  scalingFactor: bigint,
+  orderType: string,
+): bigint {
+  let returnAmount = BigInt(0);
+  for (let i = 0; i < ordersDataScaled.length; i++) {
+    const amountOffered = BigInt(ordersDataScaled[i].amountOffered);
+    const priceOffered = BigInt(ordersDataScaled[i].priceOffered);
+    const checkValue =
+      orderType === 'Sell'
+        ? MathSol.divDownFixed(amountOffered, priceOffered)
+        : MathSol.mulDownFixed(amountOffered, priceOffered);
+
+    if (checkValue <= Number(amount)) {
+      returnAmount = MathSol.add(returnAmount, amountOffered);
+    } else {
+      returnAmount = MathSol.add(
+        returnAmount,
+        orderType === 'Sell'
+          ? MathSol.mulDownFixed(BigInt(Number(amount)), priceOffered)
+          : MathSol.divDownFixed(BigInt(Number(amount)), priceOffered),
+      );
+    }
+    amount = BigInt(Number(amount) - Number(checkValue));
+    if (Number(amount) < 0) break;
+  }
+
+  returnAmount =
+    orderType === 'Sell'
+      ? MathSol.divDown(returnAmount, BigInt(Number(scalingFactor)))
+      : returnAmount;
+
+  return BigInt(Number(returnAmount));
+}
+//TODO: Verify if token decimals are not nedded to get actual balance(depending on the format of amount in)
+//gets maxAmount that can be swapped in or out of both primary and secondary issue pools
+//use 99% of the balance so not all balance can be swapped.
+export function getSwapMaxAmount(
+  poolPairData: PoolPairData,
+  side: SwapSide,
+): bigint {
+  return (
+    ((side === SwapSide.SELL
+      ? poolPairData.balances[poolPairData.indexIn]
+      : poolPairData.balances[poolPairData.indexOut]) *
+      99n) /
+    100n
+  );
 }
 
-function isSecondaryPool(poolType: string): boolean {
-  return poolType == VerifiedPoolTypes.SecondaryIssuePool;
+export function handleSwap(event: any, pool: PoolState, log: Log): PoolState {
+  const tokenIn = event.args.tokenIn.toLowerCase();
+  const amountIn = BigInt(event.args.amountIn.toString());
+  const tokenOut = event.args.tokenOut.toLowerCase();
+  const amountOut = BigInt(event.args.amountOut.toString());
+  pool.tokens[tokenIn].balance += amountIn;
+  pool.tokens[tokenOut].balance -= amountOut;
+  return pool;
 }
 
-// function findRequiredMainTokenInPool(
-//   tokenToFind: string,
-//   pool: SubgraphPoolBase,
-// ): SubgraphMainToken {
-//   const mainToken = pool.mainTokens.find(
-//     token => token.address.toLowerCase() === tokenToFind.toLowerCase(),
-//   );
+export function handlePoolBalanceChanged(
+  event: any,
+  pool: PoolState,
+  log: Log,
+): PoolState {
+  const tokens = event.args.tokens.map((t: string) => t.toLowerCase());
+  const deltas = event.args.deltas.map((d: any) => BigInt(d.toString()));
+  const fees = event.args.protocolFeeAmounts.map((d: any) =>
+    BigInt(d.toString()),
+  ) as bigint[];
+  tokens.forEach((t: string, i: number) => {
+    const diff = deltas[i] - fees[i];
+    pool.tokens[t].balance += diff;
+  });
+  return pool;
+}
 
-//   if (!mainToken) {
-//     throw new Error(`Main token does not exist in pool: ${tokenToFind}`);
-//   }
+export function typecastReadOnlyPoolState(
+  pool: DeepReadonly<PoolState>,
+): PoolState {
+  return _.cloneDeep(pool) as PoolState;
+}
 
-//   return mainToken;
-// }
+//constructs onchain multicall data for Both Primary and SecondaryIssue Pool.
+//To get pool(primary/secondary) tokens from vault contract, minimum orderSize from primary and secondary,
+//minimumprice from primary
+export function getOnChainCalls(
+  pool: SubgraphPoolBase,
+  vaultAddress: string,
+): callData[] {
+  const poolCallData: callData[] = [
+    {
+      target: vaultAddress,
+      callData: VAULT_INTERFACE.encodeFunctionData('getPoolTokens', [pool.id]),
+    },
+  ];
+  if (pool.poolType === VerifiedPoolTypes.PrimaryIssuePool) {
+    poolCallData.push({
+      target: pool.address,
+      callData: PRIMARY_POOL_INTERFACE.encodeFunctionData('getMinimumPrice'),
+    });
+    poolCallData.push({
+      target: pool.address,
+      callData: PRIMARY_POOL_INTERFACE.encodeFunctionData(
+        'getMinimumOrderSize',
+      ),
+    });
+  }
+  if (pool.poolType === VerifiedPoolTypes.SecondaryIssuePool) {
+    poolCallData.push({
+      target: pool.address,
+      callData: SECONDARY_POOL_INTERFACE.encodeFunctionData('getMinOrderSize'),
+    });
+  }
+
+  return poolCallData;
+}
+
+//Decodes multicall data for both Primary and SecondaryIssue pools. And save pools using address to poolState Mapping.
+//Data must contain returnData. StartIndex is where to start in returnData.
+export function decodeOnChainCalls(
+  pool: SubgraphPoolBase,
+  data: { success: boolean; returnData: any }[],
+  startIndex: number,
+): [{ [address: string]: PoolState }, number] {
+  const pools = {} as { [address: string]: PoolState };
+  let minimumOrderSize: any;
+  let minimumPrice: any;
+
+  const poolTokens = decodeThrowError(
+    VAULT_INTERFACE,
+    'getPoolTokens',
+    data[startIndex++],
+    pool.address,
+  );
+
+  if (pool.poolType === VerifiedPoolTypes.PrimaryIssuePool) {
+    minimumOrderSize = decodeThrowError(
+      PRIMARY_POOL_INTERFACE,
+      'getMinimumOrderSize',
+      data[startIndex++],
+      pool.address,
+    )[0];
+
+    minimumPrice = decodeThrowError(
+      PRIMARY_POOL_INTERFACE,
+      'getMinimumPrice',
+      data[startIndex++],
+      pool.address,
+    )[0];
+  }
+
+  if (pool.poolType === VerifiedPoolTypes.SecondaryIssuePool) {
+    minimumOrderSize = decodeThrowError(
+      SECONDARY_POOL_INTERFACE,
+      'getMinOrderSize',
+      data[startIndex++],
+      pool.address,
+    )[0];
+  }
+
+  const poolState: PoolState = {
+    swapFee: BigInt('0'),
+    tokens: poolTokens.tokens.reduce(
+      (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
+        const tokenState: TokenState = {
+          balance: BigInt(poolTokens.balances[j].toString()),
+        };
+        ptAcc[pt.toLowerCase()] = tokenState;
+        return ptAcc;
+      },
+      {},
+    ),
+    orderedTokens: poolTokens.tokens,
+    minimumOrderSize,
+    minimumPrice,
+  };
+
+  pools[pool.address] = poolState;
+
+  return [pools, startIndex];
+}
