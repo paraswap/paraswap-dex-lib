@@ -13,10 +13,10 @@ async function main() {
   const network = Network.MAINNET;
   const dexKey = 'MaverickV1';
   const dexHelper = new DummyDexHelper(network);
-  const startBlockNumber = 18233872;
-  // const startBlockNumber = 18235059;
+  // const startBlockNumber = 18233872;
+  const startBlockNumber = 18235059;
   // const blockNumberCheck = 18235060;
-  const blocksToLookForward = 10000;
+  const blocksToLookForward = 1;
   const poolAddress = '0x352B186090068Eb35d532428676cE510E17AB581';
   const srcToken = {
     address: `0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee`,
@@ -72,6 +72,9 @@ async function main() {
   );
 
   for (const [i, log] of logsToDispatch.entries()) {
+    if (i === 143) {
+      continue;
+    }
     if (log.blockNumber > currentBlock.number) {
       inputParams.blockNumber = log.blockNumber;
       currentBlock = await dexHelper.web3Provider.eth.getBlock(log.blockNumber);
@@ -94,12 +97,12 @@ async function main() {
 
     if (output! > 1800000000) {
       console.log(
-        `\n\n\n!!!Output after ${log.blockNumber}/${inputParams.blockNumber} and topic0 ${log.topics[0]}, txHash=${log.transactionHash}, txInd=${log.transactionIndex}: ${output}!!!\n\n\n`,
+        `\n\n\n (${i}/${logsToDispatch.length}) !!!Output after ${log.blockNumber}/${inputParams.blockNumber} and topic0 ${log.topics[0]}, txHash=${log.transactionHash}, txInd=${log.transactionIndex}: ${output}!!!\n\n\n`,
       );
     } else {
-      // console.log(
-      //   `\nOutput after ${log.blockNumber}/${inputParams.blockNumber} and topic0 ${log.topics[0]}, txHash=${log.transactionHash}, txInd=${log.transactionIndex}: ${output}`,
-      // );
+      console.log(
+        `\n(${i}/${logsToDispatch.length}) Output after ${log.blockNumber}/${inputParams.blockNumber} and topic0 ${log.topics[0]}, txHash=${log.transactionHash}, txInd=${log.transactionIndex}: ${output}`,
+      );
     }
 
     // if (i === 2) {
