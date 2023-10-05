@@ -317,8 +317,11 @@ export class DexAdapterService {
   }
 
   doesPreProcessingRequireSequentiality(dexKey: string): boolean {
-    const dex = this.getDexByKey(dexKey);
-
-    return !!dex.needsSequentialPreprocessing;
+    try {
+      const dex = this.getDexByKey(dexKey);
+      return !!dex.needsSequentialPreprocessing;
+    } catch (e) {
+      return false;
+    }
   }
 }
