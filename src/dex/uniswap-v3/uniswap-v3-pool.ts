@@ -55,7 +55,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   public initFailed = false;
   public initRetryAttemptCount = 0;
 
-  public readonly feeCodeAsString;
+  public feeCodeAsString;
 
   constructor(
     readonly dexHelper: IDexHelper,
@@ -515,5 +515,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       encodedKey,
       this.poolInitCodeHash,
     );
+  }
+
+  protected updateFeeCode(fee: bigint): void {
+    this.feeCode = fee;
+    this.feeCodeAsString = fee.toString();
   }
 }

@@ -46,7 +46,8 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
       resCurrentFee.returnData,
     ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps, bigint];
 
-    this.feeCode = fee;
+    this.updateFeeCode(fee);
+
     const tickBitmap = {};
     const ticks = {};
 
