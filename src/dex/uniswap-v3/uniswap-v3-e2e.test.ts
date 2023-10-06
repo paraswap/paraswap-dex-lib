@@ -1110,4 +1110,29 @@ describe('UniswapV3 E2E', () => {
       );
     });
   });
+
+  describe('Retro', () => {
+    const dexKey = 'Retro';
+
+    describe('POLYGON', () => {
+      const network = Network.POLYGON;
+
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '100000000';
+      const nativeTokenAmount = '1100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
 });

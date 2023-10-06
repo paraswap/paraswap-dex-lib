@@ -99,6 +99,7 @@ export class UniswapV3
         'QuickSwapV3.1',
         'RamsesV2',
         'ChronosV3',
+        'Retro',
       ]),
     );
 
