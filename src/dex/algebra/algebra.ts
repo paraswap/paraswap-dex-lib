@@ -38,14 +38,15 @@ import {
 import { AlgebraMath } from './lib/AlgebraMath';
 import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
+import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
 
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
 };
 
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 60 * 60 * 1000; // 3 hours
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const ALGEBRA_EFFICIENCY_FACTOR = 3;
 const ALGEBRA_TICK_GAS_COST = 24_000; // Ceiled
 const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
@@ -59,6 +60,7 @@ const MAX_STALE_STATE_BLOCK_AGE = {
 type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
+  private readonly factory: AlgebraFactory;
   readonly isFeeOnTransferSupported: boolean = false;
   protected eventPools: Record<string, IAlgebraEventPool | null> = {};
 
@@ -114,6 +116,14 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     this.AlgebraPoolImplem =
       config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
+
+    this.factory = new AlgebraFactory(
+      dexHelper,
+      dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet,
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -126,13 +136,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async initializePricing(blockNumber: number) {
-    const cleanNonExistingPoolTTLMs =
-      this.config.cleanExistingPoolTTLMs ||
-      ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+    // Init listening to new pools creation
+    await this.factory.initialize(blockNumber);
 
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
-        const maxTimestamp = Date.now() - cleanNonExistingPoolTTLMs;
+        const maxTimestamp =
+          Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
         await this.dexHelper.cache.zremrangebyscore(
           this.notExistingPoolSetKey,
           0,
@@ -146,6 +156,37 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       );
     }
   }
+
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+  }) => {
+    const logPrefix = '[Algebra.onPoolCreatedDeleteFromNonExistingSet]';
+    const [_token0, _token1] = this._sortTokens(token0, token1);
+    const poolKey = `${token0}_${token1}`.toLowerCase();
+
+    // consider doing it only from master pool for less calls to distant cache
+
+    // delete entry locally to let local instance discover the pool
+    delete this.eventPools[this.getPoolIdentifier(_token0, _token1)];
+
+    try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+      );
+      // delete pool record from set
+      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+    } catch (error) {
+      this.logger.error(
+        `${logPrefix} failed to delete pool from set: ${poolKey}`,
+        error,
+      );
+    }
+  };
 
   async getPool(
     srcAddress: Address,
