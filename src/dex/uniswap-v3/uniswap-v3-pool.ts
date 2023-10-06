@@ -46,6 +46,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _poolAddress?: Address;
 
+  public currentFeeCodeAsString: string | undefined;
+
   protected _stateRequestCallData?: MultiCallParams<
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
@@ -515,10 +517,5 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       encodedKey,
       this.poolInitCodeHash,
     );
-  }
-
-  protected updateFeeCode(fee: bigint): void {
-    this.feeCode = fee;
-    this.feeCodeAsString = fee.toString();
   }
 }

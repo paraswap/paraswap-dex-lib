@@ -46,11 +46,10 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
       resCurrentFee.returnData,
     ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps, bigint];
 
-    this.updateFeeCode(fee);
-
     const tickBitmap = {};
     const ticks = {};
 
+    this.currentFeeCodeAsString = fee.toString();
     _reduceTickBitmap(tickBitmap, _state.tickBitmap);
     _reduceTicks(ticks, _state.ticks);
 
@@ -83,7 +82,7 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
         feeProtocol: bigIntify(_state.slot0.feeProtocol),
       },
       liquidity: bigIntify(_state.liquidity),
-      fee: this.feeCode,
+      fee,
       tickSpacing,
       maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,
