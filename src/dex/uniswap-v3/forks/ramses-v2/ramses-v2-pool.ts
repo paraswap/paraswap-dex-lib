@@ -12,6 +12,7 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
 
   public readonly poolIface = new Interface(RamsesV2PoolABI);
 
+
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
@@ -23,6 +24,8 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
         decodeFunction: uint24ToBigInt,
       },
     ];
+
+    this._stateRequestCallData = calldataWithFee;
 
     const [resBalance0, resBalance1, resState, resCurrentFee] =
       await this.dexHelper.multiWrapper.tryAggregate<
@@ -44,6 +47,7 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
       resCurrentFee.returnData,
     ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps, bigint];
 
+    this.feeCode = fee;
     const tickBitmap = {};
     const ticks = {};
 
@@ -79,7 +83,7 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
         feeProtocol: bigIntify(_state.slot0.feeProtocol),
       },
       liquidity: bigIntify(_state.liquidity),
-      fee,
+      fee: this.feeCode,
       tickSpacing,
       maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,
@@ -98,5 +102,4 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
       balance1,
     };
   }
-
 }
