@@ -185,7 +185,6 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     limitPoolsMap: { [key: string]: string[] | null } | null,
-    isFirstSwap: boolean,
     transferFees: TransferFeeParams = {
       srcFee: 0,
       destFee: 0,
@@ -227,7 +226,6 @@ export class PricingHelper {
                   blockNumber,
                   limitPools ? limitPools : undefined,
                   transferFees,
-                  isFirstSwap,
                 )
                 .then(poolPrices => {
                   try {
