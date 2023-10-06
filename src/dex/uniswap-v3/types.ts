@@ -54,6 +54,8 @@ export type PoolState = {
   balance1: bigint;
 };
 
+export type FactoryState = Record<string, never>;
+
 export type UniswapV3Data = {
   path: {
     tokenIn: Address;
