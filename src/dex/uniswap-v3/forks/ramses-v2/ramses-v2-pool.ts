@@ -12,7 +12,6 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
 
   public readonly poolIface = new Interface(RamsesV2PoolABI);
 
-
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
