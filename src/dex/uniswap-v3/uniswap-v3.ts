@@ -540,7 +540,8 @@ export class UniswapV3
             {
               tokenIn: from.address,
               tokenOut: to.address,
-              fee: pool.currentFeeCodeAsString ? pool.currentFeeCodeAsString : pool.feeCodeAsString,
+              fee: pool.feeCodeAsString,
+              currentFee: pool.currentFeeCodeAsString,
             },
           ],
           exchange: pool.poolAddress,
@@ -734,7 +735,8 @@ export class UniswapV3
                 {
                   tokenIn: _srcAddress,
                   tokenOut: _destAddress,
-                  fee: pool.currentFeeCodeAsString ? pool.currentFeeCodeAsString : pool.feeCode.toString(),
+                  fee: pool.feeCode.toString(),
+                  currentFee: pool.currentFeeCodeAsString,
                 },
               ],
             },

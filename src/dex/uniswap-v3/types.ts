@@ -61,6 +61,7 @@ export type UniswapV3Data = {
     tokenIn: Address;
     tokenOut: Address;
     fee: NumberAsString;
+    currentFee?: NumberAsString;
   }[];
   isApproved?: boolean;
 };

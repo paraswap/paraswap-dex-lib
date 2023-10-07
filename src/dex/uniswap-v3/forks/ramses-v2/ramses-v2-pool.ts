@@ -1,5 +1,5 @@
 import { UniswapV3EventPool } from '../../uniswap-v3-pool';
-import { DecodedStateMultiCallResultWithRelativeBitmaps, PoolState } from '../../types';
+import { DecodedStateMultiCallResultWithRelativeBitmaps, DecodeStateMultiCallFunc, PoolState } from '../../types';
 import { assert } from 'ts-essentials';
 import { _reduceTickBitmap, _reduceTicks } from '../../contract-math/utils';
 import { bigIntify } from '../../../../utils';
@@ -7,10 +7,59 @@ import { TickBitMap } from '../../contract-math/TickBitMap';
 import { uint24ToBigInt } from '../../../../lib/decoders';
 import { Interface } from 'ethers/lib/utils';
 import RamsesV2PoolABI from '../../../../abi/ramses-v2/RamsesV2Pool.abi.json';
+import { IDexHelper } from '../../../../dex-helper';
+import { Contract } from 'web3-eth-contract';
+import { Address, Logger } from '../../../../types';
 
 export class RamsesV2EventPool extends UniswapV3EventPool {
 
   public readonly poolIface = new Interface(RamsesV2PoolABI);
+
+  constructor(
+    readonly dexHelper: IDexHelper,
+    parentName: string,
+    readonly stateMultiContract: Contract,
+    readonly decodeStateMultiCallResultWithRelativeBitmaps:
+      | DecodeStateMultiCallFunc
+      | undefined,
+    readonly erc20Interface: Interface,
+    protected readonly factoryAddress: Address,
+    public feeCode: bigint,
+    token0: Address,
+    token1: Address,
+    logger: Logger,
+    mapKey: string = '',
+    readonly poolInitCodeHash: string,
+  ) {
+    super(
+      dexHelper,
+      parentName,
+      stateMultiContract,
+      decodeStateMultiCallResultWithRelativeBitmaps,
+      erc20Interface,
+      factoryAddress,
+      feeCode,
+      token0,
+      token1,
+      logger,
+      mapKey,
+      poolInitCodeHash,
+    );
+
+    this.handlers['FeeAdjustment'] = this.handleFeeAdjustmentEvent.bind(this);
+  }
+
+  handleFeeAdjustmentEvent(
+    event: any,
+    pool: PoolState,
+  ): PoolState {
+    const newFee = bigIntify(event.args.newFee);
+
+    pool.fee = newFee;
+    this.currentFeeCodeAsString = newFee.toString();
+
+    return pool;
+  }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();

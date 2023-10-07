@@ -8,6 +8,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint24",
+        "name": "oldFee",
+        "type": "uint24"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint24",
+        "name": "newFee",
+        "type": "uint24"
+      }
+    ],
+    "name": "FeeAdjustment",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "owner",
