@@ -222,9 +222,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
-      AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0xFb8773AA4Fd02e54bbd352061D8Be1911FAa210a',
-      AvalancheBuyAdapter: '0x434C1Cca4842629230067674Dd54E21a14D9FD5D',
+      AvalancheAdapter01: '0x4ebda7657DBe0f27E377EA26f11279D2b8Ef9a0f',
+      AvalancheAdapter02: '0x33c0413e149f1e75F6693C1540E108FAB987fb06',
+      AvalancheBuyAdapter: '0xFeBcd59fE83d40948C0097e8CAd8c6ECD500B1Ac',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
