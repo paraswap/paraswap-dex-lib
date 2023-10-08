@@ -1,4 +1,5 @@
 import { DeepReadonly, assert } from 'ts-essentials';
+import { Interface } from '@ethersproject/abi';
 import { Address, Log, Logger, Token } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -12,37 +13,30 @@ import {
 import _, { keyBy } from 'lodash';
 import { SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
 import {
-  _getSecondaryTokenAmount,
-  decodeOnChainCalls,
   getNewAmount,
-  getOnChainCalls,
-  getSwapMaxAmount,
-  handlePoolBalanceChanged,
-  handleSwap,
   isSupportedPool,
-  parsePoolPairData,
   poolGetMainTokens,
   typecastReadOnlyPoolState,
 } from './utils';
-import {
-  getPrimaryTokenIn,
-  getPrimaryTokenOut,
-} from './pools/primary/primaryPool';
-import {
-  getSecondaryTokenIn,
-  getSecondaryTokenOut,
-} from './pools/secondary/secondarPool';
 import {
   MAX_POOL_CNT,
   POOL_CACHE_TTL,
   VAULT_INTERFACE,
   fetchAllPools,
 } from './constants';
+import VAULTABI from '../../abi/verified/vault.json';
+import { PrimaryIssuePool } from './pools/primary/primaryPool';
+import { SecondaryIssuePool } from './pools/secondary/secondarPool';
 
 export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
+  public vaultInterface: Interface;
   handlers: {
     [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
   } = {};
+
+  pools: {
+    [type: string]: PrimaryIssuePool | SecondaryIssuePool;
+  };
 
   logDecoder: (log: Log) => any;
 
@@ -63,9 +57,22 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
   ) {
     super(parentName, vaultAddress, dexHelper, logger);
     this.logDecoder = (log: Log) => VAULT_INTERFACE.parseLog(log);
+    this.vaultInterface = new Interface(VAULTABI);
     this.addressesSubscribed = [vaultAddress];
-    this.handlers['Swap'] = handleSwap.bind(this);
-    this.handlers['PoolBalanceChanged'] = handlePoolBalanceChanged.bind(this);
+    const primaryIssuePool = new PrimaryIssuePool(
+      this.vaultAddress,
+      this.vaultInterface,
+    );
+    const secondaryIssuePool = new SecondaryIssuePool(
+      this.vaultAddress,
+      this.vaultInterface,
+    );
+    this.pools = {};
+    this.pools[VerifiedPoolTypes.PrimaryIssuePool] = primaryIssuePool;
+    this.pools[VerifiedPoolTypes.SecondaryIssuePool] = secondaryIssuePool;
+    this.handlers['Swap'] = this.handleSwap.bind(this);
+    this.handlers['PoolBalanceChanged'] =
+      this.handlePoolBalanceChanged.bind(this);
   }
 
   //This function is called every time any of the subscribed addresses release log.
@@ -140,6 +147,10 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
       (pool: Omit<SubgraphPoolBase, 'mainTokens'>) => ({
         ...pool,
         mainTokens: poolGetMainTokens(pool, poolsMap),
+        tokensMap: pool.tokens.reduce(
+          (acc, token) => ({ ...acc, [token.address.toLowerCase()]: token }),
+          {},
+        ),
       }),
     );
 
@@ -168,10 +179,12 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
       .map(pool => {
         if (!isSupportedPool(pool.poolType)) return [];
 
-        return getOnChainCalls(pool, this.vaultAddress);
+        return this.pools[pool.poolType].getOnChainCalls(
+          pool,
+          this.vaultAddress,
+        );
       })
       .flat();
-
     // 500 is an arbitrary number chosen based on the blockGasLimit
     const slicedMultiCallData = _.chunk(multiCallData, 500);
 
@@ -184,12 +197,13 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
         ),
       )
     ).flat();
-
     let i = 0;
     const onChainStateMap = subgraphPoolBase.reduce(
       (acc: { [address: string]: PoolState }, pool) => {
         if (!isSupportedPool(pool.poolType)) return acc;
-        const [decoded, newIndex] = decodeOnChainCalls(pool, returnData, i);
+        const [decoded, newIndex] = this.pools[
+          pool.poolType
+        ].decodeOnChainCalls(pool, returnData, i);
         i = newIndex;
         acc = { ...acc, ...decoded };
         return acc;
@@ -215,50 +229,6 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
     return allPoolsLatestState;
   }
 
-  // Helper function that get tokenIn when buying in both primary and secondaery issue pools
-  onBuy(
-    amounts: bigint[],
-    poolPairData: PoolPairData,
-    isCurrencyIn: boolean,
-    creator: string | undefined,
-    poolType: VerifiedPoolTypes,
-  ): bigint[] | null {
-    if (poolType === VerifiedPoolTypes.PrimaryIssuePool) {
-      return amounts.map(amount =>
-        getPrimaryTokenIn(poolPairData, amount, isCurrencyIn),
-      );
-    } else if (poolType === VerifiedPoolTypes.SecondaryIssuePool) {
-      return amounts.map(amount =>
-        getSecondaryTokenIn(poolPairData, amount, creator!, isCurrencyIn),
-      );
-    } else {
-      this.logger.error(`OnBuy Error: Invalid Pool type: ${poolType}`);
-      return null;
-    }
-  }
-
-  //Helper function that get tokenOut when selling in both primary and secondaery issue pools
-  onSell(
-    amounts: bigint[],
-    poolPairData: PoolPairData,
-    isCurrencyIn: boolean,
-    creator: string | undefined,
-    poolType: VerifiedPoolTypes,
-  ): bigint[] | null {
-    if (poolType === VerifiedPoolTypes.PrimaryIssuePool) {
-      return amounts.map(amount =>
-        getPrimaryTokenOut(poolPairData, amount, isCurrencyIn),
-      );
-    } else if (poolType === VerifiedPoolTypes.SecondaryIssuePool) {
-      return amounts.map(amount =>
-        getSecondaryTokenOut(poolPairData, amount, creator!, isCurrencyIn),
-      );
-    } else {
-      this.logger.error(`OnSell Error: Invalid Pool type: ${poolType}`);
-      return null;
-    }
-  }
-
   //gets prices for from and to in a pool(primary or secondarypool) when buying or selling
   getPricesPool(
     from: Token,
@@ -274,13 +244,16 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
       return null;
     }
     const amountWithoutZero = amounts.slice(1);
-    const poolPairData = parsePoolPairData(
+    const poolPairData = this.pools[subgraphPool.poolType].parsePoolPairData(
       subgraphPool,
       poolState,
       from.address,
       to.address,
     );
-    const swapMaxAmount = getSwapMaxAmount(poolPairData, side);
+    const swapMaxAmount = this.pools[subgraphPool.poolType].getSwapMaxAmount(
+      poolPairData,
+      side,
+    );
     const checkedAmounts: bigint[] = new Array(amountWithoutZero.length).fill(
       0n,
     );
@@ -305,14 +278,14 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
       checkedUnitVolume === 0n
         ? 0n
         : side === SwapSide.SELL
-        ? this.onSell(
+        ? this.pools[subgraphPool.poolType].onSell(
             [checkedUnitVolume],
             poolPairData,
             isCurrencyIn,
             creator,
             subgraphPool.poolType,
           )![0]
-        : this.onBuy(
+        : this.pools[subgraphPool.poolType].onBuy(
             [checkedUnitVolume],
             poolPairData,
             isCurrencyIn,
@@ -322,14 +295,14 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
     const prices: bigint[] = new Array(amounts.length).fill(0n);
     const outputs =
       side === SwapSide.SELL
-        ? this.onSell(
+        ? this.pools[subgraphPool.poolType].onSell(
             amountWithoutZero.slice(0, nonZeroAmountIndex),
             poolPairData,
             isCurrencyIn,
             creator,
             subgraphPool.poolType,
           )
-        : this.onBuy(
+        : this.pools[subgraphPool.poolType].onBuy(
             amountWithoutZero.slice(0, nonZeroAmountIndex),
             poolPairData,
             isCurrencyIn,
@@ -350,5 +323,28 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
 
     return { unit: unitResult, prices };
+  }
+
+  handleSwap(event: any, pool: PoolState, log: Log): PoolState {
+    const tokenIn = event.args.tokenIn.toLowerCase();
+    const amountIn = BigInt(event.args.amountIn.toString());
+    const tokenOut = event.args.tokenOut.toLowerCase();
+    const amountOut = BigInt(event.args.amountOut.toString());
+    pool.tokens[tokenIn].balance += amountIn;
+    pool.tokens[tokenOut].balance -= amountOut;
+    return pool;
+  }
+
+  handlePoolBalanceChanged(event: any, pool: PoolState, log: Log): PoolState {
+    const tokens = event.args.tokens.map((t: string) => t.toLowerCase());
+    const deltas = event.args.deltas.map((d: any) => BigInt(d.toString()));
+    const fees = event.args.protocolFeeAmounts.map((d: any) =>
+      BigInt(d.toString()),
+    ) as bigint[];
+    tokens.forEach((t: string, i: number) => {
+      const diff = deltas[i] - fees[i];
+      pool.tokens[t].balance += diff;
+    });
+    return pool;
   }
 }
