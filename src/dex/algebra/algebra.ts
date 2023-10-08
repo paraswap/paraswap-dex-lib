@@ -167,7 +167,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }) => {
     const logPrefix = '[Algebra.onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${token0}_${token1}`.toLowerCase();
+    const poolKey = `${_token0}_${_token1}`.toLowerCase();
 
     // consider doing it only from master pool for less calls to distant cache
 

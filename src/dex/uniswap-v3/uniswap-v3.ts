@@ -209,7 +209,7 @@ export class UniswapV3
   }) => {
     const logPrefix = '[UniswapV3.onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${token0}_${token1}_${fee}`.toLowerCase();
+    const poolKey = `${_token0}_${_token1}_${fee}`.toLowerCase();
 
     // consider doing it only from master pool for less calls to distant cache
 
