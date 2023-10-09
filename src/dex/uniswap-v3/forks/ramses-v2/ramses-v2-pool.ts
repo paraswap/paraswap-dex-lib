@@ -56,7 +56,6 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
     const newFee = bigIntify(event.args.newFee);
 
     pool.fee = newFee;
-    this.currentFeeCodeAsString = newFee.toString();
 
     return pool;
   }
@@ -98,7 +97,6 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
     const tickBitmap = {};
     const ticks = {};
 
-    this.currentFeeCodeAsString = fee.toString();
     _reduceTickBitmap(tickBitmap, _state.tickBitmap);
     _reduceTicks(ticks, _state.ticks);
 

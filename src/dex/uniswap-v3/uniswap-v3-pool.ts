@@ -46,8 +46,6 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _poolAddress?: Address;
 
-  public currentFeeCodeAsString: string | undefined;
-
   protected _stateRequestCallData?: MultiCallParams<
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
