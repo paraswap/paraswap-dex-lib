@@ -148,11 +148,16 @@ export class PrimaryIssuePool {
   ): bigint {
     try {
       if (amount === 0n) return 0n;
+      //up scale balance according to upscaleArray function on basepool contract
+      //don't divide by 1e18 to avoid 0 result incase balance is too small
       const scaledBalances = poolPairData.balances.map((balance, idx) => {
         return MathSol.mul(balance, poolPairData.scalingFactors[idx]);
       });
       const tokenInBalance = scaledBalances[poolPairData.indexIn];
       const tokenOutBalance = scaledBalances[poolPairData.indexOut];
+      //upscale amount using scaling factor of tokenin since(token out amount is what we are looking for)
+      //according to upscale function on basepool contract
+      //don't divide by 1e18 to avoid 0 result incase amount is too small
       const scaledAmount = MathSol.mul(
         amount,
         poolPairData.scalingFactors[poolPairData.indexIn],
@@ -200,6 +205,7 @@ export class PrimaryIssuePool {
       if (tokenOutBalance < amountOut) {
         return 0n;
       }
+      //downscale amountout as done on primaryissuepool contract
       return MathSol.divDown(
         amountOut,
         poolPairData.scalingFactors[poolPairData.indexOut],
@@ -219,11 +225,16 @@ export class PrimaryIssuePool {
       if (amount === 0n) {
         return 0n;
       }
+      //up scale balance according to upscaleArray function on basepool contract
+      //don't divide by 1e18 to avoid 0 result incase balance is too small
       const scaledBalances = poolPairData.balances.map((balance, idx) => {
         return MathSol.mul(balance, poolPairData.scalingFactors[idx]);
       });
       const tokenInBalance = scaledBalances[poolPairData.indexIn];
       const tokenOutBalance = scaledBalances[poolPairData.indexOut];
+      //up scale amount using scaling factor of tokenout(since amount of tokenin is what we are looking for)
+      //according to upscale function on basepool contract
+      //don't divide by 1e18 to avoid 0 result incase balance is too small
       const scaledAmount = MathSol.mul(
         amount,
         poolPairData.scalingFactors[poolPairData.indexOut],
@@ -274,6 +285,7 @@ export class PrimaryIssuePool {
           return 0n;
         }
       }
+      //downscale amountIn has done on primary issue pool
       return MathSol.divUp(
         amountIn,
         poolPairData.scalingFactors[poolPairData.indexIn],
