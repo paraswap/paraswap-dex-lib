@@ -205,7 +205,8 @@ export class PrimaryIssuePool {
       if (tokenOutBalance < amountOut) {
         return 0n;
       }
-      //downscale amountout as done on primaryissuepool contract
+      //downscaledown amountout by tokenout scaling factor as done on primaryissuepool contract
+      //don't use fixed method to get rid of 1e18 added from scaling of balances and amount
       return MathSol.divDown(
         amountOut,
         poolPairData.scalingFactors[poolPairData.indexOut],
@@ -285,7 +286,8 @@ export class PrimaryIssuePool {
           return 0n;
         }
       }
-      //downscale amountIn has done on primary issue pool
+      //downscaleup amountIn by token in scaling factor has done on primary issue pool
+      //don't use fixed method to get rid of 1e18 added from scaling of balances and amount
       return MathSol.divUp(
         amountIn,
         poolPairData.scalingFactors[poolPairData.indexIn],
