@@ -424,18 +424,12 @@ describe('UniswapV3 E2E', () => {
         [
           SwapSide.SELL,
           [
-            // ContractMethod.simpleSwap,
+            ContractMethod.simpleSwap,
             ContractMethod.multiSwap,
-            // ContractMethod.megaSwap,
+            ContractMethod.megaSwap,
           ],
         ],
-        [
-          SwapSide.BUY,
-          [
-            // ContractMethod.simpleBuy,
-            // ContractMethod.buy
-          ],
-        ],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       sideToContractMethods.forEach((contractMethods, side) =>
@@ -1083,6 +1077,52 @@ describe('UniswapV3 E2E', () => {
       const tokenAAmount: string = '111110000';
       const tokenBAmount: string = '10000000';
       const nativeTokenAmount = '11000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+
+    describe('BASE', () => {
+      const network = Network.BASE;
+
+      const tokenASymbol: string = 'USDbC';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '111110000';
+      const tokenBAmount: string = '110000000000000000';
+      const nativeTokenAmount = '1100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
+
+  describe('Retro', () => {
+    const dexKey = 'Retro';
+
+    describe('POLYGON', () => {
+      const network = Network.POLYGON;
+
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '100000000';
+      const nativeTokenAmount = '1100000000000000000';
 
       testForNetwork(
         network,

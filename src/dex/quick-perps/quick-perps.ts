@@ -117,45 +117,55 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<QuickPerpsData>> {
     if (side === SwapSide.BUY || !this.pool) return null;
-    const srcAddress = this.dexHelper.config
-      .wrapETH(srcToken)
-      .address.toLowerCase();
-    const destAddress = this.dexHelper.config
-      .wrapETH(destToken)
-      .address.toLowerCase();
-    if (
-      srcAddress === destAddress ||
-      !(
-        this.supportedTokensMap[srcAddress] &&
-        this.supportedTokensMap[destAddress]
+    try {
+      const srcAddress = this.dexHelper.config
+        .wrapETH(srcToken)
+        .address.toLowerCase();
+      const destAddress = this.dexHelper.config
+        .wrapETH(destToken)
+        .address.toLowerCase();
+      if (
+        srcAddress === destAddress ||
+        !(
+          this.supportedTokensMap[srcAddress] &&
+          this.supportedTokensMap[destAddress]
+        )
       )
-    )
+        return null;
+      const srcPoolIdentifier = `${this.dexKey}_${srcAddress}`;
+      const destPoolIdentifier = `${this.dexKey}_${destAddress}`;
+      const pools = [srcPoolIdentifier, destPoolIdentifier];
+      if (limitPools && pools.some(p => !limitPools.includes(p))) return null;
+
+      const unitVolume = getBigIntPow(srcToken.decimals);
+      const prices = await this.pool.getAmountOut(
+        srcAddress,
+        destAddress,
+        [unitVolume, ...amounts],
+        blockNumber,
+      );
+
+      if (!prices) return null;
+
+      return [
+        {
+          prices: prices.slice(1),
+          unit: prices[0],
+          gasCost: QuickPerpsGasCost,
+          exchange: this.dexKey,
+          data: {},
+          poolAddresses: [this.params.vault],
+        },
+      ];
+    } catch (e) {
+      this.logger.error(
+        `Error_getPrices ${srcToken.symbol || srcToken.address}, ${
+          destToken.symbol || destToken.address
+        }, ${side}: `,
+        e,
+      );
       return null;
-    const srcPoolIdentifier = `${this.dexKey}_${srcAddress}`;
-    const destPoolIdentifier = `${this.dexKey}_${destAddress}`;
-    const pools = [srcPoolIdentifier, destPoolIdentifier];
-    if (limitPools && pools.some(p => !limitPools.includes(p))) return null;
-
-    const unitVolume = getBigIntPow(srcToken.decimals);
-    const prices = await this.pool.getAmountOut(
-      srcAddress,
-      destAddress,
-      [unitVolume, ...amounts],
-      blockNumber,
-    );
-
-    if (!prices) return null;
-
-    return [
-      {
-        prices: prices.slice(1),
-        unit: prices[0],
-        gasCost: QuickPerpsGasCost,
-        exchange: this.dexKey,
-        data: {},
-        poolAddresses: [this.params.vault],
-      },
-    ];
+    }
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap

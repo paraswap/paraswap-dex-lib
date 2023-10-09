@@ -2,28 +2,22 @@ import { defaultAbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { pack } from '@ethersproject/solidity';
 import {
-  Token,
+  AdapterExchangeParam,
   Address,
   ExchangePrices,
-  AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
+  ExchangeTxInfo,
   Logger,
   NumberAsString,
+  PoolLiquidity,
   PoolPrices,
-  TxInfo,
   PreprocessTransactionOptions,
-  ExchangeTxInfo,
+  SimpleExchangeParam,
+  Token,
+  TxInfo,
 } from '../../types';
-import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
+import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import {
-  getBigIntPow,
-  getDexKeysWithNetwork,
-  interpolate,
-  isTruthy,
-  uuidToBytes16,
-} from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, interpolate, isTruthy, uuidToBytes16, } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -35,11 +29,8 @@ import {
   UniswapV3Param,
   UniswapV3SimpleSwapParams,
 } from './types';
-import {
-  getLocalDeadlineAsFriendlyPlaceholder,
-  SimpleExchange,
-} from '../simple-exchange';
-import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
+import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange, } from '../simple-exchange';
+import { Adapters, PoolsToPreload, UniswapV3Config } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
@@ -58,12 +49,9 @@ import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import {
-  AssetType,
-  DEFAULT_ID_ERC20,
-  DEFAULT_ID_ERC20_AS_STRING,
-} from '../../lib/tokens/types';
+import { AssetType, DEFAULT_ID_ERC20, DEFAULT_ID_ERC20_AS_STRING, } from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
+import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -71,14 +59,15 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param>
 {
+  private readonly factory: UniswapV3Factory;
   readonly isFeeOnTransferSupported: boolean = false;
   readonly eventPools: Record<string, UniswapV3EventPool | null> = {};
 
@@ -97,6 +86,7 @@ export class UniswapV3
         'QuickSwapV3.1',
         'RamsesV2',
         'ChronosV3',
+        'Retro',
       ]),
     );
 
@@ -138,6 +128,14 @@ export class UniswapV3
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
+
+    this.factory = new UniswapV3Factory(
+      dexHelper,
+      dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet,
+    );
   }
 
   get supportedFees() {
@@ -154,6 +152,9 @@ export class UniswapV3
   }
 
   async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    await this.factory.initialize(blockNumber);
+
     // This is only for testing, because cold pool fetching is goes out of
     // FETCH_POOL_INDENTIFIER_TIMEOUT range
     await Promise.all(
@@ -183,6 +184,38 @@ export class UniswapV3
       );
     }
   }
+
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+    fee,
+  }) => {
+    const logPrefix = '[UniswapV3.onPoolCreatedDeleteFromNonExistingSet]';
+    const [_token0, _token1] = this._sortTokens(token0, token1);
+    const poolKey = `${token0}_${token1}_${fee}`.toLowerCase();
+
+    // consider doing it only from master pool for less calls to distant cache
+
+    // delete entry locally to let local instance discover the pool
+    delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];
+
+    try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+      );
+      // delete pool record from set
+      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+    } catch (error) {
+      this.logger.error(
+        `${logPrefix} failed to delete pool from set: ${poolKey}`,
+        error,
+      );
+    }
+  };
 
   async getPool(
     srcAddress: Address,
@@ -241,21 +274,25 @@ export class UniswapV3
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
+    const poolImplementation =
+      this.config.eventPoolImplementation !== undefined
+        ? this.config.eventPoolImplementation
+        : UniswapV3EventPool;
     pool =
       pool ||
-      new UniswapV3EventPool(
-        this.dexHelper,
-        this.dexKey,
-        this.stateMultiContract,
-        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
-        this.erc20Interface,
-        this.config.factory,
-        fee,
-        token0,
-        token1,
-        this.logger,
-        this.cacheStateKey,
-        this.config.initHash,
+      new poolImplementation(
+          this.dexHelper,
+          this.dexKey,
+          this.stateMultiContract,
+          this.config.decodeStateMultiCallResultWithRelativeBitmaps,
+          this.erc20Interface,
+          this.config.factory,
+          fee,
+          token0,
+          token1,
+          this.logger,
+          this.cacheStateKey,
+          this.config.initHash,
       );
 
     try {
@@ -374,6 +411,7 @@ export class UniswapV3
     amounts: bigint[],
     side: SwapSide,
     pools: UniswapV3EventPool[],
+    states: PoolState[],
   ): Promise<ExchangePrices<UniswapV3Data> | null> {
     if (pools.length === 0) {
       return null;
@@ -471,7 +509,7 @@ export class UniswapV3
     };
 
     let i = 0;
-    const result = pools.map(pool => {
+    const result = pools.map((pool, index) => {
       const _rates = _amounts.map(() => decode(i++));
       const unit: bigint = _rates[0];
 
@@ -491,6 +529,7 @@ export class UniswapV3
               tokenIn: from.address,
               tokenOut: to.address,
               fee: pool.feeCodeAsString,
+              currentFee: states[index].fee.toString(),
             },
           ],
           exchange: pool.poolAddress,
@@ -602,16 +641,17 @@ export class UniswapV3
         },
       );
 
+      const states = poolsToUse.poolWithState.map(
+        p => p.getState(blockNumber)!,
+      );
+
       const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
         _destToken,
         amounts,
         side,
         this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
-      );
-
-      const states = poolsToUse.poolWithState.map(
-        p => p.getState(blockNumber)!,
+        this.network === Network.ZKEVM ? [] : states,
       );
 
       const unitAmount = getBigIntPow(
@@ -685,6 +725,7 @@ export class UniswapV3
                   tokenIn: _srcAddress,
                   tokenOut: _destAddress,
                   fee: pool.feeCode.toString(),
+                  currentFee: state.fee.toString(),
                 },
               ],
             },
@@ -1065,6 +1106,7 @@ export class UniswapV3
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
       stateMultiCallAbi: this.config.stateMultiCallAbi,
+      eventPoolImplementation: this.config.eventPoolImplementation,
       decodeStateMultiCallResultWithRelativeBitmaps:
         this.config.decodeStateMultiCallResultWithRelativeBitmaps,
     };

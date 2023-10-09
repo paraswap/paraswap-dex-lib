@@ -51,12 +51,47 @@ export class Api3FeedSubscriber<State> extends PartialEventSubscriber<
     };
   }
 
+  static getDapiNameHashMultiCallInput(proxy: Address): MultiCallInput {
+    return {
+      target: proxy,
+      callData:
+        Api3FeedSubscriber.proxyInterface.encodeFunctionData('dapiNameHash'),
+    };
+  }
+
   static getDataFeedId(proxy: Address): MultiCallInput {
     return {
       target: proxy,
       callData:
         Api3FeedSubscriber.proxyInterface.encodeFunctionData('dataFeedId'),
     };
+  }
+
+  static getFeedIdFromDapiNameHash(
+    api3Server: Address,
+    dapiNameHash: string,
+  ): MultiCallInput {
+    return {
+      target: api3Server,
+      callData: Api3FeedSubscriber.api3ServerV1Iface.encodeFunctionData(
+        'dapiNameHashToDataFeedId',
+        [dapiNameHash],
+      ),
+    };
+  }
+
+  static decodeFeedIdFromDapiNameHash(multicallOutput: MultiCallOutput) {
+    return Api3FeedSubscriber.api3ServerV1Iface.decodeFunctionResult(
+      'dapiNameHashToDataFeedId',
+      multicallOutput,
+    )[0];
+  }
+
+  static decodeDapiNameHash(multicallOutput: MultiCallOutput) {
+    return Api3FeedSubscriber.proxyInterface.decodeFunctionResult(
+      'dapiNameHash',
+      multicallOutput,
+    )[0];
   }
 
   static decodeDataFeedId(multicallOutput: MultiCallOutput) {
