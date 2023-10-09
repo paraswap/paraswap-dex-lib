@@ -30,7 +30,8 @@ import {
   DexParams,
   OutputResult,
   PoolState,
-  SolidlyV3Data, SolidlyV3SimpleSwapParams,
+  SolidlyV3Data,
+  SolidlyV3SimpleSwapParams,
   UniswapV3Functions,
   UniswapV3Param,
   UniswapV3SimpleSwapParams,
@@ -65,7 +66,7 @@ import {
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
-import { TickMath } from "./contract-math/TickMath";
+import { TickMath } from './contract-math/TickMath';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -92,11 +93,7 @@ export class SolidlyV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(
-      _.pick(SolidlyV3Config, [
-        'SolidlyV3',
-      ]),
-    );
+    getDexKeysWithNetwork(_.pick(SolidlyV3Config, ['SolidlyV3']));
 
   logger: Logger;
 
@@ -451,7 +448,7 @@ export class SolidlyV3
         (acc, pool) => {
           let state = pool.getState(blockNumber);
           if (state === null) {
-            throw new Error("Unable to retrieve pool state.");
+            throw new Error('Unable to retrieve pool state.');
           } else {
             acc.poolWithState.push(pool);
           }
@@ -534,7 +531,7 @@ export class SolidlyV3
             prices,
             data: {
               zeroForOne,
-              poolAddress: pool.poolAddress
+              poolAddress: pool.poolAddress,
             },
             poolIdentifier: this.getPoolIdentifier(
               pool.token0,
@@ -686,23 +683,26 @@ export class SolidlyV3
     data: SolidlyV3Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapFunction = this.poolIface.getFunction('swap(address,bool,int256,uint160,uint256,uint256)');
+    const swapFunction = this.poolIface.getFunction(
+      'swap(address,bool,int256,uint160)',
+    );
 
     const swapFunctionParams: SolidlyV3SimpleSwapParams = {
       recipient: this.augustusAddress,
       zeroForOne: data.zeroForOne,
-      amountSpecified: side === SwapSide.SELL ? srcAmount.toString() : (-destAmount).toString(),
-      sqrtPriceLimitX96: data.zeroForOne ? (TickMath.MIN_SQRT_RATIO + BigInt(1)).toString() : (TickMath.MAX_SQRT_RATIO - BigInt(1)).toString(),
-      amountLimit: '1',
-      deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-    }
+      amountSpecified:
+        side === SwapSide.SELL
+          ? srcAmount.toString()
+          : (-destAmount).toString(),
+      sqrtPriceLimitX96: data.zeroForOne
+        ? (TickMath.MIN_SQRT_RATIO + BigInt(1)).toString()
+        : (TickMath.MAX_SQRT_RATIO - BigInt(1)).toString(),
+    };
     const swapData = this.poolIface.encodeFunctionData(swapFunction, [
       swapFunctionParams.recipient,
       swapFunctionParams.zeroForOne,
       swapFunctionParams.amountSpecified,
       swapFunctionParams.sqrtPriceLimitX96,
-      swapFunctionParams.amountLimit,
-      swapFunctionParams.deadline,
     ]);
 
     return this.buildSimpleParamWithoutWETHConversion(

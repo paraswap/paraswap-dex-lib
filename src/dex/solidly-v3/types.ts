@@ -84,9 +84,7 @@ export type SolidlyV3SimpleSwapParams = {
   zeroForOne: boolean;
   amountSpecified: NumberAsString;
   sqrtPriceLimitX96: NumberAsString;
-  amountLimit: NumberAsString;
-  deadline: string;
-}
+};
 
 export type UniswapV3Param = [
   fromToken: Address,
