@@ -1,4 +1,4 @@
-import { BI_MAX_INT, BI_POWS } from '../../../../bigint-constants';
+import { BI_MAX_INT, BI_POWS } from '../../../bigint-constants';
 
 const _require = (b: boolean, message: string) => {
   if (!b) throw new Error(message);

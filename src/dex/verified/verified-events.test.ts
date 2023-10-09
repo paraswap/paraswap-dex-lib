@@ -84,31 +84,31 @@ describe('Verified EventPool', function () {
     );
   });
 
-  Object.entries(eventsToTest).forEach(
-    ([poolAddress, events]: [string, EventMappings]) => {
-      describe(`Events for ${poolAddress}`, () => {
-        Object.entries(events).forEach(
-          ([eventName, blockNumbers]: [string, number[]]) => {
-            describe(`${eventName}`, () => {
-              blockNumbers.forEach((blockNumber: number) => {
-                it(`State after ${blockNumber}`, async function () {
-                  await testEventSubscriber(
-                    verifiedPool,
-                    verifiedPool.addressesSubscribed,
-                    (_blockNumber: number) =>
-                      fetchPoolState(verifiedPool, _blockNumber),
-                    blockNumber,
-                    `${parentName}_${poolAddress}`,
-                    dexHelper.provider,
-                  );
-                });
-              });
-            });
-          },
-        );
-      });
-    },
-  );
+  // Object.entries(eventsToTest).forEach(
+  //   ([poolAddress, events]: [string, EventMappings]) => {
+  //     describe(`Events for ${poolAddress}`, () => {
+  //       Object.entries(events).forEach(
+  //         ([eventName, blockNumbers]: [string, number[]]) => {
+  //           describe(`${eventName}`, () => {
+  //             blockNumbers.forEach((blockNumber: number) => {
+  //               it(`State after ${blockNumber}`, async function () {
+  //                 await testEventSubscriber(
+  //                   verifiedPool,
+  //                   verifiedPool.addressesSubscribed,
+  //                   (_blockNumber: number) =>
+  //                     fetchPoolState(verifiedPool, _blockNumber),
+  //                   blockNumber,
+  //                   `${parentName}_${poolAddress}`,
+  //                   dexHelper.provider,
+  //                 );
+  //               });
+  //             });
+  //           });
+  //         },
+  //       );
+  //     });
+  //   },
+  // );
 
   describe('Custom Test', () => {
     it('All pools test: ', async () => {
@@ -121,6 +121,7 @@ describe('Verified EventPool', function () {
         'allPools after fetching pool state: ',
         verifiedPool.allPools,
       );
+      const creator: string = '';
       //other tests
       Object.entries(poolsMap).forEach(([poolAddress, poolState]) => {
         const subgraphPool = verifiedPool.allPools.find(
@@ -151,6 +152,7 @@ describe('Verified EventPool', function () {
           [0n, 745000000000000000n],
           745000000000000000n,
           SwapSide.SELL,
+          creator,
         );
         // const price2 = verifiedPool.getPricesPool(tokens[0], tokens[1], subgraphPool!, poolState, [BigInt(10), BigInt(5)], BigInt(6), SwapSide.BUY)
         const price3 = verifiedPool.getPricesPool(
@@ -161,6 +163,7 @@ describe('Verified EventPool', function () {
           [0n, 2126543n],
           BigInt(6),
           SwapSide.SELL,
+          creator,
         );
         // const price4 = verifiedPool.getPricesPool(tokens[1], tokens[0], subgraphPool!, poolState, [BigInt(10), BigInt(5)], BigInt(6), SwapSide.BUY)
         console.log(

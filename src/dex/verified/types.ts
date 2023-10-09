@@ -61,8 +61,8 @@ export type OrdersState = {
   creator: Address;
   tokenIn: { id: Address };
   tokenOut: { id: Address };
-  amountOffered: number;
-  priceOffered: number;
+  amountOffered: bigint;
+  priceOffered: bigint;
   timestamp: bigint;
   orderReference: string;
 };
@@ -72,9 +72,9 @@ export type SecondaryTradeState = {
   party: { id: Address };
   counterparty: { id: Address };
   orderType: string;
-  price: number;
+  price: bigint;
   currency: { id: Address };
-  amount: number;
+  amount: bigint;
   executionDate: bigint;
   orderReference: string;
 };

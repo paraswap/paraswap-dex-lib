@@ -18,15 +18,62 @@ import {
   poolGetMainTokens,
   typecastReadOnlyPoolState,
 } from './utils';
-import {
-  MAX_POOL_CNT,
-  POOL_CACHE_TTL,
-  VAULT_INTERFACE,
-  fetchAllPools,
-} from './constants';
+import { MAX_POOL_CNT, POOL_CACHE_TTL, VAULT_INTERFACE } from './constants';
 import VAULTABI from '../../abi/verified/vault.json';
 import { PrimaryIssuePool } from './pools/primary/primaryPool';
 import { SecondaryIssuePool } from './pools/secondary/secondarPool';
+
+const fetchAllPools = `query ($count: Int)    {
+  pools: pools(
+    first: $count
+    orderDirection: desc
+    where: {
+    swapEnabled: true, 
+    poolType_in: ["PrimaryIssue", "SecondaryIssue"]
+    }
+  ) {
+    id
+    address
+    poolType
+    tokens {
+      address
+      decimals
+    }
+    security
+    currency
+    orders {
+      id
+      creator
+      tokenIn {
+       id
+      }
+      tokenOut {
+       id
+      }
+      amountOffered
+      priceOffered
+      timestamp
+      orderReference 
+    }
+    secondaryTrades{
+      id
+      party {
+        id
+      }
+      counterparty {
+        id
+      }
+      orderType
+      price
+      currency {
+        id
+      }
+      amount
+      executionDate
+      orderReference
+    }
+  }
+}`;
 
 export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
   public vaultInterface: Interface;
@@ -238,6 +285,7 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
     amounts: bigint[],
     unitVolume: bigint,
     side: SwapSide,
+    creator: string,
   ): { unit: bigint; prices: bigint[] } | null {
     if (!isSupportedPool(subgraphPool.poolType)) {
       this.logger.error(`Unsupported Pool Type: ${subgraphPool.poolType}`);
@@ -273,7 +321,6 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
     const isCurrencyIn = from.address === subgraphPool.currency;
     //Todo: Figure out creator
-    let creator;
     const unitResult =
       checkedUnitVolume === 0n
         ? 0n
@@ -283,14 +330,12 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
             poolPairData,
             isCurrencyIn,
             creator,
-            subgraphPool.poolType,
           )![0]
         : this.pools[subgraphPool.poolType].onBuy(
             [checkedUnitVolume],
             poolPairData,
             isCurrencyIn,
             creator,
-            subgraphPool.poolType,
           )![0];
     const prices: bigint[] = new Array(amounts.length).fill(0n);
     const outputs =
@@ -300,14 +345,12 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
             poolPairData,
             isCurrencyIn,
             creator,
-            subgraphPool.poolType,
           )
         : this.pools[subgraphPool.poolType].onBuy(
             amountWithoutZero.slice(0, nonZeroAmountIndex),
             poolPairData,
             isCurrencyIn,
             creator,
-            subgraphPool.poolType,
           );
 
     assert(

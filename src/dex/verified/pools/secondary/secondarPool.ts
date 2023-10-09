@@ -1,4 +1,3 @@
-import { BasePool } from '../../../balancer-v2/pools/balancer-v2-pool';
 import { Interface } from '@ethersproject/abi';
 import SECONDARYISSUEPOOL from '../../../../abi/verified/SecondaryIssuePool.json';
 import {
@@ -7,14 +6,13 @@ import {
   PoolState,
   SubgraphPoolBase,
   TokenState,
-  VerifiedPoolTypes,
   callData,
 } from '../../types';
 import { decodeThrowError } from '../../utils';
-import { BigNumber, formatFixed } from '@ethersproject/bignumber';
-import { BigNumber as BigN } from 'bignumber.js';
+import { BigNumber, formatFixed, parseFixed } from '@ethersproject/bignumber';
 import { SwapSide } from '@paraswap/core';
-import { MathSol } from './secondaryPoolMath';
+import { MathSol } from '../generalPoolMath';
+import { WeiPerEther as ONE } from '@ethersproject/constants';
 
 //Todo: explain the math better(after testing secondary)
 export class SecondaryIssuePool {
@@ -28,7 +26,7 @@ export class SecondaryIssuePool {
     this.poolInterface = new Interface(SECONDARYISSUEPOOL.abi);
   }
 
-  //Helper function to parse both primary and secondary issue pools data into params for onSell and onBuy functions.
+  //Helper function to parse secondary issue pools data into params for onSell and onBuy functions.
   parsePoolPairData(
     pool: SubgraphPoolBase,
     poolState: PoolState,
@@ -63,7 +61,6 @@ export class SecondaryIssuePool {
       bptIndex,
       swapFee: poolState.swapFee,
       minOrderSize: poolState.minimumOrderSize,
-      minPrice: poolState.minimumPrice,
       scalingFactors,
       orders,
       secondaryTrades,
@@ -71,9 +68,8 @@ export class SecondaryIssuePool {
     return poolPairData;
   }
 
-  //constructs onchain multicall data for Both Primary and SecondaryIssue Pool.
-  //To get pool(primary/secondary) tokens from vault contract, minimum orderSize from primary and secondary,
-  //minimumprice from primary
+  //constructs onchain multicall data for SecondaryIssue Pool.
+  //To get pool(primary/secondary) tokens from vault contract, minimum orderSize secondary,
   getOnChainCalls(pool: SubgraphPoolBase, vaultAddress: string): callData[] {
     const poolCallData: callData[] = [
       {
@@ -91,7 +87,7 @@ export class SecondaryIssuePool {
     return poolCallData;
   }
 
-  //Decodes multicall data for both Primary and SecondaryIssue pools. And save pools using address to poolState Mapping.
+  //Decodes multicall data for SecondaryIssue pools. And save pools using address to poolState Mapping.
   //Data must contain returnData. StartIndex is where to start in returnData.
   decodeOnChainCalls(
     pool: SubgraphPoolBase,
@@ -134,32 +130,32 @@ export class SecondaryIssuePool {
     return [pools, startIndex];
   }
 
-  // Helper function that get tokenIn when buying in both primary and secondaery issue pools
+  // Helper function that get tokenIn when buying in both secondaery issue pools
   onBuy(
     amounts: bigint[],
     poolPairData: PoolPairData,
     isCurrencyIn: boolean,
-    creator: string | undefined,
-    poolType: VerifiedPoolTypes,
+    creator: string,
   ): bigint[] {
     return amounts.map(amount =>
       this.getSecondaryTokenIn(poolPairData, amount, creator!, isCurrencyIn),
     );
   }
 
-  //Helper function that get tokenOut when selling in both primary and secondaery issue pools
+  //Helper function that get tokenOut when selling in secondaery issue pools
   onSell(
     amounts: bigint[],
     poolPairData: PoolPairData,
     isCurrencyIn: boolean,
-    creator: string | undefined,
-    poolType: VerifiedPoolTypes,
+    creator: string,
   ): bigint[] | null {
     return amounts.map(amount =>
       this.getSecondaryTokenOut(poolPairData, amount, creator!, isCurrencyIn),
     );
   }
 
+  //Helper function that calculates amount in or out for both buy and sell in secondary pool
+  //according to calculation from SOR
   _getSecondaryTokenAmount(
     amount: bigint,
     ordersDataScaled: OrdersState[],
@@ -168,33 +164,31 @@ export class SecondaryIssuePool {
   ): bigint {
     let returnAmount = BigInt(0);
     for (let i = 0; i < ordersDataScaled.length; i++) {
-      const amountOffered = BigInt(ordersDataScaled[i].amountOffered);
-      const priceOffered = BigInt(ordersDataScaled[i].priceOffered);
+      const amountOffered = ordersDataScaled[i].amountOffered;
+      const priceOffered = ordersDataScaled[i].priceOffered;
       const checkValue =
         orderType === 'Sell'
           ? MathSol.divDownFixed(amountOffered, priceOffered)
           : MathSol.mulDownFixed(amountOffered, priceOffered);
-
-      if (checkValue <= Number(amount)) {
+      if (checkValue <= amount) {
         returnAmount = MathSol.add(returnAmount, amountOffered);
       } else {
         returnAmount = MathSol.add(
           returnAmount,
           orderType === 'Sell'
-            ? MathSol.mulDownFixed(BigInt(Number(amount)), priceOffered)
-            : MathSol.divDownFixed(BigInt(Number(amount)), priceOffered),
+            ? MathSol.mulDownFixed(amount, priceOffered)
+            : MathSol.divDownFixed(amount, priceOffered),
         );
       }
-      amount = BigInt(Number(amount) - Number(checkValue));
-      if (Number(amount) < 0) break;
+      amount = MathSol.sub(amount, checkValue);
+      if (amount < 0n) break;
     }
-
     returnAmount =
       orderType === 'Sell'
-        ? MathSol.divDown(returnAmount, BigInt(Number(scalingFactor)))
+        ? MathSol.divDown(returnAmount, scalingFactor)
         : returnAmount;
 
-    return BigInt(Number(returnAmount));
+    return returnAmount;
   }
 
   //gets amount of tokenOut in Secondary Issue pool(used when selling) according to calculation from SOR Repo
@@ -205,16 +199,30 @@ export class SecondaryIssuePool {
     isCurrencyIn: boolean,
   ): bigint {
     try {
-      if (amount == 0n) return 0n;
+      poolPairData.orders!.map(order => {
+        order.amountOffered = BigInt(
+          Number(parseFixed(order.amountOffered.toString(), 18)),
+        );
+        order.priceOffered = BigInt(
+          Number(parseFixed(order.priceOffered.toString(), 18)),
+        );
+      });
+      poolPairData.secondaryTrades!.map(trade => {
+        trade.amount = BigInt(Number(parseFixed(trade.amount.toString(), 18)));
+        trade.price = BigInt(Number(parseFixed(trade.price.toString(), 18)));
+      });
       let security: string;
-      let scalingFactor: bigint;
+      let scalingFactor;
       if (isCurrencyIn) {
-        security = poolPairData.tokens[poolPairData.indexOut];
-        scalingFactor = poolPairData.scalingFactors[poolPairData.indexIn];
+        {
+          security = poolPairData.tokens[poolPairData.indexOut];
+          scalingFactor = poolPairData.scalingFactors[poolPairData.indexIn];
+        }
       } else {
         security = poolPairData.tokens[poolPairData.indexIn];
         scalingFactor = poolPairData.scalingFactors[poolPairData.indexOut];
       }
+      if (amount == 0n) return 0n;
       let buyOrders = poolPairData
         .orders!.filter(
           order =>
@@ -233,12 +241,12 @@ export class SecondaryIssuePool {
           return acc;
         }, {}),
       );
-      openOrders = openOrders.filter(order => order.priceOffered !== 0);
-      if (poolPairData.secondaryTrades?.length) {
+      openOrders = openOrders.filter(order => order.priceOffered !== 0n);
+      if (poolPairData.secondaryTrades!.length) {
         buyOrders = openOrders
           .map(order => {
             // filtering of already matched orders
-            const matchedTrade = poolPairData.secondaryTrades?.find(
+            const matchedTrade = poolPairData.secondaryTrades!.find(
               trade =>
                 trade.orderReference?.toLowerCase() ===
                 order.orderReference?.toLowerCase(),
@@ -246,44 +254,46 @@ export class SecondaryIssuePool {
             if (matchedTrade) {
               const price =
                 order.tokenIn.id.toLowerCase() === security.toLowerCase()
-                  ? (1 / matchedTrade.price) * 10 ** 18
-                  : matchedTrade.price / 10 ** 18;
-              const amount = matchedTrade.amount * price;
+                  ? BigInt((1 / Number(matchedTrade.price)) * 10 ** 18)
+                  : BigInt(Number(matchedTrade.price) / 10 ** 18);
+              const amount = MathSol.mul(matchedTrade.amount, price);
               return {
                 ...order,
-                amountOffered: order.amountOffered - amount,
+                amountOffered: MathSol.sub(order.amountOffered, amount),
               };
             }
             return order;
           })
-          .filter(element => element && element.amountOffered !== 0);
+          .filter(element => element && element.amountOffered !== 0n);
       }
-      buyOrders = buyOrders.sort((a, b) => b.priceOffered - a.priceOffered);
+      buyOrders = buyOrders.sort(
+        (a, b) => Number(b.priceOffered) - Number(a.priceOffered),
+      );
 
       const orderBookdepth = BigInt(
         buyOrders
           .map(
             order =>
-              (order.amountOffered / order.priceOffered) *
-              Number(BigNumber.from('1000000000000000000')),
+              (Number(order.amountOffered) / Number(order.priceOffered)) *
+              Number(ONE),
           )
-          .reduce((partialSum, a) => Number(BigN(partialSum).plus(BigN(a))), 0),
+          .reduce((partialSum, a) => Number(partialSum + a), 0),
       );
-      if (Number(amount) > Number(orderBookdepth)) return 0n;
+      if (amount > orderBookdepth) return 0n;
 
-      const tokensOut = this._getSecondaryTokenAmount(
+      const amountOut = this._getSecondaryTokenAmount(
         amount,
         buyOrders,
-        scalingFactor!,
+        scalingFactor,
         'Sell',
       );
-
-      const scaleTokensOut = formatFixed(
-        BigNumber.from(Math.trunc(Number(tokensOut.toString())).toString()),
+      const scaledAmountOut = formatFixed(
+        BigNumber.from(Math.trunc(Number(amountOut.toString())).toString()),
         poolPairData.decimals[poolPairData.indexOut],
       );
-      return BigInt(scaleTokensOut);
-    } catch (err: any) {
+      return BigInt(scaledAmountOut);
+      // return MathSol.divDown(amountOut, poolPairData.scalingFactors[poolPairData.indexOut]);
+    } catch (error) {
       return 0n;
     }
   }
@@ -296,20 +306,34 @@ export class SecondaryIssuePool {
     isCurrencyIn: boolean,
   ): bigint {
     try {
+      poolPairData.orders!.map(order => {
+        order.amountOffered = BigInt(
+          Number(parseFixed(order.amountOffered.toString(), 18)),
+        );
+        order.priceOffered = BigInt(
+          Number(parseFixed(order.priceOffered.toString(), 18)),
+        );
+      });
+      poolPairData.secondaryTrades!.map(trade => {
+        trade.amount = BigInt(Number(parseFixed(trade.amount.toString(), 18)));
+        trade.price = BigInt(Number(parseFixed(trade.price.toString(), 18)));
+      });
       let currency: string;
       let security: string;
-      let scalingFactor: bigint;
+      let scalingFactor;
       if (isCurrencyIn) {
-        currency = poolPairData.tokens[poolPairData.indexIn];
-        security = poolPairData.tokens[poolPairData.indexOut];
-        scalingFactor = poolPairData.scalingFactors[poolPairData.indexIn];
+        {
+          currency = poolPairData.tokens[poolPairData.indexIn];
+          security = poolPairData.tokens[poolPairData.indexOut];
+          scalingFactor = poolPairData.scalingFactors[poolPairData.indexIn];
+        }
       } else {
         currency = poolPairData.tokens[poolPairData.indexOut];
         security = poolPairData.tokens[poolPairData.indexIn];
         scalingFactor = poolPairData.scalingFactors[poolPairData.indexOut];
       }
-      const scaledAmount = amount * scalingFactor!;
-      if (scaledAmount === 0n) return 0n;
+      const scaledAmount = MathSol.mul(amount, scalingFactor);
+      if (scaledAmount == 0n) return 0n;
       let sellOrders = poolPairData
         .orders!.filter(
           order =>
@@ -317,7 +341,6 @@ export class SecondaryIssuePool {
             order.creator.toLowerCase() !== creator.toLowerCase(),
         )
         .sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
-
       // filtering of edited & cancelled order from orderBook
       let openOrders: OrdersState[] = Object.values(
         sellOrders.reduce((acc: any, cur) => {
@@ -328,9 +351,7 @@ export class SecondaryIssuePool {
           return acc;
         }, {}),
       );
-
-      openOrders = openOrders.filter(order => order.priceOffered !== 0);
-
+      openOrders = openOrders.filter(order => order.priceOffered !== 0n);
       if (poolPairData.secondaryTrades!.length) {
         sellOrders = openOrders
           .map(order => {
@@ -343,50 +364,51 @@ export class SecondaryIssuePool {
             if (matchedTrade) {
               const price =
                 order.tokenIn.id.toLowerCase() === security.toLowerCase()
-                  ? (1 / Number(matchedTrade.price)) * 10 ** 18
-                  : Number(matchedTrade.price) / 10 ** 18;
-              const amount = Number(matchedTrade.amount) * price;
+                  ? BigInt((1 / Number(matchedTrade.price)) * 10 ** 18)
+                  : BigInt(Number(matchedTrade.price) / 10 ** 18);
+              const amount = MathSol.mul(matchedTrade.amount, price);
               return {
                 ...order,
-                amountOffered: order.amountOffered - amount,
+                amountOffered: MathSol.sub(order.amountOffered, amount),
               };
             }
             return order;
           })
-          .filter(element => element && Number(element.amountOffered) !== 0);
+          .filter(element => element && element.amountOffered !== 0n);
       }
-      sellOrders = sellOrders.sort((a, b) => a.priceOffered - b.priceOffered);
+      sellOrders = sellOrders.sort(
+        (a, b) => Number(a.priceOffered) - Number(b.priceOffered),
+      );
       const orderBookdepth = BigInt(
         sellOrders
           .map(
             order =>
-              (order.amountOffered * order.priceOffered) /
-              Number(BigNumber.from('1000000000000000000')),
+              (Number(order.amountOffered) * Number(order.priceOffered)) /
+              Number(ONE),
           )
-          .reduce((partialSum, a) => Number(BigN(partialSum).plus(BigN(a))), 0),
+          .reduce((partialSum, a) => Number(partialSum + a), 0),
       );
 
-      if (Number(amount) > Number(orderBookdepth)) return 0n;
+      if (amount > orderBookdepth) return 0n;
 
-      const tokensIn = this._getSecondaryTokenAmount(
+      const amountIn = this._getSecondaryTokenAmount(
         amount,
         sellOrders,
         scalingFactor,
         'Buy',
       );
-
-      const scaleTokensOut = formatFixed(
-        BigNumber.from(Math.trunc(Number(tokensIn.toString())).toString()),
+      const scaledAmountIn = formatFixed(
+        BigNumber.from(Math.trunc(Number(amountIn.toString())).toString()),
         poolPairData.decimals[poolPairData.indexOut],
       );
-      return BigInt(scaleTokensOut);
-    } catch (err: any) {
+      return BigInt(scaledAmountIn);
+    } catch (err) {
       return 0n;
     }
   }
 
   //TODO: Verify if token decimals are not nedded to get actual balance(depending on the format of amount in)
-  //gets maxAmount that can be swapped in or out of both primary and secondary issue pools
+  //gets maxAmount that can be swapped in or out of secondary issue pools
   //use 99% of the balance so not all balance can be swapped.
   getSwapMaxAmount(poolPairData: PoolPairData, side: SwapSide): bigint {
     return (

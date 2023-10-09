@@ -1,14 +1,12 @@
 import { Interface } from '@ethersproject/abi';
 import {
-  OrdersState,
   PoolPairData,
   PoolState,
   SubgraphPoolBase,
   TokenState,
-  VerifiedPoolTypes,
   callData,
 } from '../../types';
-import { MathSol } from '../primary/primaryPoolMath';
+import { MathSol } from '../generalPoolMath';
 import PRIMARYISSUEPOOL from '../../../../abi/verified/PrimaryIssuePool.json';
 import { decodeThrowError } from '../../utils';
 import { SwapSide } from '@paraswap/core';
@@ -50,8 +48,6 @@ export class PrimaryIssuePool {
       scalingFactors.push(BigInt(10 ** (18 - _decimal)));
       return t.address;
     });
-    const orders = pool.orders;
-    const secondaryTrades = pool.secondaryTrades;
     const poolPairData: PoolPairData = {
       tokens,
       balances,
@@ -63,15 +59,12 @@ export class PrimaryIssuePool {
       minOrderSize: poolState.minimumOrderSize,
       minPrice: poolState.minimumPrice,
       scalingFactors,
-      orders,
-      secondaryTrades,
     };
     return poolPairData;
   }
 
-  //constructs onchain multicall data for Both Primary and SecondaryIssue Pool.
-  //To get pool(primary/secondary) tokens from vault contract, minimum orderSize from primary and secondary,
-  //minimumprice from primary
+  //constructs onchain multicall data for Primary Issue Pool.
+  //To get primary pool tokens from vault contract, minimum orderSize minimumprice from primary contract
   getOnChainCalls(pool: SubgraphPoolBase, vaultAddress: string): callData[] {
     const poolCallData: callData[] = [
       {
@@ -93,7 +86,7 @@ export class PrimaryIssuePool {
     return poolCallData;
   }
 
-  //Decodes multicall data for both Primary and SecondaryIssue pools. And save pools using address to poolState Mapping.
+  //Decodes multicall data for Primary Issue pools. And save pools using address to poolState Mapping.
   //Data must contain returnData. StartIndex is where to start in returnData.
   decodeOnChainCalls(
     pool: SubgraphPoolBase,
@@ -145,77 +138,6 @@ export class PrimaryIssuePool {
     pools[pool.address] = poolState;
 
     return [pools, startIndex];
-  }
-
-  //gets amount of tokenIn in primaryIssue pool(used when buying) according to calculation from SOR Repo
-  getPrimaryTokenIn(
-    poolPairData: PoolPairData,
-    amount: bigint,
-    isCurrencyIn: boolean,
-  ): bigint {
-    try {
-      if (amount === 0n) {
-        return 0n;
-      }
-      const scaledBalances = poolPairData.balances.map((balance, idx) => {
-        return MathSol.mul(balance, poolPairData.scalingFactors[idx]);
-      });
-      const tokenInBalance = scaledBalances[poolPairData.indexIn];
-      const tokenOutBalance = scaledBalances[poolPairData.indexOut];
-      const scaledAmount = MathSol.mul(
-        amount,
-        poolPairData.scalingFactors[poolPairData.indexIn],
-      );
-      let amountIn: bigint;
-      if (isCurrencyIn) {
-        if (tokenOutBalance <= 0n) {
-          return 0n;
-        }
-        if (scaledAmount >= tokenInBalance) {
-          return 0n;
-        }
-        const preCalc = MathSol.sub(tokenInBalance, scaledAmount);
-        const postCalc = MathSol.divDownFixed(
-          scaledAmount,
-          BigInt(poolPairData.minPrice!),
-        );
-        amountIn = MathSol.divDownFixed(
-          postCalc,
-          MathSol.divDownFixed(tokenInBalance, preCalc),
-        );
-        if (amountIn < poolPairData.minOrderSize!) {
-          return 0n;
-        }
-        if (
-          MathSol.divDownFixed(scaledAmount, amountIn) <
-          BigInt(poolPairData.minPrice!)
-        ) {
-          return 0n;
-        }
-      } else {
-        if (scaledAmount >= tokenOutBalance) {
-          return 0n;
-        }
-        if (scaledAmount < BigInt(poolPairData.minOrderSize!)) {
-          return 0n;
-        }
-        const preCalc = MathSol.sub(tokenOutBalance, scaledAmount);
-        const postCalc = MathSol.divDownFixed(tokenOutBalance, preCalc);
-        amountIn = MathSol.mulDownFixed(
-          postCalc,
-          MathSol.mulDownFixed(scaledAmount, BigInt(poolPairData.minPrice!)),
-        );
-        if (
-          MathSol.divDownFixed(amountIn, scaledAmount) <
-          BigInt(poolPairData.minPrice!)
-        ) {
-          return 0n;
-        }
-      }
-      return amountIn;
-    } catch (err: any) {
-      return 0n;
-    }
   }
 
   //gets amount of tokenOut in primaryIssue pool(used when selling) according to calculation from SOR Repo
@@ -278,13 +200,89 @@ export class PrimaryIssuePool {
       if (tokenOutBalance < amountOut) {
         return 0n;
       }
-      return amountOut;
+      return MathSol.divDown(
+        amountOut,
+        poolPairData.scalingFactors[poolPairData.indexOut],
+      );
     } catch (err: any) {
       return 0n;
     }
   }
 
-  // Helper function that get tokenIn when buying in both primary and secondaery issue pools
+  //gets amount of tokenIn in primaryIssue pool(used when buying) according to calculation from SOR Repo
+  getPrimaryTokenIn(
+    poolPairData: PoolPairData,
+    amount: bigint,
+    isCurrencyIn: boolean,
+  ): bigint {
+    try {
+      if (amount === 0n) {
+        return 0n;
+      }
+      const scaledBalances = poolPairData.balances.map((balance, idx) => {
+        return MathSol.mul(balance, poolPairData.scalingFactors[idx]);
+      });
+      const tokenInBalance = scaledBalances[poolPairData.indexIn];
+      const tokenOutBalance = scaledBalances[poolPairData.indexOut];
+      const scaledAmount = MathSol.mul(
+        amount,
+        poolPairData.scalingFactors[poolPairData.indexOut],
+      );
+      let amountIn: bigint;
+      if (isCurrencyIn) {
+        if (scaledAmount >= tokenOutBalance) {
+          return 0n;
+        }
+        if (scaledAmount < BigInt(poolPairData.minOrderSize!)) {
+          return 0n;
+        }
+        const preCalc = MathSol.sub(tokenOutBalance, scaledAmount);
+        const postCalc = MathSol.divDownFixed(tokenOutBalance, preCalc);
+        amountIn = MathSol.mulDownFixed(
+          postCalc,
+          MathSol.mulDownFixed(scaledAmount, BigInt(poolPairData.minPrice!)),
+        );
+        if (
+          MathSol.divDownFixed(amountIn, scaledAmount) <
+          BigInt(poolPairData.minPrice!)
+        ) {
+          return 0n;
+        }
+      } else {
+        if (tokenInBalance <= 0n) {
+          return 0n;
+        }
+        if (scaledAmount >= tokenOutBalance) {
+          return 0n;
+        }
+        const preCalc = MathSol.sub(tokenOutBalance, scaledAmount);
+        const postCalc = MathSol.divDownFixed(
+          scaledAmount,
+          BigInt(poolPairData.minPrice!),
+        );
+        amountIn = MathSol.divDownFixed(
+          postCalc,
+          MathSol.divDownFixed(tokenOutBalance, preCalc),
+        );
+        if (amountIn < BigInt(poolPairData.minOrderSize)) {
+          return 0n;
+        }
+        if (
+          MathSol.divDownFixed(scaledAmount, amountIn) <
+          BigInt(poolPairData.minPrice!)
+        ) {
+          return 0n;
+        }
+      }
+      return MathSol.divUp(
+        amountIn,
+        poolPairData.scalingFactors[poolPairData.indexIn],
+      );
+    } catch (err: any) {
+      return 0n;
+    }
+  }
+  // Helper function that get tokenIn when buying in primary issue pools
   onBuy(
     amounts: bigint[],
     poolPairData: PoolPairData,
@@ -295,7 +293,7 @@ export class PrimaryIssuePool {
     );
   }
 
-  //Helper function that get tokenOut when selling in both primary and secondaery issue pools
+  //Helper function that get tokenOut when selling in both primary issue pool
   onSell(
     amounts: bigint[],
     poolPairData: PoolPairData,
@@ -307,7 +305,7 @@ export class PrimaryIssuePool {
   }
 
   //TODO: Verify if token decimals are not nedded to get actual balance(depending on the format of amount in)
-  //gets maxAmount that can be swapped in or out of both primary and secondary issue pools
+  //gets maxAmount that can be swapped in or out of both primary issue pool
   //use 99% of the balance so not all balance can be swapped.
   getSwapMaxAmount(poolPairData: PoolPairData, side: SwapSide): bigint {
     return (
