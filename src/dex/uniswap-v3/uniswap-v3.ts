@@ -17,7 +17,13 @@ import {
 } from '../../types';
 import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, interpolate, isTruthy, uuidToBytes16, } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  isTruthy,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -29,7 +35,10 @@ import {
   UniswapV3Param,
   UniswapV3SimpleSwapParams,
 } from './types';
-import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange, } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { Adapters, PoolsToPreload, UniswapV3Config } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
@@ -49,7 +58,11 @@ import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import { AssetType, DEFAULT_ID_ERC20, DEFAULT_ID_ERC20_AS_STRING, } from '../../lib/tokens/types';
+import {
+  AssetType,
+  DEFAULT_ID_ERC20,
+  DEFAULT_ID_ERC20_AS_STRING,
+} from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 
@@ -196,7 +209,7 @@ export class UniswapV3
   }) => {
     const logPrefix = '[UniswapV3.onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${token0}_${token1}_${fee}`.toLowerCase();
+    const poolKey = `${_token0}_${_token1}_${fee}`;
 
     // consider doing it only from master pool for less calls to distant cache
 
@@ -281,18 +294,18 @@ export class UniswapV3
     pool =
       pool ||
       new poolImplementation(
-          this.dexHelper,
-          this.dexKey,
-          this.stateMultiContract,
-          this.config.decodeStateMultiCallResultWithRelativeBitmaps,
-          this.erc20Interface,
-          this.config.factory,
-          fee,
-          token0,
-          token1,
-          this.logger,
-          this.cacheStateKey,
-          this.config.initHash,
+        this.dexHelper,
+        this.dexKey,
+        this.stateMultiContract,
+        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
+        this.erc20Interface,
+        this.config.factory,
+        fee,
+        token0,
+        token1,
+        this.logger,
+        this.cacheStateKey,
+        this.config.initHash,
       );
 
     try {

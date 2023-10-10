@@ -1,5 +1,9 @@
 import { UniswapV3EventPool } from '../../uniswap-v3-pool';
-import { DecodedStateMultiCallResultWithRelativeBitmaps, DecodeStateMultiCallFunc, PoolState } from '../../types';
+import {
+  DecodedStateMultiCallResultWithRelativeBitmaps,
+  DecodeStateMultiCallFunc,
+  PoolState,
+} from '../../types';
 import { assert } from 'ts-essentials';
 import { _reduceTickBitmap, _reduceTicks } from '../../contract-math/utils';
 import { bigIntify } from '../../../../utils';
@@ -12,7 +16,6 @@ import { Contract } from 'web3-eth-contract';
 import { Address, Logger } from '../../../../types';
 
 export class RamsesV2EventPool extends UniswapV3EventPool {
-
   public readonly poolIface = new Interface(RamsesV2PoolABI);
 
   constructor(
@@ -49,10 +52,7 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
     this.handlers['FeeAdjustment'] = this.handleFeeAdjustmentEvent.bind(this);
   }
 
-  handleFeeAdjustmentEvent(
-    event: any,
-    pool: PoolState,
-  ): PoolState {
+  handleFeeAdjustmentEvent(event: any, pool: PoolState): PoolState {
     const newFee = bigIntify(event.args.newFee);
 
     pool.fee = newFee;
@@ -77,7 +77,7 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
     const [resBalance0, resBalance1, resState, resCurrentFee] =
       await this.dexHelper.multiWrapper.tryAggregate<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
-        >(
+      >(
         false,
         calldataWithFee,
         blockNumber,
@@ -92,7 +92,12 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
       resBalance1.returnData,
       resState.returnData,
       resCurrentFee.returnData,
-    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps, bigint];
+    ] as [
+      bigint,
+      bigint,
+      DecodedStateMultiCallResultWithRelativeBitmaps,
+      bigint,
+    ];
 
     const tickBitmap = {};
     const ticks = {};
