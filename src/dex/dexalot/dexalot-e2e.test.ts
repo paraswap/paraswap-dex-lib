@@ -29,7 +29,7 @@ function testForNetwork(
   const tokens = Tokens[network];
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
-  const sleepMs = 5000;
+  const sleepMs = 20000;
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [

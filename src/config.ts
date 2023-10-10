@@ -223,8 +223,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0x2cdB0cDc2a9321ac2ED5b741828a5216C265Be80',
-      AvalancheBuyAdapter: '0x9Aa41A24A10af2a965A6D406b913a7Cd9C6886ea',
+      AvalancheAdapter02: '0x928eE214dB95eeD9241329F889320a21bcED6b65',
+      AvalancheBuyAdapter: '0x3d3131Ed7A6D4d6E765BC96D5cd416Cf2C2c075C',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
