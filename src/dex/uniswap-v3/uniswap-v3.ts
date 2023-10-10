@@ -2,20 +2,20 @@ import { defaultAbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { pack } from '@ethersproject/solidity';
 import {
-  Token,
+  AdapterExchangeParam,
   Address,
   ExchangePrices,
-  AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
+  ExchangeTxInfo,
   Logger,
   NumberAsString,
+  PoolLiquidity,
   PoolPrices,
-  TxInfo,
   PreprocessTransactionOptions,
-  ExchangeTxInfo,
+  SimpleExchangeParam,
+  Token,
+  TxInfo,
 } from '../../types';
-import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
+import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   getBigIntPow,
@@ -39,7 +39,7 @@ import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { UniswapV3Config, Adapters, PoolsToPreload } from './config';
+import { Adapters, PoolsToPreload, UniswapV3Config } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
@@ -287,9 +287,13 @@ export class UniswapV3
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
+    const poolImplementation =
+      this.config.eventPoolImplementation !== undefined
+        ? this.config.eventPoolImplementation
+        : UniswapV3EventPool;
     pool =
       pool ||
-      new UniswapV3EventPool(
+      new poolImplementation(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
@@ -420,6 +424,7 @@ export class UniswapV3
     amounts: bigint[],
     side: SwapSide,
     pools: UniswapV3EventPool[],
+    states: PoolState[],
   ): Promise<ExchangePrices<UniswapV3Data> | null> {
     if (pools.length === 0) {
       return null;
@@ -517,7 +522,7 @@ export class UniswapV3
     };
 
     let i = 0;
-    const result = pools.map(pool => {
+    const result = pools.map((pool, index) => {
       const _rates = _amounts.map(() => decode(i++));
       const unit: bigint = _rates[0];
 
@@ -537,6 +542,7 @@ export class UniswapV3
               tokenIn: from.address,
               tokenOut: to.address,
               fee: pool.feeCodeAsString,
+              currentFee: states[index].fee.toString(),
             },
           ],
           exchange: pool.poolAddress,
@@ -648,16 +654,17 @@ export class UniswapV3
         },
       );
 
+      const states = poolsToUse.poolWithState.map(
+        p => p.getState(blockNumber)!,
+      );
+
       const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
         _destToken,
         amounts,
         side,
         this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
-      );
-
-      const states = poolsToUse.poolWithState.map(
-        p => p.getState(blockNumber)!,
+        this.network === Network.ZKEVM ? [] : states,
       );
 
       const unitAmount = getBigIntPow(
@@ -731,6 +738,7 @@ export class UniswapV3
                   tokenIn: _srcAddress,
                   tokenOut: _destAddress,
                   fee: pool.feeCode.toString(),
+                  currentFee: state.fee.toString(),
                 },
               ],
             },
@@ -1111,6 +1119,7 @@ export class UniswapV3
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
       stateMultiCallAbi: this.config.stateMultiCallAbi,
+      eventPoolImplementation: this.config.eventPoolImplementation,
       decodeStateMultiCallResultWithRelativeBitmaps:
         this.config.decodeStateMultiCallResultWithRelativeBitmaps,
     };
