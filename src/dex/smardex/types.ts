@@ -5,7 +5,7 @@ import {
   UniswapPool,
 } from '../uniswap-v2/types';
 import { UniswapV2Pair } from '../uniswap-v2/uniswap-v2';
-import { type SmardexEventPool } from './smardex';
+import { SmardexEventPool } from './smardex-event-pool';
 
 export interface SmardexPoolState extends SmardexFees {
   reserves0: string;

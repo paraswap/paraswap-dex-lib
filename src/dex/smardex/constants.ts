@@ -1,4 +1,6 @@
 // event Sync (uint256 reserve0, uint256 reserve1, uint256 fictiveReserve0, uint256 fictiveReserve1, uint256 priceAverage0, uint256 priceAverage1)
+import { SmardexFees } from './types';
+
 export enum TOPICS {
   SYNC_EVENT = '0x2a368c7f33bb86e2d999940a3989d849031aff29b750f67947e6b8e8c3d2ffd6',
   SWAP_EVENT = '0xa4228e1eb11eb9b31069d9ed20e7af9a010ca1a02d4855cee54e08e188fcc32c',
@@ -27,3 +29,8 @@ export const directSmardexFunctionName = [
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
 
 export const DefaultSmardexPoolGasCost = 130 * 1000;
+
+export const FEES_LAYER_ONE: SmardexFees = {
+  feesLP: 500n,
+  feesPool: 200n,
+};
