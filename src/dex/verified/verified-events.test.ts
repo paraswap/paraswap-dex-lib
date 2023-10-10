@@ -84,43 +84,36 @@ describe('Verified EventPool', function () {
     );
   });
 
-  // Object.entries(eventsToTest).forEach(
-  //   ([poolAddress, events]: [string, EventMappings]) => {
-  //     describe(`Events for ${poolAddress}`, () => {
-  //       Object.entries(events).forEach(
-  //         ([eventName, blockNumbers]: [string, number[]]) => {
-  //           describe(`${eventName}`, () => {
-  //             blockNumbers.forEach((blockNumber: number) => {
-  //               it(`State after ${blockNumber}`, async function () {
-  //                 await testEventSubscriber(
-  //                   verifiedPool,
-  //                   verifiedPool.addressesSubscribed,
-  //                   (_blockNumber: number) =>
-  //                     fetchPoolState(verifiedPool, _blockNumber),
-  //                   blockNumber,
-  //                   `${parentName}_${poolAddress}`,
-  //                   dexHelper.provider,
-  //                 );
-  //               });
-  //             });
-  //           });
-  //         },
-  //       );
-  //     });
-  //   },
-  // );
+  Object.entries(eventsToTest).forEach(
+    ([poolAddress, events]: [string, EventMappings]) => {
+      describe(`Events for ${poolAddress}`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async function () {
+                  await testEventSubscriber(
+                    verifiedPool,
+                    verifiedPool.addressesSubscribed,
+                    (_blockNumber: number) =>
+                      fetchPoolState(verifiedPool, _blockNumber),
+                    blockNumber,
+                    `${parentName}_${poolAddress}`,
+                    dexHelper.provider,
+                  );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
 
   describe('Custom Test', () => {
     it('All pools test: ', async () => {
-      console.log(
-        'allPools before fetching pool state: ',
-        verifiedPool.allPools,
-      );
       const poolsMap = await fetchPoolState(verifiedPool, 48391093);
-      console.log(
-        'allPools after fetching pool state: ',
-        verifiedPool.allPools,
-      );
+      expect(verifiedPool.allPools.length).toBeGreaterThan(0);
       const creator: string = '';
       //other tests
       Object.entries(poolsMap).forEach(([poolAddress, poolState]) => {
@@ -129,10 +122,7 @@ describe('Verified EventPool', function () {
         );
         //test for maintokens: (must not include bpt token/poolAddress)
         subgraphPool?.mainTokens.forEach(token => {
-          assert(
-            token.address !== poolAddress,
-            'Maintokens Test Failed: Maintokens contain bpt/pool token',
-          );
+          expect(token.address !== poolAddress);
         });
         let tokens: Token[] = [];
         subgraphPool?.mainTokens.forEach(token => {
@@ -161,7 +151,7 @@ describe('Verified EventPool', function () {
           subgraphPool!,
           poolState,
           [0n, 2126543n],
-          BigInt(6),
+          2126543n,
           SwapSide.SELL,
           creator,
         );

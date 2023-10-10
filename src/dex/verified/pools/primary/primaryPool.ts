@@ -169,9 +169,9 @@ export class PrimaryIssuePool {
           scaledAmount,
           BigInt(poolPairData.minPrice!),
         );
-        amountOut = MathSol.divDown(
+        amountOut = MathSol.divDownFixed(
           postCalc,
-          MathSol.divDown(preCalc, tokenInBalance),
+          MathSol.divDownFixed(preCalc, tokenInBalance),
         );
         if (amountOut < BigInt(poolPairData.minOrderSize)) {
           return 0n;
