@@ -30,6 +30,7 @@ type BaseConfig = {
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   swaapV2AuthToken?: string;
+  smardexSubgraphAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 
@@ -58,6 +59,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
+    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
@@ -158,6 +160,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
+    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
@@ -186,6 +189,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
+    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
@@ -272,6 +276,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
     privateHttpProvider: process.env.HTTP_PROVIDER_42161,
+    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
@@ -358,6 +363,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusRFQAddress: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
     tokenTransferProxyAddress: '0x93aAAe79a53759cD164340E4C8766E4Db5331cD7',
     multicallV2Address: '0xeDF6D2a16e8081F777eB623EeB4411466556aF3d',
+    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     privateHttpProvider: process.env.HTTP_PROVIDER_8453,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs: [],
@@ -415,6 +421,7 @@ export function generateConfig(network: number): Config {
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
+    smardexSubgraphAuthToken: baseConfig.smardexSubgraphAuthToken,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
   };
 }

@@ -76,7 +76,6 @@ export class Smardex
   implements IDex<SmardexData, SmardexParam>
 {
   pairs: { [key: string]: SmardexPair } = {};
-  // feeFactor = 10000;
   factory: Contract;
 
   routerInterface: Interface;
@@ -805,7 +804,7 @@ export class Smardex
         variables: { token: tokenAddress.toLowerCase(), limit },
       },
       SUBGRAPH_TIMEOUT,
-      { 'x-api-key': process.env.API_KEY_SMARDEX_SUBGRAPH! },
+      { 'x-api-key': this.dexHelper.config.data.smardexSubgraphAuthToken! },
     );
 
     if (!(data && data.pools0 && data.pools1))

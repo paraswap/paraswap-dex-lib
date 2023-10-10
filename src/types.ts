@@ -276,6 +276,7 @@ export type Config = {
   hashFlowDisabledMMs: string[];
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
+  smardexSubgraphAuthToken?: string,
   forceRpcFallbackDexs: string[];
 };
 
