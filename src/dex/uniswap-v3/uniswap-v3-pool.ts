@@ -12,6 +12,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
   DecodedStateMultiCallResultWithRelativeBitmaps,
+  DecodeStateMultiCallFunc,
 } from './types';
 import UniswapV3PoolABI from '../../abi/uniswap-v3/UniswapV3Pool.abi.json';
 import { bigIntify, catchParseLogError, isSampled } from '../../utils';
@@ -45,7 +46,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _poolAddress?: Address;
 
-  private _stateRequestCallData?: MultiCallParams<
+  protected _stateRequestCallData?: MultiCallParams<
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
 
@@ -54,15 +55,18 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   public initFailed = false;
   public initRetryAttemptCount = 0;
 
-  public readonly feeCodeAsString;
+  public feeCodeAsString;
 
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
     readonly stateMultiContract: Contract,
+    readonly decodeStateMultiCallResultWithRelativeBitmaps:
+      | DecodeStateMultiCallFunc
+      | undefined,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
-    public readonly feeCode: bigint,
+    public feeCode: bigint,
     token0: Address,
     token1: Address,
     logger: Logger,
@@ -195,7 +199,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return null; // ignore unrecognized event
   }
 
-  private _getStateRequestCallData() {
+  protected _getStateRequestCallData() {
     if (!this._stateRequestCallData) {
       const callData: MultiCallParams<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps
@@ -226,9 +230,13 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
               this.getBitmapRangeToRequest(),
             )
             .encodeABI(),
-          decodeFunction: decodeStateMultiCallResultWithRelativeBitmaps,
+          decodeFunction:
+            this.decodeStateMultiCallResultWithRelativeBitmaps !== undefined
+              ? this.decodeStateMultiCallResultWithRelativeBitmaps
+              : decodeStateMultiCallResultWithRelativeBitmaps,
         },
       ];
+
       this._stateRequestCallData = callData;
     }
     return this._stateRequestCallData;

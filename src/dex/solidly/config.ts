@@ -72,6 +72,28 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 2,
     },
   },
+  VelodromeV2: {
+    [Network.OPTIMISM]: {
+      // There is no subgraph for VelodromeV2
+      factoryAddress: '0xF1046053aa5682b4F9a81b5481394DA16BE5FF5a',
+      router: '0xa2f581b012E0f2dcCDe86fCbfb529f4aC5dD4983',
+      initCode:
+        '0x1a8f01f7eab324003d9388f229ea17991eee9c9d14586f429799f3656790eba0',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
+  Aerodrome: {
+    [Network.BASE]: {
+      // There is no subgraph for Aerodrome
+      factoryAddress: '0x420DD381b31aEf6683db6B902084cB0FFECe40Da',
+      router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
+      initCode:
+        '0x1a8f01f7eab324003d9388f229ea17991eee9c9d14586f429799f3656790eba0',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
   Cone: {
     [Network.BSC]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/cone-exchange/cone',
@@ -125,6 +147,37 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0,
     },
   },
+  Ramses: {
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/ramsesexchange/api-subgraph',
+      factoryAddress: '0xAAA20D08e59F6561f242b08513D36266C5A29415',
+      router: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
+      initCode:
+        '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
+      poolGasCost: 180 * 1000,
+      feeCode: 0,
+    },
+  },
+  Equalizer: {
+    [Network.FANTOM]: {
+      factoryAddress: '0xc6366EFD0AF1d09171fe0EBF32c7943BB310832a',
+      router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
+      initCode:
+        '0x02ada2a0163cd4f7e0f0c9805f5230716a95b174140e4c84c14883de216cc6a3',
+      feeCode: 0,
+      poolGasCost: 180 * 1000,
+    },
+    [Network.BASE]: {
+      factoryAddress: '0xed8db60acc29e14bc867a497d94ca6e3ceb5ec04',
+      router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
+      initCode:
+        '0x7ba31a081e879b8e7f06d4e8bf5ee26b5c2680669c5701f4cdbdcde51727b275',
+      feeCode: 0,
+      feeFactor: 1e18,
+      poolGasCost: 180 * 1000,
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -132,7 +185,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }], // dystopia
   },
   [Network.FANTOM]: {
-    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly + spiritSwapV2
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly, spiritSwapV2, equalizer
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
@@ -147,6 +200,9 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 3 }], // solisnek
   },
   [Network.ARBITRUM]: {
-    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome, equalizer
   },
 };

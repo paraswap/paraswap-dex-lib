@@ -38,6 +38,7 @@ export enum Network {
   FANTOM = 250,
   ARBITRUM = 42161,
   OPTIMISM = 10,
+  BASE = 8453,
 }
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
 

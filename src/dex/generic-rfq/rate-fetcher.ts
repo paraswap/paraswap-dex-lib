@@ -226,7 +226,7 @@ export class RateFetcher {
   private handleRatesResponse(resp: RatesResponse) {
     const pairs = this.pairs;
 
-    if(isEmpty(pairs)) return;
+    if (isEmpty(pairs)) return;
 
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
@@ -239,7 +239,7 @@ export class RateFetcher {
         return;
       }
 
-      if(isEmpty(this.tokens)) return;
+      if (isEmpty(this.tokens)) return;
 
       const baseToken = this.tokens[pair.base];
       const quoteToken = this.tokens[pair.quote];
@@ -376,6 +376,7 @@ export class RateFetcher {
     srcAmount: string,
     side: SwapSide,
     userAddress: Address,
+    partner?: string,
   ): Promise<OrderInfo> {
     const srcToken = this.dexHelper.config.wrapETH(_srcToken);
     const destToken = this.dexHelper.config.wrapETH(_destToken);
@@ -390,6 +391,7 @@ export class RateFetcher {
       makerAmount: side === SwapSide.BUY ? srcAmount : undefined,
       takerAmount: side === SwapSide.SELL ? srcAmount : undefined,
       userAddress,
+      partner,
     };
 
     try {
