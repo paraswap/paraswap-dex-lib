@@ -678,39 +678,35 @@ export class Smardex
     };
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
+  getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
+    if (!isETHAddress(srcToken) && !isETHAddress(destToken))
+      return NULL_ADDRESS;
+    return weth || this.dexHelper.config.data.wrappedNativeTokenAddress;
+  }
+
   getAdapterParam(
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
-    toAmount: NumberAsString, // required for buy case
+    toAmount: NumberAsString,
     data: SmardexData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const pools = encodePools(data.pools);
-    const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
-          weth: 'address',
-          pools: 'uint256[]',
+          path: 'address[] calldata',
+          receiver: 'address',
+          deadline: 'uint256'
         },
       },
-      { pools, weth },
+      { path: data.path, receiver: data.receiver, deadline: data.deadline },
     );
     return {
       targetExchange: data.router,
       payload,
       networkFee: '0',
     };
-  }
-
-  getWETHAddress(srcToken: Address, destToken: Address, weth?: Address) {
-    if (!isETHAddress(srcToken) && !isETHAddress(destToken))
-      return NULL_ADDRESS;
-    return weth || this.dexHelper.config.data.wrappedNativeTokenAddress;
   }
 
   async getSimpleParam(
