@@ -761,8 +761,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       quoteData.signature,
     ];
 
-    console.log('PARAMS: ', params);
-
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
