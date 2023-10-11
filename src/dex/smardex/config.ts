@@ -1,6 +1,6 @@
 import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 
 const GATEWAY_SUBGRAPH = 'https://subgraph.smardex.io';
 const MAINNET_INIT_HASH =
@@ -44,6 +44,24 @@ export const SmardexConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // This is an example
-  // [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: '', index: 0 }],
+    [SwapSide.BUY]: [{ name: '', index: 0 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: '', index: 0 }],
+    [SwapSide.BUY]: [{ name: '', index: 0 }],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [{ name: '', index: 0 }],
+    [SwapSide.BUY]: [{ name: '', index: 0 }],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: '', index: 0 }],
+    [SwapSide.BUY]: [{ name: '', index: 0 }],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: '', index: 0 }],
+    [SwapSide.BUY]: [{ name: '', index: 0 }],
+  },
 };

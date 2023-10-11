@@ -101,6 +101,7 @@ export class Smardex
     protected network: Network,
     dexKey: string,
     public dexHelper: IDexHelper,
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -121,7 +122,7 @@ export class Smardex
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return Adapters[this.network]?.[side] || null;
+    return this.adapters[side] ? this.adapters[side] : null;
   }
 
   async getPoolIdentifiers(
