@@ -45,7 +45,7 @@ export class MultiSwap
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -66,13 +66,9 @@ export class MultiSwap
           encodePartnerAddressForFeeLogic({
             partnerAddress,
             partnerFeePercent,
-            positiveSlippageToUser,
+            takeSurplus,
           }),
-          encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.SELL,
-          ),
+          encodeFeePercent(partnerFeePercent, takeSurplus, SwapSide.SELL),
         ];
 
     const sellData: ContractSellData = {
