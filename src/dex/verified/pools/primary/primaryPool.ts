@@ -45,7 +45,7 @@ export class PrimaryIssuePool {
       balances.push(poolState.tokens[t.address.toLowerCase()].balance);
       const _decimal = pool.tokens[i].decimals;
       decimals.push(_decimal);
-      scalingFactors.push(BigInt(10 ** (18 - _decimal)));
+      scalingFactors.push(BigInt(10 ** 18) * BigInt(10 ** (18 - _decimal)));
       return t.address;
     });
     const poolPairData: PoolPairData = {
@@ -104,16 +104,16 @@ export class PrimaryIssuePool {
       pool.address,
     );
 
-    minimumOrderSize = decodeThrowError(
+    minimumPrice = decodeThrowError(
       this.poolInterface,
-      'getMinimumOrderSize',
+      'getMinimumPrice',
       data[startIndex++],
       pool.address,
     )[0];
 
-    minimumPrice = decodeThrowError(
+    minimumOrderSize = decodeThrowError(
       this.poolInterface,
-      'getMinimumPrice',
+      'getMinimumOrderSize',
       data[startIndex++],
       pool.address,
     )[0];
@@ -134,7 +134,6 @@ export class PrimaryIssuePool {
       minimumOrderSize,
       minimumPrice,
     };
-
     pools[pool.address] = poolState;
 
     return [pools, startIndex];
@@ -147,18 +146,18 @@ export class PrimaryIssuePool {
     isCurrencyIn: boolean,
   ): bigint {
     try {
-      if (amount === 0n) return 0n;
+      if (amount === 0n) {
+        return 0n;
+      }
       //up scale balance according to upscaleArray function on basepool contract
-      //don't divide by 1e18 to avoid 0 result incase balance is too small
       const scaledBalances = poolPairData.balances.map((balance, idx) => {
-        return MathSol.mul(balance, poolPairData.scalingFactors[idx]);
+        return MathSol.mulDownFixed(balance, poolPairData.scalingFactors[idx]);
       });
       const tokenInBalance = scaledBalances[poolPairData.indexIn];
       const tokenOutBalance = scaledBalances[poolPairData.indexOut];
       //upscale amount using scaling factor of tokenin since(token out amount is what we are looking for)
       //according to upscale function on basepool contract
-      //don't divide by 1e18 to avoid 0 result incase amount is too small
-      const scaledAmount = MathSol.mul(
+      const scaledAmount = MathSol.mulDownFixed(
         amount,
         poolPairData.scalingFactors[poolPairData.indexIn],
       );
@@ -207,7 +206,7 @@ export class PrimaryIssuePool {
       }
       //downscaledown amountout by tokenout scaling factor as done on primaryissuepool contract
       //don't use fixed method to get rid of 1e18 added from scaling of balances and amount
-      return MathSol.divDown(
+      return MathSol.divDownFixed(
         amountOut,
         poolPairData.scalingFactors[poolPairData.indexOut],
       );
@@ -229,14 +228,14 @@ export class PrimaryIssuePool {
       //up scale balance according to upscaleArray function on basepool contract
       //don't divide by 1e18 to avoid 0 result incase balance is too small
       const scaledBalances = poolPairData.balances.map((balance, idx) => {
-        return MathSol.mul(balance, poolPairData.scalingFactors[idx]);
+        return MathSol.mulDownFixed(balance, poolPairData.scalingFactors[idx]);
       });
       const tokenInBalance = scaledBalances[poolPairData.indexIn];
       const tokenOutBalance = scaledBalances[poolPairData.indexOut];
       //up scale amount using scaling factor of tokenout(since amount of tokenin is what we are looking for)
       //according to upscale function on basepool contract
       //don't divide by 1e18 to avoid 0 result incase balance is too small
-      const scaledAmount = MathSol.mul(
+      const scaledAmount = MathSol.mulDownFixed(
         amount,
         poolPairData.scalingFactors[poolPairData.indexOut],
       );
@@ -288,7 +287,7 @@ export class PrimaryIssuePool {
       }
       //downscaleup amountIn by token in scaling factor has done on primary issue pool
       //don't use fixed method to get rid of 1e18 added from scaling of balances and amount
-      return MathSol.divUp(
+      return MathSol.divUpFixed(
         amountIn,
         poolPairData.scalingFactors[poolPairData.indexIn],
       );

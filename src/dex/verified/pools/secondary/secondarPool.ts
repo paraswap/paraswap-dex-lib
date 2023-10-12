@@ -47,7 +47,7 @@ export class SecondaryIssuePool {
       balances.push(poolState.tokens[t.address.toLowerCase()].balance);
       const _decimal = pool.tokens[i].decimals;
       decimals.push(_decimal);
-      scalingFactors.push(BigInt(10 ** (18 - _decimal)));
+      scalingFactors.push(BigInt(10 ** 18) * BigInt(10 ** (18 - _decimal)));
       return t.address;
     });
     const orders = pool.orders;

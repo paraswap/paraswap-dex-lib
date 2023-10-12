@@ -1,7 +1,7 @@
 import { Address } from '../../types';
 
 export type VerifiedData = {
-  exchange: string;
+  poolId: string;
 };
 
 export type DexParams = {
@@ -44,6 +44,7 @@ export type SubgraphToken = {
 };
 
 export interface SubgraphMainToken extends SubgraphToken {
+  isDeeplyNested: any;
   poolToken: SubgraphToken;
   pathToToken: {
     poolId: string;

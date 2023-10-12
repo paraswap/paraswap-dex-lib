@@ -115,64 +115,164 @@ describe('Verified EventPool', function () {
       const poolsMap = await fetchPoolState(verifiedPool, 48391093);
       expect(verifiedPool.allPools.length).toBeGreaterThan(0);
       const creator: string = '';
-      //other tests
-      Object.entries(poolsMap).forEach(([poolAddress, poolState]) => {
-        const subgraphPool = verifiedPool.allPools.find(
-          pool => pool.address.toLowerCase() === poolAddress.toLowerCase(),
+      //This test both primary and secondary
+      // Object.entries(poolsMap).forEach(([poolAddress, poolState]) => {
+      //   const subgraphPool = verifiedPool.allPools.find(
+      //     pool => pool.address.toLowerCase() === poolAddress.toLowerCase(),
+      //   );
+      //   //test for maintokens: (must not include bpt token/poolAddress)
+      //   subgraphPool?.mainTokens.forEach(token => {
+      //     expect(token.address !== poolAddress);
+      //   });
+      //   let tokens: Token[] = [];
+      //   subgraphPool?.mainTokens.forEach(token => {
+      //     const _token = subgraphPool.tokens.find(
+      //       t => t.address === token.address,
+      //     );
+      //     tokens.push({
+      //       address: _token?.address!,
+      //       decimals: _token?.decimals!,
+      //     });
+      //   });
+      //   const price1 = verifiedPool.getPricesPool(
+      //     tokens[0],
+      //     tokens[1],
+      //     subgraphPool!,
+      //     poolState,
+      //     [0n, 745000000000000000n],
+      //     745000000000000000n,
+      //     SwapSide.SELL,
+      //     creator,
+      //   );
+      //   // const price2 = verifiedPool.getPricesPool(tokens[0], tokens[1], subgraphPool!, poolState, [BigInt(10), BigInt(5)], BigInt(6), SwapSide.BUY)
+      //   const price3 = verifiedPool.getPricesPool(
+      //     tokens[1],
+      //     tokens[0],
+      //     subgraphPool!,
+      //     poolState,
+      //     [0n, 2126543n],
+      //     2126543n,
+      //     SwapSide.SELL,
+      //     creator,
+      //   );
+      //   // const price4 = verifiedPool.getPricesPool(tokens[1], tokens[0], subgraphPool!, poolState, [BigInt(10), BigInt(5)], BigInt(6), SwapSide.BUY)
+      //   console.log(
+      //     subgraphPool?.poolType,
+      //     ' Sell Price: for ',
+      //     tokens[0],
+      //     ' : ',
+      //     price1,
+      //   );
+      //   // console.log(subgraphPool?.poolType,  " Buy Price: for ",  tokens[0], " : ", price2);
+      //   console.log(
+      //     subgraphPool?.poolType,
+      //     ' Sell Price: for ',
+      //     tokens[1],
+      //     ' : ',
+      //     price3,
+      //   );
+      //   // console.log(subgraphPool?.poolType,  " Buy Price: for ",  tokens[1], " : ", price4);
+      // });
+      //This test only primary
+      const _poolState = poolsMap['0x1b96d5660be3e948ddf331aa05e46c59c6a832f4'];
+      const subgraphPool = verifiedPool.allPools.find(
+        pool =>
+          pool.address.toLowerCase() ===
+          '0x1b96d5660be3e948ddf331aa05e46c59c6a832f4'.toLowerCase(),
+      );
+      //test for maintokens: (must not include bpt token/poolAddress)
+      subgraphPool?.mainTokens.forEach(token => {
+        assert(
+          token.address !== '0x1b96d5660be3e948ddf331aa05e46c59c6a832f4',
+          'Maintokens Test Failed: Maintokens contain bpt/pool token',
         );
-        //test for maintokens: (must not include bpt token/poolAddress)
-        subgraphPool?.mainTokens.forEach(token => {
-          expect(token.address !== poolAddress);
-        });
-        let tokens: Token[] = [];
-        subgraphPool?.mainTokens.forEach(token => {
-          const _token = subgraphPool.tokens.find(
-            t => t.address === token.address,
-          );
-          tokens.push({
-            address: _token?.address!,
-            decimals: _token?.decimals!,
-          });
-        });
-        const price1 = verifiedPool.getPricesPool(
-          tokens[0],
-          tokens[1],
-          subgraphPool!,
-          poolState,
-          [0n, 745000000000000000n],
-          745000000000000000n,
-          SwapSide.SELL,
-          creator,
-        );
-        // const price2 = verifiedPool.getPricesPool(tokens[0], tokens[1], subgraphPool!, poolState, [BigInt(10), BigInt(5)], BigInt(6), SwapSide.BUY)
-        const price3 = verifiedPool.getPricesPool(
-          tokens[1],
-          tokens[0],
-          subgraphPool!,
-          poolState,
-          [0n, 2126543n],
-          2126543n,
-          SwapSide.SELL,
-          creator,
-        );
-        // const price4 = verifiedPool.getPricesPool(tokens[1], tokens[0], subgraphPool!, poolState, [BigInt(10), BigInt(5)], BigInt(6), SwapSide.BUY)
-        console.log(
-          subgraphPool?.poolType,
-          ' Sell Price: for ',
-          tokens[0],
-          ' : ',
-          price1,
-        );
-        // console.log(subgraphPool?.poolType,  " Buy Price: for ",  tokens[0], " : ", price2);
-        console.log(
-          subgraphPool?.poolType,
-          ' Sell Price: for ',
-          tokens[1],
-          ' : ',
-          price3,
-        );
-        // console.log(subgraphPool?.poolType,  " Buy Price: for ",  tokens[1], " : ", price4);
       });
+      let tokens: Token[] = [];
+      subgraphPool?.mainTokens.forEach(token => {
+        const _token = subgraphPool.tokens.find(
+          t => t.address === token.address,
+        );
+        tokens.push({
+          address: _token?.address!,
+          decimals: _token?.decimals!,
+        });
+      });
+      const price1 = verifiedPool.getPricesPool(
+        tokens[0],
+        tokens[1],
+        subgraphPool!,
+        _poolState,
+        [0n, 1749284608758693473n],
+        1749284608758693473n,
+        SwapSide.SELL,
+        creator,
+      );
+      const price2 = verifiedPool.getPricesPool(
+        tokens[1],
+        tokens[0],
+        subgraphPool!,
+        _poolState,
+        [0n, 1093543n],
+        1093543n,
+        SwapSide.SELL,
+        creator,
+      );
+      const price3 = verifiedPool.getPricesPool(
+        tokens[0],
+        tokens[1],
+        subgraphPool!,
+        _poolState,
+        [0n, 1093543n],
+        1093543n,
+        SwapSide.BUY,
+        creator,
+      );
+      const price4 = verifiedPool.getPricesPool(
+        tokens[1],
+        tokens[0],
+        subgraphPool!,
+        _poolState,
+        [0n, 1749284608758693473n],
+        1749284608758693473n,
+        SwapSide.BUY,
+        creator,
+      );
+      console.log(
+        `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
+          price1?.prices[1]
+        }(${
+          Number(price1!.prices[1]) / 10 ** 6
+        }) Currency token will be paid out when you sell 1749284608758693473n(${
+          Number(1749284608758693473n) / 10 ** 18
+        }) Security token`,
+      );
+      console.log(
+        `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
+          price2?.prices[1]
+        }(${
+          Number(price2!.prices[1]) / 10 ** 18
+        }) Security token will be paid out when you sell 1093543n(${
+          1093543 / 10 ** 6
+        }) currency token`,
+      );
+      console.log(
+        `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
+          price3?.prices[1]
+        }(${
+          Number(price3!.prices[1]) / 10 ** 18
+        }) Security token will be paid in when you buy 1093543n(${
+          1093543 / 10 ** 6
+        }) Currency token`,
+      );
+      console.log(
+        `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
+          price4?.prices[1]
+        }(${
+          Number(price4!.prices[1]) / 10 ** 6
+        }) Currency token will be paid in when you buy 1749284608758693473n(${
+          Number(1749284608758693473n) / 10 ** 18
+        }) Security token`,
+      );
     });
   });
 });

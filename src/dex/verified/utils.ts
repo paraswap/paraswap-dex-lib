@@ -10,7 +10,8 @@ import {
 } from './types';
 
 import { DeepReadonly } from 'ts-essentials';
-import _ from 'lodash';
+import _, { keyBy, reverse, uniqBy } from 'lodash';
+import { SwapSide } from '@paraswap/core';
 
 interface BalancerPathHop {
   pool: SubgraphPoolBase;
@@ -66,12 +67,14 @@ export function poolGetMainTokens(
             token: securityToken,
           },
         ],
+        isDeeplyNested: undefined,
       });
     } else {
       mainTokens.push({
         ...token,
         pathToToken: [],
         poolToken: token,
+        isDeeplyNested: undefined,
       });
     }
   }
@@ -87,4 +90,88 @@ export function typecastReadOnlyPoolState(
   pool: DeepReadonly<PoolState>,
 ): PoolState {
   return _.cloneDeep(pool) as PoolState;
+}
+
+export function poolAddressMap(
+  pools: SubgraphPoolBase[],
+): SubgraphPoolAddressDictionary {
+  return keyBy(pools, 'address');
+}
+
+export function poolIdMap(pools: SubgraphPoolBase[]): {
+  [poolId: string]: SubgraphPoolBase;
+} {
+  return keyBy(pools, 'id');
+}
+
+function findRequiredMainTokenInPool(
+  tokenToFind: string,
+  pool: SubgraphPoolBase,
+): SubgraphMainToken {
+  const mainToken = pool.mainTokens.find(
+    token => token.address.toLowerCase() === tokenToFind.toLowerCase(),
+  );
+
+  if (!mainToken) {
+    throw new Error(`Main token does not exist in pool: ${tokenToFind}`);
+  }
+
+  return mainToken;
+}
+
+export function poolGetPathForTokenInOut(
+  tokenInAddress: string,
+  tokenOutAddress: string,
+  pool: SubgraphPoolBase,
+  poolsMap: SubgraphPoolAddressDictionary,
+  side: SwapSide,
+): BalancerPathHop[] {
+  const tokenIn = findRequiredMainTokenInPool(tokenInAddress, pool);
+  const tokenOut = findRequiredMainTokenInPool(tokenOutAddress, pool);
+
+  const tokenInHops: BalancerPathHop[] = reverse([...tokenIn.pathToToken]).map(
+    hop => ({
+      pool: poolsMap[hop.poolAddress],
+      tokenIn: hop.token,
+      tokenOut: { address: hop.poolAddress, decimals: 18 },
+    }),
+  );
+
+  const tokenOutHops: BalancerPathHop[] = tokenOut.pathToToken.map(hop => ({
+    pool: poolsMap[hop.poolAddress],
+    tokenIn: { address: hop.poolAddress, decimals: 18 },
+    tokenOut: hop.token,
+  }));
+
+  const result = [
+    ...tokenInHops,
+    { pool, tokenIn: tokenIn.poolToken, tokenOut: tokenOut.poolToken },
+    ...tokenOutHops,
+  ];
+
+  return side === SwapSide.SELL ? result : result.reverse();
+}
+
+export function getAllPoolsUsedInPaths(
+  from: string,
+  to: string,
+  allowedPools: SubgraphPoolBase[],
+  poolAddressMap: SubgraphPoolAddressDictionary,
+  side: SwapSide,
+) {
+  //get all pools from the nested paths
+  return uniqBy(
+    allowedPools
+      .map(pool =>
+        poolGetPathForTokenInOut(
+          from.toLowerCase(),
+          to.toLowerCase(),
+          pool,
+          poolAddressMap,
+          side,
+        ).map(hop => hop.pool),
+      )
+      .flat(),
+    'address',
+  );
 }

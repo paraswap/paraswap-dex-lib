@@ -8,7 +8,6 @@ import {
   SubgraphPoolBase,
   VerifiedPoolTypes,
   PoolStateMap,
-  PoolPairData,
 } from './types';
 import _, { keyBy } from 'lodash';
 import { SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
@@ -18,7 +17,7 @@ import {
   poolGetMainTokens,
   typecastReadOnlyPoolState,
 } from './utils';
-import { MAX_POOL_CNT, POOL_CACHE_TTL, VAULT_INTERFACE } from './constants';
+import { MAX_POOL_CNT, POOL_CACHE_TTL } from './constants';
 import VAULTABI from '../../abi/verified/vault.json';
 import { PrimaryIssuePool } from './pools/primary/primaryPool';
 import { SecondaryIssuePool } from './pools/secondary/secondarPool';
@@ -103,7 +102,6 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
     logger: Logger,
   ) {
     super(parentName, vaultAddress, dexHelper, logger);
-    this.logDecoder = (log: Log) => VAULT_INTERFACE.parseLog(log);
     this.vaultInterface = new Interface(VAULTABI);
     this.addressesSubscribed = [vaultAddress];
     const primaryIssuePool = new PrimaryIssuePool(
@@ -114,6 +112,7 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.vaultAddress,
       this.vaultInterface,
     );
+    this.logDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.pools = {};
     this.pools[VerifiedPoolTypes.PrimaryIssuePool] = primaryIssuePool;
     this.pools[VerifiedPoolTypes.SecondaryIssuePool] = secondaryIssuePool;
