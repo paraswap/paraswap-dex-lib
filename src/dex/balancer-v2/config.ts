@@ -19,6 +19,16 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
         'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
+    [Network.AVALANCHE]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-avalanche-v2',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    },
+    [Network.BASE]: {
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    },
   },
   BeetsFi: {
     [Network.FANTOM]: {
@@ -62,5 +72,13 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 4 }],
     [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 5 }],
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter01', index: 8 }],
+    [SwapSide.BUY]: [{ name: 'AvalancheBuyAdapter', index: 7 }],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 4 }],
+    [SwapSide.BUY]: [{ name: 'BaseBuyAdapter', index: 3 }],
   },
 };

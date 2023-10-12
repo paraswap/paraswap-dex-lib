@@ -82,6 +82,7 @@ export const implementations: Record<
   [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customPlain3CoinThree,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain3CoinThree,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customPlain3CoinThree,
 };
 
 export default implementations;

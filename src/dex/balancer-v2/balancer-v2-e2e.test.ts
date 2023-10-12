@@ -2,13 +2,110 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Holders, Tokens } from '../../../tests/constants-e2e';
+import {
+  Holders,
+  NativeTokenSymbols,
+  Tokens,
+} from '../../../tests/constants-e2e';
 import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { generateConfig } from '../../config';
 
 jest.setTimeout(50 * 1000);
+
+function testForNetwork(
+  network: Network,
+  dexKey: string,
+  tokenASymbol: string,
+  tokenBSymbol: string,
+  tokenAAmount: string,
+  tokenBAmount: string,
+  nativeTokenAmount: string,
+  slippage?: number | undefined,
+) {
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
+  const tokens = Tokens[network];
+  const holders = Holders[network];
+  const nativeTokenSymbol = NativeTokenSymbols[network];
+
+  const sideToContractMethods = new Map([
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.simpleSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+      ],
+    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+  ]);
+
+  describe(`${network}`, () => {
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[nativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[nativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+              );
+            });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+              );
+            });
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+              );
+            });
+          });
+        });
+      }),
+    );
+  });
+}
 
 describe('BalancerV2 E2E', () => {
   describe('BalancerV2 MAINNET', () => {
@@ -94,6 +191,18 @@ describe('BalancerV2 E2E', () => {
               name: 'AURA',
               sellAmount: '200000000000000',
               buyAmount: '10000000000',
+            },
+          ],
+          [
+            {
+              name: 'USDC',
+              sellAmount: '111000000',
+              buyAmount: '111000000',
+            },
+            {
+              name: 'wstETH',
+              sellAmount: '100000000000000000',
+              buyAmount: '100000000000000000',
             },
           ],
         ];
@@ -1005,6 +1114,204 @@ describe('BalancerV2 E2E', () => {
         }),
       );
     });
+  });
+
+  describe('BalancerV2 Avalanche', () => {
+    const dexKey = 'BalancerV2';
+    const network = Network.AVALANCHE;
+    const tokens = Tokens[Network.AVALANCHE];
+    const holders = Holders[Network.AVALANCHE];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    describe('ComposableStable', () => {
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+      ]);
+
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
+        [
+          [
+            {
+              name: 'sAVAX',
+              sellAmount: '20000000000000',
+              buyAmount: '200000000',
+            },
+            {
+              name: 'AVAX',
+              sellAmount: '200000000',
+              buyAmount: '2000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'USDT',
+              sellAmount: '20000000',
+              buyAmount: '200000000',
+            },
+            {
+              name: 'USDC',
+              sellAmount: '200000000',
+              buyAmount: '2000000000',
+            },
+          ],
+        ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    side === SwapSide.SELL
+                      ? pair[0].sellAmount
+                      : pair[0].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    });
+
+    describe('Weighted Pool', () => {
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.simpleSwap,
+            ContractMethod.multiSwap,
+            ContractMethod.megaSwap,
+          ],
+        ],
+        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      ]);
+
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
+        [
+          [
+            {
+              name: 'BETS',
+              sellAmount: '20000000000000',
+              buyAmount: '200000000',
+            },
+            {
+              name: 'sAVAX',
+              sellAmount: '200000000',
+              buyAmount: '2000000000000000',
+            },
+          ],
+          [
+            {
+              name: 'HATCHY',
+              sellAmount: '20000000000000',
+              buyAmount: '200000000',
+            },
+            {
+              name: 'AVAX',
+              sellAmount: '200000000',
+              buyAmount: '2000000000000000',
+            },
+          ],
+        ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    side === SwapSide.SELL
+                      ? pair[0].sellAmount
+                      : pair[0].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    });
+  });
+
+  describe('BalancerV2 Base', () => {
+    const dexKey = 'BalancerV2';
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'GOLD';
+
+    const tokenAAmount: string = '11110010';
+    const tokenBAmount: string = '210000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
   });
 
   describe('BeetsFi OPTIMISM', () => {

@@ -56,6 +56,10 @@ import {
   DEFAULT_ID_ERC20,
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
+import {
+  OnPoolCreatedCallback,
+  PancakeswapV3Factory,
+} from './pancakeswap-v3-factory';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -63,14 +67,15 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
-const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const PANCAKESWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class PancakeswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data>
 {
+  private readonly factory: PancakeswapV3Factory;
   readonly isFeeOnTransferSupported: boolean = false;
   readonly eventPools: Record<string, PancakeSwapV3EventPool | null> = {};
 
@@ -117,6 +122,14 @@ export class PancakeswapV3
 
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
+
+    this.factory = new PancakeswapV3Factory(
+      dexHelper,
+      dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet,
+    );
   }
 
   get supportedFees() {
@@ -133,6 +146,9 @@ export class PancakeswapV3
   }
 
   async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    await this.factory.initialize(blockNumber);
+
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
         const maxTimestamp =
@@ -151,20 +167,71 @@ export class PancakeswapV3
     }
   }
 
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+    fee,
+  }) => {
+    const logPrefix = '[PancakeV3.onPoolCreatedDeleteFromNonExistingSet]';
+    const [_token0, _token1] = this._sortTokens(token0, token1);
+    const poolKey = `${_token0}_${_token1}_${fee}`;
+
+    // consider doing it only from master pool for less calls to distant cache
+
+    // delete entry locally to let local instance discover the pool
+    delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];
+
+    try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+      );
+      // delete pool record from set
+      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+    } catch (error) {
+      this.logger.error(
+        `${logPrefix} failed to delete pool from set :${poolKey}`,
+        error,
+      );
+    }
+  };
+
   async getPool(
     srcAddress: Address,
     destAddress: Address,
     fee: bigint,
     blockNumber: number,
   ): Promise<PancakeSwapV3EventPool | null> {
-    let pool =
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
+    let pool = this.eventPools[
+      this.getPoolIdentifier(srcAddress, destAddress, fee)
+    ] as PancakeSwapV3EventPool | null | undefined;
 
-    if (pool === undefined) {
-      const [token0, token1] = this._sortTokens(srcAddress, destAddress);
+    if (pool === null) return null;
 
-      const key = `${token0}_${token1}_${fee}`.toLowerCase();
+    if (pool) {
+      if (!pool.initFailed) {
+        return pool;
+      } else {
+        // if init failed then prefer to early return pool with empty state to fallback to rpc call
+        if (
+          ++pool.initRetryAttemptCount % this.config.initRetryFrequency !==
+          0
+        ) {
+          return pool;
+        }
+        // else pursue with re-try initialization
+      }
+    }
 
+    const [token0, token1] = this._sortTokens(srcAddress, destAddress);
+
+    const key = `${token0}_${token1}_${fee}`.toLowerCase();
+
+    // no need to run this logic on retry initialisation scenario
+    if (!pool) {
       const notExistingPoolScore = await this.dexHelper.cache.zscore(
         this.notExistingPoolSetKey,
         key,
@@ -187,9 +254,12 @@ export class PancakeswapV3
           fee: fee.toString(),
         }),
       );
+    }
 
-      this.logger.trace(`starting to listen to new pool: ${key}`);
-      pool = new PancakeSwapV3EventPool(
+    this.logger.trace(`starting to listen to new pool: ${key}`);
+    pool =
+      pool ||
+      new PancakeSwapV3EventPool(
         this.dexHelper,
         this.dexKey,
         this.stateMultiContract,
@@ -204,55 +274,57 @@ export class PancakeswapV3
         this.config.deployer,
       );
 
-      try {
-        await pool.initialize(blockNumber, {
-          initCallback: (state: DeepReadonly<PoolState>) => {
-            //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
-            pool!.addressesSubscribed[0] = state.pool;
-            pool!.poolAddress = state.pool;
-          },
-        });
-      } catch (e) {
-        if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-          // no need to await we want the set to have the pool key but it's not blocking
-          this.dexHelper.cache.zadd(
-            this.notExistingPoolSetKey,
-            [Date.now(), key],
-            'NX',
-          );
-
-          // Pool does not exist for this feeCode, so we can set it to null
-          // to prevent more requests for this pool
-          pool = null;
-          this.logger.trace(
-            `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} not found`,
-            e,
-          );
-        } else {
-          // Unexpected Error. Break execution. Do not save the pool in this.eventPools
-          this.logger.error(
-            `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool`,
-            e,
-          );
-          throw new Error('Cannot generate pool state');
-        }
-      }
-
-      if (pool !== null) {
-        const allEventPools = Object.values(this.eventPools);
-        this.logger.info(
-          `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
-            // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
-            .reduce(
-              (acc, curr) => (curr !== null ? ++acc : acc),
-              0,
-            )} non-null pools or ${allEventPools.length} total pools`,
+    try {
+      await pool.initialize(blockNumber, {
+        initCallback: (state: DeepReadonly<PoolState>) => {
+          //really hacky, we need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
+          pool!.addressesSubscribed[0] = state.pool;
+          pool!.poolAddress = state.pool;
+          pool!.initFailed = false;
+          pool!.initRetryAttemptCount = 0;
+        },
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+        // no need to await we want the set to have the pool key but it's not blocking
+        this.dexHelper.cache.zadd(
+          this.notExistingPoolSetKey,
+          [Date.now(), key],
+          'NX',
         );
-      }
 
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-        pool;
+        // Pool does not exist for this feeCode, so we can set it to null
+        // to prevent more requests for this pool
+        pool = null;
+        this.logger.trace(
+          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} not found`,
+          e,
+        );
+      } else {
+        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // note: state would be null by default which allows to fallback
+        this.logger.warn(
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}, fee=${fee} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          e,
+        );
+        pool.initFailed = true;
+      }
     }
+
+    if (pool !== null) {
+      const allEventPools = Object.values(this.eventPools);
+      this.logger.info(
+        `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
+          // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
+          .reduce(
+            (acc, curr) => (curr !== null ? ++acc : acc),
+            0,
+          )} non-null pools or ${allEventPools.length} total pools`,
+      );
+    }
+
+    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
+      pool;
     return pool;
   }
 
@@ -550,7 +622,7 @@ export class PancakeswapV3
         _destToken,
         amounts,
         side,
-        poolsToUse.poolWithoutState,
+        this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
       );
 
       const states = poolsToUse.poolWithState.map(
@@ -572,6 +644,11 @@ export class PancakeswapV3
           const state = states[i];
 
           if (state.liquidity <= 0n) {
+            if (state.liquidity < 0) {
+              this.logger.error(
+                `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+              );
+            }
             this.logger.trace(`pool have 0 liquidity`);
             return null;
           }
@@ -594,7 +671,7 @@ export class PancakeswapV3
             balanceDestToken,
           );
 
-          if (!unitResult || !pricesResult) {
+          if (!pricesResult) {
             this.logger.debug('Prices or unit is not calculated');
             return null;
           }
@@ -615,7 +692,7 @@ export class PancakeswapV3
             }),
           ];
           return {
-            unit: unitResult.outputs[0],
+            unit: unitResult?.outputs[0] || 0n,
             prices,
             data: {
               path: [
@@ -873,6 +950,7 @@ export class PancakeswapV3
       supportedFees: this.config.supportedFees,
       stateMulticall: this.config.stateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
+      initRetryFrequency: this.config.initRetryFrequency,
       uniswapMulticall: this.config.uniswapMulticall,
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,
