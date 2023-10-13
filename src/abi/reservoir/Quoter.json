@@ -1,0 +1,325 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "aFactory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "aWETH",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "MINIMUM_LIQUIDITY",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WETH",
+    "outputs": [
+      {
+        "internalType": "contract IWETH",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "factory",
+    "outputs": [
+      {
+        "internalType": "contract GenericFactory",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "aAmountOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aReserveIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aReserveOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aCurveId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aSwapFee",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "token0PrecisionMultiplier",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "token1PrecisionMultiplier",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "amplificationCoefficient",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct ExtraData",
+        "name": "aExtraData",
+        "type": "tuple"
+      }
+    ],
+    "name": "getAmountIn",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAmountIn",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "aAmountIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aReserveIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aReserveOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aCurveId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aSwapFee",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "token0PrecisionMultiplier",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "token1PrecisionMultiplier",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "amplificationCoefficient",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct ExtraData",
+        "name": "aExtraData",
+        "type": "tuple"
+      }
+    ],
+    "name": "getAmountOut",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAmountOut",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "aAmountOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "aPath",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "aCurveIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "getAmountsIn",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "rAmountsIn",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "aAmountIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "aPath",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "aCurveIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "getAmountsOut",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "rAmountsOut",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "aTokenA",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "aTokenB",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aCurveId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountADesired",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountBDesired",
+        "type": "uint256"
+      }
+    ],
+    "name": "quoteAddLiquidity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAmountA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rAmountB",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rLiq",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "aTokenA",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "aTokenB",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aCurveId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aLiq",
+        "type": "uint256"
+      }
+    ],
+    "name": "quoteRemoveLiquidity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAmountA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rAmountB",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

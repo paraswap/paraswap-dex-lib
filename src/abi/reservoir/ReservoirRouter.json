@@ -1,0 +1,457 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "aFactory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "aWETH",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function",
+    "name": "WETH",
+    "outputs": [
+      {
+        "internalType": "contract IWETH",
+        "name": "",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "aTokenA",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "aTokenB",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aCurveId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountADesired",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountBDesired",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountAMin",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountBMin",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "aTo",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "addLiquidity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAmountA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rAmountB",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rLiq",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function",
+    "name": "factory",
+    "outputs": [
+      {
+        "internalType": "contract GenericFactory",
+        "name": "",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "aData",
+        "type": "bytes[]"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "multicall",
+    "outputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "rResults",
+        "type": "bytes[]"
+      }
+    ]
+  },
+  {
+    "inputs": [],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "refundETH"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "aTokenA",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "aTokenB",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aCurveId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aLiq",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountAMin",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountBMin",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "aTo",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "removeLiquidity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAmountA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rAmountB",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "selfPermit"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expiry",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "selfPermitAllowed"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expiry",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "selfPermitAllowedIfNecessary"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "selfPermitIfNecessary"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "aAmountIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountOutMin",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "aPath",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "aCurveIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "aTo",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "swapExactForVariable",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "rAmountOut",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "aAmountOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountInMax",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "aPath",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "aCurveIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "aTo",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "swapVariableForExact",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "rAmounts",
+        "type": "uint256[]"
+      }
+    ]
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "aToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aAmountMinimum",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "aRecipient",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "sweepToken"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "aAmountMinimum",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "aRecipient",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function",
+    "name": "unwrapWETH"
+  },
+  {
+    "inputs": [],
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]
