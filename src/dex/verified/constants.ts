@@ -6,3 +6,7 @@ export const STABLE_GAS_COST = 84_000;
 
 // I see three pools used in trade: (57856 + 79098 + 51041) / 3 = 62665 ~ 63k
 export const VARIABLE_GAS_COST_PER_CYCLE = 63_000;
+export enum DirectMethods {
+  directSell = 'directBalancerV2GivenInSwap',
+  directBuy = 'directBalancerV2GivenOutSwap',
+}

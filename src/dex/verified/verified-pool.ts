@@ -22,6 +22,8 @@ import VAULTABI from '../../abi/verified/vault.json';
 import { PrimaryIssuePool } from './pools/primary/primaryPool';
 import { SecondaryIssuePool } from './pools/secondary/secondarPool';
 
+//TODO: verify why polygon pools have no liquidity and update the query
+//it must filter with liquidity
 const fetchAllPools = `query ($count: Int)    {
   pools: pools(
     first: $count

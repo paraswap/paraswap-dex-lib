@@ -24,7 +24,12 @@ export const VerifiedConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: 'Adapter02', index: 9 }],
+    [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 9 }],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [{ name: 'PolygonAdapter01', index: 9 }],
+    [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 6 }],
+  },
 };

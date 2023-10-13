@@ -182,9 +182,11 @@ describe('Verified EventPool', function () {
       );
       //test for maintokens: (must not include bpt token/poolAddress)
       subgraphPool?.mainTokens.forEach(token => {
-        assert(
-          token.address !== '0x1b96d5660be3e948ddf331aa05e46c59c6a832f4',
-          'Maintokens Test Failed: Maintokens contain bpt/pool token',
+        expect(
+          assert(
+            token.address !== '0x1b96d5660be3e948ddf331aa05e46c59c6a832f4',
+            'Maintokens Test Failed: Maintokens contain bpt/pool token',
+          ),
         );
       });
       let tokens: Token[] = [];
@@ -212,8 +214,8 @@ describe('Verified EventPool', function () {
         tokens[0],
         subgraphPool!,
         _poolState,
-        [0n, 1093543n],
-        1093543n,
+        [0n, 1093542n],
+        1093542n,
         SwapSide.SELL,
         creator,
       );
@@ -237,6 +239,7 @@ describe('Verified EventPool', function () {
         SwapSide.BUY,
         creator,
       );
+      //print out the result to best explain it
       console.log(
         `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
           price1?.prices[1]
@@ -252,7 +255,7 @@ describe('Verified EventPool', function () {
         }(${
           Number(price2!.prices[1]) / 10 ** 18
         }) Security token will be paid out when you sell 1093543n(${
-          1093543 / 10 ** 6
+          1093542 / 10 ** 6
         }) currency token`,
       );
       console.log(

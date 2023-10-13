@@ -1,4 +1,5 @@
 import { Address } from '../../types';
+import { NumberAsString } from '@paraswap/core';
 
 export type VerifiedData = {
   poolId: string;
@@ -93,13 +94,13 @@ export interface SubgraphPoolBase {
   mainTokens: SubgraphMainToken[];
 }
 
-export type BalancerSwapV2 = {
+export type VerifiedSwapParam = {
   poolId: string;
   amount: string;
 };
 
 export type OptimizedBalancerV2Data = {
-  swaps: BalancerSwapV2[];
+  swaps: VerifiedSwapParam[];
 };
 
 export type BalancerFunds = {
@@ -109,28 +110,10 @@ export type BalancerFunds = {
   toInternalBalance: boolean;
 };
 
-// Indexes represent the index of the asset assets array param
-export type BalancerSwap = {
-  poolId: string;
-  assetInIndex: number;
-  assetOutIndex: number;
-  amount: string;
-  userData: string;
-};
-
 export enum SwapTypes {
   SwapExactIn,
   SwapExactOut,
 }
-
-export type BalancerParam = [
-  kind: SwapTypes,
-  swaps: BalancerSwap[],
-  assets: string[],
-  funds: BalancerFunds,
-  limits: string[],
-  deadline: string,
-];
 
 export interface callData {
   target: string;
@@ -155,4 +138,45 @@ export type PoolPairData = {
   minPrice?: bigint;
   orders?: OrdersState[];
   secondaryTrades?: SecondaryTradeState[];
+};
+
+export type VerifiedDirectParam = [
+  swaps: VerifiedSwap[],
+  assets: Address[],
+  funds: BalancerFunds,
+  limits: NumberAsString[],
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  deadline: NumberAsString,
+  feePercent: NumberAsString,
+  vault: Address,
+  partner: Address,
+  isApproved: boolean,
+  beneficiary: Address,
+  permit: string,
+  uuid: string,
+];
+
+export type OptimizedVerifiedData = {
+  swaps: VerifiedSwapParam[];
+  isApproved?: boolean;
+};
+
+export type VerifiedParam = [
+  kind: SwapTypes,
+  swaps: VerifiedSwap[],
+  assets: string[],
+  funds: BalancerFunds,
+  limits: string[],
+  deadline: string,
+];
+
+// Indexes represent the index of the asset assets array param
+export type VerifiedSwap = {
+  poolId: string;
+  assetInIndex: number;
+  assetOutIndex: number;
+  amount: string;
+  userData: string;
 };
