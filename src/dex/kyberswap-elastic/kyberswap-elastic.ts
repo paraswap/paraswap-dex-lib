@@ -1,6 +1,6 @@
 import { defaultAbiCoder, Interface } from '@ethersproject/abi';
 import { pack } from '@ethersproject/solidity';
-import { AsyncOrSync, assert, DeepReadonly } from 'ts-essentials';
+import { DeepReadonly } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import _ from 'lodash';
@@ -28,7 +28,6 @@ import {
   getDexKeysWithNetwork,
   interpolate,
   isTruthy,
-  uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -48,7 +47,7 @@ import {
   PoolState,
   KyberElasticParam,
   KyberElasticFunctions,
-  OutputResult,
+  OutputResult, PoolPairsInfo,
 } from './types';
 import { KyberswapElasticConfig, Adapters } from './config';
 import {
@@ -62,16 +61,10 @@ import { KyberswapElasticEventPool } from './kyberswap-elastic-pool';
 import { ksElasticMath } from './contract-math/kyberswap-elastic-math';
 import { ERR_DECODE, ERR_POOL_DOES_NOT_EXIST } from './errors';
 
-type PoolPairsInfo = {
-  token0: Address;
-  token1: Address;
-  swapFeeUnits: string;
-};
-
 const CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
 
-export class KyberswapElastic
+export class KyberSwapElastic
   extends SimpleExchange
   implements IDex<KyberswapElasticData>
 {

@@ -24,7 +24,8 @@ import PoolABI from '../../abi/kyberswap-elastic/IPool.json';
 import TicksFeesReaderABI from '../../abi/kyberswap-elastic/TicksFeesReader.json';
 import AntiSnipAttackPositionManagerABI from '../../abi/kyberswap-elastic/IAntiSnipAttackPositionManager.json';
 
-import { KyberswapElasticConfig, TICK_DISTANCE } from './config';
+import { KyberswapElasticConfig } from './config';
+import { KS_TICK_DISTANCE } from './constants';
 import {
   PoolState,
   TickInfo,
@@ -252,7 +253,7 @@ export class KyberswapElasticEventPool extends StatefulEventSubscriber<PoolState
 
     const [_initializedTicks, _ticks] = await this._fetchTicks(blockNumber);
 
-    const _tickDistance = TICK_DISTANCE[this.swapFeeUnits.toString()];
+    const _tickDistance = KS_TICK_DISTANCE[this.swapFeeUnits.toString()];
     const _maxTickLiquidity =
       BI_MAX_UINT128 / TickMath.getMaxNumberTicks(_tickDistance);
 

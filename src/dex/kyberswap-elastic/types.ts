@@ -1,6 +1,12 @@
 import { Address } from '../../types';
 import { NumberAsString } from '../../types';
 
+export type PoolPairsInfo = {
+  token0: Address;
+  token1: Address;
+  swapFeeUnits: string;
+};
+
 export type PoolState = {
   pool: string;
   tickDistance: bigint;

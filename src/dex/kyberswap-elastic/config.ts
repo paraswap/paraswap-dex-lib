@@ -1,19 +1,10 @@
 import { DexParams } from './types';
-import { DexConfigMap, AdapterMappings, NumberAsString } from '../../types';
+import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
+import { KS_SUPPORTED_FEES } from './constants';
 
-const supportedFees = [
-  5000n,
-  2000n,
-  1000n,
-  300n,
-  250n,
-  100n,
-  40n,
-  20n,
-  10n,
-  8n,
-];
+const SUBGRAPH_BASE_URL =
+  'https://api.thegraph.com/subgraphs/name/kybernetwork';
 
 const KS_ELASTIC_CONFIG: DexParams = {
   factory: '0xC7a590291e07B9fe9E64b86c58fD8fC764308C4A',
@@ -22,26 +13,10 @@ const KS_ELASTIC_CONFIG: DexParams = {
   quoter: '0x4d47fd5a29904Dae0Ef51b1c450C9750F15D7856',
   ticksFeesReader: '0x8Fd8Cb948965d9305999D767A02bf79833EADbB3',
   tokenPositionDescriptor: '0x98565FcAD2080C5c19C3136fa367cE371cD40bD6',
-  supportedFees: supportedFees,
+  supportedFees: KS_SUPPORTED_FEES,
   poolInitHash:
     '0x00e263aaa3a2c06a89b53217a9e7aad7e15613490a72e0f95f303c4de2dc7045',
   chunksCount: 10,
-};
-
-const SUBGRAPH_BASE_URL =
-  'https://api.thegraph.com/subgraphs/name/kybernetwork';
-
-export const TICK_DISTANCE: Record<NumberAsString, bigint> = {
-  5000: 100n,
-  2000: 100n,
-  1000: 200n,
-  300: 60n,
-  250: 25n,
-  100: 10n,
-  40: 8n,
-  20: 2n,
-  10: 1n,
-  8: 1n,
 };
 
 export const KyberswapElasticConfig: DexConfigMap<DexParams> = {
