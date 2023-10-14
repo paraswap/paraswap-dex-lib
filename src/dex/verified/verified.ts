@@ -82,7 +82,6 @@ export class Verified
 
   logger: Logger;
   nonEventPoolStateCache: PoolStateCache;
-
   constructor(
     readonly network: Network,
     readonly dexKey: string,
@@ -103,7 +102,6 @@ export class Verified
     );
     this.nonEventPoolStateCache = { blockNumber: 0, poolState: {} };
   }
-
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
   // for pricing requests. set states for event pools
@@ -434,6 +432,11 @@ export class Verified
     ];
 
     return params;
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
   }
 
   //checks if vault has been preapproved to have access to amount of from token
