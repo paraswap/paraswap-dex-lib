@@ -11,10 +11,10 @@ import { generateConfig } from '../../config';
 function testForNetwork(
   network: Network,
   dexKey: string,
-  tokenASymbol: string,
-  tokenBSymbol: string,
-  tokenAAmount: string,
-  tokenBAmount: string,
+  cashTokenSymbol: string,
+  securityTokenSymbol: string,
+  cashTokenAmount: string,
+  securityTokenAmount: string,
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -34,7 +34,7 @@ function testForNetwork(
       ],
     ],
     // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]], //will be tested when simpleSwap has been figured out
   ]);
 
   describe(`${network}`, () => {
@@ -44,12 +44,12 @@ function testForNetwork(
           describe(`${contractMethod}`, () => {
             //Verified pools only supports currency to security swap
             //no native token swap for now so we only test token to token swaps
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            it(`${cashTokenSymbol} -> ${securityTokenSymbol}`, async () => {
               await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                tokens[cashTokenSymbol],
+                tokens[securityTokenSymbol],
+                holders[cashTokenSymbol],
+                side === SwapSide.SELL ? cashTokenAmount : securityTokenAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -70,25 +70,20 @@ describe('Verified E2E', () => {
   const dexKey = 'BalancerV2';
 
   describe('Polygon', () => {
-    // const network = Network.POLYGON;
-    // const tokenASymbol: string = 'USDC';
-    // const tokenBSymbol: string = 'CH1265330';
+    const network = Network.POLYGON;
+    const cashTokenSymbol: string = 'USDC';
+    const securityTokenSymbol: string = 'CH1265330';
 
-    // const tokenAAmount: string = '1000000';
-    // const tokenBAmount: string = '1000000000000000000';
+    const cashTokenAmount: string = '1000000';
+    const securityTokenAmount: string = '1000000000000000000';
 
-    // testForNetwork(
-    //   network,
-    //   dexKey,
-    //   tokenASymbol,
-    //   tokenBSymbol,
-    //   tokenAAmount,
-    //   tokenBAmount,
-    // );
-    it('Pending tests', () => {
-      const a = 'PENDING';
-      expect(a).toEqual('PENDING'); //a test is needed at least to avoid error
-      console.log('........Tests are pending for E2E........');
-    });
+    testForNetwork(
+      network,
+      dexKey,
+      cashTokenSymbol,
+      securityTokenSymbol,
+      cashTokenAmount,
+      securityTokenAmount,
+    );
   });
 });
