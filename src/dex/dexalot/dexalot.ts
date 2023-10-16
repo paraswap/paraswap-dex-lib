@@ -353,41 +353,41 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         }
       }
 
-      let price,
+      let price = BigInt(0),
         amount = BigInt(0);
-      if (left === orderbook.length) {
-        price = BigInt(
-          ethers.utils
-            .parseUnits(orderbook[left - 1][0], baseToken.decimals)
-            .toString(),
-        );
-        amount = qty;
-      } else if (amounts[i] === qty) {
+      if (amounts[i] === qty) {
         price = BigInt(
           ethers.utils
             .parseUnits(orderbook[left][0], baseToken.decimals)
             .toString(),
         );
         amount = amounts[i];
-      } else {
+      } else if (left < orderbook.length) {
         const lPrice = BigInt(
           ethers.utils
-            .parseUnits(orderbook[left][0], baseToken.decimals)
+            .parseUnits(orderbook[left - 1][0], baseToken.decimals)
             .toString(),
         );
         const rPrice = BigInt(
           ethers.utils
-            .parseUnits(orderbook[left + 1][0], baseToken.decimals)
+            .parseUnits(orderbook[left][0], baseToken.decimals)
             .toString(),
         );
-        const lQty = qty;
+        let lQty = BigInt(
+          ethers.utils
+            .parseUnits(orderbook[left - 1][1], quoteToken.decimals)
+            .toString(),
+        );
         let rQty = BigInt(
           ethers.utils
-            .parseUnits(orderbook[left + 1][1], quoteToken.decimals)
+            .parseUnits(orderbook[left][1], quoteToken.decimals)
             .toString(),
         );
         if (side === ClobSide.ASK) {
-          rQty = (rQty * rPrice) / BigInt(10 ** quoteToken.decimals);
+          lQty = (lQty * BigInt(10 ** (baseToken.decimals * 2))) /
+            (lPrice * BigInt(10 ** quoteToken.decimals));
+          rQty = (rQty * BigInt(10 ** (baseToken.decimals * 2))) /
+            (rPrice * BigInt(10 ** quoteToken.decimals));;
         }
         price = lPrice + ((rPrice - lPrice) * (amt - lQty)) / (rQty - lQty);
         amount = amounts[i];
