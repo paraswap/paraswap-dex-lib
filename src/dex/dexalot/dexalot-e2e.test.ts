@@ -34,13 +34,13 @@ function testForNetwork(
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [
       ContractMethod.simpleSwap,
-      // ContractMethod.megaSwap,
-      // ContractMethod.multiSwap
+      ContractMethod.megaSwap,
+      ContractMethod.multiSwap
     ]],
-    // [SwapSide.BUY, [
-    //   ContractMethod.simpleBuy,
-    //   ContractMethod.buy
-    // ]],
+    [SwapSide.BUY, [
+      ContractMethod.simpleBuy,
+      ContractMethod.buy
+    ]],
   ]);
 
   describe(`${network}`, () => {
@@ -67,24 +67,24 @@ function testForNetwork(
                   sleepMs,
                 );
               });
-              // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              //   await testE2E(
-              //     tokens[tokenBSymbol],
-              //     tokens[tokenASymbol],
-              //     holders[tokenBSymbol],
-              //     side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-              //     side,
-              //     dexKey,
-              //     contractMethod,
-              //     network,
-              //     provider,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     sleepMs,
-              //   );
-              // });
+              it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenBSymbol],
+                  tokens[tokenASymbol],
+                  holders[tokenBSymbol],
+                  side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
+                );
+              });
             } else {
               it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
                 await testE2E(
@@ -197,7 +197,6 @@ describe('Dexalot E2E', () => {
     const tokenBSymbol: string = 'USDC';
 
     const tokenAAmount: string = '30000000';
-    // const tokenAAmount: string = '25000000';
     const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '1000000000000000000';
 
