@@ -447,6 +447,12 @@ export const Tokens: {
       addBalance: _balancesFn,
       addAllowance: _allowancesFn,
     },
+    ROMNEY: {
+      address: '0xebe153c59c60f8199db5b75328745ae2e2adc7a1',
+      decimals: 18,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -1025,7 +1031,7 @@ export const Holders: {
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
-    CH1265330: '0xaA0d06ed9CeFb0B26ef011363c9d7880feda8f08',
+    CH1265330: '0xaa0d06ed9cefb0b26ef011363c9d7880feda8f08',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',

@@ -316,17 +316,4 @@ export class PrimaryIssuePool {
       this.getPrimaryTokenOut(poolPairData, amount, isCurrencyIn),
     );
   }
-
-  //TODO: Verify if token decimals are not nedded to get actual balance(depending on the format of amount in)
-  //gets maxAmount that can be swapped in or out of both primary issue pool
-  //use 99% of the balance so not all balance can be swapped.
-  getSwapMaxAmount(poolPairData: PoolPairData, side: SwapSide): bigint {
-    return (
-      ((side === SwapSide.SELL
-        ? poolPairData.balances[poolPairData.indexIn]
-        : poolPairData.balances[poolPairData.indexOut]) *
-        99n) /
-      100n
-    );
-  }
 }

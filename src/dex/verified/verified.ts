@@ -150,11 +150,8 @@ export class Verified
       ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
     );
   }
-
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
+  // Returns pool prices for amounts. amounnt must be an array with 0 as first element: [0n, amounts]
+  // If limitPools is defined only pools in limitPools will be used
   async getPricesVolume(
     srcToken: Token, //From Token
     destToken: Token, //Token To

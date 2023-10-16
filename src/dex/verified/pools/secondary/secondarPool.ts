@@ -78,11 +78,11 @@ export class SecondaryIssuePool {
           pool.id,
         ]),
       },
+      {
+        target: pool.address,
+        callData: this.poolInterface.encodeFunctionData('getMinOrderSize'),
+      },
     ];
-    poolCallData.push({
-      target: pool.address,
-      callData: this.poolInterface.encodeFunctionData('getMinOrderSize'),
-    });
 
     return poolCallData;
   }
@@ -108,7 +108,6 @@ export class SecondaryIssuePool {
       data[startIndex++],
       pool.address,
     )[0];
-
     const poolState: PoolState = {
       swapFee: BigInt('0'),
       tokens: poolTokens.tokens.reduce(
@@ -124,7 +123,6 @@ export class SecondaryIssuePool {
       orderedTokens: poolTokens.tokens,
       minimumOrderSize,
     };
-
     pools[pool.address] = poolState;
 
     return [pools, startIndex];
@@ -405,18 +403,5 @@ export class SecondaryIssuePool {
     } catch (err) {
       return 0n;
     }
-  }
-
-  //TODO: Verify if token decimals are not nedded to get actual balance(depending on the format of amount in)
-  //gets maxAmount that can be swapped in or out of secondary issue pools
-  //use 99% of the balance so not all balance can be swapped.
-  getSwapMaxAmount(poolPairData: PoolPairData, side: SwapSide): bigint {
-    return (
-      ((side === SwapSide.SELL
-        ? poolPairData.balances[poolPairData.indexIn]
-        : poolPairData.balances[poolPairData.indexOut]) *
-        99n) /
-      100n
-    );
   }
 }

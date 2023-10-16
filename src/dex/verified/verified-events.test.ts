@@ -11,41 +11,7 @@ import { PoolState, PoolStateMap, SubgraphPoolBase } from './types';
 import { VerifiedConfig } from './config';
 import { assert } from 'console';
 
-/*
-  README
-  ======
-
-  This test script adds unit tests for Verified event based
-  system. This is done by fetching the state on-chain before the
-  event block, manually pushing the block logs to the event-subscriber,
-  comparing the local state with on-chain state.
-
-  Most of the logic for testing is abstracted by `testEventSubscriber`.
-  You need to do two things to make the tests work:
-
-  1. Fetch the block numbers where certain events were released. You
-  can modify the `./scripts/fetch-event-blocknumber.ts` to get the
-  block numbers for different events. Make sure to get sufficient
-  number of blockNumbers to cover all possible cases for the event
-  mutations.
-
-  2. Complete the implementation for fetchPoolState function. The
-  function should fetch the on-chain state of the event subscriber
-  using just the blocknumber.
-
-  The template tests only include the test for a single event
-  subscriber. There can be cases where multiple event subscribers
-  exist for a single DEX. In such cases additional tests should be
-  added.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-events.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 jest.setTimeout(50 * 1000);
-
 async function fetchPoolState(
   verifiedPool: VerifiedEventPool,
   blockNumber: number,
@@ -111,70 +77,13 @@ describe('Verified EventPool', function () {
   );
 
   describe('Custom Test', () => {
-    it('All pools test: ', async () => {
-      const poolsMap = await fetchPoolState(verifiedPool, 48391093);
+    it('PrimaryIssue Pool getPricesPool test: ', async () => {
+      const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const poolsMap = await fetchPoolState(verifiedPool, blockNumber);
       expect(verifiedPool.allPools.length).toBeGreaterThan(0);
-      const creator: string = '';
-      //This test both primary and secondary
-      // Object.entries(poolsMap).forEach(([poolAddress, poolState]) => {
-      //   const subgraphPool = verifiedPool.allPools.find(
-      //     pool => pool.address.toLowerCase() === poolAddress.toLowerCase(),
-      //   );
-      //   //test for maintokens: (must not include bpt token/poolAddress)
-      //   subgraphPool?.mainTokens.forEach(token => {
-      //     expect(token.address !== poolAddress);
-      //   });
-      //   let tokens: Token[] = [];
-      //   subgraphPool?.mainTokens.forEach(token => {
-      //     const _token = subgraphPool.tokens.find(
-      //       t => t.address === token.address,
-      //     );
-      //     tokens.push({
-      //       address: _token?.address!,
-      //       decimals: _token?.decimals!,
-      //     });
-      //   });
-      //   const price1 = verifiedPool.getPricesPool(
-      //     tokens[0],
-      //     tokens[1],
-      //     subgraphPool!,
-      //     poolState,
-      //     [0n, 745000000000000000n],
-      //     745000000000000000n,
-      //     SwapSide.SELL,
-      //     creator,
-      //   );
-      //   // const price2 = verifiedPool.getPricesPool(tokens[0], tokens[1], subgraphPool!, poolState, [BigInt(10), BigInt(5)], BigInt(6), SwapSide.BUY)
-      //   const price3 = verifiedPool.getPricesPool(
-      //     tokens[1],
-      //     tokens[0],
-      //     subgraphPool!,
-      //     poolState,
-      //     [0n, 2126543n],
-      //     2126543n,
-      //     SwapSide.SELL,
-      //     creator,
-      //   );
-      //   // const price4 = verifiedPool.getPricesPool(tokens[1], tokens[0], subgraphPool!, poolState, [BigInt(10), BigInt(5)], BigInt(6), SwapSide.BUY)
-      //   console.log(
-      //     subgraphPool?.poolType,
-      //     ' Sell Price: for ',
-      //     tokens[0],
-      //     ' : ',
-      //     price1,
-      //   );
-      //   // console.log(subgraphPool?.poolType,  " Buy Price: for ",  tokens[0], " : ", price2);
-      //   console.log(
-      //     subgraphPool?.poolType,
-      //     ' Sell Price: for ',
-      //     tokens[1],
-      //     ' : ',
-      //     price3,
-      //   );
-      //   // console.log(subgraphPool?.poolType,  " Buy Price: for ",  tokens[1], " : ", price4);
-      // });
-      //This test only primary
-      const _poolState = poolsMap['0x1b96d5660be3e948ddf331aa05e46c59c6a832f4'];
+      const creator: string = ''; //not needed in primary pool price calculation
+      //This tests Primary pool with address: 0x1b96d5660be3e948ddf331aa05e46c59c6a832f4
+      const poolState = poolsMap['0x1b96d5660be3e948ddf331aa05e46c59c6a832f4'];
       const subgraphPool = verifiedPool.allPools.find(
         pool =>
           pool.address.toLowerCase() ===
@@ -184,7 +93,7 @@ describe('Verified EventPool', function () {
       subgraphPool?.mainTokens.forEach(token => {
         expect(
           assert(
-            token.address !== '0x1b96d5660be3e948ddf331aa05e46c59c6a832f4',
+            token.address.toLowerCase() !== subgraphPool.address.toLowerCase(),
             'Maintokens Test Failed: Maintokens contain bpt/pool token',
           ),
         );
@@ -199,13 +108,17 @@ describe('Verified EventPool', function () {
           decimals: _token?.decimals!,
         });
       });
+      const cashAmounts = [1000000n, 2150160n];
+      const securityAmounts = [1000000000000000000n, 1749284608758693473n];
+      const fixedCashAmount = Number(cashAmounts[1]) / 10 ** 6; //cash/currency decimals
+      const fixedSecurityAmount = Number(securityAmounts[1]) / 10 ** 18; //security decimals
       const price1 = verifiedPool.getPricesPool(
         tokens[0],
         tokens[1],
         subgraphPool!,
-        _poolState,
-        [0n, 1749284608758693473n],
-        1749284608758693473n,
+        poolState,
+        [0n, securityAmounts[1]],
+        securityAmounts[0],
         SwapSide.SELL,
         creator,
       );
@@ -213,9 +126,9 @@ describe('Verified EventPool', function () {
         tokens[1],
         tokens[0],
         subgraphPool!,
-        _poolState,
-        [0n, 1093542n],
-        1093542n,
+        poolState,
+        [0n, cashAmounts[1]],
+        cashAmounts[0],
         SwapSide.SELL,
         creator,
       );
@@ -223,9 +136,9 @@ describe('Verified EventPool', function () {
         tokens[0],
         tokens[1],
         subgraphPool!,
-        _poolState,
-        [0n, 1093543n],
-        1093543n,
+        poolState,
+        [0n, cashAmounts[1]], //amount will change to token out amount for buy
+        cashAmounts[0],
         SwapSide.BUY,
         creator,
       );
@@ -233,48 +146,46 @@ describe('Verified EventPool', function () {
         tokens[1],
         tokens[0],
         subgraphPool!,
-        _poolState,
-        [0n, 1749284608758693473n],
-        1749284608758693473n,
+        poolState,
+        [0n, securityAmounts[1]], //amount will change to token out amount for buy
+        securityAmounts[0],
         SwapSide.BUY,
         creator,
       );
-      //print out the result to best explain it
+      // //log the results to best explain the prices
       console.log(
-        `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
-          price1?.prices[1]
-        }(${
-          Number(price1!.prices[1]) / 10 ** 6
-        }) Currency token will be paid out when you sell 1749284608758693473n(${
-          Number(1749284608758693473n) / 10 ** 18
-        }) Security token`,
+        `Primary Pool(address: ${subgraphPool?.address}) ${price1?.prices[1]}(${
+          Number(price1?.prices[1]) / 10 ** 6 //cash/currency decimals
+        }) Currency token will be paid out when you sell ${
+          securityAmounts[1]
+        }(${fixedSecurityAmount}) Security token`,
       );
       console.log(
         `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
           price2?.prices[1]
         }(${
-          Number(price2!.prices[1]) / 10 ** 18
-        }) Security token will be paid out when you sell 1093543n(${
-          1093542 / 10 ** 6
-        }) currency token`,
+          Number(price2?.prices[1]) / 10 ** 18 //security decimals
+        }) Security token will be paid out when you sell ${
+          cashAmounts[1]
+        }(${fixedCashAmount}) currency token`,
       );
       console.log(
         `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
           price3?.prices[1]
         }(${
-          Number(price3!.prices[1]) / 10 ** 18
-        }) Security token will be paid in when you buy 1093543n(${
-          1093543 / 10 ** 6
-        }) Currency token`,
+          Number(price3?.prices[1]) / 10 ** 18 //security decimals
+        }) Security token will be paid in when you buy ${
+          cashAmounts[1]
+        } (${fixedCashAmount}) Currency token`,
       );
       console.log(
         `In ${subgraphPool?.poolType} Pool(address: ${subgraphPool?.address}) ${
           price4?.prices[1]
         }(${
-          Number(price4!.prices[1]) / 10 ** 6
-        }) Currency token will be paid in when you buy 1749284608758693473n(${
-          Number(1749284608758693473n) / 10 ** 18
-        }) Security token`,
+          Number(price4?.prices[1]) / 10 ** 6 //cash/currency decimals
+        }) Currency token will be paid in when you buy ${
+          securityAmounts[1]
+        }(${fixedSecurityAmount}) Security token`,
       );
     });
   });

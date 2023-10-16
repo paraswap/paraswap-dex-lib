@@ -174,16 +174,15 @@ describe('Verified Integration Tests', function () {
   const srcTokenSymbol = 'USDC';
   const destTokenSymbol = 'CH1265330';
 
-  //stop at 2 USDC(2000000) because current USDC balance is 2.25016(2250160) from the pool
-  //anything above the balance when selling will give 0 price
+  //stop at 2 USDC(2000000) because to avoid 0 prices current USDC balance is 2.25016(2250160)
+  //anything above the balance when buying will give 0 price
   const usdcAmounts = [
     0n,
     1n * BI_POWS[tokens[srcTokenSymbol].decimals],
     2n * BI_POWS[tokens[srcTokenSymbol].decimals],
   ];
 
-  //stop at 3 (3000000000000000000) to avoid 0 price because when you attempt to sell 4(4000000000000000000)
-  //the returned amount will be more than 2.25016 USDC which is above the current USDC balance from pool.
+  //stop at 3 (3000000000000000000) to keep it minimal
   const securityAmounts = [
     0n,
     1n * BI_POWS[tokens[destTokenSymbol].decimals],

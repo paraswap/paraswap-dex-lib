@@ -278,6 +278,7 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   //gets prices for from and to in a pool(primary or secondarypool) when buying or selling
+  //amounnt must be an array with 0 as first element: [0n, amounts]
   getPricesPool(
     from: Token,
     to: Token,
@@ -299,41 +300,30 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
       from.address,
       to.address,
     );
-    const swapMaxAmount = this.pools[subgraphPool.poolType].getSwapMaxAmount(
-      poolPairData,
-      side,
-    );
     const checkedAmounts: bigint[] = new Array(amountWithoutZero.length).fill(
       0n,
     );
-    const checkedUnitVolume = getNewAmount(swapMaxAmount, unitVolume);
     let nonZeroAmountIndex = 0;
     for (const [i, amountIn] of amountWithoutZero.entries()) {
-      const checkedOutput = getNewAmount(swapMaxAmount, amountIn);
-      if (checkedOutput === 0n) {
-        // Stop earlier because other values are bigger and for sure wont' be tradable
-        break;
+      if (amountIn != 0n) {
+        nonZeroAmountIndex = i + 1;
+        checkedAmounts[i] = amountIn;
       }
-      nonZeroAmountIndex = i + 1;
-      checkedAmounts[i] = checkedOutput;
     }
-    if (nonZeroAmountIndex === 0) {
-      return null;
-    }
+    if (nonZeroAmountIndex === 0) return null;
     const isCurrencyIn = from.address === subgraphPool.currency;
-    //Todo: Figure out creator
     const unitResult =
-      checkedUnitVolume === 0n
+      unitVolume === 0n
         ? 0n
         : side === SwapSide.SELL
         ? this.pools[subgraphPool.poolType].onSell(
-            [checkedUnitVolume],
+            [unitVolume],
             poolPairData,
             isCurrencyIn,
             creator,
           )![0]
         : this.pools[subgraphPool.poolType].onBuy(
-            [checkedUnitVolume],
+            [unitVolume],
             poolPairData,
             isCurrencyIn,
             creator,
