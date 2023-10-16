@@ -1088,6 +1088,7 @@ export const Holders: {
     nETH: '0xcf2ef00e75558512ae735679ea5df62ad2056786',
     avWETH: '0x92d78e32b990d10aeca0875dc5585f1a6f958179',
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
+    BTCb: '0x84c06d3c27821d0136f66306f5028d43ceac268d',
   },
   [Network.ARBITRUM]: {
     ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
