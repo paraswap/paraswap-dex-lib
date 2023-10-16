@@ -387,7 +387,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           lQty = (lQty * BigInt(10 ** (baseToken.decimals * 2))) /
             (lPrice * BigInt(10 ** quoteToken.decimals));
           rQty = (rQty * BigInt(10 ** (baseToken.decimals * 2))) /
-            (rPrice * BigInt(10 ** quoteToken.decimals));;
+            (rPrice * BigInt(10 ** quoteToken.decimals));
         }
         price = lPrice + ((rPrice - lPrice) * (amt - lQty)) / (rQty - lQty);
         amount = amounts[i];
