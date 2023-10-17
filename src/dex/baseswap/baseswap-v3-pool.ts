@@ -28,7 +28,7 @@ import { uint256ToBigInt } from '../../lib/decoders';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 import { _reduceTickBitmap, _reduceTicks } from './contract-math/utils';
 
-export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
+export class BaseswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,

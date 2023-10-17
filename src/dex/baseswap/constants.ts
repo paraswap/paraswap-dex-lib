@@ -11,7 +11,7 @@ export const TICK_BITMAP_BUFFER = 8n;
 export const MAX_PRICING_COMPUTATION_STEPS_ALLOWED = 128;
 
 export const UNISWAPV3_SUBGRAPH_URL =
-  'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
+  'https://api.thegraph.com/subgraphs/name/baseswapfi/v3-base';
 
 export const UNISWAPV3_EFFICIENCY_FACTOR = 3;
 

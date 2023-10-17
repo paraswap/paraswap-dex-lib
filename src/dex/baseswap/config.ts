@@ -14,22 +14,22 @@ const SUPPORTED_FEES = [10000n, 2500n, 450n, 80n];
 export const PoolsToPreload: DexConfigMap<
   { token0: Address; token1: Address }[]
 > = {
-  UniswapV3: {
-    [Network.POLYGON]: [
+  BaseswapV3: {
+    [Network.BASE]: [
       {
-        token0: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'.toLowerCase(),
-        token1: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'.toLowerCase(),
+        token0: ''.toLowerCase(),
+        token1: ''.toLowerCase(),
       },
       {
-        token0: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619'.toLowerCase(),
-        token1: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'.toLowerCase(),
+        token0: ''.toLowerCase(),
+        token1: ''.toLowerCase(),
       },
     ],
   },
 };
 
 export const BaseswapV3Config: DexConfigMap<DexParams> = {
-  UniswapV3: {
+  BaseswapV3: {
     [Network.BASE]: {
       factory: '0x38015D05f4fEC8AFe15D7cc0386a126574e8077B',
       quoter: '0x4fDBD73aD4B1DDde594BF05497C15f76308eFfb9',

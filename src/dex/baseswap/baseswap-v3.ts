@@ -24,7 +24,7 @@ import {
   isTruthy,
   uuidToBytes16,
 } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   DexParams,
@@ -40,7 +40,7 @@ import {
   SimpleExchange,
 } from '../simple-exchange';
 import { Adapters, PoolsToPreload, BaseswapV3Config } from './config';
-import { UniswapV3EventPool } from './uniswap-v3-pool';
+import { BaseswapV3EventPool } from './baseswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
@@ -64,7 +64,10 @@ import {
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
-import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
+import {
+  OnPoolCreatedCallback,
+  BaseswapV3Factory,
+} from './baseswap-v3-factory';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -76,13 +79,13 @@ const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 d
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
-export class UniswapV3
+export class BaseswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param>
 {
-  private readonly factory: UniswapV3Factory;
+  private readonly factory: BaseswapV3Factory;
   readonly isFeeOnTransferSupported: boolean = false;
-  readonly eventPools: Record<string, UniswapV3EventPool | null> = {};
+  readonly eventPools: Record<string, BaseswapV3EventPool | null> = {};
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
@@ -94,6 +97,7 @@ export class UniswapV3
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
       _.pick(BaseswapV3Config, [
+        'BaseswapV3',
         'UniswapV3',
         'SushiSwapV3',
         'QuickSwapV3.1',
@@ -142,7 +146,7 @@ export class UniswapV3
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
-    this.factory = new UniswapV3Factory(
+    this.factory = new BaseswapV3Factory(
       dexHelper,
       dexKey,
       this.config.factory,
@@ -235,10 +239,10 @@ export class UniswapV3
     destAddress: Address,
     fee: bigint,
     blockNumber: number,
-  ): Promise<UniswapV3EventPool | null> {
+  ): Promise<BaseswapV3EventPool | null> {
     let pool = this.eventPools[
       this.getPoolIdentifier(srcAddress, destAddress, fee)
-    ] as UniswapV3EventPool | null | undefined;
+    ] as BaseswapV3EventPool | null | undefined;
 
     if (pool === null) return null;
 
@@ -290,7 +294,7 @@ export class UniswapV3
     const poolImplementation =
       this.config.eventPoolImplementation !== undefined
         ? this.config.eventPoolImplementation
-        : UniswapV3EventPool;
+        : BaseswapV3EventPool;
     pool =
       pool ||
       new poolImplementation(
@@ -423,7 +427,7 @@ export class UniswapV3
     to: Token,
     amounts: bigint[],
     side: SwapSide,
-    pools: UniswapV3EventPool[],
+    pools: BaseswapV3EventPool[],
     states: PoolState[],
   ): Promise<ExchangePrices<UniswapV3Data> | null> {
     if (pools.length === 0) {
@@ -580,7 +584,7 @@ export class UniswapV3
 
       if (_srcAddress === _destAddress) return null;
 
-      let selectedPools: UniswapV3EventPool[] = [];
+      let selectedPools: BaseswapV3EventPool[] = [];
 
       if (!limitPools) {
         selectedPools = (
@@ -649,8 +653,8 @@ export class UniswapV3
           return acc;
         },
         {
-          poolWithState: [] as UniswapV3EventPool[],
-          poolWithoutState: [] as UniswapV3EventPool[],
+          poolWithState: [] as BaseswapV3EventPool[],
+          poolWithoutState: [] as BaseswapV3EventPool[],
         },
       );
 
@@ -1086,14 +1090,14 @@ export class UniswapV3
   private async _getPoolsFromIdentifiers(
     poolIdentifiers: string[],
     blockNumber: number,
-  ): Promise<UniswapV3EventPool[]> {
+  ): Promise<BaseswapV3EventPool[]> {
     const pools = await Promise.all(
       poolIdentifiers.map(async identifier => {
         const [, srcAddress, destAddress, fee] = identifier.split('_');
         return this.getPool(srcAddress, destAddress, BigInt(fee), blockNumber);
       }),
     );
-    return pools.filter(pool => pool) as UniswapV3EventPool[];
+    return pools.filter(pool => pool) as BaseswapV3EventPool[];
   }
 
   private _getLoweredAddresses(srcToken: Token, destToken: Token) {

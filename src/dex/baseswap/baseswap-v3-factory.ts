@@ -21,7 +21,7 @@ export type OnPoolCreatedCallback = ({
  * "Stateless" event subscriber in order to capture "PoolCreated" event on new pools created.
  * State is present, but it's a placeholder to actually make the events reach handlers (if there's no previous state - `processBlockLogs` is not called)
  */
-export class UniswapV3Factory extends StatefulEventSubscriber<FactoryState> {
+export class BaseswapV3Factory extends StatefulEventSubscriber<FactoryState> {
   handlers: {
     [event: string]: (event: any) => Promise<void>;
   } = {};
