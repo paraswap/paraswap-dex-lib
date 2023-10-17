@@ -34,3 +34,5 @@ export const NETWORK_ID_TO_NAME: Record<number, string> = {
 // revisited
 export const FACTORY_MAX_PLAIN_COINS = 4;
 export const FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN = 10;
+
+export const DIRECT_METHOD_NAME = 'directCurveV1Swap';

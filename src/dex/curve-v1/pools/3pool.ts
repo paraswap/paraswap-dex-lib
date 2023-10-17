@@ -4,7 +4,7 @@ import { Address, Log } from '../../../types';
 import StableSwap3Pool from '../../../abi/curve-v1/StableSwap3Pool.json';
 import { CurvePool, PoolState } from './curve-pool';
 import { IDexHelper } from '../../../dex-helper';
-import { BN_0 } from '../../../bignumber-constants';
+import { BN_0, BN_1 } from '../../../bignumber-constants';
 import { bigNumberify, stringify } from '../../../utils';
 import BigNumber from 'bignumber.js';
 
@@ -152,7 +152,7 @@ export class ThreePool extends CurvePool {
 
     let _x: BigNumber = BN_0;
     for (let _i = 0; _i < this.N_COINS; _i++) {
-      if (_i != i) {
+      if (_i !== i) {
         _x = xp[_i];
       } else {
         continue;
@@ -271,5 +271,43 @@ export class ThreePool extends CurvePool {
       state.balances,
     );
     return dy;
+  }
+
+  public _get_dy(
+    i: number,
+    j: number,
+    dx: BigNumber,
+    A: BigNumber,
+    fee: BigNumber,
+    balances: BigNumber[],
+    rates: BigNumber[],
+    usefee = true,
+  ): BigNumber {
+    const xp = this._xp(rates, balances);
+    const x = xp[i].plus(dx.times(rates[i]).idiv(this.PRECISION));
+    const y = this.get_y(i, j, x, xp, A);
+    const dy = xp[j].minus(y).minus(BN_1).times(this.PRECISION).idiv(rates[j]);
+    let _fee = fee.times(dy).idiv(this.FEE_DENOMINATOR);
+    if (!usefee) _fee = BN_0;
+    return dy.minus(_fee);
+  }
+
+  public _get_dy_underlying(
+    i: number,
+    j: number,
+    dx: BigNumber,
+    A: BigNumber,
+    fee: BigNumber,
+    balances: BigNumber[],
+    rates: BigNumber[],
+    usefee = true,
+  ): BigNumber {
+    const xp = this._xp(rates, balances);
+    const x = xp[i].plus(dx.times(this.PRECISION_MUL[i]));
+    const y = this.get_y(i, j, x, xp, A);
+    const dy = xp[j].minus(y).minus(BN_1).idiv(this.PRECISION_MUL[j]);
+    let _fee = fee.times(dy).idiv(this.FEE_DENOMINATOR);
+    if (!usefee) _fee = BN_0;
+    return dy.minus(_fee);
   }
 }

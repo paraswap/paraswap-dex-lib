@@ -1,7 +1,25 @@
+import { NumberAsString } from '@paraswap/core';
 import { Address } from '../../types';
 
-export interface PoolBase {
-  gasCost: number;
+// These should match the Balancer Pool types available on Subgraph
+export enum BalancerPoolTypes {
+  Weighted = 'Weighted',
+  Stable = 'Stable',
+  MetaStable = 'MetaStable',
+  LiquidityBootstrapping = 'LiquidityBootstrapping',
+  Investment = 'Investment',
+  StablePhantom = 'StablePhantom',
+  ComposableStable = 'ComposableStable',
+  Linear = 'Linear',
+  AaveLinear = 'AaveLinear',
+  ERC4626Linear = 'ERC4626Linear',
+  BeefyLinear = 'BeefyLinear',
+  GearboxLinear = 'GearboxLinear',
+  MidasLinear = 'MidasLinear',
+  ReaperLinear = 'ReaperLinear',
+  SiloLinear = 'SiloLinear',
+  TetuLinear = 'TetuLinear',
+  YearnLinear = 'YearnLinear',
 }
 
 export type TokenState = {
@@ -15,7 +33,8 @@ export type PoolState = {
     [address: string]: TokenState;
   };
   swapFee: bigint;
-  gasCost: number;
+  orderedTokens: string[];
+  rate?: bigint;
   amp?: bigint;
   // Linear Pools
   mainIndex?: number;
@@ -23,23 +42,41 @@ export type PoolState = {
   bptIndex?: number;
   lowerTarget?: bigint;
   upperTarget?: bigint;
+  actualSupply?: bigint;
 };
 
 export type SubgraphToken = {
   address: string;
   decimals: number;
-  linearPoolAddr?: string;
-  linearPoolId?: string;
+};
+
+export interface SubgraphMainToken extends SubgraphToken {
+  poolToken: SubgraphToken;
+  pathToToken: {
+    poolId: string;
+    poolAddress: string;
+    token: SubgraphToken;
+  }[];
+  //used to flag tokens that inside of a nested composable stable this way we can avoid paths
+  //through pools where the tokenIn and tokenOut are inside a nested pool
+  //ie MAI / bbaUSD, where tokenIn is DAI and tokenOut is USDC
+  isDeeplyNested: boolean;
+}
+
+export type SubgraphPoolAddressDictionary = {
+  [address: string]: SubgraphPoolBase;
 };
 
 export interface SubgraphPoolBase {
   id: string;
   address: string;
-  poolType: string;
+  poolType: BalancerPoolTypes;
   tokens: SubgraphToken[];
+  tokensMap: { [tokenAddress: string]: SubgraphToken };
   mainIndex: number;
   wrappedIndex: number;
-  totalLiquidity: string;
+
+  mainTokens: SubgraphMainToken[];
 }
 
 export type BalancerSwapV2 = {
@@ -49,12 +86,13 @@ export type BalancerSwapV2 = {
 
 export type OptimizedBalancerV2Data = {
   swaps: BalancerSwapV2[];
+  isApproved?: boolean;
 };
 
 export type BalancerFunds = {
   sender: string;
-  recipient: string;
   fromInternalBalance: boolean;
+  recipient: string;
   toInternalBalance: boolean;
 };
 
@@ -79,6 +117,24 @@ export type BalancerParam = [
   funds: BalancerFunds,
   limits: string[],
   deadline: string,
+];
+
+export type BalancerV2DirectParam = [
+  swaps: BalancerSwap[],
+  assets: Address[],
+  funds: BalancerFunds,
+  limits: NumberAsString[],
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  expectedAmount: NumberAsString,
+  deadline: NumberAsString,
+  feePercent: NumberAsString,
+  vault: Address,
+  partner: Address,
+  isApproved: boolean,
+  beneficiary: Address,
+  permit: string,
+  uuid: string,
 ];
 
 export type BalancerV2Data = {

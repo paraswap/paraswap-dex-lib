@@ -17,6 +17,7 @@ import { DexAdapterService } from '../dex';
 import {
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 
 type SimpleSwapParam = [ConstractSimpleData];
@@ -222,7 +223,7 @@ export abstract class SimpleRouterBase<RouterParam>
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -271,7 +272,7 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -284,6 +285,17 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
       priceRoute,
       minMaxAmount,
     );
+
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(this.side)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            takeSurplus,
+          }),
+          encodeFeePercent(partnerFeePercent, takeSurplus, this.side),
+        ];
 
     const sellData: ConstractSimpleData = {
       ...partialContractSimpleData,
@@ -298,14 +310,8 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
           ? priceRoute.destAmount
           : priceRoute.srcAmount,
       beneficiary,
-      partner: referrerAddress || partnerAddress,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(this.side)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            this.side,
-          ),
+      partner,
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

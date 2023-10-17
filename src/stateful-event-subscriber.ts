@@ -18,6 +18,7 @@ type StateCache<State> = {
 export type InitializeStateOptions<State> = {
   state?: DeepReadonly<State>;
   initCallback?: (state: DeepReadonly<State>) => void;
+  forceRegenerate?: boolean;
 };
 
 export abstract class StatefulEventSubscriber<State>
@@ -89,6 +90,13 @@ export abstract class StatefulEventSubscriber<State>
     let masterBn: undefined | number = undefined;
     if (options && options.state) {
       this.setState(options.state, blockNumber);
+    } else if (options && options.forceRegenerate) {
+      // ZkEVM forces to always regenerate state when it is old
+      this.logger.debug(
+        `${this.parentName}: ${this.name}: forced to regenerate state`,
+      );
+      const state = await this.generateState(blockNumber);
+      this.setState(state, blockNumber);
     } else {
       if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
         let stateAsString = await this.dexHelper.cache.hget(
@@ -367,8 +375,9 @@ export abstract class StatefulEventSubscriber<State>
       this.masterPoolNeeded &&
       state === null
     ) {
-      this.logger.info(
-        `${this.parentName}: ${this.name}: schedule a job to get state from cache`,
+      this._logBatchTypicalMessages(
+        `${this.parentName}: schedule a job to get state from cache`,
+        'info',
       );
 
       this.dexHelper.cache.addBatchHGet(
@@ -384,8 +393,9 @@ export abstract class StatefulEventSubscriber<State>
             return false;
           }
 
-          this.logger.info(
-            `${this.parentName}: ${this.name}: received state from a scheduled job`,
+          this._logBatchTypicalMessages(
+            `${this.parentName}: received state from a scheduled job`,
+            'info',
           );
           this.setState(state.state, state.bn);
           return true;
@@ -400,7 +410,11 @@ export abstract class StatefulEventSubscriber<State>
       return;
     }
 
-    this.logger.info(`${this.parentName}: ${this.name} saving state in cache`);
+    this._logBatchTypicalMessages(
+      `${this.parentName}: saving state in cache`,
+      'info',
+    );
+
     this.dexHelper.cache.hset(
       this.mapKey,
       this.name,

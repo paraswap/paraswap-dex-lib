@@ -6,7 +6,7 @@ import { ZERO_TICK_INFO } from '../constants';
 
 export class Tick {
   static update(
-    state: PoolState,
+    state: Pick<PoolState, 'ticks'>,
     tick: bigint,
     tickCurrent: bigint,
     liquidityDelta: bigint,
@@ -61,7 +61,7 @@ export class Tick {
     return flipped;
   }
 
-  static clear(state: PoolState, tick: bigint) {
+  static clear(state: Pick<PoolState, 'ticks'>, tick: bigint) {
     delete state.ticks[Number(tick)];
   }
 

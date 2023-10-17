@@ -6,7 +6,7 @@ import { Address, Log } from '../../../types';
 import { StatefulEventSubscriber } from '../../../stateful-event-subscriber';
 import { DeepReadonly } from 'ts-essentials';
 // import { getManyPoolStates } from './getstate-multicall';
-import { BN_0, BN_POWS } from '../../../bignumber-constants';
+import { BN_0, BN_1, BN_POWS } from '../../../bignumber-constants';
 import { IDexHelper } from '../../../dex-helper';
 import { erc20Iface } from '../../../lib/utils-interfaces';
 import { bigNumberify, catchParseLogError, stringify } from '../../../utils';

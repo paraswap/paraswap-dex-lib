@@ -33,10 +33,12 @@ export enum Network {
   RINKEBY = 4,
   BSC = 56,
   POLYGON = 137,
+  ZKEVM = 1101,
   AVALANCHE = 43114,
   FANTOM = 250,
   ARBITRUM = 42161,
   OPTIMISM = 10,
+  BASE = 8453,
 }
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
 

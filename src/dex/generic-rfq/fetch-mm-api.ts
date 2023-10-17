@@ -5,7 +5,7 @@ import Web3 from 'web3';
 import { generateConfig } from '../../config';
 import { DummyRequestWrapper } from '../../dex-helper/dummy-dex-helper';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
-import Fetcher from '../../lib/fetcher/fetcher';
+import { Fetcher } from '../../lib/fetcher/fetcher';
 import { getLogger } from '../../lib/log4js';
 import { MultiWrapper } from '../../lib/multi-wrapper';
 import { genericRFQAuthHttp } from './security';
@@ -23,11 +23,11 @@ import {
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
-  validateAndCast,
 } from './validators';
 import MultiV2Abi from '../../abi/multi-v2.json';
 import { AbiItem } from 'web3-utils';
 import { checkOrder } from './utils';
+import { validateAndCast } from '../../lib/validators';
 
 const network = 1;
 

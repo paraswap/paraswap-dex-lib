@@ -7,7 +7,7 @@ export const PlatypusConfig: DexConfigMap<DexParams> = {
     [Network.AVALANCHE]: {
       pools: [
         {
-          address: '0x66357dCaCe80431aee0A7507e2E361B7e2402370',
+          address: '0xbe52548488992Cc76fFA1B42f3A58F646864df45',
           name: 'Main USD Pool',
           oracleType: PlatypusOracleType.ChainLink,
         },

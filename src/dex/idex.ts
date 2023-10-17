@@ -20,6 +20,7 @@ import { IDexHelper } from '../dex-helper/idex-helper';
 
 export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   needWrapNative: boolean;
+  needsSequentialPreprocessing?: boolean;
 
   // Returns the ETH fee required to swap
   // It is optional for a DEX to implement this
@@ -76,9 +77,15 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
     data: ExchangeData,
     side: SwapSide,
     permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
     contractMethod?: string,
   ): TxInfo<DirectParam>;
 }

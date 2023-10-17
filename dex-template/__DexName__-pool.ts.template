@@ -8,9 +8,11 @@ import { PoolState } from './types';
 
 export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
-    [event: string]:
-      (event: any, state: DeepReadonly<PoolState>, log: Readonly<Log>)
-        => DeepReadonly<PoolState> | null;
+    [event: string]: (
+      event: any,
+      state: DeepReadonly<PoolState>,
+      log: Readonly<Log>,
+    ) => DeepReadonly<PoolState> | null;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -18,7 +20,7 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
   addressesSubscribed: string[];
 
   constructor(
-    protected parentName: string,
+    readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -26,7 +28,8 @@ export class __DexName__EventPool extends StatefulEventSubscriber<PoolState> {
       '' /* TODO: Import and put here __DexName__ ABI */,
     ), // TODO: add any additional params required for event subscriber
   ) {
-    super(parentName, logger);
+    // TODO: Add pool name
+    super(parentName, 'POOL_NAME', dexHelper, logger);
 
     // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.__DexNameCamel__Iface.parseLog(log);
