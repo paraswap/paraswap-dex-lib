@@ -395,8 +395,10 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
 
       if (side === ClobSide.BID) {
         result.push(
-          (amount * BigInt(10 ** (baseToken.decimals * 2))) /
-            (price * BigInt(10 ** quoteToken.decimals)),
+          price !== 0n // To avoid division by zero error
+          ? (amount * BigInt(10 ** (baseToken.decimals * 2))) /
+            (price * BigInt(10 ** quoteToken.decimals))
+          : 0n,
         );
       } else {
         result.push(
