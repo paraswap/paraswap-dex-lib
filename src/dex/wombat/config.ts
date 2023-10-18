@@ -13,6 +13,14 @@ export const WombatConfig: DexConfigMap<DexParams> = {
         /** @todo add Side and Dynamic pools */
       ],
     },
+    [Network.ARBITRUM]: {
+      pools: [
+        {
+          address: '0xc6bc781E20f9323012F6e422bdf552Ff06bA6CD1',
+          name: 'Wombat Main Pool',
+        },
+      ],
+    },
   },
 };
 
