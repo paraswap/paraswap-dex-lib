@@ -526,6 +526,10 @@ export const Tokens: {
       address: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
       decimals: 18,
     },
+    BNBx: {
+      address: '0xab824b47806fea52276fef231e5e2d5fb3d4cf4e',
+      decimals: 9,
+    },
     BUSD: {
       address: '0xe9e7cea3dedca5984780bafc599bd69add087d56',
       decimals: 18,

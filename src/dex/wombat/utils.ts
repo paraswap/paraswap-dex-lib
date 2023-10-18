@@ -43,6 +43,7 @@ function swapQuoteFunc(
     return 0n;
   }
   // int256 D = Ax + Ay - A.wmul((Lx * Lx) / Ax + (Ly * Ly) / Ay); // flattened _invariantFunc
+
   const d =
     assetX +
     assetY -

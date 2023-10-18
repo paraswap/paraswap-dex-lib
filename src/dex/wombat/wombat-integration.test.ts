@@ -150,16 +150,16 @@ describe('Wombat', function () {
   let blockNumber: number;
   let wombat: Wombat;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('BSC', () => {
+    const network = Network.BSC;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'USDT';
 
     const amountsForSell = [
       0n,
