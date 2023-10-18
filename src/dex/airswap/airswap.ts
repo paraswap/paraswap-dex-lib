@@ -36,6 +36,7 @@ import {
 } from './airswap-tools';
 import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
+import { Server } from '@airswap/libraries';
 
 type temporaryMakerAnswer = {
   pairs: {
@@ -221,7 +222,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       const prices = price.prices.filter(p => p > 0n);
       return prices.length > 0;
     });
-    // console.log("pricesWithout0n", pricesWithout0n)
+    console.log('pricesWithout0n', pricesWithout0n);
     return pricesWithout0n;
   }
 
@@ -351,34 +352,23 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       normalizedDestToken,
       this.network,
     );
-    let responses = {} as Promise<QuoteResponse>[];
-    try {
-      responses =
-        makers.length > 0
-          ? makers.map(maker => {
-              return makeRFQ(
-                maker,
-                this.augustusAddress.toLocaleLowerCase(),
-                normalizedSrcToken,
-                normalizedDestToken,
-                amount,
-              );
-            })
-          : ({} as unknown as any);
-    } catch (error) {
-      // console.error(error);
-    }
-
-    const fulfilledResponses = (
-      await fulfilledWithinTimeout<QuoteResponse>(responses, 3000)
-    ).filter(
-      r => r.signedOrder != undefined && Object.keys(r.signedOrder).length > 0,
+    const maker = await Server.at(optimalSwapExchange.data!.maker, {
+      chainId: this.network,
+    });
+    const response = await makeRFQ(
+      maker,
+      this.augustusAddress.toLocaleLowerCase(),
+      normalizedSrcToken,
+      normalizedDestToken,
+      amount,
     );
 
-    const firstResponse = fulfilledResponses[0];
-    console.log('fulfilledResponses', fulfilledResponses);
-
-    if (!firstResponse || !firstResponse.signedOrder) {
+    if (
+      !response ||
+      !response.signedOrder ||
+      !response.signedOrder.expiry ||
+      response.signedOrder.expiry == 'undefined'
+    ) {
       throw new Error('No responses from maker');
     }
 
@@ -386,12 +376,12 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       {
         ...optimalSwapExchange,
         data: {
-          maker: firstResponse.maker,
+          maker: response.maker,
           senderWallet: this.augustusAddress,
-          signedOrder: firstResponse.signedOrder,
+          signedOrder: response.signedOrder,
         },
       },
-      { deadline: BigInt(firstResponse.signedOrder.expiry) },
+      { deadline: BigInt(response.signedOrder.expiry) },
     ];
   }
 

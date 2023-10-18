@@ -92,19 +92,19 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[nativeTokenSymbol],
+            //     tokens[tokenASymbol],
+            //     holders[nativeTokenSymbol],
+            //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
             // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
             //   await testE2E(
             //     tokens[tokenASymbol],
@@ -118,19 +118,19 @@ function testForNetwork(
             //     provider,
             //   );
             // });
-            // it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenASymbol],
-            //     tokens[tokenBSymbol],
-            //     holders[tokenASymbol],
-            //     side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),
@@ -147,7 +147,7 @@ describe('Airswap E2E', () => {
     describe('USDT/APE', () => {
       const tokenASymbol: string = 'USDT';
       const tokenBSymbol: string = 'APE';
-      const nativeTokenSymbol: string = 'WETH';
+      const nativeTokenSymbol: string = 'WBNB';
 
       const tokenAAmount: string = '1000000';
       const tokenBAmount: string = '1000000000000000000';
@@ -165,13 +165,13 @@ describe('Airswap E2E', () => {
       );
     });
 
-    describe('USDC/USDC', () => {
-      const tokenASymbol: string = 'USDT';
-      const tokenBSymbol: string = 'USDC';
+    describe('USDC/USDT', () => {
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
       const nativeTokenSymbol: string = 'WETH';
 
-      const tokenAAmount: string = '1000000000';
-      const tokenBAmount: string = '1000000000';
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '100000000';
       const nativeTokenAmount = '1000000000000000000';
 
       testForNetwork(
@@ -208,16 +208,41 @@ describe('Airswap E2E', () => {
     });
   });
 
+  describe('BSC', () => {
+    const network = Network.BSC;
+
+    describe('USDC/USDC', () => {
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDC';
+      const nativeTokenSymbol: string = 'WBNB';
+
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        nativeTokenSymbol,
+      );
+    });
+  });
+
   describe('POLYGON', () => {
     const network = Network.POLYGON;
 
     describe('USDT/USDC', () => {
-      const tokenASymbol: string = 'USDT';
-      const tokenBSymbol: string = 'USDC';
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
       const nativeTokenSymbol: string = 'WMATIC';
 
-      const tokenAAmount: string = '1000000';
-      const tokenBAmount: string = '1000000';
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000';
       const nativeTokenAmount = '1000000000000000000000';
 
       testForNetwork(

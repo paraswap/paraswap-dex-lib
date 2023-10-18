@@ -552,6 +552,7 @@ export const Tokens: {
     WBNB: {
       address: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
       decimals: 18,
+      symbol: 'WBNB',
     },
     BUSD: {
       address: '0xe9e7cea3dedca5984780bafc599bd69add087d56',
@@ -579,7 +580,11 @@ export const Tokens: {
       address: '0x30807D3b851A31d62415B8bb7Af7dCa59390434a',
       decimals: 18,
     },
-    BNB: { address: ETHER_ADDRESS, decimals: 18 },
+    BNB: {
+      address: ETHER_ADDRESS,
+      decimals: 18,
+      symbol: 'BNB',
+    },
     bBTC: {
       address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c',
       decimals: 18,
@@ -645,6 +650,7 @@ export const Tokens: {
     WBTC: {
       address: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
       decimals: 8,
+      symbol: 'WBTC',
     },
     WETH: {
       address: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
