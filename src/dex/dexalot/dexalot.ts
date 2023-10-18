@@ -56,6 +56,7 @@ import {
   DEXALOT_RESTRICT_TTL_S,
   DEXALOT_RATELIMIT_CACHE_VALUE,
   DEXALOT_BLACKLIST_CACHES_TTL_S,
+  DEXALOT_FIRM_QUOTE_TIMEOUT_MS,
 } from './constants';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
@@ -580,7 +581,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const rfq: RFQResponse = await this.dexHelper.httpRequest.post(
         `${DEXALOT_API_URL}/api/rfq/firm`,
         rfqParams,
-        undefined,
+        DEXALOT_FIRM_QUOTE_TIMEOUT_MS,
         { 'x-apikey': this.dexalotAuthToken },
       );
       if (!rfq) {
