@@ -76,6 +76,7 @@ import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
+import { Dexalot } from './dexalot/dexalot';
 
 const LegacyDexes = [
   CurveV2,
@@ -102,6 +103,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Dexalot,
   CurveV1,
   CurveFork,
   Swerve,
