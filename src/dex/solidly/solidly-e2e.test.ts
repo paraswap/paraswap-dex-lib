@@ -423,8 +423,8 @@ describe('Solidly E2E', () => {
       const tokenASymbol: string = 'lzUSDC';
       const tokenBSymbol: string = 'axlUSDC';
 
-      const tokenAAmount: string = '111110';
-      const tokenBAmount: string = '100000';
+      const tokenAAmount: string = '1111100';
+      const tokenBAmount: string = '1000000';
       const nativeTokenAmount = '11000000000000000';
 
       testForNetwork(

@@ -9,7 +9,7 @@ import _ from 'lodash';
 
 const FvmFactoryABI = [
   {
-    inputs: [{ internalType: 'bool', name: '_stable', type: 'bool' }],
+    inputs: [{ internalType: '_pair', name: '_stable', type: 'address' }],
     name: 'getFee',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
@@ -39,7 +39,7 @@ export class Fvm extends Solidly {
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: this.factoryAddress,
-      callData: fvmFactoryIface.encodeFunctionData('getFee', [pair.stable]),
+      callData: fvmFactoryIface.encodeFunctionData('getFee', [pair.exchange]),
     };
     const callDecoder = (values: any[]) =>
       parseInt(

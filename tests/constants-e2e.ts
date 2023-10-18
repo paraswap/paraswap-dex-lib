@@ -1054,6 +1054,8 @@ export const Holders: {
     GDAI: '0x0e2ed73f9c1409e2b36fe6c46e60d4557b7c2ac0',
     EQUAL: '0x8b187ea19c93091a4d6b426b71871648182b5fac',
     FVM: '0x07BB65fAaC502d4996532F834A1B7ba5dC32Ff96',
+    lzUSDC: '0x1e38e2e0e7df3be6592867d0ac2713a4dbda8350',
+    axlUSDC: '0xccf932cd565c21d2e516c8ff3a4f244eea27e09a',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',

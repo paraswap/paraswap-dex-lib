@@ -196,7 +196,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }], // dystopia
   },
   [Network.FANTOM]: {
-    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly, spiritSwapV2, equalizer
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly, spiritSwapV2, equalizer, fvm
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
