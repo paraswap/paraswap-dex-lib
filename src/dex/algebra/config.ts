@@ -33,6 +33,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
       deployer: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
       version: 'v1.1',
+      forceManualStateGenerate: true,
     },
   },
   ZyberSwapV3: {

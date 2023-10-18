@@ -53,6 +53,21 @@ export const PancakeswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://api.studio.thegraph.com/query/45376/exchange-v3-arbitrum/version/latest',
     },
+    [Network.BASE]: {
+      factory: '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
+      deployer: '0x41ff9AA7e16B8B1a8a8dc4f0eFacd93D02d071c9',
+      quoter: '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
+      router: '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
+      supportedFees: PANCAKE_SUPPORTED_FEES,
+      stateMulticall: '0xeBF40A40CA3D4310Bf53048F48e860656e1D7C81',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 30,
+      initHash:
+        '0x6ce8eb472fa82df5469c6ab6d485f17c3ad13c8cd7af59b3d4a8026c5ce0f7e2',
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/45376/exchange-v3-base/version/latest',
+    },
   },
 };
 
@@ -68,5 +83,9 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 3 }],
     [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 2 }],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 1 }],
+    [SwapSide.BUY]: [{ name: 'BaseBuyAdapter', index: 1 }],
   },
 };

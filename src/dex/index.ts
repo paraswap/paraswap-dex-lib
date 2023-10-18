@@ -47,6 +47,7 @@ import { Thena } from './solidly/forks-override/thena';
 import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
 import { VelodromeV2 } from './solidly/forks-override/velodromeV2';
+import { Aerodrome } from './solidly/forks-override/aerodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
@@ -74,7 +75,9 @@ import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
+import { Dexalot } from './dexalot/dexalot';
 
 const LegacyDexes = [
   CurveV2,
@@ -101,6 +104,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Dexalot,
   CurveV1,
   CurveFork,
   Swerve,
@@ -134,6 +138,7 @@ const Dexes = [
   Chronos,
   Velodrome,
   VelodromeV2,
+  Aerodrome,
   Cone,
   SoliSnek,
   Equalizer,
@@ -146,6 +151,7 @@ const Dexes = [
   MaverickV1,
   Camelot,
   SwaapV2,
+  QuickPerps,
   NomiswapV2,
 ];
 
@@ -312,5 +318,14 @@ export class DexAdapterService {
     return side === SwapSide.SELL
       ? this.sellAdapters[specialDexKey]
       : this.buyAdapters[specialDexKey];
+  }
+
+  doesPreProcessingRequireSequentiality(dexKey: string): boolean {
+    try {
+      const dex = this.getDexByKey(dexKey);
+      return !!dex.needsSequentialPreprocessing;
+    } catch (e) {
+      return false;
+    }
   }
 }
