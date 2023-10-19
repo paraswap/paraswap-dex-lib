@@ -311,6 +311,14 @@ export const Tokens: {
       address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
       decimals: 18,
     },
+    fETH: {
+      address: '0x53805A76E1f5ebbFE7115F16f9c87C2f7e633726',
+      decimals: 18,
+    },
+    xETH: {
+      address: '0xe063F04f280c60aECa68b38341C2eEcBeC703ae2',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -984,6 +992,7 @@ export const Holders: {
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
     GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
     wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
+    fETH: '0x53805A76E1f5ebbFE7115F16f9c87C2f7e633726',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
