@@ -10,10 +10,11 @@ jobs:
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v2
+
       - run: |
-        git fetch --no-tags --depth=1 origin master
-        git checkout -b master
-        git checkout ${{ github.event.pull_request.head.sha }}
+          git fetch --no-tags --depth=1 origin master
+          git checkout -b master
+          git checkout ${{ github.event.pull_request.head.sha }}
 
       - name: Setup node
         uses: actions/setup-node@v2
