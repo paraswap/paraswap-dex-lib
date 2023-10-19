@@ -1513,5 +1513,26 @@ describe('Solidly E2E', () => {
         }),
       );
     });
+
+    describe('Fvm', () => {
+      const dexKey = 'Fvm';
+
+      const tokenASymbol: string = 'USDbC';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '1111100000';
+      const tokenBAmount: string = '1111100000';
+      const nativeTokenAmount = '100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
   });
 });
