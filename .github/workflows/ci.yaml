@@ -9,7 +9,10 @@ jobs:
         node: ['16.x']
     name: Node ${{ matrix.node }} sample
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - run: |
           git fetch --no-tags --depth=1 origin master
