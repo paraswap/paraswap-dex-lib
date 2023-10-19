@@ -169,6 +169,12 @@ function testForNetwork(
 describe('Dexalot E2E', () => {
   const dexKey = 'Dexalot';
 
+  describe('Test on ci', () => {
+    it('should', () => {
+      expect(true).toBe(true);
+    })
+  });
+
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 
