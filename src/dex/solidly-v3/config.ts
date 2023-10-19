@@ -30,7 +30,7 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
   SolidlyV3: {
     [Network.MAINNET]: {
       // factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-      factory: '0x735bb16affe83a3dc4dc418abccf179617cf9ff2',
+      factory: '0x70Fe4a44EA505cFa3A57b95cF2862D4fd5F0f687',
       quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
       router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedTickSpacings: SUPPORTED_TICK_SPACINGS,
@@ -38,9 +38,14 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
+      // OG uniswap initHash
       // initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      initHash: `0x2d6541efe1e24667ba5408a35ae420462924d43db1251d7580804ac81545109b`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/solidlylabs/solidly-v3',
+      // Solidly initHash prior to callbacks
+      // initHash: `0x2d6541efe1e24667ba5408a35ae420462924d43db1251d7580804ac81545109b`,
+      // Solidly initHash after callbacks
+      initHash: `0xe9b68c5f77858eecac2e651646e208175e9b1359d68d0e14fc69f8c54e5010bf`,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/solidlylabs/solidly-v3',
     },
   },
 };
