@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -7,10 +8,11 @@ import { UniswapV3Config } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { OracleObservation, PoolState, Slot0, TickInfo } from './types';
-import { bigIntify } from '../../utils';
-import { MultiResult } from '../../lib/multi-wrapper';
-import { TickBitMap } from './contract-math/TickBitMap';
+import { PoolState } from './types';
+import { Interface } from '@ethersproject/abi';
+import ERC20ABI from '../../abi/erc20.json';
+import StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
+import { AbiItem } from 'web3-utils';
 
 jest.setTimeout(300 * 1000);
 const dexKey = 'UniswapV3';
@@ -71,6 +73,15 @@ describe('UniswapV3 Event', function () {
     // But stateMulticall is not deployed at that time. So I just remove that check
     // I think it is not important actually
     ['IncreaseObservationCardinalityNext']: [],
+    ['Collect']: [
+      16440688, 16440718, 16440799, 16440818, 16440824, 16440834, 16440840,
+      16440931, 16440955, 16441031, 16441106, 16441124, 16441186, 16441187,
+      16441202, 16441249,
+    ],
+    ['Flash']: [
+      16417763, 16419900, 16422564, 16432928, 16434338, 16434528, 16434610,
+      16437224, 16437229,
+    ],
   };
 
   describe('UniswapV3EventPool', function () {
@@ -85,12 +96,18 @@ describe('UniswapV3 Event', function () {
           const uniswapV3Pool = new UniswapV3EventPool(
             dexHelper,
             dexKey,
-            config.stateMulticall,
+            new dexHelper.web3Provider.eth.Contract(
+              StateMulticallABI as AbiItem[],
+              config.stateMulticall,
+            ),
+            new Interface(ERC20ABI),
             config.factory,
             poolFeeCode,
             token0,
             token1,
             logger,
+            undefined,
+            config.initHash,
           );
 
           // It is done in generateState. But here have to make it manually
@@ -134,12 +151,18 @@ describe('UniswapV3 Event', function () {
     const uniswapV3Pool = new UniswapV3EventPool(
       dexHelper,
       dexKey,
-      _config.stateMulticall,
+      new dexHelper.web3Provider.eth.Contract(
+        StateMulticallABI as AbiItem[],
+        config.stateMulticall,
+      ),
+      new Interface(ERC20ABI),
       _config.factory,
       _feeCode,
       _token0,
       _token1,
       logger,
+      undefined,
+      config.initHash,
     );
 
     // It is done in generateState. But here have to make it manually

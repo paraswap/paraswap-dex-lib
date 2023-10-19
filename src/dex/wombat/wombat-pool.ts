@@ -145,14 +145,14 @@ export class WombatEventPool extends StatefulEventSubscriber<PoolState> {
 
     let i = 0;
     // 2 A. decode pool params
-    const ampFactor = WombatEventPool.poolInterface.decodeFunctionResult(
+    const ampFactor = BigInt(WombatEventPool.poolInterface.decodeFunctionResult(
       'ampFactor',
       returnData[i++],
-    )[0];
-    const haircutRate = WombatEventPool.poolInterface.decodeFunctionResult(
+    )[0]);
+    const haircutRate = BigInt(WombatEventPool.poolInterface.decodeFunctionResult(
       'haircutRate',
       returnData[i++],
-    )[0];
+    )[0]);
     const poolState: PoolState = {
       params: {
         ampFactor,
@@ -165,14 +165,14 @@ export class WombatEventPool extends StatefulEventSubscriber<PoolState> {
     for (const [tokenAddress, tokenInfo] of Object.entries(
       this.poolCfg.tokens,
     )) {
-      const cash = WombatEventPool.assetInterface.decodeFunctionResult(
+      const cash = BigInt(WombatEventPool.assetInterface.decodeFunctionResult(
         'cash',
         returnData[i++],
-      )[0];
-      const liability = WombatEventPool.assetInterface.decodeFunctionResult(
+      )[0]);
+      const liability = BigInt(WombatEventPool.assetInterface.decodeFunctionResult(
         'liability',
         returnData[i++],
-      )[0];
+      )[0]);
       poolState.underlyingAddresses.push(tokenAddress);
       poolState.asset[tokenAddress] = {
         cash,

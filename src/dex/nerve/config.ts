@@ -367,6 +367,37 @@ export const NerveConfig: DexConfigMap<DexParams> = {
       abi: ironV2PoolABI,
     },
   },
+  ZyberswapStable: {
+    [Network.ARBITRUM]: {
+      poolConfigs: {
+        Stablecoin: {
+          name: 'Stablecoin',
+          address: '0x969f7699fbB9C79d8B61315630CDeED95977Cfb8',
+          coins: [
+            {
+              address: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8', // 0 - USDC
+              decimals: 6,
+            },
+            {
+              address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // 1 - USDT
+              decimals: 6,
+            },
+            {
+              address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', // 2 - DAI
+              decimals: 18,
+            },
+          ],
+          isMetapool: false,
+          isUSDPool: true,
+          lpToken: {
+            address: '0x1A90A043751A364447110FF95CCa05AE752d85BE',
+            decimals: 18,
+          },
+        },
+      },
+      abi: axialPoolABI,
+    },
+  },
   Saddle: {
     [Network.MAINNET]: {
       poolConfigs: {

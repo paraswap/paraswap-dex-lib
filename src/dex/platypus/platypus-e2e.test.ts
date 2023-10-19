@@ -40,7 +40,7 @@ describe('Platypus E2E', () => {
       'newFRAX',
       'MIM',
       'YUSD',
-      'H2O',
+      // 'H2O', // pool is paused
       'MONEY',
       'TSD',
     ];

@@ -233,6 +233,22 @@ export const JarvisV6Config: DexConfigMap<DexParams> = {
           chainLinkAggregatorAddress:
             '0xfd54f97a6c408561b5df798c04ae08b27ca0d7f7',
         },
+        {
+          address: '0x30E97dc680Ee97Ff65B5188d34Fb4EA20B38D710',
+          priceFeedPair: 'BRLUSD',
+          syntheticToken: {
+            address: '0xf2f77FE7b8e66571E0fca7104c4d670BF1C8d722',
+            decimals: 18,
+            symbol: 'jBRL',
+          },
+          collateralToken: {
+            address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+            decimals: 6,
+            symbol: 'USDC',
+          },
+          chainLinkAggregatorAddress:
+            '0x6DBd1be1a83005d26b582D61937b406300B05A8F',
+        },
       ],
     },
   },

@@ -19,7 +19,7 @@ import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { WombatData, DexParams, WombatConfigInfo, PoolState } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange } from '../simple-exchange';
 import { WombatConfig, Adapters } from './config';
 import { WombatEventPool } from './wombat-pool';
 import { quoteFrom } from './utils';
@@ -372,7 +372,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       srcAmount,
       1 /** @todo assume slippage tolorence is 2% and set the minimum receive accordingly */,
       this.augustusAddress,
-      this.getDeadline(),
+      getLocalDeadlineAsFriendlyPlaceholder(),
     ]);
 
     return this.buildSimpleParamWithoutWETHConversion(

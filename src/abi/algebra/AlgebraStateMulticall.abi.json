@@ -1,0 +1,801 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract IAlgebraFactory",
+        "name": "factory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "int16",
+        "name": "tickBitmapStart",
+        "type": "int16"
+      },
+      {
+        "internalType": "int16",
+        "name": "tickBitmapEnd",
+        "type": "int16"
+      }
+    ],
+    "name": "getAdditionalBitmapWithoutTicks",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "int16",
+            "name": "index",
+            "type": "int16"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAlgebraStateMulticall.TickBitMapMappings[]",
+        "name": "tickBitmap",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IAlgebraFactory",
+        "name": "factory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "int16",
+        "name": "tickBitmapStart",
+        "type": "int16"
+      },
+      {
+        "internalType": "int16",
+        "name": "tickBitmapEnd",
+        "type": "int16"
+      }
+    ],
+    "name": "getAdditionalBitmapWithTicks",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "int16",
+            "name": "index",
+            "type": "int16"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IAlgebraStateMulticall.TickBitMapMappings[]",
+        "name": "tickBitmap",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "int24",
+            "name": "index",
+            "type": "int24"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint128",
+                "name": "liquidityGross",
+                "type": "uint128"
+              },
+              {
+                "internalType": "int128",
+                "name": "liquidityNet",
+                "type": "int128"
+              },
+              {
+                "internalType": "int56",
+                "name": "tickCumulativeOutside",
+                "type": "int56"
+              },
+              {
+                "internalType": "uint160",
+                "name": "secondsPerLiquidityOutsideX128",
+                "type": "uint160"
+              },
+              {
+                "internalType": "uint32",
+                "name": "secondsOutside",
+                "type": "uint32"
+              },
+              {
+                "internalType": "bool",
+                "name": "initialized",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.TickInfo",
+            "name": "value",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct IAlgebraStateMulticall.TickInfoMappings[]",
+        "name": "ticks",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IAlgebraFactory",
+        "name": "factory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "int16",
+        "name": "tickBitmapStart",
+        "type": "int16"
+      },
+      {
+        "internalType": "int16",
+        "name": "tickBitmapEnd",
+        "type": "int16"
+      }
+    ],
+    "name": "getFullState",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "contract IAlgebraPool",
+            "name": "pool",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "blockTimestamp",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint160",
+                "name": "price",
+                "type": "uint160"
+              },
+              {
+                "internalType": "int24",
+                "name": "tick",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint16",
+                "name": "fee",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint16",
+                "name": "timepointIndex",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint8",
+                "name": "communityFeeToken0",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "communityFeeToken1",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "unlocked",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.GlobalState",
+            "name": "globalState",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint128",
+            "name": "liquidity",
+            "type": "uint128"
+          },
+          {
+            "internalType": "int24",
+            "name": "tickSpacing",
+            "type": "int24"
+          },
+          {
+            "internalType": "uint128",
+            "name": "maxLiquidityPerTick",
+            "type": "uint128"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "initialized",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint32",
+                "name": "blockTimestamp",
+                "type": "uint32"
+              },
+              {
+                "internalType": "int56",
+                "name": "tickCumulative",
+                "type": "int56"
+              },
+              {
+                "internalType": "uint160",
+                "name": "secondsPerLiquidityCumulative",
+                "type": "uint160"
+              },
+              {
+                "internalType": "uint88",
+                "name": "volatilityCumulative",
+                "type": "uint88"
+              },
+              {
+                "internalType": "int24",
+                "name": "averageTick",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint144",
+                "name": "volumePerLiquidityCumulative",
+                "type": "uint144"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.Timepoints",
+            "name": "timepoints",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "int16",
+                "name": "index",
+                "type": "int16"
+              },
+              {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.TickBitMapMappings[]",
+            "name": "tickBitmap",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "int24",
+                "name": "index",
+                "type": "int24"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint128",
+                    "name": "liquidityGross",
+                    "type": "uint128"
+                  },
+                  {
+                    "internalType": "int128",
+                    "name": "liquidityNet",
+                    "type": "int128"
+                  },
+                  {
+                    "internalType": "int56",
+                    "name": "tickCumulativeOutside",
+                    "type": "int56"
+                  },
+                  {
+                    "internalType": "uint160",
+                    "name": "secondsPerLiquidityOutsideX128",
+                    "type": "uint160"
+                  },
+                  {
+                    "internalType": "uint32",
+                    "name": "secondsOutside",
+                    "type": "uint32"
+                  },
+                  {
+                    "internalType": "bool",
+                    "name": "initialized",
+                    "type": "bool"
+                  }
+                ],
+                "internalType": "struct IAlgebraStateMulticall.TickInfo",
+                "name": "value",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.TickInfoMappings[]",
+            "name": "ticks",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct IAlgebraStateMulticall.StateResult",
+        "name": "state",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IAlgebraFactory",
+        "name": "factory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "int16",
+        "name": "tickBitmapStart",
+        "type": "int16"
+      },
+      {
+        "internalType": "int16",
+        "name": "tickBitmapEnd",
+        "type": "int16"
+      }
+    ],
+    "name": "getFullStateWithoutTicks",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "contract IAlgebraPool",
+            "name": "pool",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "blockTimestamp",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint160",
+                "name": "price",
+                "type": "uint160"
+              },
+              {
+                "internalType": "int24",
+                "name": "tick",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint16",
+                "name": "fee",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint16",
+                "name": "timepointIndex",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint8",
+                "name": "communityFeeToken0",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "communityFeeToken1",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "unlocked",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.GlobalState",
+            "name": "globalState",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint128",
+            "name": "liquidity",
+            "type": "uint128"
+          },
+          {
+            "internalType": "int24",
+            "name": "tickSpacing",
+            "type": "int24"
+          },
+          {
+            "internalType": "uint128",
+            "name": "maxLiquidityPerTick",
+            "type": "uint128"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "initialized",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint32",
+                "name": "blockTimestamp",
+                "type": "uint32"
+              },
+              {
+                "internalType": "int56",
+                "name": "tickCumulative",
+                "type": "int56"
+              },
+              {
+                "internalType": "uint160",
+                "name": "secondsPerLiquidityCumulative",
+                "type": "uint160"
+              },
+              {
+                "internalType": "uint88",
+                "name": "volatilityCumulative",
+                "type": "uint88"
+              },
+              {
+                "internalType": "int24",
+                "name": "averageTick",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint144",
+                "name": "volumePerLiquidityCumulative",
+                "type": "uint144"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.Timepoints",
+            "name": "timepoints",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "int16",
+                "name": "index",
+                "type": "int16"
+              },
+              {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.TickBitMapMappings[]",
+            "name": "tickBitmap",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "int24",
+                "name": "index",
+                "type": "int24"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint128",
+                    "name": "liquidityGross",
+                    "type": "uint128"
+                  },
+                  {
+                    "internalType": "int128",
+                    "name": "liquidityNet",
+                    "type": "int128"
+                  },
+                  {
+                    "internalType": "int56",
+                    "name": "tickCumulativeOutside",
+                    "type": "int56"
+                  },
+                  {
+                    "internalType": "uint160",
+                    "name": "secondsPerLiquidityOutsideX128",
+                    "type": "uint160"
+                  },
+                  {
+                    "internalType": "uint32",
+                    "name": "secondsOutside",
+                    "type": "uint32"
+                  },
+                  {
+                    "internalType": "bool",
+                    "name": "initialized",
+                    "type": "bool"
+                  }
+                ],
+                "internalType": "struct IAlgebraStateMulticall.TickInfo",
+                "name": "value",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.TickInfoMappings[]",
+            "name": "ticks",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct IAlgebraStateMulticall.StateResult",
+        "name": "state",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IAlgebraFactory",
+        "name": "factory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "int16",
+        "name": "leftBitmapAmount",
+        "type": "int16"
+      },
+      {
+        "internalType": "int16",
+        "name": "rightBitmapAmount",
+        "type": "int16"
+      }
+    ],
+    "name": "getFullStateWithRelativeBitmaps",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "contract IAlgebraPool",
+            "name": "pool",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "blockTimestamp",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint160",
+                "name": "price",
+                "type": "uint160"
+              },
+              {
+                "internalType": "int24",
+                "name": "tick",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint16",
+                "name": "fee",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint16",
+                "name": "timepointIndex",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint8",
+                "name": "communityFeeToken0",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "communityFeeToken1",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "unlocked",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.GlobalState",
+            "name": "globalState",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint128",
+            "name": "liquidity",
+            "type": "uint128"
+          },
+          {
+            "internalType": "int24",
+            "name": "tickSpacing",
+            "type": "int24"
+          },
+          {
+            "internalType": "uint128",
+            "name": "maxLiquidityPerTick",
+            "type": "uint128"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "initialized",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint32",
+                "name": "blockTimestamp",
+                "type": "uint32"
+              },
+              {
+                "internalType": "int56",
+                "name": "tickCumulative",
+                "type": "int56"
+              },
+              {
+                "internalType": "uint160",
+                "name": "secondsPerLiquidityCumulative",
+                "type": "uint160"
+              },
+              {
+                "internalType": "uint88",
+                "name": "volatilityCumulative",
+                "type": "uint88"
+              },
+              {
+                "internalType": "int24",
+                "name": "averageTick",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint144",
+                "name": "volumePerLiquidityCumulative",
+                "type": "uint144"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.Timepoints",
+            "name": "timepoints",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "int16",
+                "name": "index",
+                "type": "int16"
+              },
+              {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.TickBitMapMappings[]",
+            "name": "tickBitmap",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "int24",
+                "name": "index",
+                "type": "int24"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint128",
+                    "name": "liquidityGross",
+                    "type": "uint128"
+                  },
+                  {
+                    "internalType": "int128",
+                    "name": "liquidityNet",
+                    "type": "int128"
+                  },
+                  {
+                    "internalType": "int56",
+                    "name": "tickCumulativeOutside",
+                    "type": "int56"
+                  },
+                  {
+                    "internalType": "uint160",
+                    "name": "secondsPerLiquidityOutsideX128",
+                    "type": "uint160"
+                  },
+                  {
+                    "internalType": "uint32",
+                    "name": "secondsOutside",
+                    "type": "uint32"
+                  },
+                  {
+                    "internalType": "bool",
+                    "name": "initialized",
+                    "type": "bool"
+                  }
+                ],
+                "internalType": "struct IAlgebraStateMulticall.TickInfo",
+                "name": "value",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct IAlgebraStateMulticall.TickInfoMappings[]",
+            "name": "ticks",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct IAlgebraStateMulticall.StateResult",
+        "name": "state",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

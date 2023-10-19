@@ -17,6 +17,8 @@ import {
 } from '../types';
 import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
+import { v4 as uuid } from 'uuid';
+import { DirectContractMethods } from '@paraswap/core/build/constants';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -130,6 +132,15 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       side === SwapSide.SELL ? quoteAmount : amount
     ).toString();
 
+    // eslint-disable-next-line no-console
+    console.log(
+      `Estimated gas cost for ${this.dexKey}: ${
+        Array.isArray(finalPrice.gasCost)
+          ? finalPrice.gasCost[finalPrice.gasCost.length - 1]
+          : finalPrice.gasCost
+      }`,
+    );
+
     const unoptimizedRate = {
       blockNumber,
       network: this.network,
@@ -196,6 +207,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
         : priceRoute.srcAmount,
     );
 
+    const contractMethod = priceRoute.contractMethod;
+
     // Call preprocessTransaction for each exchange before we build transaction
     try {
       priceRoute.bestRoute = await Promise.all(
@@ -225,6 +238,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         {
                           slippageFactor,
                           txOrigin: userAddress,
+                          isDirectMethod: DirectContractMethods.includes(
+                            contractMethod as ContractMethod,
+                          ),
                         },
                       );
 
@@ -255,7 +271,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       partnerAddress: NULL_ADDRESS,
       partnerFeePercent: '0',
       deadline: deadline.toString(),
-      uuid: '00000000-0000-0000-0000-000000000000',
+      uuid: uuid(),
     });
   }
 }

@@ -39,15 +39,21 @@ import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
 import { Wombat } from './wombat/wombat';
 import { GMX } from './gmx/gmx';
-import { WooFi } from './woo-fi/woo-fi';
+import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
+import { Ramses } from './solidly/forks-override/ramses';
+import { Thena } from './solidly/forks-override/thena';
+import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
+import { VelodromeV2 } from './solidly/forks-override/velodromeV2';
+import { Aerodrome } from './solidly/forks-override/aerodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
-import { QuickSwapV3 } from './quickswap-v3';
+import { SoliSnek } from './solidly/forks-override/solisnek';
+import { Equalizer } from './solidly/forks-override/equalizer';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -57,6 +63,21 @@ import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
+import { Camelot } from './camelot/camelot';
+import { Hashflow } from './hashflow/hashflow';
+import { SolidlyEthereum } from './solidly/solidly-ethereum';
+import { MaverickV1 } from './maverick-v1/maverick-v1';
+import { QuickSwapV3 } from './quickswap/quickswap-v3';
+import { ThenaFusion } from './quickswap/thena-fusion';
+import { TraderJoeV2 } from './trader-joe-v2';
+import { SwaapV2 } from './swaap-v2/swaap-v2';
+import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
+import { TraderJoeV21 } from './trader-joe-v2.1';
+import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
+import { Algebra } from './algebra/algebra';
+import { QuickPerps } from './quick-perps/quick-perps';
+import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
+import { Dexalot } from './dexalot/dexalot';
 
 const LegacyDexes = [
   CurveV2,
@@ -73,12 +94,17 @@ const LegacyDexes = [
   DodoV1,
   DodoV2,
   QuickSwapV3,
+  ThenaFusion,
+  SpiritSwapV3,
+  TraderJoeV2,
+  TraderJoeV21,
   Jarvis,
   Lido,
   AugustusRFQOrder,
 ];
 
 const Dexes = [
+  Dexalot,
   CurveV1,
   CurveFork,
   Swerve,
@@ -86,6 +112,8 @@ const Dexes = [
   BalancerV2,
   UniswapV2,
   UniswapV3,
+  Algebra,
+  PancakeswapV3,
   BiSwap,
   MDEX,
   Dfyn,
@@ -100,16 +128,30 @@ const Dexes = [
   Platypus,
   GMX,
   JarvisV6,
-  WooFi,
+  WooFiV2,
   ParaSwapLimitOrders,
   Solidly,
+  SolidlyEthereum,
   SpiritSwapV2,
+  Ramses,
+  Thena,
+  Chronos,
   Velodrome,
+  VelodromeV2,
+  Aerodrome,
   Cone,
+  SoliSnek,
+  Equalizer,
   Synthetix,
   CurveV1Factory,
   SwaapV1,
   WstETH,
+  Hashflow,
+  MaverickV1,
+  Camelot,
+  SwaapV2,
+  QuickPerps,
+  NomiswapV2,
   Wombat,
 ];
 

@@ -20,6 +20,7 @@ import { IDexHelper } from '../dex-helper/idex-helper';
 
 export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   needWrapNative: boolean;
+  needsSequentialPreprocessing?: boolean;
 
   // Returns the ETH fee required to swap
   // It is optional for a DEX to implement this
@@ -76,9 +77,15 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
     data: ExchangeData,
     side: SwapSide,
     permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
     contractMethod?: string,
   ): TxInfo<DirectParam>;
 }
@@ -124,9 +131,11 @@ export interface IDexPricing<ExchangeData> {
     blockNumber: number,
     // list of pool identifiers to use for pricing, if undefined use all pools
     limitPools?: string[],
+
     // I don't like putting this as new params, but in order to not change interface
     // across all integrations, done it like this
     transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
   ): Promise<ExchangePrices<ExchangeData> | null>;
 
   // Returns estimated gas cost for calldata for DEX when used in multiSwap.

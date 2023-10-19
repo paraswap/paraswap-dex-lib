@@ -6,7 +6,7 @@ import {
   MIN_LIQUIDITY_IN_USD,
 } from '../constants';
 import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
-import { Address } from 'paraswap-core';
+import { Address } from '@paraswap/core';
 
 export type MulticallReturnedTypes = bigint | bigint[];
 
@@ -48,6 +48,7 @@ export abstract class PoolPollingBase {
     readonly isLendingPool: boolean,
     readonly baseStatePoolPolling: PoolPollingBase | undefined,
     readonly isSrcFeeOnTransferSupported: boolean,
+    readonly customGasCost: number | undefined,
   ) {
     this.fullName = `${dexKey}-${network}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
     this.isMetaPool = baseStatePoolPolling !== undefined;
