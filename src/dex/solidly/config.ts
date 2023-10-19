@@ -213,4 +213,7 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses
   },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome, equalizer
+  },
 };
