@@ -27,4 +27,4 @@ jobs:
 
       - name: Run Changed tests only
         if: github.event_name == 'pull_request'
-        run: npx jest --verbose --onlyChanged --changedSince=${{github.event.pull_request.base.sha }}
+        run: npx jest --verbose --onlyChanged --changedSince=origin/master
