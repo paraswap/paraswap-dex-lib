@@ -91,6 +91,12 @@ function testForNetwork(
   });
 }
 
+describe('New test', () => {
+  it('should2', () => {
+    expect(true).toBe(true);
+  });
+});
+
 describe('Solidly E2E', () => {
   describe('Fantom', () => {
     const network = Network.FANTOM;

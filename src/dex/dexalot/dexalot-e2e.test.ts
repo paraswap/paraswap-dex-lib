@@ -166,12 +166,6 @@ function testForNetwork(
   });
 }
 
-describe('New test', () => {
-  it('should2', () => {
-    expect(true).toBe(true);
-  });
-});
-
 describe('Dexalot E2E', () => {
   const dexKey = 'Dexalot';
 
