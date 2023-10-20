@@ -191,7 +191,7 @@ export class RateFetcher {
       this.network,
       this.blacklistCacheKey,
       this.blacklistCacheTTL,
-      JSON.stringify(blacklist.map((item) => item.toLowerCase())),
+      JSON.stringify(blacklist.map(item => item.toLowerCase())),
     );
   }
 }

@@ -311,6 +311,14 @@ export const Tokens: {
       address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
       decimals: 18,
     },
+    fETH: {
+      address: '0x53805A76E1f5ebbFE7115F16f9c87C2f7e633726',
+      decimals: 18,
+    },
+    xETH: {
+      address: '0xe063F04f280c60aECa68b38341C2eEcBeC703ae2',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {

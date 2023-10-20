@@ -32,15 +32,15 @@ function testForNetwork(
   const sleepMs = 10000;
 
   const sideToContractMethods = new Map([
-    [SwapSide.SELL, [
-      ContractMethod.simpleSwap,
-      ContractMethod.megaSwap,
-      ContractMethod.multiSwap
-    ]],
-    [SwapSide.BUY, [
-      ContractMethod.simpleBuy,
-      ContractMethod.buy
-    ]],
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.simpleSwap,
+        ContractMethod.megaSwap,
+        ContractMethod.multiSwap,
+      ],
+    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
