@@ -27,7 +27,7 @@ jobs:
 
       - name: Run Changed tests only
         env:
-          TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_ACCOUNT_ID }}
+          TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_USERNAME }}
           TENDERLY_PROJECT: ${{ secrets.TENDERLY_PROJECT }}
           TENDERLY_TOKEN: ${{ secrets.TENDERLY_TOKEN }}
           HTTP_PROVIDER_1: ${{ secrets.HTTP_PROVIDER_1 }}
