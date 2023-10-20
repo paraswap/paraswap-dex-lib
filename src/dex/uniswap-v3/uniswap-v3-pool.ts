@@ -46,7 +46,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   private _poolAddress?: Address;
 
-  private _stateRequestCallData?: MultiCallParams<
+  protected _stateRequestCallData?: MultiCallParams<
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
 
@@ -55,7 +55,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   public initFailed = false;
   public initRetryAttemptCount = 0;
 
-  public readonly feeCodeAsString;
+  public feeCodeAsString;
 
   constructor(
     readonly dexHelper: IDexHelper,
@@ -66,7 +66,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       | undefined,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
-    public readonly feeCode: bigint,
+    public feeCode: bigint,
     token0: Address,
     token1: Address,
     logger: Logger,
@@ -199,7 +199,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return null; // ignore unrecognized event
   }
 
-  private _getStateRequestCallData() {
+  protected _getStateRequestCallData() {
     if (!this._stateRequestCallData) {
       const callData: MultiCallParams<
         bigint | DecodedStateMultiCallResultWithRelativeBitmaps

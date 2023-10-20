@@ -60,7 +60,7 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -102,13 +102,9 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
           encodePartnerAddressForFeeLogic({
             partnerAddress,
             partnerFeePercent,
-            positiveSlippageToUser,
+            takeSurplus,
           }),
-          encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.BUY,
-          ),
+          encodeFeePercent(partnerFeePercent, takeSurplus, SwapSide.BUY),
         ];
 
     const buyData: ContractSimpleBuyNFTData = {

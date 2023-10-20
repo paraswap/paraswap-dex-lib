@@ -17,7 +17,7 @@ export class TransactionBuilder {
     referrerAddress,
     partnerAddress,
     partnerFeePercent,
-    positiveSlippageToUser,
+    takeSurplus,
     gasPrice,
     maxFeePerGas,
     maxPriorityFeePerGas,
@@ -33,7 +33,7 @@ export class TransactionBuilder {
     referrerAddress?: Address;
     partnerAddress: Address;
     partnerFeePercent: string;
-    positiveSlippageToUser?: boolean;
+    takeSurplus?: boolean;
     gasPrice?: string; // // @TODO: improve types? so that either gasPrice or ALL of max.*FeePerGas MUST be returned?
     maxFeePerGas?: string;
     maxPriorityFeePerGas?: string;
@@ -53,7 +53,7 @@ export class TransactionBuilder {
         referrerAddress,
         partnerAddress,
         partnerFeePercent,
-        positiveSlippageToUser ?? true,
+        takeSurplus ?? false,
         _beneficiary,
         permit || '0x',
         deadline,

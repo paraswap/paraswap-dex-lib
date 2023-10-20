@@ -51,6 +51,8 @@ export type PoolState_v1_9 = {
   areTicksCompressed: boolean;
 };
 
+export type FactoryState = Record<string, never>;
+
 export type AlgebraData = {
   path: {
     tokenIn: Address;
@@ -73,7 +75,6 @@ export type DexParams = {
   version: 'v1.1' | 'v1.9';
   forceRPC?: boolean;
   forceManualStateGenerate?: boolean;
-  cleanExistingPoolTTLMs?: number;
 };
 
 export type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;

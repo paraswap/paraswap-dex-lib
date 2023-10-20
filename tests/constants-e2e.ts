@@ -520,6 +520,18 @@ export const Tokens: {
       address: '0xe578C856933D8e1082740bf7661e379Aa2A30b26',
       decimals: 6,
     },
+    axlUSDC: {
+      address: '0x1B6382DBDEa11d97f24495C9A90b7c88469134a4',
+      decimals: 6,
+    },
+    lzUSDC: {
+      address: '0x28a92dde19D9989F39A49905d7C9C2FAc7799bDf',
+      decimals: 6,
+    },
+    FVM: {
+      address: '0x07BB65fAaC502d4996532F834A1B7ba5dC32Ff96',
+      decimals: 18,
+    },
   },
   [Network.BSC]: {
     POPS: {
@@ -1049,6 +1061,9 @@ export const Holders: {
     GUSDC: '0x894d774a293f8aa3d23d67815d4cadb5319c1094',
     GDAI: '0x0e2ed73f9c1409e2b36fe6c46e60d4557b7c2ac0',
     EQUAL: '0x8b187ea19c93091a4d6b426b71871648182b5fac',
+    FVM: '0x07BB65fAaC502d4996532F834A1B7ba5dC32Ff96',
+    lzUSDC: '0x1e38e2e0e7df3be6592867d0ac2713a4dbda8350',
+    axlUSDC: '0xccf932cd565c21d2e516c8ff3a4f244eea27e09a',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
@@ -1073,7 +1088,7 @@ export const Holders: {
     BETS: '0x8cc2284c90d05578633418f9cde104f402375a65',
     HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
     USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
-    USDC: '0xbf14db80d9275fb721383a77c00ae180fc40ae98',
+    USDC: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
     WETHe: '0xD291B51f7a1a1F4917D085F2a7731A447E4aF82D',
     POPS: '0x5268c2331658cb0b2858cfa9db27d8f22f5434bc',
@@ -1089,13 +1104,14 @@ export const Holders: {
     TSD: '0x691A89db352B72dDb249bFe16503494eC0D920A4',
     THO: '0xc40d16c47394a506d451475c8a7c46c1175c1da1',
     aAvaUSDT: '0x50B1Ba98Cf117c9682048D56628B294ebbAA4ec2',
-    USDT: '0x4aeFa39caEAdD662aE31ab0CE7c8C2c9c0a013E8',
+    USDT: '0x764fe7fb23f0f995c45faef5e32a4526f2028814',
     aAvaWAVAX: '0x1B18Df70863636AEe4BfBAb6F7C70ceBCA9bA404',
     oldFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
     newFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
     nETH: '0xcf2ef00e75558512ae735679ea5df62ad2056786',
     avWETH: '0x92d78e32b990d10aeca0875dc5585f1a6f958179',
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
+    BTCb: '0x84c06d3c27821d0136f66306f5028d43ceac268d',
   },
   [Network.ARBITRUM]: {
     ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',

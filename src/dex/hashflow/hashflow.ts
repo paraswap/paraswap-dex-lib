@@ -62,6 +62,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly isStatePollingDex = true;
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
+  readonly needsSequentialPreprocessing = true;
   readonly isFeeOnTransferSupported = false;
   private api: HashflowApi;
   private rateFetcher: RateFetcher;
@@ -737,7 +738,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         );
         await this.setBlacklist(options.txOrigin);
       } else {
-        if(e instanceof TooStrictSlippageCheckError) {
+        if (e instanceof TooStrictSlippageCheckError) {
           this.logger.warn(
             `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
           );

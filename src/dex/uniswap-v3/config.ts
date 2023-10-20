@@ -5,6 +5,7 @@ import { Address } from '../../types';
 import RamsesV2StateMulticallABI from '../../abi/RamsesV2StateMulticall.abi.json';
 import { AbiItem } from 'web3-utils';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './forks/ramses-v2/utils';
+import { RamsesV2EventPool } from './forks/ramses-v2/ramses-v2-pool';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
 
@@ -251,6 +252,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
+      eventPoolImplementation: RamsesV2EventPool,
       decodeStateMultiCallResultWithRelativeBitmaps,
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
@@ -271,6 +273,20 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/uniswap-v3/version/latest',
+    },
+  },
+  Retro: {
+    [Network.POLYGON]: {
+      factory: '0x91e1B99072f238352f59e58de875691e20Dc19c1',
+      quoter: '0xfe08be075758935cb6cb9318d1fbb60920416d4e',
+      router: '0x1891783cb3497Fdad1F25C933225243c2c7c4102',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x6Dc993Fe1e945A640576B4Dca81281d8e998DF71',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0x817e07951f93017a93327ac8cc31e946540203a19e1ecc37bc1761965c2d1090`,
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/ruvlol/univ3-test',
     },
   },
 };

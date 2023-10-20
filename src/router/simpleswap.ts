@@ -223,7 +223,7 @@ export abstract class SimpleRouterBase<RouterParam>
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -272,7 +272,7 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -292,13 +292,9 @@ export abstract class SimpleRouter extends SimpleRouterBase<SimpleSwapParam> {
           encodePartnerAddressForFeeLogic({
             partnerAddress,
             partnerFeePercent,
-            positiveSlippageToUser,
+            takeSurplus,
           }),
-          encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            this.side,
-          ),
+          encodeFeePercent(partnerFeePercent, takeSurplus, this.side),
         ];
 
     const sellData: ConstractSimpleData = {

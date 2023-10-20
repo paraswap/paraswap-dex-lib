@@ -53,6 +53,7 @@ import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { SoliSnek } from './solidly/forks-override/solisnek';
 import { Equalizer } from './solidly/forks-override/equalizer';
+import { Fvm } from './solidly/forks-override/fvm';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -76,8 +77,8 @@ import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
+import { Dexalot } from './dexalot/dexalot';
 import { FxProtocol } from './fx-protocol/fx-protocol';
-import { error } from 'console';
 
 const LegacyDexes = [
   CurveV2,
@@ -104,6 +105,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Dexalot,
   CurveV1,
   CurveFork,
   Swerve,
@@ -141,6 +143,7 @@ const Dexes = [
   Cone,
   SoliSnek,
   Equalizer,
+  Fvm,
   Synthetix,
   CurveV1Factory,
   SwaapV1,
@@ -317,5 +320,14 @@ export class DexAdapterService {
     return side === SwapSide.SELL
       ? this.sellAdapters[specialDexKey]
       : this.buyAdapters[specialDexKey];
+  }
+
+  doesPreProcessingRequireSequentiality(dexKey: string): boolean {
+    try {
+      const dex = this.getDexByKey(dexKey);
+      return !!dex.needsSequentialPreprocessing;
+    } catch (e) {
+      return false;
+    }
   }
 }
