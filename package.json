@@ -48,7 +48,7 @@
     "check:tsc": "tsc",
     "check:es": "eslint \"src/**/*.ts\" --ignore-pattern=\"*.test.ts\"",
     "checks": "yarn check:pq && yarn check:tsc && yarn check:es",
-    "tests:changedsince": "jest --verbose --silent --changedSince=master --coverage"
+    "tests:changedsince": "jest --verbose --onlyChanged --changedSince=origin/master"
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",

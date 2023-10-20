@@ -166,20 +166,14 @@ function testForNetwork(
   });
 }
 
+describe('New test', () => {
+  it('should2', () => {
+    expect(true).toBe(true);
+  });
+});
+
 describe('Dexalot E2E', () => {
   const dexKey = 'Dexalot';
-
-  describe('Test on ci', () => {
-    it('should', () => {
-      expect(true).toBe(true);
-    })
-  });
-
-  describe('New test', () => {
-    it('should2', () => {
-      expect(true).toBe(true);
-    });
-  });
 
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
