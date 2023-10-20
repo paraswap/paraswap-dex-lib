@@ -47,8 +47,7 @@
     "check:pq": "pretty-quick --staged",
     "check:tsc": "tsc",
     "check:es": "eslint \"src/**/*.ts\" --ignore-pattern=\"*.test.ts\"",
-    "checks": "yarn check:pq && yarn check:tsc && yarn check:es",
-    "tests:changedsince": "jest --verbose --onlyChanged --changedSince=origin/master"
+    "checks": "yarn check:pq && yarn check:tsc && yarn check:es"
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
