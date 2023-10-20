@@ -6,6 +6,7 @@ import {
   PreprocessTransactionOptions,
   Config,
   PoolLiquidity,
+  Address,
 } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
@@ -61,17 +62,19 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     return;
   }
 
+  getIdentifier(srcToken: Address, destToken: Address) {
+    // Keep only destination token in order to prevent taping into the same market maker liquidity during same swap (double spending)
+    return `${this.dexKey}_${destToken}`.toLowerCase();
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
-    return [
-      `${this.dexKey}_${_srcToken.address}_${_destToken.address}`.toLowerCase(),
-    ];
+    return [this.getIdentifier(srcToken.address, _destToken.address)];
   }
 
   calcOutsFromAmounts(
@@ -131,11 +134,18 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
 
-    const _srcAddress = _srcToken.address.toLowerCase();
-    const _destAddress = _destToken.address.toLowerCase();
-    if (_srcAddress === _destAddress) return null;
+    _srcToken.address = _srcToken.address.toLowerCase();
+    _destToken.address = _destToken.address.toLowerCase();
+    if (_srcToken.address === _destToken.address) return null;
 
-    const expectedIdentifier = this.getIdentifier(_srcAddress, _destAddress);
+    const expectedIdentifier = this.getIdentifier(
+      _srcToken.address,
+      _destToken.address,
+    );
+
+    if (!limitPools?.includes(expectedIdentifier)) {
+      return null;
+    }
 
     const rates = await this.rateFetcher.getOrderPrice(
       _srcToken,
@@ -200,6 +210,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
       options.txOrigin,
+      options.partner,
     );
 
     const expiryAsBigInt = BigInt(order.order.expiry);

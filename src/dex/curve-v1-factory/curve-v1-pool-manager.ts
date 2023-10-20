@@ -16,6 +16,7 @@ import { PoolPollingBase } from './state-polling-pools/pool-polling-base';
 import { StatePollingManager } from './state-polling-pools/polling-manager';
 import { CACHE_PREFIX, NULL_ADDRESS } from '../../constants';
 import { LiquidityInCache } from './types';
+import { assert } from 'ts-essentials';
 
 /*
  * The idea of FactoryPoolManager is to try to abstract both pool types: fully event based
@@ -41,7 +42,10 @@ export class CurveV1FactoryPoolManager {
   // It should bo considered for optimizing
   private coinAddressesToPoolIdentifiers: Record<string, string[]> = {};
 
-  private allCurveLiquidityApiSlugs: Set<string> = new Set(['/factory']);
+  private allCurveLiquidityApiSlugs: Set<string> = new Set([
+    '/factory',
+    '/factory-crvusd',
+  ]);
 
   private statePollingManager = StatePollingManager;
   private taskScheduler: TaskScheduler;
@@ -90,7 +94,7 @@ export class CurveV1FactoryPoolManager {
       filteredPoolsByLiquidity.sort((a, b) => +a.isMetaPool - +b.isMetaPool),
     );
 
-    this.statePollingManager.updatePoolsInBatch(
+    return this.statePollingManager.updatePoolsInBatch(
       this.logger,
       this.dexHelper,
       pools,
@@ -98,6 +102,16 @@ export class CurveV1FactoryPoolManager {
       Date.now() - this.liquidityUpdatedAtMs > LIQUIDITY_UPDATE_PERIOD_MS
         ? this.fetchLiquiditiesFromApi.bind(this)
         : undefined,
+    );
+  }
+
+  async updateManuallyPollingPools(pools: PoolPollingBase[]) {
+    return this.statePollingManager.updatePoolsInBatch(
+      this.logger,
+      this.dexHelper,
+      pools,
+      undefined,
+      undefined,
     );
   }
 
@@ -123,6 +137,11 @@ export class CurveV1FactoryPoolManager {
   }
 
   getPriceHandler(implementationAddress: string): PriceHandler {
+    assert(
+      this.allPriceHandlers[implementationAddress],
+      `No price handler for ${implementationAddress}`,
+    );
+
     return this.allPriceHandlers[implementationAddress];
   }
 

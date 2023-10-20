@@ -17,7 +17,7 @@ export function _calculateInvariant(
    // n = number of tokens                                                                      //
    *********x************************************************************************************/
 
-    // We support rounding up or down.
+  // We support rounding up or down.
 
   let sum = 0n;
   const numTokens = balances.length;
@@ -44,18 +44,18 @@ export function _calculateInvariant(
     prevInvariant = invariant;
     invariant = MathSol.div(
       MathSol.mul(MathSol.mul(BigInt(numTokens), invariant), invariant) +
-      MathSol.div(
-        MathSol.mul(MathSol.mul(ampTimesTotal, sum), P_D),
-        AMP_PRECISION,
-        roundUp,
-      ),
+        MathSol.div(
+          MathSol.mul(MathSol.mul(ampTimesTotal, sum), P_D),
+          AMP_PRECISION,
+          roundUp,
+        ),
       MathSol.mul(BigInt(numTokens + 1), invariant) +
-      // No need to use checked arithmetic for the amp precision, the amp is guaranteed to be at least 1
-      MathSol.div(
-        MathSol.mul(ampTimesTotal - AMP_PRECISION, P_D),
-        AMP_PRECISION,
-        !roundUp,
-      ),
+        // No need to use checked arithmetic for the amp precision, the amp is guaranteed to be at least 1
+        MathSol.div(
+          MathSol.mul(ampTimesTotal - AMP_PRECISION, P_D),
+          AMP_PRECISION,
+          !roundUp,
+        ),
       roundUp,
     );
 
@@ -234,9 +234,9 @@ export function _calcTokenInGivenExactBptOut(
   const newInvariant = MathSol.mulUpFixed(
     MathSol.divUpFixed(
       MathSol.add(bptTotalSupply, bptAmountOut),
-      bptTotalSupply
+      bptTotalSupply,
     ),
-    invariant
+    invariant,
   );
 
   const newBalanceTokenIndex =
@@ -244,11 +244,11 @@ export function _calcTokenInGivenExactBptOut(
       amp,
       balances,
       newInvariant,
-      tokenIndexIn
+      tokenIndexIn,
     );
   const amountInWithoutFee = MathSol.sub(
     newBalanceTokenIndex,
-    balances[tokenIndexIn]
+    balances[tokenIndexIn],
   );
 
   let sumBalances = BigInt(0);
@@ -260,18 +260,18 @@ export function _calcTokenInGivenExactBptOut(
   // and used in virtual swaps, and charge swap fees accordingly.
   const currentWeight = MathSol.divDownFixed(
     balances[tokenIndexIn],
-    sumBalances
+    sumBalances,
   );
   const taxablePercentage = MathSol.complementFixed(currentWeight);
   const taxableAmount = MathSol.mulUpFixed(
     amountInWithoutFee,
-    taxablePercentage
+    taxablePercentage,
   );
   const nonTaxableAmount = MathSol.sub(amountInWithoutFee, taxableAmount);
 
   return MathSol.add(
     nonTaxableAmount,
-    MathSol.divUpFixed(taxableAmount, MathSol.sub(MathSol.ONE, fee))
+    MathSol.divUpFixed(taxableAmount, MathSol.sub(MathSol.ONE, fee)),
   );
 }
 

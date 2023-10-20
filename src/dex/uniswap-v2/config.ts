@@ -117,6 +117,20 @@ export const Adapters: {
       },
     ],
   },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter01',
+        index: 6,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BaseBuyAdapter',
+        index: 4,
+      },
+    ],
+  },
 };
 
 export const UniswapV2Config: DexConfigMap<DexParams> = {
@@ -381,6 +395,15 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
     },
     [Network.MAINNET]: {
       factoryAddress: '0x1097053Fd2ea711dad45caCcc45EfF7548fCB362',
+      initCode:
+        '0x57224589c67f3f30a6b0d7a1b54cf3153ab84563bc609ef41dfb34f8b2974d2d',
+      poolGasCost: 90 * 1000,
+      feeCode: 25,
+    },
+    [Network.ARBITRUM]: {
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/45376/exchange-v2-arbitrum/version/latest',
+      factoryAddress: '0x02a84c1b3BBD7401a5f7fa98a384EBC70bB5749E',
       initCode:
         '0x57224589c67f3f30a6b0d7a1b54cf3153ab84563bc609ef41dfb34f8b2974d2d',
       poolGasCost: 90 * 1000,
@@ -685,6 +708,15 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x1a76b7e7272f6187014e23f04d1b2e543eed2fd1f76481149008cc6eacb05c22',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+    },
+  },
+  BaseSwap: {
+    [Network.BASE]: {
+      factoryAddress: '0xFDa619b6d20975be80A10332cD39b9a4b0FAa8BB',
+      initCode:
+        '0xb618a2730fae167f5f8ac7bd659dd8436d571872655bcb6fd11f2158c8a64a3b',
+      poolGasCost: 90 * 1000,
+      feeCode: 25,
     },
   },
 };

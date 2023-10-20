@@ -44,18 +44,18 @@ export class StableMath {
       prevInvariant = invariant;
       invariant = MathSol.div(
         MathSol.mul(MathSol.mul(BigInt(numTokens), invariant), invariant) +
-        MathSol.div(
-          MathSol.mul(MathSol.mul(ampTimesTotal, sum), P_D),
-          this._AMP_PRECISION,
-          roundUp,
-        ),
+          MathSol.div(
+            MathSol.mul(MathSol.mul(ampTimesTotal, sum), P_D),
+            this._AMP_PRECISION,
+            roundUp,
+          ),
         MathSol.mul(BigInt(numTokens + 1), invariant) +
-        // No need to use checked arithmetic for the amp precision, the amp is guaranteed to be at least 1
-        MathSol.div(
-          MathSol.mul(ampTimesTotal - this._AMP_PRECISION, P_D),
-          this._AMP_PRECISION,
-          !roundUp,
-        ),
+          // No need to use checked arithmetic for the amp precision, the amp is guaranteed to be at least 1
+          MathSol.div(
+            MathSol.mul(ampTimesTotal - this._AMP_PRECISION, P_D),
+            this._AMP_PRECISION,
+            !roundUp,
+          ),
         roundUp,
       );
 
@@ -70,7 +70,6 @@ export class StableMath {
 
     throw new Error('Errors.STABLE_INVARIANT_DIDNT_CONVERGE');
   }
-
 
   static _calcInGivenOut(
     amplificationParameter: bigint,
@@ -101,7 +100,7 @@ export class StableMath {
         1n,
       );
     });
-  };
+  }
 
   static _calcOutGivenIn(
     amplificationParameter: bigint,
@@ -117,7 +116,7 @@ export class StableMath {
       amplificationParameter,
       balances,
       true,
-      );
+    );
 
     const initBalance = balances[tokenIndexIn];
     // Modification: The original code was implemented for a single tokenAmountsIn

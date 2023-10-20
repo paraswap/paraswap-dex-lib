@@ -3,16 +3,15 @@ import { ImplementationNames, PoolState } from '../../types';
 import { get_dy, IPoolContext } from '../types';
 import { requireConstant, requireValue } from './utils';
 
-const factoryPlain2Basic: get_dy = (
+const _genericFactoryPlain2Basic = (
   self: IPoolContext,
   state: PoolState,
   i: number,
   j: number,
   dx: bigint,
-): bigint => {
+  rates: bigint[],
+) => {
   const { PRECISION, FEE_DENOMINATOR } = self.constants;
-  const { rate_multipliers } = state.constants;
-  const rates = [...rate_multipliers];
   const xp = self._xp_mem(self, rates, state.balances);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
@@ -20,6 +19,49 @@ const factoryPlain2Basic: get_dy = (
   const dy = xp[j] - y - 1n;
   const _fee = (state.fee * dy) / FEE_DENOMINATOR;
   return ((dy - _fee) * PRECISION) / rates[j];
+};
+
+const factoryPlain2Basic: get_dy = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dx: bigint,
+): bigint => {
+  const { rate_multipliers } = state.constants;
+  const rates = [...rate_multipliers];
+  return _genericFactoryPlain2Basic(self, state, i, j, dx, rates);
+};
+
+const factoryPlain2EthEma2: get_dy = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dx: bigint,
+): bigint => {
+  if (state.storedRates === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} factoryPlain2EthEma2: storedRates is not provided`,
+    );
+  }
+  const rates = [...state.storedRates];
+  return _genericFactoryPlain2Basic(self, state, i, j, dx, rates);
+};
+const factoryMetaBtcSbtc2: get_dy = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dx: bigint,
+): bigint => {
+  if (state.virtualPrice === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} factoryMetaBtcSbtc2: virtualPrice is not provided`,
+    );
+  }
+  const rates = [state.constants.rate_multipliers[0], state.virtualPrice];
+  return _genericFactoryPlain2Basic(self, state, i, j, dx, rates);
 };
 
 const factoryPlain2Optimized: get_dy = (
@@ -167,6 +209,7 @@ const customAvalanche3CoinLending: get_dy = (
 const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.CUSTOM_PLAIN_2COIN_FRAX]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_2COIN_RENBTC]: customPlain3CoinBtc,
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: customPlain2CoinFrax,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: customPlain3CoinBtc,
   [ImplementationNames.CUSTOM_PLAIN_3COIN_THREE]: customPlain3CoinThree,
 
@@ -217,6 +260,13 @@ const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.FACTORY_PLAIN_4_BASIC]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_4_ETH]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_4_OPTIMIZED]: factoryPlain2Optimized,
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: factoryMetaBtcSbtc2,
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: factoryMetaBtcSbtc2,
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: factoryPlain2EthEma2,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: factoryPlain2Basic,
 };
 
 export default implementations;

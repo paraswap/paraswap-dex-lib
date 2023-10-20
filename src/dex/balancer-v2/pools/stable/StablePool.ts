@@ -77,7 +77,9 @@ export class StablePool extends BaseGeneralPool {
 
     const scalingFactors: bigint[] = [];
     const balances = poolState.orderedTokens.map((tokenAddress, i) => {
-      const t = pool.tokensMap[tokenAddress.toLowerCase()] || poolState.tokens[tokenAddress.toLowerCase()];
+      const t =
+        pool.tokensMap[tokenAddress.toLowerCase()] ||
+        poolState.tokens[tokenAddress.toLowerCase()];
 
       if (t.address.toLowerCase() === tokenIn.toLowerCase()) {
         indexIn = i;
@@ -213,7 +215,7 @@ export class StablePool extends BaseGeneralPool {
       (this._upscale(
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
-        ) *
+      ) *
         99n) /
       100n
     );

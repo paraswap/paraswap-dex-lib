@@ -29,6 +29,7 @@ function testForNetwork(
         ContractMethod.simpleSwap,
         ContractMethod.multiSwap,
         ContractMethod.megaSwap,
+        ContractMethod.directCurveV1Swap,
       ],
     ],
   ]);
@@ -99,6 +100,61 @@ describe('CurveV1Factory E2E', () => {
     const tokenBSymbol: string = 'alETH';
 
     const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+
+  describe('Mainnet crvUSD', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'crvUSD';
+    const tokenBSymbol: string = 'USDT';
+
+    const tokenAAmount: string = '10000000000000000000';
+    const tokenBAmount: string = '10000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+  describe('Mainnet ng pool', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'ETH';
+    const tokenBSymbol: string = 'STETH';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+  describe('Mainnet SBTC2 pool', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'WBTC';
+    const tokenBSymbol: string = 'sBTC';
+
+    const tokenAAmount: string = '100000000';
     const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(

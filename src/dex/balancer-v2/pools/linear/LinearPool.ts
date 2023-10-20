@@ -631,7 +631,7 @@ export class LinearPool extends BasePool {
       (this._upscale(
         poolPairData.balances[poolPairData.indexOut],
         poolPairData.scalingFactors[poolPairData.indexOut],
-        ) *
+      ) *
         99n) /
       100n
     );

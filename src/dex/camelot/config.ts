@@ -19,7 +19,6 @@ export const CamelotConfig: DexConfigMap<DexParams> = {
 
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.ARBITRUM]: {
-    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }],
-    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 1 }],
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 5 }],
   },
 };

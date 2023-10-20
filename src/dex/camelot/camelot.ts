@@ -1,6 +1,5 @@
 import {
   DEST_TOKEN_PARASWAP_TRANSFERS,
-  ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
   SRC_TOKEN_PARASWAP_TRANSFERS,
@@ -17,24 +16,15 @@ import {
   SimpleExchangeParam,
   Token,
   TransferFeeParams,
-  TxInfo,
 } from '../../types';
 import { IDexHelper } from '../../dex-helper';
-import erc20ABI from '../../abi/erc20.json';
 import {
-  UniswapData,
   UniswapParam,
   UniswapV2Functions,
-  UniswapDataLegacy,
   UniswapV2Data,
   UniswapPool,
 } from '../uniswap-v2/types';
-import {
-  getBigIntPow,
-  getDexKeysWithNetwork,
-  isETHAddress,
-  prependWithOx,
-} from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import camelotFactoryABI from '../../abi/camelot/CamelotFactory.json';
 import camelotPairABI from '../../abi/camelot/CamelotPair.json';
 import _ from 'lodash';
@@ -43,11 +33,7 @@ import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SolidlyStablePool } from '../solidly/solidly-stable-pool';
 import { Uniswapv2ConstantProductPool } from '../uniswap-v2/uniswap-v2-constant-product-pool';
-import {
-  CamelotPoolState,
-  CamelotPoolOrderedParams,
-  CamelotData,
-} from './types';
+import { CamelotPoolState, CamelotPoolOrderedParams } from './types';
 import { CamelotConfig, Adapters } from './config';
 import { Contract } from 'web3-eth-contract';
 import { IDex } from '../idex';
@@ -57,6 +43,7 @@ import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { SimpleExchange } from '../simple-exchange';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { SolidlyData } from '../solidly/types';
 
 const DefaultCamelotPoolGasCost = 90 * 1000;
 
@@ -170,7 +157,7 @@ export class CamelotEventPool extends StatefulEventSubscriber<CamelotPoolState> 
 
 export class Camelot
   extends SimpleExchange
-  implements IDex<CamelotData, UniswapParam>
+  implements IDex<SolidlyData, UniswapParam>
 {
   pairs: { [key: string]: CamelotPair } = {};
   feeFactor = 100000;
@@ -511,7 +498,7 @@ export class Camelot
       srcDexFee: 0,
       destDexFee: 0,
     },
-  ): Promise<ExchangePrices<CamelotData> | null> {
+  ): Promise<ExchangePrices<SolidlyData> | null> {
     try {
       const from = this.dexHelper.config.wrapETH(_from);
       const to = this.dexHelper.config.wrapETH(_to);
@@ -593,6 +580,7 @@ export class Camelot
             factory: this.factoryAddress,
             initCode: this.initCode,
             feeFactor: this.feeFactor,
+            isFeeTokenInRoute: Object.values(transferFees).some(f => f !== 0),
             pools: [
               {
                 address: pairParam.exchange,
@@ -729,21 +717,22 @@ export class Camelot
     destToken: Address,
     srcAmount: NumberAsString,
     toAmount: NumberAsString, // required for buy case
-    data: UniswapData,
+    data: SolidlyData,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error('Buy not supported');
 
     const pools = encodePools(data.pools, this.feeFactor);
-    const weth = this.getWETHAddress(srcToken, destToken, data.weth);
+    const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           weth: 'address',
           pools: 'uint256[]',
+          isFeeTokenInRoute: 'bool',
         },
       },
-      { pools, weth },
+      { pools, weth, isFeeTokenInRoute: data.isFeeTokenInRoute },
     );
     return {
       targetExchange: data.router,
@@ -757,7 +746,7 @@ export class Camelot
     dest: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    data: CamelotData,
+    data: SolidlyData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error('Buy not supported');

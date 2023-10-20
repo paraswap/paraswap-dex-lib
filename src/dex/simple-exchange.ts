@@ -1,5 +1,6 @@
 import { Interface } from '@ethersproject/abi';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
+import { Contract } from 'web3-eth-contract';
 import { Address, SimpleExchangeParam, NumberAsString } from '../types';
 import { CACHE_PREFIX, ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
@@ -9,6 +10,7 @@ import { isETHAddress } from '../utils';
 import { MAX_UINT } from '../constants';
 import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
+import { AbiItem } from 'web3-utils';
 
 /*
  * Context: Augustus routers have all a deadline protection logic implemented globally.
@@ -26,6 +28,7 @@ export class SimpleExchange {
   simpleSwapHelper: Interface;
   protected abiCoder: AbiCoder;
   erc20Interface: Interface;
+  erc20Contract: Contract;
 
   needWrapNative = false;
   isFeeOnTransferSupported = false;
@@ -42,6 +45,9 @@ export class SimpleExchange {
   constructor(dexHelper: IDexHelper, public dexKey: string) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
+    this.erc20Contract = new dexHelper.web3Provider.eth.Contract(
+      ERC20ABI as AbiItem[],
+    );
     this.abiCoder = Web3Abi as unknown as AbiCoder;
 
     this.network = dexHelper.config.data.network;

@@ -1,5 +1,6 @@
 import {} from 'ts-essentials';
 import { BI_POWS } from '../../../../bigint-constants';
+import { PRECISION } from '../../../kyberdmm/fee-formula';
 import { ImplementationNames, PoolContextConstants } from '../../types';
 
 const implementationConstants: Record<
@@ -34,6 +35,21 @@ const implementationConstants: Record<
     PRECISION_MUL: [10000000000n, 10000000000n],
     LENDING_PRECISION: BI_POWS[18],
     USE_LENDING: [true, false],
+  },
+  [ImplementationNames.CUSTOM_PLAIN_2COIN_WBTC]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+
+    FEE_DENOMINATOR: BI_POWS[10],
+    PRECISION: BI_POWS[18],
+
+    PRECISION_MUL: [10000000000n, 1n],
+    RATES: [10000000000000000000000000000n, 1000000000000000000n],
+    A_PRECISION: 100n,
   },
   [ImplementationNames.CUSTOM_PLAIN_3COIN_SBTC]: {
     isWrapNative: false,
@@ -499,6 +515,79 @@ const implementationConstants: Record<
     FEE_DENOMINATOR: BI_POWS[10],
     PRECISION: BI_POWS[18],
 
+    A_PRECISION: 100n,
+  },
+
+  [ImplementationNames.FACTORY_META_BTC_SBTC2]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    MAX_COIN: 2 - 1,
+
+    BASE_N_COINS: 2,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_META_BTC_BALANCES_SBTC2]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: true,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    MAX_COIN: 2 - 1,
+
+    BASE_N_COINS: 2,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: true,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
     A_PRECISION: 100n,
   },
 };

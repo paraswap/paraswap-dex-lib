@@ -271,8 +271,8 @@ export function _calcTokensOutGivenExactBptIn(
    // bpt = bptTotalSupply                                                                      //
    **********************************************************************************************/
 
-    // Since we're computing an amount out, we round down overall. This means rounding down on both the
-    // multiplication and division.
+  // Since we're computing an amount out, we round down overall. This means rounding down on both the
+  // multiplication and division.
 
   const bptRatio = MathSol.divDownFixed(bptAmountIn, bptTotalSupply);
   const amountsOut: bigint[] = new Array(balances.length);

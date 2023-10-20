@@ -16,7 +16,6 @@ export type WeightedPoolPairData = {
   swapFee: bigint;
 };
 
-
 export class WeightedPool extends BaseMinimalSwapInfoPool {
   vaultAddress: string;
   vaultInterface: Interface;

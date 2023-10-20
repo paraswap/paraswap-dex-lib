@@ -11,6 +11,7 @@ import { DexAdapterService } from '../dex';
 import {
   encodeFeePercent,
   encodeFeePercentForReferrer,
+  encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
 import { PartialContractSimpleData, SimpleRouterBase } from './simpleswap';
 import { BI_ADDR_MASK } from '../bigint-constants';
@@ -59,7 +60,7 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -95,6 +96,17 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
       };
     };
 
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(SwapSide.BUY)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            takeSurplus,
+          }),
+          encodeFeePercent(partnerFeePercent, takeSurplus, SwapSide.BUY),
+        ];
+
     const buyData: ContractSimpleBuyNFTData = {
       ...partialContractSimpleData,
       fromToken: priceRoute.srcToken,
@@ -104,14 +116,8 @@ export class SimpleBuyNFT extends SimpleRouterBase<SimpleBuyNFTParam> {
       fromAmount: minMaxAmount,
       expectedAmount: priceRoute.srcAmount,
       beneficiary,
-      partner: referrerAddress || partnerAddress,
-      feePercent: referrerAddress
-        ? encodeFeePercentForReferrer(SwapSide.BUY)
-        : encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.BUY,
-          ),
+      partner,
+      feePercent,
       permit,
       deadline,
       uuid: uuidToBytes16(uuid),

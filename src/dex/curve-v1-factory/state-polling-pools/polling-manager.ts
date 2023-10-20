@@ -3,7 +3,7 @@ import { Network } from '../../../constants';
 import { IDexHelper } from '../../../dex-helper';
 import { Utils, _require } from '../../../utils';
 import { PoolState } from '../types';
-import { PoolPollingBase } from './pool-polling-base';
+import { MulticallReturnedTypes, PoolPollingBase } from './pool-polling-base';
 
 /*
  * Since we are updating all pools state at once, I need some generalized iterator without state,
@@ -15,7 +15,7 @@ export class StatePollingManager {
     dexHelper: IDexHelper,
     pools: PoolPollingBase[],
     blockNumber?: number,
-  ): Promise<PoolState[]> {
+  ): Promise<(PoolState | null)[]> {
     if (pools.length === 0) {
       return [];
     }
@@ -42,7 +42,8 @@ export class StatePollingManager {
       _blockNumber = 0;
     }
 
-    const result = await dexHelper.multiWrapper.aggregate(
+    const results = await dexHelper.multiWrapper.tryAggregate(
+      false,
       callDatas,
       blockNumber,
       1000,
@@ -52,8 +53,36 @@ export class StatePollingManager {
     let lastStart = 0;
 
     for (const [i, p] of pools.entries()) {
+      const resultsForPool = results.slice(
+        lastStart,
+        lastStart + poolResultDividers[i],
+      );
+
+      let someCallsFailed = false;
+      let failedCalls: number[] = [];
+      const multiOutputs = resultsForPool.map((result, i) => {
+        if (result.success === false) {
+          someCallsFailed = true;
+          failedCalls.push(i);
+          return null;
+        }
+        return result.returnData;
+        // I consider this conversion safe without further checks, because if call failed, we won't proceed to state parsing
+      }) as MulticallReturnedTypes[];
+
+      if (someCallsFailed) {
+        const multiCallRequests = p.getStateMultiCalldata();
+        failedCalls.forEach(i => {
+          p.logger.error(
+            `Call number ${i} for pool=${p.address} to ${multiCallRequests[i].target} with ${multiCallRequests[i].callData} failed`,
+          );
+        });
+        newStates[i] = null;
+        continue;
+      }
+
       const newState = p.parseMultiResultsToStateValues(
-        result.slice(lastStart, lastStart + poolResultDividers[i]),
+        multiOutputs,
         _blockNumber,
         updatedAt,
       );
@@ -86,13 +115,18 @@ export class StatePollingManager {
       );
       await Promise.all(
         pools.map(async (p, i) => {
-          await dexHelper.cache.hset(
-            p.cacheStateKey,
-            p.poolIdentifier,
-            Utils.Serialize(newStates[i]),
-          );
+          if (newStates[i] !== null) {
+            await dexHelper.cache.hset(
+              p.cacheStateKey,
+              p.poolIdentifier,
+              Utils.Serialize(newStates[i]),
+            );
+          } else {
+            await dexHelper.cache.hdel(p.cacheStateKey, [p.poolIdentifier]);
+          }
         }),
       );
+
       logger.info(
         `${dexKey}: all (${pools.length}) pools state was successfully updated on network ${dexHelper.config.data.network}`,
       );

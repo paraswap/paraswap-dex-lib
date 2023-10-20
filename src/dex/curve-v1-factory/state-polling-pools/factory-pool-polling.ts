@@ -14,9 +14,20 @@ import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '@paraswap/core';
 import { BigNumber } from 'ethers';
 import { _require } from '../../../utils';
+import { AbiItem } from 'web3-utils';
 
 const DEFAULT_2_ZERO_ARRAY = [0n, 0n];
 const DEFAULT_4_ZERO_ARRAY = [0n, 0n, 0n, 0n];
+
+type AdditionalContractFunctions = 'stored_rates';
+
+const getStoredRatesABI = (n: number) => ({
+  name: 'stored_rates',
+  stateMutability: 'view',
+  type: 'function',
+  inputs: [],
+  outputs: [{ name: '', type: `uint256[${n}]` }],
+});
 
 export class FactoryStateHandler extends PoolPollingBase {
   constructor(
@@ -33,10 +44,16 @@ export class FactoryStateHandler extends PoolPollingBase {
     readonly poolConstants: PoolConstants,
     readonly poolContextConstants: PoolContextConstants,
     readonly isSrcFeeOnTransferSupported: boolean,
+    liquidityApiSlug: string,
     baseStatePoolPolling?: PoolPollingBase,
+    customGasCost?: number,
+    readonly isStoredRatesSupported: boolean = false,
     private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),
+    private additionalFuncsIface: Interface = new Interface([
+      getStoredRatesABI(poolContextConstants.N_COINS),
+    ]),
   ) {
     super(
       logger,
@@ -49,10 +66,11 @@ export class FactoryStateHandler extends PoolPollingBase {
       poolIdentifier,
       poolConstants,
       address,
-      '/factory',
+      liquidityApiSlug,
       false,
       baseStatePoolPolling,
       isSrcFeeOnTransferSupported,
+      customGasCost,
     );
 
     if (this.isMetaPool && this.baseStatePoolPolling === undefined) {
@@ -93,6 +111,24 @@ export class FactoryStateHandler extends PoolPollingBase {
           ),
       },
     ];
+
+    if (this.isStoredRatesSupported) {
+      calls.push({
+        target: this.address,
+        callData: this.additionalFuncsIface.encodeFunctionData(
+          'stored_rates',
+          [],
+        ),
+        decodeFunction: (result: MultiResult<BytesLike> | BytesLike) =>
+          generalDecoder(
+            result,
+            [`uint256[${this.poolContextConstants.N_COINS}]`],
+            new Array(this.poolContextConstants.N_COINS).fill(0n),
+            parsed => parsed[0].map((p: BigNumber) => p.toBigInt()),
+          ),
+      });
+    }
+
     return calls;
   }
 
@@ -101,7 +137,12 @@ export class FactoryStateHandler extends PoolPollingBase {
     blockNumber: number,
     updatedAtMs: number,
   ): PoolState {
-    const [A, fees, balances] = multiOutputs as [bigint, bigint[], bigint[]];
+    const [A, fees, balances, storedRates] = multiOutputs as [
+      bigint,
+      bigint[],
+      bigint[],
+      bigint[] | undefined,
+    ];
 
     let basePoolState: PoolState | undefined;
     if (this.isMetaPool) {
@@ -126,6 +167,7 @@ export class FactoryStateHandler extends PoolPollingBase {
       basePoolState,
       updatedAtMs,
       blockNumber,
+      storedRates,
     };
   }
 }

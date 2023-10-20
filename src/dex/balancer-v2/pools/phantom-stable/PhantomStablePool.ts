@@ -282,7 +282,6 @@ export class PhantomStablePool extends BasePool {
         amountsIn.push(amt);
       });
     } else if (pairType === PairTypes.BptToToken) {
-
       tokenAmountsOut.forEach(amountOut => {
         let amt: bigint;
         try {
