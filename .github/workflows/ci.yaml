@@ -9,6 +9,11 @@ jobs:
         node: ['16.x']
     name: Node ${{ matrix.node }} sample
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
       - name: Fetching base and head commit (pull_request)
         run: |
           git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
@@ -25,10 +30,6 @@ jobs:
           echo "BASE=$base" >> $GITHUB_ENV
           echo "HEAD=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
 
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
       - name: Checkout
         uses: actions/checkout@v3
         with:
