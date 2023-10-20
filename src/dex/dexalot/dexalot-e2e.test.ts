@@ -175,6 +175,12 @@ describe('Dexalot E2E', () => {
     })
   });
 
+  describe('New test', () => {
+    it('should2', () => {
+      expect(true).toBe(true);
+    });
+  });
+
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 
