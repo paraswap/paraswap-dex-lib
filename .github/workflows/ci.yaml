@@ -26,5 +26,4 @@ jobs:
         run: yarn check:es
 
       - name: Run Changed tests only
-        if: github.event_name == 'pull_request'
         run: npx jest --verbose --onlyChanged --changedSince=origin/master
