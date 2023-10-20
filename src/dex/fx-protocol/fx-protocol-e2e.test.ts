@@ -84,7 +84,7 @@ describe('FxProtocol E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'stETH';
+    const tokenASymbol: string = 'STETH';
     const tokenBSymbol: string = 'fETH';
 
     const tokenAAmount: string = '1000000000000000000';
