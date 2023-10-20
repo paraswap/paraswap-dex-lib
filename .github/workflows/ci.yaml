@@ -15,11 +15,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - run: |
-          git fetch --no-tags --depth=1 origin master
-          git checkout -b master
-          git checkout ${{ github.event.pull_request.head.sha }}
-
       - name: Setup node
         uses: actions/setup-node@v2
         with:
@@ -32,4 +27,4 @@ jobs:
         run: yarn check:es
 
       - name: Run Changed tests only
-        run: npx jest --verbose --onlyChanged --changedSince=${{ github.event.pull_request.base.sha }}
+        run: npx jest --verbose --onlyChanged --changedSince=${{ github.event.workflow_run.head_sha }}
