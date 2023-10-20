@@ -4,10 +4,6 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: ['16.x']
-    name: Node ${{ matrix.node }} sample
     steps:
       - name: Dump GitHub context
         env:
@@ -23,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 16
 
       - name: Install Dependencies
         run: yarn
