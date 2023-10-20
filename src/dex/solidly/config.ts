@@ -194,7 +194,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       subgraphURL:
         'https://thegraph.com/hosted-service/subgraph/tbotteam/usdfi-dexv2',
       factoryAddress: '0xB3863573d9f25e6a84895d4685a408db7a488416',
-      router: '0x226E6a0114729ad4db1c80C55900729D352E2132',
+      router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
       initCode:
         '0x1d770cc32abcf060a45b0de3f0afbd8594effe9f6d836f93d19c05d76b4b4dfa ',
       // Variable fees. Defaults:
