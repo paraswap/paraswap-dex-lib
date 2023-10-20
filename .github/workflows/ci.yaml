@@ -9,6 +9,10 @@ jobs:
         node: ['16.x']
     name: Node ${{ matrix.node }} sample
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - name: Checkout
         uses: actions/checkout@v3
         with:
