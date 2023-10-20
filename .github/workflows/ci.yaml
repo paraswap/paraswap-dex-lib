@@ -5,52 +5,35 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-
-      - name: Initializing git repository
-        run: |
-          git init --initial-branch=main
-          git remote add origin ${{ github.event.repository.html_url }}
-
-      - name: Fetching base and head commit (push)
-        if: github.event_name == 'push'
-        env:
-          PUSHED_COMMITS: ${{ toJSON(github.event.commits) }}
-        run: |
-          if [[ ${{ github.event.before }} == 0000000000000000000000000000000000000000 ]]
-          then
-            before=$(echo "$PUSHED_COMMITS" | jq .[0].id --raw-output)
-
-            git fetch --no-tags --prune --no-recurse-submodules --depth=2 origin $before ${{ github.event.after }}
-
-            echo "BASE=$(git rev-parse $before~1)" >> $GITHUB_ENV
-          else
-            git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }} ${{ github.event.after }}
-
-            echo "BASE=${{ github.event.before }}" >> $GITHUB_ENV
-          fi
-
-          echo "HEAD=${{ github.event.after }}" >> $GITHUB_ENV
-
-      - name: Fetching base and head commit (pull_request)
-        if: github.event_name == 'pull_request'
-        run: |
-          git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
-          git fetch --no-tags --prune --no-recurse-submodules --depth=10 origin ${{ github.event.pull_request.base.sha }}
-          git checkout --progress --force ${{ github.event.pull_request.head.sha }}
-
-          while [[ -n $(git rev-list shallow ^${{ github.event.pull_request.base.sha }}) ]]
-          do
-            git fetch --no-tags --prune --no-recurse-submodules --deepen=10 origin ${{ github.event.pull_request.base.sha }}
-          done
-
-          base=$(git rev-list ${{ github.event.pull_request.head.sha }} ^${{ github.event.pull_request.base.sha }} | tail --lines 1 | xargs -I {} git rev-parse {}~1)
-
-          echo "BASE=$base" >> $GITHUB_ENV
-          echo "HEAD=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # During a pre-merge check, Github creates and checks out an temporary merge commit. That
+          # commit won't work as the HEAD for jest --changedSince
+          ref: ${{ github.event.pull_request.head.sha }}
+          - name: Fetch merge base commits
+            env:
+              GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            run: |
+              # Fetch commits to a depth so that head and base reach their merge base.
+              comparison=$(gh api\
+                repos/paraswap/parapswap-dex-lib/compare/${{ github.event.pull_request.base.sha }}...${{github.event.pull_request.head.sha }})
+              behind_by=$(echo -E $comparison | jq -r '.behind_by')
+              ahead_by=$(echo -E $comparison | jq -r '.ahead_by')
+              echo "ahead_by: $ahead_by; behind by: $behind_by"
+              # +1 because fetch depth=1 is the commit itself.
+              if [[ $behind_by -gt 0 ]]; then
+                base_depth=$((behind_by+1))
+                echo Fetching base to depth $base_depth
+                git -c protocol.version=2 fetch --no-tags --no-recurse-submodules\
+                  --depth=$base_depth origin ${{github.event.pull_request.base.sha }}
+              fi
+              if [[ $ahead_by -gt 0 ]]; then
+                head_depth=$((ahead_by+1))
+                echo Fetching head to depth $head_depth
+                git -c protocol.version=2 fetch --no-tags --no-recurse-submodules\
+                  --depth=$head_depth origin ${{github.event.pull_request.head.sha }}
+              fi
 
       - uses: actions/checkout@v2
 
