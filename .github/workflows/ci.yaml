@@ -9,7 +9,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      
+
       - name: Fetch merge base commits
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -49,4 +49,4 @@ jobs:
 
       - name: Run Changed tests only
         if: github.event_name == 'pull_request'
-        run: npx jest --verbose --onlyChanged --changedSince=${{ env.BASE }}
+        run: npx jest --verbose --onlyChanged --changedSince=${{github.event.pull_request.base.sha }}
