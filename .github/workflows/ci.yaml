@@ -11,10 +11,6 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
 
       - uses: actions/checkout@v2
-      - run: |
-          git fetch --no-tags --depth=1 origin master
-          git checkout -b master
-          git checkout ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -28,4 +24,5 @@ jobs:
         run: yarn check:es
 
       - name: Run Changed tests only
-        run: npx jest --verbose --onlyChanged --changedSince=master
+        if: github.event_name == 'pull_request'
+        run: npx jest --verbose --onlyChanged --changedSince=${{ github.event.pull_request.base.sha }}
