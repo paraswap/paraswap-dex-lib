@@ -49,8 +49,7 @@ async function checkOnChainPricing(
   // TODO: Replace dummy interface with the real one
   // Normally you can get it from fxProtocol.Iface or from eventPool.
   // It depends on your implementation
-  const readerIface = FxProtocol.MarketIface;
-
+  const readerIface = FxProtocol.stETHTreasuryIface;
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
@@ -104,10 +103,6 @@ async function testPricingOnNetwork(
     side,
     blockNumber,
     pools,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
   );
 
   expect(poolPrices).not.toBeNull();

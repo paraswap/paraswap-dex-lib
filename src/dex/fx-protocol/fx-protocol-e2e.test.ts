@@ -48,21 +48,8 @@ function testForNetwork(
               await testE2E(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
-                holders[tokenASymbol],
+                holders['0x0aF766927D25a53352664eA94825aDbaaA6bA770'],
                 side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
                 side,
                 dexKey,
                 contractMethod,

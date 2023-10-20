@@ -58,18 +58,6 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
-    // const config = await FxProtocolConfig.getConfig(
-    //   this.params,
-    //   blockNumber,
-    //   this.dexHelper.multiContract,
-    // );
-  }
-
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
