@@ -25,7 +25,7 @@ export interface PriceLevel {
 
 export type QuoteResponse = {
   maker: string;
-  signedOrder: OrderERC20;
+  signedOrder: OrderERC20 | undefined;
 };
 
 export type PricingResponse = {

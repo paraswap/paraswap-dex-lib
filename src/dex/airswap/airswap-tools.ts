@@ -4,7 +4,6 @@ import { RegistryV4, Registry, Server } from '@airswap/libraries';
 import { PriceLevel, PricingResponse, QuoteResponse } from './types';
 import axios, { Method } from 'axios';
 import BigNumber from 'bignumber.js';
-import { getBigNumberPow } from '../../bignumber-constants';
 import { SwapSide } from '@paraswap/core';
 import { FullOrderERC20 } from '@airswap/types';
 import { Protocols } from '@airswap/constants';
@@ -79,7 +78,7 @@ async function connectToServers(
   chainId: number,
 ): Promise<Array<Server>> {
   const promises = serversUrl.map(url => Server.at(url, { chainId }));
-  const servers = await fulfilledWithinTimeout<Server>(promises, 2000);
+  const servers = await fulfilledWithinTimeout<Server>(promises, 3000);
   return servers;
 }
 
@@ -107,7 +106,7 @@ export const getThresholdsFromMaker = async (
 
   const result = await fulfilledWithinTimeout<PricingResponse | undefined>(
     requests,
-    2000,
+    3000,
   );
   return result.filter(
     r => r !== undefined && r.levels.length > 0,
@@ -145,12 +144,16 @@ export async function makeRFQ(
       maker: maker.locator,
       signedOrder: response,
     });
-    return Promise.resolve({ maker: maker.locator, signedOrder: response });
+    const isResponseValid = Object.values(response).indexOf('undefined') === -1; // @todo fix in the library
+    return Promise.resolve({
+      maker: maker.locator,
+      signedOrder: isResponseValid ? response : undefined,
+    });
   } catch (e) {
     console.error(e);
     return Promise.resolve({
       maker: maker.locator,
-      signedOrder: {} as FullOrderERC20,
+      signedOrder: undefined,
     });
   }
 }

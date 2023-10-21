@@ -17,7 +17,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AirswapData, QuoteResponse } from './types';
+import { AirswapData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AirSwapConfig, Adapters } from './config';
 import { Interface } from 'ethers/lib/utils';
@@ -26,16 +26,13 @@ import { AddressZero } from '@ethersproject/constants';
 
 import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
 import {
-  fulfilledWithinTimeout,
   getAvailableMakersForRFQ,
-  getPricingErc20,
   getServersUrl,
   getThresholdsFromMaker,
   makeRFQ,
   priceFromThreshold,
 } from './airswap-tools';
 import BigNumber from 'bignumber.js';
-import { getBigNumberPow } from '../../bignumber-constants';
 import { Server } from '@airswap/libraries';
 
 type temporaryMakerAnswer = {
@@ -363,12 +360,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       amount,
     );
 
-    if (
-      !response ||
-      !response.signedOrder ||
-      !response.signedOrder.expiry ||
-      response.signedOrder.expiry == 'undefined'
-    ) {
+    if (!response || !response.signedOrder) {
       throw new Error('No responses from maker');
     }
 
