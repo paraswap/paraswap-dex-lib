@@ -1,5 +1,4 @@
 import { Solidly } from '../solidly';
-import { SolidlyPair } from '../types';
 import { Network } from '../../../constants';
 import { getDexKeysWithNetwork } from '../../../utils';
 import { SolidlyConfig } from '../config';
