@@ -17,9 +17,7 @@ export async function getAvailableMakersForRFQ(
   try {
     const urls = (
       await getServersUrl(from.address, to.address, provider, chainId)
-    ).filter(
-      url => !isWebsocket(url), //&& url.includes("altono")
-    );
+    ).filter(url => !isWebsocket(url) && url.includes('altono'));
     const servers = await connectToServers(urls, chainId);
     // console.log('server:', servers);
     return Promise.resolve(servers);
@@ -43,9 +41,7 @@ export async function getServersUrl(
       quoteToken,
     );
     return Promise.resolve(
-      urls.filter(
-        url => !isWebsocket(url), //&& url.includes("altono")
-      ),
+      urls.filter(url => !isWebsocket(url) && url.includes('altono')),
     );
   } catch (err) {
     console.error(err);
@@ -92,6 +88,12 @@ export const getThresholdsFromMaker = async (
     async (url): Promise<PricingResponse | undefined> => {
       try {
         const levels = await getPricingErc20(url!, srcToken, destToken, side);
+        const levels2 = await getPricingErc20FromLib(
+          url!,
+          srcToken,
+          destToken,
+          side,
+        );
         const resp: PricingResponse = {
           maker: url,
           levels,
@@ -196,6 +198,34 @@ export async function getPricingErc20(
     // console.log('getting answer from', url);
     return result;
   } catch (err) {
+    return [];
+  }
+}
+
+export async function getPricingErc20FromLib(
+  url: string,
+  srcToken: Token,
+  destToken: Token,
+  swapSide: SwapSide,
+): Promise<PriceLevel[]> {
+  try {
+    const maker = await Server.at(url);
+    const response = await maker.getPricingERC20([
+      {
+        baseToken: srcToken.address.toString(),
+        quoteToken: destToken.address.toString(),
+      },
+    ]);
+    console.log('response from lib:', response);
+    const result =
+      swapSide === SwapSide.SELL
+        ? // @ts-ignore
+          mapMakerSELLResponse(response)
+        : // @ts-ignore
+          mapMakerBUYResponse(response);
+    return result;
+  } catch (err) {
+    console.log(url, '->', err);
     return [];
   }
 }

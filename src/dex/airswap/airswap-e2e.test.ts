@@ -147,7 +147,7 @@ describe('Airswap E2E', () => {
     describe('USDT/APE', () => {
       const tokenASymbol: string = 'USDT';
       const tokenBSymbol: string = 'APE';
-      const nativeTokenSymbol: string = 'WBNB';
+      const nativeTokenSymbol: string = 'WETH';
 
       const tokenAAmount: string = '1000000';
       const tokenBAmount: string = '1000000000000000000';
