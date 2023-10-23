@@ -289,6 +289,21 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/ruvlol/univ3-test',
     },
   },
+  Horiza: {
+    [Network.ARBITRUM]: {
+      factory: '0x5b1C257B88537d1Ce2AF55a1760336288CcD28B6',
+      quoter: '0x6D70c9B23Da7E3a1669e1f8929a56Cf5Ad612b24',
+      router: '0xd73C4F7fa43A0aFd85a25Aa3aC79FCB6905Ef24a',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x46b44eb4Cc3bEbB9f04C419f691aB85Ff885A4D6',
+      uniswapMulticall: '0xaBB58098A7B5172A9b0B38a1925A522dbf0b4FC3',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0x55664e1b1a13929bcf29e892daf029637225ec5c85a385091b8b31dcca255627`,
+      subgraphURL:
+        'https://subgraph-prod.goerli.horiza.io/subgraphs/name/retro-arbitrum-one-uniswap-v3',
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
