@@ -542,7 +542,7 @@ export class UniswapV3
               tokenIn: from.address,
               tokenOut: to.address,
               fee: pool.feeCodeAsString,
-              currentFee: states[index] ? states[index].fee.toString() : undefined,
+              currentFee: states[index]?.fee.toString(),
             },
           ],
           exchange: pool.poolAddress,
