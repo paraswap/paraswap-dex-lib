@@ -197,10 +197,8 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
       initCode:
         '0x1d770cc32abcf060a45b0de3f0afbd8594effe9f6d836f93d19c05d76b4b4dfa',
-      stableFee: 4, // 0.04%
-      volatileFee: 30, // 0.3%
       poolGasCost: 180 * 1000,
-      feeCode: 4,
+      feeCode: 0, // dynamic fees
     },
   },
 };
