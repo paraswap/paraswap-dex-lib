@@ -76,6 +76,7 @@ export class TenderlySimulation implements TransactionSimulator {
     }
 
     try {
+      await process.nextTick(() => { }); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       let res = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork`,
         {
