@@ -39,11 +39,15 @@ export class Velocimeter extends Solidly {
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: this.factoryAddress,
-      callData: velocimeterFactoryIface.encodeFunctionData('getFee', [pair.exchange]),
+      callData: velocimeterFactoryIface.encodeFunctionData('getFee', [
+        pair.exchange,
+      ]),
     };
     const callDecoder = (values: any[]) =>
       parseInt(
-        velocimeterFactoryIface.decodeFunctionResult('getFee', values)[0].toString(),
+        velocimeterFactoryIface
+          .decodeFunctionResult('getFee', values)[0]
+          .toString(),
       );
 
     return {

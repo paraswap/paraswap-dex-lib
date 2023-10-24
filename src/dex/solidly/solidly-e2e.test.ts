@@ -1126,6 +1126,26 @@ describe('Solidly E2E', () => {
         }),
       );
     });
+
+    describe('Usdfi', () => {
+      const dexKey = 'Usdfi';
+      const tokenASymbol: string = 'FRAX';
+      const tokenBSymbol: string = 'frxETH';
+
+      const tokenAAmount: string = '100000000000000000';
+      const tokenBAmount: string = '1111100000';
+      const nativeTokenAmount = '100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
   });
 
   describe('Avalanche', () => {
