@@ -5,6 +5,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -45,6 +50,6 @@ jobs:
           if [ -n "$CHANGED_SPECS" ]; then
             echo "Running the following changed specs"
             echo $CHANGED_SPECS
-            npx jest --ci --verbose $CHANGED_SPECS
+            npx jest --ci --forceExit --verbose $CHANGED_SPECS
           fi
 #        run: npx jest --verbose --onlyChanged --changedSince=origin/master --forceExit
