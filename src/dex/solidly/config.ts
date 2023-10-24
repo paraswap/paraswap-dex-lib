@@ -188,6 +188,15 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       poolGasCost: 180 * 1000, // just same as other forks
       // no subgraph
     },
+    [Network.BASE]: {
+      factoryAddress: '0xe21Aac7F113Bd5DC2389e4d8a8db854a87fD6951',
+      router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
+      initCode:
+        '0xac4013aa7118234c1dd1f9cc4cdd3933d5a426224bc691c1bde3d8930a7e6151', // PairFactory.pairCodeHash
+      feeCode: 0, // dynamic fees
+      poolGasCost: 180 * 1000, // just same as other forks
+      // no subgraph
+    },
   },
 };
 
