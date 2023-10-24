@@ -40,4 +40,4 @@ jobs:
           HTTP_PROVIDER_8453: ${{ secrets.HTTP_PROVIDER_8453 }}
           HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
-        run: npx jest --verbose --onlyChanged --changedSince=origin/master
+        run: npx jest --verbose --onlyChanged --changedSince=origin/master --forceExit

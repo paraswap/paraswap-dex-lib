@@ -92,7 +92,7 @@ function testForNetwork(
 }
 
 describe('New test', () => {
-  it('should2', () => {
+  it('should2 ', () => {
     expect(true).toBe(true);
   });
 });
