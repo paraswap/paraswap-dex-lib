@@ -178,10 +178,19 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       poolGasCost: 180 * 1000,
     },
   },
-  Fvm: {
+  Velocimeter: {
     [Network.FANTOM]: {
       factoryAddress: '0x472f3C3c9608fe0aE8d702f3f8A2d12c410C881A',
       router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
+      initCode:
+        '0xac4013aa7118234c1dd1f9cc4cdd3933d5a426224bc691c1bde3d8930a7e6151', // PairFactory.pairCodeHash
+      feeCode: 0, // dynamic fees
+      poolGasCost: 180 * 1000, // just same as other forks
+      // no subgraph
+    },
+    [Network.BASE]: {
+      factoryAddress: '0xe21Aac7F113Bd5DC2389e4d8a8db854a87fD6951',
+      router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
       initCode:
         '0xac4013aa7118234c1dd1f9cc4cdd3933d5a426224bc691c1bde3d8930a7e6151', // PairFactory.pairCodeHash
       feeCode: 0, // dynamic fees
@@ -208,7 +217,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }], // dystopia
   },
   [Network.FANTOM]: {
-    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly, spiritSwapV2, equalizer, fvm
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly, spiritSwapV2, equalizer, velocimeter
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
@@ -226,6 +235,6 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses
   },
   [Network.BASE]: {
-    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome, equalizer
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome, equalizer, velocimeter
   },
 };
