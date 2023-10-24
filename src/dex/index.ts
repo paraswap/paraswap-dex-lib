@@ -79,6 +79,7 @@ import { Algebra } from './algebra/algebra';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
+import { BMX } from './bmx/bmx';
 
 const LegacyDexes = [
   CurveV2,
@@ -155,6 +156,7 @@ const Dexes = [
   SwaapV2,
   QuickPerps,
   NomiswapV2,
+  BMX,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
