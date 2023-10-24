@@ -178,7 +178,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       poolGasCost: 180 * 1000,
     },
   },
-  Fvm: {
+  Velocimeter: {
     [Network.FANTOM]: {
       factoryAddress: '0x472f3C3c9608fe0aE8d702f3f8A2d12c410C881A',
       router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
@@ -198,6 +198,18 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       // no subgraph
     },
   },
+  Usdfi: {
+    [Network.BSC]: {
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/tbotteam/usdfi-dexv2',
+      factoryAddress: '0xB3863573d9f25e6a84895d4685a408db7a488416',
+      router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
+      initCode:
+        '0x1d770cc32abcf060a45b0de3f0afbd8594effe9f6d836f93d19c05d76b4b4dfa',
+      poolGasCost: 180 * 1000,
+      feeCode: 0, // dynamic fees
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
@@ -205,13 +217,13 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 3 }], // dystopia
   },
   [Network.FANTOM]: {
-    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly, spiritSwapV2, equalizer, fvm
+    [SwapSide.SELL]: [{ name: 'FantomAdapter01', index: 10 }], // solidly, spiritSwapV2, equalizer, velocimeter
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 8 }], // velodrome
   },
   [Network.BSC]: {
-    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // thena + cone
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 1 }], // thena + cone, usdFi
   },
   [Network.MAINNET]: {
     [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
@@ -223,6 +235,6 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses
   },
   [Network.BASE]: {
-    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome, equalizer
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 3 }], // aerodrome, equalizer, velocimeter
   },
 };
