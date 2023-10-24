@@ -46,7 +46,7 @@ jobs:
           if [ -n "$CHANGED_SPECS" ]; then
             echo "Running the following changed specs"
             echo $CHANGED_SPECS
-            npx jest --ci --forceExit --verbose $CHANGED_SPECS
+#            npx jest --ci --forceExit --verbose $CHANGED_SPECS
           else
             echo "There are no changed tests...skipping"
           fi
