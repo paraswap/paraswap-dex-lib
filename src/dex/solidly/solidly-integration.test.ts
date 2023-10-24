@@ -17,7 +17,7 @@ import { Ramses } from './forks-override/ramses';
 import * as util from 'util';
 import { VelodromeV2 } from './forks-override/velodromeV2';
 import { Equalizer } from './forks-override/equalizer';
-import { Fvm } from './forks-override/fvm';
+import { Velocimeter } from './forks-override/velocimeter';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
 const amounts6 = [0n, BI_POWS[6], 2000000n];
@@ -527,9 +527,9 @@ describe('Solidly integration tests', () => {
       });
     });
 
-    describe('Fvm', () => {
-      const dexKey = 'Fvm';
-      const fvm = new Fvm(network, dexKey, dexHelper);
+    describe('Velocimeter', () => {
+      const dexKey = 'Velocimeter';
+      const velocimeter = new Velocimeter(network, dexKey, dexHelper);
 
       describe('UniswapV2 like pool', function () {
         const TokenASymbol = 'WFTM';
@@ -541,7 +541,7 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await fvm.getPoolIdentifiers(
+          const pools = await velocimeter.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -554,7 +554,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await fvm.getPricesVolume(
+          const poolPrices = await velocimeter.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -574,7 +574,7 @@ describe('Solidly integration tests', () => {
 
           for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              fvm,
+              velocimeter,
               'getAmountOut',
               blocknumber,
               poolPrice.prices,
@@ -596,7 +596,7 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await fvm.getPoolIdentifiers(
+          const pools = await velocimeter.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -609,7 +609,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await fvm.getPricesVolume(
+          const poolPrices = await velocimeter.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -628,7 +628,7 @@ describe('Solidly integration tests', () => {
           // Check if onchain pricing equals to calculated ones
           for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              fvm,
+              velocimeter,
               'getAmountOut',
               blocknumber,
               poolPrice.prices,
@@ -652,7 +652,7 @@ describe('Solidly integration tests', () => {
         it('getPoolIdentifiers and getPricesVolume', async function () {
           // const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
           const blocknumber = 67666611;
-          const pools = await fvm.getPoolIdentifiers(
+          const pools = await velocimeter.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -665,7 +665,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await fvm.getPricesVolume(
+          const poolPrices = await velocimeter.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -684,7 +684,7 @@ describe('Solidly integration tests', () => {
           // Check if onchain pricing equals to calculated ones
           for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              fvm,
+              velocimeter,
               'getAmountOut',
               blocknumber,
               poolPrice.prices,
@@ -1439,9 +1439,9 @@ describe('Solidly integration tests', () => {
       });
     });
 
-    describe('Fvm', () => {
-      const dexKey = 'Fvm';
-      const fvm = new Fvm(network, dexKey, dexHelper);
+    describe('Velocimeter', () => {
+      const dexKey = 'Velocimeter';
+      const velocimeter = new Velocimeter(network, dexKey, dexHelper);
 
       describe('UniswapV2 like pool', function () {
         const TokenASymbol = 'WETH';
@@ -1453,7 +1453,7 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await fvm.getPoolIdentifiers(
+          const pools = await velocimeter.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -1466,7 +1466,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await fvm.getPricesVolume(
+          const poolPrices = await velocimeter.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -1486,7 +1486,7 @@ describe('Solidly integration tests', () => {
 
           for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              fvm,
+              velocimeter,
               'getAmountOut',
               blocknumber,
               poolPrice.prices,
@@ -1508,7 +1508,7 @@ describe('Solidly integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await fvm.getPoolIdentifiers(
+          const pools = await velocimeter.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -1521,7 +1521,7 @@ describe('Solidly integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await fvm.getPricesVolume(
+          const poolPrices = await velocimeter.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -1540,7 +1540,7 @@ describe('Solidly integration tests', () => {
           // Check if onchain pricing equals to calculated ones
           for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              fvm,
+              velocimeter,
               'getAmountOut',
               blocknumber,
               poolPrice.prices,
