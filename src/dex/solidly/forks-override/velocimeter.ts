@@ -17,7 +17,7 @@ const velocimeterFactoryABI = [
   },
 ];
 
-const velocimeteractoryIface = new Interface(velocimeterFactoryABI);
+const velocimeterFactoryIface = new Interface(velocimeterFactoryABI);
 
 export class Velocimeter extends Solidly {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -39,11 +39,11 @@ export class Velocimeter extends Solidly {
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: this.factoryAddress,
-      callData: velocimeteractoryIface.encodeFunctionData('getFee', [pair.exchange]),
+      callData: velocimeterFactoryIface.encodeFunctionData('getFee', [pair.exchange]),
     };
     const callDecoder = (values: any[]) =>
       parseInt(
-        velocimeteractoryIface.decodeFunctionResult('getFee', values)[0].toString(),
+        velocimeterFactoryIface.decodeFunctionResult('getFee', values)[0].toString(),
       );
 
     return {
