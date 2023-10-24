@@ -53,7 +53,7 @@ import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { SoliSnek } from './solidly/forks-override/solisnek';
 import { Equalizer } from './solidly/forks-override/equalizer';
-import { Fvm } from './solidly/forks-override/fvm';
+import { Velocimeter } from './solidly/forks-override/velocimeter';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -142,7 +142,7 @@ const Dexes = [
   Cone,
   SoliSnek,
   Equalizer,
-  Fvm,
+  Velocimeter,
   Synthetix,
   CurveV1Factory,
   SwaapV1,

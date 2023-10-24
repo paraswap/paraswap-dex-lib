@@ -7,7 +7,7 @@ import { getDexKeysWithNetwork } from '../../../utils';
 import { SolidlyConfig } from '../config';
 import _ from 'lodash';
 
-const FvmFactoryABI = [
+const velocimeterFactoryABI = [
   {
     inputs: [{ internalType: '_pair', name: '_stable', type: 'address' }],
     name: 'getFee',
@@ -17,11 +17,11 @@ const FvmFactoryABI = [
   },
 ];
 
-const fvmFactoryIface = new Interface(FvmFactoryABI);
+const velocimeteractoryIface = new Interface(velocimeterFactoryABI);
 
-export class Fvm extends Solidly {
+export class Velocimeter extends Solidly {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(SolidlyConfig, ['Fvm']));
+    getDexKeysWithNetwork(_.pick(SolidlyConfig, ['Velocimeter']));
 
   constructor(
     protected network: Network,
@@ -39,11 +39,11 @@ export class Fvm extends Solidly {
   protected getFeesMultiCallData(pair: SolidlyPair) {
     const callEntry = {
       target: this.factoryAddress,
-      callData: fvmFactoryIface.encodeFunctionData('getFee', [pair.exchange]),
+      callData: velocimeteractoryIface.encodeFunctionData('getFee', [pair.exchange]),
     };
     const callDecoder = (values: any[]) =>
       parseInt(
-        fvmFactoryIface.decodeFunctionResult('getFee', values)[0].toString(),
+        velocimeteractoryIface.decodeFunctionResult('getFee', values)[0].toString(),
       );
 
     return {
