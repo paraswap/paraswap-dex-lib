@@ -167,7 +167,7 @@ function testForNetwork(
 }
 
 describe('Dexalot E2E', () => {
-  const dexKey = 'Dexalot';
+  const dexKey = 'Dexalot ';
 
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;

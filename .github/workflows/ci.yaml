@@ -40,4 +40,11 @@ jobs:
           HTTP_PROVIDER_8453: ${{ secrets.HTTP_PROVIDER_8453 }}
           HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
-        run: npx jest --verbose --onlyChanged --changedSince=origin/master --forceExit
+        run: |
+          CHANGED_SPECS=$(git diff --name-only origin/${{ github.base_ref }} origin/${{ github.head_ref }} | grep test.ts)
+          if [ -n "$CHANGED_SPECS" ]; then
+            echo "Running the following changed specs"
+            echo $CHANGED_SPECS
+            npx jest --ci --verbose $CHANGED_SPECS
+          fi
+#        run: npx jest --verbose --onlyChanged --changedSince=origin/master --forceExit
