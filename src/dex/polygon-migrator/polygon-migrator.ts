@@ -34,9 +34,9 @@ export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigra
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
-    readonly migratorAddress: string = PolygonMigratorConfig['PolygonMigrator'][network].migratorAddress,
-    readonly polTokenAddress: string = PolygonMigratorConfig['PolygonMigrator'][network].polTokenAddress,
-    readonly maticTokenAddress: string = PolygonMigratorConfig['PolygonMigrator'][network].maticTokenAddress,
+    readonly migratorAddress: string = PolygonMigratorConfig[dexKey][network].migratorAddress,
+    readonly polTokenAddress: string = PolygonMigratorConfig[dexKey][network].polTokenAddress,
+    readonly maticTokenAddress: string = PolygonMigratorConfig[dexKey][network].maticTokenAddress,
     protected unitPrice = BI_POWS[18],
     protected adapters = Adapters[network] || {},
     protected migratorInterface = new Interface(PolygonMigrationAbi),
@@ -69,7 +69,7 @@ export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigra
     blockNumber: number,
   ): Promise<string[]> {
     if(this.isAppropriatePair(srcToken, destToken)) {
-      return [`${this.network}_${srcToken.address}_${destToken.address}`];
+      return [`${this.dexKey}_${srcToken.address}_${destToken.address}`];
     }
 
     return [];
