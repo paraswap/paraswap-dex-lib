@@ -5,6 +5,7 @@ import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool';
 import { Weth } from './weth/weth';
+import { PolygonMigrator } from './polygon-migrator/polygon-migrator';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
@@ -52,8 +53,9 @@ import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { SoliSnek } from './solidly/forks-override/solisnek';
+import { Usdfi } from './solidly/forks-override/usdfi';
 import { Equalizer } from './solidly/forks-override/equalizer';
-import { Fvm } from './solidly/forks-override/fvm';
+import { Velocimeter } from './solidly/forks-override/velocimeter';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -123,6 +125,7 @@ const Dexes = [
   AaveV3,
   KyberDmm,
   Weth,
+  PolygonMigrator,
   MakerPsm,
   Nerve,
   Platypus,
@@ -142,7 +145,8 @@ const Dexes = [
   Cone,
   SoliSnek,
   Equalizer,
-  Fvm,
+  Velocimeter,
+  Usdfi,
   Synthetix,
   CurveV1Factory,
   SwaapV1,
