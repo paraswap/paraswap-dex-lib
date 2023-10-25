@@ -41,4 +41,4 @@ jobs:
           HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
         run: |
-          git diff --name-only origin/master ${{ github.ref }} | grep test.ts
+          git diff --exit-code --name-only origin/master ${{ github.ref }} | grep test.ts
