@@ -42,4 +42,3 @@ jobs:
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
         run: |
           CHANGED_TESTS=$(git diff --name-only origin/master ${{ github.ref }} | grep test.ts)
-          echo "$CHANGED_SPECS"
