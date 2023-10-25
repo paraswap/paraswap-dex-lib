@@ -92,7 +92,7 @@ function testForNetwork(
 }
 
 describe('Solidly E2E', () => {
-  describe('Fantom', () => {
+  describe('Fantom ', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];

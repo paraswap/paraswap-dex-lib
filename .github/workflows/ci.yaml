@@ -41,4 +41,11 @@ jobs:
           HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
         run: |
-          git diff --exit-code --name-only origin/master ${{ github.ref }} | grep test.ts
+          CHANGED_TESTS=$(git diff --name-only origin/master ${{ github.ref }} | grep test.ts || true)
+          echo "$CHANGED_TESTS"
+          if [ -n "$CHANGED_TESTS" ]; then
+            echo "Running the following changed specs"
+            npx jest --ci --forceExit --verbose $CHANGED_TESTS
+          else
+            echo "There are no changed tests...skipping"
+          fi
