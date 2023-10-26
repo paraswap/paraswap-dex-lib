@@ -311,6 +311,14 @@ export const Tokens: {
       address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
       decimals: 18,
     },
+    MATIC: {
+      address: '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0',
+      decimals: 18,
+    },
+    POL: {
+      address: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6',
+      decimals: 19,
+    }
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -1008,6 +1016,8 @@ export const Holders: {
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
     GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
     wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
+    MATIC: '0x7073783eee7e9b3e6e4ddac4d7f49dc46044dd9a',
+    POL: '0x57B6Ad484ccdd902C4419424bA648ba6Ed45dc68',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',

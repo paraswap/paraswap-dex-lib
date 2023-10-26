@@ -1,0 +1,2 @@
+
+export const POLYGON_MIGRATION_GAS_COST= 90_000;
