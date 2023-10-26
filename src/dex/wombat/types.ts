@@ -2,6 +2,10 @@ import { Address } from '../../types';
 
 // State-related types
 
+export type BmwState = {
+  pools: Address[];
+};
+
 export type PoolState = {
   // poolState is the state of event
   // subscriber. This should be the minimum
@@ -13,31 +17,19 @@ export type PoolState = {
 };
 
 export type AssetState = {
+  paused: boolean;
   cash: bigint;
   liability: bigint;
+  underlyingTokenDecimals: number;
+  relativePrice?: bigint;
 };
 
 export type PoolParams = {
+  paused: boolean;
   ampFactor: bigint;
   haircutRate: bigint;
-};
-
-// Wombat Config types
-
-export type WombatConfigInfo = {
-  poolAddresses: Address[];
-  pools: { [poolAddress: string]: WombatPoolConfigInfo };
-};
-
-export type WombatPoolConfigInfo = {
-  tokenAddresses: Address[];
-  tokens: {
-    [tokenAddress: string]: {
-      tokenSymbol: string;
-      tokenDecimals: number;
-      assetAddress: Address;
-    };
-  };
+  startCovRatio: bigint;
+  endCovRatio: bigint;
 };
 
 export type WombatData = {
@@ -50,8 +42,5 @@ export type WombatData = {
 
 export type DexParams = {
   // DexParams is set of parameters that can be used to initiate a DEX fork.
-  pools: {
-    address: Address;
-    name: string;
-  }[];
+  bmwAddress: Address;
 };

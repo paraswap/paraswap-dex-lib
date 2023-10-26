@@ -5,15 +5,12 @@ import { DeepReadonly } from 'ts-essentials';
 import { WombatEventPool } from './wombat-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
-import { DummyDexHelper } from '../../dex-helper/index';
-import {
-  testEventSubscriber,
-  getSavedConfig,
-  saveConfig,
-} from '../../../tests/utils-events';
-import { PoolState, WombatConfigInfo } from './types';
+import { DummyDexHelper } from '../../dex-helper';
+import { testEventSubscriber } from '../../../tests/utils-events';
+import { BmwState, PoolState } from './types';
 import { WombatConfig } from './config';
 import { Wombat } from './wombat';
+import { WombatBmw } from './wombat-bmw';
 /*
   README
   ======
@@ -56,7 +53,12 @@ async function fetchPoolState(
 ): Promise<DeepReadonly<PoolState>> {
   return await wombatPool.generateState(blockNumber);
 }
-
+async function fetchBmwState(
+  wombatBmw: WombatBmw,
+  blockNumber: number,
+): Promise<DeepReadonly<BmwState>> {
+  return await wombatBmw.generateState(blockNumber);
+}
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
@@ -66,15 +68,14 @@ describe('Wombat EventPool BSC', function () {
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
   let wombatPool: WombatEventPool;
-  const mainPoolAddress = WombatConfig.Wombat[Network.BSC].pools[0].address;
-  // poolAddress -> EventMappings
+  const bmwAddress = WombatConfig.Wombat[Network.BSC].bmwAddress;
   const eventsToTest: Record<Address, EventMappings> = {
-    // Main pool
-    [mainPoolAddress]: {
-      Deposit: [22764190],
-      // Deposit: [24764190],
+    [bmwAddress]: {
+      Add: [24685640, 24685642, 24685644, 24685646, 24685647, 24685649],
     },
   };
+
+  const wombat = new Wombat(network, dexKey, dexHelper);
 
   for (const [poolAddress, events] of Object.entries(eventsToTest)) {
     describe(`Events for ${poolAddress}`, () => {
@@ -82,35 +83,34 @@ describe('Wombat EventPool BSC', function () {
         describe(`${eventName}`, () => {
           for (const blockNumber of blockNumbers) {
             it(`State after ${blockNumber}`, async function () {
-              let cfgInfo = getSavedConfig<WombatConfigInfo>(
-                blockNumber,
-                dexKey,
-              );
+              // let cfgInfo = getSavedConfig<WombatConfigInfo>(
+              //   blockNumber,
+              //   dexKey,
+              // );
+              //
+              // cfgInfo = undefined;
+              // if (!cfgInfo) {
+              //   const dex = new Wombat(network, dexKey, dexHelper);
+              //   cfgInfo = await dex.generateConfigInfo(blockNumber);
+              //   saveConfig(blockNumber, dexKey, cfgInfo);
+              // }
 
-              cfgInfo = undefined;
-              if (!cfgInfo) {
-                const dex = new Wombat(network, dexKey, dexHelper);
-                cfgInfo = await dex.generateConfigInfo(blockNumber);
-                saveConfig(blockNumber, dexKey, cfgInfo);
-              }
-
-              wombatPool = new WombatEventPool(
-                dexKey,
-                'Main Pool',
-                network,
-                dexHelper,
-                logger,
-                poolAddress.toLowerCase(),
-                cfgInfo.pools[poolAddress.toLowerCase()],
-              );
+              // wombatPool = new WombatEventPool(
+              //   dexKey,
+              //   'Main Pool',
+              //   network,
+              //   dexHelper,
+              //   logger,
+              //   poolAddress.toLowerCase(),
+              // );
 
               await testEventSubscriber(
-                wombatPool,
-                wombatPool.addressesSubscribed,
+                wombat.bmw,
+                wombat.bmw.addressesSubscribed,
                 (_blockNumber: number) =>
-                  fetchPoolState(wombatPool, _blockNumber),
+                  fetchBmwState(wombat.bmw, _blockNumber),
                 blockNumber,
-                `${dexKey}_${poolAddress}`,
+                `${dexKey}_${bmwAddress}`,
                 dexHelper.provider,
               );
             });
