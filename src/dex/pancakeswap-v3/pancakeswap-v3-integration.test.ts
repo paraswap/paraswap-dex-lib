@@ -77,7 +77,6 @@ const testingData: Partial<{ [key in Network]: any }> = {
 
 describe('PancakeswapV3', function () {
   describe('BSC', () => {
-    console.log('Test');
     describe('WBNB -> USDT', () => {
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         const network = Network.BSC;
