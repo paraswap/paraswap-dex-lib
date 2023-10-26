@@ -1,5 +1,80 @@
 [
   {
+    "inputs": [],
+    "name": "CORE_UNDERFLOW",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_AMOUNT_TOO_LOW",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_ASSET_ALREADY_EXIST",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_ASSET_ALREADY_PAUSED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_ASSET_NOT_EXISTS",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_ASSET_NOT_PAUSED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_CASH_NOT_ENOUGH",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_COV_RATIO_LIMIT_EXCEEDED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_EXPIRED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_FORBIDDEN",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_INVALID_VALUE",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_SAME_ADDRESS",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_ZERO_ADDRESS",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_ZERO_AMOUNT",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WOMBAT_ZERO_LIQUIDITY",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -97,6 +172,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "previousOwner",
@@ -131,7 +219,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "asset",
+        "name": "token",
         "type": "address"
       },
       {
@@ -328,7 +416,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "asset",
+        "name": "token",
         "type": "address"
       },
       {
@@ -486,6 +574,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "endCovRatio",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -598,6 +699,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "isPaused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "lpDividendRatio",
     "outputs": [
@@ -632,7 +752,13 @@
       }
     ],
     "name": "mintFee",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "feeCollected",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -904,6 +1030,24 @@
   {
     "inputs": [
       {
+        "internalType": "uint128",
+        "name": "startCovRatio_",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "endCovRatio_",
+        "type": "uint128"
+      }
+    ],
+    "name": "setCovRatioFeeParam",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "dev_",
         "type": "address"
@@ -982,6 +1126,19 @@
     "name": "setMintFeeThreshold",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "startCovRatio",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
