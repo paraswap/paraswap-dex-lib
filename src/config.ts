@@ -280,8 +280,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
       ArbitrumAdapter01: '0xD8134ACfc9c71Ab51452b5bA23A31354F4739032',
-      ArbitrumAdapter02: '0xD1F70c98a78d48A93F0B4dDa49057469dc5aC126',
-      ArbitrumBuyAdapter: '0x434C1Cca4842629230067674Dd54E21a14D9FD5D',
+      ArbitrumAdapter02: '0x3a1F07fA88D6D88bbE5Bab462E52A8CD002810d3',
+      ArbitrumBuyAdapter: '0x34bDD625C494496d78A792fEB37741E3bc90d4eA',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',

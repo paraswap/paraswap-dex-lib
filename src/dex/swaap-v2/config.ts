@@ -20,6 +20,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 7 }],
   },
   [Network.ARBITRUM]: {
-    // TODO: add the proper adapters
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 6 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 8 }],
   },
 };
