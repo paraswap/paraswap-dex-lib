@@ -13,6 +13,8 @@ jobs:
       - name: Get branch name
         id: branch-name
         uses: tj-actions/branch-names@v7
+
+      - name: Dump vars
         run: |
           echo "Running on default: ${{ steps.branch-name.outputs.current_branch }}"
           echo "Base branch: ${{ steps.branch-name.outputs.base_ref_branch }}"
