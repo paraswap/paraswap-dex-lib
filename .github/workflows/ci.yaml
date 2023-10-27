@@ -5,11 +5,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -21,6 +16,10 @@ jobs:
 
       - name: Install Dependencies
         run: yarn
+
+      - name: Run Eslint checks
+        if: github.event_name == 'push'
+        run: yarn check:es
 
       - name: Run Changed tests only
         if: github.event_name == 'pull_request'
@@ -39,7 +38,7 @@ jobs:
           HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
         run: |
-          CHANGED_TESTS=$(git diff --name-only ${{ github.base_ref }} ${{ github.ref }} | grep test.ts || true)
+          CHANGED_TESTS=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.ref }} | grep test.ts || true)
           echo "$CHANGED_TESTS"
           if [ -n "$CHANGED_TESTS" ]; then
             echo "Running the following changed specs"
