@@ -5,10 +5,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
+#      - name: Dump GitHub context
+#        env:
+#          GITHUB_CONTEXT: ${{ toJson(github) }}
+#        run: echo "$GITHUB_CONTEXT"
+
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v7
+        run: |
+          echo "Running on default: ${{ steps.branch-name.outputs.current_branch }}"
+          echo "Base branch: ${{ steps.branch-name.outputs.base_ref_branch }}"
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -47,7 +54,7 @@ jobs:
           HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
         run: |
-          CHANGED_TESTS=$(git diff --name-only origin/master ${{ github.ref }} | grep test.ts || true)
+          CHANGED_TESTS=$(git diff --name-only ${{ steps.branch-name.outputs.base_ref_branch }} ${{ github.ref }} | grep test.ts || true)
           echo "$CHANGED_TESTS"
           if [ -n "$CHANGED_TESTS" ]; then
             echo "Running the following changed specs"
