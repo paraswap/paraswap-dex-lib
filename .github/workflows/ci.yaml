@@ -1,15 +1,10 @@
 name: CI
-on: push
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -23,10 +18,12 @@ jobs:
         run: yarn
 
       - name: Run Eslint checks
+        if: github.event_name == 'push'
         run: yarn check:es
 
       - name: Run Changed tests only
-        timeout-minutes: 60
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 15
         env:
           TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_USERNAME }}
           TENDERLY_PROJECT: ${{ secrets.TENDERLY_PROJECT }}
@@ -41,7 +38,7 @@ jobs:
           HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
         run: |
-          CHANGED_TESTS=$(git diff --name-only origin/master ${{ github.ref }} | grep test.ts || true)
+          CHANGED_TESTS=$(git diff --name-only origin/${{ github.base_ref }} origin/${{ github.head_ref }} | grep test.ts || true)
           echo "$CHANGED_TESTS"
           if [ -n "$CHANGED_TESTS" ]; then
             echo "Running the following changed specs"
