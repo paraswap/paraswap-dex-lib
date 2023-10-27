@@ -1,12 +1,18 @@
 name: CI
-on: push
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Node ${{ matrix.node }} sample
     steps:
-      - uses: actions/checkout@v2
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -16,5 +22,28 @@ jobs:
       - name: Install Dependencies
         run: yarn
 
-      - name: Run Eslint checks
-        run: yarn check:es
+      - name: Run Changed tests only
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 15
+        env:
+          TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_USERNAME }}
+          TENDERLY_PROJECT: ${{ secrets.TENDERLY_PROJECT }}
+          TENDERLY_TOKEN: ${{ secrets.TENDERLY_TOKEN }}
+          HTTP_PROVIDER_1: ${{ secrets.HTTP_PROVIDER_1 }}
+          HTTP_PROVIDER_10: ${{ secrets.HTTP_PROVIDER_10 }}
+          HTTP_PROVIDER_56: ${{ secrets.HTTP_PROVIDER_56 }}
+          HTTP_PROVIDER_137: ${{ secrets.HTTP_PROVIDER_137 }}
+          HTTP_PROVIDER_250: ${{ secrets.HTTP_PROVIDER_250 }}
+          HTTP_PROVIDER_1101: ${{ secrets.HTTP_PROVIDER_1101 }}
+          HTTP_PROVIDER_8453: ${{ secrets.HTTP_PROVIDER_8453 }}
+          HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
+          HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
+        run: |
+          CHANGED_TESTS=$(git diff --name-only ${{ github.base_ref }} ${{ github.ref }} | grep test.ts || true)
+          echo "$CHANGED_TESTS"
+          if [ -n "$CHANGED_TESTS" ]; then
+            echo "Running the following changed specs"
+            npx jest --ci --forceExit --verbose $CHANGED_TESTS
+          else
+            echo "There are no changed tests...skipping"
+          fi
