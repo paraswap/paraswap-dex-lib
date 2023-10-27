@@ -136,5 +136,4 @@ describe('PolygonMigrator', function () {
     expect(poolPrices).not.toBeNull();
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   });
-
 });

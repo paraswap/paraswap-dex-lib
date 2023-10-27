@@ -1,6 +1,10 @@
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
-import { DexParams, PolygonMigrationData, PolygonMigratorFunctions } from './types';
+import {
+  DexParams,
+  PolygonMigrationData,
+  PolygonMigratorFunctions,
+} from './types';
 import { Network, SwapSide } from '../../constants';
 import { getDexKeysWithNetwork } from '../../utils';
 import { Adapters, PolygonMigratorConfig } from './config';
@@ -12,7 +16,7 @@ import {
   PoolLiquidity,
   PoolPrices,
   SimpleExchangeParam,
-  Token
+  Token,
 } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -21,7 +25,10 @@ import { POLYGON_MIGRATION_GAS_COST } from './constants';
 import PolygonMigrationAbi from '../../abi/polygon-migration/PolygonMigration.abi.json';
 import { Interface } from 'ethers/lib/utils';
 
-export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigrationData, DexParams> {
+export class PolygonMigrator
+  extends SimpleExchange
+  implements IDex<PolygonMigrationData, DexParams>
+{
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;
 
@@ -34,9 +41,12 @@ export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigra
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
-    readonly migratorAddress: string = PolygonMigratorConfig[dexKey][network].migratorAddress,
-    readonly polTokenAddress: string = PolygonMigratorConfig[dexKey][network].polTokenAddress,
-    readonly maticTokenAddress: string = PolygonMigratorConfig[dexKey][network].maticTokenAddress,
+    readonly migratorAddress: string = PolygonMigratorConfig[dexKey][network]
+      .migratorAddress,
+    readonly polTokenAddress: string = PolygonMigratorConfig[dexKey][network]
+      .polTokenAddress,
+    readonly maticTokenAddress: string = PolygonMigratorConfig[dexKey][network]
+      .maticTokenAddress,
     protected unitPrice = BI_POWS[18],
     protected adapters = Adapters[network] || {},
     protected migratorInterface = new Interface(PolygonMigrationAbi),
@@ -58,8 +68,10 @@ export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigra
   }
 
   isAppropriatePair(srcToken: Token, destToken: Token) {
-    return (this.isMatic(srcToken.address) && this.isPol(destToken.address))
-      || (this.isMatic(destToken.address) && this.isPol(srcToken.address));
+    return (
+      (this.isMatic(srcToken.address) && this.isPol(destToken.address)) ||
+      (this.isMatic(destToken.address) && this.isPol(srcToken.address))
+    );
   }
 
   async getPoolIdentifiers(
@@ -68,7 +80,7 @@ export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigra
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if(this.isAppropriatePair(srcToken, destToken)) {
+    if (this.isAppropriatePair(srcToken, destToken)) {
       return [`${this.dexKey}_${srcToken.address}_${destToken.address}`];
     }
 
@@ -83,7 +95,7 @@ export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigra
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<PolygonMigrationData>> {
-    if(!this.isAppropriatePair(srcToken, destToken)) {
+    if (!this.isAppropriatePair(srcToken, destToken)) {
       return null;
     }
 
@@ -100,7 +112,9 @@ export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigra
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(poolPrices: PoolPrices<PolygonMigrationData>): number | number[] {
+  getCalldataGasCost(
+    poolPrices: PoolPrices<PolygonMigrationData>,
+  ): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -128,8 +142,10 @@ export class PolygonMigrator extends SimpleExchange implements IDex<PolygonMigra
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const swapData = this.migratorInterface.encodeFunctionData(
-      this.isMatic(srcToken) ? PolygonMigratorFunctions.migrate : PolygonMigratorFunctions.unmigrate,
-      [ srcAmount ],
+      this.isMatic(srcToken)
+        ? PolygonMigratorFunctions.migrate
+        : PolygonMigratorFunctions.unmigrate,
+      [srcAmount],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
