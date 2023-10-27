@@ -311,6 +311,14 @@ export const Tokens: {
       address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
       decimals: 18,
     },
+    MATIC: {
+      address: '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0',
+      decimals: 18,
+    },
+    POL: {
+      address: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6',
+      decimals: 19,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -582,6 +590,18 @@ export const Tokens: {
     axlUSD: {
       address: '0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3',
       decimals: 6,
+    },
+    FRAX: {
+      address: '0x90C97F71E18723b0Cf0dfa30ee176Ab653E89F40',
+      decimals: 18,
+    },
+    frxETH: {
+      address: '0x64048A7eEcF3a2F1BA9e144aAc3D7dB6e58F555e',
+      decimals: 18,
+    },
+    USDFI: {
+      address: '0x11A38e06699b238D6D9A0C7A01f3AC63a07ad318',
+      decimals: 18,
     },
   },
   [Network.AVALANCHE]: {
@@ -996,6 +1016,8 @@ export const Holders: {
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
     GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
     wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
+    MATIC: '0x7073783eee7e9b3e6e4ddac4d7f49dc46044dd9a',
+    POL: '0x57B6Ad484ccdd902C4419424bA648ba6Ed45dc68',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -1071,6 +1093,9 @@ export const Holders: {
     anyBTC: '0x4ffef8e8a75c20ab0ddf96c50d2457277d27923c',
     nUSD: '0x28ec0b36f0819ecb5005cab836f4ed5a2eca4d13',
     axlUSD: '0xc03fbeda9069b22a120ae6a09349a0b5eea5570a',
+    FRAX: '0xEB4576fE753DAB07635c0Bb6c8f0A355e1Db5d31',
+    frxETH: '0xf324adC872005197A6f7DAE214d3b63aa0C3625F',
+    USDFI: '0x2E00D722e091836B39Db3e4dcE6eE51c90c5B221',
   },
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
