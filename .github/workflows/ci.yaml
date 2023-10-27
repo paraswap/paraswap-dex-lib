@@ -17,7 +17,7 @@ jobs:
       - name: Dump vars
         run: |
           echo "Running on default: ${{ steps.branch-name.outputs.current_branch }}"
-          echo "Base branch: ${{ steps.branch-name.outputs.base_ref_branch }}"
+          echo "Base branch: ${{ toJson(steps.branch-name.outputs) }}"
 
       - name: Checkout
         uses: actions/checkout@v3
