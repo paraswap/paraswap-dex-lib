@@ -40,7 +40,7 @@ jobs:
         run: yarn check:es
 
       - name: Run Changed tests only
-        if: github.base_ref != 'refs/heads/master
+        if: ${{ github.base_ref != 'refs/heads/master' }}
         timeout-minutes: 15
         env:
           TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_USERNAME }}
