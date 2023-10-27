@@ -30,7 +30,7 @@ type BaseConfig = {
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   swaapV2AuthToken?: string;
-  smardexSubgraphAuthToken?: string;
+  dexalotAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 
@@ -52,14 +52,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0xfb2a3de6c7B8c77b520E3da16021f3D8A4E93168',
-      Adapter04: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
-      BuyAdapter: '0x613876f3dE2Ec633f8054fE7a561324c1a01d9cB',
+      Adapter04: '0x1A23Aa6f7ff4215Fd2d220EA6f4a0DF45A77fc6C',
+      BuyAdapter: '0x1310dE2C69e9753bee19B5522bad39c5f788efd9',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
@@ -146,7 +145,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
-    forceRpcFallbackDexs: [],
   },
   [Network.BSC]: {
     network: Network.BSC,
@@ -160,7 +158,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
@@ -189,7 +186,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
@@ -223,10 +219,11 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
+    dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0xFb8773AA4Fd02e54bbd352061D8Be1911FAa210a',
-      AvalancheBuyAdapter: '0x434C1Cca4842629230067674Dd54E21a14D9FD5D',
+      AvalancheAdapter02: '0x2cdB0cDc2a9321ac2ED5b741828a5216C265Be80',
+      AvalancheBuyAdapter: '0x9Aa41A24A10af2a965A6D406b913a7Cd9C6886ea',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -276,7 +273,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
     privateHttpProvider: process.env.HTTP_PROVIDER_42161,
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
@@ -363,7 +359,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     augustusRFQAddress: '0xa003dFBA51C9e1e56C67ae445b852bdEd7aC5EEd',
     tokenTransferProxyAddress: '0x93aAAe79a53759cD164340E4C8766E4Db5331cD7',
     multicallV2Address: '0xeDF6D2a16e8081F777eB623EeB4411466556aF3d',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     privateHttpProvider: process.env.HTTP_PROVIDER_8453,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs: [],
@@ -420,8 +415,8 @@ export function generateConfig(network: number): Config {
       baseConfig.rpcPollingBlocksBackToTriggerUpdate,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
+    dexalotAuthToken: baseConfig.dexalotAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
-    smardexSubgraphAuthToken: baseConfig.smardexSubgraphAuthToken,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
   };
 }
