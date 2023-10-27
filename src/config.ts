@@ -145,6 +145,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
   },
   [Network.BSC]: {
     network: Network.BSC,

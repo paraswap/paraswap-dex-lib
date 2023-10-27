@@ -62,6 +62,18 @@ export class Buy extends PayloadEncoder implements IRouter<BuyParam> {
       minMaxAmount,
       priceRoute.srcAmount,
     );
+
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(SwapSide.BUY)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            takeSurplus,
+          }),
+          encodeFeePercent(partnerFeePercent, takeSurplus, SwapSide.BUY),
+        ];
+
     const buyData: ContractBuyData = {
       adapter,
       fromToken: priceRoute.srcToken,
