@@ -318,7 +318,7 @@ export const Tokens: {
     POL: {
       address: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6',
       decimals: 19,
-    }
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
