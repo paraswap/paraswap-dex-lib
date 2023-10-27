@@ -31,7 +31,8 @@ jobs:
         run: yarn check:es
 
       - name: Run Changed tests only
-        timeout-minutes: 60
+        if: ${{ github.base_ref != 'refs/heads/master }}
+        timeout-minutes: 15
         env:
           TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_USERNAME }}
           TENDERLY_PROJECT: ${{ secrets.TENDERLY_PROJECT }}
