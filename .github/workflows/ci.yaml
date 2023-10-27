@@ -43,7 +43,7 @@ jobs:
           HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
           HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
         run: |
-          CHANGED_TESTS=$(git diff --name-only origin/${{ github.base_ref }} ${{ github.head_ref }} | grep test.ts || true)
+          CHANGED_TESTS=$(git diff --name-only origin/${{ github.base_ref }} ${{ github.ref }} | grep test.ts || true)
           echo "$CHANGED_TESTS"
           if [ -n "$CHANGED_TESTS" ]; then
             echo "Running the following changed specs"
