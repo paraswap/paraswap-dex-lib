@@ -98,12 +98,12 @@ export class BaseswapV3
     getDexKeysWithNetwork(
       _.pick(BaseswapV3Config, [
         'BaseswapV3',
-        'UniswapV3',
-        'SushiSwapV3',
-        'QuickSwapV3.1',
-        'RamsesV2',
-        'ChronosV3',
-        'Retro',
+        // 'UniswapV3',
+        // 'SushiSwapV3',
+        // 'QuickSwapV3.1',
+        // 'RamsesV2',
+        // 'ChronosV3',
+        // 'Retro',
       ]),
     );
 
@@ -291,10 +291,12 @@ export class BaseswapV3
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
+
     const poolImplementation =
       this.config.eventPoolImplementation !== undefined
         ? this.config.eventPoolImplementation
         : BaseswapV3EventPool;
+
     pool =
       pool ||
       new poolImplementation(
@@ -1015,31 +1017,31 @@ export class BaseswapV3
 
     const res = await this._querySubgraph(
       `query ($token: Bytes!, $count: Int) {
-                pools0: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token0: $token}) {
-                id
-                token0 {
-                  id
-                  decimals
-                }
-                token1 {
-                  id
-                  decimals
-                }
-                totalValueLockedUSD
-              }
-              pools1: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token1: $token}) {
-                id
-                token0 {
-                  id
-                  decimals
-                }
-                token1 {
-                  id
-                  decimals
-                }
-                totalValueLockedUSD
-              }
-            }`,
+          pools0: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token0: $token}) {
+            id
+            token0 {
+              id
+              decimals
+            }
+            token1 {
+              id
+              decimals
+            }
+            totalValueLockedUSD
+          }
+          pools1: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token1: $token}) {
+            id
+            token0 {
+              id
+              decimals
+            }
+            token1 {
+              id
+              decimals
+            }
+            totalValueLockedUSD
+          }
+      }`,
       {
         token: _tokenAddress,
         count: limit,
