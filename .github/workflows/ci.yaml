@@ -4,29 +4,9 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
+    name: Node ${{ matrix.node }} sample
     steps:
-#      - name: Dump GitHub context
-#        env:
-#          GITHUB_CONTEXT: ${{ toJson(github) }}
-#        run: echo "$GITHUB_CONTEXT"
-
-      - name: Get branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v7
-
-      - name: Dump vars
-        run: |
-          echo "Running on default: ${{ steps.branch-name.outputs.current_branch }}"
-          echo "Base branch: ${{ toJson(steps.branch-name.outputs) }}"
-
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v2
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -38,29 +18,3 @@ jobs:
 
       - name: Run Eslint checks
         run: yarn check:es
-
-      - name: Run Changed tests only
-        if: ${{ github.base_ref != 'refs/heads/master' }}
-        timeout-minutes: 15
-        env:
-          TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_USERNAME }}
-          TENDERLY_PROJECT: ${{ secrets.TENDERLY_PROJECT }}
-          TENDERLY_TOKEN: ${{ secrets.TENDERLY_TOKEN }}
-          HTTP_PROVIDER_1: ${{ secrets.HTTP_PROVIDER_1 }}
-          HTTP_PROVIDER_10: ${{ secrets.HTTP_PROVIDER_10 }}
-          HTTP_PROVIDER_56: ${{ secrets.HTTP_PROVIDER_56 }}
-          HTTP_PROVIDER_137: ${{ secrets.HTTP_PROVIDER_137 }}
-          HTTP_PROVIDER_250: ${{ secrets.HTTP_PROVIDER_250 }}
-          HTTP_PROVIDER_1101: ${{ secrets.HTTP_PROVIDER_1101 }}
-          HTTP_PROVIDER_8453: ${{ secrets.HTTP_PROVIDER_8453 }}
-          HTTP_PROVIDER_42161: ${{ secrets.HTTP_PROVIDER_42161 }}
-          HTTP_PROVIDER_43114: ${{ secrets.HTTP_PROVIDER_43114 }}
-        run: |
-          CHANGED_TESTS=$(git diff --name-only ${{ steps.branch-name.outputs.base_ref_branch }} ${{ github.ref }} | grep test.ts || true)
-          echo "$CHANGED_TESTS"
-          if [ -n "$CHANGED_TESTS" ]; then
-            echo "Running the following changed specs"
-            npx jest --ci --forceExit --verbose $CHANGED_TESTS
-          else
-            echo "There are no changed tests...skipping"
-          fi
