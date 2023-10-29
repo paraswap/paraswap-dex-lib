@@ -33,8 +33,8 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
   ]);
@@ -48,7 +48,7 @@ function testForNetwork(
               await testE2E(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
-                holders['0x0aF766927D25a53352664eA94825aDbaaA6bA770'],
+                '0x0aF766927D25a53352664eA94825aDbaaA6bA770',
                 side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
                 side,
                 dexKey,

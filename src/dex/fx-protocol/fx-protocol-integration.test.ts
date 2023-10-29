@@ -22,7 +22,7 @@ function getReaderCalldata(
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [amount]),
+    callData: readerIface.encodeFunctionData(funcName, []),
   }));
 }
 
@@ -30,10 +30,15 @@ function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
+  destTokenSymbol: string,
 ) {
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
+    if (destTokenSymbol == 'fETH') {
+      return BigInt(parsed[1]._hex);
+    } else {
+      return BigInt(parsed[2]._hex);
+    }
   });
 }
 
@@ -43,6 +48,7 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  destTokenSymbol: string,
 ) {
   const exchangeAddress = '0x0e5CAA5c889Bdf053c9A76395f62267E653AFbb0';
 
@@ -62,11 +68,16 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
 
-  console.log('readerResult---', readerResult);
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
+  const data = decodeReaderResult(
+    readerResult,
+    readerIface,
+    funcName,
+    destTokenSymbol,
   );
 
+  const expectedPrices = [0n].concat(
+    decodeReaderResult(readerResult, readerIface, funcName, destTokenSymbol),
+  );
   expect(prices).toEqual(expectedPrices);
 }
 
@@ -82,7 +93,6 @@ async function testPricingOnNetwork(
   funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
-
   const pools = await fxProtocol.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
@@ -104,7 +114,6 @@ async function testPricingOnNetwork(
     blockNumber,
     pools,
   );
-
   expect(poolPrices).not.toBeNull();
   if (fxProtocol.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
@@ -119,6 +128,7 @@ async function testPricingOnNetwork(
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    destTokenSymbol,
   );
 }
 
@@ -170,7 +180,7 @@ describe('FxProtocol', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'getCurrentNav', // TODO: Put here proper function name to check pricing
+        'getCurrentNav',
       );
     });
 
