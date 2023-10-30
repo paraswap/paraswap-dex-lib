@@ -151,26 +151,9 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
       pool2AssetInfo.get(pool)!.set(lpToken, underlyingToken);
     }
 
-    inputs = [];
     pool2AssetInfo.forEach((asset2TokenMap, pool) => {
-      inputs.push({
-        target: pool,
-        callData: WombatBmw.poolInterface.encodeFunctionData(
-          'creditForTokensHaircut',
-        ),
-      });
-    });
-
-    returnData = await this.dexHelper.multiContract.methods
-      .tryAggregate(false, inputs)
-      .call({}, blockNumber);
-    i = 0;
-    pool2AssetInfo.forEach((asset2TokenMap, pool) => {
-      // don't add cross-chain pools
-      if (!returnData[i++].success) {
-        bmwState.pools.push(pool);
-        this.onAssetAdded(pool, asset2TokenMap, blockNumber);
-      }
+      bmwState.pools.push(pool);
+      this.onAssetAdded(pool, asset2TokenMap, blockNumber);
     });
 
     return bmwState;
