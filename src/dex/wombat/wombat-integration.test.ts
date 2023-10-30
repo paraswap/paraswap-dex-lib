@@ -231,7 +231,7 @@ describe('Wombat', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'quotePotentialSwap', // TODO: Put here proper function name to check pricing
+        'quotePotentialSwap',
       );
     });
 
@@ -245,7 +245,7 @@ describe('Wombat', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        'quotePotentialSwap', // TODO: Put here proper function name to check pricing
+        'quotePotentialSwap',
       );
     });
 

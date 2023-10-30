@@ -24,3 +24,5 @@ export const Adapters: Record<number, AdapterMappings> = {
     ],
   },
 };
+
+export const LIQUIDITY_THRESHOLD_IN_USD = 100;

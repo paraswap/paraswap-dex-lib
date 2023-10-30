@@ -17,6 +17,7 @@ export type PoolState = {
 };
 
 export type AssetState = {
+  address: Address;
   paused: boolean;
   cash: bigint;
   liability: bigint;
@@ -44,3 +45,10 @@ export type DexParams = {
   // DexParams is set of parameters that can be used to initiate a DEX fork.
   bmwAddress: Address;
 };
+
+export type MulticallResultOutputs =
+  | boolean
+  | bigint
+  | Address
+  | number
+  | undefined;

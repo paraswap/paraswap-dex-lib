@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi';
 import { BytesLike } from 'ethers';
 import { LogDescription } from 'ethers/lib/utils';
-import Web3EthContract, { Contract } from 'web3-eth-contract';
+import { Contract } from 'web3-eth-contract';
 import { DeepReadonly } from 'ts-essentials';
 import { Address, Log, Logger, MultiCallInput } from '../../types';
 import { catchParseLogError } from '../../utils';
@@ -10,10 +10,12 @@ import { IDexHelper } from '../../dex-helper';
 import { BmwState } from './types';
 import BmwABI from '../../abi/wombat/bmw.json';
 import AssetABI from '../../abi/wombat/asset.json';
+import PoolABI from '../../abi/wombat/pool.json';
 
 export class WombatBmw extends StatefulEventSubscriber<BmwState> {
   static readonly bmwInterface = new Interface(BmwABI);
   static readonly assetInterface = new Interface(AssetABI);
+  static readonly poolInterface = new Interface(PoolABI);
 
   private readonly logDecoder: (log: Log) => any;
   private bmwContract: Contract;
@@ -32,10 +34,11 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
     protected dexHelper: IDexHelper,
     logger: Logger,
     protected bmwAddress: Address,
-    protected onPoolAdded: (
+    protected onAssetAdded: (
       pool: Address,
+      asset2TokenMap: Map<Address, Address>,
       blockNumber: number,
-    ) => Promise<void>,
+    ) => void,
   ) {
     super(
       `${dexKey} ${name}`,
@@ -71,7 +74,7 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
-        await this.handlers[event.name](event, state, log);
+        return await this.handlers[event.name](event, state, log);
       }
     } catch (e) {
       catchParseLogError(e, this.logger);
@@ -107,16 +110,24 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
         .call({}, blockNumber)
     ).returnData;
 
-    const lpTokens = returnData.map(
-      (data: BytesLike) =>
-        WombatBmw.bmwInterface.decodeFunctionResult('poolInfo', data)[0],
+    const lpTokens = returnData.map((data: BytesLike) =>
+      WombatBmw.bmwInterface
+        .decodeFunctionResult('poolInfo', data)[0]
+        .toLowerCase(),
     );
 
-    // 2. get all pools and underlying tokens
-    inputs = lpTokens.map((lpToken: string) => ({
-      target: lpToken,
-      callData: WombatBmw.assetInterface.encodeFunctionData('pool'),
-    }));
+    inputs = [];
+    for (const lpToken of lpTokens) {
+      inputs.push({
+        target: lpToken,
+        callData:
+          WombatBmw.assetInterface.encodeFunctionData('underlyingToken'),
+      });
+      inputs.push({
+        target: lpToken,
+        callData: WombatBmw.assetInterface.encodeFunctionData('pool'),
+      });
+    }
 
     returnData = (
       await this.dexHelper.multiContract.methods
@@ -124,20 +135,43 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
         .call({}, blockNumber)
     ).returnData;
 
-    const pools = returnData
-      .map(
-        (data: BytesLike) =>
-          WombatBmw.assetInterface.decodeFunctionResult('pool', data)[0],
-      )
-      .map((pool: string) => pool.toLowerCase());
+    const pool2AssetInfo = new Map<Address, Map<Address, Address>>();
+    let i = 0;
+    for (const lpToken of lpTokens) {
+      const underlyingToken = WombatBmw.assetInterface
+        .decodeFunctionResult('underlyingToken', returnData[i++])[0]
+        .toLowerCase();
+      const pool = WombatBmw.assetInterface
+        .decodeFunctionResult('pool', returnData[i++])[0]
+        .toLowerCase();
 
-    const promises = [];
-    for (const pool of pools) {
-      if (!bmwState.pools.includes(pool)) {
-        bmwState.pools.push(pool);
-        promises.push(this.onPoolAdded(pool, blockNumber));
+      if (!pool2AssetInfo.has(pool)) {
+        pool2AssetInfo.set(pool, new Map<Address, Address>());
       }
+      pool2AssetInfo.get(pool)!.set(lpToken, underlyingToken);
     }
+
+    inputs = [];
+    pool2AssetInfo.forEach((asset2TokenMap, pool) => {
+      inputs.push({
+        target: pool,
+        callData: WombatBmw.poolInterface.encodeFunctionData(
+          'creditForTokensHaircut',
+        ),
+      });
+    });
+
+    returnData = await this.dexHelper.multiContract.methods
+      .tryAggregate(false, inputs)
+      .call({}, blockNumber);
+    i = 0;
+    pool2AssetInfo.forEach((asset2TokenMap, pool) => {
+      // don't add cross-chain pools
+      if (!returnData[i++].success) {
+        bmwState.pools.push(pool);
+        this.onAssetAdded(pool, asset2TokenMap, blockNumber);
+      }
+    });
 
     return bmwState;
   }
@@ -147,17 +181,37 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
     state: DeepReadonly<BmwState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<BmwState> | null> {
-    const lpToken = event.args.lpToken.toString();
-    const data = await this.dexHelper.web3Provider.eth.call({
-      to: lpToken,
-      data: WombatBmw.assetInterface.encodeFunctionData('pool'),
+    const lpToken = event.args.lpToken.toString().toLowerCase();
+    let multiCallInputs: MultiCallInput[] = [];
+
+    multiCallInputs.push({
+      target: lpToken,
+      callData: WombatBmw.assetInterface.encodeFunctionData('pool'),
     });
+    multiCallInputs.push({
+      target: lpToken,
+      callData: WombatBmw.assetInterface.encodeFunctionData('underlyingToken'),
+    });
+
+    const returnData = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(multiCallInputs)
+        .call({}, log.blockNumber)
+    ).returnData;
+
     const pool = WombatBmw.assetInterface
-      .decodeFunctionResult('pool', data)[0]
+      .decodeFunctionResult('pool', returnData[0])[0]
+      .toLowerCase();
+    const underlyingToken = WombatBmw.assetInterface
+      .decodeFunctionResult('underlyingToken', returnData[1])[0]
       .toLowerCase();
 
+    this.onAssetAdded(
+      pool,
+      new Map<Address, Address>().set(lpToken, underlyingToken),
+      log.blockNumber,
+    );
     if (!state.pools.includes(pool)) {
-      await this.onPoolAdded(pool, log.blockNumber);
       return {
         pools: [...state.pools, pool],
       };

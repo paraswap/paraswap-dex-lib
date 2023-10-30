@@ -1,4 +1,7 @@
 import { BI_POWS } from '../../bigint-constants';
+import { MultiResult } from '../../lib/multi-wrapper';
+import { BytesLike } from 'ethers/lib/utils';
+import { generalDecoder } from '../../lib/decoders';
 
 export const WAD = BI_POWS[18];
 
@@ -51,3 +54,9 @@ export function sqrt(y: bigint, guess: bigint): bigint {
 
   return z;
 }
+
+export const uint120ToBigInt = (
+  result: MultiResult<BytesLike> | BytesLike,
+): bigint => {
+  return generalDecoder(result, ['uint120'], 0n, value => value[0].toBigInt());
+};
