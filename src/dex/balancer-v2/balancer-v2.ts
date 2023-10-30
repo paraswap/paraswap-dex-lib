@@ -5,38 +5,28 @@ import {
   AdapterExchangeParam,
   Address,
   ExchangePrices,
+  ExchangeTxInfo,
   Log,
   Logger,
-  TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
+  TxInfo,
 } from '../../types';
-import {
-  ETHER_ADDRESS,
-  MAX_INT,
-  MAX_UINT,
-  Network,
-  NULL_ADDRESS,
-  SUBGRAPH_TIMEOUT,
-  SwapSide,
-} from '../../constants';
+import { ETHER_ADDRESS, MAX_INT, MAX_UINT, Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT, SwapSide, } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StablePool } from './pools/stable/StablePool';
 import { WeightedPool } from './pools/weighted/WeightedPool';
 import { PhantomStablePool } from './pools/phantom-stable/PhantomStablePool';
 import { LinearPool } from './pools/linear/LinearPool';
+import { Gyro3Pool } from './pools/gyro/Gyro3Pool';
+import { GyroEPool } from './pools/gyro/GyroEPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import {
-  getDexKeysWithNetwork,
-  getBigIntPow,
-  uuidToBytes16,
-} from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, uuidToBytes16, } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
@@ -44,32 +34,19 @@ import {
   BalancerPoolTypes,
   BalancerSwap,
   BalancerV2Data,
+  BalancerV2DirectParam,
   OptimizedBalancerV2Data,
   PoolState,
   PoolStateCache,
   PoolStateMap,
   SubgraphPoolAddressDictionary,
-  BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
 } from './types';
-import {
-  getLocalDeadlineAsFriendlyPlaceholder,
-  SimpleExchange,
-} from '../simple-exchange';
-import { BalancerConfig, Adapters } from './config';
-import {
-  getAllPoolsUsedInPaths,
-  isSameAddress,
-  poolGetMainTokens,
-  poolGetPathForTokenInOut,
-} from './utils';
-import {
-  DirectMethods,
-  MIN_USD_LIQUIDITY_TO_FETCH,
-  STABLE_GAS_COST,
-  VARIABLE_GAS_COST_PER_CYCLE,
-} from './constants';
+import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange, } from '../simple-exchange';
+import { Adapters, BalancerConfig } from './config';
+import { getAllPoolsUsedInPaths, isSameAddress, poolGetMainTokens, poolGetPathForTokenInOut, } from './utils';
+import { DirectMethods, MIN_USD_LIQUIDITY_TO_FETCH, STABLE_GAS_COST, VARIABLE_GAS_COST_PER_CYCLE, } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
@@ -91,6 +68,8 @@ const enabledPoolTypes = [
   BalancerPoolTypes.SiloLinear,
   BalancerPoolTypes.TetuLinear,
   BalancerPoolTypes.YearnLinear,
+  BalancerPoolTypes.GyroE,
+  BalancerPoolTypes.Gyro3,
 ];
 
 const disabledPoolIds = [
@@ -191,6 +170,21 @@ const fetchAllPools = `query ($count: Int) {
     }
     mainIndex
     wrappedIndex
+    root3Alpha
+    alpha
+    beta
+    c
+    s
+    lambda
+    tauAlphaX
+    tauAlphaY
+    tauBetaX
+    tauBetaY
+    u
+    v
+    w
+    z
+    dSq
   }
 }`;
 // skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Experimental.
@@ -223,7 +217,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   } = {};
 
   pools: {
-    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
+    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool | Gyro3Pool | GyroEPool;
   };
 
   public allPools: SubgraphPoolBase[] = [];
@@ -286,6 +280,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       true,
     );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
+    const gyro3Pool = new Gyro3Pool(this.vaultAddress, this.vaultInterface);
+    const gyroEPool = new GyroEPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
     this.pools[BalancerPoolTypes.Weighted] = weightedPool;
@@ -307,6 +303,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.BeefyLinear] = linearPool;
     // Beets uses "Linear" generically for all linear pool types
     this.pools[BalancerPoolTypes.Linear] = linearPool;
+
+    this.pools[BalancerPoolTypes.Gyro3] = gyro3Pool;
+    this.pools[BalancerPoolTypes.GyroE] = gyroEPool;
+
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
