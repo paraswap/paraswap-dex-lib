@@ -17,6 +17,7 @@ import {
   balancesFromTokenInOut,
   Vector2,
 } from '@balancer-labs/sor';
+import { StablePoolPairData } from '../stable/StablePool';
 
 // Swap Limit factor
 const SWAP_LIMIT_FACTOR = BigInt('999999000000000000');
@@ -235,5 +236,9 @@ export class GyroEPool extends BasePool {
     } catch (error) {
       return [];
     }
+  }
+
+  onBuy(amounts: bigint[], poolPairData: StablePoolPairData): bigint[] {
+    return [];
   }
 }

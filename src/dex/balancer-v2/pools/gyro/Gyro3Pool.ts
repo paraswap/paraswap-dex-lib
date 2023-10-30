@@ -11,6 +11,7 @@ import {
 import { callData, SubgraphPoolBase, PoolState, TokenState } from '../../types';
 import { MathSol } from '../../balancer-v2-math';
 import { Gyro3Maths } from '@balancer-labs/sor';
+import { StablePoolPairData } from '../stable/StablePool';
 
 // Swap Limit factor
 const SWAP_LIMIT_FACTOR = BigInt('999999000000000000');
@@ -200,5 +201,9 @@ export class Gyro3Pool extends BasePool {
     } catch (error) {
       return [];
     }
+  }
+
+  onBuy(amounts: bigint[], poolPairData: StablePoolPairData): bigint[] {
+    return [];
   }
 }

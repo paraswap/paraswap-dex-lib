@@ -228,6 +228,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.Weighted,
     BalancerPoolTypes.LiquidityBootstrapping,
     BalancerPoolTypes.Investment,
+    BalancerPoolTypes.Gyro3,
+    BalancerPoolTypes.GyroE,
 
     // Need to check if we can support these pools with event base
     // BalancerPoolTypes.ComposableStable,
