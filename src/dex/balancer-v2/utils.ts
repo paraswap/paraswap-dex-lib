@@ -18,7 +18,7 @@ interface BalancerPathHop {
   pool: SubgraphPoolBase;
   tokenIn: SubgraphToken;
   tokenOut: SubgraphToken;
-};
+}
 
 /**
  * Parses a fixed-point decimal string into a BigNumber. If we do not have enough decimals to express the number, we truncate it.

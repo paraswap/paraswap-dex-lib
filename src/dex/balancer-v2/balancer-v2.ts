@@ -15,7 +15,15 @@ import {
   Token,
   TxInfo,
 } from '../../types';
-import { ETHER_ADDRESS, MAX_INT, MAX_UINT, Network, NULL_ADDRESS, SUBGRAPH_TIMEOUT, SwapSide, } from '../../constants';
+import {
+  ETHER_ADDRESS,
+  MAX_INT,
+  MAX_UINT,
+  Network,
+  NULL_ADDRESS,
+  SUBGRAPH_TIMEOUT,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StablePool } from './pools/stable/StablePool';
 import { WeightedPool } from './pools/weighted/WeightedPool';
@@ -26,7 +34,11 @@ import { GyroEPool } from './pools/gyro/GyroEPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getBigIntPow, getDexKeysWithNetwork, uuidToBytes16, } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
@@ -43,10 +55,23 @@ import {
   SubgraphPoolBase,
   SwapTypes,
 } from './types';
-import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange, } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { Adapters, BalancerConfig } from './config';
-import { getAllPoolsUsedInPaths, isSameAddress, poolGetMainTokens, poolGetPathForTokenInOut, } from './utils';
-import { DirectMethods, MIN_USD_LIQUIDITY_TO_FETCH, STABLE_GAS_COST, VARIABLE_GAS_COST_PER_CYCLE, } from './constants';
+import {
+  getAllPoolsUsedInPaths,
+  isSameAddress,
+  poolGetMainTokens,
+  poolGetPathForTokenInOut,
+} from './utils';
+import {
+  DirectMethods,
+  MIN_USD_LIQUIDITY_TO_FETCH,
+  STABLE_GAS_COST,
+  VARIABLE_GAS_COST_PER_CYCLE,
+} from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
@@ -217,7 +242,13 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   } = {};
 
   pools: {
-    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool | Gyro3Pool | GyroEPool;
+    [type: string]:
+      | WeightedPool
+      | StablePool
+      | LinearPool
+      | PhantomStablePool
+      | Gyro3Pool
+      | GyroEPool;
   };
 
   public allPools: SubgraphPoolBase[] = [];
