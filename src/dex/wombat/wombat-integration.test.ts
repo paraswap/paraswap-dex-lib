@@ -16,21 +16,6 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { Token } from '../../types';
 import { Address } from '@paraswap/core';
 
-/*
-  README
-  ======
-
-  This test script adds tests for Wombat general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Wombat specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
@@ -39,19 +24,13 @@ function getReaderCalldata(
   toToken: Token,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(
       funcName,
       side == SwapSide.SELL
-        ? [
-            // TODO: Put here additional arguments to encode them
-            fromToken.address,
-            toToken.address,
-            amount,
-          ]
+        ? [fromToken.address, toToken.address, amount]
         : [toToken.address, fromToken.address, -amount],
     ),
   }));
@@ -62,7 +41,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -82,9 +60,6 @@ async function checkOnChainPricing(
 ) {
   const exchangeAddress = pool; // TODO: Put here the real exchange address
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from wombat.Iface or from eventPool.
-  // It depends on your implementation
   const readerIface = Wombat.poolInterface;
 
   const readerCallData = getReaderCalldata(
@@ -180,8 +155,102 @@ describe('Wombat', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'USDT';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      wombat = new Wombat(network, dexKey, dexHelper);
+      if (wombat.initializePricing) {
+        await wombat.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        wombat,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'quotePotentialSwap',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        wombat,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        'quotePotentialSwap',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newWombat = new Wombat(network, dexKey, dexHelper);
+      if (newWombat.updatePoolState) {
+        await newWombat.updatePoolState();
+      }
+      const poolLiquidity = await newWombat.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newWombat.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
     const srcTokenSymbol = 'USDC';
     const destTokenSymbol = 'USDT';
 
