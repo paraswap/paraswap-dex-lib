@@ -46,3 +46,6 @@ jobs:
           else
             echo "There are no changed tests...skipping"
           fi
+
+          printf '%s\n' "$TENDERLY_PROJECT" > test.txt
+          cat test.txt
