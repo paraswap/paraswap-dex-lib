@@ -23,7 +23,6 @@ describe('BalancerV2', () => {
   const gyroEPool = new GyroEPool(config.vaultAddress, vaultInterface);
   const tokens = Tokens[network];
 
-
   describe('GyroE Pool', () => {
     describe('Pool Fetching', () => {
       let GyroEPoolSg: SubgraphPoolBase;
@@ -38,9 +37,11 @@ describe('BalancerV2', () => {
         dexHelper,
         logger,
       );
+
       it('should be supported pool type', async function () {
         expect(balancerPools.isSupportedPool('GyroE')).toBe(true);
       });
+
       it('should be event supported', async function () {
         expect(
           balancerPools.eventSupportedPoolTypes.includes(
@@ -48,6 +49,7 @@ describe('BalancerV2', () => {
           ),
         ).toBe(true);
       });
+
       it('should fetch GyroE Pool with correct fields from Subgraph', async function () {
         const pools = await balancerPools.fetchAllSubgraphPools();
         // USDC/TUSD
@@ -72,6 +74,7 @@ describe('BalancerV2', () => {
         expect(GyroEPoolSg.z).not.toBeNull();
         expect(GyroEPoolSg.dSq).not.toBeNull();
       });
+
       it('getOnChainState', async function () {
         const blocknumber = 40068730;
         const state = await balancerPools.getOnChainState(
@@ -87,6 +90,7 @@ describe('BalancerV2', () => {
           GyroEPoolState.tokens[tokens.TUSD.address.toLowerCase()].balance,
         ).toBe(BigInt('26629907962671451455387'));
       });
+
       it('parsePoolPairData', async function () {
         const tokenIn = tokens.USDC.address;
         const tokenOut = tokens.TUSD.address;
@@ -107,6 +111,7 @@ describe('BalancerV2', () => {
         expect(pairData.tokenInIsToken0).toBe(true);
       });
     });
+
     describe('Swap Functions', () => {
       describe('Swap Functions  - 6decimals>18decimals', () => {
         const pairData: GyroEPoolPairData = {
@@ -145,6 +150,7 @@ describe('BalancerV2', () => {
             lambda: BigNumber.from('2500000000000000000000'),
           },
         };
+
         it('getSwapMaxAmount', async () => {
           const swapMaxAmount = gyroEPool.getSwapMaxAmount(
             pairData,
@@ -152,6 +158,7 @@ describe('BalancerV2', () => {
           );
           expect(swapMaxAmount).toBe(BigInt('26629881332'));
         });
+
         it('swap', async function () {
           const amountIn = BigInt('13500000');
           const amountOut = gyroEPool.onSell([amountIn], pairData);
@@ -159,6 +166,7 @@ describe('BalancerV2', () => {
           expect(amountOut[0].toString()).toBe('13499365736688193741');
         });
       });
+
       describe('Swap Functions  - 18decimals>6decimals', () => {
         const pairData: GyroEPoolPairData = {
           tokenInIsToken0: false,
@@ -196,6 +204,7 @@ describe('BalancerV2', () => {
             lambda: BigNumber.from('2500000000000000000000'),
           },
         };
+
         it('getSwapMaxAmount', async () => {
           const swapMaxAmount = gyroEPool.getSwapMaxAmount(
             pairData,
@@ -203,6 +212,7 @@ describe('BalancerV2', () => {
           );
           expect(swapMaxAmount).toBe(BigInt('18186175314806499000000'));
         });
+
         it('swap', async function () {
           const amountIn = BigInt('13500000000000000000');
           const amountOut = gyroEPool.onSell([amountIn], pairData);

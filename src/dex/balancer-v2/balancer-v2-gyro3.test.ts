@@ -15,7 +15,6 @@ import { BalancerPoolTypes, PoolState, SubgraphPoolBase } from './types';
 import { Gyro3Pool, Gyro3PoolPairData } from './pools/gyro/Gyro3Pool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 
-
 describe('BalancerV2', () => {
   const dexKey = 'BalancerV2';
   const network = Network.POLYGON;
@@ -38,9 +37,11 @@ describe('BalancerV2', () => {
         dexHelper,
         logger,
       );
+
       it('should be supported pool type', async function () {
         expect(balancerPools.isSupportedPool('Gyro3')).toBe(true);
       });
+
       it('should be event supported', async function () {
         expect(
           balancerPools.eventSupportedPoolTypes.includes(
@@ -48,6 +49,7 @@ describe('BalancerV2', () => {
           ),
         ).toBe(true);
       });
+
       it('should fetch Gyro3 Pool with correct fields from Subgraph', async function () {
         const pools = await balancerPools.fetchAllSubgraphPools();
         // USDC/BUSD/USDT
@@ -62,6 +64,7 @@ describe('BalancerV2', () => {
         Gyro3PoolSg = { ...Gyro3PoolSg };
         Gyro3PoolSg.root3Alpha = '0.9995';
       });
+
       it('getOnChainState', async function () {
         const blocknumber = 40038397;
         const state = await balancerPools.getOnChainState(
@@ -80,6 +83,7 @@ describe('BalancerV2', () => {
           Gyro3PoolState.tokens[tokens.USDT.address.toLowerCase()].balance,
         ).toBe(BigInt('25601127342'));
       });
+
       it('parsePoolPairData', async function () {
         const tokenIn = tokens.BUSD.address;
         const tokenOut = tokens.USDT.address;
@@ -104,6 +108,7 @@ describe('BalancerV2', () => {
         expect(pairData.root3Alpha.toString()).toBe('999500000000000000');
       });
     });
+
     describe('Swap Functions', () => {
       describe('Swap Functions  - 6decimals>18decimals', () => {
         const pairData: Gyro3PoolPairData = {
@@ -124,6 +129,7 @@ describe('BalancerV2', () => {
           decimalsTertiary: 6,
           root3Alpha: BigNumber.from('999500000000000000'),
         };
+
         it('getSwapMaxAmount', async () => {
           const swapMaxAmount = gyro3Pool.getSwapMaxAmount(
             pairData,
@@ -131,6 +137,7 @@ describe('BalancerV2', () => {
           );
           expect(swapMaxAmount).toBe(BigInt('41279029459'));
         });
+
         it('swap', async function () {
           const amountIn = BigInt('13500000');
           const amountOut = gyro3Pool.onSell([amountIn], pairData);
@@ -138,6 +145,7 @@ describe('BalancerV2', () => {
           expect(amountOut[0].toString()).toBe('13499339792532290017');
         });
       });
+
       describe('Swap Functions  - 18decimals>6decimals', () => {
         const pairData: Gyro3PoolPairData = {
           balances: [
@@ -157,6 +165,7 @@ describe('BalancerV2', () => {
           decimalsTertiary: 6,
           root3Alpha: BigNumber.from('999500000000000000'),
         };
+
         it('getSwapMaxAmount', async () => {
           const swapMaxAmount = gyro3Pool.getSwapMaxAmount(
             pairData,
@@ -164,6 +173,7 @@ describe('BalancerV2', () => {
           );
           expect(swapMaxAmount).toBe(BigInt('25601101740872658000000'));
         });
+
         it('swap', async function () {
           const amountIn = BigInt('13500000000000000000');
           const amountOut = gyro3Pool.onSell([amountIn], pairData);
