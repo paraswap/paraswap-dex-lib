@@ -75,9 +75,9 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
-const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
+const BASESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const BASESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
+const BASESWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class BaseswapV3
   extends SimpleExchange
@@ -95,17 +95,7 @@ export class BaseswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(
-      _.pick(BaseswapV3Config, [
-        'BaseswapV3',
-        // 'UniswapV3',
-        // 'SushiSwapV3',
-        // 'QuickSwapV3.1',
-        // 'RamsesV2',
-        // 'ChronosV3',
-        // 'Retro',
-      ]),
-    );
+    getDexKeysWithNetwork(_.pick(BaseswapV3Config, ['BaseswapV3']));
 
   logger: Logger;
 
@@ -187,7 +177,7 @@ export class BaseswapV3
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
         const maxTimestamp =
-          Date.now() - UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+          Date.now() - BASESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS;
         await this.dexHelper.cache.zremrangebyscore(
           this.notExistingPoolSetKey,
           0,
@@ -197,7 +187,7 @@ export class BaseswapV3
 
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
-        UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+        BASESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
       );
     }
   }
@@ -488,7 +478,7 @@ export class BaseswapV3
     const calldata = pools.map(pool =>
       _amounts.map(_amount => ({
         target: this.config.quoter,
-        gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
+        gasLimit: BASESWAPV3_QUOTE_GASLIMIT,
         callData:
           side === SwapSide.SELL
             ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
@@ -559,7 +549,7 @@ export class BaseswapV3
           pool.feeCode,
         ),
         exchange: this.dexKey,
-        gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
+        gasCost: prices.map(p => (p === 0n ? 0 : BASESWAPV3_QUOTE_GASLIMIT)),
         poolAddresses: [pool.poolAddress],
       };
     });

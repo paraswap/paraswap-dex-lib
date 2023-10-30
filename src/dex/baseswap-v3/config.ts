@@ -17,12 +17,12 @@ export const PoolsToPreload: DexConfigMap<
   BaseswapV3: {
     [Network.BASE]: [
       {
-        token0: ''.toLowerCase(),
-        token1: ''.toLowerCase(),
+        token0: '0x4200000000000000000000000000000000000006'.toLowerCase(),
+        token1: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA'.toLowerCase(), // USDbC
       },
       {
-        token0: ''.toLowerCase(),
-        token1: ''.toLowerCase(),
+        token0: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'.toLowerCase(), // USDC
+        token1: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA'.toLowerCase(), // USDbC
       },
     ],
   },
@@ -47,7 +47,7 @@ export const BaseswapV3Config: DexConfigMap<DexParams> = {
 
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.BASE]: {
-    [SwapSide.SELL]: [{ name: 'Adapter01', index: 6 }],
-    [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 2 }],
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 1 }],
+    [SwapSide.BUY]: [{ name: 'BaseBuyAdapter', index: 1 }],
   },
 };
