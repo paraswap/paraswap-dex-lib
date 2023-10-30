@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 import { Interface, Result } from '@ethersproject/abi';
@@ -12,6 +13,8 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { Token } from '../../types';
+import { Address } from '@paraswap/core';
 
 /*
   README
@@ -31,16 +34,26 @@ import { Tokens } from '../../../tests/constants-e2e';
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
+  side: SwapSide,
+  fromToken: Token,
+  toToken: Token,
   amounts: bigint[],
   funcName: string,
   // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(
+      funcName,
+      side == SwapSide.SELL
+        ? [
+            // TODO: Put here additional arguments to encode them
+            fromToken.address,
+            toToken.address,
+            amount,
+          ]
+        : [toToken.address, fromToken.address, -amount],
+    ),
   }));
 }
 
@@ -58,21 +71,28 @@ function decodeReaderResult(
 
 async function checkOnChainPricing(
   wombat: Wombat,
+  pool: Address,
+  fromToken: Token,
+  toToken: Token,
+  side: SwapSide,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = pool; // TODO: Put here the real exchange address
 
   // TODO: Replace dummy interface with the real one
   // Normally you can get it from wombat.Iface or from eventPool.
   // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = Wombat.poolInterface;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
+    side,
+    fromToken,
+    toToken,
     amounts.slice(1),
     funcName,
   );
@@ -138,6 +158,10 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     wombat,
+    poolPrices![0].data.exchange,
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
+    side,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
@@ -207,7 +231,7 @@ describe('Wombat', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'quotePotentialSwap',
       );
     });
 
@@ -221,7 +245,7 @@ describe('Wombat', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        'quotePotentialSwap',
       );
     });
 

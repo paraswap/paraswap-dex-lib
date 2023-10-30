@@ -1,247 +1,231 @@
 import { Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
+import { Address } from '@paraswap/core';
+import _ from 'lodash';
+
+import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
+import { IDexHelper } from '../../dex-helper';
+import { StatefulRpcPoller } from '../../lib/stateful-rpc-poller/stateful-rpc-poller';
+import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
+import { ObjWithUpdateInfo } from '../../lib/stateful-rpc-poller/types';
+import { pollingManagerCbExtractor } from '../../lib/stateful-rpc-poller/utils';
 import {
-  Address,
-  Log,
-  Logger,
-  MultiCallInput,
-  MultiCallOutput,
-} from '../../types';
-import { catchParseLogError } from '../../utils';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState, WombatPoolConfigInfo } from './types';
+  addressArrayDecode,
+  booleanDecode,
+  uint256ToBigInt,
+  uint8ToNumber,
+} from '../../lib/decoders';
 import PoolABI from '../../abi/wombat/pool.json';
 import AssetABI from '../../abi/wombat/asset.json';
+import { uint120ToBigInt } from './utils';
+import { AssetState, MulticallResultOutputs, PoolState } from './types';
 
-export class WombatEventPool extends StatefulEventSubscriber<PoolState> {
+export class WombatPool extends StatefulRpcPoller<
+  PoolState,
+  MulticallResultOutputs
+> {
   static readonly poolInterface = new Interface(PoolABI);
   static readonly assetInterface = new Interface(AssetABI);
 
-  handlers: {
-    [event: string]: (
-      event: any,
-      state: DeepReadonly<PoolState>,
-      log: Readonly<Log>,
-    ) => DeepReadonly<PoolState> | null;
-  } = {};
-
-  logDecoder: (log: Log) => any;
-
-  blankState: PoolState = {
-    asset: {},
-    underlyingAddresses: [],
-    params: {
-      ampFactor: 0n,
-      haircutRate: 0n,
-    },
-  };
   constructor(
     dexKey: string,
-    name: string,
-    protected network: number,
-    protected dexHelper: IDexHelper,
-    logger: Logger,
+    poolIdentifier: string,
+    dexHelper: IDexHelper,
     protected poolAddress: Address,
-    protected poolCfg: WombatPoolConfigInfo,
+    protected asset2TokenMap: Map<Address, Address>,
   ) {
-    super(
-      `${dexKey} ${name}`,
-      `${dexKey}-${network} ${name}`,
-      dexHelper,
-      logger,
+    const callbacks = pollingManagerCbExtractor(
+      StatePollingManager.getInstance(dexHelper),
     );
 
-    this.logDecoder = (log: Log) => WombatEventPool.poolInterface.parseLog(log);
-
-    // users-actions handlers
-    this.handlers['Deposit'] = this.handleDeposit.bind(this);
-    this.handlers['Withdraw'] = this.handleWithdraw.bind(this);
-    this.handlers['Swap'] = this.handleSwap.bind(this);
-
-    // admin-actions handlers
-    /** @todo handle dynamically updating params */
-    // this.handlers['SetAmpFactor'] = this.handleDeposit.bind(this);
-    // this.handlers['SetHaircutRate'] = this.handleDeposit.bind(this);
-
-    /** @todo handle dynamically adding/removing assets */
-    // this.handlers['AssetAdded'] = this.handleAssetAdded.bind(this);
-    // this.handlers['AssetRemoved'] = this.handleAssetRemoved.bind(this);
+    super(dexKey, poolIdentifier, dexHelper, 0, 0, false, callbacks);
   }
 
-  /**
-   * The function is called every time any of the subscribed
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state.
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
-  protected processLog(
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    try {
-      const event = this.logDecoder(log);
-      if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
+  protected _getFetchStateMultiCalls(): MultiCallParams<MulticallResultOutputs>[] {
+    const params: MultiCallParams<MulticallResultOutputs>[] = [];
+
+    params.push({
+      target: this.poolAddress,
+      callData: WombatPool.poolInterface.encodeFunctionData('paused'),
+      decodeFunction: booleanDecode,
+    });
+    params.push({
+      target: this.poolAddress,
+      callData: WombatPool.poolInterface.encodeFunctionData('ampFactor'),
+      decodeFunction: uint256ToBigInt,
+    });
+    params.push({
+      target: this.poolAddress,
+      callData: WombatPool.poolInterface.encodeFunctionData('haircutRate'),
+      decodeFunction: uint256ToBigInt,
+    });
+    params.push({
+      target: this.poolAddress,
+      callData: WombatPool.poolInterface.encodeFunctionData('startCovRatio'),
+      decodeFunction: uint256ToBigInt,
+    });
+    params.push({
+      target: this.poolAddress,
+      callData: WombatPool.poolInterface.encodeFunctionData('endCovRatio'),
+      decodeFunction: uint256ToBigInt,
+    });
+    params.push({
+      target: this.poolAddress,
+      callData: WombatPool.poolInterface.encodeFunctionData('getTokens'),
+      decodeFunction: addressArrayDecode,
+    });
+
+    this.asset2TokenMap.forEach((token, asset) => {
+      params.push({
+        target: this.poolAddress,
+        callData: WombatPool.poolInterface.encodeFunctionData('isPaused', [
+          token,
+        ]),
+        decodeFunction: booleanDecode,
+      });
+      params.push({
+        target: asset,
+        callData: WombatPool.assetInterface.encodeFunctionData('cash'),
+        decodeFunction: uint120ToBigInt,
+      });
+      params.push({
+        target: asset,
+        callData: WombatPool.assetInterface.encodeFunctionData('liability'),
+        decodeFunction: uint120ToBigInt,
+      });
+      params.push({
+        target: asset,
+        callData: WombatPool.assetInterface.encodeFunctionData(
+          'underlyingTokenDecimals',
+        ),
+        decodeFunction: uint8ToNumber,
+      });
+      params.push({
+        target: asset,
+        callData:
+          WombatPool.assetInterface.encodeFunctionData('getRelativePrice'),
+        decodeFunction: uint256ToBigInt,
+      });
+    });
+
+    return params;
+  }
+
+  protected _parseStateFromMultiResults(
+    multiOutputs: MulticallResultOutputs[],
+  ): PoolState {
+    const [
+      paused,
+      ampFactor,
+      haircutRate,
+      startCovRatio,
+      endCovRatio,
+      tokens,
+      ...remained
+    ] = multiOutputs as [
+      boolean,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      Address[],
+      ...MulticallResultOutputs[],
+    ];
+
+    const assetTokenArray = Array.from(this.asset2TokenMap.entries());
+    const token2AssetStates = new Map<Address, AssetState>();
+    _.chunk(remained, 5).forEach((chunk, i) => {
+      const [paused, cash, liability, underlyingTokenDecimals, relativePrice] =
+        chunk as [boolean, bigint, bigint, number, bigint | undefined];
+
+      const [asset, token] = assetTokenArray[i];
+      token2AssetStates.set(token, {
+        address: asset,
+        paused,
+        cash,
+        liability,
+        underlyingTokenDecimals,
+        relativePrice,
+      });
+    });
+
+    const poolState: PoolState = {
+      params: {
+        paused,
+        ampFactor,
+        haircutRate,
+        startCovRatio,
+        endCovRatio,
+      },
+      underlyingAddresses: tokens,
+      asset: {},
+    };
+
+    const isMainPool =
+      Array.from(token2AssetStates.values()).filter(
+        assetState => assetState.relativePrice === undefined,
+      ).length > 0;
+    for (const token of poolState.underlyingAddresses) {
+      if (!token2AssetStates.has(token)) {
+        // this happens when asset has been added to pool but is not added to BMW yet
+        continue;
       }
+      poolState.asset[token] = token2AssetStates.get(token)!;
+      if (isMainPool) {
+        poolState.asset[token].relativePrice = undefined;
+      }
+    }
+
+    return poolState;
+  }
+
+  public async fetchLatestStateFromRpc(): Promise<ObjWithUpdateInfo<PoolState> | null> {
+    const multiCalls = this.getFetchStateWithBlockInfoMultiCalls();
+    try {
+      const lastUpdatedAtMs = Date.now();
+      const aggregatedResults = (await this.dexHelper.multiWrapper.tryAggregate<
+        number | MulticallResultOutputs
+      >(
+        false,
+        multiCalls as MultiCallParams<MulticallResultOutputs | number>[],
+      )) as [MultiResult<number>, ...MultiResult<MulticallResultOutputs>[]];
+
+      return this.parseStateFromMultiResultsWithBlockInfo(
+        aggregatedResults,
+        lastUpdatedAtMs,
+      );
     } catch (e) {
-      catchParseLogError(e, this.logger);
+      this._logMessageWithSuppression('ERROR_FETCHING_STATE_FROM_RPC', e);
     }
 
     return null;
   }
 
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenerate state if the event based
-   * system fails to fetch events and the local state is no
-   * more correct.
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subscriber at blocknumber
-   */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // const multiCallInputs = this.getGenerateStateMultiCallInputs();
-
-    // 1. Generate multiCallInputs
-    const multiCallInputs: MultiCallInput[] = [];
-    // 1 A. pool params
-    // ampFactor
-    multiCallInputs.push({
-      target: this.poolAddress,
-      callData: WombatEventPool.poolInterface.encodeFunctionData('ampFactor'),
-    });
-    // haircutRate
-    multiCallInputs.push({
-      target: this.poolAddress,
-      callData: WombatEventPool.poolInterface.encodeFunctionData('haircutRate'),
-    });
-
-    // 1 B. asset state: cash and liability
-    for (const tokenInfo of Object.values(this.poolCfg.tokens)) {
-      multiCallInputs.push({
-        target: tokenInfo.assetAddress,
-        callData: WombatEventPool.assetInterface.encodeFunctionData('cash'),
-      });
-      multiCallInputs.push({
-        target: tokenInfo.assetAddress,
-        callData:
-          WombatEventPool.assetInterface.encodeFunctionData('liability'),
-      });
-    }
-
-    // 2. Decode MultiCallOutput
-    let returnData: MultiCallOutput[] = [];
-    if (multiCallInputs.length) {
-      returnData = (
-        await this.dexHelper.multiContract.methods
-          .aggregate(multiCallInputs)
-          .call({}, blockNumber)
-      ).returnData;
-    }
-
-    let i = 0;
-    // 2 A. decode pool params
-    const ampFactor = BigInt(WombatEventPool.poolInterface.decodeFunctionResult(
-      'ampFactor',
-      returnData[i++],
-    )[0]);
-    const haircutRate = BigInt(WombatEventPool.poolInterface.decodeFunctionResult(
-      'haircutRate',
-      returnData[i++],
-    )[0]);
-    const poolState: PoolState = {
-      params: {
-        ampFactor,
-        haircutRate,
-      },
-      underlyingAddresses: [],
-      asset: {},
-    };
-    // 2 B. decode asset state: cash and liability
-    for (const [tokenAddress, tokenInfo] of Object.entries(
-      this.poolCfg.tokens,
-    )) {
-      const cash = BigInt(WombatEventPool.assetInterface.decodeFunctionResult(
-        'cash',
-        returnData[i++],
-      )[0]);
-      const liability = BigInt(WombatEventPool.assetInterface.decodeFunctionResult(
-        'liability',
-        returnData[i++],
-      )[0]);
-      poolState.underlyingAddresses.push(tokenAddress);
-      poolState.asset[tokenAddress] = {
-        cash,
-        liability,
-      };
-    }
-    return poolState;
-  }
-
-  handleDeposit(
-    event: any,
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    const amountAdded = BigInt(event.args.amount.toString());
-    const tokenAddress = event.args.token.toString();
+  public parseStateFromMultiResultsWithBlockInfo(
+    multiOutputs: [
+      MultiResult<number>,
+      ...MultiResult<MulticallResultOutputs>[],
+    ],
+    lastUpdatedAtMs: number,
+  ): ObjWithUpdateInfo<PoolState> {
+    const [blockNumber, ...outputsForAbstract] = multiOutputs.map((m, i) => {
+      return m.returnData;
+    }) as [number, ...MulticallResultOutputs[]];
 
     return {
-      ...state,
-      asset: {
-        ...state.asset,
-        [tokenAddress]: {
-          cash: state.asset[tokenAddress].cash + amountAdded,
-          liability: state.asset[tokenAddress].liability + amountAdded,
-        },
-      },
-    };
-  }
-  handleWithdraw(
-    event: any,
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    const amountWithdrew = BigInt(event.args.amount.toString());
-    const tokenAddress = event.args.token.toString();
-
-    return {
-      ...state,
-      asset: {
-        ...state.asset,
-        [tokenAddress]: {
-          cash: state.asset[tokenAddress].cash - amountWithdrew,
-          liability: state.asset[tokenAddress].liability - amountWithdrew,
-        },
-      },
+      value: this._parseStateFromMultiResults(outputsForAbstract),
+      blockNumber,
+      lastUpdatedAtMs,
     };
   }
 
-  handleSwap(
-    event: any,
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    const fromTokenAddress = event.args.fromToken.toString();
-    const fromAmount = BigInt(event.args.fromAmount.toString());
-    const toTokenAddress = event.args.toToken.toString();
-    const toAmount = BigInt(event.args.toAmount.toString());
+  public addAssets(asset2TokenMap: Map<Address, Address>) {
+    for (const [asset, token] of asset2TokenMap) {
+      if (this.asset2TokenMap.has(asset)) {
+        continue;
+      }
 
-    return {
-      ...state,
-      asset: {
-        ...state.asset,
-        [fromTokenAddress]: {
-          cash: state.asset[fromTokenAddress].cash + fromAmount,
-        },
-        [toTokenAddress]: {
-          cash: state.asset[toTokenAddress].cash - toAmount,
-        },
-      },
-    };
+      this.asset2TokenMap.set(asset, token);
+      this._cachedMultiCallData = undefined;
+    }
   }
 }

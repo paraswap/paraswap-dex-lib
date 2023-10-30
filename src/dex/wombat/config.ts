@@ -5,21 +5,10 @@ import { Network, SwapSide } from '../../constants';
 export const WombatConfig: DexConfigMap<DexParams> = {
   Wombat: {
     [Network.BSC]: {
-      pools: [
-        {
-          address: '0x312Bc7eAAF93f1C60Dc5AfC115FcCDE161055fb0',
-          name: 'Wombat Main Pool',
-        },
-        /** @todo add Side and Dynamic pools */
-      ],
+      bmwAddress: '0x489833311676B566f888119c29bd997Dc6C95830',
     },
     [Network.ARBITRUM]: {
-      pools: [
-        {
-          address: '0xc6bc781E20f9323012F6e422bdf552Ff06bA6CD1',
-          name: 'Wombat Main Pool',
-        },
-      ],
+      bmwAddress: '0x62A83C6791A3d7950D823BB71a38e47252b6b6F4',
     },
   },
 };
@@ -35,3 +24,5 @@ export const Adapters: Record<number, AdapterMappings> = {
     ],
   },
 };
+
+export const LIQUIDITY_THRESHOLD_IN_USD = 100;
