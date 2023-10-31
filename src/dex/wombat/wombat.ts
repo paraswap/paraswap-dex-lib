@@ -30,8 +30,10 @@ import { WombatQuoter } from './wombat-quoter';
 import { WombatBmw } from './wombat-bmw';
 import { fromWad } from './utils';
 import { WombatPool } from './wombat-pool';
+import { UniswapV2 } from '../uniswap-v2/uniswap-v2';
 
 export class Wombat extends SimpleExchange implements IDex<WombatData> {
+  // export class Wombat implements IDex<WombatData> {
   // contract interfaces
   static readonly erc20Interface = new Interface(ERC20ABI);
   static readonly poolInterface = new Interface(PoolABI);
