@@ -44,6 +44,7 @@ export type WombatData = {
 export type DexParams = {
   // DexParams is set of parameters that can be used to initiate a DEX fork.
   bmwAddress: Address;
+  // routerAddress?: Address;
 };
 
 export type MulticallResultOutputs =
