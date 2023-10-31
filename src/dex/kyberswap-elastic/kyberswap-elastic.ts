@@ -47,7 +47,8 @@ import {
   PoolState,
   KyberElasticParam,
   KyberElasticFunctions,
-  OutputResult, PoolPairsInfo,
+  OutputResult,
+  PoolPairsInfo,
 } from './types';
 import { KyberswapElasticConfig, Adapters } from './config';
 import {
@@ -64,7 +65,7 @@ import { ERR_DECODE, ERR_POOL_DOES_NOT_EXIST } from './errors';
 const CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
 
-export class KyberSwapElastic
+export class KyberswapElastic
   extends SimpleExchange
   implements IDex<KyberswapElasticData>
 {
