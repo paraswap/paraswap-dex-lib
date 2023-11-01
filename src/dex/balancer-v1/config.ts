@@ -2,7 +2,8 @@ import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
-export const POOLS_FETCH_TIMEOUT = 10000;
+export const MAX_POOL_CNT = 1000;
+export const MIN_USD_LIQUIDITY_TO_FETCH = 100;
 export const BALANCES_MULTICALL_POOLS_LIMIT = 200;
 export const MAX_POOLS_FOR_PRICING = 5;
 export const BALANCER_SWAP_GAS_COST = 120 * 1000;
