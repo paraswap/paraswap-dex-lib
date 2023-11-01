@@ -99,7 +99,7 @@ describe('BaseswapV3 Event', function () {
           // mapKey: string = '',
           // readonly poolInitCodeHash: string,
 
-          const uniswapV3Pool = new BaseswapV3EventPool(
+          const baseswapV3Pool = new BaseswapV3EventPool(
             dexHelper,
             dexKey,
             new dexHelper.web3Provider.eth.Contract(
@@ -118,15 +118,15 @@ describe('BaseswapV3 Event', function () {
           );
 
           // It is done in generateState. But here have to make it manually
-          uniswapV3Pool.poolAddress = poolAddress.toLowerCase();
-          uniswapV3Pool.addressesSubscribed[0] = poolAddress;
+          baseswapV3Pool.poolAddress = poolAddress.toLowerCase();
+          baseswapV3Pool.addressesSubscribed[0] = poolAddress;
 
           await testEventSubscriber(
-            uniswapV3Pool,
-            uniswapV3Pool.addressesSubscribed,
+            baseswapV3Pool,
+            baseswapV3Pool.addressesSubscribed,
             (_blockNumber: number) =>
               fetchPoolStateFromContract(
-                uniswapV3Pool,
+                baseswapV3Pool,
                 _blockNumber,
                 poolAddress,
               ),
