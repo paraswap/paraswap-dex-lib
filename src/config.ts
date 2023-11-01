@@ -30,6 +30,7 @@ type BaseConfig = {
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
   swaapV2AuthToken?: string;
+  dexalotAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 
@@ -51,8 +52,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0xfb2a3de6c7B8c77b520E3da16021f3D8A4E93168',
-      Adapter04: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
-      BuyAdapter: '0x613876f3dE2Ec633f8054fE7a561324c1a01d9cB',
+      Adapter04: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
+      BuyAdapter: '0x1310dE2C69e9753bee19B5522bad39c5f788efd9',
+      BuyAdapter02: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -219,10 +221,11 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
+    dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0xFb8773AA4Fd02e54bbd352061D8Be1911FAa210a',
-      AvalancheBuyAdapter: '0x434C1Cca4842629230067674Dd54E21a14D9FD5D',
+      AvalancheAdapter02: '0x2cdB0cDc2a9321ac2ED5b741828a5216C265Be80',
+      AvalancheBuyAdapter: '0x9Aa41A24A10af2a965A6D406b913a7Cd9C6886ea',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -414,6 +417,7 @@ export function generateConfig(network: number): Config {
       baseConfig.rpcPollingBlocksBackToTriggerUpdate,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
+    dexalotAuthToken: baseConfig.dexalotAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
   };
