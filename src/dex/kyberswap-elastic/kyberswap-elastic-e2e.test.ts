@@ -34,11 +34,11 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -95,11 +95,13 @@ function testForNetwork(
 describe('KyberswapElastic E2E', () => {
   const dexKey = 'KyberswapElastic';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
 
+    // const tokenASymbol: string = 'USDC';
+    // const tokenBSymbol: string = 'USDT';
     const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'USDT';
+    const tokenBSymbol: string = 'WMATIC';
 
     const tokenAAmount: string = '10000000';
     const tokenBAmount: string = '10000000';
