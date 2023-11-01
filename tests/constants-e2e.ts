@@ -27,10 +27,6 @@ export const Tokens: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
     },
-    AMPL: {
-      address: '0xd46ba6d942050d489dbd938a2c909a5d5039a161',
-      decimals: 9,
-    },
     USDC: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
@@ -962,7 +958,6 @@ export const Holders: {
   [Network.MAINNET]: {
     ETH: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
     USDC: '0x79E2Ba942B0e8fDB6ff3d406e930289d10B49ADe',
-    AMPL: '0x223592a191ECfC7FDC38a9256c3BD96E771539A9',
     WBTC: '0x1cb17a66dc606a52785f69f08f4256526abd4943',
     sBTC: '0xA2e3475D13776C6E42ff37B47286827d959B2195',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
