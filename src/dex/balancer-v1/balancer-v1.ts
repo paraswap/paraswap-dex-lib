@@ -39,6 +39,10 @@ import { generatePoolStates } from './utils';
 import BalancerV1ExchangeProxyABI from '../../abi/BalancerV1ExchangeProxy.json';
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 
+const BLACKLISTED_POOLS = new Set([
+  '0x7860e28ebfb8ae052bfe279c07ac5d94c9cd2937',
+]);
+
 export class BalancerV1
   extends SimpleExchange
   implements IDex<BalancerV1Data | OptimizedBalancerV1Data>
@@ -82,11 +86,18 @@ export class BalancerV1
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(_blockNumber: number) {
-    this.poolsInfo = await this.dexHelper.httpRequest.get<PoolsInfo>(
+    const _poolsInfo = await this.dexHelper.httpRequest.get<PoolsInfo>(
       this.config.poolsURL,
       POOLS_FETCH_TIMEOUT,
     );
+
     this.poolInfosByToken = {};
+    if (!_poolsInfo) return;
+    this.poolsInfo = {
+      ..._poolsInfo,
+      pools: _poolsInfo.pools.filter(p => !BLACKLISTED_POOLS.has(p.id)),
+    };
+
     for (const poolInfo of this.poolsInfo.pools) {
       for (const tokenAddress of poolInfo.tokensList) {
         if (!this.poolInfosByToken[tokenAddress]) {
