@@ -9,6 +9,7 @@ export const FxProtocolConfig: DexConfigMap<DexParams> = {
       xETH: '0xe063F04f280c60aECa68b38341C2eEcBeC703ae2',
       stETH: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
       market: '0xe7b9c7c9cA85340b8c06fb805f7775e3015108dB',
+      stETHTreasury: '0x0e5CAA5c889Bdf053c9A76395f62267E653AFbb0',
     },
   },
 };

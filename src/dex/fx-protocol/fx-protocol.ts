@@ -1,5 +1,5 @@
 import { AsyncOrSync } from 'ts-essentials';
-import { Interface } from '@ethersproject/abi';
+import { Interface, Result } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -19,6 +19,7 @@ import { FxProtocolData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { FxProtocolConfig, Adapters } from './config';
 import { BI_POWS } from '../../bigint-constants';
+import { uint256ToBigInt } from '../../lib/decoders';
 
 import FractionalTokenABI from '../../abi/fx-protocol/FractionalToken.json';
 import LeveragedTokenABI from '../../abi/fx-protocol/LeveragedToken.json';
@@ -83,7 +84,6 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    error('srcToken', srcToken);
     if (
       (this.isstETH(srcToken.address) && this.isfETH(destToken.address)) ||
       (this.isstETH(srcToken.address) && this.isxETH(destToken.address))
@@ -92,6 +92,22 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     } else {
       return [];
     }
+  }
+
+  decodeReaderResult(
+    results: Result,
+    readerIface: Interface,
+    funcName: string,
+    destTokenSymbol: string,
+  ) {
+    return results.map((result, index) => {
+      const parsed = readerIface.decodeFunctionResult(funcName, result);
+      if (destTokenSymbol == 'fETH') {
+        return BigInt(parsed[1]._hex);
+      } else {
+        return BigInt(parsed[2]._hex);
+      }
+    });
   }
 
   // Returns pool prices for amounts.
@@ -110,24 +126,43 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
       (this.isstETH(srcToken.address) && this.isfETH(destToken.address)) ||
       (this.isstETH(srcToken.address) && this.isxETH(destToken.address));
     if (!_isFXSwap) return null;
+
+    const readerCallData = [
+      {
+        target: this.config.stETHTreasury,
+        callData:
+          FxProtocol.stETHTreasuryIface.encodeFunctionData('getCurrentNav'),
+        decodeFunction: uint256ToBigInt,
+      },
+    ];
+    const readerResult = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blockNumber)
+    ).returnData;
+
+    let _destTokenSymbol: string = 'fETH';
+    if (this.isstETH(srcToken.address) && this.isfETH(destToken.address)) {
+      _destTokenSymbol = 'fETH';
+    }
+    if (this.isstETH(srcToken.address) && this.isxETH(destToken.address)) {
+      _destTokenSymbol = 'xETH';
+    }
+    const _price = this.decodeReaderResult(
+      readerResult,
+      FxProtocol.stETHTreasuryIface,
+      'getCurrentNav',
+      _destTokenSymbol,
+    )[0];
     return [
       {
         unit: this.unitPrice,
-        prices: amounts,
+        prices: amounts.map(item => (item * _price) / BI_POWS[18]),
         data: {},
         poolAddresses: [this.config.fETH],
         exchange: this.dexKey,
         gasCost: 70000,
         poolIdentifier: `${this.dexKey}_${this.network}_${this.config.fETH}`,
-      },
-      {
-        unit: this.unitPrice,
-        prices: amounts,
-        data: {},
-        poolAddresses: [this.config.xETH],
-        exchange: this.dexKey,
-        gasCost: 70000,
-        poolIdentifier: `${this.dexKey}_${this.network}_${this.config.xETH}`,
       },
     ];
   }

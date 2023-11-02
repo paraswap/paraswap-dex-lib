@@ -18,4 +18,5 @@ export type DexParams = {
   xETH: Address;
   stETH: Address;
   market: Address;
+  stETHTreasury: Address;
 };

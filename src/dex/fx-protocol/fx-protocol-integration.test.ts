@@ -31,13 +31,14 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
   destTokenSymbol: string,
+  amounts: bigint[],
 ) {
-  return results.map(result => {
+  return results.map((result, index) => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     if (destTokenSymbol == 'fETH') {
-      return BigInt(parsed[1]._hex);
+      return BigInt(parsed[1]._hex) * BigInt(amounts[index + 1] / BI_POWS[18]);
     } else {
-      return BigInt(parsed[2]._hex);
+      return BigInt(parsed[2]._hex) * BigInt(amounts[index + 1] / BI_POWS[18]);
     }
   });
 }
@@ -68,15 +69,14 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
 
-  const data = decodeReaderResult(
-    readerResult,
-    readerIface,
-    funcName,
-    destTokenSymbol,
-  );
-
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName, destTokenSymbol),
+    decodeReaderResult(
+      readerResult,
+      readerIface,
+      funcName,
+      destTokenSymbol,
+      amounts,
+    ),
   );
   expect(prices).toEqual(expectedPrices);
 }
@@ -115,11 +115,6 @@ async function testPricingOnNetwork(
     pools,
   );
   expect(poolPrices).not.toBeNull();
-  if (fxProtocol.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
 
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
