@@ -104,9 +104,9 @@ function testForNetwork(
   });
 }
 
-describe('BasewapV3 E2E', () => {
-  const dexKey = 'BasewapV3';
-  describe('BasewapV3 Base', () => {
+describe('BaseswapV3 E2E', () => {
+  const dexKey = 'BaseswapV3';
+  describe('BaseswapV3 Base', () => {
     const network = Network.BASE;
     const tokens = Tokens[network];
     const holders = Holders[network];
