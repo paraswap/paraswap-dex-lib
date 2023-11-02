@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Install Dependencies
+      - name: Install Dependencies Test
         run: yarn
 
       - name: Run Eslint checks
