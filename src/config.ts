@@ -276,12 +276,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
     privateHttpProvider: process.env.HTTP_PROVIDER_42161,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
       ArbitrumAdapter01: '0xD8134ACfc9c71Ab51452b5bA23A31354F4739032',
-      ArbitrumAdapter02: '0xD1F70c98a78d48A93F0B4dDa49057469dc5aC126',
-      ArbitrumBuyAdapter: '0x434C1Cca4842629230067674Dd54E21a14D9FD5D',
+      ArbitrumAdapter02: '0x248009f6F78b5AcD5EA2fc86d56b77A7AeEe2eFc',
+      ArbitrumBuyAdapter: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
