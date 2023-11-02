@@ -195,21 +195,6 @@ const fetchAllPools = `query ($count: Int) {
     }
     mainIndex
     wrappedIndex
-    root3Alpha
-    alpha
-    beta
-    c
-    s
-    lambda
-    tauAlphaX
-    tauAlphaY
-    tauBetaX
-    tauBetaY
-    u
-    v
-    w
-    z
-    dSq
   }
 }`;
 // skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Experimental.
@@ -254,13 +239,16 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   public allPools: SubgraphPoolBase[] = [];
   vaultDecoder: (log: Log) => any;
 
+  buySupportedPoolTypes: BalancerPoolTypes[] = [
+    BalancerPoolTypes.Weighted,
+    BalancerPoolTypes.GyroE,
+  ];
+
   eventSupportedPoolTypes: BalancerPoolTypes[] = [
     BalancerPoolTypes.Stable,
     BalancerPoolTypes.Weighted,
     BalancerPoolTypes.LiquidityBootstrapping,
     BalancerPoolTypes.Investment,
-    BalancerPoolTypes.Gyro3,
-    BalancerPoolTypes.GyroE,
 
     // Need to check if we can support these pools with event base
     // BalancerPoolTypes.ComposableStable,
@@ -496,7 +484,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
 
     if (
-      subgraphPool.poolType !== BalancerPoolTypes.Weighted &&
+      !this.buySupportedPoolTypes.includes(subgraphPool.poolType) &&
       side === SwapSide.BUY
     ) {
       return null;

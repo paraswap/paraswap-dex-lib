@@ -1,5 +1,6 @@
 import { NumberAsString } from '@paraswap/core';
 import { Address } from '../../types';
+import { DerivedGyroEParams, GyroEParams } from '@balancer-labs/sor';
 
 // These should match the Balancer Pool types available on Subgraph
 export enum BalancerPoolTypes {
@@ -34,6 +35,10 @@ export type PoolState = {
   tokens: {
     [address: string]: TokenState;
   };
+  tokenRates?: bigint[];
+  rateProviders?: string[];
+  gyroParams?: GyroEParams;
+  gyroDerivedParams?: DerivedGyroEParams;
   swapFee: bigint;
   orderedTokens: string[];
   rate?: bigint;
