@@ -110,17 +110,22 @@ export abstract class ComposedEventSubscriber<
           .call({}, blockNumber)
       ).returnData;
     }
-    const stateParts = await Promise.all(
-      this.parts.map((p, i) =>
-        p.generateState(
-          returnData.slice(...this.multiCallSlices[i]),
-          blockNumber,
+    try {
+      const stateParts = await Promise.all(
+        this.parts.map((p, i) =>
+          p.generateState(
+            returnData.slice(...this.multiCallSlices[i]),
+            blockNumber,
+          ),
         ),
-      ),
-    );
-    return this.parts.reduce(
-      (acc, p, i) => p.lens.set(stateParts[i])(acc),
-      this.blankState,
-    );
+      );
+      return this.parts.reduce(
+        (acc, p, i) => p.lens.set(stateParts[i])(acc),
+        this.blankState,
+      );
+    } catch (e) {
+      this.logger.error(`Error generating state: ${e}`);
+      throw e;
+    }
   }
 }

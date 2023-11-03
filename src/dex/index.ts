@@ -5,6 +5,7 @@ import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool';
 import { Weth } from './weth/weth';
+import { PolygonMigrator } from './polygon-migrator/polygon-migrator';
 import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
@@ -42,13 +43,19 @@ import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
+import { Ramses } from './solidly/forks-override/ramses';
 import { Thena } from './solidly/forks-override/thena';
 import { Chronos } from './solidly/forks-override/chronos';
 import { Velodrome } from './solidly/forks-override/velodrome';
+import { VelodromeV2 } from './solidly/forks-override/velodromeV2';
+import { Aerodrome } from './solidly/forks-override/aerodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
 import { Cone } from './solidly/forks-override/cone';
 import { SoliSnek } from './solidly/forks-override/solisnek';
+import { Usdfi } from './solidly/forks-override/usdfi';
+import { Equalizer } from './solidly/forks-override/equalizer';
+import { Velocimeter } from './solidly/forks-override/velocimeter';
 import { BalancerV1 } from './balancer-v1/balancer-v1';
 import { balancerV1Merge } from './balancer-v1/optimizer';
 import { CurveV1 } from './curve-v1/curve-v1';
@@ -70,6 +77,9 @@ import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { QuickPerps } from './quick-perps/quick-perps';
+import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
+import { Dexalot } from './dexalot/dexalot';
 import { Morphex } from './morphex/morphex';
 
 const LegacyDexes = [
@@ -97,6 +107,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Dexalot,
   CurveV1,
   CurveFork,
   Swerve,
@@ -115,6 +126,7 @@ const Dexes = [
   AaveV3,
   KyberDmm,
   Weth,
+  PolygonMigrator,
   MakerPsm,
   Nerve,
   Platypus,
@@ -125,11 +137,17 @@ const Dexes = [
   Solidly,
   SolidlyEthereum,
   SpiritSwapV2,
+  Ramses,
   Thena,
   Chronos,
   Velodrome,
+  VelodromeV2,
+  Aerodrome,
   Cone,
   SoliSnek,
+  Equalizer,
+  Velocimeter,
+  Usdfi,
   Synthetix,
   CurveV1Factory,
   SwaapV1,
@@ -138,6 +156,8 @@ const Dexes = [
   MaverickV1,
   Camelot,
   SwaapV2,
+  QuickPerps,
+  NomiswapV2,
   Morphex,
 ];
 
@@ -304,5 +324,14 @@ export class DexAdapterService {
     return side === SwapSide.SELL
       ? this.sellAdapters[specialDexKey]
       : this.buyAdapters[specialDexKey];
+  }
+
+  doesPreProcessingRequireSequentiality(dexKey: string): boolean {
+    try {
+      const dex = this.getDexByKey(dexKey);
+      return !!dex.needsSequentialPreprocessing;
+    } catch (e) {
+      return false;
+    }
   }
 }

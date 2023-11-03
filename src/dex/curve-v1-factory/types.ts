@@ -104,6 +104,7 @@ export enum FactoryImplementationNames {
   FACTORY_PLAIN_2_ETH_EMA = 'factory_plain_2_eth_ema',
   FACTORY_PLAIN_2_ETH_EMA2 = 'factory_plain_2_eth_ema2',
   FACTORY_PLAIN_2_OPTIMIZED = 'factory_plain_2_optimized',
+  FACTORY_PLAIN_2_CRV_EMA = 'factory_plain_2_crv_ema',
 
   FACTORY_PLAIN_3_BALANCES = 'factory_plain_3_balances',
   FACTORY_PLAIN_3_BASIC = 'factory_plain_3_basic',
@@ -154,6 +155,7 @@ export type FactoryPoolImplementations = {
   basePoolAddress?: Address;
   customGasCost?: number;
   isStoreRateSupported?: boolean;
+  liquidityApiSlug?: string;
 };
 
 export type CustomPoolConfig = {
@@ -174,7 +176,7 @@ export type CustomPoolConfig = {
 };
 
 export type DexParams = {
-  factoryAddress: string | null;
+  factoryAddresses: string[] | null;
   stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;

@@ -38,14 +38,15 @@ import {
 import { AlgebraMath } from './lib/AlgebraMath';
 import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
+import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
 
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
 };
 
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 60 * 60 * 1000; // 3 hours
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const ALGEBRA_EFFICIENCY_FACTOR = 3;
 const ALGEBRA_TICK_GAS_COST = 24_000; // Ceiled
 const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
@@ -59,6 +60,7 @@ const MAX_STALE_STATE_BLOCK_AGE = {
 type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
+  private readonly factory: AlgebraFactory;
   readonly isFeeOnTransferSupported: boolean = false;
   protected eventPools: Record<string, IAlgebraEventPool | null> = {};
 
@@ -114,6 +116,14 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     this.AlgebraPoolImplem =
       config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
+
+    this.factory = new AlgebraFactory(
+      dexHelper,
+      dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet,
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -126,6 +136,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    await this.factory.initialize(blockNumber);
+
     if (!this.dexHelper.config.isSlave) {
       const cleanExpiredNotExistingPoolsKeys = async () => {
         const maxTimestamp =
@@ -144,6 +157,37 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     }
   }
 
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+  }) => {
+    const logPrefix = '[Algebra.onPoolCreatedDeleteFromNonExistingSet]';
+    const [_token0, _token1] = this._sortTokens(token0, token1);
+    const poolKey = `${_token0}_${_token1}`;
+
+    // consider doing it only from master pool for less calls to distant cache
+
+    // delete entry locally to let local instance discover the pool
+    delete this.eventPools[this.getPoolIdentifier(_token0, _token1)];
+
+    try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+      );
+      // delete pool record from set
+      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+    } catch (error) {
+      this.logger.error(
+        `${logPrefix} failed to delete pool from set: ${poolKey}`,
+        error,
+      );
+    }
+  };
+
   async getPool(
     srcAddress: Address,
     destAddress: Address,
@@ -160,14 +204,15 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         if (this.network !== Network.ZKEVM) return pool;
 
         if (
-          pool.getState(blockNumber) === null &&
-          blockNumber - pool.getStateBlockNumber() >
-            MAX_STALE_STATE_BLOCK_AGE[this.network]
+          pool.getStaleState() === null ||
+          (pool.getState(blockNumber) === null &&
+            blockNumber - pool.getStateBlockNumber() >
+              MAX_STALE_STATE_BLOCK_AGE[this.network])
         ) {
           /* reload state, on zkEVM this would most likely timeout during request life
            * but would allow to rely on staleState for couple of min for next requests
            */
-          await pool.initialize(blockNumber);
+          await pool.initialize(blockNumber, { forceRegenerate: true });
         }
 
         return pool;
@@ -226,6 +271,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         this.cacheStateKey,
         this.config.initHash,
         this.config.deployer,
+        this.config.forceManualStateGenerate,
       );
 
     try {
@@ -255,10 +301,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           e,
         );
       } else {
-        // on unkown error mark as failed and increase retryCount for retry init strategy
+        // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress}pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
@@ -790,6 +836,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       subgraphURL: this.config.subgraphURL,
       version: this.config.version,
       forceRPC: this.config.forceRPC,
+      forceManualStateGenerate: this.config.forceManualStateGenerate,
     };
     return newConfig;
   }
@@ -814,20 +861,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           return null;
         }
 
-        // TODO buy
-        let lastNonZeroOutput = 0n;
-        let lastNonZeroTickCountsOutputs = 0;
-
         for (let i = 0; i < outputsResult.outputs.length; i++) {
-          // local pricing algo may output 0s at the tail for some out of range amounts, prefer to propagating last amount to appease top algo
-          if (outputsResult.outputs[i] > 0n) {
-            lastNonZeroOutput = outputsResult.outputs[i];
-            lastNonZeroTickCountsOutputs = outputsResult.tickCounts[i];
-          } else {
-            outputsResult.outputs[i] = lastNonZeroOutput;
-            outputsResult.tickCounts[i] = lastNonZeroTickCountsOutputs;
-          }
-
           if (outputsResult.outputs[i] > destTokenBalance) {
             outputsResult.outputs[i] = 0n;
             outputsResult.tickCounts[i] = 0;

@@ -41,6 +41,7 @@ class DummyCache implements ICache {
   }
 
   async rawget(key: string): Promise<string | null> {
+    return this.storage[key] ? this.storage[key] : null;
     return null;
   }
 
@@ -49,10 +50,12 @@ class DummyCache implements ICache {
     value: string,
     ttl: number,
   ): Promise<string | null> {
-    return null;
+    this.storage[key] = value;
+    return 'OK';
   }
 
   async rawdel(key: string): Promise<void> {
+    delete this.storage[key];
     return;
   }
 
@@ -109,6 +112,10 @@ class DummyCache implements ICache {
   }
 
   async zremrangebyscore(key: string, min: number, max: number) {
+    return 0;
+  }
+
+  async zrem(key: string, membersKeys: string[]): Promise<number> {
     return 0;
   }
 
