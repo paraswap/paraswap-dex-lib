@@ -1248,7 +1248,7 @@ describe('BaseswapV3', function () {
     const dexHelper = new DummyDexHelper(network);
 
     let blockNumber: number;
-    let retro: UniswapV3;
+    let baseswapV3: UniswapV3;
 
     const TokenASymbol = 'USDC';
     const TokenA = Tokens[network][TokenASymbol];
@@ -1260,11 +1260,11 @@ describe('BaseswapV3', function () {
 
     beforeEach(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      retro = new UniswapV3(network, dexKey, dexHelper);
+      baseswapV3 = new UniswapV3(network, dexKey, dexHelper);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      const pools = await retro.getPoolIdentifiers(
+      const pools = await baseswapV3.getPoolIdentifiers(
         TokenA,
         TokenB,
         SwapSide.SELL,
@@ -1277,7 +1277,7 @@ describe('BaseswapV3', function () {
 
       expect(pools.length).toBeGreaterThan(0);
 
-      const poolPrices = await retro.getPricesVolume(
+      const poolPrices = await baseswapV3.getPricesVolume(
         TokenA,
         TokenB,
         amounts,
@@ -1296,10 +1296,10 @@ describe('BaseswapV3', function () {
       let falseChecksCounter = 0;
       await Promise.all(
         poolPrices!.map(async price => {
-          const fee = retro.eventPools[price.poolIdentifier!]!.feeCode;
+          const fee = baseswapV3.eventPools[price.poolIdentifier!]!.feeCode;
           const res = await checkOnChainPricing(
             dexHelper,
-            retro,
+            baseswapV3,
             'quoteExactInputSingle',
             blockNumber,
             QuoterV2,
@@ -1317,7 +1317,7 @@ describe('BaseswapV3', function () {
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      const pools = await retro.getPoolIdentifiers(
+      const pools = await baseswapV3.getPoolIdentifiers(
         TokenA,
         TokenB,
         SwapSide.BUY,
@@ -1330,7 +1330,7 @@ describe('BaseswapV3', function () {
 
       expect(pools.length).toBeGreaterThan(0);
 
-      const poolPrices = await retro.getPricesVolume(
+      const poolPrices = await baseswapV3.getPricesVolume(
         TokenA,
         TokenB,
         amountsBuy,
@@ -1350,10 +1350,10 @@ describe('BaseswapV3', function () {
       let falseChecksCounter = 0;
       await Promise.all(
         poolPrices!.map(async price => {
-          const fee = retro.eventPools[price.poolIdentifier!]!.feeCode;
+          const fee = baseswapV3.eventPools[price.poolIdentifier!]!.feeCode;
           const res = await checkOnChainPricing(
             dexHelper,
-            retro,
+            baseswapV3,
             'quoteExactOutputSingle',
             blockNumber,
             QuoterV2,
@@ -1430,7 +1430,7 @@ describe('BaseswapV3', function () {
         300000000n,
       ];
 
-      const pools = await retro.getPoolIdentifiers(
+      const pools = await baseswapV3.getPoolIdentifiers(
         TokenA,
         TokenB,
         SwapSide.SELL,
@@ -1443,7 +1443,7 @@ describe('BaseswapV3', function () {
 
       expect(pools.length).toBeGreaterThan(0);
 
-      const poolPrices = await retro.getPricesVolume(
+      const poolPrices = await baseswapV3.getPricesVolume(
         TokenA,
         TokenB,
         amounts,
@@ -1468,10 +1468,10 @@ describe('BaseswapV3', function () {
       let falseChecksCounter = 0;
       await Promise.all(
         poolPrices!.map(async price => {
-          const fee = retro.eventPools[price.poolIdentifier!]!.feeCode;
+          const fee = baseswapV3.eventPools[price.poolIdentifier!]!.feeCode;
           const res = await checkOnChainPricing(
             dexHelper,
-            retro,
+            baseswapV3,
             'quoteExactInputSingle',
             blockNumber,
             QuoterV2,
@@ -1548,7 +1548,7 @@ describe('BaseswapV3', function () {
         300000000n,
       ];
 
-      const pools = await retro.getPoolIdentifiers(
+      const pools = await baseswapV3.getPoolIdentifiers(
         TokenA,
         TokenB,
         SwapSide.BUY,
@@ -1561,7 +1561,7 @@ describe('BaseswapV3', function () {
 
       expect(pools.length).toBeGreaterThan(0);
 
-      const poolPrices = await retro.getPricesVolume(
+      const poolPrices = await baseswapV3.getPricesVolume(
         TokenA,
         TokenB,
         amountsBuy,
@@ -1586,10 +1586,10 @@ describe('BaseswapV3', function () {
       let falseChecksCounter = 0;
       await Promise.all(
         poolPrices!.map(async price => {
-          const fee = retro.eventPools[price.poolIdentifier!]!.feeCode;
+          const fee = baseswapV3.eventPools[price.poolIdentifier!]!.feeCode;
           const res = await checkOnChainPricing(
             dexHelper,
-            retro,
+            baseswapV3,
             'quoteExactOutputSingle',
             blockNumber,
             QuoterV2,
@@ -1606,7 +1606,10 @@ describe('BaseswapV3', function () {
     });
 
     it('getTopPoolsForToken', async function () {
-      const poolLiquidity = await retro.getTopPoolsForToken(TokenB.address, 10);
+      const poolLiquidity = await baseswapV3.getTopPoolsForToken(
+        TokenB.address,
+        10,
+      );
       console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
