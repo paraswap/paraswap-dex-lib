@@ -1135,4 +1135,29 @@ describe('UniswapV3 E2E', () => {
       );
     });
   });
+
+  describe('Horiza', () => {
+    const dexKey = 'Horiza';
+
+    describe('ARBITRUM', () => {
+      const network = Network.ARBITRUM;
+
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '10000000000000000';
+      const tokenBAmount: string = '1000000';
+      const nativeTokenAmount = '1100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
 });
