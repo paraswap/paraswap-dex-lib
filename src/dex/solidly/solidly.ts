@@ -75,7 +75,8 @@ export class Solidly extends UniswapV2 {
         'Chronos',
         'Ramses',
         'Equalizer',
-        'Aerodrome',
+        'Velocimeter',
+        'Usdfi',
       ]),
     );
 

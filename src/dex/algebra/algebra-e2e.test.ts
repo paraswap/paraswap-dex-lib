@@ -198,7 +198,7 @@ describe('Algebra', () => {
         tokenAAmount,
         tokenBAmount,
         nativeTokenAmount,
-      )
+      );
     });
   });
 
