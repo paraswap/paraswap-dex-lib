@@ -11,7 +11,6 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import { Address } from '@paraswap/core';
-import { BaseswapV3 } from '../baseswap-v3/baseswap-v3';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDC';
