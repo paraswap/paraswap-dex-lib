@@ -14,7 +14,7 @@ import { generateConfig } from '../../config';
 describe('Morphex E2E', () => {
   const dexKey = 'Morphex';
 
-  describe('Morphex Fantom', () => {
+  describe('Fantom', () => {
     const network = Network.FANTOM;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -89,7 +89,7 @@ describe('Morphex E2E', () => {
     );
   });
 
-  describe('Morphex BSC', () => {
+  describe('BSC', () => {
     const network = Network.BSC;
     const tokens = Tokens[network];
     const holders = Holders[network];
