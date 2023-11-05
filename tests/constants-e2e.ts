@@ -607,6 +607,10 @@ export const Tokens: {
       address: '0x11A38e06699b238D6D9A0C7A01f3AC63a07ad318',
       decimals: 18,
     },
+    XRP: {
+      address: '0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe',
+      decimals: 18,
+    },
   },
   [Network.AVALANCHE]: {
     USDCe: {

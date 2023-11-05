@@ -65,18 +65,16 @@ export const Adapters: {
   [Network.BSC]: {
     [SwapSide.SELL]: [
       {
-        // TODO: Update
-        name: 'BscAdapter01',
-        index: 9,
+        name: 'BscAdapter02',
+        index: 6,
       },
     ],
   },
   [Network.FANTOM]: {
     [SwapSide.SELL]: [
       {
-        // TODO: Update
         name: 'FantomAdapter01',
-        index: 9,
+        index: 12,
       },
     ],
   },
