@@ -165,7 +165,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     token0,
     token1,
   }) => {
-    const logPrefix = '[Algebra.onPoolCreatedDeleteFromNonExistingSet]';
+    const logPrefix = `[${this.dexKey}.onPoolCreatedDeleteFromNonExistingSet]`;
     const [_token0, _token1] = this._sortTokens(token0, token1);
     const poolKey = `${_token0}_${_token1}`;
 
@@ -179,7 +179,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         `${logPrefix} delete pool from not existing set: ${poolKey}`,
       );
       // delete pool record from set
-      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+      const result = await this.dexHelper.cache.zrem(
+        this.notExistingPoolSetKey,
+        [poolKey],
+      );
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}, result: ${result}`,
+      );
     } catch (error) {
       this.logger.error(
         `${logPrefix} failed to delete pool from set: ${poolKey}`,
