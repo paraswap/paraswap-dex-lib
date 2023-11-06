@@ -100,6 +100,7 @@ export class UniswapV3
         'RamsesV2',
         'ChronosV3',
         'Retro',
+        'BaseswapV3',
       ]),
     );
 
