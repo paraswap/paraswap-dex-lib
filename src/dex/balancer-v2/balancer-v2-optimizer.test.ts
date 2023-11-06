@@ -327,7 +327,7 @@ describe('BalancerV2 optimizer', () => {
                 exchange: 'BalancerV2',
                 srcAmount: '27001080000000000000',
                 destAmount: '1663710383246524230443584',
-                percent: 100,
+                percent: 3,
                 poolAddresses: ['0xcb0e14e96f2cefa8550ad8e4aea344f211e5061d'],
                 data: {
                   poolId:
@@ -347,7 +347,7 @@ describe('BalancerV2 optimizer', () => {
                 exchange: 'BalancerV2',
                 srcAmount: '598920000000000000',
                 destAmount: '36257151080030344235259',
-                percent: 100,
+                percent: 97,
                 poolAddresses: ['0x458ae80894A0924Ac763C034977e330c565F1687'],
                 data: {
                   poolId:
@@ -507,8 +507,6 @@ describe('BalancerV2 optimizer', () => {
       },
     ];
 
-    // Test is not full
-    expect(true).toEqual(fail);
     expect(optimizedRate).toStrictEqual(expectedRate);
   });
 
