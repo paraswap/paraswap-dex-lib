@@ -323,7 +323,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     orderbook: string[][],
     baseToken: Token,
     quoteToken: Token,
-    side: ClobSide,
+    isInputQuote: boolean,
   ) {
     let result = [];
 
@@ -345,7 +345,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             .parseUnits(orderbook[mid][1], quoteToken.decimals)
             .toString(),
         );
-        if (side === ClobSide.ASK) {
+        if (isInputQuote) {
           const price = BigInt(
             ethers.utils
               .parseUnits(orderbook[mid][0], baseToken.decimals)
@@ -371,6 +371,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             .toString(),
         );
         amount = amounts[i];
+      } else if (left === 0) {
+        price = 0n;
       } else if (left < orderbook.length) {
         const lPrice = BigInt(
           ethers.utils
@@ -392,9 +394,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             .parseUnits(orderbook[left][1], quoteToken.decimals)
             .toString(),
         );
-        if (side === ClobSide.ASK) {
-          lQty =
-            (lQty * BigInt(10 ** (baseToken.decimals * 2))) /
+        if (isInputQuote) {
+          lQty = (lQty * BigInt(10 ** (baseToken.decimals * 2))) /
             (lPrice * BigInt(10 ** quoteToken.decimals));
           rQty =
             (rQty * BigInt(10 ** (baseToken.decimals * 2))) /
@@ -404,17 +405,17 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         amount = amounts[i];
       }
 
-      if (side === ClobSide.BID) {
+      if (isInputQuote) {
+        result.push(
+          (price * amount * BigInt(10 ** quoteToken.decimals)) /
+            BigInt(10 ** (baseToken.decimals * 2)),
+        );
+      } else {
         result.push(
           price !== 0n // To avoid division by zero error
             ? (amount * BigInt(10 ** (baseToken.decimals * 2))) /
                 (price * BigInt(10 ** quoteToken.decimals))
             : 0n,
-        );
-      } else {
-        result.push(
-          (price * amount * BigInt(10 ** quoteToken.decimals)) /
-            BigInt(10 ** (baseToken.decimals * 2)),
         );
       }
     }
@@ -496,10 +497,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       // convert from swap to clob side
       let orderbook = priceData.asks;
       let clobSide = ClobSide.BID;
-      if (
-        (side === SwapSide.SELL && pairData.isSrcBase) ||
-        (side === SwapSide.BUY && !pairData.isSrcBase)
-      ) {
+      if (pairData.isSrcBase) {
         orderbook = priceData.bids;
         clobSide = ClobSide.ASK;
       }
@@ -507,12 +505,14 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         throw new Error(`Empty orderbook for ${pairKey}`);
       }
 
+      const isInputQuote = (clobSide === ClobSide.ASK && side === SwapSide.SELL) || (clobSide === ClobSide.BID && side === SwapSide.BUY);
+
       const prices = this.calculateOrderPrice(
         amounts,
         orderbook,
         baseToken,
         quoteToken,
-        clobSide,
+        isInputQuote
       );
       const outDecimals =
         clobSide === ClobSide.BID ? baseToken.decimals : quoteToken.decimals;
