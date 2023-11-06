@@ -224,46 +224,79 @@ describe('SwaapV2 E2E', () => {
     );
   });
 
-  // Arbitrum will be supported later
-  // describe('Arbitrum', () => {
-  //   const network = Network.ARBITRUM;
-  //
-  //   const tokenASymbol: string = 'ETH';
-  //   const tokenBSymbol: string = 'DAI';
-  //
-  //   const tokenAAmount: string = '100000000';
-  //   const tokenBAmount: string = '1000000000000000000';
-  //   const nativeTokenAmount = '1000000000000000000';
-  //
-  //   testForNetwork(
-  //     network,
-  //     dexKey,
-  //     tokenASymbol,
-  //     tokenBSymbol,
-  //     tokenAAmount,
-  //     tokenBAmount,
-  //     nativeTokenAmount,
-  //   );
-  // });
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+    const tokens = Tokens[network];
+    const holders = Holders[network];
 
-  // Mainnet will be supported later
-  // describe('Mainnet', () => {
-  //   const network = Network.MAINNET;
-  //   const tokenASymbol: string = 'USDC';
-  //   const tokenBSymbol: string = 'USDT';
-  //
-  //   const tokenAAmount: string = '100000000';
-  //   const tokenBAmount: string = '1000000000000000000';
-  //   const nativeTokenAmount = '1000000000000000000';
-  //
-  //   testForNetwork(
-  //     network,
-  //     dexKey,
-  //     tokenASymbol,
-  //     tokenBSymbol,
-  //     tokenAAmount,
-  //     tokenBAmount,
-  //     nativeTokenAmount,
-  //   );
-  // });
+    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      [
+        {
+          name: 'WETH',
+          sellAmount: '10000000000000000',
+          buyAmount: '1000000000000000000',
+        },
+        {
+          name: 'DAI',
+          sellAmount: '1000000000000000000',
+          buyAmount: '10000000000000000',
+        },
+      ],
+    ];
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          pairs.forEach(pair => {
+            describe(`${contractMethod}`, () => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? pair[0].sellAmount
+                    : pair[0].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
+                );
+              });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
+                );
+              });
+            });
+          });
+        });
+      }),
+    );
+  });
 });

@@ -28,16 +28,35 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import {
+  MIN_USD_LIQUIDITY_TO_FETCH,
   BalancerV1Config,
   Adapters,
-  POOLS_FETCH_TIMEOUT,
   MAX_POOLS_FOR_PRICING,
   BALANCER_SWAP_GAS_COST,
+  MAX_POOL_CNT,
 } from './config';
 import { BalancerV1EventPool } from './balancer-v1-pool';
 import { generatePoolStates } from './utils';
 import BalancerV1ExchangeProxyABI from '../../abi/BalancerV1ExchangeProxy.json';
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
+
+const fetchAllPoolsQuery = `query {
+    pools(first: ${MAX_POOL_CNT.toString()} 
+        orderBy: liquidity
+        orderDirection: desc
+        where: {liquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}}) {
+          id
+          swapFee
+          totalWeight
+          tokensList
+          tokens {
+            address
+            balance
+            decimals
+            denormWeight
+          }
+        }
+    }`;
 
 export class BalancerV1
   extends SimpleExchange
@@ -82,10 +101,21 @@ export class BalancerV1
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(_blockNumber: number) {
-    this.poolsInfo = await this.dexHelper.httpRequest.get<PoolsInfo>(
-      this.config.poolsURL,
-      POOLS_FETCH_TIMEOUT,
+    const { data } = await this.dexHelper.httpRequest.post<{
+      data: { pools: PoolInfo[] };
+    }>(
+      this.config.subgraphURL,
+      { query: fetchAllPoolsQuery },
+      SUBGRAPH_TIMEOUT,
     );
+
+    if (!(data && data.pools))
+      throw new Error(
+        `Error ${this.dexKey} Subgraph: couldn't fetch the pools from the subgraph`,
+      );
+
+    this.poolsInfo = data;
+
     this.poolInfosByToken = {};
     for (const poolInfo of this.poolsInfo.pools) {
       for (const tokenAddress of poolInfo.tokensList) {
