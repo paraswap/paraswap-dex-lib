@@ -1054,11 +1054,11 @@ export class BalancerV2
         ETHER_ADDRESS.toLowerCase(),
       );
       const _srcToken = this.dexHelper.config.wrapETH({
-        address: srcToken,
+        address: swapData.srcToken,
         decimals: 18,
       }).address;
       const _destToken = this.dexHelper.config.wrapETH({
-        address: destToken,
+        address: swapData.destToken,
         decimals: 18,
       }).address;
 

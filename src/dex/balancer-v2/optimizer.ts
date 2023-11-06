@@ -1,4 +1,4 @@
-import { UnoptimizedRate, OptimalSwapExchange } from '../../types';
+import { UnoptimizedRate, OptimalSwapExchange, OptimalSwap } from '../../types';
 import { BalancerSwapV2 } from './types';
 import { SwapSide } from '../../constants';
 import { BalancerConfig } from './config';
@@ -10,6 +10,7 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
     rawSwap: OptimalSwapExchange<any>[],
     accumulatedBalancers: { [key: string]: OptimalSwapExchange<any> },
     side: SwapSide,
+    swap: OptimalSwap,
   ): OptimalSwapExchange<any>[] => {
     let optimizedSwap = new Array<OptimalSwapExchange<any>>();
     const newBalancers: { [key: string]: OptimalSwapExchange<any> } = {};
@@ -47,6 +48,10 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
         ).toFixed(6);
 
         accumulatedBalancers[exchangeKey].data.swaps.push({
+          // it's not included in balancer-v2-optimizer.test.ts
+          srcToken: swap.srcToken,
+          destToken: swap.destToken,
+          //
           poolId: s.data.poolId,
           amount: side === SwapSide.SELL ? s.srcAmount : s.destAmount,
         });
@@ -74,6 +79,7 @@ export function balancerV2Merge(or: UnoptimizedRate): UnoptimizedRate {
             s.swapExchanges,
             accumulatedBalancers,
             or.side,
+            s,
           ),
         }))
         .filter(s => s.swapExchanges.length > 0),
