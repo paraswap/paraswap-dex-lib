@@ -3,12 +3,12 @@ export const UNISWAPV3_TICK_BASE_OVERHEAD = 75_000;
 export const UNISWAPV3_POOL_SEARCH_OVERHEAD = 10_000;
 
 // This is used for price calculation. If out of scope, return 0n
-export const TICK_BITMAP_TO_USE = 40n;
+export const TICK_BITMAP_TO_USE = 400n;
 
 // This is used to check if the state is still valid.
-export const TICK_BITMAP_BUFFER = 80n;
+export const TICK_BITMAP_BUFFER = 800n;
 
-export const MAX_PRICING_COMPUTATION_STEPS_ALLOWED = 256;
+export const MAX_PRICING_COMPUTATION_STEPS_ALLOWED = 4096;
 
 export const UNISWAPV3_SUBGRAPH_URL =
   'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
