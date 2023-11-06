@@ -208,7 +208,7 @@ export class UniswapV3
     token1,
     fee,
   }) => {
-    const logPrefix = '[UniswapV3.onPoolCreatedDeleteFromNonExistingSet]';
+    const logPrefix = `[${this.dexKey}.onPoolCreatedDeleteFromNonExistingSet]`;
     const [_token0, _token1] = this._sortTokens(token0, token1);
     const poolKey = `${_token0}_${_token1}_${fee}`;
 
@@ -222,7 +222,13 @@ export class UniswapV3
         `${logPrefix} delete pool from not existing set: ${poolKey}`,
       );
       // delete pool record from set
-      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+      const result = await this.dexHelper.cache.zrem(
+        this.notExistingPoolSetKey,
+        [poolKey],
+      );
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set: ${poolKey}, result: ${result}`,
+      );
     } catch (error) {
       this.logger.error(
         `${logPrefix} failed to delete pool from set: ${poolKey}`,
