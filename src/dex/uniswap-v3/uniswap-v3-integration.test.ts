@@ -11,6 +11,7 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import { Address } from '@paraswap/core';
+import { UniswapV3Config } from './config';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDC';
@@ -1256,7 +1257,61 @@ describe('BaseswapV3', function () {
     const TokenBSymbol = 'WETH';
     const TokenB = Tokens[network][TokenBSymbol];
 
-    const QuoterV2 = '0x4fDBD73aD4B1DDde594BF05497C15f76308eFfb9';
+    const QuoterV2 = UniswapV3Config[dexKey][network].quoter;
+
+    const amountsBuy = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+      48000000n,
+      54000000n,
+      60000000n,
+      66000000n,
+      72000000n,
+      78000000n,
+      84000000n,
+      90000000n,
+      96000000n,
+      102000000n,
+      108000000n,
+      114000000n,
+      120000000n,
+      126000000n,
+      132000000n,
+      138000000n,
+      144000000n,
+      150000000n,
+      156000000n,
+      162000000n,
+      168000000n,
+      174000000n,
+      180000000n,
+      186000000n,
+      192000000n,
+      198000000n,
+      204000000n,
+      210000000n,
+      216000000n,
+      222000000n,
+      228000000n,
+      234000000n,
+      240000000n,
+      246000000n,
+      252000000n,
+      258000000n,
+      264000000n,
+      270000000n,
+      276000000n,
+      282000000n,
+      288000000n,
+      294000000n,
+      300000000n,
+    ];
 
     beforeEach(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
@@ -1317,6 +1372,13 @@ describe('BaseswapV3', function () {
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const amountsBuy = [
+        0n,
+        1n * BI_POWS[18],
+        2n * BI_POWS[18],
+        3n * BI_POWS[18],
+      ];
+
       const pools = await baseswapV3.getPoolIdentifiers(
         TokenA,
         TokenB,
@@ -1376,60 +1438,6 @@ describe('BaseswapV3', function () {
       const TokenBSymbol = 'USDC';
       const TokenB = Tokens[network][TokenBSymbol];
 
-      const amounts = [
-        0n,
-        6000000n,
-        12000000n,
-        18000000n,
-        24000000n,
-        30000000n,
-        36000000n,
-        42000000n,
-        48000000n,
-        54000000n,
-        60000000n,
-        66000000n,
-        72000000n,
-        78000000n,
-        84000000n,
-        90000000n,
-        96000000n,
-        102000000n,
-        108000000n,
-        114000000n,
-        120000000n,
-        126000000n,
-        132000000n,
-        138000000n,
-        144000000n,
-        150000000n,
-        156000000n,
-        162000000n,
-        168000000n,
-        174000000n,
-        180000000n,
-        186000000n,
-        192000000n,
-        198000000n,
-        204000000n,
-        210000000n,
-        216000000n,
-        222000000n,
-        228000000n,
-        234000000n,
-        240000000n,
-        246000000n,
-        252000000n,
-        258000000n,
-        264000000n,
-        270000000n,
-        276000000n,
-        282000000n,
-        288000000n,
-        294000000n,
-        300000000n,
-      ];
-
       const pools = await baseswapV3.getPoolIdentifiers(
         TokenA,
         TokenB,
@@ -1446,7 +1454,7 @@ describe('BaseswapV3', function () {
       const poolPrices = await baseswapV3.getPricesVolume(
         TokenA,
         TokenB,
-        amounts,
+        amountsBuy,
         SwapSide.SELL,
         blockNumber,
         pools,
@@ -1459,7 +1467,7 @@ describe('BaseswapV3', function () {
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(
         poolPrices!.filter(pp => pp.unit !== 0n),
-        amounts,
+        amountsBuy,
         SwapSide.SELL,
         dexKey,
       );
@@ -1479,7 +1487,7 @@ describe('BaseswapV3', function () {
             TokenA.address,
             TokenB.address,
             fee,
-            amounts,
+            amountsBuy,
           );
           if (res === false) falseChecksCounter++;
         }),
@@ -1493,60 +1501,6 @@ describe('BaseswapV3', function () {
 
       const TokenBSymbol = 'USDC';
       const TokenB = Tokens[network][TokenBSymbol];
-
-      const amountsBuy = [
-        0n,
-        6000000n,
-        12000000n,
-        18000000n,
-        24000000n,
-        30000000n,
-        36000000n,
-        42000000n,
-        48000000n,
-        54000000n,
-        60000000n,
-        66000000n,
-        72000000n,
-        78000000n,
-        84000000n,
-        90000000n,
-        96000000n,
-        102000000n,
-        108000000n,
-        114000000n,
-        120000000n,
-        126000000n,
-        132000000n,
-        138000000n,
-        144000000n,
-        150000000n,
-        156000000n,
-        162000000n,
-        168000000n,
-        174000000n,
-        180000000n,
-        186000000n,
-        192000000n,
-        198000000n,
-        204000000n,
-        210000000n,
-        216000000n,
-        222000000n,
-        228000000n,
-        234000000n,
-        240000000n,
-        246000000n,
-        252000000n,
-        258000000n,
-        264000000n,
-        270000000n,
-        276000000n,
-        282000000n,
-        288000000n,
-        294000000n,
-        300000000n,
-      ];
 
       const pools = await baseswapV3.getPoolIdentifiers(
         TokenA,
