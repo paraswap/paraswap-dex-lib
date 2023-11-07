@@ -1,13 +1,10 @@
 import { IAlgebraPoolState } from '../types';
 import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
-import {
-  OUT_OF_RANGE_ERROR_POSTFIX,
-  TICK_BITMAP_BUFFER,
-  TICK_BITMAP_TO_USE,
-} from '../../uniswap-v3/constants';
+import { OUT_OF_RANGE_ERROR_POSTFIX } from '../../uniswap-v3/constants';
 import { TickMath } from '../../uniswap-v3/contract-math/TickMath';
 import { Yul } from './yul-helper';
+import { TICK_BITMAP_BUFFER, TICK_BITMAP_TO_USE } from '../constants';
 
 function isWordPosOut(
   wordPos: bigint,
