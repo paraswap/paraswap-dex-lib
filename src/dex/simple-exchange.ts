@@ -9,7 +9,7 @@ import augustusABI from '../abi/augustus.json';
 import { isETHAddress } from '../utils';
 import { MAX_UINT } from '../constants';
 import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
+import { ICache, IDexHelper } from '../dex-helper';
 import { AbiItem } from 'web3-utils';
 
 /*
@@ -36,11 +36,13 @@ export class SimpleExchange {
   protected augustusAddress: Address;
   protected augustusInterface: Interface;
   private provider: Web3;
+  private cache: ICache;
 
   protected network: number;
   protected dexmapKey: string;
 
   readonly cacheStateKey: string;
+  private readonly cacheApprovesKey: string;
 
   constructor(dexHelper: IDexHelper, public dexKey: string) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
@@ -54,12 +56,17 @@ export class SimpleExchange {
     this.augustusAddress = dexHelper.config.data.augustusAddress;
     this.augustusInterface = new Interface(augustusABI);
     this.provider = dexHelper.web3Provider;
+    this.cache = dexHelper.cache;
 
     this.dexmapKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_poolconfigs`.toLowerCase();
 
     this.cacheStateKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
+
+    // if there's anything else to cache, this name could be more abstract
+    this.cacheApprovesKey =
+      `${CACHE_PREFIX}_${this.network}_approves`.toLowerCase();
   }
 
   private async hasAugustusAllowance(
@@ -68,9 +75,37 @@ export class SimpleExchange {
     amount: string,
   ): Promise<boolean> {
     if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) return true;
+    // TODO: is it possible that augustus address will be changed ??
+    // if so, it should be included in the cache key
+    const cacheKey = `${token}_${target}`;
 
-    const allowanceData = this.erc20Interface.encodeFunctionData('allowance', [
+    // as approve is given to an infinite amount, we can cache only the target and token address
+    const isCachedApproved = await this.cache.sismember(
+      this.cacheApprovesKey,
+      cacheKey,
+    );
+
+    if (isCachedApproved) return true;
+
+    const allowance = await this.getAllowance(
       this.augustusAddress,
+      token,
+      target,
+    );
+    const isApproved = BigInt(allowance) >= BigInt(amount);
+
+    if (isApproved) await this.cache.sadd(this.cacheApprovesKey, cacheKey);
+
+    return isApproved;
+  }
+
+  private async getAllowance(
+    spender: Address,
+    token: Address,
+    target: Address,
+  ): Promise<string> {
+    const allowanceData = this.erc20Interface.encodeFunctionData('allowance', [
+      spender,
       target,
     ]);
 
@@ -83,7 +118,8 @@ export class SimpleExchange {
       'allowance',
       allowanceRaw,
     );
-    return BigInt(allowance.toString()) >= BigInt(amount);
+
+    return allowance.toString();
   }
 
   protected async getApproveSimpleParam(
