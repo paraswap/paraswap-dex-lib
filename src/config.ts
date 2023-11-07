@@ -252,7 +252,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_250`]?.split(',') || [],
 
     adapterAddresses: {
-      FantomAdapter01: '0xede616e2e3c35eeb28a1737785c5c5e8e965cd56',
+      FantomAdapter01: '0x2C091198d44Adc34831B165e390B083D66109ddA',
       FantomBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     },
     uniswapV2ExchangeRouterAddress:
