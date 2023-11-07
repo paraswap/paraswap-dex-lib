@@ -26,7 +26,7 @@ export const SWAAP_403_TTL_S = 60 * 60 * 24; // 24 hours
 
 export const SWAAP_429_TTL_S = 60 * 60 * 1; // 1 hour
 
-export const SWAAP_RESTRICT_TTL_S = 60 * 30; // 30 minutes
+export const SWAAP_POOL_RESTRICT_TTL_S = 60 * 30; // 30 minutes
 
 export const SWAAP_RESTRICTED_CACHE_KEY = 'restricted';
 
