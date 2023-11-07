@@ -189,12 +189,33 @@ describe('Wombat', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       wombat = new Wombat(network, dexKey, dexHelper);
-      if (wombat.initializePricing) {
-        await wombat.initializePricing(blockNumber);
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      if (wombat.updatePoolState) {
+        await wombat.updatePoolState();
+      }
+      const poolLiquidity = await wombat.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!wombat.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
       }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      if (wombat.initializePricing) {
+        await wombat.initializePricing(blockNumber);
+      }
       await testPricingOnNetwork(
         wombat,
         network,
@@ -209,6 +230,9 @@ describe('Wombat', function () {
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      if (wombat.initializePricing) {
+        await wombat.initializePricing(blockNumber);
+      }
       await testPricingOnNetwork(
         wombat,
         network,
@@ -220,28 +244,6 @@ describe('Wombat', function () {
         amountsForBuy,
         'quotePotentialSwap',
       );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newWombat = new Wombat(network, dexKey, dexHelper);
-      if (newWombat.updatePoolState) {
-        await newWombat.updatePoolState();
-      }
-      const poolLiquidity = await newWombat.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newWombat.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
     });
   });
 
@@ -285,12 +287,33 @@ describe('Wombat', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       wombat = new Wombat(network, dexKey, dexHelper);
-      if (wombat.initializePricing) {
-        await wombat.initializePricing(blockNumber);
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      if (wombat.updatePoolState) {
+        await wombat.updatePoolState();
+      }
+      const poolLiquidity = await wombat.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!wombat.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
       }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      if (wombat.initializePricing) {
+        await wombat.initializePricing(blockNumber);
+      }
       await testPricingOnNetwork(
         wombat,
         network,
@@ -305,6 +328,9 @@ describe('Wombat', function () {
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      if (wombat.initializePricing) {
+        await wombat.initializePricing(blockNumber);
+      }
       await testPricingOnNetwork(
         wombat,
         network,
@@ -316,28 +342,6 @@ describe('Wombat', function () {
         amountsForBuy,
         'quotePotentialSwap',
       );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newWombat = new Wombat(network, dexKey, dexHelper);
-      if (newWombat.updatePoolState) {
-        await newWombat.updatePoolState();
-      }
-      const poolLiquidity = await newWombat.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newWombat.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
     });
   });
 });

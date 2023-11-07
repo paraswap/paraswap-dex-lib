@@ -174,7 +174,9 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     for (const poolAddress of pools) {
       let state = await this.pools![poolAddress].getState(blockNumber);
       if (!state) {
-        this.logger.error(`State is null in getPricesVolume`);
+        this.logger.warn(
+          `State of pool ${poolAddress} is null in getPricesVolume, skipping...`,
+        );
         continue;
       }
       const [unit, ...prices] = this.computePrices(
@@ -230,7 +232,9 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     for (const [poolAddress, pool] of Object.entries(this.pools)) {
       let stateOj = await pool.getState(blockNumber);
       if (!stateOj) {
-        this.logger.error(`State is null in findPools`);
+        this.logger.warn(
+          `State of pool ${poolAddress} is null in findPools, skipping...`,
+        );
         continue;
       }
 
@@ -241,7 +245,8 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
         state.asset[srcTokenAddress] &&
         state.asset[destTokenAddress] &&
         (liquidityThresholdInUSD === 0 ||
-          this.poolLiquidityUSD![poolAddress] > liquidityThresholdInUSD)
+          (this.poolLiquidityUSD![poolAddress] &&
+            this.poolLiquidityUSD![poolAddress] > liquidityThresholdInUSD))
       ) {
         pools.push(poolAddress);
       }
@@ -332,14 +337,16 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     const usdPromises = [];
     const poolStates: { [poolAddress: string]: DeepReadonly<PoolState> } = {};
     const poolStateObjs = await Promise.all(
-      Object.values(this.pools).map(pool => pool.getState(blockNumber)),
+      Object.values(this.pools).map(pool => pool.getState()),
     );
 
     for (const [poolAddress, pool] of Object.entries(this.pools)) {
       const index = Object.keys(this.pools).indexOf(poolAddress);
       let state = poolStateObjs[index];
       if (!state) {
-        this.logger.error(`State of ${poolAddress} is null in updatePoolState`);
+        this.logger.warn(
+          `State of ${poolAddress} is null in updatePoolState, skipping...`,
+        );
         continue;
       }
       poolStates[poolAddress] = state.value;
@@ -379,15 +386,14 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     if (!this.poolLiquidityUSD) await this.updatePoolState();
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
     tokenAddress = tokenAddress.toLowerCase();
     const pools: string[] = [];
     const poolStates: { [poolAddress: string]: DeepReadonly<PoolState> } = {};
     for (const [poolAddress, eventPool] of Object.entries(this.pools)) {
-      let state = await eventPool.getState(blockNumber);
+      let state = await eventPool.getState();
       if (!state) {
-        this.logger.error(
-          `State of ${poolAddress} is null in getTopPoolsForToken`,
+        this.logger.warn(
+          `State of ${poolAddress} is null in getTopPoolsForToken, skipping...`,
         );
         continue;
       }
