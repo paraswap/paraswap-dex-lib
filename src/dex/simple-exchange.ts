@@ -75,8 +75,6 @@ export class SimpleExchange {
     amount: string,
   ): Promise<boolean> {
     if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) return true;
-    // TODO: is it possible that augustus address will be changed ??
-    // if so, it should be included in the cache key
     const cacheKey = `${token}_${target}`;
 
     // as approve is given to an infinite amount, we can cache only the target and token address
