@@ -17,11 +17,7 @@ import {
 import { ethers } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import AlgebraV1_9ABI from '../../abi/algebra/AlgebraPool-v1_9.abi.json';
-import {
-  OUT_OF_RANGE_ERROR_POSTFIX,
-  TICK_BITMAP_BUFFER,
-  TICK_BITMAP_TO_USE,
-} from '../uniswap-v3/constants';
+import { OUT_OF_RANGE_ERROR_POSTFIX } from '../uniswap-v3/constants';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { decodeStateMultiCallResultWithRelativeBitmapsV1_9 } from './utils';
@@ -33,6 +29,7 @@ import {
 import { Constants } from './lib/Constants';
 import { Network } from '../../constants';
 import { TickTable } from './lib/TickTable';
+import { TICK_BITMAP_BUFFER, TICK_BITMAP_TO_USE } from './constants';
 
 export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9> {
   handlers: {

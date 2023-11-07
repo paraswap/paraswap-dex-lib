@@ -20,11 +20,7 @@ import { Contract } from 'web3-eth-contract';
 import AlgebraABI from '../../abi/algebra/AlgebraPool-v1_1.abi.json';
 import FactoryABI from '../../abi/algebra/AlgebraFactory-v1_1.abi.json';
 import { DecodedStateMultiCallResultWithRelativeBitmapsV1_1 } from './types';
-import {
-  OUT_OF_RANGE_ERROR_POSTFIX,
-  TICK_BITMAP_BUFFER,
-  TICK_BITMAP_TO_USE,
-} from '../uniswap-v3/constants';
+import { OUT_OF_RANGE_ERROR_POSTFIX } from '../uniswap-v3/constants';
 import {
   addressDecode,
   uint256ToBigInt,
@@ -45,6 +41,7 @@ import {
 import { Constants } from './lib/Constants';
 import { Network, NULL_ADDRESS } from '../../constants';
 import { TickTable } from './lib/TickTable';
+import { TICK_BITMAP_BUFFER, TICK_BITMAP_TO_USE } from './constants';
 
 const BN_ZERO = BigNumber.from(0);
 const MAX_BATCH_SIZE = 100;
