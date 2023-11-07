@@ -16,12 +16,10 @@ import {
   PriceComputationState,
   _updatePriceComputationObjects,
 } from '../../uniswap-v3/contract-math/uniswap-v3-math';
-import {
-  MAX_PRICING_COMPUTATION_STEPS_ALLOWED,
-  OUT_OF_RANGE_ERROR_POSTFIX,
-} from '../../uniswap-v3/constants';
+import { OUT_OF_RANGE_ERROR_POSTFIX } from '../../uniswap-v3/constants';
 import { TickManager } from './TickManager';
 import { TickTable } from './TickTable';
+import { MAX_PRICING_COMPUTATION_STEPS_ALLOWED } from '../constants';
 
 type UpdatePositionCache = {
   price: bigint;
