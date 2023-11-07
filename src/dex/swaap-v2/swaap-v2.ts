@@ -41,7 +41,8 @@ import {
   GAS_COST_ESTIMATION,
   BATCH_SWAP_SELECTOR,
   CALLER_SLOT,
-  SWAAP_BLACKLIST_TTL_S,
+  SWAAP_403_TTL_S,
+  SWAAP_429_TTL_S,
   SWAAP_RFQ_TOKENS_ENDPOINT,
   SWAAP_RESTRICT_TTL_S,
   SWAAP_RESTRICTED_CACHE_KEY,
@@ -561,11 +562,13 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         { deadline: minDeadline },
       ];
     } catch (e) {
-      if (
-        isAxiosError(e) &&
-        (e.response?.status === 403 || e.response?.status === 429)
-      ) {
-        await this.setBlacklist(options.txOrigin);
+      if (isAxiosError(e) && e.response?.status === 403) {
+        await this.setBlacklist(options.txOrigin, SWAAP_403_TTL_S);
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: Encountered blacklisted user=${options.txOrigin}. Adding to local blacklist cache`,
+        );
+      } else if (isAxiosError(e) && e.response?.status === 429) {
+        await this.setBlacklist(options.txOrigin, SWAAP_429_TTL_S);
         this.logger.warn(
           `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
         );
@@ -622,7 +625,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
   async setBlacklist(
     txOrigin: Address,
-    ttl: number = SWAAP_BLACKLIST_TTL_S,
+    ttl: number = SWAAP_403_TTL_S,
   ): Promise<boolean> {
     await this.dexHelper.cache.setex(
       this.dexKey,
