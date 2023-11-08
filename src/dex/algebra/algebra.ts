@@ -165,7 +165,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     token0,
     token1,
   }) => {
-    const logPrefix = `[${this.dexKey}.onPoolCreatedDeleteFromNonExistingSet]`;
+    const logPrefix = `[onPoolCreatedDeleteFromNonExistingSet]`;
     const [_token0, _token1] = this._sortTokens(token0, token1);
     const poolKey = `${_token0}_${_token1}`;
 
