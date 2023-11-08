@@ -15,6 +15,8 @@ import {
 import { Interface } from '@ethersproject/abi';
 import RewardRouterABI from '../../abi/bmx/reward-router-v3.json';
 import YearnTokenVaultABI from '../../abi/bmx/yearn-token-vault.json';
+import WbltHelperABI from '../../abi/bmx/wblt-helper.json';
+import GLPManagerABI from '../../abi/bmx/glp-manager.json';
 import ERC20ABI from '../../abi/erc20.json';
 import { BigNumber } from 'ethers';
 import { SimpleExchange } from '../simple-exchange';
@@ -35,6 +37,8 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
   protected bmxGasCost = 300 * 1000; // TODO: check
   public static rewardRouterInterface = new Interface(RewardRouterABI);
   public static wbltInterface = new Interface(YearnTokenVaultABI);
+  public static wbltHelperInterface = new Interface(WbltHelperABI);
+  public static glpManagerInterface = new Interface(GLPManagerABI);
 
   /*** GMX members ***/
   protected pool: GMXEventPool | null = null;
@@ -151,48 +155,43 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
     const destPoolIdentifier = `${this.dexKey}_${destAddress}`;
     const pools = [srcPoolIdentifier, destPoolIdentifier];
     if (limitPools && pools.some(p => !limitPools.includes(p))) return null;
-
+    const unitVolume = getBigIntPow(srcToken.decimals);
     if (
       srcAddress.toLowerCase() === this.params.wblt.toLowerCase() ||
       destAddress.toLowerCase() === this.params.wblt.toLowerCase()
     ) {
       // handle WBLT deposit/withdrawal estimations
-      if (srcAddress.toLowerCase() === this.params.wblt.toLowerCase()) {
-        // TODO: Simulate withdrawing
-        return [
-          {
-            prices: amounts,
-            unit: BigInt(1e18),
-            gasCost: this.bmxGasCost,
-            exchange: this.dexKey,
-            data: {},
-            poolAddresses: [this.params.vault],
-          },
-        ];
-      } else {
-        const unitVolume = getBigIntPow(srcToken.decimals);
-        const prices = await this.pool.buyWBLTAmountsOut(
-          srcAddress,
-          this.params.wblt.toLowerCase(),
-          [unitVolume, ...amounts],
-          blockNumber,
-        );
+      const prices =
+        srcAddress.toLowerCase() === this.params.wblt.toLowerCase()
+          ? // Estimate WBLT withdrawal
+            await this.pool.sellWBLTAmountsOut(
+              destAddress,
+              this.params.wblt.toLowerCase(),
+              [unitVolume, ...amounts],
+              blockNumber,
+            )
+          : // Estimate WBLT deposit
+            await this.pool.buyWBLTAmountsOut(
+              srcAddress,
+              this.params.wblt.toLowerCase(),
+              [unitVolume, ...amounts],
+              blockNumber,
+            );
 
-        if (!prices) return null;
+      if (!prices) return null;
 
-        return [
-          {
-            prices: prices.slice(1),
-            unit: prices[0],
-            gasCost: this.bmxGasCost,
-            exchange: this.dexKey,
-            data: {},
-            poolAddresses: [this.params.vault],
-          },
-        ];
-      }
+      return [
+        {
+          prices: prices.slice(1),
+          unit: prices[0],
+          gasCost: this.bmxGasCost,
+          exchange: this.dexKey,
+          data: {},
+          poolAddresses: [this.params.vault],
+        },
+      ];
     } else {
-      const unitVolume = getBigIntPow(srcToken.decimals);
+      // Estimate normal vault swap
       const prices = await this.pool.getAmountOut(
         srcAddress,
         destAddress,
@@ -220,6 +219,8 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD; // TODO
   }
 
+  // Encode params required by the exchange adapter
+  // Used for multiSwap, buy & megaSwap
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -229,12 +230,14 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
-      targetExchange: this.params.vault, // TODO
+      targetExchange: this.params.vault,
       payload: '0x',
       networkFee: '0',
     };
   }
 
+  // Encode call data used by simpleSwap like routers
+  // Used for simpleSwap & simpleBuy
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -243,46 +246,30 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
     data: GMXData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    // Withdraw WBLT
     if (srcToken.toLowerCase() === this.params.wblt.toLowerCase()) {
-      // TODO Withdraw WBLT
-      const withdrawCalldata = BMX.wbltInterface.encodeFunctionData(
-        'withdraw()',
-        [],
+      const approveWBLTParam = await this.getApproveSimpleParam(
+        this.params.wblt,
+        this.params.wbltHelper,
+        srcAmount,
       );
 
-      const approveBLTParam = await this.getApproveSimpleParam(
-        this.params.stakedGLP,
-        this.params.glpManager,
-        destAmount,
+      const withdrawCalldata = BMX.wbltHelperInterface.encodeFunctionData(
+        'withdraw',
+        [destToken, srcAmount, destAmount],
       );
 
-      const unstakeAndRedeemGlpCalldata =
-        BMX.rewardRouterInterface.encodeFunctionData('unstakeAndRedeemGlp', [
-          destToken,
-          destAmount,
-          BigNumber.from('0'),
-          BigNumber.from('0'), //TODO: GLP threshold in DEXParams
-        ]);
-
-      const valuesToSend = ['0', ...approveBLTParam.values, '0'];
+      const valuesToSend = [...approveWBLTParam.values, '0'];
 
       return {
-        callees: [
-          this.params.wblt,
-          ...approveBLTParam.callees,
-          this.params.rewardRouter,
-        ],
-        calldata: [
-          withdrawCalldata,
-          ...approveBLTParam.calldata,
-          unstakeAndRedeemGlpCalldata,
-        ],
+        callees: [...approveWBLTParam.callees, this.params.wbltHelper],
+        calldata: [...approveWBLTParam.calldata, withdrawCalldata],
         values: valuesToSend,
         networkFee: '0',
       };
     }
+    // Deposit WBLT
     if (destToken.toLowerCase() === this.params.wblt.toLowerCase()) {
-      // Deposit WBLT
       const approveSrcTokenParam = await this.getApproveSimpleParam(
         srcToken,
         this.params.glpManager,
@@ -294,7 +281,7 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
           srcToken,
           srcAmount,
           BigNumber.from('0'),
-          BigNumber.from('0'), //TODO: GLP threshold in DEXParams
+          BigNumber.from('0'),
         ]);
 
       const approveBLTParam = await this.getApproveSimpleParam(
@@ -350,6 +337,10 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
     };
   }
 
+  // This is called once before getTopPoolsForToken is
+  // called for multiple tokens. This can be helpful to
+  // update common state required for calculating
+  // getTopPoolsForToken.
   async updatePoolState(): Promise<void> {
     if (!this.supportedTokens.length) {
       const tokenAddresses = await GMXEventPool.getWhitelistedTokens(
@@ -380,6 +371,11 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
         address: t,
         decimals: tokenDecimals[i],
       }));
+      // Add WBLT to the list
+      this.supportedTokens.push({
+        address: this.params.wblt,
+        decimals: 18,
+      });
     }
 
     const erc20BalanceCalldata = BMX.erc20Interface.encodeFunctionData(
@@ -419,7 +415,6 @@ export class BMX extends SimpleExchange implements IDex<GMXData> {
     const tokenAddress = _tokenAddress.toLowerCase();
     if (!this.supportedTokens.some(t => t.address === tokenAddress)) return [];
     return [
-      // TODO: add WBLT case
       {
         exchange: this.dexKey,
         address: this.params.vault,

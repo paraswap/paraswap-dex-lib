@@ -1,6 +1,6 @@
 import { DeepReadonly } from 'ts-essentials';
-import { Lens, lens } from '../../lens';
-import { Address, Log, Logger, MultiCallInput } from '../../types';
+import { lens } from '../../lens';
+import { Address, Logger, MultiCallInput } from '../../types';
 import { ComposedEventSubscriber } from '../../composed-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState, DexParams, PoolConfig } from './types';
@@ -11,10 +11,7 @@ import { Vault } from './vault';
 import { USDG } from './usdg';
 import { Contract } from 'web3-eth-contract';
 import ReaderABI from '../../abi/gmx/reader.json';
-import GLPManagerABI from '../../abi/bmx/glp-manager.json';
 import { BMX } from './bmx';
-import { ethers } from 'ethers';
-import { generateConfig } from '../../config';
 
 const MAX_AMOUNT_IN_CACHE_TTL = 5 * 60;
 
@@ -22,10 +19,11 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
   PRICE_PRECISION = 10n ** 30n;
   USDG_DECIMALS = 18;
   BASIS_POINTS_DIVISOR = 10000n;
+  DEGRADATION_COEFFICIENT = 10n ** 18n;
 
   vault: Vault<PoolState>;
   reader: Contract;
-  glpManager: Contract;
+  glpManager: Address;
 
   constructor(
     parentName: string,
@@ -117,10 +115,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
       ReaderABI as any,
       config.readerAddress,
     );
-    this.glpManager = new this.dexHelper.web3Provider.eth.Contract(
-      GLPManagerABI as any,
-      config.glpManager,
-    );
+    this.glpManager = config.glpManager;
   }
 
   async getStateOrGenerate(blockNumber: number): Promise<Readonly<PoolState>> {
@@ -152,36 +147,19 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     return BigInt(maxAmount);
   }
 
-  async getAumInUsdg(): Promise<bigint> {
-    const cacheKey = 'bmx_aumInUsdg';
-    const aumInUsdgCached = await this.dexHelper.cache.get(
+  async getWbltFreeFundsAndAumInUsdg(
+    wblt: Address,
+    maximise: Boolean,
+    blockNumber: number,
+  ): Promise<bigint[]> {
+    const cacheKey = 'bmx_auimInUsdgAndFreeFunds';
+    const auimInUsdgAndFreeFunds = await this.dexHelper.cache.get(
       this.parentName,
       this.network,
       cacheKey,
     );
-    if (aumInUsdgCached) return BigInt(aumInUsdgCached);
-
-    const aumInUsdg: string = await this.glpManager.methods
-      .getAumInUsdg(true)
-      .call();
-    this.dexHelper.cache.setex(
-      this.parentName,
-      this.network,
-      cacheKey,
-      MAX_AMOUNT_IN_CACHE_TTL,
-      aumInUsdg,
-    );
-    return BigInt(aumInUsdg);
-  }
-
-  async getWbltFreeFunds(wblt: Address, blockNumber: number): Promise<bigint> {
-    const cacheKey = 'bmx_wbltFreeFunds';
-    const wbltFreeFundsCached = await this.dexHelper.cache.get(
-      this.parentName,
-      this.network,
-      cacheKey,
-    );
-    if (wbltFreeFundsCached) return BigInt(wbltFreeFundsCached);
+    if (auimInUsdgAndFreeFunds)
+      return auimInUsdgAndFreeFunds.split(',').map(a => BigInt(a));
 
     let multicallCalldata = [];
 
@@ -206,6 +184,13 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     multicallCalldata.push({
       callData: BMX.wbltInterface.encodeFunctionData('totalAssets', []),
       target: wblt,
+    });
+
+    multicallCalldata.push({
+      callData: BMX.glpManagerInterface.encodeFunctionData('getAumInUsdg', [
+        maximise,
+      ]),
+      target: this.glpManager,
     });
 
     const results = (
@@ -234,36 +219,39 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
         .decodeFunctionResult('totalAssets', results[3])
         .toString(),
     );
-    const provider = new ethers.providers.JsonRpcProvider(
-      generateConfig(this.network).privateHttpProvider,
-      this.network,
+    let aumInUsdg = BigInt(
+      BMX.glpManagerInterface
+        .decodeFunctionResult('getAumInUsdg', results[4])
+        .toString(),
     );
+
     let blockTimestamp = BigInt(
-      (await provider.getBlock(blockNumber)).timestamp,
+      (await this.dexHelper.web3Provider.eth.getBlock(blockNumber)).timestamp,
     );
-    const DEGRADATION_COEFFICIENT = BigInt(1e18);
 
     let lockedFundsRatio =
       (blockTimestamp - lastReport) * lockedProfitDegradation;
 
     let calculatedLockedProfit;
-    if (lockedFundsRatio < DEGRADATION_COEFFICIENT) {
+    if (lockedFundsRatio < this.DEGRADATION_COEFFICIENT) {
       calculatedLockedProfit =
         lockedProfit -
-        (lockedFundsRatio * lockedProfit) / DEGRADATION_COEFFICIENT;
+        (lockedFundsRatio * lockedProfit) / this.DEGRADATION_COEFFICIENT;
     } else {
       calculatedLockedProfit = 0n;
     }
 
     let wbltFreeFunds = totalAssets - calculatedLockedProfit;
+    let cacheValue = `${wbltFreeFunds.toString()},${aumInUsdg.toString()}`;
     this.dexHelper.cache.setex(
       this.parentName,
       this.network,
       cacheKey,
       MAX_AMOUNT_IN_CACHE_TTL,
-      wbltFreeFunds.toString(),
+      cacheValue,
     );
-    return BigInt(wbltFreeFunds);
+
+    return [wbltFreeFunds, aumInUsdg];
   }
 
   async buyWBLTAmountsOut(
@@ -272,8 +260,11 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     _amountsIn: bigint[],
     blockNumber: number,
   ): Promise<bigint[] | null> {
-    const aumInUsdg = await this.getAumInUsdg();
-    const wbltFreeFunds = await this.getWbltFreeFunds(_wblt, blockNumber);
+    const [wbltFreeFunds, aumInUsdg] = await this.getWbltFreeFundsAndAumInUsdg(
+      _wblt,
+      true,
+      blockNumber,
+    );
     const state = await this.getStateOrGenerate(blockNumber);
     const priceIn = this.vault.getMinPrice(state, _tokenIn);
     const tokenInDecimals = this.vault.tokenDecimals[_tokenIn];
@@ -286,6 +277,7 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
       let feeBasisPoints;
       {
         let usdgAmount = (_amountIn * priceIn) / this.PRICE_PRECISION;
+        if (usdgAmount == 0n) return 0n;
         usdgAmount = (usdgAmount * USDGUnit) / tokenInUnit;
 
         feeBasisPoints = this.vault.getFeeBasisPoints(
@@ -313,6 +305,43 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
       let wbltAmount = (bltMintAmount * wbltTotalSupply) / wbltFreeFunds;
 
       return wbltAmount;
+    });
+  }
+
+  async sellWBLTAmountsOut(
+    _tokenOut: Address,
+    _wblt: Address,
+    _amountsIn: bigint[],
+    blockNumber: number,
+  ): Promise<bigint[] | null> {
+    const [wbltFreeFunds, aumInUsdg] = await this.getWbltFreeFundsAndAumInUsdg(
+      _wblt,
+      false,
+      blockNumber,
+    );
+    const state = await this.getStateOrGenerate(blockNumber);
+    const priceOut = this.vault.getMaxPrice(state, _tokenOut);
+    return _amountsIn.map(_amountIn => {
+      let value = (_amountIn * wbltFreeFunds) / state.wblt.totalSupply; // too small
+      if (value == 0n) return 0n;
+      let usdgAmount = (value * aumInUsdg) / state.glp.totalSupply; // too big
+      let redemptionAmount = (usdgAmount * this.PRICE_PRECISION) / priceOut;
+      const tokenOutDecimals = this.vault.tokenDecimals[_tokenOut];
+      const tokenInUnit = BigInt(10 ** 18);
+      const tokenOutUnit = BigInt(10 ** tokenOutDecimals);
+      let amountOut = (redemptionAmount * tokenOutUnit) / tokenInUnit;
+      let feeBasisPoints = this.vault.getFeeBasisPoints(
+        state,
+        _tokenOut,
+        usdgAmount,
+        this.vault.mintBurnBasisPoints,
+        this.vault.taxBasisPoints,
+        false,
+      );
+      let afterFeeAmount =
+        (amountOut * (this.BASIS_POINTS_DIVISOR - feeBasisPoints)) /
+        this.BASIS_POINTS_DIVISOR;
+      return afterFeeAmount;
     });
   }
 
