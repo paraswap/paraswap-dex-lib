@@ -176,7 +176,7 @@ export class PancakeswapV3
     token1,
     fee,
   }) => {
-    const logPrefix = `[onPoolCreatedDeleteFromNonExistingSet]`;
+    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
     const poolKey = `${_token0}_${_token1}_${fee}`;
 
