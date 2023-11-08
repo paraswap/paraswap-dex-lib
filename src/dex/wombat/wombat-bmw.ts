@@ -38,7 +38,7 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
       pool: Address,
       asset2TokenMap: Map<Address, Address>,
       blockNumber: number,
-    ) => void,
+    ) => Promise<void>,
   ) {
     super(
       `${dexKey} ${name}`,
@@ -151,10 +151,12 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
       pool2AssetInfo.get(pool)!.set(lpToken, underlyingToken);
     }
 
+    const promises: Promise<void>[] = [];
     pool2AssetInfo.forEach((asset2TokenMap, pool) => {
       bmwState.pools.push(pool);
-      this.onAssetAdded(pool, asset2TokenMap, blockNumber);
+      promises.push(this.onAssetAdded(pool, asset2TokenMap, blockNumber));
     });
+    await Promise.all(promises);
 
     return bmwState;
   }
@@ -189,7 +191,7 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
       .decodeFunctionResult('underlyingToken', returnData[1])[0]
       .toLowerCase();
 
-    this.onAssetAdded(
+    await this.onAssetAdded(
       pool,
       new Map<Address, Address>().set(lpToken, underlyingToken),
       log.blockNumber,

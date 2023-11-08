@@ -30,7 +30,6 @@ import { WombatQuoter } from './wombat-quoter';
 import { WombatBmw } from './wombat-bmw';
 import { fromWad } from './utils';
 import { WombatPool } from './wombat-pool';
-import { UniswapV2 } from '../uniswap-v2/uniswap-v2';
 
 export class Wombat extends SimpleExchange implements IDex<WombatData> {
   // export class Wombat implements IDex<WombatData> {
@@ -94,11 +93,11 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     }
   }
 
-  onAssetAdded = (
+  onAssetAdded = async (
     pool: Address,
     asset2TokenMap: Map<Address, Address>,
     blockNumber: number,
-  ): void => {
+  ): Promise<void> => {
     if (!this.pools[pool]) {
       this.pools[pool] = new WombatPool(
         this.dexKey,
@@ -107,6 +106,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
         pool,
         asset2TokenMap,
       );
+      await this.pools[pool].getState('latest', true);
     } else {
       this.pools[pool].addAssets(asset2TokenMap);
     }
@@ -134,7 +134,6 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
         srcToken.address.toLowerCase(),
         destToken.address.toLowerCase(),
         blockNumber,
-        LIQUIDITY_THRESHOLD_IN_USD,
       )
     ).map(p => this.getPoolIdentifier(p));
   }
