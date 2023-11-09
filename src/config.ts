@@ -365,6 +365,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs: [],
     adapterAddresses: {
       BaseAdapter01: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
+      // BaseAdapter02 is implemented by Morphex
+      // repo: https://github.com/pbnather/morphex-wblt-helper/tree/paraswapAdapter
+      BaseAdapter02: '0xfF21c6B215d5cBA2e260C302283Ea9F29dA95264',
       BaseBuyAdapter: '0xB11bCA7B01b425afD0743A4D77B4f593883f94C0',
     },
     uniswapV2ExchangeRouterAddress:

@@ -29,8 +29,10 @@ export const Adapters: {
   [Network.BASE]: {
     [SwapSide.SELL]: [
       {
-        name: 'BaseAdapter01',
-        index: 6, // TODO: there is no BMX adapter
+        // Implemented by Morphex
+        // repo: https://github.com/pbnather/morphex-wblt-helper/tree/paraswapAdapter
+        name: 'BaseAdapter02',
+        index: 1,
       },
     ],
   },

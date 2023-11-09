@@ -36,8 +36,8 @@ describe('BMX E2E', () => {
         SwapSide.SELL,
         [
           ContractMethod.simpleSwap,
-          // ContractMethod.multiSwap,
-          // ContractMethod.megaSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
         ],
       ],
     ]);
@@ -112,8 +112,8 @@ describe('BMX E2E', () => {
         SwapSide.SELL,
         [
           ContractMethod.simpleSwap,
-          // ContractMethod.multiSwap,
-          // ContractMethod.megaSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
         ],
       ],
     ]);
