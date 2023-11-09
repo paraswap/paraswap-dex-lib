@@ -29,6 +29,8 @@ import {
   SwaapV2APIParameters,
   SwaapV2QuoteError,
   TokensMap,
+  SwaapV2NotificationRequest,
+  SwaapV2NotificationResponse,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, SwaapV2Config } from './config';
@@ -59,6 +61,8 @@ import {
   SWAAP_ORDER_TYPE_SELL,
   SWAAP_ORDER_TYPE_BUY,
   SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
+  SWAAP_BANNED_CODE,
+  SWAAP_NOTIFY_ENDPOINT,
 } from './constants';
 import { getPoolIdentifier, normalizeTokenAddress, getPairName } from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
@@ -596,7 +600,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
             normalizedSrcToken.address,
             normalizedDestToken.address,
           );
-          await this.restrictPool(poolIdentifier);
+          var message = 'Unknown error';
+          if (e instanceof Error) {
+            message = `${e.name}: ${e.message}`;
+          }
+          await this.restrictPool(message, poolIdentifier);
         }
       }
 
@@ -604,7 +612,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     }
   }
 
-  async restrictPool(poolIdentifier: string): Promise<void> {
+  async restrictPool(message: string, poolIdentifier: string): Promise<void> {
     this.logger.warn(
       `${this.dexKey}-${this.network}: ${poolIdentifier} was restricted for ${SWAAP_POOL_RESTRICT_TTL_S} sec. due to fails`,
     );
@@ -615,17 +623,20 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       poolIdentifier,
       Date.now().toString(),
     );
-  }
 
-  async restrict(ttl: number = SWAAP_POOL_RESTRICT_TTL_S): Promise<boolean> {
-    await this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      SWAAP_RESTRICTED_CACHE_KEY,
-      ttl,
-      'true',
-    );
-    return true;
+    this.rateFetcher
+      .notify(SWAAP_BANNED_CODE, message, this.getNotifyReqParams())
+      .then((answer: SwaapV2NotificationResponse) => {
+        if (answer.success) {
+          this.logger.info(`Successfully notified Swaap API`);
+        } else {
+          this.logger.error(`Swaap API was not successfully notified`);
+        }
+      })
+      .catch(e => {
+        // Must never happen
+        this.logger.error(`Swaap API notification failed: ${e}`);
+      });
   }
 
   async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
@@ -963,6 +974,10 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
   getQuoteReqParams(): SwaapV2APIParameters {
     return this.getAPIReqParams(SWAAP_RFQ_QUOTE_ENDPOINT, 'POST');
+  }
+
+  getNotifyReqParams(): SwaapV2APIParameters {
+    return this.getAPIReqParams(SWAAP_NOTIFY_ENDPOINT, 'POST');
   }
 
   getTokensReqParams(): SwaapV2APIParameters {

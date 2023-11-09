@@ -20,6 +20,8 @@ export const SWAAP_RFQ_PRICES_ENDPOINT = 'prices';
 
 export const SWAAP_RFQ_QUOTE_ENDPOINT = 'quote';
 
+export const SWAAP_NOTIFY_ENDPOINT = 'notify';
+
 export const SWAAP_RFQ_TOKENS_ENDPOINT = 'tokens';
 
 export const SWAAP_403_TTL_S = 60 * 60 * 24; // 24 hours
@@ -42,3 +44,9 @@ export const SWAAP_ORDER_TYPE_BUY = 2;
 
 export const SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION =
   new BigNumber('0.001');
+
+export const SWAAP_NOTIFY_TIMEOUT_MS = 2000;
+
+export const SWAAP_NOTIFICATION_ORIGIN = 'paraswap';
+
+export const SWAAP_BANNED_CODE = 1;

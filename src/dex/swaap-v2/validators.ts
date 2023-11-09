@@ -126,3 +126,9 @@ export const getQuoteResponseValidator = joi
     success: joi.boolean().required(),
   })
   .unknown(true);
+
+export const notifyResponseValidator = joi
+  .object({
+    success: joi.boolean().required(),
+  })
+  .unknown(true);

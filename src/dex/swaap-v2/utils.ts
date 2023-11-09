@@ -1,5 +1,5 @@
 import { Address } from '../../types';
-import { CACHE_PREFIX, ETHER_ADDRESS, NULL_ADDRESS } from '../../constants';
+import { ETHER_ADDRESS, NULL_ADDRESS } from '../../constants';
 
 export const getIdentifierPrefix = (
   dexKey: string,

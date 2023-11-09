@@ -11,14 +11,21 @@ import {
   SwaapV2OrderType,
   SwaapV2TokensResponse,
   TokensMap,
+  SwaapV2NotificationRequest,
+  SwaapV2NotificationResponse,
 } from './types';
 import {
   priceLevelsResponseValidator,
   getQuoteResponseValidator,
   getTokensResponseValidator,
+  notifyResponseValidator,
 } from './validators';
 import { normalizeTokenAddress } from './utils';
-import { SWAAP_RFQ_QUOTE_TIMEOUT_MS } from './constants';
+import {
+  SWAAP_RFQ_QUOTE_TIMEOUT_MS,
+  SWAAP_NOTIFY_TIMEOUT_MS,
+  SWAAP_NOTIFICATION_ORIGIN,
+} from './constants';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 
 export class RateFetcher {
@@ -205,6 +212,49 @@ export class RateFetcher {
         guaranteed_price: quoteResp.guaranteed_price,
         success: quoteResp.success,
         recipient: quoteResp.recipient,
+      };
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
+  }
+
+  async notify(
+    code: number,
+    message: string,
+    requestParameters: RequestConfig,
+  ): Promise<SwaapV2NotificationResponse> {
+    const _payload: SwaapV2NotificationRequest = {
+      origin: SWAAP_NOTIFICATION_ORIGIN,
+      code: code,
+      message: message,
+    };
+
+    try {
+      let payload: RequestConfig = {
+        data: _payload,
+        ...requestParameters,
+        timeout: SWAAP_NOTIFY_TIMEOUT_MS,
+      };
+
+      this.logger.info(
+        'Notify Request:',
+        JSON.stringify(payload).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
+      const { data } = await this.dexHelper.httpRequest.request<unknown>(
+        payload,
+      );
+      this.logger.info(
+        'Notify Response: ',
+        JSON.stringify(data).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
+      const notifyResp = validateAndCast<SwaapV2NotificationResponse>(
+        data,
+        notifyResponseValidator,
+      );
+
+      return {
+        success: notifyResp.success,
       };
     } catch (e) {
       this.logger.error(e);
