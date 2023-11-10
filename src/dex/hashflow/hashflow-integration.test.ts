@@ -10,6 +10,7 @@ import {
   checkPoolPrices,
   checkPoolsLiquidity,
   checkConstantPoolPrices,
+  sleep,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
@@ -104,6 +105,8 @@ describe('Hashflow', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       hashflow = new Hashflow(network, dexKey, dexHelper);
+      await hashflow.initializePricing(0);
+      await sleep(5000);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
