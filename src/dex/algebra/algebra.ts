@@ -320,7 +320,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     if (pool !== null) {
       const allEventPools = Object.values(this.eventPools);
       // if pool was created, delete pool record from non existing set
-      this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [key]);
+      this.dexHelper.cache
+        .zrem(this.notExistingPoolSetKey, [key])
+        .catch(() => {});
       this.logger.info(
         `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
           // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
