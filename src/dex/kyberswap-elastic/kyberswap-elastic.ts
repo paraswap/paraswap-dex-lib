@@ -326,7 +326,14 @@ export class KyberswapElastic
 
       const [token0] = this._sortTokens(_srcAddress, _destAddress);
 
-      const isToken0 = token0 === _srcAddress ? true : false;
+      const isToken0 =
+        side == SwapSide.SELL
+          ? token0 === _srcAddress
+            ? true
+            : false
+          : token0 === _srcAddress
+          ? false
+          : true;
 
       const result = await Promise.all(
         poolsToUse.poolWithState.map(async (pool, i) => {
