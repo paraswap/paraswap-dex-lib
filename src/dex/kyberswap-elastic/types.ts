@@ -93,7 +93,7 @@ export type KyberElasticSellParam = {
   recipient: Address;
   deadline: string;
   amountIn: NumberAsString;
-  amountOutMinimum: NumberAsString;
+  minAmountOut: NumberAsString;
 };
 
 export type KyberElasticBuyParam = {
@@ -101,12 +101,14 @@ export type KyberElasticBuyParam = {
   recipient: Address;
   deadline: string;
   amountOut: NumberAsString;
-  amountInMaximum: NumberAsString;
+  maxAmountIn: NumberAsString;
 };
 
 export type KyberElasticParam = KyberElasticSellParam | KyberElasticBuyParam;
 
 export enum KyberElasticFunctions {
+  swapExactInput = 'swapExactInput',
+  swapExactOutput = 'swapExactOutput',
   quoteExactInputSingle = 'quoteExactInputSingle',
   quoteExactOutputSingle = 'quoteExactOutputSingle',
 }

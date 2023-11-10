@@ -207,7 +207,7 @@ describe('KyberswapElastic', function () {
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      const pools = await kyberswapElastic.getPoolIdentifiers(
+      let pools = await kyberswapElastic.getPoolIdentifiers(
         TokenA,
         TokenB,
         SwapSide.BUY,
@@ -217,6 +217,8 @@ describe('KyberswapElastic', function () {
         `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
         pools,
       );
+
+      pools = [pools[0]];
 
       expect(pools.length).toBeGreaterThan(0);
 

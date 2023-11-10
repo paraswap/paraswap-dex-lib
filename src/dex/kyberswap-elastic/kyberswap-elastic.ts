@@ -499,25 +499,25 @@ export class KyberswapElastic
   ): Promise<SimpleExchangeParam> {
     const swapFunction =
       side === SwapSide.SELL
-        ? KyberElasticFunctions.quoteExactInputSingle
-        : KyberElasticFunctions.quoteExactOutputSingle;
+        ? KyberElasticFunctions.swapExactInput
+        : KyberElasticFunctions.swapExactOutput;
 
     const path = this._encodePath(data.path, side);
     const swapFunctionParams: KyberElasticParam =
       side === SwapSide.SELL
         ? {
+            path,
             recipient: this.augustusAddress,
             deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
-            amountOutMinimum: destAmount,
-            path,
+            minAmountOut: destAmount,
           }
         : {
+            path,
             recipient: this.augustusAddress,
             deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
-            amountInMaximum: srcAmount,
-            path,
+            maxAmountIn: srcAmount,
           };
     const swapData = this.routerIface.encodeFunctionData(swapFunction, [
       swapFunctionParams,
