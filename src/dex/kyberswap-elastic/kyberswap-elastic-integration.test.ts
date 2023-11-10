@@ -484,8 +484,8 @@ describe('KyberswapElastic', function () {
             KyberElasticFunctions.quoteExactOutputSingle,
             blockNumber,
             price.prices,
-            TokenB.address,
             TokenA.address,
+            TokenB.address,
             swapFeeUnits,
             amountsBuy,
           );
