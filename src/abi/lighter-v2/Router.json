@@ -1,0 +1,1009 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_factoryAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_wethAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2ParseCallData_ByteSizeLimit32",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2ParseCallData_CannotReadPastEndOfCallData",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2ParseCallData_InvalidFunctionSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2ParseCallData_InvalidMantissa",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2ParseCallData_InvalidPaddedNumber",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Quoter_InvalidOrderBookId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Quoter_InvalidSwapExactMultiRequestCombination",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Quoter_NotEnoughLiquidity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Router_InsufficientWETH9",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Router_InvalidOrderBookId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Router_NativeRefundFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Router_NotEnoughNative",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Router_ReceiveNotSupported",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Router_SwapExactOutputMultiTooMuchRequested",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Router_TransferCallbackCallerIsNotOrderBook",
+    "type": "error"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "fallback"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint32",
+        "name": "orderId",
+        "type": "uint32"
+      }
+    ],
+    "name": "cancelLimitOrder",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "size",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "orderId",
+        "type": "uint32[]"
+      }
+    ],
+    "name": "cancelLimitOrderBatch",
+    "outputs": [
+      {
+        "internalType": "bool[]",
+        "name": "isCanceled",
+        "type": "bool[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "amount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "priceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      }
+    ],
+    "name": "createFoKOrder",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "orderId",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "amount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "priceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      }
+    ],
+    "name": "createIoCOrder",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "orderId",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "amount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "priceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint32",
+        "name": "hintId",
+        "type": "uint32"
+      }
+    ],
+    "name": "createLimitOrder",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "orderId",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "size",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "amount0Base",
+        "type": "uint64[]"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "priceBase",
+        "type": "uint64[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "isAsk",
+        "type": "bool[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "hintId",
+        "type": "uint32[]"
+      }
+    ],
+    "name": "createLimitOrderBatch",
+    "outputs": [
+      {
+        "internalType": "uint32[]",
+        "name": "orderId",
+        "type": "uint32[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "factory",
+    "outputs": [
+      {
+        "internalType": "contract IFactory",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint32",
+        "name": "limit",
+        "type": "uint32"
+      }
+    ],
+    "name": "getLimitOrders",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isAsk",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "ids",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "owners",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amount0s",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "prices",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct IOrderBook.OrderQueryItem",
+        "name": "askOrders",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isAsk",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "ids",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "owners",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amount0s",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "prices",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct IOrderBook.OrderQueryItem",
+        "name": "bidOrders",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint32",
+        "name": "startOrderId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint32",
+        "name": "limit",
+        "type": "uint32"
+      }
+    ],
+    "name": "getPaginatedOrders",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isAsk",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "ids",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "owners",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amount0s",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "prices",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct IOrderBook.OrderQueryItem",
+        "name": "orderData",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "getQuoteForExactInput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "quotedInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quotedOutput",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isAsk",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "orderBookId",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ISwapMultiRequest.SwapRequest[]",
+        "name": "swapRequests",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "exactInput",
+        "type": "uint256"
+      }
+    ],
+    "name": "getQuoteForExactInputMulti",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "quotedInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quotedOutput",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "getQuoteForExactOutput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "quotedInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quotedOutput",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isAsk",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "orderBookId",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ISwapMultiRequest.SwapRequest[]",
+        "name": "swapRequests",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "exactOutput",
+        "type": "uint256"
+      }
+    ],
+    "name": "getQuoteForExactOutputMulti",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "quotedInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quotedOutput",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "debitTokenAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "contract IERC20Minimal",
+        "name": "debitToken",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_data",
+        "type": "bytes"
+      }
+    ],
+    "name": "lighterV2TransferCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "priceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      }
+    ],
+    "name": "suggestHintId",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "isAsk",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "orderBookId",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct ISwapMultiRequest.SwapRequest[]",
+            "name": "swapRequests",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "exactInput",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutput",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "unwrap",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct ISwapMultiRequest.MultiPathExactInputRequest",
+        "name": "multiPathExactInputRequest",
+        "type": "tuple"
+      }
+    ],
+    "name": "swapExactInputMulti",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "swappedInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "swappedOutput",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "exactInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "unwrap",
+        "type": "bool"
+      }
+    ],
+    "name": "swapExactInputSingle",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "swappedInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "swappedOutput",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "isAsk",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "orderBookId",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct ISwapMultiRequest.SwapRequest[]",
+            "name": "swapRequests",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "exactOutput",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInput",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "unwrap",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct ISwapMultiRequest.MultiPathExactOutputRequest",
+        "name": "multiPathExactOutputRequest",
+        "type": "tuple"
+      }
+    ],
+    "name": "swapExactOutputMulti",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "swappedInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "swappedOutput",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "exactOutput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "unwrap",
+        "type": "bool"
+      }
+    ],
+    "name": "swapExactOutputSingle",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "swappedInput",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "swappedOutput",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint32",
+        "name": "orderId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "newAmount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "newPriceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint32",
+        "name": "hintId",
+        "type": "uint32"
+      }
+    ],
+    "name": "updateLimitOrder",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "newOrderId",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "size",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "orderId",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "newAmount0Base",
+        "type": "uint64[]"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "newPriceBase",
+        "type": "uint64[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "hintId",
+        "type": "uint32[]"
+      }
+    ],
+    "name": "updateLimitOrderBatch",
+    "outputs": [
+      {
+        "internalType": "uint32[]",
+        "name": "newOrderId",
+        "type": "uint32[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isAsk",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "orderBookId",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ISwapMultiRequest.SwapRequest[]",
+        "name": "swapRequests",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "validateMultiPathSwap",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "weth9",
+    "outputs": [
+      {
+        "internalType": "contract IWETH9",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]

@@ -1,0 +1,1184 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "_orderBookId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "_token0Address",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_token1Address",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_logSizeTick",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_logPriceTick",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_minToken0BaseAmount",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_minToken1BaseAmount",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Base_ContractBalanceDoesNotMatchSentAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2CreateOrderBook_InvalidMinAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2CreateOrderBook_InvalidTickCombination",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2FlashLoan_InsufficentCallbackTransfer",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_AmountTooSmall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_CannotCancelInactiveOrders",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_CannotEraseHeadOrTailOrders",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_CreatorIdExceedsLimit",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_FoKNotFilled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_InsufficentCallbackTransfer",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_InsufficientClaimableBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_InvalidHintId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_OrderDoesNotExist",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_OrderIdExceedsLimit",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_PriceTooBig",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Order_PriceTooSmall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Owner_CallerCannotCancel",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Swap_NotEnoughLiquidity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Swap_NotEnoughOutput",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Swap_TooMuchRequested",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2TokenTransfer_Failed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Vault_InsufficentCallbackTransfer",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Vault_InvalidClaimAmount",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint32",
+        "name": "id",
+        "type": "uint32"
+      }
+    ],
+    "name": "CancelLimitOrder",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountDelta",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isToken0",
+        "type": "bool"
+      }
+    ],
+    "name": "ClaimableBalanceDecrease",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountDelta",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isToken0",
+        "type": "bool"
+      }
+    ],
+    "name": "ClaimableBalanceIncrease",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint32",
+        "name": "id",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "amount0Base",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "priceBase",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum IOrderBook.OrderType",
+        "name": "orderType",
+        "type": "uint8"
+      }
+    ],
+    "name": "CreateOrder",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount0",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount1",
+        "type": "uint256"
+      }
+    ],
+    "name": "FlashLoan",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint32",
+        "name": "askId",
+        "type": "uint32"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint32",
+        "name": "bidId",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "askOwner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bidOwner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount0",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount1",
+        "type": "uint256"
+      }
+    ],
+    "name": "Swap",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isExactInput",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "swapAmount0",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "swapAmount1",
+        "type": "uint256"
+      }
+    ],
+    "name": "SwapExactAmount",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "CREATOR_ID_THRESHOLD",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "LOG10_TICK_THRESHOLD",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_PRICE",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ORDER_ID_THRESHOLD",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "addressToCreatorId",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "addressToOwnerId",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "id",
+        "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "cancelLimitOrder",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountToClaim",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isToken0",
+        "type": "bool"
+      }
+    ],
+    "name": "claimToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "claimableToken0Balance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "claimableToken1Balance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "amount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "priceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "hintId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "enum IOrderBook.OrderType",
+        "name": "orderType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes",
+        "name": "callbackData",
+        "type": "bytes"
+      }
+    ],
+    "name": "createOrder",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "newOrderId",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "name": "creatorIdToAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountToDeposit",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isToken0",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes",
+        "name": "callbackData",
+        "type": "bytes"
+      }
+    ],
+    "name": "depositToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount0",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "callbackData",
+        "type": "bytes"
+      }
+    ],
+    "name": "flashLoan",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint32",
+        "name": "id",
+        "type": "uint32"
+      }
+    ],
+    "name": "getLimitOrder",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "perfMode_creatorId",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "prev",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "next",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "ownerId",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "amount0Base",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "priceBase",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct IOrderBook.LimitOrder",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "takerOrderAmount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "takerOrderPriceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "makerOrderAmount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "makerOrderPriceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "isTakerAsk",
+        "type": "bool"
+      }
+    ],
+    "name": "getLimitOrderSwapAmounts",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "amount0BaseReturn",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint128",
+        "name": "amount1BaseReturn",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "startOrderId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint32",
+        "name": "limit",
+        "type": "uint32"
+      }
+    ],
+    "name": "getPaginatedOrders",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isAsk",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "ids",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "owners",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amount0s",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "prices",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct IOrderBook.OrderQueryItem",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount0",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint64",
+        "name": "makerAmount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "makerPriceBase",
+        "type": "uint64"
+      }
+    ],
+    "name": "getSwapAmountsForToken0",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "swapAmount0",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "swapAmount1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "amount0BaseDelta",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "fullTakerFill",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint64",
+        "name": "makerAmount0Base",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "makerPriceBase",
+        "type": "uint64"
+      }
+    ],
+    "name": "getSwapAmountsForToken1",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "swapAmount0",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "swapAmount1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "amount0BaseDelta",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "fullTakerFill",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "id",
+        "type": "uint32"
+      }
+    ],
+    "name": "isAskOrder",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "id",
+        "type": "uint32"
+      }
+    ],
+    "name": "isOrderActive",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "minToken0BaseAmount",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "minToken1BaseAmount",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "orderBookId",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "orderIdCounter",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "name": "ownerIdToAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceDivider",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceMultiplier",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceTick",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "sizeTick",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "priceBase",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      }
+    ],
+    "name": "suggestHintId",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "isAsk",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isExactInput",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "exactAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expectedAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "callbackData",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapExactSingle",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token0",
+    "outputs": [
+      {
+        "internalType": "contract IERC20Minimal",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token1",
+    "outputs": [
+      {
+        "internalType": "contract IERC20Minimal",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

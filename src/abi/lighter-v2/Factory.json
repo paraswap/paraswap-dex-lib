@@ -1,0 +1,442 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2CreateOrderBook_InvalidTokenPair",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2CreateOrderBook_OrderBookAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2CreateOrderBook_OrderBookIdExceedsLimit",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Factory_CallerNotOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LighterV2Factory_OwnerCannotBeZero",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "orderBookAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token0",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token1",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "logSizeTick",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "logPriceTick",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "minToken0BaseAmount",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "minToken1BaseAmount",
+        "type": "uint128"
+      }
+    ],
+    "name": "OrderBookCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnerChanged",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ORDERBOOK_ID_THRESHOLD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token0",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token1",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "logSizeTick",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "logPriceTick",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "minToken0BaseAmount",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint128",
+        "name": "minToken1BaseAmount",
+        "type": "uint128"
+      }
+    ],
+    "name": "createOrderBook",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "orderBookAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllOrderBooksDetails",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "orderBookAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "orderBookId",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "token0",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token1",
+            "type": "address"
+          },
+          {
+            "internalType": "uint128",
+            "name": "sizeTick",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "priceMultiplier",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "priceDivider",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint64",
+            "name": "minToken0BaseAmount",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint128",
+            "name": "minToken1BaseAmount",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct IFactory.OrderBookDetails[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      }
+    ],
+    "name": "getOrderBookDetailsFromId",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "orderBookAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "orderBookId",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "token0",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token1",
+            "type": "address"
+          },
+          {
+            "internalType": "uint128",
+            "name": "sizeTick",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "priceMultiplier",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "priceDivider",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint64",
+            "name": "minToken0BaseAmount",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint128",
+            "name": "minToken1BaseAmount",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct IFactory.OrderBookDetails",
+        "name": "orderBookDetails",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token0",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token1",
+        "type": "address"
+      }
+    ],
+    "name": "getOrderBookDetailsFromTokenPair",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "orderBookAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "orderBookId",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "token0",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token1",
+            "type": "address"
+          },
+          {
+            "internalType": "uint128",
+            "name": "sizeTick",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "priceMultiplier",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "priceDivider",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint64",
+            "name": "minToken0BaseAmount",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint128",
+            "name": "minToken1BaseAmount",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct IFactory.OrderBookDetails",
+        "name": "orderBookDetails",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "orderBookId",
+        "type": "uint8"
+      }
+    ],
+    "name": "getOrderBookFromId",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token0",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token1",
+        "type": "address"
+      }
+    ],
+    "name": "getOrderBookFromTokenPair",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "orderBookIdCounter",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "setOwner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
