@@ -395,7 +395,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             .toString(),
         );
         if (isInputQuote) {
-          lQty = (lQty * BigInt(10 ** (baseToken.decimals * 2))) /
+          lQty =
+            (lQty * BigInt(10 ** (baseToken.decimals * 2))) /
             (lPrice * BigInt(10 ** quoteToken.decimals));
           rQty =
             (rQty * BigInt(10 ** (baseToken.decimals * 2))) /
@@ -451,7 +452,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           )
         : await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber);
 
-      pools = await Promise.all(pools.map(async (p) => !(await this.isRestrictedPool(p)))).then((res) => pools.filter((_v, i) => res[i]));
+      pools = await Promise.all(
+        pools.map(async p => !(await this.isRestrictedPool(p))),
+      ).then(res => pools.filter((_v, i) => res[i]));
       if (pools.length === 0) {
         return null;
       }
@@ -502,14 +505,16 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         throw new Error(`Empty orderbook for ${pairKey}`);
       }
 
-      const isInputQuote = (clobSide === ClobSide.ASK && side === SwapSide.SELL) || (clobSide === ClobSide.BID && side === SwapSide.BUY);
+      const isInputQuote =
+        (clobSide === ClobSide.ASK && side === SwapSide.SELL) ||
+        (clobSide === ClobSide.BID && side === SwapSide.BUY);
 
       const prices = this.calculateOrderPrice(
         amounts,
         orderbook,
         baseToken,
         quoteToken,
-        isInputQuote
+        isInputQuote,
       );
       const outDecimals =
         clobSide === ClobSide.BID ? baseToken.decimals : quoteToken.decimals;
@@ -576,7 +581,13 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const makerToken = normalizedDestToken;
       const takerToken = normalizedSrcToken;
 
-      const slippageBps = side === SwapSide.SELL ? BigNumber(1).minus(options.slippageFactor).multipliedBy(10000).toFixed(0) : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
+      const slippageBps =
+        side === SwapSide.SELL
+          ? BigNumber(1)
+              .minus(options.slippageFactor)
+              .multipliedBy(10000)
+              .toFixed(0)
+          : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
@@ -725,11 +736,18 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             `${this.dexKey}-${this.network}: failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
           );
         } else {
-          const poolIdentifiers = await this.getPoolIdentifiers(srcToken, destToken, side, 0);
+          const poolIdentifiers = await this.getPoolIdentifiers(
+            srcToken,
+            destToken,
+            side,
+            0,
+          );
           this.logger.warn(
             `${this.dexKey}-${this.network}: protocol is restricted for pools ${poolIdentifiers} due to swap: ${swapIdentifier}`,
           );
-          await Promise.all(poolIdentifiers.map(async (p) => await this.restrictPool(p)));
+          await Promise.all(
+            poolIdentifiers.map(async p => await this.restrictPool(p)),
+          );
         }
       }
 
@@ -818,7 +836,10 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     return `${DEXALOT_RESTRICTED_CACHE_KEY}-${poolIdentifier}`;
   }
 
-  async restrictPool(poolIdentifier: string, ttl: number = DEXALOT_RESTRICT_TTL_S): Promise<boolean> {
+  async restrictPool(
+    poolIdentifier: string,
+    ttl: number = DEXALOT_RESTRICT_TTL_S,
+  ): Promise<boolean> {
     await this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
