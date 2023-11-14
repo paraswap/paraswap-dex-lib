@@ -165,7 +165,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     token0,
     token1,
   }) => {
-    const logPrefix = '[Algebra.onPoolCreatedDeleteFromNonExistingSet]';
+    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
     const poolKey = `${_token0}_${_token1}`;
 
@@ -176,13 +176,19 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     try {
       this.logger.info(
-        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
       );
       // delete pool record from set
-      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+      const result = await this.dexHelper.cache.zrem(
+        this.notExistingPoolSetKey,
+        [poolKey],
+      );
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
+      );
     } catch (error) {
       this.logger.error(
-        `${logPrefix} failed to delete pool from set: ${poolKey}`,
+        `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
         error,
       );
     }
@@ -313,6 +319,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     if (pool !== null) {
       const allEventPools = Object.values(this.eventPools);
+      // if pool was created, delete pool record from non existing set
+      this.dexHelper.cache
+        .zrem(this.notExistingPoolSetKey, [key])
+        .catch(() => {});
       this.logger.info(
         `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
           // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
