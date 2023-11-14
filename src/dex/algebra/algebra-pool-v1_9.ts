@@ -26,7 +26,6 @@ import {
   _reduceTickBitmap,
   _reduceTicks,
 } from '../uniswap-v3/contract-math/utils';
-import { Constants } from './lib/Constants';
 import { Network } from '../../constants';
 import { TickTable } from './lib/TickTable';
 import { TICK_BITMAP_BUFFER, TICK_BITMAP_TO_USE } from './constants';
@@ -368,8 +367,8 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
       blockTimestamp: bigIntify(_state.blockTimestamp),
       globalState,
       liquidity: bigIntify(_state.liquidity),
-      tickSpacing: Constants.TICK_SPACING,
-      maxLiquidityPerTick: Constants.MAX_LIQUIDITY_PER_TICK,
+      tickSpacing: bigIntify(_state.tickSpacing),
+      maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,
       ticks,
       startTickBitmap,
