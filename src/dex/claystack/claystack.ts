@@ -1,3 +1,4 @@
+import { Interface } from '@ethersproject/abi';
 import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
@@ -14,24 +15,35 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { ClaystackData } from './types';
+import { ClaystackData, PoolState, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { ClaystackConfig, Adapters } from './config';
-import { ClaystackEventPool } from './claystack-pool';
+import CSETH_ABI from '../../abi/ERC20.abi.json';
+import CLAYMAIN_ABI from '../../abi/claystack/clayMain.json';
 
 export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
-  protected eventPools: ClaystackEventPool;
+  static readonly csETHIface = new Interface(CSETH_ABI);
+  static readonly clayMainIface = new Interface(CLAYMAIN_ABI);
 
-  readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+  protected config: DexParams;
 
-  readonly isFeeOnTransferSupported = false;
+  readonly hasConstantPriceLargeAmounts = true;
+
+  readonly needWrapNative = false;
+
+  // There aren't actually fees on csETH currently but can be later updated
+  readonly isFeeOnTransferSupported = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(ClaystackConfig);
 
   logger: Logger;
+
+  private state: { blockNumber: number } & PoolState = {
+    blockNumber: 0,
+    totalPooledEther: 0n,
+    totalShares: 0n,
+  };
 
   constructor(
     readonly network: Network,
@@ -40,13 +52,12 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper, dexKey);
+    const config = ClaystackConfig[dexKey][network];
+    this.config = {
+      csETH: config.csETH.toLowerCase(),
+      clayMain: config.clayMain.toLowerCase(),
+    };
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new ClaystackEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
   }
 
   // Initialize pricing is called once in the start of
