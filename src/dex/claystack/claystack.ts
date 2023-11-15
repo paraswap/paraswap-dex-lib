@@ -1,25 +1,26 @@
 import { Interface } from '@ethersproject/abi';
-import { AsyncOrSync } from 'ts-essentials';
-import {
-  Token,
-  Address,
-  ExchangePrices,
-  PoolPrices,
-  AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
-  Logger,
-} from '../../types';
-import { SwapSide, Network } from '../../constants';
-import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
-import { IDexHelper } from '../../dex-helper/idex-helper';
-import { ClaystackData, PoolState, DexParams } from './types';
-import { SimpleExchange } from '../simple-exchange';
-import { ClaystackConfig, Adapters } from './config';
+import { ethers } from 'ethers';
 import CSETH_ABI from '../../abi/ERC20.abi.json';
 import CLAYMAIN_ABI from '../../abi/claystack/clayMain.json';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { ETHER_ADDRESS, Network, SwapSide } from '../../constants';
+import { IDexHelper } from '../../dex-helper/idex-helper';
+import { IDex } from '../../dex/idex';
+import { uint256ToBigInt } from '../../lib/decoders';
+import {
+  AdapterExchangeParam,
+  Address,
+  ExchangePrices,
+  Logger,
+  PoolLiquidity,
+  PoolPrices,
+  SimpleExchangeParam,
+  Token,
+} from '../../types';
+import { Utils, getDexKeysWithNetwork } from '../../utils';
+import { SimpleExchange } from '../simple-exchange';
+import { Adapters, ClaystackConfig } from './config';
+import { ClaystackData, DexParams, PoolState } from './types';
 
 export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
   static readonly csETHIface = new Interface(CSETH_ABI);
@@ -41,8 +42,7 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
 
   private state: { blockNumber: number } & PoolState = {
     blockNumber: 0,
-    totalPooledEther: 0n,
-    totalShares: 0n,
+    exchangeRate: 0n,
   };
 
   constructor(
@@ -58,14 +58,6 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
       clayMain: config.clayMain.toLowerCase(),
     };
     this.logger = dexHelper.getLogger(dexKey);
-  }
-
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
   }
 
   // Returns the list of contract adapters (name and index)
@@ -84,9 +76,26 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+    if (
+      !(
+        srcTokenAddress === this.config.csETH.toLowerCase() &&
+        destTokenAddress === ETHER_ADDRESS.toLowerCase()
+      )
+    ) {
+      return [];
+    }
+    return [this.dexKey + '_' + this.config.csETH];
   }
+
+  protected calcExchangeRate = (amount: bigint): bigint =>
+    (amount * this.state.exchangeRate) /
+    ethers.constants.WeiPerEther.toBigInt();
+
+  protected calcReverseExchangeRate = (amount: bigint): bigint =>
+    (amount * ethers.constants.WeiPerEther.toBigInt()) /
+    this.state.exchangeRate;
 
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
@@ -100,12 +109,75 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<ClaystackData>> {
-    // TODO: complete me!
-    return null;
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+    if (
+      !(
+        srcTokenAddress === this.config.csETH.toLowerCase() &&
+        destTokenAddress === ETHER_ADDRESS.toLowerCase()
+      )
+    ) {
+      return null;
+    }
+    const cached = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      'state',
+    );
+    if (cached) {
+      this.state = Utils.Parse(cached);
+    }
+    if (blockNumber > this.state.blockNumber) {
+      const calls = [
+        {
+          target: this.config.clayMain,
+          callData: Claystack.clayMainIface.encodeFunctionData(
+            'getExchangeRate',
+            [ethers.constants.WeiPerEther],
+          ),
+          decodeFunction: uint256ToBigInt,
+        },
+      ];
+      const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+        true,
+        calls,
+        blockNumber,
+      );
+      this.state = {
+        blockNumber,
+        exchangeRate: results[0].returnData,
+      };
+      this.dexHelper.cache.setex(
+        this.dexKey,
+        this.network,
+        'state',
+        60,
+        Utils.Serialize(this.state),
+      );
+    }
+
+    const calc =
+      srcToken.address.toLowerCase() === ETHER_ADDRESS.toLowerCase() &&
+      destToken.address.toLowerCase() === this.config.csETH
+        ? this.calcExchangeRate
+        : this.calcReverseExchangeRate;
+    return [
+      {
+        unit: calc(1000000000000000000n),
+        prices: amounts.map(calc),
+        data: {},
+        poolAddresses: [this.config.csETH],
+        exchange: this.dexKey,
+        gasCost: 70000,
+        poolIdentifier: this.dexKey,
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(poolPrices: PoolPrices<ClaystackData>): number | number[] {
+  getCalldataGasCost(
+    _poolPrices: PoolPrices<ClaystackData>,
+  ): number | number[] {
     // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
@@ -121,15 +193,9 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
     data: ClaystackData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
-
-    // Encode here the payload for adapter
-    const payload = '';
-
     return {
-      targetExchange: exchange,
-      payload,
+      targetExchange: this.config.clayMain,
+      payload: '0x',
       networkFee: '0',
     };
   }
@@ -146,29 +212,24 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
     data: ClaystackData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { exchange } = data;
-
-    // Encode here the transaction arguments
-    const swapData = '';
-
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      exchange,
-    );
-  }
-
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    if (
+      srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase() &&
+      destToken.toLowerCase() === this.config.csETH
+    ) {
+      return {
+        callees: [this.config.clayMain],
+        calldata: [Claystack.clayMainIface.encodeFunctionData('deposit', [])],
+        values: [srcAmount],
+        networkFee: '0',
+      };
+    } else {
+      return {
+        callees: [],
+        calldata: [],
+        values: ['0'],
+        networkFee: '0',
+      };
+    }
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -177,13 +238,22 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
-  }
-
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+    tokenAddress = tokenAddress.toLowerCase();
+    if (tokenAddress !== this.config.csETH.toLowerCase()) {
+      return [];
+    }
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.config.csETH,
+        connectorTokens: [
+          {
+            decimals: 18,
+            address: this.config.csETH,
+          },
+        ],
+        liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+      },
+    ];
   }
 }

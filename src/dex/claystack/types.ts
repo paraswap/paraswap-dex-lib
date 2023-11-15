@@ -1,8 +1,7 @@
 import { Address } from '../../types';
 
 export type PoolState = {
-  totalPooledEther: bigint;
-  totalShares: bigint;
+  exchangeRate: bigint;
 };
 
 export type ClaystackData = {};
