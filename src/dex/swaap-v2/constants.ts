@@ -30,8 +30,6 @@ export const SWAAP_429_TTL_S = 60 * 60 * 1; // 1 hour
 
 export const SWAAP_POOL_RESTRICT_TTL_S = 60 * 30; // 30 minutes
 
-export const SWAAP_RESTRICTED_CACHE_KEY = 'restricted';
-
 export const GAS_COST_ESTIMATION = 170_000;
 
 export const BATCH_SWAP_SELECTOR = '0x945bcec9';

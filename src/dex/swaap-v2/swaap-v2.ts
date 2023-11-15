@@ -29,7 +29,6 @@ import {
   SwaapV2APIParameters,
   SwaapV2QuoteError,
   TokensMap,
-  SwaapV2NotificationRequest,
   SwaapV2NotificationResponse,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -53,7 +52,6 @@ import {
   SWAAP_429_TTL_S,
   SWAAP_RFQ_TOKENS_ENDPOINT,
   SWAAP_POOL_RESTRICT_TTL_S,
-  SWAAP_RESTRICTED_CACHE_KEY,
   SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS,
   SWAAP_RFQ_TOKENS_CACHES_TTL_S,
   SWAAP_PRICES_CACHE_KEY,
