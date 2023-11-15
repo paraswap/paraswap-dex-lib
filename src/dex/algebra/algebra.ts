@@ -294,6 +294,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           pool!.initRetryAttemptCount = 0;
         },
       });
+
+      if (this.newlyCreatedPoolKeys.has(key)) {
+        this.newlyCreatedPoolKeys.delete(key);
+      }
     } catch (e) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
         /* 
@@ -305,6 +309,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           this.logger.warn(
             `[block=${blockNumber}][Pool=${key}] newly created pool failed to initialise`,
           );
+          this.newlyCreatedPoolKeys.delete(key);
         } else {
           // no need to await we want the set to have the pool key but it's not blocking
           this.dexHelper.cache.zadd(
