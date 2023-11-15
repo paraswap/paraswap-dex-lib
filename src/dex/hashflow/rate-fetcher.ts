@@ -1,14 +1,14 @@
+import { Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher, SkippingRequest } from '../../lib/fetcher/fetcher';
 import { validateAndCast } from '../../lib/validators';
 import { Logger } from '../../types';
 import {
+  HashflowMarketMakersResponse,
   HashflowRateFetcherConfig,
   HashflowRatesResponse,
-  HashflowMarketMakersResponse,
 } from './types';
-import { pricesResponseValidator, marketMakersValidator } from './validators';
-import { Network } from '../../constants';
+import { marketMakersValidator, pricesResponseValidator } from './validators';
 
 export class RateFetcher {
   private rateFetcher: Fetcher<HashflowRatesResponse>;

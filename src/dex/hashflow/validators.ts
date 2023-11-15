@@ -12,17 +12,24 @@ export const levelValidator = joi.array().items(
     }),
     levels: joi.array().items(
       joi.object({
-        level: joi.string().min(1).required(),
-        price: joi.string().min(1).required(),
+        q: joi.string().min(1).required(),
+        p: joi.string().min(1).required(),
       }),
     ),
-    includesFees: joi.boolean().required(),
   }),
 );
 
 export const pricesResponseValidator = joi.object({
   status: joi.string().required(),
-  networkId: joi.number().required(),
+  // networkId: joi.number().required(),
+  baseChain: joi.object({
+    chainType: joi.string().required(),
+    chainId: joi.number().required(),
+  }),
+  quoteChain: joi.object({
+    chainType: joi.string().required(),
+    chainId: joi.number().required(),
+  }),
   levels: joi.object().pattern(joi.string().min(1), levelValidator),
 });
 

@@ -13,8 +13,8 @@ export type DexParams = {
 };
 
 export interface PriceLevel {
-  level: string;
-  price: string;
+  q: string;
+  p: string;
 }
 
 export class RfqError extends Error {}
