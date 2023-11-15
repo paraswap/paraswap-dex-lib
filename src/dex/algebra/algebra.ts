@@ -64,6 +64,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   readonly isFeeOnTransferSupported: boolean = false;
   protected eventPools: Record<string, IAlgebraEventPool | null> = {};
 
+  private newlyCreatedPoolKeys: Set<string> = new Set();
+
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
@@ -167,7 +169,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }) => {
     const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${_token0}_${_token1}`;
+    const poolKey = `${_token0}_${_token1}`.toLowerCase();
+
+    this.newlyCreatedPoolKeys.add(poolKey);
 
     // consider doing it only from master pool for less calls to distant cache
 
@@ -292,25 +296,36 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       });
     } catch (e) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-        // no need to await we want the set to have the pool key but it's not blocking
-        this.dexHelper.cache.zadd(
-          this.notExistingPoolSetKey,
-          [Date.now(), key],
-          'NX',
-        );
+        /* 
+         protection against 2 race conditions
+          1/ if pool.initialize() promise rejects after the Pool creation event got treated
+          2/ if the rpc node we hit on the http request is lagging behind the one we got event from (websocket)
+        */
+        if (this.newlyCreatedPoolKeys.has(key)) {
+          this.logger.warn(
+            `[block=${blockNumber}][Pool=${key}] newly created pool failed to initialise`,
+          );
+        } else {
+          // no need to await we want the set to have the pool key but it's not blocking
+          this.dexHelper.cache.zadd(
+            this.notExistingPoolSetKey,
+            [Date.now(), key],
+            'NX',
+          );
 
-        // Pool does not exist for this pair, so we can set it to null
-        // to prevent more requests for this pool
-        pool = null;
-        this.logger.trace(
-          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress} not found`,
-          e,
-        );
+          // Pool does not exist for this pair, so we can set it to null
+          // to prevent more requests for this pool
+          pool = null;
+          this.logger.info(
+            `[block=${blockNumber}][Pool=${key}] pool failed to initialize, probably not existing`,
+            e,
+          );
+        }
       } else {
         // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
