@@ -5,7 +5,6 @@ import {
   IDexHelper,
 } from '../dex-helper';
 import BigNumber from 'bignumber.js';
-import { TransactionBuilder } from '../transaction-builder';
 import { PricingHelper } from '../pricing-helper';
 import { DexAdapterService } from '../dex';
 import {
@@ -19,6 +18,7 @@ import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
 import { v4 as uuid } from 'uuid';
 import { DirectContractMethods } from '@paraswap/core/build/constants';
+import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-builder';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -52,7 +52,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   dexHelper: IDexHelper;
   dexAdapterService: DexAdapterService;
   pricingHelper: PricingHelper;
-  transactionBuilder: TransactionBuilder;
+  transactionBuilder: GenericSwapTransactionBuilder;
 
   constructor(
     protected network: number,
@@ -69,7 +69,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       this.dexAdapterService,
       this.dexHelper.getLogger,
     );
-    this.transactionBuilder = new TransactionBuilder(this.dexAdapterService);
+    this.transactionBuilder = new GenericSwapTransactionBuilder(
+      this.dexAdapterService,
+    );
 
     const dex = this.dexAdapterService.getDexByKey(dexKey);
     if (limitOrderProvider && dex instanceof LimitOrderExchange) {

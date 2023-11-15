@@ -3,6 +3,7 @@ import {
   Address,
   SimpleExchangeParam,
   AdapterExchangeParam,
+  DexExchangeParam,
   TxInfo,
   NumberAsString,
   Token,
@@ -67,6 +68,15 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     data: ExchangeData,
     side: SwapSide,
   ): AsyncOrSync<SimpleExchangeParam>;
+
+  getDexParam?(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+  ): AsyncOrSync<DexExchangeParam>;
 
   // Returns params required by direct swap method.
   // Only Dexes which have a direct method should implement this

@@ -159,6 +159,23 @@ class APIParaswapSDK implements IParaSwapSDK {
   }
 }
 
+function allowAugustusV6(
+  tokenAddress: Address,
+  holderAddress: Address,
+  network: Network,
+) {
+  const augustusV6Address = generateConfig(network).augustusV6Address;
+  return {
+    from: holderAddress,
+    to: tokenAddress,
+    data: erc20Interface.encodeFunctionData('approve', [
+      augustusV6Address,
+      MAX_UINT,
+    ]),
+    value: '0',
+  };
+}
+
 function allowTokenTransferProxyParams(
   tokenAddress: Address,
   holderAddress: Address,
@@ -286,8 +303,13 @@ export async function testE2E(
     const allowanceTx = await ts.simulate(
       allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
     );
+    const augustusV6Allowance = await ts.simulate(
+      allowAugustusV6(srcToken.address, senderAddress, network),
+    );
     if (!allowanceTx.success) console.log(allowanceTx.url);
+    if (!augustusV6Allowance.success) console.log(augustusV6Allowance.url);
     expect(allowanceTx!.success).toEqual(true);
+    expect(augustusV6Allowance!.success).toEqual(true);
   }
 
   if (deployedTestContractAddress) {

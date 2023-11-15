@@ -156,6 +156,15 @@ export type AdapterExchangeParam = {
   networkFee: string;
 };
 
+export type DexExchangeParam = {
+  exchangeData: string;
+  srcAmount: string;
+  destAmount: string;
+  targetExchange: string;
+  needWeth: boolean;
+  amountOffset?: number;
+};
+
 export type AdapterMappings = {
   [side: string]: { name: string; index: number }[];
 };
@@ -263,11 +272,13 @@ export type Config = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
+  augustusV6Address?: Address;
   augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
   privateHttpProvider: string;
   adapterAddresses: { [name: string]: Address };
+  executorsAddresses?: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
   rpcPollingMaxAllowedStateDelayInBlocks: number;
