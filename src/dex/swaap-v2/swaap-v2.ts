@@ -643,7 +643,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       this.runtimeMMsRestrictHashMapKey,
       poolIdentifier,
     );
-    const wasNotRestricted = createdAt == null;
+    const wasNotRestricted = createdAt === null;
     if (wasNotRestricted) {
       return false;
     }
