@@ -581,20 +581,20 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const makerToken = normalizedDestToken;
       const takerToken = normalizedSrcToken;
 
-      const slippageBps =
-        side === SwapSide.SELL
-          ? BigNumber(1)
-              .minus(options.slippageFactor)
-              .multipliedBy(10000)
-              .toFixed(0)
-          : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
+      const isSell = side === SwapSide.SELL;
+      const isBuy = side === SwapSide.BUY;
+
+      const slippageBps = isSell
+        ? BigNumber(1)
+            .minus(options.slippageFactor)
+            .multipliedBy(10000)
+            .toFixed(0)
+        : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
-        makerAmount:
-          side === SwapSide.BUY ? optimalSwapExchange.destAmount : undefined,
-        takerAmount:
-          side === SwapSide.SELL ? optimalSwapExchange.srcAmount : undefined,
+        makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
+        takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
         userAddress: options.txOrigin,
         chainid: this.network,
         partner: options.partner,
@@ -627,7 +627,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         order.takerAsset.toLowerCase() === takerToken.address,
         `QuoteData takerAsset=${order.takerAsset} is different from Paraswap takerAsset=${takerToken.address}`,
       );
-      if (side === SwapSide.SELL) {
+      if (isSell) {
         assert(
           order.takerAmount === optimalSwapExchange.srcAmount,
           `QuoteData takerAmount=${order.takerAmount} is different from Paraswap srcAmount=${optimalSwapExchange.srcAmount}`,
@@ -646,7 +646,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       let isFailOnSlippage = false;
       let slippageErrorMessage = '';
 
-      if (side === SwapSide.SELL) {
+      if (isSell) {
         if (
           BigInt(order.makerAmount) <
           BigInt(
@@ -685,7 +685,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       let isTooStrictSlippage = false;
       if (
         isFailOnSlippage &&
-        side === SwapSide.SELL &&
+        isSell &&
         new BigNumber(1)
           .minus(slippageFactor)
           .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
@@ -693,7 +693,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         isTooStrictSlippage = true;
       } else if (
         isFailOnSlippage &&
-        side === SwapSide.BUY &&
+        isBuy &&
         slippageFactor
           .minus(1)
           .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
