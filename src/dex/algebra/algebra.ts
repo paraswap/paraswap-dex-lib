@@ -45,8 +45,8 @@ type PoolPairsInfo = {
   token1: Address;
 };
 
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
+// const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+// const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const ALGEBRA_EFFICIENCY_FACTOR = 3;
 const ALGEBRA_TICK_GAS_COST = 24_000; // Ceiled
 const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
@@ -141,22 +141,23 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     // Init listening to new pools creation
     await this.factory.initialize(blockNumber);
 
-    if (!this.dexHelper.config.isSlave) {
-      const cleanExpiredNotExistingPoolsKeys = async () => {
-        const maxTimestamp =
-          Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
-        await this.dexHelper.cache.zremrangebyscore(
-          this.notExistingPoolSetKey,
-          0,
-          maxTimestamp,
-        );
-      };
+    //// COMMENTING DEPRECATED LOGIC: as we now  invalidate pools on creation this is not needed anymore
+    // if (!this.dexHelper.config.isSlave) {
+    //   const cleanExpiredNotExistingPoolsKeys = async () => {
+    //     const maxTimestamp =
+    //       Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+    //     await this.dexHelper.cache.zremrangebyscore(
+    //       this.notExistingPoolSetKey,
+    //       0,
+    //       maxTimestamp,
+    //     );
+    //   };
 
-      this.intervalTask = setInterval(
-        cleanExpiredNotExistingPoolsKeys.bind(this),
-        ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
-      );
-    }
+    //   this.intervalTask = setInterval(
+    //     cleanExpiredNotExistingPoolsKeys.bind(this),
+    //     ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+    //   );
+    // }
   }
 
   /*
