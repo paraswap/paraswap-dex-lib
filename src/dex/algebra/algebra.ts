@@ -312,6 +312,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           );
           this.newlyCreatedPoolKeys.delete(key);
         } else {
+          this.logger.info(
+            `[block=${blockNumber}][Pool=${key}] pool failed to initialize so it's marked as non existing`,
+            e,
+          );
+
           // allowing only master/leader node to alter distant cache to reduce risk of race conditions
           if (!this.dexHelper.config.isSlave) {
             // no need to await we want the set to have the pool key but it's not blocking
@@ -325,16 +330,12 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           // Pool does not exist for this pair, so we can set it to null
           // to prevent more requests for this pool
           pool = null;
-          this.logger.info(
-            `[block=${blockNumber}][Pool=${key}] pool failed to initialize, probably not existing`,
-            e,
-          );
         }
       } else {
         // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `[block=${blockNumber}][Pool=${key}] Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
