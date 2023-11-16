@@ -395,7 +395,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             .toString(),
         );
         if (isInputQuote) {
-          lQty = (lQty * BigInt(10 ** (baseToken.decimals * 2))) /
+          lQty =
+            (lQty * BigInt(10 ** (baseToken.decimals * 2))) /
             (lPrice * BigInt(10 ** quoteToken.decimals));
           rQty =
             (rQty * BigInt(10 ** (baseToken.decimals * 2))) /
@@ -432,10 +433,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     transferFees?: TransferFeeParams,
   ): Promise<null | ExchangePrices<DexalotData>> {
     try {
-      if (await this.isRestricted()) {
-        return null;
-      }
-
       const normalizedSrcToken = this.normalizeToken(srcToken);
       const normalizedDestToken = this.normalizeToken(destToken);
 
@@ -444,7 +441,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         return null;
       }
 
-      const pools = limitPools
+      let pools = limitPools
         ? limitPools.filter(
             p =>
               p ===
@@ -455,6 +452,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           )
         : await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber);
 
+      pools = await Promise.all(
+        pools.map(async p => !(await this.isRestrictedPool(p))),
+      ).then(res => pools.filter((_v, i) => res[i]));
       if (pools.length === 0) {
         return null;
       }
@@ -505,14 +505,16 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         throw new Error(`Empty orderbook for ${pairKey}`);
       }
 
-      const isInputQuote = (clobSide === ClobSide.ASK && side === SwapSide.SELL) || (clobSide === ClobSide.BID && side === SwapSide.BUY);
+      const isInputQuote =
+        (clobSide === ClobSide.ASK && side === SwapSide.SELL) ||
+        (clobSide === ClobSide.BID && side === SwapSide.BUY);
 
       const prices = this.calculateOrderPrice(
         amounts,
         orderbook,
         baseToken,
         quoteToken,
-        isInputQuote
+        isInputQuote,
       );
       const outDecimals =
         clobSide === ClobSide.BID ? baseToken.decimals : quoteToken.decimals;
@@ -579,15 +581,24 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const makerToken = normalizedDestToken;
       const takerToken = normalizedSrcToken;
 
+      const isSell = side === SwapSide.SELL;
+      const isBuy = side === SwapSide.BUY;
+
+      const slippageBps = isSell
+        ? BigNumber(1)
+            .minus(options.slippageFactor)
+            .multipliedBy(10000)
+            .toFixed(0)
+        : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
-        makerAmount:
-          side === SwapSide.BUY ? optimalSwapExchange.destAmount : undefined,
-        takerAmount:
-          side === SwapSide.SELL ? optimalSwapExchange.srcAmount : undefined,
+        makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
+        takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
         userAddress: options.txOrigin,
         chainid: this.network,
+        partner: options.partner,
+        slippage: slippageBps,
       };
 
       const rfq: RFQResponse = await this.dexHelper.httpRequest.post(
@@ -616,7 +627,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         order.takerAsset.toLowerCase() === takerToken.address,
         `QuoteData takerAsset=${order.takerAsset} is different from Paraswap takerAsset=${takerToken.address}`,
       );
-      if (side === SwapSide.SELL) {
+      if (isSell) {
         assert(
           order.takerAmount === optimalSwapExchange.srcAmount,
           `QuoteData takerAmount=${order.takerAmount} is different from Paraswap srcAmount=${optimalSwapExchange.srcAmount}`,
@@ -635,7 +646,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       let isFailOnSlippage = false;
       let slippageErrorMessage = '';
 
-      if (side === SwapSide.SELL) {
+      if (isSell) {
         if (
           BigInt(order.makerAmount) <
           BigInt(
@@ -674,7 +685,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       let isTooStrictSlippage = false;
       if (
         isFailOnSlippage &&
-        side === SwapSide.SELL &&
+        isSell &&
         new BigNumber(1)
           .minus(slippageFactor)
           .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
@@ -682,7 +693,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         isTooStrictSlippage = true;
       } else if (
         isFailOnSlippage &&
-        side === SwapSide.BUY &&
+        isBuy &&
         slippageFactor
           .minus(1)
           .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
@@ -725,10 +736,18 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             `${this.dexKey}-${this.network}: failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
           );
         } else {
-          this.logger.warn(
-            `${this.dexKey}-${this.network}: protocol is restricted`,
+          const poolIdentifiers = await this.getPoolIdentifiers(
+            srcToken,
+            destToken,
+            side,
+            0,
           );
-          await this.restrict();
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: protocol is restricted for pools ${poolIdentifiers} due to swap: ${swapIdentifier}`,
+          );
+          await Promise.all(
+            poolIdentifiers.map(async p => await this.restrictPool(p)),
+          );
         }
       }
 
@@ -813,22 +832,29 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     };
   }
 
-  async restrict(ttl: number = DEXALOT_RESTRICT_TTL_S): Promise<boolean> {
+  getRestrictedPoolKey(poolIdentifier: string): string {
+    return `${DEXALOT_RESTRICTED_CACHE_KEY}-${poolIdentifier}`;
+  }
+
+  async restrictPool(
+    poolIdentifier: string,
+    ttl: number = DEXALOT_RESTRICT_TTL_S,
+  ): Promise<boolean> {
     await this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
-      DEXALOT_RESTRICTED_CACHE_KEY,
+      this.getRestrictedPoolKey(poolIdentifier),
       ttl,
       'true',
     );
     return true;
   }
 
-  async isRestricted(): Promise<boolean> {
+  async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
     const result = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
-      DEXALOT_RESTRICTED_CACHE_KEY,
+      this.getRestrictedPoolKey(poolIdentifier),
     );
 
     return result === 'true';

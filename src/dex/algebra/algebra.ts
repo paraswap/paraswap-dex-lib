@@ -414,9 +414,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     side: SwapSide,
     pool: IAlgebraEventPool,
   ): Promise<ExchangePrices<AlgebraData> | null> {
-    this.logger.warn(
-      `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
-    );
+    if (!this.config.forceRPC) {
+      this.logger.warn(
+        `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
+      );
+    }
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
