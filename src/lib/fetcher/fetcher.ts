@@ -100,12 +100,12 @@ export class Fetcher<T> {
 
     results.map(result => {
       if (!(result instanceof Error || result instanceof SkippingRequest)) {
-        // this.logger.info(
-        //   'Results Data:',
-        //   JSON.stringify((result as any).data)
-        //     .replace(/(?:\r\n|\r|\n)/g, ' ')
-        //     .substring(0, 1000),
-        // );
+        this.logger.info(
+          'Results Data:',
+          JSON.stringify((result as any).data)
+            .replace(/(?:\r\n|\r|\n)/g, ' ')
+            .substring(0, 1000),
+        );
       }
     });
 
@@ -142,7 +142,7 @@ export class Fetcher<T> {
         const reqInfo = this.requests[i];
         const info = reqInfo.info;
         const options = reqInfo.info.requestOptions;
-        // this.logger.debug(`(${options.url}) received new data`);
+        this.logger.debug(`(${options.url}) received new data`);
 
         try {
           const parsedData = info.caster(response.data);

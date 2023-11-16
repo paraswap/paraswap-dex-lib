@@ -30,7 +30,6 @@ export class RateFetcher {
     this.pricesCacheTTL = config.rateConfig.pricesCacheTTLSecs;
     this.marketMakersCacheKey = config.rateConfig.marketMakersCacheKey;
     this.marketMakersCacheTTL = config.rateConfig.marketMakersCacheTTLSecs;
-
     this.marketMakersFetcher = new Fetcher<HashflowMarketMakersResponse>(
       dexHelper.httpRequest,
       {
@@ -69,10 +68,9 @@ export class RateFetcher {
               );
             }
 
-            const prices = await dexHelper.httpRequest.request({
-              ...options,
-              params: { ...options.params, marketMakers: filteredMarketMakers },
-            });
+            options.params.marketMakers = filteredMarketMakers;
+
+            const prices = await dexHelper.httpRequest.request(options);
 
             return prices;
           },
