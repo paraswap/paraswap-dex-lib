@@ -60,13 +60,6 @@ export class GenericSwapTransactionBuilder {
     );
   }
 
-  protected getApproveERC20CallData(address: Address, srcAmount: string) {
-    return this.erc20Interface.encodeFunctionData('approve', [
-      address,
-      srcAmount,
-    ]);
-  }
-
   protected buildFees(
     referrerAddress: string | undefined,
     partnerAddress: string,
@@ -91,7 +84,6 @@ export class GenericSwapTransactionBuilder {
   protected async buildCalls(
     priceRoute: OptimalRate,
     minMaxAmount: string,
-    userAddress: Address,
   ): Promise<string> {
     const side = priceRoute.side;
     const wethAddress =
@@ -142,11 +134,17 @@ export class GenericSwapTransactionBuilder {
             }
           }
 
+          const destTokenIsWeth = _dest === wethAddress;
+
           const dexParams = await dex.getDexParam!(
             _src,
             _dest,
             _srcAmount,
             _destAmount,
+            destTokenIsWeth
+              ? this.dexAdapterService.dexHelper.config.data
+                  .executorsAddresses!['Executor01']
+              : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
             se.data,
             side,
           );
@@ -208,11 +206,7 @@ export class GenericSwapTransactionBuilder {
     deadline: string,
     uuid: string,
   ) {
-    const bytecode = await this.buildCalls(
-      priceRoute,
-      minMaxAmount,
-      userAddress,
-    );
+    const bytecode = await this.buildCalls(priceRoute, minMaxAmount);
 
     const side = priceRoute.side;
     const isSell = side === SwapSide.SELL;

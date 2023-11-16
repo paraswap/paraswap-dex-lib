@@ -74,6 +74,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
+    recipient: Address,
     data: ExchangeData,
     side: SwapSide,
   ): AsyncOrSync<DexExchangeParam>;

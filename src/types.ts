@@ -158,10 +158,7 @@ export type AdapterExchangeParam = {
 
 export type DexExchangeParam = {
   exchangeData: string;
-  srcAmount: string;
-  destAmount: string;
   targetExchange: string;
-  needWeth: boolean;
   amountOffset?: number;
 };
 

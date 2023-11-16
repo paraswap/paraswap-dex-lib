@@ -12,14 +12,14 @@ const {
 } = ethers;
 
 const EXECUTOR_01_FUNCTION_DATA_TYPES: string[] = [
-  'bytes20', // Address(20)
-  'bytes4', // Calldata Size(4)
-  'bytes2', // fromAmount Pos(2)
-  'bytes2', // srcToken Pos(2)
-  'bytes2', // Special Exchange(2
-  'bytes2', // Flags(2)
-  'bytes28', // Zero Padding  (28)
-  'bytes', // Dex calldata
+  'bytes20', // Address(bytes20)
+  'bytes4', // Calldata Size(bytes 4)
+  'bytes2', // fromAmount Pos(bytes2)
+  'bytes2', // srcToken Pos(bytes2)
+  'bytes2', // Special Exchange(bytes2)
+  'bytes2', // Flags(bytes2)
+  'bytes28', // Zero Padding (bytes28)
+  'bytes', // Dex calldata (bytes)
 ];
 
 const BYTES_28_LENGTH = 28;

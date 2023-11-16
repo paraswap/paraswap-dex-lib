@@ -973,6 +973,7 @@ export class UniswapV3
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
+    recipient: Address,
     data: UniswapV3Data,
     side: SwapSide,
   ): DexExchangeParam {
@@ -982,24 +983,18 @@ export class UniswapV3
         : UniswapV3Functions.exactOutput;
 
     const path = this._encodePath(data.path, side);
-    const destTokenIsWeth =
-      destToken === this.dexHelper.config.data.wrappedNativeTokenAddress;
 
     const swapFunctionParams: UniswapV3SimpleSwapParams =
       side === SwapSide.SELL
         ? {
-            recipient: destTokenIsWeth
-              ? this.dexHelper.config.data.executorsAddresses!['Executor01']
-              : this.augustusV6Address!,
+            recipient,
             deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountIn: srcAmount,
             amountOutMinimum: destAmount,
             path,
           }
         : {
-            recipient: destTokenIsWeth
-              ? this.dexHelper.config.data.executorsAddresses!['Executor01']
-              : this.augustusV6Address!,
+            recipient,
             deadline: getLocalDeadlineAsFriendlyPlaceholder(),
             amountOut: destAmount,
             amountInMaximum: srcAmount,
@@ -1012,10 +1007,7 @@ export class UniswapV3
 
     return {
       exchangeData,
-      srcAmount,
-      destAmount,
       targetExchange: this.config.router,
-      needWeth: true,
     };
   }
 
