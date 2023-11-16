@@ -54,6 +54,9 @@ enum Flag {
   NINE = 9,
   EIGHT = 8,
   SEVEN = 7,
+  FIVE = 5,
+  FOUR = 4,
+  THREE = 3,
   ZERO = 0,
 }
 
@@ -75,35 +78,34 @@ export class Executor01BytecodeBuilder {
   ) {
     const checkSrcTokenBalanceAfterSwap = flag % 3 === 2;
 
-    return exchangeDataList.reduce((acc, se) => {
-      let srcTokenPos = 0;
-      if (checkSrcTokenBalanceAfterSwap) {
-        const srcTokenAddrForNextCall = maybeWethCallData?.withdraw
-          ? this.dexHelper.config.data.wrappedNativeTokenAddress
-          : priceRoute.destToken;
+    // We support 1 Dex for now
+    const dexData = exchangeDataList[0];
 
-        const srcTokenAddrIndex = se.exchangeData
-          .replace('0x', '')
-          .indexOf(srcTokenAddrForNextCall.replace('0x', ''));
-        srcTokenPos = (srcTokenAddrIndex - 24) / 2;
-      }
+    let srcTokenPos = 0;
+    if (checkSrcTokenBalanceAfterSwap) {
+      const srcTokenAddrForNextCall = maybeWethCallData?.withdraw
+        ? this.dexHelper.config.data.wrappedNativeTokenAddress
+        : priceRoute.destToken;
 
-      return acc.concat(
-        solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
-          se.targetExchange, // target exchange
-          hexZeroPad(
-            hexlify(hexDataLength(se.exchangeData) + BYTES_28_LENGTH),
-            4,
-          ), // dex calldata length + bytes28(0)
-          hexZeroPad(hexlify(0), 2), // fromAmountPos
-          hexZeroPad(hexlify(srcTokenPos), 2), // srcTokenPos
-          hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
-          hexZeroPad(hexlify(flag), 2), // flag
-          ZEROS_28_BYTES, // bytes28(0)
-          se.exchangeData, // dex calldata
-        ]),
-      );
-    }, '');
+      const srcTokenAddrIndex = dexData.exchangeData
+        .replace('0x', '')
+        .indexOf(srcTokenAddrForNextCall.replace('0x', ''));
+      srcTokenPos = (srcTokenAddrIndex - 24) / 2;
+    }
+
+    return solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
+      dexData.targetExchange, // target exchange
+      hexZeroPad(
+        hexlify(hexDataLength(dexData.exchangeData) + BYTES_28_LENGTH),
+        4,
+      ), // dex calldata length + bytes28(0)
+      hexZeroPad(hexlify(0), 2), // fromAmountPos
+      hexZeroPad(hexlify(srcTokenPos), 2), // srcTokenPos
+      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify(flag), 2), // flag
+      ZEROS_28_BYTES, // bytes28(0)
+      dexData.exchangeData, // dex calldata
+    ]);
   }
 
   protected buildApproveCallData(
@@ -137,7 +139,7 @@ export class Executor01BytecodeBuilder {
   }
 
   protected buildUnwrapEthCallData(withdrawCallData: string) {
-    const unwrapCallData = solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
+    return solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
       this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
       hexZeroPad(hexlify(hexDataLength(withdrawCallData) + BYTES_28_LENGTH), 4), // unwrap calldata length + bytes28(0)
       hexZeroPad(hexlify(4), 2), // fromAmountPos
@@ -147,8 +149,26 @@ export class Executor01BytecodeBuilder {
       ZEROS_28_BYTES, // bytes28(0)
       withdrawCallData, // unwrap calldata
     ]);
+  }
 
-    const finalUnwrapCallData = solidityPack(
+  protected buildTransferCallData(
+    transferCallData: string,
+    tokenAddr: Address,
+  ) {
+    return solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
+      tokenAddr, // token address
+      hexZeroPad(hexlify(hexDataLength(transferCallData) + BYTES_28_LENGTH), 4), // unwrap calldata length + bytes28(0)
+      hexZeroPad(hexlify(36), 2), // fromAmountPos
+      hexZeroPad(hexlify(0), 2), // srcTokenPos
+      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify(Flag.THREE), 2), // flag
+      ZEROS_28_BYTES, // bytes28(0)
+      transferCallData, // unwrap calldata
+    ]);
+  }
+
+  protected buildFinalSpecialFlagCalldata() {
+    return solidityPack(
       ['bytes20', 'bytes4', 'bytes2', 'bytes2', 'bytes2', 'bytes2', 'bytes32'],
       [
         this.dexHelper.config.data.augustusV6Address, // augusutus v6 address
@@ -160,21 +180,36 @@ export class Executor01BytecodeBuilder {
         ZEROS_32_BYTES, // bytes28(0) + bytes4(0)
       ],
     );
-
-    return hexConcat([unwrapCallData, finalUnwrapCallData]);
   }
 
   protected getFlags(
     priceRoute: OptimalRate,
+    exchangeDataList: DexExchangeParam[],
     maybeWethCallData?: DepositWithdrawReturn,
   ): { approve: Flag; dex: Flag; wrap: Flag } {
     const { srcToken, destToken } = priceRoute;
 
     const needWrap = isETHAddress(srcToken) && maybeWethCallData?.deposit;
     const needUnwrap = isETHAddress(destToken) && maybeWethCallData?.withdraw;
+    const isEthSrc = isETHAddress(srcToken) && !maybeWethCallData?.deposit;
+    const isEthDest = isETHAddress(destToken) && !maybeWethCallData?.withdraw;
+    const hasRecipient = exchangeDataList[0].dexFuncHasRecipient;
+
+    let dexFlag = Flag.ZERO;
+    if (isEthSrc) {
+      dexFlag = Flag.FIVE;
+    } else if (needWrap) {
+      dexFlag = Flag.TWELVE;
+    } else if (needUnwrap) {
+      dexFlag = Flag.EIGHT;
+    } else if (!hasRecipient && isEthDest) {
+      dexFlag = Flag.FOUR;
+    } else if (!hasRecipient) {
+      dexFlag = Flag.EIGHT;
+    }
 
     return {
-      dex: needWrap ? Flag.TWELVE : needUnwrap ? Flag.EIGHT : Flag.ZERO,
+      dex: dexFlag,
       wrap:
         isETHAddress(srcToken) && maybeWethCallData?.deposit
           ? Flag.NINE
@@ -189,7 +224,11 @@ export class Executor01BytecodeBuilder {
     maybeWethCallData?: DepositWithdrawReturn,
   ): string {
     let finalCallData = '';
-    const flags = this.getFlags(priceRoute, maybeWethCallData);
+    const flags = this.getFlags(
+      priceRoute,
+      exchangeDataList,
+      maybeWethCallData,
+    );
     const dexCallData = this.buildDexCallData(
       priceRoute,
       exchangeDataList,
@@ -228,6 +267,30 @@ export class Executor01BytecodeBuilder {
         );
         finalCallData = hexConcat([finalCallData, withdrawCallData]);
       }
+    }
+
+    if (
+      !exchangeDataList[0].dexFuncHasRecipient &&
+      !isETHAddress(priceRoute.destToken)
+    ) {
+      const transferCallData = this.buildTransferCallData(
+        this.erc20Interface.encodeFunctionData('transfer', [
+          this.dexHelper.config.data.augustusV6Address,
+          priceRoute.destAmount,
+        ]),
+        priceRoute.destToken,
+      );
+
+      finalCallData = hexConcat([finalCallData, transferCallData]);
+    }
+
+    if (
+      maybeWethCallData?.withdraw ||
+      (!exchangeDataList[0].dexFuncHasRecipient &&
+        isETHAddress(priceRoute.destToken))
+    ) {
+      const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
+      finalCallData = hexConcat([finalCallData, finalSpecialFlagCalldata]);
     }
 
     return solidityPack(

@@ -1006,6 +1006,7 @@ export class UniswapV3
     ]);
 
     return {
+      dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.config.router,
     };

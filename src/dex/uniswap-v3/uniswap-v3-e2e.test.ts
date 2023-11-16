@@ -69,6 +69,7 @@ function testForNetwork(
                 undefined,
                 undefined,
                 slippage,
+                2000,
               );
             });
             it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
@@ -86,6 +87,7 @@ function testForNetwork(
                 undefined,
                 undefined,
                 slippage,
+                2000,
               );
             });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
@@ -103,6 +105,7 @@ function testForNetwork(
                 undefined,
                 undefined,
                 slippage,
+                2000,
               );
             });
           });
@@ -762,7 +765,7 @@ describe('UniswapV3 E2E', () => {
       const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'USDT';
 
-      const tokenAAmount: string = '111110000';
+      const tokenAAmount: string = '1111100000';
       const tokenBAmount: string = '1100000000';
       const nativeTokenAmount = '11000000000000000';
 
