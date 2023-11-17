@@ -112,10 +112,8 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
     if (
-      !(
-        srcTokenAddress === this.config.csETH.toLowerCase() &&
-        destTokenAddress === ETHER_ADDRESS.toLowerCase()
-      )
+      srcTokenAddress === this.config.csETH.toLowerCase() &&
+      destTokenAddress === ETHER_ADDRESS.toLowerCase()
     ) {
       return null;
     }
@@ -133,7 +131,7 @@ export class Claystack extends SimpleExchange implements IDex<ClaystackData> {
           target: this.config.clayMain,
           callData: Claystack.clayMainIface.encodeFunctionData(
             'getExchangeRate',
-            [ethers.constants.WeiPerEther],
+            [],
           ),
           decodeFunction: uint256ToBigInt,
         },
