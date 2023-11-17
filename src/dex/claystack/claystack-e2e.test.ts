@@ -2,15 +2,15 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { testE2E } from '../../../tests/utils-e2e';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import {
-  Tokens,
   Holders,
   NativeTokenSymbols,
+  Tokens,
 } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { testE2E } from '../../../tests/utils-e2e';
 import { generateConfig } from '../../config';
+import { ContractMethod, Network, SwapSide } from '../../constants';
 
 /*
   README
@@ -140,11 +140,11 @@ describe('Claystack E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'ETH';
+    const tokenBSymbol: string = 'csETH';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '100';
+    const tokenBAmount: string = '100';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

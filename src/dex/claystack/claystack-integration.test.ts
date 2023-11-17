@@ -3,16 +3,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Interface, Result } from '@ethersproject/abi';
-import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
-import { BI_POWS } from '../../bigint-constants';
-import { Claystack } from './claystack';
+import { Tokens } from '../../../tests/constants-e2e';
 import {
+  checkConstantPoolPrices,
   checkPoolPrices,
   checkPoolsLiquidity,
-  checkConstantPoolPrices,
 } from '../../../tests/utils';
-import { Tokens } from '../../../tests/constants-e2e';
+import { BI_POWS } from '../../bigint-constants';
+import { Network, SwapSide } from '../../constants';
+import { DummyDexHelper } from '../../dex-helper/index';
+import { Claystack } from './claystack';
 
 /*
   README
@@ -159,8 +159,8 @@ describe('Claystack', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'ETH';
+    const destTokenSymbol = 'csETH';
 
     const amountsForSell = [
       0n,
@@ -193,9 +193,6 @@ describe('Claystack', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       claystack = new Claystack(network, dexKey, dexHelper);
-      if (claystack.initializePricing) {
-        await claystack.initializePricing(blockNumber);
-      }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -230,9 +227,6 @@ describe('Claystack', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newClaystack = new Claystack(network, dexKey, dexHelper);
-      if (newClaystack.updatePoolState) {
-        await newClaystack.updatePoolState();
-      }
       const poolLiquidity = await newClaystack.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
