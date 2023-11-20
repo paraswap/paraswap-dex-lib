@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.42.13",
+  "version": "2.42.14-algebra-price-fix.0",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
