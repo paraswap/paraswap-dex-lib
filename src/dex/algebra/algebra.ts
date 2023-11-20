@@ -317,15 +317,12 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
             e,
           );
 
-          // allowing only master/leader node to alter distant cache to reduce risk of race conditions
-          if (!this.dexHelper.config.isSlave) {
-            // no need to await we want the set to have the pool key but it's not blocking
-            this.dexHelper.cache.zadd(
-              this.notExistingPoolSetKey,
-              [Date.now(), key],
-              'NX',
-            );
-          }
+          // no need to await we want the set to have the pool key but it's not blocking
+          this.dexHelper.cache.zadd(
+            this.notExistingPoolSetKey,
+            [Date.now(), key],
+            'NX',
+          );
 
           // Pool does not exist for this pair, so we can set it to null
           // to prevent more requests for this pool
