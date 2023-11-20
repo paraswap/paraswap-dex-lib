@@ -267,7 +267,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       );
     }
 
-    this.logger.trace(`starting to listen to new pool: ${key}`);
+    this.logger.info(`starting to listen to new pool: ${key}`);
     pool =
       pool ||
       new this.AlgebraPoolImplem(
@@ -296,10 +296,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         },
       });
 
+      this.logger.info(`pool ${key} initialised`);
+
       if (this.newlyCreatedPoolKeys.has(key)) {
         this.newlyCreatedPoolKeys.delete(key);
       }
     } catch (e) {
+      this.logger.info(`pool ${key} failed to initialise`, e);
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
         /* 
          protection against 2 race conditions
