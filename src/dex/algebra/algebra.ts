@@ -308,9 +308,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         */
         if (this.newlyCreatedPoolKeys.has(key)) {
           this.logger.warn(
-            `[block=${blockNumber}][Pool=${key}] newly created pool failed to initialise`,
+            `[block=${blockNumber}][Pool=${key}] newly created pool failed to initialise, trying on next request`,
           );
-          this.newlyCreatedPoolKeys.delete(key);
         } else {
           this.logger.info(
             `[block=${blockNumber}][Pool=${key}] pool failed to initialize so it's marked as non existing`,
