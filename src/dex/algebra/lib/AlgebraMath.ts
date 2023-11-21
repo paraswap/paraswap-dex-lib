@@ -588,7 +588,7 @@ class AlgebraMathClass {
 
       // equivalent of  PriceMovementMath.movePriceTowardsTarget
       const result = SwapMath.computeSwapStep(
-        poolState.globalState.price,
+        currentPrice,
         zeroToOne == step.nextTickPrice < newSqrtPriceX96
           ? newSqrtPriceX96
           : step.nextTickPrice,
@@ -650,6 +650,18 @@ class AlgebraMathClass {
         break;
       }
     }
+
+    _require(
+      currentPrice == newSqrtPriceX96,
+      `LOGIC ERROR: calculated currentPrice and price from event ('newSqrtPriceX96') should always be equal at the end`,
+      { currentPrice, newSqrtPriceX96 },
+    );
+
+    _require(
+      currentTick == newTick,
+      `LOGIC ERROR: calculated currentTick and tick from event ('newTick') should always be equal at the end`,
+      { currentTick, newTick },
+    );
 
     let [amount0, amount1] =
       zeroToOne == cache.exactInput // the amount to provide could be less then initially specified (e.g. reached limit)
