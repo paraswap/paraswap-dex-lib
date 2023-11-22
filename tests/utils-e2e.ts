@@ -16,6 +16,7 @@ import {
   MAX_UINT,
   Network,
   ContractMethod,
+  NULL_ADDRESS,
 } from '../src/constants';
 import {
   OptimalRate,
@@ -28,13 +29,21 @@ import {
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
-import { DummyDexHelper, DummyLimitOrderProvider } from '../src/dex-helper';
+import {
+  DummyDexHelper,
+  DummyLimitOrderProvider,
+  IDexHelper,
+} from '../src/dex-helper';
 import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 import { GIFTER_ADDRESS } from './constants-e2e';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
+import * as util from 'util';
+import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
+import { DexAdapterService } from '../src';
+import { v4 as uuid } from 'uuid';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -91,13 +100,31 @@ const MULTISIG: { [nid: number]: string } = {
 
 class APIParaswapSDK implements IParaSwapSDK {
   paraSwap: SimpleFetchSDK;
+  dexKeys: string[];
+  dexHelper: IDexHelper;
+  transactionBuilder: GenericSwapTransactionBuilder;
+  dexAdapterService: DexAdapterService;
 
-  constructor(protected network: number, protected dexKey: string) {
+  constructor(
+    protected network: number,
+    dexKeys: string | string[],
+    rpcUrl: string,
+  ) {
+    this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.paraSwap = constructSimpleSDK({
       chainId: network,
       axios,
       apiURL: testingEndpoint,
     });
+    this.dexHelper = new DummyDexHelper(this.network, rpcUrl);
+
+    this.dexAdapterService = new DexAdapterService(
+      this.dexHelper,
+      this.network,
+    );
+    this.transactionBuilder = new GenericSwapTransactionBuilder(
+      this.dexAdapterService,
+    );
   }
 
   async getPrices(
@@ -106,7 +133,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     amount: bigint,
     side: SwapSide,
     contractMethod: ContractMethod,
-    _poolIdentifiers?: string[],
+    _poolIdentifiers?: { [key: string]: string[] | null } | null,
   ): Promise<OptimalRate> {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
@@ -117,7 +144,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       side,
       amount: amount.toString(),
       options: {
-        includeDEXS: [this.dexKey],
+        includeDEXS: this.dexKeys,
         includeContractMethods: [contractMethod],
         partner: 'any',
       },
@@ -133,29 +160,17 @@ class APIParaswapSDK implements IParaSwapSDK {
     userAddress: Address,
   ): Promise<TxObject> {
     const minMaxAmount = _minMaxAmount.toString();
-    const swapParams = await this.paraSwap.swap.buildTx(
-      {
-        srcToken: priceRoute.srcToken,
-        srcDecimals: priceRoute.srcDecimals,
-        destDecimals: priceRoute.destDecimals,
-        destToken: priceRoute.destToken,
-        srcAmount:
-          priceRoute.side === SwapSide.SELL
-            ? priceRoute.srcAmount
-            : minMaxAmount,
-        destAmount:
-          priceRoute.side === SwapSide.SELL
-            ? minMaxAmount
-            : priceRoute.destAmount,
-        priceRoute,
-        userAddress,
-        partner: 'paraswap.io',
-      },
-      {
-        ignoreChecks: true,
-      },
-    );
-    return swapParams as TxObject;
+    let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
+
+    return await this.transactionBuilder.build({
+      priceRoute,
+      minMaxAmount: minMaxAmount.toString(),
+      userAddress,
+      partnerAddress: NULL_ADDRESS,
+      partnerFeePercent: '0',
+      deadline: deadline.toString(),
+      uuid: uuid(),
+    });
   }
 }
 
@@ -165,6 +180,7 @@ function allowAugustusV6(
   network: Network,
 ) {
   const augustusV6Address = generateConfig(network).augustusV6Address;
+
   return {
     from: holderAddress,
     to: tokenAddress,
@@ -280,11 +296,11 @@ export async function testE2E(
   senderAddress: Address,
   _amount: string,
   swapSide = SwapSide.SELL,
-  dexKey: string,
+  dexKeys: string | string[],
   contractMethod: ContractMethod,
   network: Network = Network.MAINNET,
   _0: Provider,
-  poolIdentifiers?: string[],
+  poolIdentifiers?: { [key: string]: string[] | null } | null,
   limitOrderProvider?: DummyLimitOrderProvider,
   transferFees?: TransferFeeParams,
   // Specified in BPS: part of 10000
@@ -375,8 +391,8 @@ export async function testE2E(
   const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = useAPI
-    ? new APIParaswapSDK(network, dexKey)
-    : new LocalParaswapSDK(network, dexKey, '', limitOrderProvider);
+    ? new APIParaswapSDK(network, dexKeys, '')
+    : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
@@ -400,6 +416,8 @@ export async function testE2E(
       poolIdentifiers,
       transferFees,
     );
+
+    console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Calculate slippage. Default is 1%
@@ -441,10 +459,10 @@ export type TestParamE2E = {
   thirdPartyAddress?: Address;
   _amount: string;
   swapSide: SwapSide;
-  dexKey: string;
+  dexKeys: string | string[];
   contractMethod: ContractMethod;
   network: Network;
-  poolIdentifiers?: string[];
+  poolIdentifiers?: { [key: string]: string[] | null } | null;
   limitOrderProvider?: DummyLimitOrderProvider;
   transferFees?: TransferFeeParams;
   srcTokenBalanceOverrides?: Record<Address, string>;
@@ -479,7 +497,7 @@ export async function newTestE2E({
   thirdPartyAddress,
   _amount,
   swapSide,
-  dexKey,
+  dexKeys,
   contractMethod,
   network,
   poolIdentifiers,
@@ -556,7 +574,7 @@ export async function newTestE2E({
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = new LocalParaswapSDK(
     network,
-    dexKey,
+    dexKeys,
     '',
     limitOrderProvider,
   );
@@ -636,7 +654,6 @@ export async function newTestE2E({
       destToken.applyOverrides(stateOverrides);
 
       const swapTx = await ts.simulate(swapParams, stateOverrides);
-      console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
       // Only log gas estimate if testing against API
       if (useAPI)
         console.log(

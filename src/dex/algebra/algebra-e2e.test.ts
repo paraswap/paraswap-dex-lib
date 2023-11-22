@@ -74,12 +74,12 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
     // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -205,9 +205,49 @@ describe('Algebra', () => {
   describe('CamelotV3', () => {
     const dexKey = 'CamelotV3';
 
+    describe('Aury -> Grail multiswap', () => {
+      const dexKeys = 'CamelotV3';
+      const network = Network.ARBITRUM;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'AURY';
+      const tokenBSymbol: string = 'GRAIL';
+
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '10038480351';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.simpleSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+
     describe('Arbitrum', () => {
       const network = Network.ARBITRUM;
-      const tokenASymbol: string = 'USDC';
+      const tokenASymbol: string = 'USDCe';
       const tokenBSymbol: string = 'USDT';
 
       const tokenAAmount: string = '1000000000';

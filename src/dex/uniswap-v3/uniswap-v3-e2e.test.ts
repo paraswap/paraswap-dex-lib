@@ -3,11 +3,11 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import {
-  Tokens,
   Holders,
   NativeTokenSymbols,
+  Tokens,
 } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
@@ -756,19 +756,336 @@ describe('UniswapV3 E2E', () => {
     });
   });
 
+  describe('V6 Mutiswap test', () => {
+    describe('Multiswap USDC -> ETH -> WBTC via SushiSwapV3', () => {
+      const dexKeys = ['SushiSwapV3'];
+      const network = Network.MAINNET;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'WBTC';
+
+      const tokenAAmount: string = '10000000';
+      const tokenBAmount: string = '10038480351';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+
+    describe('Multiswap DAI -> USDC -> ETH  via SushiSwapV3', () => {
+      const dexKeys = ['SushiSwapV3'];
+      const network = Network.MAINNET;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'DAI';
+      const tokenBSymbol: string = 'ETH';
+
+      const tokenAAmount: string = '1000000000000000000000';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+
+    describe('Multiswap ETH -> USDC -> DAI  via SushiSwapV3', () => {
+      const dexKeys = ['SushiSwapV3'];
+      const network = Network.MAINNET;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '100000000000000000';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+
+    describe('Multiswap USDT -> USDC -> DAI  via SushiSwapV3', () => {
+      const dexKeys = ['SushiSwapV3'];
+      const network = Network.MAINNET;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '100000000';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+
+    describe('Mutiswap GUSD -> USDC -> ETH via SushiSwapV3 and CurveV1', () => {
+      const dexKeys = ['SushiSwapV3', 'CurveV1'];
+      const network = Network.MAINNET;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'GUSD';
+      const tokenBSymbol: string = 'ETH';
+
+      const tokenAAmount: string = '100000';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+
+    describe('Mutiswap ETH -> USDC -> GUSD via SushiSwapV3 and CurveV1', () => {
+      const dexKeys = ['SushiSwapV3', 'CurveV1'];
+      const network = Network.MAINNET;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'GUSD';
+
+      const tokenAAmount: string = '100000000000000000';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+
+    describe('Mutiswap ETH -> USDC -> GUSD via BalancerV1 and CurveV1', () => {
+      const dexKeys = ['BalancerV1', 'CurveV1'];
+      const network = Network.MAINNET;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'GUSD';
+
+      const tokenAAmount: string = '100000000000000000';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+
+    describe('Multiswap WBTC -> ETH -> SUSHI via BalancerV1 and SushiSwapV3', () => {
+      const dexKeys = ['BalancerV1', 'SushiSwapV3'];
+      const network = Network.MAINNET;
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
+        network,
+      );
+      const slippage = undefined;
+
+      const tokenASymbol: string = 'WBTC';
+      const tokenBSymbol: string = 'SUSHI';
+
+      const tokenAAmount: string = '2000000';
+
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+        );
+      });
+    });
+  });
+
   describe('SushiSwapV3 E2E', () => {
     const dexKey = 'SushiSwapV3';
 
     describe('MAINNET', () => {
+      const dexKey = 'UniswapV3';
+
       const network = Network.MAINNET;
 
       const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'USDT';
 
-      const tokenAAmount: string = '1111100000';
+      const tokenAAmount: string = '1000000';
       const tokenBAmount: string = '1100000000';
-      const nativeTokenAmount = '11000000000000000';
-
+      const nativeTokenAmount = '1000000000000000000';
+      //
       testForNetwork(
         network,
         dexKey,

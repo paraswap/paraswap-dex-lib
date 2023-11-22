@@ -37,6 +37,10 @@ export const Tokens: {
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
+    SUSHI: {
+      address: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
+      decimals: 18,
+    },
     CUSDC: {
       address: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
       decimals: 8,
@@ -849,6 +853,10 @@ export const Tokens: {
       address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
       decimals: 18,
     },
+    AURY: {
+      address: '0x11bf4f05eb28b802ed3ab672594decb20ffe2313',
+      decimals: 9,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -970,7 +978,8 @@ export const Holders: {
     WBTC: '0x1cb17a66dc606a52785f69f08f4256526abd4943',
     sBTC: '0xA2e3475D13776C6E42ff37B47286827d959B2195',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
-    STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',
+    STETH: '0x50b42514389F25E1f471C8F03f6f5954df0204b0',
+    SUSHI: '0x7A280fe8a5ec1fa7C48549041a9d310365e0EFd6',
     wstETH: '0x6cE0F913F035ec6195bC3cE885aec4C66E485BC4',
     WETH: '0x2fEb1512183545f48f6b9C5b4EbfCaF49CfCa6F3',
     USDT: '0x8A446971dbB112f3be15bc38C14D44B94D9E94b9',
@@ -978,7 +987,7 @@ export const Holders: {
     CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
     AnkETH: '0xF7260D4ADc48fEefd5a19a9Eb23f9747CeE15C92',
-    DAI: '0x60FaAe176336dAb62e284Fe19B885B095d29fB7F',
+    DAI: '0x604749efB8DC03976D832c8353cB327C5dF09dF6',
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     FEI: '0x19c549357034d10db8d75ed812b45be1dd8a7218',
@@ -997,7 +1006,7 @@ export const Holders: {
     renBTC: '0xAaE0633E15200bc9C50d45cD762477D268E126BD',
     tBTC: '0xC25099792E9349C7DD09759744ea681C7de2cb66',
     HBTC: '0x52885fF60Cd7Ae081e0665968C457DdACF888C90',
-    GUSD: '0x5f65f7b609678448494De4C87521CdF6cEf1e932',
+    GUSD: '0x52775178aAff2Cd56D8D017aF6a702cd8f07c485',
     LINK: '0x98c63b7b319dfbdf3d811530f2ab9dfe4983af9d',
     ADAIv1: '0x3021026e4ff227571a5a563ad19ea657c7027e59',
     CETH: '0x712d0f306956a6a4b4f9319ad9b9de48c5345996',
@@ -1145,7 +1154,7 @@ export const Holders: {
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
     USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
-    USDC: '0xa843392198862f98d17e3aa1421b08f2c2020cff',
+    USDC: '0xb2691fd1297e85affc7c64a2f1549e24c8d13b90',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
     USDT: '0x5ff47d4ab75bcaff6807c81f1367abb53439883c',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
@@ -1162,6 +1171,8 @@ export const Holders: {
     ZYB: '0x3ec0eddcd1e25025077327886a78133589082fb2',
     WBTC: '0xd9d611c6943585bc0e18e51034af8fa28778f7da',
     RDNT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+    AURY: '0x68b9d0b3f3b599944f978b0b4b115420db88cac0',
+    GRAIL: '0x88ce30f11723e38ffafa91a22462e57222433467',
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',

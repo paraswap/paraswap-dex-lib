@@ -46,14 +46,14 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0xD3C9a6bBFE64E64da27A0086C1cA3888d1089359',
+    augustusV6Address: '0x59C653F96DF825813535bc6cF09B89FB54cd323a',
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
     executorsAddresses: {
-      Executor01: '0x1e1a6Ad27C5ac458828786cC94fD634313EE2880',
-      Executor02: '0xb86065e9be0e1A1a9B386eEEc6025C2faDF3e28b',
+      Executor01: '0xf508D8E0d8059888CD1E149DB33623E8e1ccFA36',
+      Executor02: '0x95F0B2303977C9910327Bb1a5eF49500e350ab0d',
     },
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
@@ -283,6 +283,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     hasEIP1559: false,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    augustusV6Address: '0x95a7CE91b8478449FE9454538E357A26A535d102',
     augustusRFQAddress: '0x0927FD43a7a87E3E8b81Df2c44B03C4756849F6D',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
@@ -291,6 +292,10 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
+    executorsAddresses: {
+      Executor01: '0x2927e4a2cFDAE27B27bd3F6c0A6376fF1608C354',
+      Executor02: '0xD095802e643E663C5Af0d62dDfe727aD85f18618',
+    },
     adapterAddresses: {
       ArbitrumAdapter01: '0xD8134ACfc9c71Ab51452b5bA23A31354F4739032',
       ArbitrumAdapter02: '0x248009f6F78b5AcD5EA2fc86d56b77A7AeEe2eFc',

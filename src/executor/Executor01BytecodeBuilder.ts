@@ -1,56 +1,49 @@
 import { ethers } from 'ethers';
 import { IDexHelper } from '../dex-helper';
 import { DexExchangeParam } from '../types';
-import { Address, OptimalRate } from '@paraswap/core';
+import { Address, OptimalRate, OptimalSwap } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import ERC20ABI from '../abi/erc20.json';
 import { Interface } from '@ethersproject/abi';
+import { IExecutorBytecodeBuilder } from './IExecutorBytecodeBuilder';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
 } = ethers;
 
-const EXECUTOR_01_FUNCTION_DATA_TYPES: string[] = [
-  'bytes20', // Address(bytes20)
-  'bytes4', // Calldata Size(bytes 4)
+const EXECUTOR_01_FUNCTION_CALL_DATA_TYPES: string[] = [
+  'bytes20', // address(bytes20)
+  'bytes4', // calldata Size(bytes 4)
   'bytes2', // fromAmount Pos(bytes2)
-  'bytes2', // srcToken Pos(bytes2)
-  'bytes2', // Special Exchange(bytes2)
-  'bytes2', // Flags(bytes2)
-  'bytes28', // Zero Padding (bytes28)
-  'bytes', // Dex calldata (bytes)
+  'bytes2', // destTokenPos(bytes2)
+  'bytes2', // specialExchange (bytes2)
+  'bytes2', // flag(bytes2)
+  'bytes28', // zero padding (bytes28)
+  'bytes', // dex calldata (bytes)
 ];
+
+const APPROVE_CALLDATA_DEST_TOKEN_POS = 68;
+const WRAP_UNWRAP_FROM_AMOUNT_POS = 4;
 
 const BYTES_28_LENGTH = 28;
 const BYTES_64_LENGTH = 64;
 
+const ZEROS_12_BYTES = hexZeroPad(hexlify(0), 12);
 const ZEROS_28_BYTES = hexZeroPad(hexlify(0), 28);
 const ZEROS_32_BYTES = hexZeroPad(hexlify(0), 32);
 
-/**
- * switch (flag mod 4):
- case 0: don't insert fromAmount
- case 1: sendEth equal to fromAmount
- case 2: sendEth equal to fromAmount + insert fromAmount
- case 3: insert fromAmount
-
- switch (flag mod 3):
- case 0: don't check balance after swap
- case 1: check eth balance after swap
- case 2: check "srcToken" balance after swap
- */
-
 enum SpecialDex {
   DEFAULT = 0,
-  SWAP_ON_BALANCER_V2 = 1, // swapOnBalancerV2
-  SWAP_ON_MAKER_PSM = 2, // swapOnMakerPSM
-  SWAP_ON_SWAAP_V2 = 3, // swapOnSwaapV2
+  // SWAP_ON_BALANCER_V2 = 1, // swapOnBalancerV2
+  // SWAP_ON_MAKER_PSM = 2, // swapOnMakerPSM
+  // SWAP_ON_SWAAP_V2 = 3, // swapOnSwaapV2
   SEND_NATIVE = 4, // sendNative
 }
 
 enum Flag {
-  TWELVE = 12,
+  FIFTEEN = 15,
+  ELEVEN = 11,
   NINE = 9,
   EIGHT = 8,
   SEVEN = 7,
@@ -61,9 +54,9 @@ enum Flag {
 }
 
 /**
- * Class to build bytecode for Executor01
+ * Class to build bytecode for Executor01 (simpleSwap + multiSwap with 100% amounts on each path)
  */
-export class Executor01BytecodeBuilder {
+export class Executor01BytecodeBuilder implements IExecutorBytecodeBuilder {
   erc20Interface: Interface;
 
   constructor(protected dexHelper: IDexHelper) {
@@ -71,66 +64,98 @@ export class Executor01BytecodeBuilder {
   }
 
   protected buildDexCallData(
-    priceRoute: OptimalRate,
-    exchangeDataList: DexExchangeParam[],
+    swap: OptimalSwap,
+    exchangeParam: DexExchangeParam,
     flag: Flag,
-    maybeWethCallData?: DepositWithdrawReturn,
   ) {
-    const checkSrcTokenBalanceAfterSwap = flag % 3 === 2;
+    const dontCheckBalanceAfterSwap = flag % 3 === 0;
+    const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
+    const insertFromAmount = flag % 4 === 3;
+    let { exchangeData } = exchangeParam;
 
-    // We support 1 Dex for now
-    const dexData = exchangeDataList[0];
+    let destTokenPos = 0;
+    if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
+      const destTokenAddr = isETHAddress(swap.destToken)
+        ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+        : swap.destToken.toLowerCase();
 
-    let srcTokenPos = 0;
-    if (checkSrcTokenBalanceAfterSwap) {
-      const srcTokenAddrForNextCall = maybeWethCallData?.withdraw
-        ? this.dexHelper.config.data.wrappedNativeTokenAddress
-        : priceRoute.destToken;
-
-      const srcTokenAddrIndex = dexData.exchangeData
+      if (!exchangeParam.dexFuncHasDestToken) {
+        exchangeData = hexConcat([exchangeData, ZEROS_28_BYTES, destTokenAddr]);
+      }
+      const destTokenAddrIndex = exchangeData
         .replace('0x', '')
-        .indexOf(srcTokenAddrForNextCall.replace('0x', ''));
-      srcTokenPos = (srcTokenAddrIndex - 24) / 2;
+        .indexOf(destTokenAddr.replace('0x', ''));
+      destTokenPos = (destTokenAddrIndex - 24) / 2;
     }
 
-    return solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
-      dexData.targetExchange, // target exchange
-      hexZeroPad(
-        hexlify(hexDataLength(dexData.exchangeData) + BYTES_28_LENGTH),
-        4,
-      ), // dex calldata length + bytes28(0)
-      hexZeroPad(hexlify(0), 2), // fromAmountPos
-      hexZeroPad(hexlify(srcTokenPos), 2), // srcTokenPos
+    let fromAmountPos = 0;
+    if (insertFromAmount) {
+      const fromAmount = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'],
+        [swap.swapExchanges[0].srcAmount],
+      );
+      const fromAmountIndex = exchangeData
+        .replace('0x', '')
+        .indexOf(fromAmount.replace('0x', ''));
+      fromAmountPos = fromAmountIndex / 2;
+    }
+
+    return solidityPack(EXECUTOR_01_FUNCTION_CALL_DATA_TYPES, [
+      exchangeParam.targetExchange, // target exchange
+      hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
+      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
+      hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
       hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
-      dexData.exchangeData, // dex calldata
+      exchangeData, // dex calldata
     ]);
   }
 
   protected buildApproveCallData(
     approveCalldata: string,
     tokenAddr: Address,
+    amount: string,
     flag: Flag,
   ) {
-    return solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
+    const insertFromAmount = flag % 4 === 3;
+    const checkSrcTokenBalance = flag % 3 === 2;
+
+    let fromAmountPos = 0;
+    if (insertFromAmount) {
+      const fromAmount = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'],
+        [amount],
+      );
+
+      const fromAmountIndex = approveCalldata
+        .replace('0x', '')
+        .indexOf(fromAmount.replace('0x', ''));
+      fromAmountPos = fromAmountIndex / 2;
+    }
+
+    if (checkSrcTokenBalance) {
+      approveCalldata = hexConcat([approveCalldata, ZEROS_12_BYTES, tokenAddr]);
+    }
+
+    return solidityPack(EXECUTOR_01_FUNCTION_CALL_DATA_TYPES, [
       tokenAddr, // token address to approve
       hexZeroPad(hexlify(hexDataLength(approveCalldata) + BYTES_28_LENGTH), 4), // approve calldata length + bytes(28)
-      hexZeroPad(hexlify(0), 2), // fromAmountPos
-      hexZeroPad(hexlify(0), 2), // srcTokenPos
+      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
+      hexZeroPad(hexlify(APPROVE_CALLDATA_DEST_TOKEN_POS), 2), // destTokenPos
       hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
-      approveCalldata,
+      approveCalldata, // approve calldata
     ]);
   }
 
   protected buildWrapEthCallData(depositCallData: string, flag: Flag) {
-    return solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
+    return solidityPack(EXECUTOR_01_FUNCTION_CALL_DATA_TYPES, [
       this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
       hexZeroPad(hexlify(hexDataLength(depositCallData) + BYTES_28_LENGTH), 4), // wrap calldata length + bytes(28)
-      hexZeroPad(hexlify(4), 2), // fromAmountPos
-      hexZeroPad(hexlify(0), 2), // srcTokenPos
+      hexZeroPad(hexlify(WRAP_UNWRAP_FROM_AMOUNT_POS), 2), // fromAmountPos
+      hexZeroPad(hexlify(0), 2), // destTokenPos
       hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
@@ -139,13 +164,13 @@ export class Executor01BytecodeBuilder {
   }
 
   protected buildUnwrapEthCallData(withdrawCallData: string) {
-    return solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
+    return solidityPack(EXECUTOR_01_FUNCTION_CALL_DATA_TYPES, [
       this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
       hexZeroPad(hexlify(hexDataLength(withdrawCallData) + BYTES_28_LENGTH), 4), // unwrap calldata length + bytes28(0)
-      hexZeroPad(hexlify(4), 2), // fromAmountPos
-      hexZeroPad(hexlify(0), 2), // srcTokenPos
+      hexZeroPad(hexlify(WRAP_UNWRAP_FROM_AMOUNT_POS), 2), // fromAmountPos
+      hexZeroPad(hexlify(0), 2), // destTokenPos
       hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
-      hexZeroPad(hexlify(7), 2), // flag
+      hexZeroPad(hexlify(Flag.SEVEN), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       withdrawCallData, // unwrap calldata
     ]);
@@ -155,11 +180,11 @@ export class Executor01BytecodeBuilder {
     transferCallData: string,
     tokenAddr: Address,
   ) {
-    return solidityPack(EXECUTOR_01_FUNCTION_DATA_TYPES, [
+    return solidityPack(EXECUTOR_01_FUNCTION_CALL_DATA_TYPES, [
       tokenAddr, // token address
       hexZeroPad(hexlify(hexDataLength(transferCallData) + BYTES_28_LENGTH), 4), // unwrap calldata length + bytes28(0)
       hexZeroPad(hexlify(36), 2), // fromAmountPos
-      hexZeroPad(hexlify(0), 2), // srcTokenPos
+      hexZeroPad(hexlify(0), 2), // destTokenPos
       hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
       hexZeroPad(hexlify(Flag.THREE), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
@@ -174,7 +199,7 @@ export class Executor01BytecodeBuilder {
         this.dexHelper.config.data.augustusV6Address, // augusutus v6 address
         hexZeroPad(hexlify(28 + 4), 4), // final unwrap calldata size bytes28(0) + bytes4(0)
         hexZeroPad(hexlify(0), 2), // fromAmountPos
-        hexZeroPad(hexlify(0), 2), // srcTokenPos
+        hexZeroPad(hexlify(0), 2), // destTokenPos
         hexZeroPad(hexlify(SpecialDex.SEND_NATIVE), 2), // special
         hexZeroPad(hexlify(9), 2), // flag
         ZEROS_32_BYTES, // bytes28(0) + bytes4(0)
@@ -182,95 +207,273 @@ export class Executor01BytecodeBuilder {
     );
   }
 
-  protected getFlags(
+  /**
+   * Executor01 Flags:
+   * switch (flag % 4):
+   * case 0: don't instert fromAmount
+   * case 1: sendEth equal to fromAmount
+   * case 2: sendEth equal to fromAmount + insert fromAmount
+   * case 3: insert fromAmount
+
+   * switch (flag % 3):
+   * case 0: don't check balance after swap
+   * case 1: check eth balance after swap
+   * case 2: check desTtoken balance after swap
+   */
+  protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
-    exchangeDataList: DexExchangeParam[],
+    exchangeParam: DexExchangeParam,
+    index: number,
     maybeWethCallData?: DepositWithdrawReturn,
-  ): { approve: Flag; dex: Flag; wrap: Flag } {
-    const { srcToken, destToken } = priceRoute;
+  ): { dexFlag: Flag; approveFlag: Flag } {
+    const { srcToken, destToken } = priceRoute.bestRoute[0].swaps[index];
+    const isEthSrc = isETHAddress(srcToken);
+    const isEthDest = isETHAddress(destToken);
 
-    const needWrap = isETHAddress(srcToken) && maybeWethCallData?.deposit;
-    const needUnwrap = isETHAddress(destToken) && maybeWethCallData?.withdraw;
-    const isEthSrc = isETHAddress(srcToken) && !maybeWethCallData?.deposit;
-    const isEthDest = isETHAddress(destToken) && !maybeWethCallData?.withdraw;
-    const hasRecipient = exchangeDataList[0].dexFuncHasRecipient;
+    const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
 
-    let dexFlag = Flag.ZERO;
-    if (isEthSrc) {
-      dexFlag = Flag.FIVE;
-    } else if (needWrap) {
-      dexFlag = Flag.TWELVE;
-    } else if (needUnwrap) {
-      dexFlag = Flag.EIGHT;
-    } else if (!hasRecipient && isEthDest) {
-      dexFlag = Flag.FOUR;
-    } else if (!hasRecipient) {
-      dexFlag = Flag.EIGHT;
+    const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
+    const needUnwrap =
+      needWrapNative && isEthDest && maybeWethCallData?.withdraw;
+
+    let dexFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
+    let approveFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
+
+    if (isEthSrc && !needWrap) {
+      dexFlag = Flag.FIVE; // (flag 5 mod 4) = case 1: sendEth equal to fromAmount, (flag 5 mod 3) = case 2: check "srcToken" balance after swap
+    } else if (isEthDest && !needUnwrap) {
+      dexFlag = Flag.FOUR; // (flag 4 mod 4) = case 0: don't insert fromAmount, (flag 4 mod 3) = case 1: check eth balance after swap
+    } else if (!dexFuncHasRecipient || (isEthDest && needUnwrap)) {
+      dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
     }
 
     return {
-      dex: dexFlag,
+      dexFlag,
+      approveFlag,
+    };
+  }
+
+  /**
+   * Executor01 Flags:
+   * switch (flag % 4):
+   * case 0: don't instert fromAmount
+   * case 1: sendEth equal to fromAmount
+   * case 2: sendEth equal to fromAmount + insert fromAmount
+   * case 3: insert fromAmount
+
+   * switch (flag % 3):
+   * case 0: don't check balance after swap
+   * case 1: check eth balance after swap
+   * case 2: check desTtoken balance after swap
+   */
+  protected buildMultiSwapFlags(
+    priceRoute: OptimalRate,
+    exchangeParam: DexExchangeParam,
+    index: number,
+    maybeWethCallData?: DepositWithdrawReturn,
+  ): { dexFlag: Flag; approveFlag: Flag } {
+    const swap = priceRoute.bestRoute[0].swaps[index];
+    const { srcToken, destToken } = swap;
+    const isFirstSwap = index === 0;
+    const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
+    const isEthSrc = isETHAddress(srcToken);
+    const isEthDest = isETHAddress(destToken);
+
+    const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
+    const needUnwrap =
+      needWrapNative && isEthDest && maybeWethCallData?.withdraw;
+
+    let dexFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
+    let approveFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
+
+    if (isFirstSwap) {
+      if (isEthSrc && !needWrap) {
+        dexFlag = Flag.FIVE; // (flag 5 mod 4) = case 1: sendEth equal to fromAmount, (flag 5 mod 3) = case 2: check "srcToken" balance after swap
+      } else if (isEthSrc && needWrap) {
+        dexFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
+        approveFlag = Flag.ZERO;
+      } else if (!isEthSrc && !isEthDest) {
+        dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+      } else if (isEthDest && needUnwrap) {
+        dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+        approveFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+      } else if (isEthDest && !needUnwrap) {
+        dexFlag = Flag.FOUR; // (flag 4 mod 4) = case 0: don't insert fromAmount, (flag 4 mod 3) = case 1: check eth balance after swap
+      } else if (!dexFuncHasRecipient) {
+        dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+      }
+    } else {
+      if (isEthSrc && !needWrap) {
+        dexFlag = Flag.FIVE; // (flag 5 mod 4) = case 1: sendEth equal to fromAmount, (flag 5 mod 3) = case 2: check "srcToken" balance after swap
+      } else if (isEthSrc && needWrap) {
+        dexFlag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
+        approveFlag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
+      } else {
+        dexFlag = Flag.ELEVEN; // (flag 11 mod 4) = case 3: insert fromAmount, (flag 11 mod 3) = case 2: check "srcToken" balance after swap
+        approveFlag = Flag.ELEVEN; // (flag 11 mod 4) = case 3: insert fromAmount, (flag 11 mod 3) = case 2: check "srcToken" balance after swap
+      }
+    }
+
+    return {
+      dexFlag,
+      approveFlag,
+    };
+  }
+
+  protected buildFlags(
+    priceRoute: OptimalRate,
+    exchangeDataList: DexExchangeParam[],
+    maybeWethCallData?: DepositWithdrawReturn,
+  ): { approves: Flag[]; dexes: Flag[]; wrap: Flag } {
+    const isMultiSwap = priceRoute.bestRoute[0].swaps.length > 1;
+    const buildFlagsMethod = isMultiSwap
+      ? this.buildMultiSwapFlags.bind(this)
+      : this.buildSimpleSwapFlags.bind(this);
+
+    const flags = exchangeDataList.reduce<{ dexes: Flag[]; approves: Flag[] }>(
+      (acc, exchangeParam, index) => {
+        const { dexFlag, approveFlag } = buildFlagsMethod(
+          priceRoute,
+          exchangeParam,
+          index,
+          maybeWethCallData,
+        );
+
+        acc.dexes.push(dexFlag);
+        acc.approves.push(approveFlag);
+
+        return acc;
+      },
+      { dexes: [], approves: [] },
+    );
+
+    return {
+      ...flags,
       wrap:
-        isETHAddress(srcToken) && maybeWethCallData?.deposit
+        isETHAddress(priceRoute.srcToken) && maybeWethCallData?.deposit
           ? Flag.NINE
           : Flag.SEVEN,
-      approve: needWrap ? Flag.TWELVE : needUnwrap ? Flag.EIGHT : Flag.ZERO,
     };
+  }
+
+  protected buildSingleSwapCallData(
+    priceRoute: OptimalRate,
+    exchangeParams: DexExchangeParam[],
+    index: number,
+    flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
+    maybeWethCallData: DepositWithdrawReturn,
+  ): string {
+    let swapCallData = '';
+    const swap = priceRoute.bestRoute[0].swaps[index];
+    const curExchangeParam = exchangeParams[index];
+    const srcAmount = swap.swapExchanges[0].srcAmount;
+
+    const dexCallData = this.buildDexCallData(
+      swap,
+      curExchangeParam,
+      flags.dexes[index],
+    );
+
+    swapCallData = hexConcat([dexCallData]);
+
+    if (
+      !isETHAddress(swap.srcToken) ||
+      (isETHAddress(swap.srcToken) && index !== 0)
+    ) {
+      const approve = this.erc20Interface.encodeFunctionData('approve', [
+        curExchangeParam.targetExchange,
+        srcAmount,
+      ]);
+
+      const approveCallData = this.buildApproveCallData(
+        approve,
+        isETHAddress(swap.srcToken) && index !== 0
+          ? this.dexHelper.config.data.wrappedNativeTokenAddress
+          : swap.srcToken,
+        srcAmount,
+        flags.approves[index],
+      );
+
+      swapCallData = hexConcat([approveCallData, swapCallData]);
+    }
+
+    if (curExchangeParam.needWrapNative && maybeWethCallData) {
+      if (maybeWethCallData.deposit && isETHAddress(swap.srcToken)) {
+        const prevExchangeParam = exchangeParams[index - 1];
+
+        if (
+          !prevExchangeParam ||
+          (prevExchangeParam && !prevExchangeParam.needWrapNative)
+        ) {
+          const approveWethCalldata = this.buildApproveCallData(
+            this.erc20Interface.encodeFunctionData('approve', [
+              curExchangeParam.targetExchange,
+              swap.swapExchanges[0].srcAmount,
+            ]),
+            this.dexHelper.config.data.wrappedNativeTokenAddress,
+            srcAmount,
+            flags.approves[index],
+          );
+
+          const depositCallData = this.buildWrapEthCallData(
+            maybeWethCallData.deposit.calldata,
+            Flag.NINE,
+          );
+
+          swapCallData = hexConcat([
+            approveWethCalldata,
+            depositCallData,
+            swapCallData,
+          ]);
+        }
+      }
+
+      if (maybeWethCallData.withdraw && isETHAddress(priceRoute.destToken)) {
+        const nextExchangeParam = exchangeParams[index + 1];
+
+        if (
+          !nextExchangeParam ||
+          (nextExchangeParam && !nextExchangeParam.needWrapNative)
+        ) {
+          const withdrawCallData = this.buildUnwrapEthCallData(
+            maybeWethCallData.withdraw.calldata,
+          );
+          swapCallData = hexConcat([swapCallData, withdrawCallData]);
+        }
+      }
+    }
+
+    return swapCallData;
   }
 
   public buildByteCode(
     priceRoute: OptimalRate,
     exchangeDataList: DexExchangeParam[],
-    maybeWethCallData?: DepositWithdrawReturn,
+    maybeWethCallData: DepositWithdrawReturn,
   ): string {
-    let finalCallData = '';
-    const flags = this.getFlags(
+    const flags = this.buildFlags(
       priceRoute,
       exchangeDataList,
       maybeWethCallData,
     );
-    const dexCallData = this.buildDexCallData(
-      priceRoute,
-      exchangeDataList,
-      flags.dex,
-      maybeWethCallData,
-    );
 
-    finalCallData = hexConcat([dexCallData]);
-
-    if (!isETHAddress(priceRoute.srcToken) || maybeWethCallData?.deposit) {
-      const approveCallData = this.buildApproveCallData(
-        this.erc20Interface.encodeFunctionData('approve', [
-          exchangeDataList[0].targetExchange,
-          priceRoute.srcAmount,
+    let swapsCalldata = exchangeDataList.reduce<string>(
+      (acc, exchangeParams, index) =>
+        hexConcat([
+          acc,
+          this.buildSingleSwapCallData(
+            priceRoute,
+            exchangeDataList,
+            index,
+            flags,
+            maybeWethCallData,
+          ),
         ]),
-        maybeWethCallData?.deposit
-          ? this.dexHelper.config.data.wrappedNativeTokenAddress
-          : priceRoute.srcToken,
-        flags.approve,
-      );
-      finalCallData = hexConcat([approveCallData, finalCallData]);
-    }
-
-    if (maybeWethCallData) {
-      if (maybeWethCallData.deposit) {
-        const depositCallData = this.buildWrapEthCallData(
-          maybeWethCallData.deposit.calldata,
-          flags.wrap,
-        );
-        finalCallData = hexConcat([depositCallData, finalCallData]);
-      }
-
-      if (maybeWethCallData.withdraw) {
-        const withdrawCallData = this.buildUnwrapEthCallData(
-          maybeWethCallData.withdraw.calldata,
-        );
-        finalCallData = hexConcat([finalCallData, withdrawCallData]);
-      }
-    }
+      '0x',
+    );
 
     if (
-      !exchangeDataList[0].dexFuncHasRecipient &&
+      !exchangeDataList[exchangeDataList.length - 1].dexFuncHasRecipient &&
       !isETHAddress(priceRoute.destToken)
     ) {
       const transferCallData = this.buildTransferCallData(
@@ -281,16 +484,16 @@ export class Executor01BytecodeBuilder {
         priceRoute.destToken,
       );
 
-      finalCallData = hexConcat([finalCallData, transferCallData]);
+      swapsCalldata = hexConcat([swapsCalldata, transferCallData]);
     }
 
     if (
-      maybeWethCallData?.withdraw ||
-      (!exchangeDataList[0].dexFuncHasRecipient &&
+      (maybeWethCallData?.withdraw && isETHAddress(priceRoute.destToken)) ||
+      (!exchangeDataList[exchangeDataList.length - 1].dexFuncHasRecipient &&
         isETHAddress(priceRoute.destToken))
     ) {
       const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
-      finalCallData = hexConcat([finalCallData, finalSpecialFlagCalldata]);
+      swapsCalldata = hexConcat([swapsCalldata, finalSpecialFlagCalldata]);
     }
 
     return solidityPack(
@@ -298,10 +501,10 @@ export class Executor01BytecodeBuilder {
       [
         hexZeroPad(hexlify(32), 32),
         hexZeroPad(
-          hexlify(hexDataLength(finalCallData) + BYTES_64_LENGTH), // 64 bytes = bytes12(0) + msg.sender
+          hexlify(hexDataLength(swapsCalldata) + BYTES_64_LENGTH), // 64 bytes = bytes12(0) + msg.sender
           32,
         ),
-        finalCallData,
+        swapsCalldata,
       ],
     );
   }

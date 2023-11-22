@@ -157,9 +157,11 @@ export type AdapterExchangeParam = {
 };
 
 export type DexExchangeParam = {
+  needWrapNative: boolean;
   exchangeData: string;
   targetExchange: string;
   dexFuncHasRecipient: boolean;
+  dexFuncHasDestToken: boolean;
   amountOffset?: number;
 };
 

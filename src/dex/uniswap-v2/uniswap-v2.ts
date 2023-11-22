@@ -15,6 +15,7 @@ import {
   Token,
   TxInfo,
   TransferFeeParams,
+  DexExchangeParam,
 } from '../../types';
 import {
   UniswapData,
