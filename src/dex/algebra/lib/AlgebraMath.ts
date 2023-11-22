@@ -652,15 +652,10 @@ class AlgebraMathClass {
     }
 
     _require(
-      currentPrice == newSqrtPriceX96,
-      `LOGIC ERROR: calculated currentPrice and price from event ('newSqrtPriceX96') should always be equal at the end`,
-      { currentPrice, newSqrtPriceX96 },
-    );
-
-    _require(
-      currentTick == newTick,
-      `LOGIC ERROR: calculated currentTick and tick from event ('newTick') should always be equal at the end`,
-      { currentTick, newTick },
+      currentPrice === newSqrtPriceX96 && currentTick === newTick,
+      'LOGIC ERROR: calculated (currentPrice,currentTick) and (newSqrtPriceX96, newTick) from event should always be equal at the end',
+      { currentPrice, newSqrtPriceX96, currentTick, newTick },
+      'currentPrice === newSqrtPriceX96 && currentTick === newTick',
     );
 
     let [amount0, amount1] =
