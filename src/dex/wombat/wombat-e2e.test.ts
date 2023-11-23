@@ -38,57 +38,51 @@ function testForNetwork(
     [SwapSide.BUY, [ContractMethod.simpleBuy /* ContractMethod.buy */]],
   ]);
 
-  describe(`${network}`, () => {
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
+  sideToContractMethods.forEach((contractMethods, side) =>
+    describe(`${side}`, () => {
+      contractMethods.forEach((contractMethod: ContractMethod) => {
+        pairs.forEach(pair => {
           describe(`${contractMethod}`, () => {
-            pairs.forEach(pair => {
-              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
-                await testE2E(
-                  tokens[pair[0].name],
-                  tokens[pair[1].name],
-                  holders[pair[0].name],
-                  side === SwapSide.SELL
-                    ? pair[0].sellAmount
-                    : pair[0].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  undefined,
-                  undefined,
-                  undefined,
-                  slippage,
-                );
-              });
+            it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+              await testE2E(
+                tokens[pair[0].name],
+                tokens[pair[1].name],
+                holders[pair[0].name],
+                side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+              );
+            });
 
-              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-                await testE2E(
-                  tokens[pair[1].name],
-                  tokens[pair[0].name],
-                  holders[pair[1].name],
-                  side === SwapSide.SELL
-                    ? pair[1].sellAmount
-                    : pair[1].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  undefined,
-                  undefined,
-                  undefined,
-                  slippage,
-                );
-              });
+            it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+              await testE2E(
+                tokens[pair[1].name],
+                tokens[pair[0].name],
+                holders[pair[1].name],
+                side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+              );
             });
           });
         });
-      }),
-    );
-  });
+      });
+    }),
+  );
 }
 
 describe('Wombat E2E', () => {
