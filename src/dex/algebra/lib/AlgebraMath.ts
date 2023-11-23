@@ -16,12 +16,10 @@ import {
   PriceComputationState,
   _updatePriceComputationObjects,
 } from '../../uniswap-v3/contract-math/uniswap-v3-math';
-import {
-  MAX_PRICING_COMPUTATION_STEPS_ALLOWED,
-  OUT_OF_RANGE_ERROR_POSTFIX,
-} from '../../uniswap-v3/constants';
+import { OUT_OF_RANGE_ERROR_POSTFIX } from '../../uniswap-v3/constants';
 import { TickManager } from './TickManager';
 import { TickTable } from './TickTable';
+import { MAX_PRICING_COMPUTATION_STEPS_ALLOWED } from '../constants';
 
 type UpdatePositionCache = {
   price: bigint;
@@ -590,7 +588,7 @@ class AlgebraMathClass {
 
       // equivalent of  PriceMovementMath.movePriceTowardsTarget
       const result = SwapMath.computeSwapStep(
-        poolState.globalState.price,
+        currentPrice,
         zeroToOne == step.nextTickPrice < newSqrtPriceX96
           ? newSqrtPriceX96
           : step.nextTickPrice,
@@ -652,6 +650,13 @@ class AlgebraMathClass {
         break;
       }
     }
+
+    _require(
+      currentPrice === newSqrtPriceX96 && currentTick === newTick,
+      'LOGIC ERROR: calculated (currentPrice,currentTick) and (newSqrtPriceX96, newTick) from event should always be equal at the end',
+      { currentPrice, newSqrtPriceX96, currentTick, newTick },
+      'currentPrice === newSqrtPriceX96 && currentTick === newTick',
+    );
 
     let [amount0, amount1] =
       zeroToOne == cache.exactInput // the amount to provide could be less then initially specified (e.g. reached limit)

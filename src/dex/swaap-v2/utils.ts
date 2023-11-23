@@ -1,32 +1,25 @@
 import { Address } from '../../types';
-import { CACHE_PREFIX, ETHER_ADDRESS, NULL_ADDRESS } from '../../constants';
+import { ETHER_ADDRESS, NULL_ADDRESS } from '../../constants';
 
 export const getIdentifierPrefix = (
   dexKey: string,
-  srcAddress: Address,
-  destAddress: Address,
+  tokenA: Address,
+  tokenB: Address,
 ) => {
-  return `${dexKey}_${getPairName(srcAddress, destAddress)}`.toLowerCase();
+  return `${dexKey}_${getPairName(tokenA, tokenB)}`.toLowerCase();
 };
 
-export const getPairName = (srcAddress: Address, destAddress: Address) => {
-  const sortedAddresses =
-    srcAddress < destAddress
-      ? [srcAddress, destAddress]
-      : [destAddress, srcAddress];
+export const getPairName = (tokenA: Address, tokenB: Address) => {
+  const sortedAddresses = tokenA < tokenB ? [tokenA, tokenB] : [tokenB, tokenA];
   return `${sortedAddresses[0]}_${sortedAddresses[1]}`.toLowerCase();
 };
 
 export const getPoolIdentifier = (
   dexKey: string,
-  srcAddress: Address,
-  destAddress: Address,
+  tokenA: Address,
+  tokenB: Address,
 ) => {
-  return `${getIdentifierPrefix(
-    dexKey,
-    srcAddress,
-    destAddress,
-  )}`.toLowerCase();
+  return `${getIdentifierPrefix(dexKey, tokenA, tokenB)}`.toLowerCase();
 };
 
 export const normalizeTokenAddress = (address: string): string => {

@@ -165,7 +165,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
-      BscAdapter02: '0x02f2c31ebDE63E871AD0E74c01E21c819292a59D',
+      BscAdapter02: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
       BscBuyAdapter: '0x301c2813e3ceb43A448a12f21551EDBcdC37F157',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
@@ -252,7 +252,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_250`]?.split(',') || [],
 
     adapterAddresses: {
-      FantomAdapter01: '0x434C1Cca4842629230067674Dd54E21a14D9FD5D',
+      FantomAdapter01: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
       FantomBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
     },
     uniswapV2ExchangeRouterAddress:
