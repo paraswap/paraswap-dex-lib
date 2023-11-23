@@ -11,176 +11,93 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-// function testForNetwork(
-//   network: Network,
-//   dexKey: string,
-//   tokenASymbol: string,
-//   tokenBSymbol: string,
-//   tokenAAmount: string,
-//   tokenBAmount: string,
-//   nativeTokenAmount: string,
-//   slippage?: number | undefined,
-// ) {
-//   const provider = new StaticJsonRpcProvider(
-//     generateConfig(network).privateHttpProvider,
-//     network,
-//   );
-//   const tokens = Tokens[network];
-//   const holders = Holders[network];
-//   const nativeTokenSymbol = NativeTokenSymbols[network];
+type Pairs = { name: string; sellAmount: string; buyAmount: string }[][];
 
-//   const sideToContractMethods = new Map([
-//     [
-//       SwapSide.SELL,
-//       [
-//         ContractMethod.simpleSwap,
-//         // ContractMethod.multiSwap,
-//         // ContractMethod.megaSwap,
-//       ],
-//     ],
-//     [SwapSide.BUY, [ContractMethod.simpleBuy /* ContractMethod.buy */]],
-//   ]);
+function testForNetwork(
+  network: Network,
+  dexKey: string,
+  pairs: Pairs,
+  slippage?: number | undefined,
+) {
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
+  const tokens = Tokens[network];
+  const holders = Holders[network];
 
-//   describe(`${network}`, () => {
-//     sideToContractMethods.forEach((contractMethods, side) =>
-//       describe(`${side}`, () => {
-//         contractMethods.forEach((contractMethod: ContractMethod) => {
-//           describe(`${contractMethod}`, () => {
-//             it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-//               await testE2E(
-//                 tokens[nativeTokenSymbol],
-//                 tokens[tokenASymbol],
-//                 holders[nativeTokenSymbol],
-//                 side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-//                 side,
-//                 dexKey,
-//                 contractMethod,
-//                 network,
-//                 provider,
-//                 undefined,
-//                 undefined,
-//                 undefined,
-//                 slippage,
-//               );
-//             });
-//             it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-//               await testE2E(
-//                 tokens[tokenASymbol],
-//                 tokens[nativeTokenSymbol],
-//                 holders[tokenASymbol],
-//                 side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-//                 side,
-//                 dexKey,
-//                 contractMethod,
-//                 network,
-//                 provider,
-//                 undefined,
-//                 undefined,
-//                 undefined,
-//                 slippage,
-//               );
-//             });
-//             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-//               await testE2E(
-//                 tokens[tokenASymbol],
-//                 tokens[tokenBSymbol],
-//                 holders[tokenASymbol],
-//                 side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-//                 side,
-//                 dexKey,
-//                 contractMethod,
-//                 network,
-//                 provider,
-//                 undefined,
-//                 undefined,
-//                 undefined,
-//                 slippage,
-//               );
-//             });
-//           });
-//         });
-//       }),
-//     );
-//   });
-// }
+  const sideToContractMethods = new Map([
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
+      ],
+    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy /* ContractMethod.buy */]],
+  ]);
 
-//   describe(`${network}`, () => {
-//     sideToContractMethods.forEach((contractMethods, side) =>
-//       describe(`${side}`, () => {
-//         contractMethods.forEach((contractMethod: ContractMethod) => {
-//           describe(`${contractMethod}`, () => {
-//             it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-//               await testE2E(
-//                 tokens[nativeTokenSymbol],
-//                 tokens[tokenASymbol],
-//                 holders[nativeTokenSymbol],
-//                 side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-//                 side,
-//                 dexKey,
-//                 contractMethod,
-//                 network,
-//                 provider,
-//               );
-//             });
-//             it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-//               await testE2E(
-//                 tokens[tokenASymbol],
-//                 tokens[nativeTokenSymbol],
-//                 holders[tokenASymbol],
-//                 side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-//                 side,
-//                 dexKey,
-//                 contractMethod,
-//                 network,
-//                 provider,
-//               );
-//             });
-//             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-//               await testE2E(
-//                 tokens[tokenASymbol],
-//                 tokens[tokenBSymbol],
-//                 holders[tokenASymbol],
-//                 side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-//                 side,
-//                 dexKey,
-//                 contractMethod,
-//                 network,
-//                 provider,
-//               );
-//             });
-//           });
-//         });
-//       }),
-//     );
-//   });
-// }
+  describe(`${network}`, () => {
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            pairs.forEach(pair => {
+              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                await testE2E(
+                  tokens[pair[0].name],
+                  tokens[pair[1].name],
+                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? pair[0].sellAmount
+                    : pair[0].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  slippage,
+                );
+              });
 
-// TODO: Rewrite with testForNetwork
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  slippage,
+                );
+              });
+            });
+          });
+        });
+      }),
+    );
+  });
+}
+
 describe('Wombat E2E', () => {
   const dexKey = 'Wombat';
 
   describe('BSC', () => {
     const network = Network.BSC;
-    const tokens = Tokens[network];
-    const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
 
-    const sideToContractMethods = new Map([
-      [
-        SwapSide.SELL,
-        [
-          ContractMethod.simpleSwap,
-          // ContractMethod.multiSwap,
-          // ContractMethod.megaSwap,
-        ],
-      ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy /* ContractMethod.buy */]],
-    ]);
-
-    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+    const pairs: Pairs = [
       [
         {
           name: 'USDC',
@@ -207,70 +124,13 @@ describe('Wombat E2E', () => {
       // ],
     ];
 
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
-          pairs.forEach(pair => {
-            describe(`${contractMethod}`, () => {
-              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
-                await testE2E(
-                  tokens[pair[0].name],
-                  tokens[pair[1].name],
-                  holders[pair[0].name],
-                  side === SwapSide.SELL
-                    ? pair[0].sellAmount
-                    : pair[0].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
-              });
-              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-                await testE2E(
-                  tokens[pair[1].name],
-                  tokens[pair[0].name],
-                  holders[pair[1].name],
-                  side === SwapSide.SELL
-                    ? pair[1].sellAmount
-                    : pair[1].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
-              });
-            });
-          });
-        });
-      }),
-    );
+    testForNetwork(network, dexKey, pairs);
   });
 
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
-    const tokens = Tokens[network];
-    const holders = Holders[network];
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
 
-    const sideToContractMethods = new Map([
-      [
-        SwapSide.SELL,
-        [
-          ContractMethod.simpleSwap,
-          // ContractMethod.multiSwap,
-          // ContractMethod.megaSwap,
-        ],
-      ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy /* ContractMethod.buy */]],
-    ]);
-
-    const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+    const pairs: Pairs = [
       [
         {
           name: 'USDC',
@@ -285,66 +145,6 @@ describe('Wombat E2E', () => {
       ],
     ];
 
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
-          pairs.forEach(pair => {
-            describe(`${contractMethod}`, () => {
-              it(`${pair[0].name} -> ${pair[1].name}`, async () => {
-                await testE2E(
-                  tokens[pair[0].name],
-                  tokens[pair[1].name],
-                  holders[pair[0].name],
-                  side === SwapSide.SELL
-                    ? pair[0].sellAmount
-                    : pair[0].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
-              });
-              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-                await testE2E(
-                  tokens[pair[1].name],
-                  tokens[pair[0].name],
-                  holders[pair[1].name],
-                  side === SwapSide.SELL
-                    ? pair[1].sellAmount
-                    : pair[1].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
-              });
-            });
-          });
-        });
-      }),
-    );
+    testForNetwork(network, dexKey, pairs);
   });
-
-  // describe('Arbitrum', () => {
-  //   const network = Network.ARBITRUM;
-
-  //   const tokenASymbol: string = 'USDC';
-  //   const tokenBSymbol: string = 'USDT';
-
-  //   const tokenAAmount: string = '100000000';
-  //   const tokenBAmount: string = '100000000';
-  //   const nativeTokenAmount = '1000000000000000000';
-
-  //   testForNetwork(
-  //     network,
-  //     dexKey,
-  //     tokenASymbol,
-  //     tokenBSymbol,
-  //     tokenAAmount,
-  //     tokenBAmount,
-  //     nativeTokenAmount,
-  //   );
-  // });
 });
