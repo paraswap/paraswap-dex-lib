@@ -188,11 +188,11 @@ describe('Wombat', function () {
         10n * BI_POWS[tokens[destTokenSymbol].decimals],
       ];
 
-      // BASE and OPTIMISM have very low liquidity currently, so we have to use very small amounts
-      if (network === Network.BASE || network === Network.OPTIMISM) {
-        amountsForSell = amountsForSell.map(a => a / 100n);
-        amountsForBuy = amountsForBuy.map(a => a / 100n);
-      }
+      // OPTIMISM has very low liquidity currently, so we have to use very small amounts
+      // if (network === Network.OPTIMISM) {
+      //   amountsForSell = amountsForSell.map(a => a / 100n);
+      //   amountsForBuy = amountsForBuy.map(a => a / 100n);
+      // }
 
       beforeAll(async () => {
         blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
