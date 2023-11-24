@@ -81,13 +81,13 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
     // TODO: If buy is not supported remove the buy contract methods
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-    [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy]],
   ]);
 
   describe(`${network}`, () => {

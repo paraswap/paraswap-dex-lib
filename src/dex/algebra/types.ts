@@ -53,13 +53,12 @@ export type PoolState_v1_9 = {
 
 export type FactoryState = Record<string, never>;
 
-export type AlgebraData = AlgebraDataWithoutFee | AlgebraDataWithFee;
-
-export type AlgebraDataWithoutFee = {
+export type AlgebraData = {
   path: {
     tokenIn: Address;
     tokenOut: Address;
   }[];
+  feeOnTransfer: boolean;
   isApproved?: boolean;
 };
 
