@@ -14,7 +14,7 @@ import {
 } from '../../types';
 import { Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper';
 import { DexParams, PoolState, WombatData } from './types';
@@ -22,7 +22,7 @@ import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { Adapters, LIQUIDITY_THRESHOLD_IN_USD, WombatConfig } from './config';
+import { Adapters, WombatConfig } from './config';
 import PoolABI from '../../abi/wombat/pool.json';
 import AssetABI from '../../abi/wombat/asset.json';
 import ERC20ABI from '../../abi/erc20.json';
@@ -131,8 +131,8 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     await this.updatePoolState();
     return (
       await this.findPools(
-        srcToken.address.toLowerCase(),
-        destToken.address.toLowerCase(),
+        this.dexHelper.config.wrapETH(srcToken).address.toLowerCase(),
+        this.dexHelper.config.wrapETH(destToken).address.toLowerCase(),
         blockNumber,
       )
     ).map(p => this.getPoolIdentifier(p));
@@ -158,8 +158,12 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       this.logger.error(`Missing pools for ${this.dexKey} in getPricesVolume`);
       return null;
     }
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
+    const srcTokenAddress = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+    const destTokenAddress = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
     if (srcTokenAddress === destTokenAddress) return null;
 
     const pools = (
@@ -225,7 +229,6 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     srcTokenAddress: Address,
     destTokenAddress: Address,
     blockNumber: number,
-    liquidityThresholdInUSD = 0,
   ): Promise<Address[]> {
     const pools: Address[] = [];
     for (const [poolAddress, pool] of Object.entries(this.pools)) {
@@ -242,10 +245,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
         state &&
         !state.params.paused &&
         state.asset[srcTokenAddress] &&
-        state.asset[destTokenAddress] &&
-        (liquidityThresholdInUSD === 0 ||
-          (this.poolLiquidityUSD![poolAddress] &&
-            this.poolLiquidityUSD![poolAddress] > liquidityThresholdInUSD))
+        state.asset[destTokenAddress]
       ) {
         pools.push(poolAddress);
       }
@@ -303,7 +303,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       srcToken,
       destToken,
       srcAmount,
-      1 /** @todo assume slippage tolorence is 2% and set the minimum receive accordingly */,
+      destAmount,
       this.augustusAddress,
       getLocalDeadlineAsFriendlyPlaceholder(),
     ]);
@@ -385,7 +385,11 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     if (!this.poolLiquidityUSD) await this.updatePoolState();
-    tokenAddress = tokenAddress.toLowerCase();
+    tokenAddress = (
+      isETHAddress(tokenAddress)
+        ? this.dexHelper.config.data.wrappedNativeTokenAddress
+        : tokenAddress
+    ).toLowerCase();
     const pools: string[] = [];
     const poolStates: { [poolAddress: string]: DeepReadonly<PoolState> } = {};
     for (const [poolAddress, eventPool] of Object.entries(this.pools)) {

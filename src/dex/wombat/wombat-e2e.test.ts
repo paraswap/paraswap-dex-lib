@@ -104,18 +104,18 @@ describe('Wombat E2E', () => {
           buyAmount: '1000000000',
         },
       ],
-      // [
-      //   {
-      //     name: 'BNB',
-      //     sellAmount: '1000000000000000000',
-      //     buyAmount: '1000000000',
-      //   },
-      //   {
-      //     name: 'BNBx',
-      //     sellAmount: '1000000000',
-      //     buyAmount: '1000000000000000000',
-      //   },
-      // ],
+      [
+        {
+          name: 'BNB',
+          sellAmount: '1000000000000000000',
+          buyAmount: '1000000000000000000',
+        },
+        {
+          name: 'BNBx',
+          sellAmount: '1000000000000000000',
+          buyAmount: '1000000000000000000',
+        },
+      ],
     ];
 
     testForNetwork(network, dexKey, pairs);
@@ -133,6 +133,105 @@ describe('Wombat E2E', () => {
         },
         {
           name: 'USDT',
+          sellAmount: '100000000',
+          buyAmount: '100000000',
+        },
+      ],
+      [
+        {
+          name: 'ETH',
+          sellAmount: '10000000000000000',
+          buyAmount: '10000000000000000',
+        },
+        {
+          name: 'wstETH',
+          sellAmount: '10000000000000000',
+          buyAmount: '10000000000000000',
+        },
+      ],
+    ];
+
+    testForNetwork(network, dexKey, pairs);
+  });
+
+  describe('Ethereum', () => {
+    const network = Network.MAINNET;
+
+    const pairs: Pairs = [
+      [
+        {
+          name: 'USDC',
+          sellAmount: '100000000',
+          buyAmount: '100000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '100000000',
+          buyAmount: '100000000',
+        },
+      ],
+      [
+        {
+          name: 'ETH',
+          sellAmount: '1000000000000000000',
+          buyAmount: '1000000000000000000',
+        },
+        {
+          name: 'wstETH',
+          sellAmount: '1000000000000000000',
+          buyAmount: '1000000000000000000',
+        },
+      ],
+    ];
+
+    testForNetwork(network, dexKey, pairs);
+  });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+
+    const pairs: Pairs = [
+      [
+        {
+          name: 'USDC',
+          sellAmount: '10000000',
+          buyAmount: '10000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '10000000',
+          buyAmount: '10000000',
+        },
+      ],
+      [
+        {
+          name: 'AVAX',
+          sellAmount: '100000000000000000000',
+          buyAmount: '100000000000000000000',
+        },
+        {
+          name: 'sAVAX',
+          sellAmount: '100000000000000000000',
+          buyAmount: '100000000000000000000',
+        },
+      ],
+    ];
+
+    testForNetwork(network, dexKey, pairs);
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const pairs: Pairs = [
+      [
+        {
+          name: 'USDC',
+          sellAmount: '100000000',
+          buyAmount: '100000000',
+        },
+        {
+          name: 'USDbC',
           sellAmount: '100000000',
           buyAmount: '100000000',
         },

@@ -19,9 +19,9 @@ export const WombatConfig: DexConfigMap<DexParams> = {
     [Network.BASE]: {
       bmwAddress: '0x6521a549834F5E6d253CD2e5F4fbe4048f86cd7b',
     },
-    [Network.OPTIMISM]: {
-      bmwAddress: '0x82E62f4e174E3C5e1641Df670c91Ac6Ab8541518',
-    },
+    // [Network.OPTIMISM]: {
+    //   bmwAddress: '0x82E62f4e174E3C5e1641Df670c91Ac6Ab8541518',
+    // },
   },
 };
 
@@ -59,5 +59,3 @@ export const Adapters: Record<number, AdapterMappings> = {
     ],
   },
 };
-
-export const LIQUIDITY_THRESHOLD_IN_USD = 100;
