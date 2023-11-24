@@ -788,15 +788,25 @@ export class UniswapV2
       [src, srcAmount, destAmount, weth, pools],
     );
 
-    const maybeSyncCall = rebaseTokensSetsByChain[this.network]?.has(
+    const hasRebaseTokenSrc = rebaseTokensSetsByChain[this.network]?.has(
       src.toLowerCase(),
-    )
-      ? {
-          callees: [data.pools[0].address],
-          calldata: [uniswapV2PoolIface.encodeFunctionData('sync')],
-          values: ['0'],
-        }
-      : undefined;
+    );
+    const hasRebaseTokenDest = rebaseTokensSetsByChain[this.network]?.has(
+      dest.toLowerCase(),
+    );
+
+    const maybeSyncCall =
+      hasRebaseTokenSrc || hasRebaseTokenDest
+        ? {
+            callees: [
+              hasRebaseTokenSrc
+                ? data.pools[0].address
+                : data.pools[data.pools.length - 1].address,
+            ],
+            calldata: [uniswapV2PoolIface.encodeFunctionData('sync')],
+            values: ['0'],
+          }
+        : undefined;
 
     return this.buildSimpleParamWithoutWETHConversion(
       src,
