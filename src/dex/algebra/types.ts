@@ -53,13 +53,26 @@ export type PoolState_v1_9 = {
 
 export type FactoryState = Record<string, never>;
 
-export type AlgebraData = {
+export type AlgebraData = AlgebraDataWithoutFee | AlgebraDataWithFee;
+
+export type AlgebraDataWithoutFee = {
   path: {
     tokenIn: Address;
     tokenOut: Address;
   }[];
   isApproved?: boolean;
 };
+
+export type AlgebraDataWithFee = {
+  tokenIn: Address;
+  tokenOut: Address;
+};
+
+export enum AlgebraFunctions {
+  exactInput = 'exactInput',
+  exactOutput = 'exactOutput',
+  exactInputWithFeeToken = 'exactInputSingleSupportingFeeOnTransferTokens',
+}
 
 export type DexParams = {
   router: Address;

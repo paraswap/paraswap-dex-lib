@@ -853,6 +853,10 @@ export const Tokens: {
       address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
       decimals: 18,
     },
+    RDPX: {
+      address: '0x32eb7902d4134bf98a28b963d26de779af92a212',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1145,12 +1149,13 @@ export const Holders: {
     AMPL: '0xfcaA5ea7F8eb0631BcA72C345025C0A5a6D93f0E',
   },
   [Network.ARBITRUM]: {
+    RDPX: '0x2fa6f21ecfe274f594f470c376f5bdd061e08a37',
     ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
     USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
-    USDC: '0xa843392198862f98d17e3aa1421b08f2c2020cff',
+    USDC: '0x489ee077994b6658eafa855c308275ead8097c4a',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
     USDT: '0x5ff47d4ab75bcaff6807c81f1367abb53439883c',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',

@@ -4,21 +4,36 @@ import { AbiItem } from 'web3-utils';
 import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
 import {
-  Token,
-  Address,
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
-  PoolLiquidity,
   Logger,
+  TransferFeeParams,
+  Address,
+  PoolLiquidity,
+  Token,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
+import {
+  _require,
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  isDestTokenTransferFeeToBeExchanged,
+  isSrcTokenTransferFeeToBeExchanged,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AlgebraData, DexParams, IAlgebraPoolState } from './types';
+import {
+  AlgebraData,
+  AlgebraDataWithFee,
+  AlgebraDataWithoutFee,
+  AlgebraFunctions,
+  DexParams,
+  IAlgebraPoolState,
+} from './types';
 import {
   SimpleExchange,
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -26,19 +41,16 @@ import {
 import { AlgebraConfig, Adapters } from './config';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from 'ethers/lib/utils';
-import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
+import SwapRouter from '../../abi/algebra/SwapRouter.json';
 import AlgebraQuoterABI from '../../abi/algebra/AlgebraQuoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import AlgebraStateMulticallABI from '../../abi/algebra/AlgebraStateMulticall.abi.json';
-import {
-  OutputResult,
-  UniswapV3Functions,
-  UniswapV3SimpleSwapParams,
-} from '../uniswap-v3/types';
+import { OutputResult } from '../uniswap-v3/types';
 import { AlgebraMath } from './lib/AlgebraMath';
 import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -61,7 +73,7 @@ type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private readonly factory: AlgebraFactory;
-  readonly isFeeOnTransferSupported: boolean = false;
+  readonly isFeeOnTransferSupported: boolean = true;
   protected eventPools: Record<string, IAlgebraEventPool | null> = {};
 
   private newlyCreatedPoolKeys: Set<string> = new Set();
@@ -85,12 +97,15 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     | typeof AlgebraEventPoolV1_1
     | typeof AlgebraEventPoolV1_9;
 
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
+
   constructor(
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerIface = new Interface(UniswapV3RouterABI), // same abi as uniswapV3
+    readonly routerIface = new Interface(SwapRouter), // same abi as uniswapV3
     readonly quoterIface = new Interface(AlgebraQuoterABI),
     readonly config = AlgebraConfig[dexKey][network],
   ) {
@@ -508,6 +523,12 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<null | ExchangePrices<AlgebraData>> {
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
@@ -601,16 +622,38 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const balanceDestToken =
         _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
+      const _isSrcTokenTransferFeeToBeExchanged =
+        isSrcTokenTransferFeeToBeExchanged(transferFees);
+      const _isDestTokenTransferFeeToBeExchanged =
+        isDestTokenTransferFeeToBeExchanged(transferFees);
+
+      if (_isSrcTokenTransferFeeToBeExchanged && side == SwapSide.BUY) {
+        this.logger.error(
+          `pool: ${pool.poolAddress} doesn't support buy for tax srcToken ${srcToken.address}`,
+        );
+        return null;
+      }
+
+      const [unitAmountWithFee, ...amountsWithFee] =
+        _isSrcTokenTransferFeeToBeExchanged
+          ? applyTransferFee(
+              [unitAmount, ..._amounts],
+              side,
+              transferFees.srcDexFee,
+              this.SRC_TOKEN_DEX_TRANSFERS,
+            )
+          : [unitAmount, ..._amounts];
+
       const unitResult = this._getOutputs(
         state,
-        [unitAmount],
+        [unitAmountWithFee],
         zeroForOne,
         side,
         balanceDestToken,
       );
       const pricesResult = this._getOutputs(
         state,
-        _amounts,
+        amountsWithFee,
         zeroForOne,
         side,
         balanceDestToken,
@@ -621,10 +664,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         return null;
       }
 
-      const prices = [0n, ...pricesResult.outputs];
+      const [unitResultWithFee, ...pricesResultWithFee] =
+        _isDestTokenTransferFeeToBeExchanged
+          ? applyTransferFee(
+              [unitResult.outputs[0], ...pricesResult.outputs],
+              side,
+              transferFees.destDexFee,
+              this.DEST_TOKEN_DEX_TRANSFERS,
+            )
+          : [unitResult.outputs[0], ...pricesResult.outputs];
+
+      const prices = [0n, ...pricesResultWithFee];
       const gasCost = [
         0,
-        ...pricesResult.outputs.map((p, index) => {
+        ...pricesResultWithFee.map((p, index) => {
           if (p == 0n) {
             return 0;
           } else {
@@ -639,16 +692,21 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       return [
         {
-          unit: unitResult.outputs[0],
+          unit: unitResultWithFee,
           prices,
-          data: {
-            path: [
-              {
+          data: _isSrcTokenTransferFeeToBeExchanged
+            ? {
                 tokenIn: _srcAddress,
                 tokenOut: _destAddress,
+              }
+            : {
+                path: [
+                  {
+                    tokenIn: _srcAddress,
+                    tokenOut: _destAddress,
+                  },
+                ],
               },
-            ],
-          },
           poolIdentifier: this.getPoolIdentifier(pool.token0, pool.token1),
           exchange: this.dexKey,
           gasCost: gasCost,
@@ -674,8 +732,14 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     data: AlgebraData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { path: rawPath } = data;
-    const path = this._encodePath(rawPath, side);
+    let path;
+    if (this.isAlgebraDataWithoutFee(data)) {
+      path = this._encodePath(data.path, side);
+    } else {
+      path = this._encodePath([{ ...data }], side);
+    }
+    // const { path: rawPath } = data;
+    // const path = this._encodePath(rawPath, side);
 
     const payload = this.abiCoder.encodeParameter(
       {
@@ -722,6 +786,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     return arr;
   }
 
+  isAlgebraDataWithoutFee(data: AlgebraData): data is AlgebraDataWithoutFee {
+    return (data as AlgebraDataWithoutFee).path !== undefined;
+  }
+
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -730,30 +798,47 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     data: AlgebraData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapFunction =
-      side === SwapSide.SELL
-        ? UniswapV3Functions.exactInput
-        : UniswapV3Functions.exactOutput;
+    const withoutFee = this.isAlgebraDataWithoutFee(data);
+    let swapFunction;
+    let swapParams;
 
-    const path = this._encodePath(data.path, side);
-    const swapFunctionParams: UniswapV3SimpleSwapParams =
-      side === SwapSide.SELL
-        ? {
-            recipient: this.augustusAddress,
-            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-            amountIn: srcAmount,
-            amountOutMinimum: destAmount,
-            path,
-          }
-        : {
-            recipient: this.augustusAddress,
-            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-            amountOut: destAmount,
-            amountInMaximum: srcAmount,
-            path,
-          };
+    if (!withoutFee) {
+      swapFunction = AlgebraFunctions.exactInputWithFeeToken;
+      swapParams = {
+        limitSqrtPrice: '0',
+        recipient: this.augustusAddress,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+        amountIn: srcAmount,
+        amountOutMinimum: destAmount,
+        tokenIn: data.tokenIn,
+        tokenOut: data.tokenOut,
+      };
+    } else {
+      const path = this._encodePath(data.path, side);
+      swapParams =
+        side === SwapSide.SELL
+          ? {
+              recipient: this.augustusAddress,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountIn: srcAmount,
+              amountOutMinimum: destAmount,
+              path,
+            }
+          : {
+              recipient: this.augustusAddress,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountOut: destAmount,
+              amountInMaximum: srcAmount,
+              path,
+            };
+      swapFunction =
+        side === SwapSide.SELL
+          ? AlgebraFunctions.exactInput
+          : AlgebraFunctions.exactOutput;
+    }
+
     const swapData = this.routerIface.encodeFunctionData(swapFunction, [
-      swapFunctionParams,
+      swapParams,
     ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
