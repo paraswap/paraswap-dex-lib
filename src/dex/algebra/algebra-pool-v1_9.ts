@@ -177,10 +177,10 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
 
     const tickBitmapToUse =
       TICK_BITMAP_TO_USE_BY_CHAIN[networkId] ?? TICK_BITMAP_TO_USE;
-    const tickBuffer =
+    const tickBitmapBuffer =
       TICK_BITMAP_BUFFER_BY_CHAIH[networkId] ?? TICK_BITMAP_BUFFER;
 
-    return tickBitmapToUse + tickBuffer;
+    return tickBitmapToUse + tickBitmapBuffer;
   }
 
   private async _fetchPoolState_v1_9SingleStep(

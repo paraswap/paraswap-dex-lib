@@ -24,15 +24,17 @@ function isWordPosOut(
 
   const tickBitmapToUse =
     TICK_BITMAP_TO_USE_BY_CHAIN[networkId] ?? TICK_BITMAP_TO_USE;
-  const tickBuffer =
+  const tickBitmapBuffer =
     TICK_BITMAP_BUFFER_BY_CHAIH[networkId] ?? TICK_BITMAP_BUFFER;
 
   if (isPriceQuery) {
-    lowerTickBitmapLimit = startTickBitmap - (tickBuffer + tickBitmapToUse);
-    upperTickBitmapLimit = startTickBitmap + (tickBuffer + tickBitmapToUse);
+    lowerTickBitmapLimit =
+      startTickBitmap - (tickBitmapBuffer + tickBitmapToUse);
+    upperTickBitmapLimit =
+      startTickBitmap + (tickBitmapBuffer + tickBitmapToUse);
   } else {
-    lowerTickBitmapLimit = startTickBitmap - tickBuffer;
-    upperTickBitmapLimit = startTickBitmap + tickBuffer;
+    lowerTickBitmapLimit = startTickBitmap - tickBitmapBuffer;
+    upperTickBitmapLimit = startTickBitmap + tickBitmapBuffer;
   }
 
   _require(
