@@ -883,6 +883,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   ): OutputResult | null {
     try {
       const outputsResult = AlgebraMath.queryOutputs(
+        this.network,
         state,
         amounts,
         zeroForOne,

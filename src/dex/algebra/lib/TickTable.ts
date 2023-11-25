@@ -4,9 +4,15 @@ import { DeepReadonly } from 'ts-essentials';
 import { OUT_OF_RANGE_ERROR_POSTFIX } from '../../uniswap-v3/constants';
 import { TickMath } from '../../uniswap-v3/contract-math/TickMath';
 import { Yul } from './yul-helper';
-import { TICK_BITMAP_BUFFER, TICK_BITMAP_TO_USE } from '../constants';
+import {
+  TICK_BITMAP_BUFFER,
+  TICK_BITMAP_BUFFER_BY_CHAIH,
+  TICK_BITMAP_TO_USE,
+  TICK_BITMAP_TO_USE_BY_CHAIN,
+} from '../constants';
 
 function isWordPosOut(
+  networkId: number,
   wordPos: bigint,
   startTickBitmap: bigint,
   // For pricing we use wider range to check price impact. If function called from event
@@ -16,14 +22,17 @@ function isWordPosOut(
   let lowerTickBitmapLimit;
   let upperTickBitmapLimit;
 
+  const tickBitmapToUse =
+    TICK_BITMAP_TO_USE_BY_CHAIN[networkId] ?? TICK_BITMAP_TO_USE;
+  const tickBuffer =
+    TICK_BITMAP_BUFFER_BY_CHAIH[networkId] ?? TICK_BITMAP_BUFFER;
+
   if (isPriceQuery) {
-    lowerTickBitmapLimit =
-      startTickBitmap - (TICK_BITMAP_BUFFER + TICK_BITMAP_TO_USE);
-    upperTickBitmapLimit =
-      startTickBitmap + (TICK_BITMAP_BUFFER + TICK_BITMAP_TO_USE);
+    lowerTickBitmapLimit = startTickBitmap - (tickBuffer + tickBitmapToUse);
+    upperTickBitmapLimit = startTickBitmap + (tickBuffer + tickBitmapToUse);
   } else {
-    lowerTickBitmapLimit = startTickBitmap - TICK_BITMAP_BUFFER;
-    upperTickBitmapLimit = startTickBitmap + TICK_BITMAP_BUFFER;
+    lowerTickBitmapLimit = startTickBitmap - tickBuffer;
+    upperTickBitmapLimit = startTickBitmap + tickBuffer;
   }
 
   _require(
@@ -45,6 +54,7 @@ export class TickTable {
   }
 
   static toggleTick(
+    networkId: number,
     state: Pick<IAlgebraPoolState, 'startTickBitmap' | 'tickBitmap'>,
     tick: bigint,
     tickSpacing?: bigint,
@@ -57,7 +67,7 @@ export class TickTable {
 
     // toggleTick is used only in _updatePosition which is always state changing event
     // Therefore it is never used in price query
-    isWordPosOut(rowNumber, state.startTickBitmap, false);
+    isWordPosOut(networkId, rowNumber, state.startTickBitmap, false);
 
     const stringWordPos = rowNumber.toString();
     if (state.tickBitmap[stringWordPos] === undefined) {
@@ -71,6 +81,7 @@ export class TickTable {
   }
 
   static nextInitializedTickWithinOneWord(
+    networkId: number,
     state: DeepReadonly<
       Pick<IAlgebraPoolState, 'startTickBitmap' | 'tickBitmap'>
     >,
@@ -93,7 +104,7 @@ export class TickTable {
     }
     if (lte) {
       const [rowNumber, bitNumber] = TickTable.position(tick);
-      isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
+      isWordPosOut(networkId, rowNumber, state.startTickBitmap, isPriceQuery);
       let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
       tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
 
@@ -109,7 +120,7 @@ export class TickTable {
       tick += 1n;
 
       const [rowNumber, bitNumber] = TickTable.position(tick);
-      isWordPosOut(rowNumber, state.startTickBitmap, isPriceQuery);
+      isWordPosOut(networkId, rowNumber, state.startTickBitmap, isPriceQuery);
       let tickBitmapValue = state.tickBitmap[rowNumber.toString()];
       tickBitmapValue = tickBitmapValue === undefined ? 0n : tickBitmapValue;
 
