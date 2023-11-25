@@ -43,7 +43,7 @@ import { Network, NULL_ADDRESS } from '../../constants';
 import { TickTable } from './lib/TickTable';
 import {
   TICK_BITMAP_BUFFER,
-  TICK_BITMAP_BUFFER_BY_CHAIH,
+  TICK_BITMAP_BUFFER_BY_CHAIN,
   TICK_BITMAP_TO_USE,
   TICK_BITMAP_TO_USE_BY_CHAIN,
 } from './constants';
@@ -204,7 +204,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     const tickBitmapToUse =
       TICK_BITMAP_TO_USE_BY_CHAIN[networkId] ?? TICK_BITMAP_TO_USE;
     const tickBitmapBuffer =
-      TICK_BITMAP_BUFFER_BY_CHAIH[networkId] ?? TICK_BITMAP_BUFFER;
+      TICK_BITMAP_BUFFER_BY_CHAIN[networkId] ?? TICK_BITMAP_BUFFER;
 
     return tickBitmapToUse + tickBitmapBuffer;
   }

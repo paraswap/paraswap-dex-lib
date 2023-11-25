@@ -10,7 +10,7 @@ export const TICK_BITMAP_TO_USE_BY_CHAIN: Record<number, bigint> = {
   [Network.ZKEVM]: 10n,
 };
 
-export const TICK_BITMAP_BUFFER_BY_CHAIH: Record<number, bigint> = {
+export const TICK_BITMAP_BUFFER_BY_CHAIN: Record<number, bigint> = {
   [Network.ZKEVM]: 4n,
 };
 

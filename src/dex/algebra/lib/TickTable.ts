@@ -6,7 +6,7 @@ import { TickMath } from '../../uniswap-v3/contract-math/TickMath';
 import { Yul } from './yul-helper';
 import {
   TICK_BITMAP_BUFFER,
-  TICK_BITMAP_BUFFER_BY_CHAIH,
+  TICK_BITMAP_BUFFER_BY_CHAIN,
   TICK_BITMAP_TO_USE,
   TICK_BITMAP_TO_USE_BY_CHAIN,
 } from '../constants';
@@ -25,7 +25,7 @@ function isWordPosOut(
   const tickBitmapToUse =
     TICK_BITMAP_TO_USE_BY_CHAIN[networkId] ?? TICK_BITMAP_TO_USE;
   const tickBitmapBuffer =
-    TICK_BITMAP_BUFFER_BY_CHAIH[networkId] ?? TICK_BITMAP_BUFFER;
+    TICK_BITMAP_BUFFER_BY_CHAIN[networkId] ?? TICK_BITMAP_BUFFER;
 
   if (isPriceQuery) {
     lowerTickBitmapLimit =
