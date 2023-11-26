@@ -29,33 +29,71 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.BSC]: {
     [SwapSide.SELL]: [
       {
-        // TODO: implement
-        name: 'BscAdapter01',
-        index: 3,
+        name: 'BscAdapter02',
+        index: 7,
       },
     ],
-    [SwapSide.BUY]: [
-      {
-        // TODO: implement
-        name: 'BscBuyAdapter',
-        index: 1,
-      },
-    ],
+    // [SwapSide.BUY]: [
+    //   {
+    //     name: 'BscBuyAdapter',
+    //     index: 1,
+    //   },
+    // ],
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [
       {
-        // TODO: implement
-        name: 'ArbitrumAdapter01',
-        index: 2,
+        name: 'ArbitrumAdapter02',
+        index: 7,
       },
     ],
-    [SwapSide.BUY]: [
+    // [SwapSide.BUY]: [
+    //   {
+    //     name: 'ArbitrumBuyAdapter',
+    //     index: 1,
+    //   },
+    // ],
+  },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [
       {
-        // TODO: implement
-        name: 'ArbitrumBuyAdapter',
-        index: 1,
+        name: 'Adapter04',
+        index: 6,
       },
     ],
+    // [SwapSide.BUY]: [
+    //   {
+    //     name: 'BscBuyAdapter',
+    //     index: 1,
+    //   },
+    // ],
+  },
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'AvalancheAdapter02',
+        index: 7,
+      },
+    ],
+    // [SwapSide.BUY]: [
+    //   {
+    //     name: 'BscBuyAdapter',
+    //     index: 1,
+    //   },
+    // ],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter01',
+        index: 7,
+      },
+    ],
+    // [SwapSide.BUY]: [
+    //   {
+    //     name: 'BscBuyAdapter',
+    //     index: 1,
+    //   },
+    // ],
   },
 };

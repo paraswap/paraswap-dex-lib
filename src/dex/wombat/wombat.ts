@@ -271,11 +271,16 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     data: WombatData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     const { exchange } = data;
 
-    // Encode here the payload for adapter
-    const payload = '0x';
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          deadline: 'uint256',
+        },
+      },
+      { deadline: getLocalDeadlineAsFriendlyPlaceholder() },
+    );
 
     return {
       targetExchange: exchange,

@@ -165,7 +165,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
-      BscAdapter02: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
+      // BscAdapter02: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
+      BscAdapter02: '0x5b8268F34993A48247Ac0d182a8A343518bca204',
       BscBuyAdapter: '0x301c2813e3ceb43A448a12f21551EDBcdC37F157',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
