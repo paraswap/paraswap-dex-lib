@@ -95,6 +95,9 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
+            // if src token is tax token and BUY side, then should fail (skip)
+            if (!!transferFees?.srcDexFee && side === SwapSide.BUY) return;
+
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -177,73 +180,73 @@ function testForNetwork(
 }
 
 describe('Algebra', () => {
-  // describe('QuickSwapV3 E2E', () => {
-  //   const dexKey = 'QuickSwapV3';
+  describe('QuickSwapV3 E2E', () => {
+    const dexKey = 'QuickSwapV3';
 
-  //   describe('Polygon', () => {
-  //     const network = Network.POLYGON;
-  //     const tokenASymbol: string = 'USDC';
-  //     const tokenBSymbol: string = 'DAI';
+    describe('Polygon', () => {
+      const network = Network.POLYGON;
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'DAI';
 
-  //     const tokenAAmount: string = '1000000000';
-  //     const tokenBAmount: string = '1000000000000000000000';
-  //     const nativeTokenAmount = '1000000000000000000';
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
 
-  //     testForNetwork(
-  //       network,
-  //       dexKey,
-  //       tokenASymbol,
-  //       tokenBSymbol,
-  //       tokenAAmount,
-  //       tokenBAmount,
-  //       nativeTokenAmount,
-  //     );
-  //   });
-  // });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
 
-  // describe('ZyberSwapV3', () => {
-  //   const dexKey = 'ZyberSwapV3';
+  describe('ZyberSwapV3', () => {
+    const dexKey = 'ZyberSwapV3';
 
-  //   describe('Arbitrum', () => {
-  //     const network = Network.ARBITRUM;
-  //     const tokenASymbol: string = 'USDC';
-  //     const tokenBSymbol: string = 'DAI';
+    describe('Arbitrum', () => {
+      const network = Network.ARBITRUM;
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'DAI';
 
-  //     const tokenAAmount: string = '1000000000';
-  //     const tokenBAmount: string = '1000000000000000000000';
-  //     const nativeTokenAmount = '1000000000000000000';
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
 
-  //     testForNetwork(
-  //       network,
-  //       dexKey,
-  //       tokenASymbol,
-  //       tokenBSymbol,
-  //       tokenAAmount,
-  //       tokenBAmount,
-  //       nativeTokenAmount,
-  //     );
-  //   });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
 
-  //   describe('Optimism', () => {
-  //     const network = Network.OPTIMISM;
-  //     const tokenASymbol: string = 'USDC';
-  //     const tokenBSymbol: string = 'USDT';
+    describe('Optimism', () => {
+      const network = Network.OPTIMISM;
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
 
-  //     const tokenAAmount: string = '100000000';
-  //     const tokenBAmount: string = '50000';
-  //     const nativeTokenAmount = '100000000000000';
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '50000';
+      const nativeTokenAmount = '100000000000000';
 
-  //     testForNetwork(
-  //       network,
-  //       dexKey,
-  //       tokenASymbol,
-  //       tokenBSymbol,
-  //       tokenAAmount,
-  //       tokenBAmount,
-  //       nativeTokenAmount,
-  //     );
-  //   });
-  // });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
 
   describe('CamelotV3', () => {
     const dexKey = 'CamelotV3';
