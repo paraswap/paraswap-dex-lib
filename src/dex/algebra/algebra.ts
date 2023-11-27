@@ -103,7 +103,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerIface = new Interface(SwapRouter), // same abi as uniswapV3
+    readonly routerIface = new Interface(SwapRouter),
     readonly quoterIface = new Interface(AlgebraQuoterABI),
     readonly config = AlgebraConfig[dexKey][network],
   ) {
