@@ -1135,4 +1135,28 @@ describe('UniswapV3 E2E', () => {
       );
     });
   });
+
+  describe('BaseswapV3 E2E', () => {
+    const dexKey = 'BaseswapV3';
+    describe('Base', () => {
+      const network = Network.BASE;
+
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDbC';
+
+      const tokenAAmount: string = '1000000';
+      const tokenBAmount: string = '1000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
 });
