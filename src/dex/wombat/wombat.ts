@@ -260,9 +260,6 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -273,18 +270,9 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   ): AdapterExchangeParam {
     const { exchange } = data;
 
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          deadline: 'uint256',
-        },
-      },
-      { deadline: getLocalDeadlineAsFriendlyPlaceholder() },
-    );
-
     return {
       targetExchange: exchange,
-      payload,
+      payload: '0x',
       networkFee: '0',
     };
   }
