@@ -862,7 +862,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     );
 
     // Encode here the transaction arguments
-    const swapData = this.routerInterface.encodeFunctionData('tradeSingleHop', [
+    const swapData = this.routerInterface.encodeFunctionData('tradeRFQT', [
       [
         quoteData.pool,
         quoteData.externalAccount ?? ZERO_ADDRESS,
