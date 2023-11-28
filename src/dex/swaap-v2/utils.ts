@@ -36,7 +36,7 @@ export const isStablePair = (
   normalizedDestTokenAddress: string,
 ): boolean => {
   const networkStableCoins = STABLE_COINS[network];
-  if (networkStableCoins == undefined) {
+  if (networkStableCoins === undefined) {
     return false;
   }
   return (
