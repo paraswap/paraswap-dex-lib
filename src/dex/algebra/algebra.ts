@@ -819,6 +819,12 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     let swapParams;
 
     if (data.feeOnTransfer) {
+      _require(
+        data.path.length !== 1,
+        `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
+          .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
+          .join(' ')}`,
+      );
       swapFunction = AlgebraFunctions.exactInputWithFeeToken;
       swapParams = {
         limitSqrtPrice: '0',
