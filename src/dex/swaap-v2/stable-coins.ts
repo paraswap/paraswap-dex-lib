@@ -1,5 +1,4 @@
-import { Token } from '../../../src/types';
-import { Network } from '../../../src/constants';
+import { Network } from '../../constants';
 
 // addresses must be consistant with utils.normalizeTokenAddress
 export const STABLE_COINS: {

@@ -1,6 +1,6 @@
 import { Address, Token } from '../../types';
 import { ETHER_ADDRESS, NULL_ADDRESS } from '../../constants';
-import { Network } from '../../../src/constants';
+import { Network } from '../../constants';
 import { STABLE_COINS } from './stable-coins';
 
 export const getIdentifierPrefix = (
