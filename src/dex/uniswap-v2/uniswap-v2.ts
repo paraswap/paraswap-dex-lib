@@ -52,6 +52,21 @@ import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
 import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import _rebaseTokens from '../../rebase-tokens.json';
+
+const rebaseTokens = _rebaseTokens as { chainId: number; address: string }[];
+
+const rebaseTokensSetsByChain = rebaseTokens.reduce<{
+  [chainId: number]: Set<string>;
+}>((acc, curr) => {
+  if (!acc[curr.chainId]) {
+    acc[curr.chainId] = new Set();
+  }
+
+  acc[curr.chainId].add(curr.address.toLowerCase());
+
+  return acc;
+}, {});
 
 const DefaultUniswapV2PoolGasCost = 90 * 1000;
 
@@ -68,7 +83,7 @@ interface UniswapV2PoolState {
   feeCode: number;
 }
 
-const uniswapV2Iface = new Interface(uniswapV2ABI);
+const uniswapV2PoolIface = new Interface(uniswapV2ABI);
 const erc20iface = new Interface(erc20ABI);
 const coder = new AbiCoder();
 
@@ -104,7 +119,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     // feesMultiCallData is only used if dynamicFees is set to true
     private feesMultiCallEntry?: { target: Address; callData: string },
     private feesMultiCallDecoder?: (values: any[]) => number,
-    private iface: Interface = uniswapV2Iface,
+    private iface: Interface = uniswapV2PoolIface,
   ) {
     super(
       parentName,
@@ -219,7 +234,7 @@ export class UniswapV2
     protected poolGasCost: number = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].poolGasCost) ??
       DefaultUniswapV2PoolGasCost,
-    protected decoderIface: Interface = uniswapV2Iface,
+    protected decoderIface: Interface = uniswapV2PoolIface,
     protected adapters = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].adapters) ??
       Adapters[network],
@@ -772,6 +787,27 @@ export class UniswapV2
       side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
       [src, srcAmount, destAmount, weth, pools],
     );
+
+    const hasRebaseTokenSrc = rebaseTokensSetsByChain[this.network]?.has(
+      src.toLowerCase(),
+    );
+    const hasRebaseTokenDest = rebaseTokensSetsByChain[this.network]?.has(
+      dest.toLowerCase(),
+    );
+
+    const maybeSyncCall =
+      hasRebaseTokenSrc || hasRebaseTokenDest
+        ? {
+            callees: [
+              hasRebaseTokenSrc
+                ? data.pools[0].address
+                : data.pools[data.pools.length - 1].address,
+            ],
+            calldata: [uniswapV2PoolIface.encodeFunctionData('sync')],
+            values: ['0'],
+          }
+        : undefined;
+
     return this.buildSimpleParamWithoutWETHConversion(
       src,
       srcAmount,
@@ -779,6 +815,9 @@ export class UniswapV2
       destAmount,
       swapData,
       data.router,
+      data.router,
+      '0',
+      maybeSyncCall,
     );
   }
 

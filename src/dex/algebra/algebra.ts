@@ -45,8 +45,8 @@ type PoolPairsInfo = {
   token1: Address;
 };
 
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
-const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
+// const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+// const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const ALGEBRA_EFFICIENCY_FACTOR = 3;
 const ALGEBRA_TICK_GAS_COST = 24_000; // Ceiled
 const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
@@ -63,6 +63,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private readonly factory: AlgebraFactory;
   readonly isFeeOnTransferSupported: boolean = false;
   protected eventPools: Record<string, IAlgebraEventPool | null> = {};
+
+  private newlyCreatedPoolKeys: Set<string> = new Set();
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
@@ -139,22 +141,23 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     // Init listening to new pools creation
     await this.factory.initialize(blockNumber);
 
-    if (!this.dexHelper.config.isSlave) {
-      const cleanExpiredNotExistingPoolsKeys = async () => {
-        const maxTimestamp =
-          Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
-        await this.dexHelper.cache.zremrangebyscore(
-          this.notExistingPoolSetKey,
-          0,
-          maxTimestamp,
-        );
-      };
+    //// COMMENTING DEPRECATED LOGIC: as we now  invalidate pools on creation this is not needed anymore
+    // if (!this.dexHelper.config.isSlave) {
+    //   const cleanExpiredNotExistingPoolsKeys = async () => {
+    //     const maxTimestamp =
+    //       Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+    //     await this.dexHelper.cache.zremrangebyscore(
+    //       this.notExistingPoolSetKey,
+    //       0,
+    //       maxTimestamp,
+    //     );
+    //   };
 
-      this.intervalTask = setInterval(
-        cleanExpiredNotExistingPoolsKeys.bind(this),
-        ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
-      );
-    }
+    //   this.intervalTask = setInterval(
+    //     cleanExpiredNotExistingPoolsKeys.bind(this),
+    //     ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+    //   );
+    // }
   }
 
   /*
@@ -167,7 +170,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }) => {
     const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${_token0}_${_token1}`;
+    const poolKey = `${_token0}_${_token1}`.toLowerCase();
+
+    this.newlyCreatedPoolKeys.add(poolKey);
 
     // consider doing it only from master pool for less calls to distant cache
 
@@ -290,27 +295,43 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           pool!.initRetryAttemptCount = 0;
         },
       });
+
+      if (this.newlyCreatedPoolKeys.has(key)) {
+        this.newlyCreatedPoolKeys.delete(key);
+      }
     } catch (e) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-        // no need to await we want the set to have the pool key but it's not blocking
-        this.dexHelper.cache.zadd(
-          this.notExistingPoolSetKey,
-          [Date.now(), key],
-          'NX',
-        );
+        /* 
+         protection against 2 race conditions
+          1/ if pool.initialize() promise rejects after the Pool creation event got treated
+          2/ if the rpc node we hit on the http request is lagging behind the one we got event from (websocket)
+        */
+        if (this.newlyCreatedPoolKeys.has(key)) {
+          this.logger.warn(
+            `[block=${blockNumber}][Pool=${key}] newly created pool failed to initialise, trying on next request`,
+          );
+        } else {
+          this.logger.info(
+            `[block=${blockNumber}][Pool=${key}] pool failed to initialize so it's marked as non existing`,
+            e,
+          );
 
-        // Pool does not exist for this pair, so we can set it to null
-        // to prevent more requests for this pool
-        pool = null;
-        this.logger.trace(
-          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress} not found`,
-          e,
-        );
+          // no need to await we want the set to have the pool key but it's not blocking
+          this.dexHelper.cache.zadd(
+            this.notExistingPoolSetKey,
+            [Date.now(), key],
+            'NX',
+          );
+
+          // Pool does not exist for this pair, so we can set it to null
+          // to prevent more requests for this pool
+          pool = null;
+        }
       } else {
         // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `[block=${blockNumber}][Pool=${key}] Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
@@ -389,9 +410,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     side: SwapSide,
     pool: IAlgebraEventPool,
   ): Promise<ExchangePrices<AlgebraData> | null> {
-    this.logger.warn(
-      `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
-    );
+    if (!this.config.forceRPC) {
+      this.logger.warn(
+        `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
+      );
+    }
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
@@ -860,6 +883,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   ): OutputResult | null {
     try {
       const outputsResult = AlgebraMath.queryOutputs(
+        this.network,
         state,
         amounts,
         zeroForOne,
