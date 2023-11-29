@@ -11,6 +11,7 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { TransferFeeParams } from '../../types';
 
 /*
   README
@@ -59,6 +60,12 @@ function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   nativeTokenAmount: string,
+  transferFees: TransferFeeParams = {
+    srcFee: 0,
+    destFee: 0,
+    srcDexFee: 0,
+    destDexFee: 0,
+  },
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -80,6 +87,7 @@ function testForNetwork(
     ],
     // TODO: If buy is not supported remove the buy contract methods
     [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy]],
   ]);
 
   describe(`${network}`, () => {
@@ -87,6 +95,46 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
+            // if src token is tax token and BUY side, then should fail (skip)
+            if (!!transferFees?.srcDexFee && side === SwapSide.BUY) return;
+
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                transferFees,
+              );
+            });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                // switch src and dest fee when tax token is dest token
+                {
+                  ...transferFees,
+                  srcDexFee: transferFees.destDexFee,
+                  destDexFee: transferFees.srcDexFee,
+                },
+              );
+            });
             it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
               await testE2E(
                 tokens[nativeTokenSymbol],
@@ -98,6 +146,14 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                // switch src and dest fee when tax token is dest token
+                {
+                  ...transferFees,
+                  srcDexFee: transferFees.destDexFee,
+                  destDexFee: transferFees.srcDexFee,
+                },
               );
             });
             it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
@@ -111,19 +167,9 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
+                undefined,
+                undefined,
+                transferFees,
               );
             });
           });
@@ -204,10 +250,35 @@ describe('Algebra', () => {
 
   describe('CamelotV3', () => {
     const dexKey = 'CamelotV3';
+    const network = Network.ARBITRUM;
 
-    describe('Arbitrum', () => {
-      const network = Network.ARBITRUM;
-      const tokenASymbol: string = 'USDC';
+    describe('Arbitrum: Tax Tokens', () => {
+      const tokenASymbol: string = 'RDPX';
+      const tokenBSymbol: string = 'WETH';
+
+      const tokenAAmount: string = '100000000000000000000';
+      const tokenBAmount: string = '100000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        {
+          srcFee: 0,
+          destFee: 0,
+          srcDexFee: 1000,
+          destDexFee: 0,
+        },
+      );
+    });
+
+    describe('Arbitrum: Non-Tax tokens', () => {
+      const tokenASymbol: string = 'USDCe';
       const tokenBSymbol: string = 'USDT';
 
       const tokenAAmount: string = '1000000000';
