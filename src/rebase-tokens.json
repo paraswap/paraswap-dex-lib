@@ -1,0 +1,17 @@
+[
+  {
+    "symbol": "AMPL",
+    "chainId": 1,
+    "address": "0xd46ba6d942050d489dbd938a2c909a5d5039a161"
+  },
+  {
+    "symbol": "AMPL",
+    "chainId": 56,
+    "address": "0xDB021b1B247fe2F1fa57e0A87C748Cc1E321F07F"
+  },
+  {
+    "symbol": "AMPL",
+    "chainId": 43114,
+    "address": "0x027dbca046ca156de9622cd1e2d907d375e53aa7"
+  }
+]

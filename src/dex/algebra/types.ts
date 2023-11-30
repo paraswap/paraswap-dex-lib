@@ -58,8 +58,20 @@ export type AlgebraData = {
     tokenIn: Address;
     tokenOut: Address;
   }[];
+  feeOnTransfer: boolean;
   isApproved?: boolean;
 };
+
+export type AlgebraDataWithFee = {
+  tokenIn: Address;
+  tokenOut: Address;
+};
+
+export enum AlgebraFunctions {
+  exactInput = 'exactInput',
+  exactOutput = 'exactOutput',
+  exactInputWithFeeToken = 'exactInputSingleSupportingFeeOnTransferTokens',
+}
 
 export type DexParams = {
   router: Address;
