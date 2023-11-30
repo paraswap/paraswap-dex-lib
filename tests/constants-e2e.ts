@@ -964,6 +964,10 @@ export const Tokens: {
       address: '0xbeFD5C25A59ef2C1316c5A4944931171F30Cd3E4',
       decimals: 18,
     },
+    WBLT: {
+      address: '0x4e74d4db6c0726ccded4656d0bce448876bb4c7a',
+      decimals: 18,
+    },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
   },
 };
@@ -1207,6 +1211,7 @@ export const Holders: {
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
     BAL: '0x854b004700885a61107b458f11ecc169a019b764',
     GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
+    WBLT: '0x6d7a48dd19d85a3075068c2f57602d28d0a610b9',
   },
 };
 
