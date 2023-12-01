@@ -4,21 +4,34 @@ import { AbiItem } from 'web3-utils';
 import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
 import {
-  Token,
-  Address,
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
-  PoolLiquidity,
   Logger,
+  TransferFeeParams,
+  Address,
+  PoolLiquidity,
+  Token,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
+import {
+  _require,
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  isDestTokenTransferFeeToBeExchanged,
+  isSrcTokenTransferFeeToBeExchanged,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AlgebraData, DexParams, IAlgebraPoolState } from './types';
+import {
+  AlgebraData,
+  AlgebraFunctions,
+  DexParams,
+  IAlgebraPoolState,
+} from './types';
 import {
   SimpleExchange,
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -26,19 +39,16 @@ import {
 import { AlgebraConfig, Adapters } from './config';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from 'ethers/lib/utils';
-import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
+import SwapRouter from '../../abi/algebra/SwapRouter.json';
 import AlgebraQuoterABI from '../../abi/algebra/AlgebraQuoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import AlgebraStateMulticallABI from '../../abi/algebra/AlgebraStateMulticall.abi.json';
-import {
-  OutputResult,
-  UniswapV3Functions,
-  UniswapV3SimpleSwapParams,
-} from '../uniswap-v3/types';
+import { OutputResult } from '../uniswap-v3/types';
 import { AlgebraMath } from './lib/AlgebraMath';
 import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -61,7 +71,7 @@ type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private readonly factory: AlgebraFactory;
-  readonly isFeeOnTransferSupported: boolean = false;
+  readonly isFeeOnTransferSupported: boolean = true;
   protected eventPools: Record<string, IAlgebraEventPool | null> = {};
 
   private newlyCreatedPoolKeys: Set<string> = new Set();
@@ -85,12 +95,15 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     | typeof AlgebraEventPoolV1_1
     | typeof AlgebraEventPoolV1_9;
 
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
+
   constructor(
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerIface = new Interface(UniswapV3RouterABI), // same abi as uniswapV3
+    readonly routerIface = new Interface(SwapRouter),
     readonly quoterIface = new Interface(AlgebraQuoterABI),
     readonly config = AlgebraConfig[dexKey][network],
   ) {
@@ -409,12 +422,23 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     amounts: bigint[],
     side: SwapSide,
     pool: IAlgebraEventPool,
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<ExchangePrices<AlgebraData> | null> {
     if (!this.config.forceRPC) {
       this.logger.warn(
         `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
       );
     }
+
+    const _isSrcTokenTransferFeeToBeExchanged =
+      isSrcTokenTransferFeeToBeExchanged(transferFees);
+    const _isDestTokenTransferFeeToBeExchanged =
+      isDestTokenTransferFeeToBeExchanged(transferFees);
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
@@ -430,7 +454,16 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       ),
     );
 
-    const calldata = _amounts.map(_amount => ({
+    const _amountsWithFee = _isSrcTokenTransferFeeToBeExchanged
+      ? applyTransferFee(
+          _amounts,
+          side,
+          transferFees.srcDexFee,
+          this.SRC_TOKEN_DEX_TRANSFERS,
+        )
+      : _amounts;
+
+    const calldata = _amountsWithFee.map(_amount => ({
       target: this.config.quoter,
       gasLimit: ALGEBRA_QUOTE_GASLIMIT,
       callData:
@@ -471,12 +504,22 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       : Math.round(totalGasCost / totalSuccessFullSwaps);
 
     let i = 0;
-    const _rates = _amounts.map(() => decode(i++));
-    const unit: bigint = _rates[0];
+    const _rates = _amountsWithFee.map(() => decode(i++));
+
+    const _ratesWithFee = _isDestTokenTransferFeeToBeExchanged
+      ? applyTransferFee(
+          _rates,
+          side,
+          transferFees.destDexFee,
+          this.DEST_TOKEN_DEX_TRANSFERS,
+        )
+      : _rates;
+
+    const unit: bigint = _ratesWithFee[0];
 
     const prices = interpolate(
-      _amounts.slice(1),
-      _rates.slice(1),
+      _amountsWithFee.slice(1),
+      _ratesWithFee.slice(1),
       amounts,
       side,
     );
@@ -486,6 +529,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         prices,
         unit,
         data: {
+          feeOnTransfer: _isSrcTokenTransferFeeToBeExchanged,
           path: [
             {
               tokenIn: from.address,
@@ -508,6 +552,12 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<null | ExchangePrices<AlgebraData>> {
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
@@ -518,6 +568,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         _destToken,
       );
 
+      const _isSrcTokenTransferFeeToBeExchanged =
+        isSrcTokenTransferFeeToBeExchanged(transferFees);
+      const _isDestTokenTransferFeeToBeExchanged =
+        isDestTokenTransferFeeToBeExchanged(transferFees);
+
       if (_srcAddress === _destAddress) return null;
 
       if (
@@ -526,8 +581,14 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         return null;
 
       const pool = await this.getPool(_srcAddress, _destAddress, blockNumber);
-
       if (!pool) return null;
+
+      if (_isSrcTokenTransferFeeToBeExchanged && side == SwapSide.BUY) {
+        this.logger.error(
+          `pool: ${pool.poolAddress} doesn't support buy for tax srcToken ${srcToken.address}`,
+        );
+        return null;
+      }
 
       if (this.config.forceRPC) {
         const rpcPrice = await this.getPricingFromRpc(
@@ -536,6 +597,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           amounts,
           side,
           pool,
+          transferFees,
         );
 
         return rpcPrice;
@@ -570,6 +632,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
             amounts,
             side,
             pool,
+            transferFees,
           );
 
           return rpcPrice;
@@ -601,16 +664,26 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const balanceDestToken =
         _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
+      const [unitAmountWithFee, ...amountsWithFee] =
+        _isSrcTokenTransferFeeToBeExchanged
+          ? applyTransferFee(
+              [unitAmount, ..._amounts],
+              side,
+              transferFees.srcDexFee,
+              this.SRC_TOKEN_DEX_TRANSFERS,
+            )
+          : [unitAmount, ..._amounts];
+
       const unitResult = this._getOutputs(
         state,
-        [unitAmount],
+        [unitAmountWithFee],
         zeroForOne,
         side,
         balanceDestToken,
       );
       const pricesResult = this._getOutputs(
         state,
-        _amounts,
+        amountsWithFee,
         zeroForOne,
         side,
         balanceDestToken,
@@ -621,10 +694,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         return null;
       }
 
-      const prices = [0n, ...pricesResult.outputs];
+      const [unitResultWithFee, ...pricesResultWithFee] =
+        _isDestTokenTransferFeeToBeExchanged
+          ? applyTransferFee(
+              [unitResult.outputs[0], ...pricesResult.outputs],
+              side,
+              transferFees.destDexFee,
+              this.DEST_TOKEN_DEX_TRANSFERS,
+            )
+          : [unitResult.outputs[0], ...pricesResult.outputs];
+
+      const prices = [0n, ...pricesResultWithFee];
       const gasCost = [
         0,
-        ...pricesResult.outputs.map((p, index) => {
+        ...pricesResultWithFee.map((p, index) => {
           if (p == 0n) {
             return 0;
           } else {
@@ -639,9 +722,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       return [
         {
-          unit: unitResult.outputs[0],
+          unit: unitResultWithFee,
           prices,
           data: {
+            feeOnTransfer: _isSrcTokenTransferFeeToBeExchanged,
             path: [
               {
                 tokenIn: _srcAddress,
@@ -674,19 +758,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     data: AlgebraData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { path: rawPath } = data;
-    const path = this._encodePath(rawPath, side);
+    let path = this._encodePath(data.path, side);
 
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           path: 'bytes',
           deadline: 'uint256',
+          feeOnTransfer: 'bool',
         },
       },
       {
         path,
         deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+        feeOnTransfer: data.feeOnTransfer,
       },
     );
 
@@ -730,30 +815,52 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     data: AlgebraData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapFunction =
-      side === SwapSide.SELL
-        ? UniswapV3Functions.exactInput
-        : UniswapV3Functions.exactOutput;
+    let swapFunction;
+    let swapParams;
 
-    const path = this._encodePath(data.path, side);
-    const swapFunctionParams: UniswapV3SimpleSwapParams =
-      side === SwapSide.SELL
-        ? {
-            recipient: this.augustusAddress,
-            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-            amountIn: srcAmount,
-            amountOutMinimum: destAmount,
-            path,
-          }
-        : {
-            recipient: this.augustusAddress,
-            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-            amountOut: destAmount,
-            amountInMaximum: srcAmount,
-            path,
-          };
+    if (data.feeOnTransfer) {
+      _require(
+        data.path.length !== 1,
+        `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
+          .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
+          .join(' ')}`,
+      );
+      swapFunction = AlgebraFunctions.exactInputWithFeeToken;
+      swapParams = {
+        limitSqrtPrice: '0',
+        recipient: this.augustusAddress,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+        amountIn: srcAmount,
+        amountOutMinimum: destAmount,
+        tokenIn: data.path[0].tokenIn,
+        tokenOut: data.path[0].tokenOut,
+      };
+    } else {
+      swapFunction =
+        side === SwapSide.SELL
+          ? AlgebraFunctions.exactInput
+          : AlgebraFunctions.exactOutput;
+      const path = this._encodePath(data.path, side);
+      swapParams =
+        side === SwapSide.SELL
+          ? {
+              recipient: this.augustusAddress,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountIn: srcAmount,
+              amountOutMinimum: destAmount,
+              path,
+            }
+          : {
+              recipient: this.augustusAddress,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountOut: destAmount,
+              amountInMaximum: srcAmount,
+              path,
+            };
+    }
+
     const swapData = this.routerIface.encodeFunctionData(swapFunction, [
-      swapFunctionParams,
+      swapParams,
     ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
