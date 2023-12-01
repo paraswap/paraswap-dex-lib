@@ -12,6 +12,7 @@
 yarn install
 ```
 
+
 4. Initialize the DEX integration. The DEX name should be in `param-case`:
 
 ```bash
