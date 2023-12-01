@@ -51,7 +51,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-      Adapter03: '0xfb2a3de6c7B8c77b520E3da16021f3D8A4E93168',
+      Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
       Adapter04: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
       BuyAdapter: '0x1310dE2C69e9753bee19B5522bad39c5f788efd9',
       BuyAdapter02: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
@@ -166,7 +166,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
       // BscAdapter02: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
-      BscAdapter02: '0x5b8268F34993A48247Ac0d182a8A343518bca204',
+      BscAdapter02: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
       BscBuyAdapter: '0x301c2813e3ceb43A448a12f21551EDBcdC37F157',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
@@ -225,7 +225,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0x2cdB0cDc2a9321ac2ED5b741828a5216C265Be80',
+      AvalancheAdapter02: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
       AvalancheBuyAdapter: '0x9Aa41A24A10af2a965A6D406b913a7Cd9C6886ea',
     },
     uniswapV2ExchangeRouterAddress:
@@ -282,7 +282,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
       ArbitrumAdapter01: '0xD8134ACfc9c71Ab51452b5bA23A31354F4739032',
-      ArbitrumAdapter02: '0x248009f6F78b5AcD5EA2fc86d56b77A7AeEe2eFc',
+      ArbitrumAdapter02: '0xe9166234DFB6d3ec05C82404109C02Ca82b16c22',
       ArbitrumBuyAdapter: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
     },
     uniswapV2ExchangeRouterAddress:
@@ -367,7 +367,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs: [],
     adapterAddresses: {
-      BaseAdapter01: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
+      BaseAdapter01: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
       BaseBuyAdapter: '0xB11bCA7B01b425afD0743A4D77B4f593883f94C0',
     },
     uniswapV2ExchangeRouterAddress:

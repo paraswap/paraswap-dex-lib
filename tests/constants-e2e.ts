@@ -768,6 +768,10 @@ export const Tokens: {
     },
   },
   [Network.ARBITRUM]: {
+    SEN: {
+      address: '0x154388a4650D63acC823e06Ef9e47C1eDdD3cBb2',
+      decimals: 18,
+    },
     DAI: {
       address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
       decimals: 18,
@@ -1149,6 +1153,8 @@ export const Holders: {
     BTCb: '0x84c06d3c27821d0136f66306f5028d43ceac268d',
   },
   [Network.ARBITRUM]: {
+    SEN: '0xcb19b6b4971bd4206bab176c75b1efe3e28ee5a8',
+    RDPX: '0x2fa6f21ecfe274f594f470c376f5bdd061e08a37',
     ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
@@ -1156,7 +1162,7 @@ export const Holders: {
     USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
     USDC: '0xb38e8c17e38363af6ebdcb3dae12e0243582891d',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
-    USDT: '0x5ff47d4ab75bcaff6807c81f1367abb53439883c',
+    USDT: '0xf977814e90da44bfa03b6295a0616a897441acec',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     FRAX: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
     nUSD: '0x9dd329f5411466d9e0c488ff72519ca9fef0cb40',
