@@ -93,3 +93,13 @@ export type SwaapV2APIParameters = {
 export type TokensMap = {
   [address: string]: Token;
 };
+
+export type SwaapV2NotificationRequest = {
+  origin: string;
+  code: number;
+  message: string;
+};
+
+export type SwaapV2NotificationResponse = {
+  success: boolean;
+};

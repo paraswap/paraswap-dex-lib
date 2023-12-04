@@ -241,6 +241,34 @@ describe('UniswapV2 E2E Avalanche', () => {
           provider,
         );
       });
+
+      it('AMPL -> MIM', async () => {
+        await testE2E(
+          tokens.AMPL,
+          tokens.MIM,
+          holders.AMPL,
+          '1000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+
+      it('MIM -> AMPL', async () => {
+        await testE2E(
+          tokens.MIM,
+          tokens.AMPL,
+          holders.MIM,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
     });
 
     describe('multiSwap', () => {

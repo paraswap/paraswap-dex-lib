@@ -2,16 +2,17 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
-import { BI_POWS } from '../../bigint-constants';
-import { Hashflow } from './hashflow';
+import { Tokens } from '../../../tests/constants-e2e';
 import {
+  checkConstantPoolPrices,
   checkPoolPrices,
   checkPoolsLiquidity,
-  checkConstantPoolPrices,
+  sleep,
 } from '../../../tests/utils';
-import { Tokens } from '../../../tests/constants-e2e';
+import { BI_POWS } from '../../bigint-constants';
+import { Network, SwapSide } from '../../constants';
+import { DummyDexHelper } from '../../dex-helper/index';
+import { Hashflow } from './hashflow';
 
 async function testPricingOnNetwork(
   hashflow: Hashflow,
@@ -104,6 +105,8 @@ describe('Hashflow', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       hashflow = new Hashflow(network, dexKey, dexHelper);
+      await hashflow.initializePricing(0);
+      await sleep(5000);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
