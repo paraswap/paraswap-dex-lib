@@ -52,7 +52,7 @@
   "dependencies": {
     "@0x/utils": "^4.5.2",
     "@hashflow/sdk": "1.2.4",
-    "@hashflow/taker-js": "0.0.2",
+    "@hashflow/taker-js": "0.3.4",
     "@paraswap/core": "1.1.0",
     "async": "^3.2.4",
     "axios": "0.26.0",
