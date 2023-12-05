@@ -40,7 +40,8 @@ import {
   SmardexRouterFunctions,
   directSmardexFunctionName,
   DefaultSmardexPoolGasCost,
-  SUBGRAPH_TIMEOUT, FEES_LAYER_ONE,
+  SUBGRAPH_TIMEOUT,
+  FEES_LAYER_ONE,
 } from '../smardex/constants';
 import { SmardexData, SmardexParam } from '../smardex/types';
 import { IDex } from '../..';
@@ -695,12 +696,14 @@ export class Smardex
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
-          path: 'address[] calldata',
+          path: 'address[]',
           receiver: 'address',
-          deadline: 'uint256'
         },
       },
-      { path: data.path, receiver: data.receiver, deadline: data.deadline },
+      {
+        path: data.path,
+        receiver: data.receiver,
+      },
     );
     return {
       targetExchange: data.router,

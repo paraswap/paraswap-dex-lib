@@ -7,7 +7,6 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-
 function testForNetwork(
   network: Network,
   dexKey: string,
@@ -25,17 +24,11 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
-    [
-      SwapSide.BUY,
-      [
-        ContractMethod.simpleBuy,
-        // ContractMethod.buy,
-      ],
-    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   sideToContractMethods.forEach((contractMethods, side) =>
@@ -48,9 +41,7 @@ function testForNetwork(
                 tokens[pair[0].name],
                 tokens[pair[1].name],
                 holders[pair[0].name],
-                side === SwapSide.SELL
-                  ? pair[0].sellAmount
-                  : pair[0].buyAmount,
+                side === SwapSide.SELL ? pair[0].sellAmount : pair[0].buyAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -63,9 +54,7 @@ function testForNetwork(
                 tokens[pair[1].name],
                 tokens[pair[0].name],
                 holders[pair[1].name],
-                side === SwapSide.SELL
-                  ? pair[1].sellAmount
-                  : pair[1].buyAmount,
+                side === SwapSide.SELL ? pair[1].sellAmount : pair[1].buyAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -113,11 +102,7 @@ describe('SmarDex E2E', () => {
       ],
     ];
 
-    testForNetwork(
-      network,
-      dexKey,
-      pairs,
-    );
+    testForNetwork(network, dexKey, pairs);
   });
 
   describe('ARBITRUM', () => {
@@ -150,11 +135,7 @@ describe('SmarDex E2E', () => {
       ],
     ];
 
-    testForNetwork(
-      network,
-      dexKey,
-      pairs
-    );
+    testForNetwork(network, dexKey, pairs);
   });
 
   describe('BSC', () => {
@@ -199,11 +180,7 @@ describe('SmarDex E2E', () => {
       ],
     ];
 
-    testForNetwork(
-      network,
-      dexKey,
-      pairs
-    );
+    testForNetwork(network, dexKey, pairs);
   });
 
   describe('POLYGON', () => {
@@ -260,11 +237,7 @@ describe('SmarDex E2E', () => {
       ],
     ];
 
-    testForNetwork(
-      network,
-      dexKey,
-      pairs,
-    );
+    testForNetwork(network, dexKey, pairs);
   });
 
   describe('BASE', () => {
@@ -297,10 +270,6 @@ describe('SmarDex E2E', () => {
       ],
     ];
 
-    testForNetwork(
-      network,
-      dexKey,
-      pairs,
-    );
+    testForNetwork(network, dexKey, pairs);
   });
 });
