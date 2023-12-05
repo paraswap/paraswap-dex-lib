@@ -1138,10 +1138,8 @@ export const Holders: {
     avWETH: '0x92d78e32b990d10aeca0875dc5585f1a6f958179',
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
     BTCb: '0x84c06d3c27821d0136f66306f5028d43ceac268d',
-    AMPL: '0xfcaA5ea7F8eb0631BcA72C345025C0A5a6D93f0E',
   },
   [Network.ARBITRUM]: {
-    RDPX: '0x2fa6f21ecfe274f594f470c376f5bdd061e08a37',
     ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
