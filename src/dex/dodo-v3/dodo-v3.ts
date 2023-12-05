@@ -1,6 +1,8 @@
+import { Interface } from '@ethersproject/abi';
 import { BytesLike } from 'ethers/lib/ethers';
 import _ from 'lodash';
-import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly, assert } from 'ts-essentials';
+import D3ProxyABI from '../../abi/dodo-v3/D3Proxy.abi.json';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -11,14 +13,20 @@ import {
   AdapterExchangeParam,
   Address,
   ExchangePrices,
+  ExchangeTxInfo,
   Logger,
+  OptimalSwapExchange,
   PoolLiquidity,
   PoolPrices,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
 } from '../../types';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  SimpleExchange,
+  getLocalDeadlineAsFriendlyPlaceholder,
+} from '../simple-exchange';
 import {
   Adapters,
   DodoV3Config,
@@ -28,6 +36,8 @@ import {
 import { DodoV3EventPool } from './dodo-v3-pool';
 import { DodoV3Vault, OnPoolCreatedOrRemovedCallback } from './dodo-v3-vault';
 import {
+  D3ProxyFunctions,
+  D3ProxySwapTokensParams,
   DexParams,
   DodoV3Data,
   PoolState,
@@ -74,6 +84,7 @@ export class DodoV3 extends SimpleExchange implements IDex<DodoV3Data> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
+    readonly proxyIface = new Interface(D3ProxyABI),
   ) {
     super(dexHelper, dexKey);
     this.config = DodoV3Config[dexKey][network];
@@ -344,6 +355,35 @@ export class DodoV3 extends SimpleExchange implements IDex<DodoV3Data> {
     };
   }
 
+  getTokenFromAddress(address: Address): Token {
+    // In this Dex decimals are not used
+    return { address, decimals: 0 };
+  }
+
+  async preProcessTransaction(
+    optimalSwapExchange: OptimalSwapExchange<DodoV3Data>,
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<DodoV3Data>, ExchangeTxInfo]> {
+    assert(
+      optimalSwapExchange.data !== undefined,
+      `preProcessTransaction: data field is missing`,
+    );
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: {
+          ...optimalSwapExchange.data,
+          slippageFactor: options.slippageFactor,
+        },
+      },
+      { deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()) },
+    ];
+  }
+
   // Encode call data used by simpleSwap like routers
   // Used for simpleSwap & simpleBuy
   // Hint: this.buildSimpleParamWithoutWETHConversion
@@ -356,10 +396,44 @@ export class DodoV3 extends SimpleExchange implements IDex<DodoV3Data> {
     data: DodoV3Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const { exchange } = data;
+    const { exchange, slippageFactor } = data;
 
-    // Encode here the transaction arguments
-    const swapData = '';
+    assert(
+      slippageFactor !== undefined,
+      `${this.dexKey}-${this.network}: slippageFactor undefined`,
+    );
+
+    const isSell = side === SwapSide.SELL;
+    const swapFunction = isSell
+      ? D3ProxyFunctions.sellTokens
+      : D3ProxyFunctions.buyTokens;
+    const minReceiveAmount = slippageFactor.times(destAmount).toFixed(0);
+    const maxPayAmount = slippageFactor.times(srcAmount).toFixed(0);
+    const d3MMSwapCallBackData = this.abiCoder.encodeParameters([], []);
+    const swapFunctionParams: D3ProxySwapTokensParams = isSell
+      ? [
+          exchange,
+          this.augustusAddress,
+          srcToken,
+          destToken,
+          srcAmount,
+          minReceiveAmount,
+          d3MMSwapCallBackData,
+          getLocalDeadlineAsFriendlyPlaceholder(),
+        ]
+      : [
+          exchange,
+          this.augustusAddress,
+          srcToken,
+          destToken,
+          destAmount,
+          maxPayAmount,
+          d3MMSwapCallBackData,
+          getLocalDeadlineAsFriendlyPlaceholder(),
+        ];
+    const swapData = this.proxyIface.encodeFunctionData(swapFunction, [
+      ...swapFunctionParams,
+    ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -367,7 +441,7 @@ export class DodoV3 extends SimpleExchange implements IDex<DodoV3Data> {
       destToken,
       destAmount,
       swapData,
-      exchange,
+      this.config.D3Proxy,
     );
   }
 
