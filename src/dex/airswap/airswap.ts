@@ -171,7 +171,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     if (normalizedSrcToken.address === normalizedDestToken.address) {
       return null;
     }
-    console.log('===================== will use pool =====>', limitPools);
+    // console.log('===================== will use pool =====>', limitPools);
     const pools =
       limitPools ??
       (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
@@ -219,7 +219,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
       const prices = price.prices.filter(p => p > 0n);
       return prices.length > 0;
     });
-    console.log('pricesWithout0n', pricesWithout0n);
+    // console.log('pricesWithout0n', pricesWithout0n);
     return pricesWithout0n;
   }
 

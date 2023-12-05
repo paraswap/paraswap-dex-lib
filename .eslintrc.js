@@ -28,7 +28,7 @@ module.exports = {
     'no-plusplus': 'off',
     'no-continue': 'off',
     'no-param-reassign': 'off',
-    'no-console': 'off',
+    'no-console': 'error',
     'max-classes-per-file': 'off',
     'no-await-in-loop': 'off',
     '@typescript-eslint/no-unused-vars': ['off'],

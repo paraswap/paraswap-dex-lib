@@ -44,7 +44,7 @@ export async function getServersUrl(
       urls.filter(url => !isWebsocket(url) && url.includes('altono')),
     );
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     return Promise.resolve([]);
   }
 }
@@ -100,7 +100,7 @@ export const getThresholdsFromMaker = async (
         };
         return resp;
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         return undefined;
       }
     },
@@ -122,37 +122,35 @@ export async function makeRFQ(
   destToken: Token,
   amount: string,
 ): Promise<QuoteResponse> {
-  // senderWallet = '0xe4064498e11797e377a170b3d5974d38861fdabf'
-  // senderWallet = '0x4F67220b0329312c24ab97086011e7503aE955FE'
   try {
-    console.log(
-      'getSignerSideOrderERC20',
-      maker.locator,
-      amount.toString(),
-      destToken.address,
-      srcToken.address,
-      senderWallet,
-    );
+    // console.log(
+    //   'getSignerSideOrderERC20',
+    //   maker.locator,
+    //   amount.toString(),
+    //   destToken.address,
+    //   srcToken.address,
+    //   senderWallet,
+    // );
     const response = await maker.getSignerSideOrderERC20(
       amount.toString(),
       destToken.address,
       srcToken.address,
       senderWallet,
     );
-    console.log('[AIRSWAP]', 'getTx', {
-      //@ts-ignore
-      swapContract: maker.swapContract,
-      senderWallet,
-      maker: maker.locator,
-      signedOrder: response,
-    });
+    // console.log('[AIRSWAP]', 'getTx', {
+    //   //@ts-ignore
+    //   swapContract: maker.swapContract,
+    //   senderWallet,
+    //   maker: maker.locator,
+    //   signedOrder: response,
+    // });
     const isResponseValid = Object.values(response).indexOf('undefined') === -1; // @todo fix in the library
     return Promise.resolve({
       maker: maker.locator,
       signedOrder: isResponseValid ? response : undefined,
     });
   } catch (e) {
-    console.error(e);
+    // console.error(e);
     return Promise.resolve({
       maker: maker.locator,
       signedOrder: undefined,
@@ -186,8 +184,8 @@ export async function getPricingErc20(
     },
     data: data,
   };
-  console.log('swapSide', swapSide === SwapSide.SELL ? 'SELL' : 'BUY');
-  console.log('data', config);
+  // console.log('swapSide', swapSide === SwapSide.SELL ? 'SELL' : 'BUY');
+  // console.log('data', config);
 
   try {
     const response = await axios.request(config);
@@ -216,7 +214,7 @@ export async function getPricingErc20FromLib(
         quoteToken: destToken.address.toString(),
       },
     ]);
-    console.log('response from lib:', response);
+    // console.log('response from lib:', response);
     const result =
       swapSide === SwapSide.SELL
         ? // @ts-ignore
@@ -225,7 +223,7 @@ export async function getPricingErc20FromLib(
           mapMakerBUYResponse(response);
     return result;
   } catch (err) {
-    console.log(url, '->', err);
+    // console.log(url, '->', err);
     return [];
   }
 }
