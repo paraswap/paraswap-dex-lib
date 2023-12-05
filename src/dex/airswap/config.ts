@@ -3,7 +3,13 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
 export const AirSwapConfig: DexConfigMap<DexParams> = {
-  AirSwap: {},
+  AirSwap: {
+    [Network.MAINNET]: {},
+    [Network.BSC]: {},
+    [Network.POLYGON]: {},
+    [Network.ARBITRUM]: {},
+    [Network.AVALANCHE]: {},
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {

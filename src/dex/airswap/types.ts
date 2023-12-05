@@ -6,10 +6,7 @@ export type AirswapData = {
   signedOrder: OrderERC20;
 };
 
-export type DexParams = {
-  swapErc20: string;
-  makerRegistry: string;
-};
+export type DexParams = {};
 
 export interface PriceLevel {
   threshold: number;

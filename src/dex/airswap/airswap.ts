@@ -25,6 +25,7 @@ import { ethers } from 'ethers';
 import { AddressZero } from '@ethersproject/constants';
 
 import swapABI from '@airswap/swap-erc20/build/contracts/SwapERC20.sol/SwapERC20.json';
+import deploys from '@airswap/swap-erc20/deploys.js';
 import {
   getAvailableMakersForRFQ,
   getServersUrl,
@@ -62,7 +63,7 @@ export class Airswap extends SimpleExchange implements IDex<AirswapData> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
-    readonly routerAddress: string = AirSwapConfig.AirSwap[network].swapErc20,
+    readonly routerAddress: string = deploys[network],
     protected routerInterface = new Interface(JSON.stringify(swapABI.abi)),
   ) {
     super(dexHelper, dexKey);
