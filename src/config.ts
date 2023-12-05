@@ -309,9 +309,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
-
     adapterAddresses: {
-      OptimismAdapter01: '0x3ad7f275E27AC579cA88e0b4765828242A9E8C49',
+      OptimismAdapter01: '0x5dcf544b0c9689fa67dcb713fd2656d217e25a59',
       OptimismBuyAdapter: '0xfdDD975FE4c1af20c24A3Ad2b33e8609a62DDC73',
     },
     uniswapV2ExchangeRouterAddress:

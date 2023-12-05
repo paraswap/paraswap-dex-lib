@@ -240,4 +240,25 @@ describe('Wombat E2E', () => {
 
     testForNetwork(network, dexKey, pairs);
   });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    const pairs: Pairs = [
+      [
+        {
+          name: 'USDC',
+          sellAmount: '100000000',
+          buyAmount: '100000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '100000000',
+          buyAmount: '100000000',
+        },
+      ],
+    ];
+
+    testForNetwork(network, dexKey, pairs);
+  });
 });

@@ -85,7 +85,7 @@ const MULTISIG: { [nid: number]: string } = {
   [Network.POLYGON]: '0x46DF4eb6f7A3B0AdF526f6955b15d3fE02c618b7',
   [Network.FANTOM]: '0xECaB2dac955b94e49Ec09D6d68672d3B397BbdAd',
   [Network.AVALANCHE]: '0x1e2ECA5e812D08D2A7F8664D69035163ff5BfEC2',
-  [Network.OPTIMISM]: '0xf01121e808F782d7F34E857c27dA31AD1f151b39',
+  [Network.OPTIMISM]: '0x3b28A6f6291f7e8277751f2911Ac49C585d049f6',
   [Network.ARBITRUM]: '0x90DfD8a6454CFE19be39EaB42ac93CD850c7f339',
   [Network.BASE]: '0x6C674c8Df1aC663b822c4B6A56B4E5e889379AE0',
 };
@@ -379,7 +379,6 @@ export async function testE2E(
       poolIdentifiers,
       transferFees,
     );
-    console.log('price route: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Calculate slippage. Default is 1%

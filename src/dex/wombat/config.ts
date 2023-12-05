@@ -19,9 +19,9 @@ export const WombatConfig: DexConfigMap<DexParams> = {
     [Network.BASE]: {
       bmwAddress: '0x6521a549834F5E6d253CD2e5F4fbe4048f86cd7b',
     },
-    // [Network.OPTIMISM]: {
-    //   bmwAddress: '0x82E62f4e174E3C5e1641Df670c91Ac6Ab8541518',
-    // },
+    [Network.OPTIMISM]: {
+      bmwAddress: '0x25C9dd8a3774EF7C918cd28ff59cF9e29504C914',
+    },
   },
 };
 
@@ -33,12 +33,6 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 7,
       },
     ],
-    // [SwapSide.BUY]: [
-    //   {
-    //     name: 'BscBuyAdapter',
-    //     index: 1,
-    //   },
-    // ],
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [
@@ -47,12 +41,6 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 8,
       },
     ],
-    // [SwapSide.BUY]: [
-    //   {
-    //     name: 'ArbitrumBuyAdapter',
-    //     index: 1,
-    //   },
-    // ],
   },
   [Network.MAINNET]: {
     [SwapSide.SELL]: [
@@ -61,12 +49,6 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 15,
       },
     ],
-    // [SwapSide.BUY]: [
-    //   {
-    //     name: 'BscBuyAdapter',
-    //     index: 1,
-    //   },
-    // ],
   },
   [Network.AVALANCHE]: {
     [SwapSide.SELL]: [
@@ -75,12 +57,6 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 7,
       },
     ],
-    // [SwapSide.BUY]: [
-    //   {
-    //     name: 'BscBuyAdapter',
-    //     index: 1,
-    //   },
-    // ],
   },
   [Network.BASE]: {
     [SwapSide.SELL]: [
@@ -89,11 +65,13 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 7,
       },
     ],
-    // [SwapSide.BUY]: [
-    //   {
-    //     name: 'BscBuyAdapter',
-    //     index: 1,
-    //   },
-    // ],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'OptimismAdapter01',
+        index: 12,
+      },
+    ],
   },
 };
