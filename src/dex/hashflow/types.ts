@@ -1,11 +1,10 @@
-import { QuoteData } from '@hashflow/taker-js/dist/types/common';
+import { Chain, QuoteData } from '@hashflow/taker-js/dist/types/common';
 import { RequestHeaders } from '../../dex-helper';
 
 export type HashflowData = {
   mm: string;
   quoteData?: QuoteData;
   signature?: string;
-  gasEstimate?: number;
 };
 
 export type DexParams = {
@@ -13,8 +12,8 @@ export type DexParams = {
 };
 
 export interface PriceLevel {
-  level: string;
-  price: string;
+  q: string;
+  p: string;
 }
 
 export class RfqError extends Error {}
@@ -29,7 +28,6 @@ export class SlippageCheckError extends Error {}
 export type HashflowRatesLevel = {
   pair: Record<string, string>;
   levels: Array<Record<string, string>>;
-  includesFees: boolean;
 };
 
 export type HashflowMarketMakersResponse = {
@@ -38,7 +36,8 @@ export type HashflowMarketMakersResponse = {
 
 export type HashflowRatesResponse = {
   status: string;
-  networkId: string;
+  baseChain: Chain;
+  quoteChain: Chain;
   levels: Record<string, Array<HashflowRatesLevel>>;
 };
 

@@ -45,7 +45,8 @@ import {
   SWAAP_RFQ_QUOTE_ENDPOINT,
   SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS,
   SWAAP_RFQ_PRICES_CACHES_TTL_S,
-  GAS_COST_ESTIMATION,
+  STABLE_SWAP_GAS_COST_ESTIMATION,
+  VOLATILE_SWAP_GAS_COST_ESTIMATION,
   BATCH_SWAP_SELECTOR,
   CALLER_SLOT,
   SWAAP_403_TTL_S,
@@ -62,7 +63,12 @@ import {
   SWAAP_BANNED_CODE,
   SWAAP_NOTIFY_ENDPOINT,
 } from './constants';
-import { getPoolIdentifier, normalizeTokenAddress, getPairName } from './utils';
+import {
+  getPoolIdentifier,
+  normalizeTokenAddress,
+  getPairName,
+  isStablePair,
+} from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
 import {
   SlippageCheckError,
@@ -404,8 +410,16 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           return null;
         }
 
+        const gasCost = isStablePair(
+          this.network,
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )
+          ? STABLE_SWAP_GAS_COST_ESTIMATION
+          : VOLATILE_SWAP_GAS_COST_ESTIMATION;
+
         return {
-          gasCost: GAS_COST_ESTIMATION,
+          gasCost: gasCost,
           exchange: this.dexKey,
           data: {},
           prices,

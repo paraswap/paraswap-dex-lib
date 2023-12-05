@@ -766,6 +766,10 @@ export const Tokens: {
       address: '0x502580fc390606b47fc3b741d6d49909383c28a9',
       decimals: 18,
     },
+    AMPL: {
+      address: '0x027dbcA046ca156De9622cD1e2D907d375e53aa7',
+      decimals: 9,
+    },
   },
   [Network.ARBITRUM]: {
     SEN: {
@@ -859,6 +863,10 @@ export const Tokens: {
     },
     wstETH: {
       address: '0x5979D7b546E38E414F7E9822514be443A4800529',
+      decimals: 18,
+    },
+    RDPX: {
+      address: '0x32eb7902d4134bf98a28b963d26de779af92a212',
       decimals: 18,
     },
   },
@@ -1128,7 +1136,7 @@ export const Holders: {
     HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
     USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
     USDC: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
-    USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
+    USDTe: '0x693b75eeD71dFA1BE188Fdb53472c8fC51c5A0A0',
     WETHe: '0xD291B51f7a1a1F4917D085F2a7731A447E4aF82D',
     POPS: '0x5268c2331658cb0b2858cfa9db27d8f22f5434bc',
     ETH: '0x9852e84b5AA485683d8AeE7B0332e42442763b75',
@@ -1151,6 +1159,7 @@ export const Holders: {
     avWETH: '0x92d78e32b990d10aeca0875dc5585f1a6f958179',
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
     BTCb: '0x84c06d3c27821d0136f66306f5028d43ceac268d',
+    AMPL: '0xfcaA5ea7F8eb0631BcA72C345025C0A5a6D93f0E',
   },
   [Network.ARBITRUM]: {
     SEN: '0xcb19b6b4971bd4206bab176c75b1efe3e28ee5a8',
