@@ -187,6 +187,11 @@ export class WombatPool extends StatefulRpcPoller<
       >(
         false,
         multiCalls as MultiCallParams<MulticallResultOutputs | number>[],
+        undefined,
+        undefined,
+        // multiCalls includes calls asset.isPaused, asset.getRelativePrice
+        // some of the contracts don't have these methods, so prevent logging errors
+        false,
       )) as [MultiResult<number>, ...MultiResult<MulticallResultOutputs>[]];
 
       return this.parseStateFromMultiResultsWithBlockInfo(
