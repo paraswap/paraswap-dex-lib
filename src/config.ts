@@ -53,9 +53,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
-      Adapter04: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
+      Adapter04: '0x9F7A886ec44d8bc181e311D76b68C9B8aE2E0BC2',
       BuyAdapter: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
-      BuyAdapter02: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
+      BuyAdapter02: '0xBA0E780Db34927F1e702717FAC21b52803D7cE25',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -168,8 +168,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
-      BscAdapter02: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
-      BscBuyAdapter: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
+      BscAdapter02: '0x9A92D2649C38415860FA59ba8B9a9960cd2839Db',
+      BscBuyAdapter: '0xd32C191e0febaa6Cc93A29Cb676474c72486E00b',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
     rpcPollingBlocksBackToTriggerUpdate: 1,
@@ -197,8 +197,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
-      PolygonAdapter02: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
-      PolygonBuyAdapter: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
+      PolygonAdapter02: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
+      PolygonBuyAdapter: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -288,8 +288,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
-      ArbitrumAdapter02: '0xe9166234DFB6d3ec05C82404109C02Ca82b16c22',
-      ArbitrumBuyAdapter: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
+      ArbitrumAdapter02: '0x58a5f0b73969800FAFf8556cD2187E3FCE71A6cb',
+      ArbitrumBuyAdapter: '0x4483Ae378897eB9FbF7f15Df98Bf07233ffFEe8b',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
@@ -376,8 +376,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs: [],
     adapterAddresses: {
-      BaseAdapter01: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
-      BaseBuyAdapter: '0xB11bCA7B01b425afD0743A4D77B4f593883f94C0',
+      BaseAdapter01: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
+      BaseBuyAdapter: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
     },
     uniswapV2ExchangeRouterAddress:
       '0x75d199EfB540e47D27D52c62Da3E7daC2B9e834F',
