@@ -157,6 +157,7 @@ export class SimpleExchange {
     swapCallee: Address,
     spender?: Address,
     networkFee: NumberAsString = '0',
+    preCalls?: Omit<SimpleExchangeParam, 'networkFee'>,
   ): Promise<SimpleExchangeParam> {
     const approveParam = await this.getApproveSimpleParam(
       src,
@@ -168,9 +169,17 @@ export class SimpleExchange {
     ).toString();
 
     return {
-      callees: [...approveParam.callees, swapCallee],
-      calldata: [...approveParam.calldata, swapCallData],
-      values: [...approveParam.values, swapValue],
+      callees: [
+        ...(preCalls?.callees || []),
+        ...approveParam.callees,
+        swapCallee,
+      ],
+      calldata: [
+        ...(preCalls?.calldata || []),
+        ...approveParam.calldata,
+        swapCallData,
+      ],
+      values: [...(preCalls?.values || []), ...approveParam.values, swapValue],
       networkFee,
     };
   }
