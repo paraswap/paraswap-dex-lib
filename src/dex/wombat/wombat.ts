@@ -377,45 +377,48 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (!this.poolLiquidityUSD) await this.updatePoolState();
-    tokenAddress = (
-      isETHAddress(tokenAddress)
-        ? this.dexHelper.config.data.wrappedNativeTokenAddress
-        : tokenAddress
-    ).toLowerCase();
-    const pools: string[] = [];
-    const poolStates: { [poolAddress: string]: DeepReadonly<PoolState> } = {};
-    for (const [poolAddress, eventPool] of Object.entries(this.pools)) {
-      let state = await eventPool.getState();
-      if (!state) {
-        this.logger.warn(
-          `State of ${poolAddress} is null in getTopPoolsForToken, skipping...`,
-        );
-        continue;
-      }
-      if (
-        state.value.underlyingAddresses.includes(tokenAddress) &&
-        this.poolLiquidityUSD![poolAddress]
-      ) {
-        poolStates[poolAddress] = state.value;
-        pools.push(poolAddress);
-      }
-    }
+    // getTopPoolsForToken shouldn't use block manager
+    // TODO: update getTopPoolsForToken to work without block manager
+    return [];
+    // if (!this.poolLiquidityUSD) await this.updatePoolState();
+    // tokenAddress = (
+    //   isETHAddress(tokenAddress)
+    //     ? this.dexHelper.config.data.wrappedNativeTokenAddress
+    //     : tokenAddress
+    // ).toLowerCase();
+    // const pools: string[] = [];
+    // const poolStates: { [poolAddress: string]: DeepReadonly<PoolState> } = {};
+    // for (const [poolAddress, eventPool] of Object.entries(this.pools)) {
+    //   let state = await eventPool.getState();
+    //   if (!state) {
+    //     this.logger.warn(
+    //       `State of ${poolAddress} is null in getTopPoolsForToken, skipping...`,
+    //     );
+    //     continue;
+    //   }
+    //   if (
+    //     state.value.underlyingAddresses.includes(tokenAddress) &&
+    //     this.poolLiquidityUSD![poolAddress]
+    //   ) {
+    //     poolStates[poolAddress] = state.value;
+    //     pools.push(poolAddress);
+    //   }
+    // }
 
-    // sort by liquidity
-    pools.sort((a, b) => this.poolLiquidityUSD![b] - this.poolLiquidityUSD![a]);
-    return pools.slice(0, limit).map(poolAddress => ({
-      exchange: this.dexKey,
-      address: poolAddress,
-      // other tokens in the same pool
-      connectorTokens: poolStates[poolAddress].underlyingAddresses
-        .filter(t => t !== tokenAddress)
-        .map(t => ({
-          decimals: poolStates[poolAddress].asset[t].underlyingTokenDecimals,
-          address: t,
-        })),
-      liquidityUSD: this.poolLiquidityUSD![poolAddress],
-    }));
+    // // sort by liquidity
+    // pools.sort((a, b) => this.poolLiquidityUSD![b] - this.poolLiquidityUSD![a]);
+    // return pools.slice(0, limit).map(poolAddress => ({
+    //   exchange: this.dexKey,
+    //   address: poolAddress,
+    //   // other tokens in the same pool
+    //   connectorTokens: poolStates[poolAddress].underlyingAddresses
+    //     .filter(t => t !== tokenAddress)
+    //     .map(t => ({
+    //       decimals: poolStates[poolAddress].asset[t].underlyingTokenDecimals,
+    //       address: t,
+    //     })),
+    //   liquidityUSD: this.poolLiquidityUSD![poolAddress],
+    // }));
   }
 
   // This is optional function in case if your implementation has acquired any resources

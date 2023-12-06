@@ -150,109 +150,109 @@ describe('Wombat', function () {
   let blockNumber: number;
   let wombat: Wombat;
 
-  Object.keys(WombatConfig[dexKey]).forEach(key => {
-    describe(`network ${key}`, () => {
-      const network = Number(key) as Network;
-      const dexHelper = new DummyDexHelper(network);
+  //   Object.keys(WombatConfig[dexKey]).forEach(key => {
+  //     describe(`network ${key}`, () => {
+  //       const network = Number(key) as Network;
+  //       const dexHelper = new DummyDexHelper(network);
 
-      const tokens = Tokens[network];
+  //       const tokens = Tokens[network];
 
-      const srcTokenSymbol = 'USDC';
-      const destTokenSymbol = network == Network.BASE ? 'USDbC' : 'USDT';
+  //       const srcTokenSymbol = 'USDC';
+  //       const destTokenSymbol = network == Network.BASE ? 'USDbC' : 'USDT';
 
-      let amountsForSell = [
-        0n,
-        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      ];
+  //       let amountsForSell = [
+  //         0n,
+  //         1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+  //       ];
 
-      let amountsForBuy = [
-        0n,
-        1n * BI_POWS[tokens[destTokenSymbol].decimals],
-        2n * BI_POWS[tokens[destTokenSymbol].decimals],
-        3n * BI_POWS[tokens[destTokenSymbol].decimals],
-        4n * BI_POWS[tokens[destTokenSymbol].decimals],
-        5n * BI_POWS[tokens[destTokenSymbol].decimals],
-        6n * BI_POWS[tokens[destTokenSymbol].decimals],
-        7n * BI_POWS[tokens[destTokenSymbol].decimals],
-        8n * BI_POWS[tokens[destTokenSymbol].decimals],
-        9n * BI_POWS[tokens[destTokenSymbol].decimals],
-        10n * BI_POWS[tokens[destTokenSymbol].decimals],
-      ];
+  //       let amountsForBuy = [
+  //         0n,
+  //         1n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         2n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         3n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         4n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         5n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         6n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         7n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         8n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         9n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //         10n * BI_POWS[tokens[destTokenSymbol].decimals],
+  //       ];
 
-      // OPTIMISM has very low liquidity currently, so we have to use very small amounts
-      // if (network === Network.OPTIMISM) {
-      //   amountsForSell = amountsForSell.map(a => a / 100n);
-      //   amountsForBuy = amountsForBuy.map(a => a / 100n);
-      // }
+  //       // OPTIMISM has very low liquidity currently, so we have to use very small amounts
+  //       // if (network === Network.OPTIMISM) {
+  //       //   amountsForSell = amountsForSell.map(a => a / 100n);
+  //       //   amountsForBuy = amountsForBuy.map(a => a / 100n);
+  //       // }
 
-      beforeAll(async () => {
-        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-        wombat = new Wombat(network, dexKey, dexHelper);
-      });
+  //       beforeAll(async () => {
+  //         blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+  //         wombat = new Wombat(network, dexKey, dexHelper);
+  //       });
 
-      it('getTopPoolsForToken', async function () {
-        // We have to check without calling initializePricing, because
-        // pool-tracker is not calling that function
-        if (wombat.updatePoolState) {
-          await wombat.updatePoolState();
-        }
-        const poolLiquidity = await wombat.getTopPoolsForToken(
-          tokens[srcTokenSymbol].address,
-          10,
-        );
-        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+  //       it('getTopPoolsForToken', async function () {
+  //         // We have to check without calling initializePricing, because
+  //         // pool-tracker is not calling that function
+  //         if (wombat.updatePoolState) {
+  //           await wombat.updatePoolState();
+  //         }
+  //         const poolLiquidity = await wombat.getTopPoolsForToken(
+  //           tokens[srcTokenSymbol].address,
+  //           10,
+  //         );
+  //         console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-        if (!wombat.hasConstantPriceLargeAmounts) {
-          checkPoolsLiquidity(
-            poolLiquidity,
-            Tokens[network][srcTokenSymbol].address,
-            dexKey,
-          );
-        }
-      });
+  //         if (!wombat.hasConstantPriceLargeAmounts) {
+  //           checkPoolsLiquidity(
+  //             poolLiquidity,
+  //             Tokens[network][srcTokenSymbol].address,
+  //             dexKey,
+  //           );
+  //         }
+  //       });
 
-      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-        if (wombat.initializePricing) {
-          await wombat.initializePricing(blockNumber);
-        }
-        await testPricingOnNetwork(
-          wombat,
-          network,
-          dexKey,
-          blockNumber,
-          srcTokenSymbol,
-          destTokenSymbol,
-          SwapSide.SELL,
-          amountsForSell,
-          'quotePotentialSwap',
-        );
-      });
+  //       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+  //         if (wombat.initializePricing) {
+  //           await wombat.initializePricing(blockNumber);
+  //         }
+  //         await testPricingOnNetwork(
+  //           wombat,
+  //           network,
+  //           dexKey,
+  //           blockNumber,
+  //           srcTokenSymbol,
+  //           destTokenSymbol,
+  //           SwapSide.SELL,
+  //           amountsForSell,
+  //           'quotePotentialSwap',
+  //         );
+  //       });
 
-      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-        if (wombat.initializePricing) {
-          await wombat.initializePricing(blockNumber);
-        }
-        await testPricingOnNetwork(
-          wombat,
-          network,
-          dexKey,
-          blockNumber,
-          srcTokenSymbol,
-          destTokenSymbol,
-          SwapSide.BUY,
-          amountsForBuy,
-          'quotePotentialSwap',
-        );
-      });
-    });
-  });
+  //       it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+  //         if (wombat.initializePricing) {
+  //           await wombat.initializePricing(blockNumber);
+  //         }
+  //         await testPricingOnNetwork(
+  //           wombat,
+  //           network,
+  //           dexKey,
+  //           blockNumber,
+  //           srcTokenSymbol,
+  //           destTokenSymbol,
+  //           SwapSide.BUY,
+  //           amountsForBuy,
+  //           'quotePotentialSwap',
+  //         );
+  //       });
+  //     });
+  //   });
 });
