@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
+    "@ethersproject/abi": "^5.7.0",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.3.4",
     "@paraswap/core": "1.1.0",
