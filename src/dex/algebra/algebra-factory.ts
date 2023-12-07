@@ -62,8 +62,8 @@ export class AlgebraFactory extends StatefulEventSubscriber<FactoryState> {
   }
 
   async handleNewPool(event: LogDescription) {
-    const token0 = event.args.token0;
-    const token1 = event.args.token1;
+    const token0 = event.args.token0.toLowerCase();
+    const token1 = event.args.token1.toLowerCase();
 
     await this.onPoolCreated({ token0, token1 });
   }

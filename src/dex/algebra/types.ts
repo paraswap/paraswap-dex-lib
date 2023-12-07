@@ -38,10 +38,10 @@ type GlobalState_v1_9 = {
 export type PoolState_v1_9 = {
   pool: string;
   blockTimestamp: bigint;
-  tickSpacing: bigint; // is actually constant
+  tickSpacing: bigint;
   globalState: GlobalState_v1_9; // eq slot0
   liquidity: bigint;
-  maxLiquidityPerTick: bigint; // is actually constant
+  maxLiquidityPerTick: bigint;
   tickBitmap: Record<NumberAsString, bigint>; // actually called tickTable in contract-
   ticks: Record<NumberAsString, TickInfo>; // although variable names are different in contracts but matches UniswapV3 TickInfo struct 1:1
   isValid: boolean;
@@ -58,8 +58,20 @@ export type AlgebraData = {
     tokenIn: Address;
     tokenOut: Address;
   }[];
+  feeOnTransfer: boolean;
   isApproved?: boolean;
 };
+
+export type AlgebraDataWithFee = {
+  tokenIn: Address;
+  tokenOut: Address;
+};
+
+export enum AlgebraFunctions {
+  exactInput = 'exactInput',
+  exactOutput = 'exactOutput',
+  exactInputWithFeeToken = 'exactInputSingleSupportingFeeOnTransferTokens',
+}
 
 export type DexParams = {
   router: Address;

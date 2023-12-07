@@ -17,7 +17,13 @@ import {
 } from '../../types';
 import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, interpolate, isTruthy, uuidToBytes16, } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  isTruthy,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -29,7 +35,10 @@ import {
   UniswapV3Param,
   UniswapV3SimpleSwapParams,
 } from './types';
-import { getLocalDeadlineAsFriendlyPlaceholder, SimpleExchange, } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { Adapters, PoolsToPreload, UniswapV3Config } from './config';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
 import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
@@ -49,7 +58,11 @@ import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import { AssetType, DEFAULT_ID_ERC20, DEFAULT_ID_ERC20_AS_STRING, } from '../../lib/tokens/types';
+import {
+  AssetType,
+  DEFAULT_ID_ERC20,
+  DEFAULT_ID_ERC20_AS_STRING,
+} from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 
@@ -87,6 +100,7 @@ export class UniswapV3
         'RamsesV2',
         'ChronosV3',
         'Retro',
+        'BaseswapV3',
       ]),
     );
 
@@ -194,9 +208,9 @@ export class UniswapV3
     token1,
     fee,
   }) => {
-    const logPrefix = '[UniswapV3.onPoolCreatedDeleteFromNonExistingSet]';
+    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${token0}_${token1}_${fee}`.toLowerCase();
+    const poolKey = `${_token0}_${_token1}_${fee}`;
 
     // consider doing it only from master pool for less calls to distant cache
 
@@ -205,13 +219,19 @@ export class UniswapV3
 
     try {
       this.logger.info(
-        `${logPrefix} delete pool from not existing set: ${poolKey}`,
+        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
       );
       // delete pool record from set
-      await this.dexHelper.cache.zrem(this.notExistingPoolSetKey, [poolKey]);
+      const result = await this.dexHelper.cache.zrem(
+        this.notExistingPoolSetKey,
+        [poolKey],
+      );
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
+      );
     } catch (error) {
       this.logger.error(
-        `${logPrefix} failed to delete pool from set: ${poolKey}`,
+        `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
         error,
       );
     }
@@ -281,18 +301,18 @@ export class UniswapV3
     pool =
       pool ||
       new poolImplementation(
-          this.dexHelper,
-          this.dexKey,
-          this.stateMultiContract,
-          this.config.decodeStateMultiCallResultWithRelativeBitmaps,
-          this.erc20Interface,
-          this.config.factory,
-          fee,
-          token0,
-          token1,
-          this.logger,
-          this.cacheStateKey,
-          this.config.initHash,
+        this.dexHelper,
+        this.dexKey,
+        this.stateMultiContract,
+        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
+        this.erc20Interface,
+        this.config.factory,
+        fee,
+        token0,
+        token1,
+        this.logger,
+        this.cacheStateKey,
+        this.config.initHash,
       );
 
     try {
@@ -334,6 +354,10 @@ export class UniswapV3
 
     if (pool !== null) {
       const allEventPools = Object.values(this.eventPools);
+      // if pool was created, delete pool record from non existing set
+      this.dexHelper.cache
+        .zrem(this.notExistingPoolSetKey, [key])
+        .catch(() => {});
       this.logger.info(
         `starting to listen to new non-null pool: ${key}. Already following ${allEventPools
           // Not that I like this reduce, but since it is done only on initialization, expect this to be ok
@@ -529,7 +553,7 @@ export class UniswapV3
               tokenIn: from.address,
               tokenOut: to.address,
               fee: pool.feeCodeAsString,
-              currentFee: states[index].fee.toString(),
+              currentFee: states[index]?.fee.toString(),
             },
           ],
           exchange: pool.poolAddress,

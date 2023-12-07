@@ -42,7 +42,7 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
-    positiveSlippageToUser: boolean,
+    takeSurplus: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -58,13 +58,9 @@ export class MegaSwap extends PayloadEncoder implements IRouter<MegaSwapParam> {
           encodePartnerAddressForFeeLogic({
             partnerAddress,
             partnerFeePercent,
-            positiveSlippageToUser,
+            takeSurplus,
           }),
-          encodeFeePercent(
-            partnerFeePercent,
-            positiveSlippageToUser,
-            SwapSide.SELL,
-          ),
+          encodeFeePercent(partnerFeePercent, takeSurplus, SwapSide.SELL),
         ];
 
     const sellData: ContractMegaSwapSellData = {
