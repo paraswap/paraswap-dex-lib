@@ -36,10 +36,10 @@ const network = Network.MAINNET;
 const dexHelper = new DummyDexHelper(network);
 
 const WETH = Tokens[network]['WETH'];
-const USDT = Tokens[network]['USDC'];
+const USDC = Tokens[network]['USDC'];
 
 const amounts = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18]];
-// Sell WETH to receive 1000 USDT, 2000 UDST, and 3000 USDT
+// Sell WETH to receive 1000 USDC, 2000 UDST, and 3000 USDC
 const amountsBuy = [
   0n,
   1000n * BI_POWS[6],
@@ -220,7 +220,7 @@ describe('SolidlyV3', function () {
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'WETH';
-    const destTokenSymbol = 'USDT';
+    const destTokenSymbol = 'USDC';
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
@@ -233,23 +233,23 @@ describe('SolidlyV3', function () {
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       const pools = await solidlyV3.getPoolIdentifiers(
         WETH,
-        USDT,
+        USDC,
         SwapSide.SELL,
         blockNumber,
       );
-      console.log(`WETH <> USDT Pool Identifiers: `, pools);
+      console.log(`WETH <> USDC Pool Identifiers: `, pools);
 
       expect(pools.length).toBeGreaterThan(0);
 
       const poolPrices = await solidlyV3.getPricesVolume(
         WETH,
-        USDT,
+        USDC,
         amounts,
         SwapSide.SELL,
         blockNumber,
         pools,
       );
-      console.log(`WETH <> USDT Pool Prices: `, poolPrices);
+      console.log(`WETH <> USDC Pool Prices: `, poolPrices);
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
@@ -265,7 +265,7 @@ describe('SolidlyV3', function () {
             solidlyV3.eventPools[price.poolIdentifier!]!.poolAddress,
             price.prices,
             WETH.address,
-            USDT.address,
+            USDC.address,
             tickSpacing,
             amounts,
             true,
@@ -280,23 +280,23 @@ describe('SolidlyV3', function () {
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       const pools = await solidlyV3.getPoolIdentifiers(
         WETH,
-        USDT,
+        USDC,
         SwapSide.BUY,
         blockNumber,
       );
-      console.log(`WETH <> USDT Pool Identifiers: `, pools);
+      console.log(`WETH <> USDC Pool Identifiers: `, pools);
 
       expect(pools.length).toBeGreaterThan(0);
 
       const poolPrices = await solidlyV3.getPricesVolume(
         WETH,
-        USDT,
+        USDC,
         amountsBuy,
         SwapSide.BUY,
         blockNumber,
         pools,
       );
-      console.log(`WETH <> USDT Pool Prices: `, poolPrices);
+      console.log(`WETH <> USDC Pool Prices: `, poolPrices);
 
       expect(poolPrices).not.toBeNull();
       checkPoolPrices(poolPrices!, amountsBuy, SwapSide.BUY, dexKey);
@@ -312,7 +312,7 @@ describe('SolidlyV3', function () {
             solidlyV3.eventPools[price.poolIdentifier!]!.poolAddress,
             price.prices,
             WETH.address,
-            USDT.address,
+            USDC.address,
             tickSpacing,
             amountsBuy,
             false,
