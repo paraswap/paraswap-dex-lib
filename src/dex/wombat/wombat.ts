@@ -45,6 +45,8 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   public bmw: WombatBmw;
   public pools: { [poolAddress: string]: WombatPool } = {};
 
+  readonly isStatePollingDex = true;
+
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
 
@@ -78,12 +80,12 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       this.config.bmwAddress,
       this.onAssetAdded.bind(this),
     );
+    this.pollingManager.initializeAllPendingPools();
   }
 
   async init(blockNumber: number) {
     if (!this.bmw.isInitialized) {
       await this.bmw.initialize(blockNumber);
-      this.pollingManager.initializeAllPendingPools();
     }
   }
 
