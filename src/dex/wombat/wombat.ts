@@ -30,6 +30,7 @@ import { WombatQuoter } from './wombat-quoter';
 import { WombatBmw } from './wombat-bmw';
 import { fromWad } from './utils';
 import { WombatPool } from './wombat-pool';
+import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
 
 export class Wombat extends SimpleExchange implements IDex<WombatData> {
   // export class Wombat implements IDex<WombatData> {
@@ -37,6 +38,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   static readonly erc20Interface = new Interface(ERC20ABI);
   static readonly poolInterface = new Interface(PoolABI);
   static readonly assetInterface = new Interface(AssetABI);
+  protected pollingManager: StatePollingManager;
 
   protected config: DexParams;
   protected poolLiquidityUSD?: { [poolAddress: string]: number };
@@ -64,6 +66,8 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.config = WombatConfig[dexKey][network];
+    this.pollingManager = StatePollingManager.getInstance(dexHelper);
+
     this.bmw = new WombatBmw(
       dexKey,
       this.config.bmwAddress,
@@ -73,6 +77,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       this.config.bmwAddress,
       this.onAssetAdded.bind(this),
     );
+    this.pollingManager.initializeAllPendingPools();
   }
 
   async init(blockNumber: number) {
