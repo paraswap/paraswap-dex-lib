@@ -6,7 +6,8 @@ dotenv.config();
 
 import SmardexPoolLayerOneABI from '../../abi/smardex/layer-1/smardex-pool.json';
 import SmardexPoolLayerTwoABI from '../../abi/smardex/layer-2/smardex-pool.json';
-import { Smardex, SmardexEventPool } from './smardex';
+import { Smardex } from './smardex';
+import { SmardexEventPool } from './smardex-event-pool';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
