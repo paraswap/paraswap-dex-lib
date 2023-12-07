@@ -66,16 +66,24 @@ function getReaderCalldata(
   }));
 }
 
+// We are only using this function to decode `quoteSwap` on SolidlyV3Pool. The output param we consider relevant
+// depends on `zeroForOne` and `exactInput`.
 function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
   zeroForOne: boolean,
+  exactInput: boolean,
 ) {
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     // zeroForOne determines whether we want to get amount0 or amount1
-    const index = zeroForOne ? 1 : 0;
+    let index;
+    if (zeroForOne == exactInput) {
+      index = 1;
+    } else {
+      index = 0;
+    }
     return parsed[index]._hex[0] == '-'
       ? BigInt(parsed[index]._hex.slice(1))
       : BigInt(parsed[index]._hex);
@@ -137,6 +145,7 @@ async function checkOnChainPricing(
       readerIface,
       'quoteSwap',
       tokenIn < tokenOut,
+      exactInput,
     ),
   );
 
