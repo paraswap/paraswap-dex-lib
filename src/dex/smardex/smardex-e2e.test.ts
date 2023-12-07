@@ -90,9 +90,9 @@ describe('SmarDex E2E', () => {
       ],
       [
         {
-          name: 'USDT',
-          sellAmount: '1200000000',
-          buyAmount: '1200000000',
+          name: 'SDEX',
+          sellAmount: '300000000000000000000000',
+          buyAmount: '30000000000',
         },
         {
           name: 'ETH',
