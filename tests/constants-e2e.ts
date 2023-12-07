@@ -1,15 +1,15 @@
-import {
-  SmartTokenParams,
-  balanceOfFn,
-  allowanceFn,
-  SmartToken,
-  balancesFn,
-  allowedFn,
-  _balancesFn,
-  _allowancesFn,
-} from '../tests/smart-tokens';
-import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
+import { Address } from '../src/types';
+import {
+  SmartToken,
+  SmartTokenParams,
+  _allowancesFn,
+  _balancesFn,
+  allowanceFn,
+  allowedFn,
+  balanceOfFn,
+  balancesFn,
+} from '../tests/smart-tokens';
 
 export const GIFTER_ADDRESS = '0xb22fC4eC94D555A5049593ca4552c810Fb8a6d00';
 export const GENERIC_ADDR1 = '0xbe9317f6711e2da074fe1f168fd9c402bc0a9d1b';
@@ -322,6 +322,10 @@ export const Tokens: {
     POL: {
       address: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6',
       decimals: 19,
+    },
+    csETH: {
+      address: '0x331312DAbaf3d69138c047AaC278c9f9e0E8FFf8',
+      decimals: 18,
     },
   },
   [Network.ROPSTEN]: {
