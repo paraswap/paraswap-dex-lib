@@ -234,13 +234,13 @@ export class StatePollingManager {
   // So all state will be initialized. It is not part of constructor, because and that time we don't have
   // all classes built
   initializeAllPendingPools() {
+    this.logger.info(
+      `${this?.constructor?.name}: Initializing all pending pools: ${this._registeredPendingPools.length}`,
+    );
     if (this._registeredPendingPools.length === 0) {
       return;
     }
 
-    this.logger.info(
-      `Initializing all pending pools: ${this._registeredPendingPools.length}`,
-    );
     this._registeredPendingPools.forEach(p => {
       this.initializePool(p);
     });
