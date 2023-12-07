@@ -238,6 +238,9 @@ export class StatePollingManager {
       return;
     }
 
+    this.logger.info(
+      `Initializing all pending pools: ${this._registeredPendingPools.length}`,
+    );
     this._registeredPendingPools.forEach(p => {
       this.initializePool(p);
     });

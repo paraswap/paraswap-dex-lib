@@ -53,6 +53,7 @@ export class WombatBmw extends StatefulEventSubscriber<BmwState> {
       BmwABI as any,
       this.bmwAddress,
     );
+    this.logger.info(`Initialized ${name} event subscriber (WombatBMW)`);
 
     // users-actions handlers
     this.handlers['Add'] = this.handleAdd.bind(this);

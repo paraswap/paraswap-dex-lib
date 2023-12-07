@@ -65,6 +65,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
+    this.logger.info(`Initializing WOMBAT ${dexKey} on ${network} DEX`);
     this.config = WombatConfig[dexKey][network];
     this.pollingManager = StatePollingManager.getInstance(dexHelper);
 
