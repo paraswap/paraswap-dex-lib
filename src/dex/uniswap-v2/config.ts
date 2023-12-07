@@ -201,7 +201,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       },
     },
   },
-  CanarySwap: {
+  Canary: {
     [Network.AVALANCHE]: {
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/canarydeveloper/canarydex',
