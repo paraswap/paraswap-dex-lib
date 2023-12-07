@@ -70,12 +70,12 @@ function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
-  exactInput: boolean,
+  zeroForOne: boolean,
 ) {
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
-    // exactInput determines whether we want to get amount0 or amount1
-    const index = exactInput ? 1 : 0;
+    // zeroForOne determines whether we want to get amount0 or amount1
+    const index = zeroForOne ? 1 : 0;
     return parsed[index]._hex[0] == '-'
       ? BigInt(parsed[index]._hex.slice(1))
       : BigInt(parsed[index]._hex);
@@ -132,7 +132,12 @@ async function checkOnChainPricing(
   }
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, 'quoteSwap', exactInput),
+    decodeReaderResult(
+      readerResult,
+      readerIface,
+      'quoteSwap',
+      tokenIn < tokenOut,
+    ),
   );
 
   console.log('EXPECTED PRICES: ', expectedPrices);
