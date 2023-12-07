@@ -64,7 +64,7 @@ describe('SolidlyV3 E2E', () => {
     );
 
     const tokenASymbol: string = 'WETH';
-    const tokenBSymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDC';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
     const tokenAAmount: string = '11000000000000000000';
@@ -116,7 +116,7 @@ describe('SolidlyV3 E2E', () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       contractMethods.forEach((contractMethod: ContractMethod) => {
         describe(`${contractMethod}`, () => {
-          it(`${network} ${side} ${contractMethod} ${tokenBSymbol} -> ${tokenBSymbol}`, async () => {
+          it(`${network} ${side} ${contractMethod} ${tokenBSymbol} -> ${tokenASymbol}`, async () => {
             await testE2E(
               tokens[tokenBSymbol],
               tokens[tokenASymbol],
