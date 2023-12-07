@@ -3,18 +3,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Interface, Result } from '@ethersproject/abi';
-import {DummyDexHelper, IDexHelper} from '../../dex-helper/index';
+import { DummyDexHelper, IDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { SolidlyV3 } from './solidly-v3';
-import { MIN_SQRT_RATIO, MAX_SQRT_RATIO } from "./constants";
+import { MIN_SQRT_RATIO, MAX_SQRT_RATIO } from './constants';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import {Address} from "@paraswap/core";
+import { Address } from '@paraswap/core';
 import SolidlyV3PoolABI from '../../abi/solidly-v3/SolidlyV3Pool.abi.json';
 
 /*
@@ -36,11 +36,16 @@ const network = Network.MAINNET;
 const dexHelper = new DummyDexHelper(network);
 
 const WETH = Tokens[network]['WETH'];
-const USDT = Tokens[network]['USDT'];
+const USDT = Tokens[network]['USDC'];
 
 const amounts = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18]];
 // Sell WETH to receive 1000 USDT, 2000 UDST, and 3000 USDT
-const amountsBuy = [0n, 1000n * BI_POWS[6], 2000n * BI_POWS[6], 3000n * BI_POWS[6]];
+const amountsBuy = [
+  0n,
+  1000n * BI_POWS[6],
+  2000n * BI_POWS[6],
+  3000n * BI_POWS[6],
+];
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -49,14 +54,14 @@ function getReaderCalldata(
   funcName: string,
   zeroForOne: boolean,
   sqrtPriceLimitX96: bigint,
-  exactInput: boolean
+  exactInput: boolean,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
       zeroForOne,
       exactInput ? amount.toString() : `-${amount.toString()}`,
-      sqrtPriceLimitX96.toString()
+      sqrtPriceLimitX96.toString(),
     ]),
   }));
 }
@@ -65,13 +70,15 @@ function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
-  exactInput: boolean
+  exactInput: boolean,
 ) {
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     // exactInput determines whether we want to get amount0 or amount1
     const index = exactInput ? 1 : 0;
-    return parsed[index]._hex[0] == '-' ? BigInt(parsed[index]._hex.slice(1)) : BigInt(parsed[index]._hex);
+    return parsed[index]._hex[0] == '-'
+      ? BigInt(parsed[index]._hex.slice(1))
+      : BigInt(parsed[index]._hex);
   });
 }
 
@@ -84,7 +91,7 @@ async function checkOnChainPricing(
   tokenOut: Address,
   tickSpacing: bigint,
   _amounts: bigint[],
-  exactInput: boolean
+  exactInput: boolean,
 ) {
   const readerIface = new Interface(SolidlyV3PoolABI);
 
@@ -103,8 +110,10 @@ async function checkOnChainPricing(
     _amounts.slice(1),
     'quoteSwap',
     tokenIn < tokenOut,
-    tokenIn < tokenOut ? MIN_SQRT_RATIO + BigInt(1) : MAX_SQRT_RATIO - BigInt(1),
-    exactInput
+    tokenIn < tokenOut
+      ? MIN_SQRT_RATIO + BigInt(1)
+      : MAX_SQRT_RATIO - BigInt(1),
+    exactInput,
   );
 
   let readerResult;
@@ -217,7 +226,6 @@ describe('SolidlyV3', function () {
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-
       const pools = await solidlyV3.getPoolIdentifiers(
         WETH,
         USDT,
@@ -244,7 +252,8 @@ describe('SolidlyV3', function () {
       let falseChecksCounter = 0;
       await Promise.all(
         poolPrices!.map(async price => {
-          const tickSpacing = solidlyV3.eventPools[price.poolIdentifier!]!.tickSpacing;
+          const tickSpacing =
+            solidlyV3.eventPools[price.poolIdentifier!]!.tickSpacing;
           const res = await checkOnChainPricing(
             dexHelper,
             blockNumber,
@@ -254,7 +263,7 @@ describe('SolidlyV3', function () {
             USDT.address,
             tickSpacing,
             amounts,
-            true
+            true,
           );
           if (res === false) falseChecksCounter++;
         }),
@@ -290,7 +299,8 @@ describe('SolidlyV3', function () {
       let falseChecksCounter = 0;
       await Promise.all(
         poolPrices!.map(async price => {
-          const tickSpacing = solidlyV3.eventPools[price.poolIdentifier!]!.tickSpacing;
+          const tickSpacing =
+            solidlyV3.eventPools[price.poolIdentifier!]!.tickSpacing;
           const res = await checkOnChainPricing(
             dexHelper,
             blockNumber,
@@ -300,7 +310,7 @@ describe('SolidlyV3', function () {
             USDT.address,
             tickSpacing,
             amountsBuy,
-            false
+            false,
           );
           if (res === false) falseChecksCounter++;
         }),
