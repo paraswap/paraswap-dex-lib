@@ -59,7 +59,7 @@
     "bignumber.js": "9.1.0",
     "cross-fetch": "^3.1.5",
     "es6-promise": "^4.2.8",
-    "ethers": "5.7.2",
+    "ethers": "^5.7.2",
     "joi": "^17.7.0",
     "lens.ts": "^0.5.1",
     "lodash": "4.17.21",
