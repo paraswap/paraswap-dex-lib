@@ -23,15 +23,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     protected smardexFeesMulticallDecoder?: (values: any[]) => SmardexFees,
     private isLayerOne = true,
   ) {
-    super(
-      'Smardex',
-      (token0.symbol || token0.address) +
-      '-' +
-      (token1.symbol || token1.address) +
-      ' pool',
-      dexHelper,
-      logger,
-    );
+    super('Smardex', `${token0.address}_${token1.address}`, dexHelper, logger);
   }
 
   async fetchPairFeesAndLastTimestamp(blockNumber: number): Promise<{
