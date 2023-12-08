@@ -33,7 +33,6 @@ import { WombatPool } from './wombat-pool';
 import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
 
 export class Wombat extends SimpleExchange implements IDex<WombatData> {
-  // export class Wombat implements IDex<WombatData> {
   // contract interfaces
   static readonly erc20Interface = new Interface(ERC20ABI);
   static readonly poolInterface = new Interface(PoolABI);
@@ -135,6 +134,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
     await this.updatePoolState();
     return (
       await this.findPools(
@@ -161,6 +161,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<WombatData>> {
+    if (side === SwapSide.BUY) return null; // Buy side not implemented yet
     if (!this.pools) {
       this.logger.error(`Missing pools for ${this.dexKey} in getPricesVolume`);
       return null;
@@ -275,6 +276,8 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     data: WombatData,
     side: SwapSide,
   ): AdapterExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
     const { exchange } = data;
 
     return {
@@ -296,6 +299,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     data: WombatData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
     const { exchange } = data;
 
     // Encode here the transaction arguments
