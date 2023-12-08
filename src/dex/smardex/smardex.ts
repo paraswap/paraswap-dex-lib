@@ -59,10 +59,7 @@ const smardexPoolL2 = new Interface(SmardexPoolLayerTwoABI);
 
 const coder = new AbiCoder();
 
-function encodePools(
-  pools: SmardexPool[],
-  // feeFactor: number,
-): NumberAsString[] {
+function encodePools(pools: SmardexPool[]): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
     return (
       (BigInt(fee) << 161n) +
@@ -241,7 +238,6 @@ export class Smardex
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
             factory: this.factoryAddress,
             initCode: this.initCode,
-            // feeFactor: this.feeFactor,
             pools: [
               {
                 address: pairParam.exchange,
@@ -310,10 +306,6 @@ export class Smardex
       priceParams.feesPool,
     ).amount;
 
-    // uncomment to log rates
-    // console.log("destAmount.", utils.formatEther(destAmount.toString()))
-    // console.log("amountIn", utils.formatEther(amountIn.toString()))
-
     return BigInt(amountIn.toString());
   }
 
@@ -337,9 +329,6 @@ export class Smardex
       priceParams.feesPool,
     ).amount;
 
-    // uncomment to log rates
-    // console.log("srcAmount.", utils.formatEther(srcAmount.toString()))
-    // console.log("amountOut", utils.formatEther(amountOut.toString()))
     return BigInt(amountOut.toString());
   }
 
@@ -579,67 +568,6 @@ export class Smardex
         return ETHER_ADDRESS;
       return token;
     });
-  }
-
-  // Necessary to get the correct path for the router
-  getDirectParam(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    expectedAmount: NumberAsString,
-    _data: SmardexData,
-    side: SwapSide,
-    permit: string,
-    uuid: string,
-    feePercent: NumberAsString,
-    deadline: NumberAsString,
-    partner: string,
-    beneficiary: string,
-    contractMethod?: string,
-  ): TxInfo<SmardexParam> {
-    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
-    if (permit !== '0x') contractMethod += 'WithPermit';
-
-    const swapParams = ((): SmardexParam => {
-      const data = _data as unknown as SmardexData;
-      const path = this.fixPath(data.path, srcToken, destToken);
-
-      switch (contractMethod) {
-        case SmardexRouterFunctions.sellExactEth:
-        case SmardexRouterFunctions.sellExactToken:
-        case SmardexRouterFunctions.swapExactIn:
-          return [
-            srcAmount,
-            destAmount,
-            data.path,
-            data.receiver,
-            data.deadline,
-          ];
-
-        case SmardexRouterFunctions.buyExactEth:
-        case SmardexRouterFunctions.buyExactToken:
-        case SmardexRouterFunctions.swapExactOut:
-          return [
-            destAmount,
-            srcAmount,
-            data.path,
-            data.receiver,
-            data.deadline,
-          ];
-
-        default:
-          throw new Error(`contractMethod=${contractMethod} is not supported`);
-      }
-    })();
-
-    const encoder = (...params: SmardexParam) =>
-      this.routerInterface.encodeFunctionData(contractMethod!, params);
-    return {
-      params: swapParams,
-      encoder,
-      networkFee: '0',
-    };
   }
 
   async getPairOrderedParams(

@@ -98,19 +98,6 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
           feesLP: BigInt(event.args.feesLP),
           feesPool: BigInt(event.args.feesPool),
         };
-      // case 'Swap':
-      //   const fetchedSwap = await this.fetchPairFeesAndLastTimestamp(log.blockNumber);
-      //   return {
-      //     reserves0: state.reserves0,
-      //     reserves1: state.reserves1,
-      //     fictiveReserves0: state.fictiveReserves0,
-      //     fictiveReserves1: state.fictiveReserves1,
-      //     priceAverage0: state.priceAverage0,
-      //     priceAverage1: state.priceAverage1,
-      //     priceAverageLastTimestamp: fetchedSwap.priceAverageLastTimestamp,
-      //     feesLP: fetchedSwap.feesLP,
-      //     feesPool: fetchedSwap.feesPool,
-      //   };
     }
     return null;
   }
