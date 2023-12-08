@@ -78,7 +78,6 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       this.config.bmwAddress,
       this.onAssetAdded.bind(this),
     );
-    this.pollingManager.initializeAllPendingPools();
   }
 
   async init(blockNumber: number) {
@@ -113,6 +112,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
         asset2TokenMap,
       );
       await this.pools[pool].getState('latest', true);
+      this.pollingManager.initializeAllPendingPools();
     } else {
       this.pools[pool].addAssets(asset2TokenMap);
     }
