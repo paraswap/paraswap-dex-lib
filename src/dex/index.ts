@@ -81,6 +81,7 @@ import { Algebra } from './algebra/algebra';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
+import { Airswap } from './airswap/airswap';
 
 const LegacyDexes = [
   CurveV2,
@@ -107,6 +108,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Airswap,
   Dexalot,
   CurveV1,
   CurveFork,
