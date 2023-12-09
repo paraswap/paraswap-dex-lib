@@ -1,0 +1,218 @@
+{
+  "ticks": {
+    "887220": {
+      "liquidityGross": "432555352",
+      "liquidityNet": "-432555352",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "887272": {
+      "liquidityGross": "0",
+      "liquidityNet": "0",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-887272": {
+      "liquidityGross": "0",
+      "liquidityNet": "0",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-887220": {
+      "liquidityGross": "432555352",
+      "liquidityNet": "432555352",
+      "feeGrowthOutside": "33210171367286974452732071",
+      "secondsPerLiquidityOutside": "84087094563190110640"
+    },
+    "-214920": {
+      "liquidityGross": "85482380811",
+      "liquidityNet": "85482380811",
+      "feeGrowthOutside": "19311023609762698567400015",
+      "secondsPerLiquidityOutside": "49681958774555657123"
+    },
+    "-208620": {
+      "liquidityGross": "7129920198900",
+      "liquidityNet": "7129920198900",
+      "feeGrowthOutside": "1125556532499984028945316",
+      "secondsPerLiquidityOutside": "11858267314548806109"
+    },
+    "-208020": {
+      "liquidityGross": "289662810643",
+      "liquidityNet": "289662810643",
+      "feeGrowthOutside": "19311023609762698567400015",
+      "secondsPerLiquidityOutside": "49592769538371063226"
+    },
+    "-207900": {
+      "liquidityGross": "1079276449975",
+      "liquidityNet": "1079276449975",
+      "feeGrowthOutside": "21372249354427768853658096",
+      "secondsPerLiquidityOutside": "52958484171039230077"
+    },
+    "-207840": {
+      "liquidityGross": "78922733745",
+      "liquidityNet": "78922733745",
+      "feeGrowthOutside": "34403411554004324888629501",
+      "secondsPerLiquidityOutside": "98730144506542203573"
+    },
+    "-207660": {
+      "liquidityGross": "78882371624",
+      "liquidityNet": "78882371624",
+      "feeGrowthOutside": "40925750265702722835232144",
+      "secondsPerLiquidityOutside": "114027209703366548185"
+    },
+    "-205440": {
+      "liquidityGross": "2252600041764669",
+      "liquidityNet": "2252600041764669",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-197640": {
+      "liquidityGross": "2252600041764669",
+      "liquidityNet": "-2252600041764669",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-197040": {
+      "liquidityGross": "144102967526",
+      "liquidityNet": "-144102967526",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-195480": {
+      "liquidityGross": "85482380811",
+      "liquidityNet": "-85482380811",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-194760": {
+      "liquidityGross": "7129920198900",
+      "liquidityNet": "-7129920198900",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-194640": {
+      "liquidityGross": "294039597870",
+      "liquidityNet": "-294039597870",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-194160": {
+      "liquidityGross": "145559843117",
+      "liquidityNet": "-145559843117",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-193980": {
+      "liquidityGross": "864159585850",
+      "liquidityNet": "-864159585850",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    },
+    "-193860": {
+      "liquidityGross": "78882371624",
+      "liquidityNet": "-78882371624",
+      "feeGrowthOutside": "0",
+      "secondsPerLiquidityOutside": "0"
+    }
+  },
+  "initialized": {
+    "887220": {
+      "previous": "-193860",
+      "next": "887272"
+    },
+    "887272": {
+      "previous": "887220",
+      "next": "887272"
+    },
+    "-887272": {
+      "previous": "-887272",
+      "next": "-887220"
+    },
+    "-887220": {
+      "previous": "-887272",
+      "next": "-214920"
+    },
+    "-214920": {
+      "previous": "-887220",
+      "next": "-208620"
+    },
+    "-208620": {
+      "previous": "-214920",
+      "next": "-208020"
+    },
+    "-208020": {
+      "previous": "-208620",
+      "next": "-207900"
+    },
+    "-207900": {
+      "previous": "-208020",
+      "next": "-207840"
+    },
+    "-207840": {
+      "previous": "-207900",
+      "next": "-207660"
+    },
+    "-207660": {
+      "previous": "-207840",
+      "next": "-205440"
+    },
+    "-205440": {
+      "previous": "-207660",
+      "next": "-197640"
+    },
+    "-197640": {
+      "previous": "-205440",
+      "next": "-197040"
+    },
+    "-197040": {
+      "previous": "-197640",
+      "next": "-195480"
+    },
+    "-195480": {
+      "previous": "-197040",
+      "next": "-194760"
+    },
+    "-194760": {
+      "previous": "-195480",
+      "next": "-194640"
+    },
+    "-194640": {
+      "previous": "-194760",
+      "next": "-194160"
+    },
+    "-194160": {
+      "previous": "-194640",
+      "next": "-193980"
+    },
+    "-193980": {
+      "previous": "-194160",
+      "next": "-193860"
+    },
+    "-193860": {
+      "previous": "-193980",
+      "next": "887220"
+    }
+  },
+  "queries": {
+    "exactTokenIn0": {
+      "usedAmount": "100000000000000000000",
+      "returnedAmount": "20455312134",
+      "initializedTicksCrossed": "7"
+    },
+    "exactTokenIn1": {
+      "usedAmount": "1000000000000",
+      "returnedAmount": "7670929767574005413",
+      "initializedTicksCrossed": "8"
+    },
+    "exactTokenOut0": {
+      "usedAmount": "5000000000000000000",
+      "returnedAmount": "10554602028",
+      "initializedTicksCrossed": "0"
+    },
+    "exactTokenOut1": {
+      "usedAmount": "10000000000",
+      "returnedAmount": "5871105897253272806",
+      "initializedTicksCrossed": "0"
+    }
+  }
+}

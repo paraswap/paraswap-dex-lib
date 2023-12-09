@@ -81,6 +81,7 @@ import { Algebra } from './algebra/algebra';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
+import { KyberswapElastic } from './kyberswap-elastic/kyberswap-elastic';
 
 const LegacyDexes = [
   CurveV2,
@@ -125,6 +126,7 @@ const Dexes = [
   AaveV2,
   AaveV3,
   KyberDmm,
+  KyberswapElastic,
   Weth,
   PolygonMigrator,
   MakerPsm,
