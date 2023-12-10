@@ -260,6 +260,26 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         'https://api.thegraph.com/subgraphs/name/ramsesexchange/concentrated-liquidity-graph',
     },
   },
+  Pharaoh: {
+    [Network.AVALANCHE]: {
+      factory: '0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42',
+      deployer: '0x95120704f4E2D545Aea8b6B3c16d9Da1fa32E30F',
+      quoter: '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
+      router: '0xAAA9f93572B99919750FA59c33c0946bc5fC0e90',
+      supportedFees: [...SUPPORTED_FEES, 50n],
+      stateMulticall: '0x50EE4112Cab9c79812F23bE079aB3911395ACc8e',
+      stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      eventPoolImplementation: RamsesV2EventPool,
+      decodeStateMultiCallResultWithRelativeBitmaps,
+      initHash:
+        '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/echovl/pharaoh-cl-subgraph',
+    },
+  },
   'QuickSwapV3.1': {
     [Network.ZKEVM]: {
       factory: '0xD9a2AD9E927Bd7014116CC5c7328f028D4318178',
