@@ -32,6 +32,7 @@ import {
   DodoV3Config,
   POOL_CACHE_TTL,
   SUBGRAPH_FETCH_ALL_POOOLS_RQ,
+  SUBGRAPH_FETCH_TOP_POOOLS_RQ,
 } from './config';
 import { DodoV3EventPool } from './dodo-v3-pool';
 import { DodoV3Vault, OnPoolCreatedOrRemovedCallback } from './dodo-v3-vault';
@@ -273,7 +274,6 @@ export class DodoV3 extends SimpleExchange implements IDex<DodoV3Data> {
         this.dexHelper.multiWrapper.defaultBatchSize,
         true,
       );
-    this.logger.info(`querySellTokens`, resQuerySwapTokens);
 
     const result: ExchangePrices<DodoV3Data> = [];
     let i = 0;
@@ -458,7 +458,57 @@ export class DodoV3 extends SimpleExchange implements IDex<DodoV3Data> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    return [];
+    const _tokenAddress = tokenAddress.toLowerCase();
+
+    const data = await this._querySubgraph<{
+      pools: Array<{
+        id: string;
+        totalAssetsUSD: string;
+        tokenList: Array<{
+          token: {
+            id: string;
+            decimals: string;
+            symbol: string;
+          };
+        }>;
+      }> | null;
+    } | null>(SUBGRAPH_FETCH_TOP_POOOLS_RQ, {
+      where: {
+        isRemove: false,
+        vault: this.config.D3Vault.toLowerCase(),
+        tokenList_: {
+          token: _tokenAddress,
+        },
+        totalAssetsUSD_gt: 0,
+      },
+      first: limit,
+    });
+
+    if (!data || !data.pools) {
+      this.logger.error(
+        `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
+      );
+      return [];
+    }
+    return data.pools
+      .map(pool => {
+        return {
+          exchange: this.dexKey,
+          address: pool.id.toLowerCase(),
+          connectorTokens: pool.tokenList
+            .map(t => t.token)
+            .filter(t => t.id.toLowerCase() !== _tokenAddress)
+            .map(t => {
+              return {
+                address: t.id.toLowerCase(),
+                decimals: parseInt(t.decimals),
+                symbol: t.symbol,
+              };
+            }),
+          liquidityUSD: parseFloat(pool.totalAssetsUSD),
+        };
+      })
+      .slice(0, limit);
   }
 
   async fetchAllSubgraphPools(blockNumber: number): Promise<
@@ -490,19 +540,16 @@ export class DodoV3 extends SimpleExchange implements IDex<DodoV3Data> {
       },
       first: 1000,
     };
-    const { data } = await this.dexHelper.httpRequest.post<{
-      data: {
-        pools: Array<{
-          id: string;
-        }> | null;
-      } | null;
-    }>(
-      this.config.subgraphURL,
-      { query: SUBGRAPH_FETCH_ALL_POOOLS_RQ, variables },
-      SUBGRAPH_TIMEOUT,
-    );
+    const data = await this._querySubgraph<{
+      pools: Array<{
+        id: string;
+      }> | null;
+    } | null>(SUBGRAPH_FETCH_ALL_POOOLS_RQ, variables);
     if (!data || !data.pools) {
-      throw new Error('Unable to fetch pools from the subgraph');
+      this.logger.error(
+        `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
+      );
+      return [];
     }
 
     this.dexHelper.cache.setex(
@@ -518,6 +565,18 @@ export class DodoV3 extends SimpleExchange implements IDex<DodoV3Data> {
     );
 
     return data.pools;
+  }
+
+  private async _querySubgraph<K>(query: string, variables: Object) {
+    try {
+      const res = await this.dexHelper.httpRequest.post<{
+        data: K;
+      }>(this.config.subgraphURL, { query, variables }, SUBGRAPH_TIMEOUT);
+      return res.data;
+    } catch (e) {
+      this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
+      return null;
+    }
   }
 
   // This is optional function in case if your implementation has acquired any resources
