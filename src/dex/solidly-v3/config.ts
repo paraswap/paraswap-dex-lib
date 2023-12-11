@@ -5,7 +5,7 @@ import { Address } from '../../types';
 
 // const SUPPORTED_FEES = [3000n];
 const SUPPORTED_FEES = [500n];
-const SUPPORTED_TICK_SPACINGS = [10n];
+const SUPPORTED_TICK_SPACINGS = [1n, 10n, 50n, 100n];
 
 // Pools that will be initialized on app startup
 // They are added for testing
