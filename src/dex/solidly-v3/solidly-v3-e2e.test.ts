@@ -67,9 +67,9 @@ describe('SolidlyV3 E2E', () => {
     const tokenBSymbol: string = 'USDC';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
-    const tokenAAmount: string = '11000000000000000000';
-    const tokenBAmount: string = '11000000';
-    const nativeTokenAmount = '11000000000000000000';
+    const tokenAAmount: string = '1100000000000000000';
+    const tokenBAmount: string = '1100000000';
+    const nativeTokenAmount = '1100000000000000000';
 
     const sideToContractMethods = new Map([
       [
