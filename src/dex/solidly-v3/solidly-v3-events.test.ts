@@ -74,23 +74,23 @@ async function fetchPoolStateFromContract(
 type EventMappings = Record<string, number[]>;
 
 describe('SolidlyV3 Event', function () {
-  const poolAddress = '0x3198EAdB777b9b6C789bfc89491774644E95eD7e';
-  const token0 = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
-  const token1 = '0xdac17f958d2ee523a2206206994597c13d831ec7';
+  const poolAddress = '0x831BF48183B999fDe45294b14B55199072f0801B';
+  const token0 = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+  const token1 = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 
   const blockNumbers: { [eventName: string]: number[] } = {
     // topic0 - 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
     ['Swap']: [
-      18185415, 18185632, 18185654, 18186489, 18186623, 18186845, 18186959, 18187709, 18187816,
-      18187818, 18187846, 18187849, 18187881
+      18600853, 18616106, 18616441, 18619851, 18622968, 18625121, 18626415, 18627297, 18630574,
+      18718946, 18726197, 18730166, 18758602
     ],
-    ['Burn']: [18185393],
-    ['Mint']: [18189645, 18189685, 18190653],
-    ['Collect']: [18185393],
+    ['Burn']: [18737937],
+    ['Mint']: [18708230, 18709265, 18737969],
+    ['Collect']: [18751597],
     //topic0 0x0eb63f4a36d6bdeee05aa00020a97d80c3e84f1b5b3ebf345fb67262e62b0f33
-    ['SetFee']: [18180677, 18181047, 18182317, 18185660, 18186351, 18188882, 18193229],
-    ['Flash']: [18202148],
-    ['CollectProtocol']: [18203357, 18209933],
+    ['SetFee']: [18427614, 18423073, 18423143, 18425324, 18430069, 18442932, 18442934],
+    ['Flash']: [18758872],
+    ['CollectProtocol']: [18530529, 18577493],
   }
 
   describe('SolidlyV3EventPool', function () {
