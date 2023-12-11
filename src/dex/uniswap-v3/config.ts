@@ -269,7 +269,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       supportedFees: [...SUPPORTED_FEES, 50n],
       stateMulticall: '0x50EE4112Cab9c79812F23bE079aB3911395ACc8e',
       stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
-      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      uniswapMulticall: '0x0139141Cd4Ee88dF3Cdb65881D411bAE271Ef0C2',
       chunksCount: 10,
       initRetryFrequency: 10,
       eventPoolImplementation: RamsesV2EventPool,
@@ -277,7 +277,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/echovl/pharaoh-cl-subgraph',
+        'https://thegraph.com/hosted-service/subgraph/ramsesexchange/pharaoh-cl-subgraph',
     },
   },
   'QuickSwapV3.1': {

@@ -708,7 +708,7 @@ describe('UniswapV3 E2E', () => {
         network,
       );
 
-      const tokenASymbol: string = 'USDCe';
+      const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'USDT';
       const nativeTokenSymbol = NativeTokenSymbols[network];
 

@@ -621,16 +621,16 @@ describe('Pharaoh', () => {
 
   const network = Network.AVALANCHE;
   const dexHelper = new DummyDexHelper(network);
-  const TokenASymbol = 'USDCe';
+  const TokenASymbol = 'USDC';
   const TokenA = Tokens[network][TokenASymbol];
 
-  const TokenBSymbol = 'USDC';
+  const TokenBSymbol = 'USDT';
   const TokenB = Tokens[network][TokenBSymbol];
 
   beforeEach(async () => {
     blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
     uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
-    uniswapV3Mainnet = new UniswapV3(Network.ARBITRUM, dexKey, dexHelper);
+    uniswapV3Mainnet = new UniswapV3(Network.AVALANCHE, dexKey, dexHelper);
   });
 
   it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -677,7 +677,7 @@ describe('Pharaoh', () => {
           uniswapV3,
           'quoteExactInputSingle',
           blockNumber,
-          '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
+          '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
           price.prices,
           TokenA.address,
           TokenB.address,
@@ -735,7 +735,7 @@ describe('Pharaoh', () => {
           uniswapV3,
           'quoteExactOutputSingle',
           blockNumber,
-          '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
+          '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
           price.prices,
           TokenA.address,
           TokenB.address,
