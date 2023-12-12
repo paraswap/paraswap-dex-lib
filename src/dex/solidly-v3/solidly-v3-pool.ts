@@ -283,7 +283,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     const currentTick = bigIntify(_state.slot0.tick);
     const tickSpacing = bigIntify(_state.tickSpacing);
-    const fee = bigIntify(_state.slot0.fee)
+    const fee = bigIntify(_state.slot0.fee);
 
     const startTickBitmap = TickBitMap.position(currentTick / tickSpacing)[0];
     const requestedRange = this.getBitmapRangeToRequest();
@@ -460,7 +460,7 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     event: any,
     pool: PoolState,
     log: Log,
-    blockHeader: BlockHeader
+    blockHeader: BlockHeader,
   ) {
     const feeNew = bigIntify(event.args.feeNew);
     pool.slot0.fee = feeNew;
