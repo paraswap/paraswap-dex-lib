@@ -12,15 +12,31 @@ const SUPPORTED_TICK_SPACINGS = [1n, 10n, 50n, 100n];
 export const PoolsToPreload: DexConfigMap<
   { token0: Address; token1: Address }[]
 > = {
-  UniswapV3: {
-    [Network.POLYGON]: [
+  SolidlyV3: {
+    [Network.MAINNET]: [
       {
-        token0: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'.toLowerCase(),
-        token1: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'.toLowerCase(),
+        token0: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'.toLowerCase(),
+        token1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'.toLowerCase(),
       },
       {
-        token0: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619'.toLowerCase(),
-        token1: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'.toLowerCase(),
+        token0: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'.toLowerCase(),
+        token1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'.toLowerCase(),
+      },
+      {
+        token0: '0x514910771AF9Ca656af840dff83E8264EcF986CA'.toLowerCase(),
+        token1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'.toLowerCase(),
+      },
+      {
+        token0: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'.toLowerCase(),
+        token1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'.toLowerCase(),
+      },
+      {
+        token0: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'.toLowerCase(),
+        token1: '0xdAC17F958D2ee523a2206206994597C13D831ec7'.toLowerCase(),
+      },
+      {
+        token0: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'.toLowerCase(),
+        token1: '0xdAC17F958D2ee523a2206206994597C13D831ec7'.toLowerCase(),
       },
     ],
   },
