@@ -569,25 +569,27 @@ export class SolidlyV3
     data: SolidlyV3Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // const { path: rawPath } = data;
-    // const path = this._encodePath(rawPath, side);
-    const path = '';
+    const sqrtPriceLimitX96 = data.zeroForOne
+      ? (TickMath.MIN_SQRT_RATIO + BigInt(1)).toString()
+      : (TickMath.MAX_SQRT_RATIO - BigInt(1)).toString();
 
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
-          path: 'bytes',
-          deadline: 'uint256',
+          recipient: 'address',
+          zeroForOne: 'bool',
+          sqrtPriceLimitX96: 'uint160',
         },
       },
       {
-        path,
-        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+        recipient: this.augustusAddress,
+        zeroForOne: data.zeroForOne,
+        sqrtPriceLimitX96,
       },
     );
 
     return {
-      targetExchange: this.config.router,
+      targetExchange: data.poolAddress,
       payload,
       networkFee: '0',
     };
