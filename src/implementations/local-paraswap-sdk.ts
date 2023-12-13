@@ -10,6 +10,7 @@ import { DexAdapterService } from '../dex';
 import {
   Address,
   OptimalRate,
+  ParaSwapVersion,
   Token,
   TransferFeeParams,
   TxObject,
@@ -187,14 +188,15 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       gasCost: '0',
       others: [],
       side,
-      tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
-      contractAddress: this.dexHelper.config.data.augustusAddress,
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);
 
     return {
       ...optimizedRate,
+      version: ParaSwapVersion.V5,
+      tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
+      contractAddress: this.dexHelper.config.data.augustusAddress,
       hmac: '0',
       srcUSD: '0',
       destUSD: '0',

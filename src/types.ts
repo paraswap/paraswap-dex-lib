@@ -250,7 +250,13 @@ export type StateOverrideObject = {
 
 export type UnoptimizedRate = Omit<
   OptimalRate,
-  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
+  | 'version'
+  | 'contractAddress'
+  | 'contractMethod'
+  | 'srcUSD'
+  | 'destUSD'
+  | 'hmac'
+  | 'partnerFee'
 >;
 
 export type MultiCallInput = {
@@ -314,3 +320,8 @@ export type TransferFeeParams = {
 };
 
 export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';
+
+export enum ParaSwapVersion {
+  V5 = '5',
+  V6 = '6',
+}
