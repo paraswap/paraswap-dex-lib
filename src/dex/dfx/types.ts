@@ -45,7 +45,17 @@ export type DfxData = {
   }[];
 };
 
+export interface PoolInfo {
+  id: string;
+  source: 'dfx' | 'curve' | 'balancer' | 'sushi';
+  pool: string;
+  lpt: string;
+  tokens: Address[];
+}
+
 export type DexParams = {
   router: Address;
   factory: Address;
+  curve: Address;
+  pools: Partial<Record<string, PoolInfo>>;
 };

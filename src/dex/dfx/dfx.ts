@@ -9,10 +9,14 @@ import {
   PoolLiquidity,
   Logger,
   NumberAsString,
+  ExchangeTxInfo,
+  OptimalSwapExchange,
+  PreprocessTransactionOptions,
+  TxInfo,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DFXV3OriginSwap, DfxData } from './types';
@@ -41,41 +45,91 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     getDexKeysWithNetwork(DfxConfig);
 
   private uniswapMulti: Contract;
-
-  private notExistingPoolSetKey: string;
+  readonly dexKey: string;
+  readonly cacheStateKey: any;
 
   logger: Logger;
 
   constructor(
     readonly network: Network,
-    readonly dexKey: string,
     readonly dexHelper: IDexHelper,
+    dexKey: string,
     readonly routerIface = new Interface(RouterABI),
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
-    protected config = DfxConfig[dexKey][network], // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
+    protected config = DfxConfig['DFXV3'][network], // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
-    super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey + '-' + network);
+    super(dexHelper);
+    this.dexKey = 'DFXV3';
+    this.logger = dexHelper.getLogger('DFXV3' + '-' + network);
     this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
       CurvepoolABI as AbiItem[],
-      '0x0',
+      DfxConfig['DFXV3'][network].curve,
     );
 
     // To receive revert reasons
     this.dexHelper.web3Provider.eth.handleRevert = false;
-
-    // Normalise once all config addresses and use across all scenarios
-
-    this.notExistingPoolSetKey =
-      `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
+  }
+  needsSequentialPreprocessing?: boolean | undefined;
+  getNetworkFee?(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: DfxData,
+    side: SwapSide,
+  ): string {
+    throw new Error('Method not implemented.');
+  }
+  preProcessTransaction?(
+    optimalSwapExchange: OptimalSwapExchange<DfxData>,
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): AsyncOrSync<[OptimalSwapExchange<DfxData>, ExchangeTxInfo]> {
+    throw new Error('Method not implemented.');
+  }
+  getTokenFromAddress?(address: string): Token {
+    throw new Error('Method not implemented.');
+  }
+  getDirectParam?(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    expectedAmount: string,
+    data: DfxData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: string,
+    deadline: string,
+    partner: string,
+    beneficiary: string,
+    contractMethod?: string | undefined,
+  ): TxInfo<null> {
+    throw new Error('Method not implemented.');
+  }
+  isStatePollingDex?: boolean | undefined;
+  addMasterPool?(poolKey: string, blockNumber: number): AsyncOrSync<boolean> {
+    throw new Error('Method not implemented.');
+  }
+  isBlacklisted?(userAddress?: string | undefined): AsyncOrSync<boolean> {
+    throw new Error('Method not implemented.');
+  }
+  setBlacklist?(userAddress?: string | undefined): AsyncOrSync<boolean> {
+    throw new Error('Method not implemented.');
+  }
+  updatePoolState?(): AsyncOrSync<void> {
+    throw new Error('Method not implemented.');
   }
   private _sortTokens(srcAddress: Address, destAddress: Address) {
     return [srcAddress, destAddress].sort((a, b) => (a < b ? -1 : 1));
   }
 
   getPoolIdentifier(srcAddress: Address, destAddress: Address) {
-    const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
-    return `${this.dexKey}_${tokenAddresses}_v3`;
+    const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('-');
+    return `dfx-${tokenAddresses}_v3`;
   }
 
   // Initialize pricing is called once in the start of
@@ -89,8 +143,8 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
-  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+  getAdapters(side: SwapSide): null {
+    return null;
   }
 
   // Returns list of pool identifiers that can be used
@@ -105,12 +159,8 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
-    const _destToken = this.dexHelper.config.wrapETH(destToken);
-    const pools = ['0x0']; //@DEV FIX
-    return pools.map(pool =>
-      this.getPoolIdentifier(_srcToken.address, _destToken.address),
-    );
+    const poolObj = Object.values(this.config.pools);
+    return poolObj.map(pool => (pool?.id ? pool.id : '')); //@DEV can be done better
   }
 
   // Returns pool prices for amounts.
@@ -126,26 +176,27 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<DfxData>> {
     // TODO: complete me!
-    const pools = ['0x0']; //@DEV FIX
+    const pools = Object.keys(this.config.pools);
 
-    const univ3Ddata = [
+    return [
       {
-        tokenIn: srcToken.address,
-        tokenOut: destToken.address,
-        fee: '1',
+        prices: amounts,
+        unit: getBigIntPow(18),
+
+        gasCost: 1000,
+        exchange: 'DFXV3',
+        data: {
+          path: [
+            {
+              tokenIn: srcToken.address,
+              tokenOut: destToken.address,
+              fee: '0.05',
+            },
+          ],
+        },
+        poolAddresses: pools,
       },
     ];
-    const data = pools.map(pool => {
-      return {
-        prices: [0n],
-        unit: 0n,
-        data: { path: univ3Ddata },
-        exchange: this.config.router,
-        gasCost: 0,
-      };
-    });
-
-    return data;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -230,7 +281,19 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     //TODO: complete me!
-    return [];
+
+    const poolObj = Object.values(this.config.pools);
+
+    const poolLiquidityArray: PoolLiquidity[] = poolObj
+      .filter(pool => pool !== undefined)
+      .map(pool => ({
+        exchange: 'DFX',
+        address: pool!.id,
+        connectorTokens: [{ address: pool!.tokens[1], decimals: 6 }],
+        liquidityUSD: 0, // @DEV fix
+      })) as PoolLiquidity[]; // Use type assertion to tell TypeScript that the array does not contain undefined values.
+
+    return poolLiquidityArray;
   }
 
   // This is optional function in case if your implementation has acquired any resources
@@ -247,9 +310,7 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     }[],
   ): string {
     if (path.length === 0) {
-      this.logger.error(
-        `${this.dexKey}: Received invalid path=${path}  to encode`,
-      );
+      this.logger.error(` Received invalid path=${path}  to encode`);
       return '0x';
     }
 

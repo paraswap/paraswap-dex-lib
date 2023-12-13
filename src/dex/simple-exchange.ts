@@ -39,12 +39,10 @@ export class SimpleExchange {
   private cache: ICache;
 
   protected network: number;
-  protected dexmapKey: string;
 
-  readonly cacheStateKey: string;
   private readonly cacheApprovesKey: string;
 
-  constructor(dexHelper: IDexHelper, public dexKey: string) {
+  constructor(dexHelper: IDexHelper) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
     this.erc20Contract = new dexHelper.web3Provider.eth.Contract(
@@ -57,12 +55,6 @@ export class SimpleExchange {
     this.augustusInterface = new Interface(augustusABI);
     this.provider = dexHelper.web3Provider;
     this.cache = dexHelper.cache;
-
-    this.dexmapKey =
-      `${CACHE_PREFIX}_${this.network}_${this.dexKey}_poolconfigs`.toLowerCase();
-
-    this.cacheStateKey =
-      `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
 
     // if there's anything else to cache, this name could be more abstract
     this.cacheApprovesKey =
