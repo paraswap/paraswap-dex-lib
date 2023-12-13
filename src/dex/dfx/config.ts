@@ -1,37 +1,15 @@
 import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
-import CurvepoolABI from '../../abi/dfx/Curve-pool.json';
+
+const PANCAKE_SUPPORTED_FEES = [10000n, 2500n, 500n, 100n];
 
 export const DfxConfig: DexConfigMap<DexParams> = {
-  Dfx: {
+  DFXV3: {
     [Network.MAINNET]: {
-      poolConfigs: {
-        'dfx-cadc-usdc-v3': {
-          name: 'dfx-cadc-usdc-v3',
-          address: '0x814A90726fb9f7cf7566e28Db634Ff5Fa959CeB1',
-          coins: [
-            {
-              address: '0xcaDC0acd4B445166f12d2C07EAc6E2544FbE2Eef', // 0 - CADC
-              decimals: 18,
-            },
-            {
-              address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // 1 - USDC
-              decimals: 6,
-            },
-          ],
-          isMetapool: false,
-          isUSDPool: true,
-          lpToken: {
-            address: '0x814A90726fb9f7cf7566e28Db634Ff5Fa959CeB1',
-            decimals: 18,
-          },
-        },
-      },
-      abi: CurvepoolABI,
+      factory: '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
+      router: '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
     },
-    // [Network.POLYGON]: {},
-    // [Network.ARBITRUM]: {},
   },
 };
 

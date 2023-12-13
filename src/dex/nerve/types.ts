@@ -5,19 +5,13 @@ import type { Address, Log, Token } from '../../types';
 import type { NerveEventPool } from './nerve-pool';
 
 export interface PoolState {
-  initialA: bigint;
-  futureA: bigint;
-  initialATime: bigint;
-  futureATime: bigint;
-  swapFee: bigint;
-  adminFee: bigint;
-  defaultDepositFee?: bigint;
-  defaultWithdrawFee?: bigint;
-  lpToken_supply: bigint;
-  balances: bigint[];
-  tokenPrecisionMultipliers: bigint[];
+  pool: string;
+  blockTimestamp: bigint;
+  fee: bigint;
+  liquidity: bigint;
   isValid: boolean;
-  paused: boolean;
+  balance0: bigint;
+  balance1: bigint;
 }
 
 export interface NervePoolConfig {

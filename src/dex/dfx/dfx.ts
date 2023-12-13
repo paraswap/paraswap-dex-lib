@@ -8,20 +8,29 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { DfxData } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import { DFXV3OriginSwap, DfxData } from './types';
+import {
+  SimpleExchange,
+  getLocalDeadlineAsFriendlyPlaceholder,
+} from '../simple-exchange';
 import { DfxConfig, Adapters } from './config';
 import { DfxEventPool } from './dfx-pool';
+import { Contract } from 'web3-eth-contract';
+import CurvepoolABI from '../../abi/dfx/Curve-pool.json';
+import RouterABI from '../../abi/dfx/Router.json';
+import { AbiItem } from 'web3-utils';
+import { UniswapV3Data } from '../uniswap-v3/types';
+import { pack } from '@ethersproject/solidity';
+import { Interface } from 'ethers/lib/utils';
 
 export class Dfx extends SimpleExchange implements IDex<DfxData> {
-  protected eventPools: DfxEventPool;
-
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
@@ -31,17 +40,42 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(DfxConfig);
 
+  private uniswapMulti: Contract;
+
+  private notExistingPoolSetKey: string;
+
   logger: Logger;
 
   constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
+    readonly routerIface = new Interface(RouterABI),
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected config = DfxConfig[dexKey][network], // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new DfxEventPool(dexKey, network, dexHelper, this.logger);
+    this.logger = dexHelper.getLogger(dexKey + '-' + network);
+    this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
+      CurvepoolABI as AbiItem[],
+      '0x0',
+    );
+
+    // To receive revert reasons
+    this.dexHelper.web3Provider.eth.handleRevert = false;
+
+    // Normalise once all config addresses and use across all scenarios
+
+    this.notExistingPoolSetKey =
+      `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
+  }
+  private _sortTokens(srcAddress: Address, destAddress: Address) {
+    return [srcAddress, destAddress].sort((a, b) => (a < b ? -1 : 1));
+  }
+
+  getPoolIdentifier(srcAddress: Address, destAddress: Address) {
+    const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
+    return `${this.dexKey}_${tokenAddresses}_v3`;
   }
 
   // Initialize pricing is called once in the start of
@@ -50,6 +84,7 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
   // implement this function
   async initializePricing(blockNumber: number) {
     // TODO: complete me!
+    //await this.factory.initialize(blockNumber);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -68,8 +103,14 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    if (side === SwapSide.BUY) return [];
+
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
+    const pools = ['0x0']; //@DEV FIX
+    return pools.map(pool =>
+      this.getPoolIdentifier(_srcToken.address, _destToken.address),
+    );
   }
 
   // Returns pool prices for amounts.
@@ -85,7 +126,26 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<DfxData>> {
     // TODO: complete me!
-    return null;
+    const pools = ['0x0']; //@DEV FIX
+
+    const univ3Ddata = [
+      {
+        tokenIn: srcToken.address,
+        tokenOut: destToken.address,
+        fee: '1',
+      },
+    ];
+    const data = pools.map(pool => {
+      return {
+        prices: [0n],
+        unit: 0n,
+        data: { path: univ3Ddata },
+        exchange: this.config.router,
+        gasCost: 0,
+      };
+    });
+
+    return data;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -102,17 +162,27 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: DfxData,
+    data: UniswapV3Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
+    const { path: rawPath } = data;
+    const path = this._encodePath(rawPath);
 
-    // Encode here the payload for adapter
-    const payload = '';
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          path: 'bytes',
+          deadline: 'uint256',
+        },
+      },
+      {
+        path,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+      },
+    );
 
     return {
-      targetExchange: exchange,
+      targetExchange: this.config.router,
       payload,
       networkFee: '0',
     };
@@ -128,13 +198,20 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     srcAmount: string,
     destAmount: string,
     data: DfxData,
-    side: SwapSide,
+    deadline: SwapSide,
   ): Promise<SimpleExchangeParam> {
     // TODO: complete me!
-    const { exchange } = data;
 
-    // Encode here the transaction arguments
-    const swapData = '';
+    const path = this._encodePath(data.path);
+    const swapFunctionParams: DFXV3OriginSwap = {
+      _originAmount: srcAmount,
+      _minTargetAmount: destAmount,
+      _path: [path], //@DEV needs to be fixed
+      _deadline: deadline,
+    };
+    const swapData = this.routerIface.encodeFunctionData('originSwap', [
+      swapFunctionParams,
+    ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -142,17 +219,8 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
       destToken,
       destAmount,
       swapData,
-      exchange,
+      this.config.router,
     );
-  }
-
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -169,5 +237,43 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     // TODO: complete me!
+  }
+
+  private _encodePath(
+    path: {
+      tokenIn: Address;
+      tokenOut: Address;
+      fee: NumberAsString;
+    }[],
+  ): string {
+    if (path.length === 0) {
+      this.logger.error(
+        `${this.dexKey}: Received invalid path=${path}  to encode`,
+      );
+      return '0x';
+    }
+
+    const { _path, types } = path.reduce(
+      (
+        { _path, types }: { _path: string[]; types: string[] },
+        curr,
+        index,
+      ): { _path: string[]; types: string[] } => {
+        if (index === 0) {
+          return {
+            types: ['address', 'uint24', 'address'],
+            _path: [curr.tokenIn, curr.fee, curr.tokenOut],
+          };
+        } else {
+          return {
+            types: [...types, 'uint24', 'address'],
+            _path: [..._path, curr.fee, curr.tokenOut],
+          };
+        }
+      },
+      { _path: [], types: [] },
+    );
+
+    return pack(types.reverse(), _path.reverse());
   }
 }

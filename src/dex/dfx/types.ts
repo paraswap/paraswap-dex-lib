@@ -1,5 +1,8 @@
 import { JsonFragment } from '@ethersproject/abi';
-import { Address, Token } from '../../types';
+import { Address, NumberAsString, Token } from '../../types';
+import { DecodeStateMultiCallFunc } from '../uniswap-v3/types';
+import { UniswapV3EventPool } from '../uniswap-v3/uniswap-v3-pool';
+import { AbiItem } from 'web3-utils';
 
 export type PoolState = {
   initialA: bigint;
@@ -24,18 +27,25 @@ export interface DFXPoolConfig {
   lpToken: Token;
 }
 
+export interface DFXV3OriginSwap {
+  _originAmount: string;
+  _minTargetAmount: string;
+  _path: string[];
+  _deadline: string;
+}
 export type DfxData = {
   // TODO: DfxData is the dex data that is
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
-  exchange: Address;
+  path: {
+    tokenIn: Address;
+    tokenOut: Address;
+    fee: NumberAsString;
+  }[];
 };
 
 export type DexParams = {
-  poolConfigs: Record<string, DFXPoolConfig>;
-  abi: JsonFragment[];
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  router: Address;
+  factory: Address;
 };
