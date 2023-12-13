@@ -44,11 +44,9 @@ export type DecodeStateMultiCallFunc = (
 ) => DecodedStateMultiCallResultWithRelativeBitmaps;
 
 export type DexParams = {
-  router: Address;
   quoter: Address;
   factory: Address;
   stateMulticall: Address;
-  uniswapMulticall: Address;
   supportedTickSpacings: bigint[];
   chunksCount: number;
   initRetryFrequency: number;

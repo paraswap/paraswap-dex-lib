@@ -45,13 +45,11 @@ export const PoolsToPreload: DexConfigMap<
 export const SolidlyV3Config: DexConfigMap<DexParams> = {
   SolidlyV3: {
     [Network.MAINNET]: {
-      // factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       factory: '0x70Fe4a44EA505cFa3A57b95cF2862D4fd5F0f687',
       quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-      router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+      // router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedTickSpacings: SUPPORTED_TICK_SPACINGS,
       stateMulticall: '0xb229563028302AA693EEaD62F80CC331aEDE4e26',
-      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
       // OG uniswap initHash
@@ -68,7 +66,7 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
 
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
-    [SwapSide.SELL]: [{ name: 'Adapter01', index: 6 }],
-    [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 2 }],
+    [SwapSide.SELL]: [{ name: 'Adapter04', index: 7 }],
+    [SwapSide.BUY]: [{ name: 'BuyAdapter02', index: 3 }],
   },
 };

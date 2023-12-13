@@ -29,11 +29,11 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy /*, ContractMethod.buy */]],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   sideToContractMethods.forEach((contractMethods, side) =>
@@ -81,6 +81,18 @@ describe('SolidlyV3 E2E', () => {
     const network = Network.MAINNET;
 
     const pairs = [
+      [
+        {
+          name: 'ETH',
+          sellAmount: '110000000000000000',
+          buyAmount: '1100000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '400000000',
+          buyAmount: '4000000',
+        },
+      ],
       [
         {
           name: 'WETH',

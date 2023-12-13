@@ -1,4 +1,4 @@
-import { defaultAbiCoder, Interface } from '@ethersproject/abi';
+import { Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { pack } from '@ethersproject/solidity';
 import {
@@ -11,19 +11,12 @@ import {
   Logger,
   NumberAsString,
   PoolPrices,
-  TxInfo,
   PreprocessTransactionOptions,
   ExchangeTxInfo,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import {
-  getBigIntPow,
-  getDexKeysWithNetwork,
-  interpolate,
-  isTruthy,
-  uuidToBytes16,
-} from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -32,9 +25,7 @@ import {
   PoolState,
   SolidlyV3Data,
   SolidlyV3SimpleSwapParams,
-  UniswapV3Functions,
   UniswapV3Param,
-  UniswapV3SimpleSwapParams,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -42,14 +33,11 @@ import {
 } from '../simple-exchange';
 import { SolidlyV3Config, Adapters, PoolsToPreload } from './config';
 import { SolidlyV3EventPool } from './solidly-v3-pool';
-import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
-import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import SolidlyV3StateMulticallABI from '../../abi/solidly-v3/SolidlyV3StateMulticall.abi.json';
 import SolidlyV3PoolABI from '../../abi/solidly-v3/SolidlyV3Pool.abi.json';
 import {
-  DirectMethods,
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_POOL_SEARCH_OVERHEAD,
   UNISWAPV3_TICK_BASE_OVERHEAD,
@@ -59,12 +47,6 @@ import { assert, DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import {
-  AssetType,
-  DEFAULT_ID_ERC20,
-  DEFAULT_ID_ERC20_AS_STRING,
-} from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { TickMath } from './contract-math/TickMath';
 
@@ -76,7 +58,6 @@ type PoolPairsInfo = {
 
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
-const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class SolidlyV3
   extends SimpleExchange
@@ -97,7 +78,6 @@ export class SolidlyV3
 
   logger: Logger;
 
-  private uniswapMulti: Contract;
   private stateMultiContract: Contract;
 
   private notExistingPoolSetKey: string;
@@ -114,10 +94,6 @@ export class SolidlyV3
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
-    this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapV3MultiABI as AbiItem[],
-      this.config.uniswapMulticall,
-    );
     this.stateMultiContract = new this.dexHelper.web3Provider.eth.Contract(
       this.config.stateMultiCallAbi !== undefined
         ? this.config.stateMultiCallAbi
@@ -652,7 +628,7 @@ export class SolidlyV3
       this.erc20Contract.options.address =
         this.dexHelper.config.wrapETH(srcToken).address;
       const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, this.config.router)
+        .allowance(this.augustusAddress, optimalSwapExchange.exchange)
         .call(undefined, 'latest');
       isApproved =
         BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
@@ -821,14 +797,12 @@ export class SolidlyV3
   private _toLowerForAllConfigAddresses() {
     // If new config property will be added, the TS will throw compile error
     const newConfig: DexParams = {
-      router: this.config.router.toLowerCase(),
       quoter: this.config.quoter.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
       supportedTickSpacings: this.config.supportedTickSpacings,
       stateMulticall: this.config.stateMulticall.toLowerCase(),
       chunksCount: this.config.chunksCount,
       initRetryFrequency: this.config.initRetryFrequency,
-      uniswapMulticall: this.config.uniswapMulticall,
       deployer: this.config.deployer?.toLowerCase(),
       initHash: this.config.initHash,
       subgraphURL: this.config.subgraphURL,
