@@ -150,7 +150,10 @@ export class GenericSwapTransactionBuilder {
             _srcAmount,
             _destAmount,
             destTokenIsWeth || !isLastSwap
-              ? this.executorDetector.getAddress(executorName)
+              ? // swap: User => AugustusV6 =>(call) Executor
+                // if it's in the middle of the swap, transfer funds to Executor
+                // if not, transfer to augustusV6
+                this.executorDetector.getAddress(executorName)
               : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
             se.data,
             side,
