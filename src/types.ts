@@ -320,8 +320,3 @@ export type TransferFeeParams = {
 };
 
 export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';
-
-export enum ParaSwapVersion {
-  V5 = '5',
-  V6 = '6',
-}

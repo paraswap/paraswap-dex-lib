@@ -10,7 +10,6 @@ import { DexAdapterService } from '../dex';
 import {
   Address,
   OptimalRate,
-  ParaSwapVersion,
   Token,
   TransferFeeParams,
   TxObject,
@@ -23,6 +22,7 @@ import {
   SwapSide,
 } from '@paraswap/core/build/constants';
 import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-builder';
+import { ParaSwapVersion } from '@paraswap/core/build/types';
 
 export interface IParaSwapSDK {
   getPrices(
