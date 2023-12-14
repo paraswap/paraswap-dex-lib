@@ -33,8 +33,6 @@ export class DfxEventPool extends StatefulEventSubscriber<PoolState> {
   addressesSubscribed: string[];
   private _poolAddress?: Address;
 
-  public readonly feeCodeAsString;
-
   private _stateRequestCallData?: MultiCallParams<
     bigint | DecodedStateMultiCallResultWithRelativeBitmaps
   >[];
@@ -46,28 +44,14 @@ export class DfxEventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
-    readonly stateMultiContract: Contract,
     readonly erc20Interface: Interface,
-    protected readonly factoryAddress: Address,
-    public readonly feeCode: bigint,
     token0: Address,
     token1: Address,
     logger: Logger,
-    mapKey: string = '',
-    readonly poolInitCodeHash: string,
-    readonly poolDeployer?: string,
   ) {
     // TODO: Add pool name
-    super(
-      parentName,
-      `${token0}_${token1}_${feeCode}`,
-      dexHelper,
-      logger,
-      true,
-      mapKey,
-    );
-    this.feeCodeAsString = feeCode.toString();
-    this.feeCodeAsString = feeCode.toString();
+    super(parentName, `${token0}_${token1}_${'v3'}`, dexHelper, logger, true);
+
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
     // TODO: make logDecoder decode logs that
@@ -169,58 +153,43 @@ export class DfxEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    const callData = this._getStateRequestCallData();
-
-    const [resBalance0, resBalance1, resState] =
-      await this.dexHelper.multiWrapper.tryAggregate<
-        bigint | DecodedStateMultiCallResultWithRelativeBitmaps
-      >(
-        false,
-        callData,
-        blockNumber,
-        this.dexHelper.multiWrapper.defaultBatchSize,
-        false,
-      );
-
-    // Quite ugly solution, but this is the one that fits to current flow.
-    // I think UniswapV3 callbacks subscriptions are complexified for no reason.
-    // Need to be revisited later
-    assert(resState.success, 'Pool does not exist');
-
-    const [balance0, balance1, _state] = [
-      resBalance0.returnData,
-      resBalance1.returnData,
-      resState.returnData,
-    ] as [bigint, bigint, DecodedStateMultiCallResultWithRelativeBitmaps];
-
-    const tickBitmap = {};
-    const ticks = {};
-
-    // _reduceTickBitmap(tickBitmap, _state.tickBitmap);
-    // _reduceTicks(ticks, _state.ticks);
-
-    const observations = {
-      [_state.slot0.observationIndex]: {
-        blockTimestamp: bigIntify(_state.observation.blockTimestamp),
-        tickCumulative: bigIntify(_state.observation.tickCumulative),
-        secondsPerLiquidityCumulativeX128: bigIntify(
-          _state.observation.secondsPerLiquidityCumulativeX128,
-        ),
-        initialized: _state.observation.initialized,
+    const calldata = _.flattenDeep([
+      {
+        target: this.poolAddress,
+        callData: this.poolIface.encodeFunctionData('liquidity', []),
       },
-    };
+      {
+        target: this.poolAddress,
+        callData: this.lpTokenIface.encodeFunctionData('curve', []),
+      },
+    ]);
 
-    const currentTick = bigIntify(_state.slot0.tick);
-    const tickSpacing = bigIntify(_state.tickSpacing);
+    const data = await this.dexHelper.multiContract.methods
+      .aggregate(calldata)
+      .call({}, blockNumber);
+
+    const [lpToken_supply, fee, balances] = [
+      bigIntify(
+        this.lpTokenIface.decodeFunctionResult('liquidity', [])[0]._hex,
+      ),
+      bigIntify(this.lpTokenIface.decodeFunctionResult('curve', [])[3]._hex),
+      [
+        bigIntify(
+          this.lpTokenIface.decodeFunctionResult('liquidity', [])[1]._hex,
+        ),
+        bigIntify(
+          this.lpTokenIface.decodeFunctionResult('liquidity', [])[2]._hex,
+        ),
+      ],
+    ];
 
     return {
-      pool: _state.pool,
-      blockTimestamp: bigIntify(_state.blockTimestamp),
-      liquidity: bigIntify(_state.liquidity),
-      fee: this.feeCode,
-      isValid: true,
-      balance0,
-      balance1,
+      pool: this.poolAddress || '0x0',
+      blockTimestamp: bigIntify(blockNumber),
+      fee: fee,
+      liquidity: lpToken_supply,
+      balance0: balances[0],
+      balance1: balances[1],
     };
   }
 
@@ -253,7 +222,6 @@ export class DfxEventPool extends StatefulEventSubscriber<PoolState> {
         `${this.parentName}: amount0 <= 0n && amount1 <= 0n for ` +
           `${this.poolAddress} and ${blockHeader.number}. Check why it happened`,
       );
-      pool.isValid = false;
       return pool;
     } else {
       const zeroForOne = amount0 > 0n;
@@ -267,7 +235,6 @@ export class DfxEventPool extends StatefulEventSubscriber<PoolState> {
           this.logger.error(
             `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount1}`,
           );
-          pool.isValid = false;
         }
         // This is not correct fully, because pool may get more tokens then it needs, but
         // it is not accounted in internal state, it should be good enough
@@ -279,7 +246,6 @@ export class DfxEventPool extends StatefulEventSubscriber<PoolState> {
           this.logger.error(
             `In swapEvent for pool ${pool.pool} received incorrect values ${zeroForOne} and ${amount0}`,
           );
-          pool.isValid = false;
         }
         pool.balance1 += BigInt.asUintN(256, amount1);
       }

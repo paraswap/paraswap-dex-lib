@@ -159,8 +159,8 @@ describe('Dfx', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'TRY';
+    const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,
@@ -192,7 +192,7 @@ describe('Dfx', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      dfx = new Dfx(network, dexKey, dexHelper);
+      dfx = new Dfx(network, dexHelper, dexKey);
       if (dfx.initializePricing) {
         await dfx.initializePricing(blockNumber);
       }
@@ -229,7 +229,7 @@ describe('Dfx', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newDfx = new Dfx(network, dexKey, dexHelper);
+      const newDfx = new Dfx(network, dexHelper, dexKey);
       if (newDfx.updatePoolState) {
         await newDfx.updatePoolState();
       }

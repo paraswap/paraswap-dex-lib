@@ -5,17 +5,12 @@ import { UniswapV3EventPool } from '../uniswap-v3/uniswap-v3-pool';
 import { AbiItem } from 'web3-utils';
 
 export type PoolState = {
-  initialA: bigint;
-  futureA: bigint;
-  initialATime: bigint;
-  futureATime: bigint;
-  swapFee: bigint;
-  adminFee: bigint;
-  defaultDepositFee?: bigint;
-  defaultWithdrawFee?: bigint;
-  lpToken_supply: bigint;
-  balances: bigint[];
-  isValid: boolean;
+  pool: string;
+  blockTimestamp: bigint;
+  fee: bigint;
+  liquidity: bigint;
+  balance0: bigint;
+  balance1: bigint;
 };
 
 export interface DFXPoolConfig {

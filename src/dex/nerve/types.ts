@@ -9,7 +9,6 @@ export interface PoolState {
   blockTimestamp: bigint;
   fee: bigint;
   liquidity: bigint;
-  isValid: boolean;
   balance0: bigint;
   balance1: bigint;
 }

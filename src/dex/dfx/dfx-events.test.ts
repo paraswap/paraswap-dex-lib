@@ -8,6 +8,8 @@ import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
+import erc20ABI from '../../abi/erc20.json';
+import { Interface } from 'ethers/lib/utils';
 
 /*
   README
@@ -47,21 +49,23 @@ jest.setTimeout(50 * 1000);
 async function fetchPoolState(
   dfxPools: DfxEventPool,
   blockNumber: number,
-  poolAddress: string,
 ): Promise<PoolState> {
-  // TODO: complete me!
-  return {};
+  // It generates data from onchain data
+  return await dfxPools.generateState(blockNumber);
 }
 
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
 describe('Dfx EventPool Mainnet', function () {
-  const dexKey = 'Dfx';
+  const dexKey = 'DFXV3';
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
   let dfxPool: DfxEventPool;
+  const token0 = 'TRYB';
+  const token1 = 'USDC';
+  const erc20Interface = new Interface(JSON.stringify(erc20ABI));
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
@@ -70,11 +74,12 @@ describe('Dfx EventPool Mainnet', function () {
 
   beforeEach(async () => {
     dfxPool = new DfxEventPool(
-      dexKey,
-      network,
       dexHelper,
+      dexKey,
+      erc20Interface,
+      token0,
+      token1,
       logger,
-      /* TODO: Put here additional constructor arguments if needed */
     );
   });
 
@@ -90,7 +95,7 @@ describe('Dfx EventPool Mainnet', function () {
                     dfxPool,
                     dfxPool.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(dfxPool, _blockNumber, poolAddress),
+                      fetchPoolState(dfxPool, _blockNumber),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
