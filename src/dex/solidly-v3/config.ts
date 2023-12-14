@@ -3,8 +3,6 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { Address } from '../../types';
 
-// const SUPPORTED_FEES = [3000n];
-const SUPPORTED_FEES = [500n];
 const SUPPORTED_TICK_SPACINGS = [1n, 10n, 50n, 100n];
 
 // Pools that will be initialized on app startup
@@ -47,16 +45,10 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       factory: '0x70Fe4a44EA505cFa3A57b95cF2862D4fd5F0f687',
       quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-      // router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
       supportedTickSpacings: SUPPORTED_TICK_SPACINGS,
       stateMulticall: '0xb229563028302AA693EEaD62F80CC331aEDE4e26',
       chunksCount: 10,
       initRetryFrequency: 10,
-      // OG uniswap initHash
-      // initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      // Solidly initHash prior to callbacks
-      // initHash: `0x2d6541efe1e24667ba5408a35ae420462924d43db1251d7580804ac81545109b`,
-      // Solidly initHash after callbacks
       initHash: `0xe9b68c5f77858eecac2e651646e208175e9b1359d68d0e14fc69f8c54e5010bf`,
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/solidlylabs/solidly-v3',
