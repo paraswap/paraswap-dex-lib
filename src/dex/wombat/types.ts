@@ -17,7 +17,7 @@ export type PoolState = {
 };
 
 export type AssetState = {
-  address: Address;
+  address?: Address; // TODO: ?
   paused: boolean;
   cash: bigint;
   liability: bigint;
