@@ -53,7 +53,7 @@
     "@0x/utils": "^4.5.2",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.0.2",
-    "@paraswap/core": "1.1.0",
+    "@paraswap/core": "https://github.com/paraswap/paraswap-core#63dfb89be09d213b2bce75f1997a793d8f0381ff",
     "async": "^3.2.4",
     "axios": "0.26.0",
     "bignumber.js": "9.1.0",
