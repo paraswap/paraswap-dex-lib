@@ -4,6 +4,8 @@ import { Address } from '../../types';
 import { AbiItem } from 'web3-utils';
 import { MultiResult } from '../../lib/multi-wrapper';
 
+export type FactoryState = Record<string, never>;
+
 export type TickInfo = {
   liquidityGross: bigint;
   liquidityNet: bigint;

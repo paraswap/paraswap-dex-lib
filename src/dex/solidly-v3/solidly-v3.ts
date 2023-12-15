@@ -49,6 +49,7 @@ import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { TickMath } from './contract-math/TickMath';
+import { OnPoolCreatedCallback, SolidlyV3Factory } from './solidly-v3-factory';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -82,6 +83,8 @@ export class SolidlyV3
 
   private notExistingPoolSetKey: string;
 
+  private readonly factory: SolidlyV3Factory;
+
   constructor(
     protected network: Network,
     dexKey: string,
@@ -107,6 +110,14 @@ export class SolidlyV3
     // Normalize once all config addresses and use across all scenarios
     this.config = this._toLowerForAllConfigAddresses();
 
+    this.factory = new SolidlyV3Factory(
+      dexHelper,
+      dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet,
+    );
+
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
   }
@@ -129,6 +140,9 @@ export class SolidlyV3
   }
 
   async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    await this.factory.initialize(blockNumber);
+
     // This is only for testing, because cold pool fetching is goes out of
     // FETCH_POOL_INDENTIFIER_TIMEOUT range
     await Promise.all(
@@ -158,6 +172,46 @@ export class SolidlyV3
       );
     }
   }
+
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+    tickSpacing,
+  }) => {
+    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
+    const [_token0, _token1] = this._sortTokens(token0, token1);
+    const poolKey = `${_token0}_${_token1}_${tickSpacing}`;
+
+    // consider doing it only from master pool for less calls to distant cache
+
+    // delete entry locally to let local instance discover the pool
+    delete this.eventPools[
+      this.getPoolIdentifier(_token0, _token1, tickSpacing)
+    ];
+
+    try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+      );
+      // delete pool record from set
+      const result = await this.dexHelper.cache.zrem(
+        this.notExistingPoolSetKey,
+        [poolKey],
+      );
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+        error,
+      );
+    }
+  };
 
   async getPool(
     srcAddress: Address,
