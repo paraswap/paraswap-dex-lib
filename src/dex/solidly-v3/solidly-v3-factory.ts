@@ -64,6 +64,9 @@ export class SolidlyV3Factory extends StatefulEventSubscriber<FactoryState> {
   }
 
   async handleNewPool(event: LogDescription) {
+    // todo: remove
+    // eslint-disable-next-line no-console
+    console.log('handleNewPool', event);
     const token0 = event.args.token0.toLowerCase();
     const token1 = event.args.token1.toLowerCase();
     const tickSpacing = BigInt(event.args.tickSpacing);

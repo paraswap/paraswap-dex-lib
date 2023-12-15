@@ -83,7 +83,8 @@ export class SolidlyV3
 
   private notExistingPoolSetKey: string;
 
-  private readonly factory: SolidlyV3Factory;
+  // todo: change to private
+  public readonly factory: SolidlyV3Factory;
 
   constructor(
     protected network: Network,
