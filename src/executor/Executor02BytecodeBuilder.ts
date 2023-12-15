@@ -12,7 +12,7 @@ const {
 } = ethers;
 
 /**
- * Class to build bytecode for Executor02 - simpleSwap with N DEXs (VERTICAL_BRANCH) and megaswap (VERTICAL_BRANCH_HORIZONTAL_SEQUENCE, NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE)
+ * Class to build bytecode for Executor02 - simpleSwap with N DEXs (VERTICAL_BRANCH) and megaswaps (VERTICAL_BRANCH_HORIZONTAL_SEQUENCE, NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE)
  */
 export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
   protected buildSimpleSwapFlags(

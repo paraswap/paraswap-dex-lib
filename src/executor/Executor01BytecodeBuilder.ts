@@ -12,7 +12,7 @@ const {
 } = ethers;
 
 /**
- * Class to build bytecode for Executor01 - simpleSwap (SINGLE_STEP) and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
+ * Class to build bytecode for Executor01 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
  */
 export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
   /**

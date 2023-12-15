@@ -12,7 +12,7 @@ export enum Executors {
 enum RouteExecutionType {
   SINGLE_STEP = 0, // simpleSwap with 100% on a path and single DEX
   HORIZONTAL_SEQUENCE = 1, // multiSwap with 100% on each path
-  VERTICAL_BRANCH = 3, // simpleSwap with N DEXs
+  VERTICAL_BRANCH = 3, // simpleSwap with N DEXs on a path
   // VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 4, // megaSwap
   // NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 5, // megaSwap
 }
