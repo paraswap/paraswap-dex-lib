@@ -66,7 +66,7 @@ export class SolidlyV3Factory extends StatefulEventSubscriber<FactoryState> {
   async handleNewPool(event: LogDescription) {
     const token0 = event.args.token0.toLowerCase();
     const token1 = event.args.token1.toLowerCase();
-    const tickSpacing = event.args.tickSpacing.toString();
+    const tickSpacing = BigInt(event.args.tickSpacing);
 
     await this.onPoolCreated({ token0, token1, tickSpacing });
   }
