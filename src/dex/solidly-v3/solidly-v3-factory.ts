@@ -68,13 +68,6 @@ export class SolidlyV3Factory extends StatefulEventSubscriber<FactoryState> {
     const token1 = event.args.token1.toLowerCase();
     const tickSpacing = event.args.tickSpacing.toString();
 
-    this.logger.log('[handleNewPool]: New pool created', {
-      token0,
-      token1,
-      tickSpacing: event.args.tickSpacing,
-    });
-    this.logger.log('[handleNewPool]: TICK spacing: ', tickSpacing);
-
     await this.onPoolCreated({ token0, token1, tickSpacing });
   }
 }
