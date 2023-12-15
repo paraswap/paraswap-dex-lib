@@ -12,9 +12,8 @@ import { IWethDepositorWithdrawer } from './dex/weth/types';
 import { DexAdapterService } from './dex';
 import { Weth } from './dex/weth/weth';
 import ERC20ABI from './abi/erc20.json';
-import { Executor01BytecodeBuilder } from './executor/Executor01BytecodeBuilder';
 import { ExecutorDetector, Executors } from './executor/ExecutorDetector';
-import { IExecutorBytecodeBuilder } from './executor/IExecutorBytecodeBuilder';
+import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 
 export class GenericSwapTransactionBuilder {
   augustusV6Interface: Interface;
@@ -88,7 +87,7 @@ export class GenericSwapTransactionBuilder {
     priceRoute: OptimalRate,
     minMaxAmount: string,
     executorName: Executors,
-    bytecodeBuilder: IExecutorBytecodeBuilder,
+    bytecodeBuilder: ExecutorBytecodeBuilder,
   ): Promise<string> {
     const side = priceRoute.side;
     const wethAddress =
@@ -139,7 +138,7 @@ export class GenericSwapTransactionBuilder {
             forceUnwrap
           ) {
             _dest = wethAddress;
-            wethWithdraw = BigInt(forceUnwrap ? se.destAmount : _destAmount);
+            wethWithdraw = BigInt(se.destAmount);
           }
 
           const destTokenIsWeth = _dest === wethAddress;
@@ -165,27 +164,24 @@ export class GenericSwapTransactionBuilder {
       ),
     );
 
-    const {
-      simpleExchangeDataList,
-      srcAmountWethToDeposit,
-      destAmountWethToWithdraw,
-    } = await rawDexParams.reduce<{
-      simpleExchangeDataList: DexExchangeParam[];
-      srcAmountWethToDeposit: bigint;
-      destAmountWethToWithdraw: bigint;
-    }>(
-      (acc, se) => {
-        acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
-        acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
-        acc.simpleExchangeDataList.push(se.dexParams);
-        return acc;
-      },
-      {
-        simpleExchangeDataList: [],
-        srcAmountWethToDeposit: 0n,
-        destAmountWethToWithdraw: 0n,
-      },
-    );
+    const { exchangeParams, srcAmountWethToDeposit, destAmountWethToWithdraw } =
+      await rawDexParams.reduce<{
+        exchangeParams: DexExchangeParam[];
+        srcAmountWethToDeposit: bigint;
+        destAmountWethToWithdraw: bigint;
+      }>(
+        (acc, se) => {
+          acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
+          acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
+          acc.exchangeParams.push(se.dexParams);
+          return acc;
+        },
+        {
+          exchangeParams: [],
+          srcAmountWethToDeposit: 0n,
+          destAmountWethToWithdraw: 0n,
+        },
+      );
 
     const maybeWethCallData = this.getDepositWithdrawWethCallData(
       srcAmountWethToDeposit,
@@ -195,7 +191,7 @@ export class GenericSwapTransactionBuilder {
 
     return bytecodeBuilder.buildByteCode(
       priceRoute,
-      simpleExchangeDataList,
+      exchangeParams,
       maybeWethCallData,
     );
   }

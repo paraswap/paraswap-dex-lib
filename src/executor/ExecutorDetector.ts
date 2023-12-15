@@ -1,30 +1,30 @@
 import { IDexHelper } from '../dex-helper';
 import { Address, OptimalRate } from '@paraswap/core';
-import { IExecutorBytecodeBuilder } from './IExecutorBytecodeBuilder';
+import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { Executor01BytecodeBuilder } from './Executor01BytecodeBuilder';
-// import { Executor02BytecodeBuilder } from './Executor02BytecodeBuilder';
+import { Executor02BytecodeBuilder } from './Executor02BytecodeBuilder';
 
 export enum Executors {
   ONE = 'Executor01',
-  // TWO = 'Executor02',
+  TWO = 'Executor02',
 }
 
 enum RouteExecutionType {
-  SINGLE_STEP = 0, // simpleSwap
-  HORIZONTAL_SEQUENCE = 1, // multiSwap
-  // VERTICAL_BRANCH = 3, // megaSwap
+  SINGLE_STEP = 0, // simpleSwap with 100% on a path and single DEX
+  HORIZONTAL_SEQUENCE = 1, // multiSwap with 100% on each path
+  VERTICAL_BRANCH = 3, // simpleSwap with N DEXs
   // VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 4, // megaSwap
   // NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 5, // megaSwap
 }
 
 export class ExecutorDetector {
-  private executor01BytecodeBuilder: IExecutorBytecodeBuilder;
-  // private executor02BytecodeBuilder: IExecutorBytecodeBuilder;
+  private executor01BytecodeBuilder: ExecutorBytecodeBuilder;
+  private executor02BytecodeBuilder: ExecutorBytecodeBuilder;
 
   protected routeExecutionTypeToExecutorMap = {
     [RouteExecutionType.SINGLE_STEP]: Executors.ONE,
     [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE,
-    // [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO,
+    [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO,
     // [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO,
     // [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]:
     //   Executors.TWO,
@@ -34,7 +34,9 @@ export class ExecutorDetector {
     this.executor01BytecodeBuilder = new Executor01BytecodeBuilder(
       this.dexHelper,
     );
-    // this.executor02BytecodeBuilder = new Executor02BytecodeBuilder(this.dexHelper);
+    this.executor02BytecodeBuilder = new Executor02BytecodeBuilder(
+      this.dexHelper,
+    );
   }
   /**
    * The method supports only simpleSwap and multiSwap with 100% token percent on each path (Executor01)
@@ -42,6 +44,13 @@ export class ExecutorDetector {
    */
   protected getRouteExecutionType(priceRoute: OptimalRate): RouteExecutionType {
     if (
+      priceRoute.bestRoute.length === 1 &&
+      priceRoute.bestRoute[0].percent === 100 &&
+      priceRoute.bestRoute[0].swaps.length === 1 &&
+      priceRoute.bestRoute[0].swaps[0].swapExchanges.length > 1
+    ) {
+      return RouteExecutionType.VERTICAL_BRANCH;
+    } else if (
       priceRoute.bestRoute.length === 1 &&
       priceRoute.bestRoute[0].percent === 100 &&
       priceRoute.bestRoute[0].swaps.length === 1
@@ -71,6 +80,7 @@ export class ExecutorDetector {
 
   getExecutorByPriceRoute(priceRoute: OptimalRate): Executors {
     const routeExecutionType = this.getRouteExecutionType(priceRoute);
+
     const executorName =
       this.routeExecutionTypeToExecutorMap[routeExecutionType];
 
@@ -89,17 +99,14 @@ export class ExecutorDetector {
     return this.dexHelper.config.data.executorsAddresses![executorName];
   }
 
-  getBytecodeBuilder(executorName: Executors): IExecutorBytecodeBuilder {
-    if (!Object.values(Executors).includes(executorName)) {
-      throw new Error(`${executorName} is not supported`);
+  getBytecodeBuilder(executorName: Executors): ExecutorBytecodeBuilder {
+    switch (executorName) {
+      case Executors.ONE:
+        return this.executor01BytecodeBuilder;
+      case Executors.TWO:
+        return this.executor02BytecodeBuilder;
+      default:
+        throw new Error(`${executorName} is not supported`);
     }
-
-    if (executorName === Executors.ONE || true) {
-      // for now always return Executor01
-      return this.executor01BytecodeBuilder;
-    }
-    // else (executorName === Executors.TWO) {
-    //   return this.executor02BytecodeBuilder;
-    // }
   }
 }

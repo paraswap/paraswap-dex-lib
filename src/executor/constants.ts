@@ -1,0 +1,26 @@
+import { ethers } from 'ethers';
+
+const {
+  utils: { hexlify, hexZeroPad },
+} = ethers;
+
+export const BYTES_28_LENGTH = 28;
+export const BYTES_64_LENGTH = 64;
+
+export const ZEROS_12_BYTES = hexZeroPad(hexlify(0), 12);
+export const ZEROS_28_BYTES = hexZeroPad(hexlify(0), 28);
+export const ZEROS_32_BYTES = hexZeroPad(hexlify(0), 32);
+
+export const EXECUTORS_FUNCTION_CALL_DATA_TYPES: string[] = [
+  'bytes20', // address(bytes20)
+  'bytes4', // calldata Size(bytes 4)
+  'bytes2', // fromAmount Pos(bytes2)
+  'bytes2', // destTokenPos(bytes2)
+  'bytes2', // specialExchange (bytes2)
+  'bytes2', // flag(bytes2)
+  'bytes28', // zero padding (bytes28)
+  'bytes', // dex calldata (bytes)
+];
+
+export const APPROVE_CALLDATA_DEST_TOKEN_POS = 68;
+export const WRAP_UNWRAP_FROM_AMOUNT_POS = 4;

@@ -184,11 +184,6 @@ export class Weth
 
     if (needWithdraw || destAmount !== '0') {
       const opType = WethFunctions.withdraw;
-      // const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
-      //   opType,
-      //   [wethToken],
-      // );
-
       const withdrawWethData = this.erc20Interface.encodeFunctionData(opType, [
         destAmount,
       ]);
