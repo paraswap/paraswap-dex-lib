@@ -421,4 +421,26 @@ describe('PancakeswapV3 E2E', () => {
       nativeTokenAmount,
     );
   });
+
+  // TODO renable once Tenderly offers support for ZkEVM
+  // describe('PancakeswapV3 ZkEVM', () => {
+  //   const network = Network.ZKEVM;
+  //
+  //   const tokenASymbol: string = 'USDT';
+  //   const tokenBSymbol: string = 'USDC';
+  //
+  //   const tokenAAmount: string = '100000000';
+  //   const tokenBAmount: string = '100000000';
+  //   const nativeTokenAmount = '110000000000000000000';
+  //
+  //   testForNetwork(
+  //       network,
+  //       dexKey,
+  //       tokenASymbol,
+  //       tokenBSymbol,
+  //       tokenAAmount,
+  //       tokenBAmount,
+  //       nativeTokenAmount,
+  //   );
+  // });
 });
