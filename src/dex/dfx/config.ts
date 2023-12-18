@@ -10,6 +10,8 @@ export const DfxConfig: DexConfigMap<DexParams> = {
       factory: '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
       router: '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
       curve: '0xa34317DB73e77d453b1B8d04550c44D10e981C8e',
+      subgraphURL:
+        'https://api.goldsky.com/api/public/project_clasdk93949ub0h10a9lf9pkq/subgraphs/amm-v3/0.0.3/gn',
       pools: {
         '0x814A90726fb9f7cf7566e28Db634Ff5Fa959CeB1': {
           id: 'cadcUsdc',

@@ -52,5 +52,6 @@ export type DexParams = {
   router: Address;
   factory: Address;
   curve: Address;
+  subgraphURL: string;
   pools: Partial<Record<string, PoolInfo>>;
 };

@@ -157,10 +157,17 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) return [];
-
     const poolObj = Object.values(this.config.pools);
-    return poolObj.map(pool => (pool?.id ? pool.id : '')); //@DEV can be done better
+    //@DEV can be done better
+    const pool = poolObj.find(
+      pool =>
+        (pool?.tokens[0].toLowerCase() == srcToken.address.toLowerCase() &&
+          pool?.tokens[1].toLowerCase() == destToken.address.toLowerCase()) ||
+        (pool?.tokens[1].toLowerCase() == srcToken.address.toLowerCase() &&
+          pool?.tokens[0].toLowerCase() == destToken.address.toLowerCase()),
+    );
+
+    return [`DFXV3_${pool?.pool}`];
   }
 
   // Returns pool prices for amounts.
@@ -284,14 +291,27 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
 
     const poolObj = Object.values(this.config.pools);
 
-    const poolLiquidityArray: PoolLiquidity[] = poolObj
-      .filter(pool => pool !== undefined)
-      .map(pool => ({
+    const pool = poolObj.find(
+      pool =>
+        pool?.tokens[0].toLowerCase() == tokenAddress.toLowerCase() ||
+        pool?.tokens[1].toLowerCase() == tokenAddress.toLowerCase(),
+    );
+
+    const callData = new this.dexHelper.web3Provider.eth.Contract(
+      CurvepoolABI as AbiItem[],
+      pool?.pool,
+    );
+
+    const data = await callData.methods.liquidity();
+
+    const poolLiquidityArray: PoolLiquidity[] = [
+      {
         exchange: 'DFX',
-        address: pool!.id,
+        address: pool!.pool,
         connectorTokens: [{ address: pool!.tokens[1], decimals: 6 }],
-        liquidityUSD: 0, // @DEV fix
-      })) as PoolLiquidity[]; // Use type assertion to tell TypeScript that the array does not contain undefined values.
+        liquidityUSD: data?.[0] || 0, // @DEV fix
+      },
+    ];
 
     return poolLiquidityArray;
   }

@@ -111,7 +111,7 @@ function testForNetwork(
 }
 
 describe('Dfx E2E', () => {
-  const dexKey = 'Dfx';
+  const dexKey = 'DFXV3';
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;

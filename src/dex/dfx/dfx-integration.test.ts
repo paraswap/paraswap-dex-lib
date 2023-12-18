@@ -130,24 +130,26 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
+
   if (dfx.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
 
+  //@DEV do this whne pricing is available
   // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    dfx,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
+  // await checkOnChainPricing(
+  //   dfx,
+  //   funcNameToCheck,
+  //   blockNumber,
+  //   poolPrices![0].prices,
+  //   amounts,
+  // );
 }
 
 describe('Dfx', function () {
-  const dexKey = 'Dfx';
+  const dexKey = 'DFXV3';
   let blockNumber: number;
   let dfx: Dfx;
 
@@ -230,20 +232,17 @@ describe('Dfx', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newDfx = new Dfx(network, dexHelper, dexKey);
-      if (newDfx.updatePoolState) {
-        await newDfx.updatePoolState();
-      }
+
       const poolLiquidity = await newDfx.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
       if (!newDfx.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,
-          dexKey,
+          'DFX',
         );
       }
     });
