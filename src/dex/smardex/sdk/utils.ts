@@ -1,7 +1,5 @@
 import { parseUnits } from 'ethers/lib/utils';
 
-import { CurrencyAmount, Trade } from './types';
-
 // Constants to compute approximate equality
 const APPROX_EQ_PRECISION = 1n;
 const APPROX_EQ_BASE_PRECISION = 1000000n;

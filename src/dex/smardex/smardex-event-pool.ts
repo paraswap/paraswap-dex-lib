@@ -4,7 +4,7 @@ import { AbiCoder, Interface } from '@ethersproject/abi';
 import { IDexHelper } from '../../dex-helper';
 import { Address, Log, Logger, Token } from '../../types';
 import { DeepReadonly } from 'ts-essentials';
-import { FEES_LAYER_ONE, TOPICS } from './constants';
+import { FEES_LEGACY_LAYER_ONE, TOPICS } from './constants';
 
 const coder = new AbiCoder();
 
@@ -21,7 +21,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
       callData: string;
     },
     protected smardexFeesMulticallDecoder?: (values: any[]) => SmardexFees,
-    private isLayerOne = true,
+    private legacyPairs?: string[],
   ) {
     super('Smardex', `${token0.address}_${token1.address}`, dexHelper, logger);
   }
@@ -37,7 +37,8 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
         callData: this.poolInterface.encodeFunctionData('getPriceAverage', []),
       },
     ];
-    if (!this.isLayerOne) {
+    const isLegacyPool = this.legacyPairs?.includes(this.poolAddress.toLowerCase());
+    if (!isLegacyPool) {
       calldata.push(this.smardexFeesMultiCallEntry!);
     }
 
@@ -51,8 +52,8 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
       data.returnData[0],
     )[2];
 
-    const fees = this.isLayerOne
-      ? FEES_LAYER_ONE
+    const fees = isLegacyPool
+      ? FEES_LEGACY_LAYER_ONE
       : this.smardexFeesMulticallDecoder!(data.returnData[1]);
     return {
       feesLP: fees.feesLP,
@@ -86,7 +87,7 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
           feesLP: fetchedSync.feesLP,
           feesPool: fetchedSync.feesPool,
         };
-      case 'FeesChanged': // only triggerd on L2
+      case 'FeesChanged':
         return {
           reserves0: state.reserves0,
           reserves1: state.reserves1,
@@ -123,7 +124,8 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
         callData: this.poolInterface.encodeFunctionData('getPriceAverage', []),
       },
     ];
-    if (!this.isLayerOne) {
+    const isLegacyPool = this.legacyPairs?.includes(this.poolAddress.toLowerCase());
+    if (!isLegacyPool) {
       calldata.push(this.smardexFeesMultiCallEntry!);
     }
 
@@ -145,8 +147,8 @@ export class SmardexEventPool extends StatefulEventSubscriber<SmardexPoolState> 
     const [priceAverage0, priceAverage1, priceAverageLastTimestamp] =
       coder.decode(['uint256', 'uint256', 'uint256'], data.returnData[2]);
 
-    const fees = this.isLayerOne
-      ? FEES_LAYER_ONE
+    const fees = isLegacyPool
+      ? FEES_LEGACY_LAYER_ONE
       : this.smardexFeesMulticallDecoder!(data.returnData[3]);
 
     return {
