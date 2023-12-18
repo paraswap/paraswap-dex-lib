@@ -766,6 +766,7 @@ export class SolidlyV3
                   decimals
                 }
                 totalValueLockedUSD
+                liquidity
               }
               pools1: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token1: $token}) {
                 id
@@ -778,6 +779,7 @@ export class SolidlyV3
                   decimals
                 }
                 totalValueLockedUSD
+                liquidity
               }
             }`,
       {
@@ -803,7 +805,9 @@ export class SolidlyV3
         },
       ],
       liquidityUSD:
-        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
+        parseFloat(pool.liquidity) > 0
+          ? parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR
+          : 0,
     }));
 
     const pools1 = _.map(res.pools1, pool => ({
@@ -816,7 +820,9 @@ export class SolidlyV3
         },
       ],
       liquidityUSD:
-        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
+        parseFloat(pool.liquidity) > 0
+          ? parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR
+          : 0,
     }));
 
     const pools = _.slice(
