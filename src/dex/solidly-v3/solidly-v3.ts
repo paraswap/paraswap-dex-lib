@@ -755,7 +755,7 @@ export class SolidlyV3
 
     const res = await this._querySubgraph(
       `query ($token: Bytes!, $count: Int) {
-                pools0: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token0: $token}) {
+                pools0: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token0: $token, liquidity_gt: "0"}) {
                 id
                 token0 {
                   id
@@ -766,9 +766,8 @@ export class SolidlyV3
                   decimals
                 }
                 totalValueLockedUSD
-                liquidity
               }
-              pools1: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token1: $token}) {
+              pools1: pools(first: $count, orderBy: totalValueLockedUSD, orderDirection: desc, where: {token1: $token, liquidity_gt: "0"}) {
                 id
                 token0 {
                   id
@@ -779,7 +778,6 @@ export class SolidlyV3
                   decimals
                 }
                 totalValueLockedUSD
-                liquidity
               }
             }`,
       {
@@ -805,9 +803,7 @@ export class SolidlyV3
         },
       ],
       liquidityUSD:
-        parseFloat(pool.liquidity) > 0
-          ? parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR
-          : 0,
+        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
     }));
 
     const pools1 = _.map(res.pools1, pool => ({
@@ -820,9 +816,7 @@ export class SolidlyV3
         },
       ],
       liquidityUSD:
-        parseFloat(pool.liquidity) > 0
-          ? parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR
-          : 0,
+        parseFloat(pool.totalValueLockedUSD) * UNISWAPV3_EFFICIENCY_FACTOR,
     }));
 
     const pools = _.slice(
