@@ -1,5 +1,5 @@
 import { Address, DexExchangeParam, OptimalRate, TxObject } from './types';
-import { ETHER_ADDRESS, SwapSide } from './constants';
+import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import AugustusV6ABI from './abi/AugustusV6.abi.json';
 import {
@@ -310,7 +310,9 @@ export class GenericSwapTransactionBuilder {
     beneficiary?: Address;
     onlyParams?: boolean;
   }): Promise<TxObject> {
-    const _beneficiary = beneficiary || userAddress;
+    const _beneficiary =
+      beneficiary && beneficiary !== NULL_ADDRESS ? beneficiary : userAddress;
+
     const { encoder, params } = await this._build(
       priceRoute,
       minMaxAmount,
