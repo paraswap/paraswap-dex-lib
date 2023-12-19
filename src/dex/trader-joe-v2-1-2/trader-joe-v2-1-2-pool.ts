@@ -1,12 +1,13 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Log, Logger } from '../../types';
+import { Log, Logger, Token } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
+import TraderJoeV2_1PoolABI from '../../abi/trader-joe-v2_1/PairABI.json';
 
-export class TraderJoeV2_1_2EventPool extends StatefulEventSubscriber<PoolState> {
+export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
@@ -19,26 +20,42 @@ export class TraderJoeV2_1_2EventPool extends StatefulEventSubscriber<PoolState>
 
   addressesSubscribed: string[];
 
+  public readonly poolIface = new Interface(TraderJoeV2_1PoolABI);
+
   constructor(
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
+    private token0: Token,
+    private token1: Token,
     logger: Logger,
-    protected traderJoeV2_1_2Iface = new Interface(
-      '' /* TODO: Import and put here TraderJoeV2_1_2 ABI */,
-    ), // TODO: add any additional params required for event subscriber
   ) {
     // TODO: Add pool name
-    super(parentName, 'POOL_NAME', dexHelper, logger);
+    super(
+      parentName,
+      `${token0.address}_${token1.address}`,
+      dexHelper,
+      logger,
+      // true,
+      // mapKey,
+    );
 
-    // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.traderJoeV2_1_2Iface.parseLog(log);
+    this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = [
       /* subscribed addresses */
     ];
 
     // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    this.handlers['TransferBatch'] = this.handleTransferBatch.bind(this);
+    this.handlers['DepositedToBins'] = this.handleDepositedToBins.bind(this);
+    this.handlers['WithdrawnFromBins'] =
+      this.handleWithdrawnFromBins.bind(this);
+    this.handlers['CompositionFees'] = this.handleCompositionFees.bind(this);
+    this.handlers['Swap'] = this.handleSwap.bind(this);
+    this.handlers['StaticFeeParametersSet'] =
+      this.handleStaticFeeParametersSet.bind(this);
+    this.handlers['FlashLoan'] = this.handleFlashLoan.bind(this);
+    this.handlers['ForcedDecay'] = this.handleForcedDecay.bind(this);
   }
 
   /**
@@ -80,8 +97,63 @@ export class TraderJoeV2_1_2EventPool extends StatefulEventSubscriber<PoolState>
     return {};
   }
 
-  // Its just a dummy example
-  handleMyEvent(
+  handleTransferBatch(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  handleDepositedToBins(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  handleWithdrawnFromBins(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  handleCompositionFees(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  handleSwap(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  handleStaticFeeParametersSet(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  handleFlashLoan(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolState> | null {
+    return null;
+  }
+
+  handleForcedDecay(
     event: any,
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
