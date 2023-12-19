@@ -4,6 +4,8 @@ export const TRADER_JOE_V2_QUOTE_GASLIMIT = 200_000;
 export const EMPTY_POOL_CACHE_TTL = 60 * 60;
 export const POPULATED_POOL_CACHE_TTL = 12 * 60 * 60;
 
+export const CACHE_PREFIX = 'dl';
+
 export const MinLBPairAbi = [
   {
     inputs: [],

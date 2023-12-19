@@ -23,26 +23,21 @@ export const TraderJoeV2_1Config: DexConfigMap<DexParams> = {
   },
 };
 
-// TODO: Check
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
-    [SwapSide.SELL]: [{ name: 'Adapter04', index: 6 }],
-    [SwapSide.BUY]: [{ name: 'BuyAdapter02', index: 2 }],
+    [SwapSide.SELL]: [{ name: 'Adapter04', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'BuyAdapter02', index: 1 }],
   },
   [Network.ARBITRUM]: {
-    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 9 }],
-    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 9 }],
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 4 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 7 }],
   },
   [Network.BSC]: {
-    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 8 }],
-    [SwapSide.BUY]: [{ name: 'BscBuyAdapter', index: 7 }],
+    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'BscBuyAdapter', index: 6 }],
   },
-  [Network.POLYGON]: {
-    [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 9 }],
-    [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 8 }],
-  },
-  [Network.BASE]: {
-    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 8 }],
-    [SwapSide.BUY]: [{ name: 'BaseBuyAdapter', index: 5 }],
+  [Network.AVALANCHE]: {
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 4 }],
+    [SwapSide.BUY]: [{ name: 'AvalancheBuyAdapter', index: 5 }],
   },
 };
