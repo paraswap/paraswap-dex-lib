@@ -4,6 +4,7 @@ import { pack } from '@ethersproject/solidity';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   ExchangeTxInfo,
   Logger,
@@ -790,37 +791,6 @@ export class UniswapV3
     }
   }
 
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: UniswapV3Data,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    const { path: rawPath } = data;
-    const path = this._encodePath(rawPath, side);
-
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          path: 'bytes',
-          deadline: 'uint256',
-        },
-      },
-      {
-        path,
-        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
-      },
-    );
-
-    return {
-      targetExchange: this.config.router,
-      payload,
-      networkFee: '0',
-    };
-  }
-
   getCalldataGasCost(poolPrices: PoolPrices<UniswapV3Data>): number | number[] {
     const gasCost =
       CALLDATA_GAS_COST.DEX_OVERHEAD +
@@ -919,10 +889,7 @@ export class UniswapV3
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<UniswapV3Param> {
-    if (
-      contractMethod !== DirectMethods.directSell &&
-      contractMethod !== DirectMethods.directBuy
-    ) {
+    if (!UniswapV3.getDirectFunctionName().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
@@ -968,6 +935,83 @@ export class UniswapV3
 
   static getDirectFunctionName(): string[] {
     return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: UniswapV3Data,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    const { path: rawPath } = data;
+    const path = this._encodePath(rawPath, side);
+
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          path: 'bytes',
+          deadline: 'uint256',
+        },
+      },
+      {
+        path,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+      },
+    );
+
+    return {
+      targetExchange: this.config.router,
+      payload,
+      networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: UniswapV3Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction =
+      side === SwapSide.SELL
+        ? UniswapV3Functions.exactInput
+        : UniswapV3Functions.exactOutput;
+
+    const path = this._encodePath(data.path, side);
+
+    const swapFunctionParams: UniswapV3SimpleSwapParams =
+      side === SwapSide.SELL
+        ? {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountIn: srcAmount,
+            amountOutMinimum: destAmount,
+            path,
+          }
+        : {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountOut: destAmount,
+            amountInMaximum: srcAmount,
+            path,
+          };
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData,
+      targetExchange: this.config.router,
+    };
   }
 
   async getSimpleParam(

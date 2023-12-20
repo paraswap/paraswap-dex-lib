@@ -1,7 +1,12 @@
 import { Interface } from '@ethersproject/abi';
 import Web3Abi, { AbiCoder } from 'web3-eth-abi';
 import { Contract } from 'web3-eth-contract';
-import { Address, SimpleExchangeParam, NumberAsString } from '../types';
+import {
+  Address,
+  SimpleExchangeParam,
+  NumberAsString,
+  DexExchangeParam,
+} from '../types';
 import { CACHE_PREFIX, ETHER_ADDRESS } from '../constants';
 import SimpleSwapHelperABI from '../abi/SimpleSwapHelperRouter.json';
 import ERC20ABI from '../abi/erc20.json';
@@ -34,6 +39,7 @@ export class SimpleExchange {
   isFeeOnTransferSupported = false;
 
   protected augustusAddress: Address;
+  protected augustusV6Address: Address | undefined;
   protected augustusInterface: Interface;
   private provider: Web3;
   private cache: ICache;
@@ -54,6 +60,7 @@ export class SimpleExchange {
 
     this.network = dexHelper.config.data.network;
     this.augustusAddress = dexHelper.config.data.augustusAddress;
+    this.augustusV6Address = dexHelper.config.data.augustusV6Address;
     this.augustusInterface = new Interface(augustusABI);
     this.provider = dexHelper.web3Provider;
     this.cache = dexHelper.cache;

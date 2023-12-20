@@ -17,11 +17,13 @@ type BaseConfig = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
+  augustusV6Address?: Address;
   augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
   privateHttpProvider?: string;
   adapterAddresses: { [name: string]: Address };
+  executorsAddresses?: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   uniswapV3EventLoggingSampleRate?: number;
   rfqConfigs: Record<string, RFQConfig>;
@@ -44,10 +46,15 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    augustusV6Address: '0xE6f1C1f58e34Df3892cB1b1c193f82462Bc0a86e',
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
+    executorsAddresses: {
+      Executor01: '0x8EdF3289C84E5ba9c73350805a7D4C1F43B41e08',
+      Executor02: '0x91E96A80943d06085997BBf41f253ae85F560B3e',
+    },
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
@@ -214,6 +221,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    augustusV6Address: '0x692aF0a7956FF165F438568b7D95B9cC288bE6c5',
     augustusRFQAddress: '0x34302c4267d0dA0A8c65510282Cc22E9e39df51f',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
@@ -222,6 +230,10 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
+    executorsAddresses: {
+      Executor01: '0x3AEeB8f4D543a06b687997313b668816fea385fF',
+      Executor02: '0x81Fa49c0Ba598527D9C483819248e2E9FE677DCA',
+    },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
       AvalancheAdapter02: '0x2cdB0cDc2a9321ac2ED5b741828a5216C265Be80',
@@ -271,6 +283,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     hasEIP1559: false,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    augustusV6Address: '0x95a7CE91b8478449FE9454538E357A26A535d102',
     augustusRFQAddress: '0x0927FD43a7a87E3E8b81Df2c44B03C4756849F6D',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
@@ -279,6 +292,10 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
+    executorsAddresses: {
+      Executor01: '0x2927e4a2cFDAE27B27bd3F6c0A6376fF1608C354',
+      Executor02: '0xD095802e643E663C5Af0d62dDfe727aD85f18618',
+    },
     adapterAddresses: {
       ArbitrumAdapter01: '0xD8134ACfc9c71Ab51452b5bA23A31354F4739032',
       ArbitrumAdapter02: '0x7b0c7f946c845bb0d43ad41ece7027e1fc11bea7',
@@ -404,11 +421,13 @@ export function generateConfig(network: number): Config {
     wrappedNativeTokenAddress: baseConfig.wrappedNativeTokenAddress,
     hasEIP1559: baseConfig.hasEIP1559,
     augustusAddress: baseConfig.augustusAddress,
+    augustusV6Address: baseConfig.augustusV6Address,
     augustusRFQAddress: baseConfig.augustusRFQAddress,
     tokenTransferProxyAddress: baseConfig.tokenTransferProxyAddress,
     multicallV2Address: baseConfig.multicallV2Address,
     privateHttpProvider: baseConfig.privateHttpProvider,
     adapterAddresses: { ...baseConfig.adapterAddresses },
+    executorsAddresses: { ...baseConfig.executorsAddresses },
     uniswapV2ExchangeRouterAddress: baseConfig.uniswapV2ExchangeRouterAddress,
     uniswapV3EventLoggingSampleRate: baseConfig.uniswapV3EventLoggingSampleRate,
     rfqConfigs: baseConfig.rfqConfigs,

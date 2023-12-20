@@ -20,6 +20,19 @@ describe('UniswapV2 E2E Mainnet', () => {
     const dexKey = 'UniswapV2';
 
     describe('Simpleswap', () => {
+      it('USDC -> USDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '1000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
       it('ETH -> TOKEN', async () => {
         await testE2E(
           tokens.ETH,

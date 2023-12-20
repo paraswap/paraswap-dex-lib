@@ -314,7 +314,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       }
     } catch (e) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-        /* 
+        /*
          protection against 2 race conditions
           1/ if pool.initialize() promise rejects after the Pool creation event got treated
           2/ if the rpc node we hit on the http request is lagging behind the one we got event from (websocket)

@@ -7,6 +7,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -24,6 +25,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, WethConfig } from './config';
 import { BI_POWS } from '../../bigint-constants';
+import { NumberAsString } from '@paraswap/core';
 
 export class Weth
   extends SimpleExchange
@@ -181,11 +183,10 @@ export class Weth
     }
 
     if (needWithdraw || destAmount !== '0') {
-      const opType = WethFunctions.withdrawAllWETH;
-      const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
-        opType,
-        [wethToken],
-      );
+      const opType = WethFunctions.withdraw;
+      const withdrawWethData = this.erc20Interface.encodeFunctionData(opType, [
+        destAmount,
+      ]);
 
       withdraw = {
         callee: this.augustusAddress,

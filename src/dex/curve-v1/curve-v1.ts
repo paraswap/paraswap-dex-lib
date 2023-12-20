@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { assert } from 'ts-essentials';
 import BigNumber from 'bignumber.js';
+import { ethers } from 'ethers';
 import CurveABI from '../../abi/Curve.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { Adapters, CurveV1Config } from './config';
@@ -10,6 +11,7 @@ import { Adapters, CurveV1Config } from './config';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   ExchangeTxInfo,
   PoolLiquidity,
@@ -976,6 +978,36 @@ export class CurveV1
       params: swapParams,
       encoder,
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: CurveV1Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, i, j, underlyingSwap } = data;
+    const defaultArgs = [i, j, srcAmount, this.minConversionRate];
+    const swapMethod = underlyingSwap
+      ? CurveSwapFunctions.exchange_underlying
+      : CurveSwapFunctions.exchange;
+    const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+      swapMethod,
+      defaultArgs,
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: false,
+      targetExchange: exchange,
     };
   }
 

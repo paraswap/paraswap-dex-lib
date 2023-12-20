@@ -91,6 +91,39 @@ describe('CurveV1 E2E', () => {
         provider,
       );
     });
+
+    it('USDC -> USDT', async () => {
+      await testE2E(
+        tokens['USDC'],
+        tokens['USDT'],
+        holders['USDC'],
+        '100000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
+
+    it('DAI -> GUSD', async () => {
+      await testE2E(
+        tokens['DAI'],
+        tokens['GUSD'],
+        holders['DAI'],
+        '100000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+        null,
+        undefined,
+        undefined,
+        1000,
+      );
+    });
+
     describe('FeeOnTransfer', () => {
       describe('sell', () => {
         const contractMethod = ContractMethod.megaSwap;

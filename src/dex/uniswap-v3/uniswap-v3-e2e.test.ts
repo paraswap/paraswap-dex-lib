@@ -3,11 +3,11 @@ dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
 import {
-  Tokens,
   Holders,
   NativeTokenSymbols,
+  Tokens,
 } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
@@ -69,6 +69,7 @@ function testForNetwork(
                 undefined,
                 undefined,
                 slippage,
+                2000,
               );
             });
             it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
@@ -86,6 +87,7 @@ function testForNetwork(
                 undefined,
                 undefined,
                 slippage,
+                2000,
               );
             });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
@@ -103,6 +105,7 @@ function testForNetwork(
                 undefined,
                 undefined,
                 slippage,
+                2000,
               );
             });
           });
@@ -118,53 +121,23 @@ describe('UniswapV3 E2E', () => {
 
     describe('UniswapV3 MAINNET', () => {
       const network = Network.MAINNET;
-      const tokens = Tokens[network];
-      const holders = Holders[network];
-      const provider = new StaticJsonRpcProvider(
-        generateConfig(network).privateHttpProvider,
+
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '11111000000';
+      const tokenBAmount: string = '11000000000';
+      const nativeTokenAmount = '1100000000000000000';
+
+      testForNetwork(
         network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
       );
-
-      it('BUY DAI -> USDC', async () => {
-        await testE2E(
-          tokens['DAI'],
-          tokens['USDC'],
-          holders['DAI'],
-          '100000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-      it('SELL WETH -> SHIBA', async () => {
-        await testE2E(
-          tokens['WETH'],
-          tokens['SHIBA'],
-          holders['WETH'],
-          '1000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-
-      it('directSwap SELL WETH -> USDC', async () => {
-        await testE2E(
-          tokens['WETH'],
-          tokens['USDC'],
-          holders['WETH'],
-          '1000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.directUniV3Swap,
-          network,
-          provider,
-        );
-      });
     });
 
     describe('UniswapV3 POLYGON', () => {
@@ -787,14 +760,16 @@ describe('UniswapV3 E2E', () => {
     const dexKey = 'SushiSwapV3';
 
     describe('MAINNET', () => {
+      const dexKey = 'UniswapV3';
+
       const network = Network.MAINNET;
 
       const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'USDT';
 
-      const tokenAAmount: string = '111110000';
+      const tokenAAmount: string = '1000000';
       const tokenBAmount: string = '1100000000';
-      const nativeTokenAmount = '11000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
 
       testForNetwork(
         network,
