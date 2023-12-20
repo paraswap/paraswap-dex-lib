@@ -6,7 +6,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { TraderJoeV2_1_2 } from './trader-joe-v2-1-2';
+import { TraderJoeV2_1 } from './trader-joe-v2-1-2';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -18,9 +18,9 @@ import { Tokens } from '../../../tests/constants-e2e';
   README
   ======
 
-  This test script adds tests for TraderJoeV2_1_2 general integration
+  This test script adds tests for TraderJoeV2_1 general integration
   with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover TraderJoeV2_1_2 specific
+  It is recommended to add tests which cover TraderJoeV2_1 specific
   logic.
 
   You can run this individual test script by running:
@@ -58,7 +58,7 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
-  traderJoeV2_1_2: TraderJoeV2_1_2,
+  traderJoeV2_1: TraderJoeV2_1,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
@@ -67,7 +67,7 @@ async function checkOnChainPricing(
   const exchangeAddress = ''; // TODO: Put here the real exchange address
 
   // TODO: Replace dummy interface with the real one
-  // Normally you can get it from traderJoeV2_1_2.Iface or from eventPool.
+  // Normally you can get it from traderJoeV2_1.Iface or from eventPool.
   // It depends on your implementation
   const readerIface = new Interface('');
 
@@ -78,7 +78,7 @@ async function checkOnChainPricing(
     funcName,
   );
   const readerResult = (
-    await traderJoeV2_1_2.dexHelper.multiContract.methods
+    await traderJoeV2_1.dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
@@ -91,7 +91,7 @@ async function checkOnChainPricing(
 }
 
 async function testPricingOnNetwork(
-  traderJoeV2_1_2: TraderJoeV2_1_2,
+  traderJoeV2_1: TraderJoeV2_1,
   network: Network,
   dexKey: string,
   blockNumber: number,
@@ -103,7 +103,7 @@ async function testPricingOnNetwork(
 ) {
   const networkTokens = Tokens[network];
 
-  const pools = await traderJoeV2_1_2.getPoolIdentifiers(
+  const pools = await traderJoeV2_1.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     side,
@@ -116,7 +116,7 @@ async function testPricingOnNetwork(
 
   expect(pools.length).toBeGreaterThan(0);
 
-  const poolPrices = await traderJoeV2_1_2.getPricesVolume(
+  const poolPrices = await traderJoeV2_1.getPricesVolume(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     amounts,
@@ -130,7 +130,7 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
-  if (traderJoeV2_1_2.hasConstantPriceLargeAmounts) {
+  if (traderJoeV2_1.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
@@ -138,7 +138,7 @@ async function testPricingOnNetwork(
 
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
-    traderJoeV2_1_2,
+    traderJoeV2_1,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
@@ -146,10 +146,10 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('TraderJoeV2_1_2', function () {
-  const dexKey = 'TraderJoeV2_1_2';
+describe('TraderJoeV2_1', function () {
+  const dexKey = 'TraderJoeV2_1';
   let blockNumber: number;
-  let traderJoeV2_1_2: TraderJoeV2_1_2;
+  let traderJoeV2_1: TraderJoeV2_1;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -159,8 +159,8 @@ describe('TraderJoeV2_1_2', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'USDT';
 
     const amountsForSell = [
       0n,
@@ -192,15 +192,15 @@ describe('TraderJoeV2_1_2', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      traderJoeV2_1_2 = new TraderJoeV2_1_2(network, dexKey, dexHelper);
-      if (traderJoeV2_1_2.initializePricing) {
-        await traderJoeV2_1_2.initializePricing(blockNumber);
+      traderJoeV2_1 = new TraderJoeV2_1(network, dexKey, dexHelper);
+      if (traderJoeV2_1.initializePricing) {
+        await traderJoeV2_1.initializePricing(blockNumber);
       }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
-        traderJoeV2_1_2,
+        traderJoeV2_1,
         network,
         dexKey,
         blockNumber,
@@ -214,7 +214,7 @@ describe('TraderJoeV2_1_2', function () {
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       await testPricingOnNetwork(
-        traderJoeV2_1_2,
+        traderJoeV2_1,
         network,
         dexKey,
         blockNumber,
@@ -229,21 +229,17 @@ describe('TraderJoeV2_1_2', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newTraderJoeV2_1_2 = new TraderJoeV2_1_2(
-        network,
-        dexKey,
-        dexHelper,
-      );
-      if (newTraderJoeV2_1_2.updatePoolState) {
-        await newTraderJoeV2_1_2.updatePoolState();
+      const newTraderJoeV2_1 = new TraderJoeV2_1(network, dexKey, dexHelper);
+      if (newTraderJoeV2_1.updatePoolState) {
+        await newTraderJoeV2_1.updatePoolState();
       }
-      const poolLiquidity = await newTraderJoeV2_1_2.getTopPoolsForToken(
+      const poolLiquidity = await newTraderJoeV2_1.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newTraderJoeV2_1_2.hasConstantPriceLargeAmounts) {
+      if (!newTraderJoeV2_1.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,

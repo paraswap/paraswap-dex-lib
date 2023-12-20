@@ -3,11 +3,28 @@ import { BigNumber } from 'ethers';
 import { NumberAsString } from '@paraswap/core';
 
 export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+  pool: string;
+  blockTimestamp: bigint;
+  balance0: bigint;
+  balance1: bigint;
+  liquidity: bigint;
+  binStep: bigint;
+  protocolFeeX: bigint;
+  protocolFeeY: bigint;
+  totalFee: bigint;
+  activeId: bigint;
+  staticFeeParameters: {
+    baseFactor: bigint;
+    filterPeriod: bigint;
+    decayPeriod: bigint;
+    reductionFactor: bigint;
+    variableFeeControl: bigint;
+    protocolShare: bigint;
+    maxVolatilityAccumulator: bigint;
+  };
 };
+
+export type DecodedStateMultiCallResult = {};
 
 export type TraderJoeV2_1Data = {
   // TODO: TraderJoeV2_1_2Data is the dex data that is

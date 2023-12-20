@@ -12,45 +12,6 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-/*
-  README
-  ======
-
-  This test script should add e2e tests for TraderJoeV2_1_2. The tests
-  should cover as many cases as possible. Most of the DEXes follow
-  the following test structure:
-    - DexName
-      - ForkName + Network
-        - ContractMethod
-          - ETH -> Token swap
-          - Token -> ETH swap
-          - Token -> Token swap
-
-  The template already enumerates the basic structure which involves
-  testing simpleSwap, multiSwap, megaSwap contract methods for
-  ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace tokenA and
-  tokenB with any two highly liquid tokens on TraderJoeV2_1_2 for the tests
-  to work. If the tokens that you would like to use are not defined in
-  Tokens or Holders map, you can update the './tests/constants-e2e'
-
-  Other than the standard cases that are already added by the template
-  it is highly recommended to add test cases which could be specific
-  to testing TraderJoeV2_1_2 (Eg. Tests based on poolType, special tokens,
-  etc).
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-e2e.test.ts`
-
-  e2e tests use the Tenderly fork api. Please add the following to your
-  .env file:
-  TENDERLY_TOKEN=Find this under Account>Settings>Authorization.
-  TENDERLY_ACCOUNT_ID=Your Tenderly account name.
-  TENDERLY_PROJECT=Name of a Tenderly project you have created in your
-  dashboard.
-
-  (This comment should be removed from the final implementation)
-*/
-
 function testForNetwork(
   network: Network,
   dexKey: string,
@@ -68,7 +29,6 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [
       SwapSide.SELL,
@@ -78,7 +38,6 @@ function testForNetwork(
         ContractMethod.megaSwap,
       ],
     ],
-    // TODO: If buy is not supported remove the buy contract methods
     [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
@@ -133,18 +92,17 @@ function testForNetwork(
   });
 }
 
-describe('TraderJoeV2_1_2 E2E', () => {
-  const dexKey = 'TraderJoeV2_1_2';
+describe('TraderJoeV2_1 E2E', () => {
+  const dexKey = 'TraderJoeV2_1';
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -156,7 +114,68 @@ describe('TraderJoeV2_1_2 E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
+  });
 
-    // TODO: Add any additional test cases required to test TraderJoeV2_1_2
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'USDCe';
+    const tokenBSymbol: string = 'USDT';
+
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+
+    const tokenASymbol: string = 'AVAX';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Bsc', () => {
+    const network = Network.BSC;
+
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'BUSD';
+
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
   });
 });

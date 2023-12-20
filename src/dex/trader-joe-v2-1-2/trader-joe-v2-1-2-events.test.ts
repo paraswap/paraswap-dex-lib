@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { TraderJoeV2_1_2EventPool } from './trader-joe-v2-1-2-pool';
+import { TraderJoeV2_1EventPool } from './trader-joe-v2-1-2-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -45,7 +45,7 @@ import { PoolState } from './types';
 jest.setTimeout(50 * 1000);
 
 async function fetchPoolState(
-  traderJoeV2_1_2Pools: TraderJoeV2_1_2EventPool,
+  traderJoeV2_1_2Pools: TraderJoeV2_1EventPool,
   blockNumber: number,
   poolAddress: string,
 ): Promise<PoolState> {
@@ -61,7 +61,7 @@ describe('TraderJoeV2_1_2 EventPool Mainnet', function () {
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let traderJoeV2_1_2Pool: TraderJoeV2_1_2EventPool;
+  let traderJoeV2_1_2Pool: TraderJoeV2_1EventPool;
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
@@ -69,7 +69,7 @@ describe('TraderJoeV2_1_2 EventPool Mainnet', function () {
   };
 
   beforeEach(async () => {
-    traderJoeV2_1_2Pool = new TraderJoeV2_1_2EventPool(
+    traderJoeV2_1_2Pool = new TraderJoeV2_1EventPool(
       dexKey,
       network,
       dexHelper,

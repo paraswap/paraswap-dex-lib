@@ -15,3 +15,5 @@ export const MinLBPairAbi = [
     type: 'function',
   },
 ];
+
+export const SUPPORTED_BIN_STEPS = [1n, 2n, 5n, 10n, 15n, 20n, 25n, 50n, 100n];

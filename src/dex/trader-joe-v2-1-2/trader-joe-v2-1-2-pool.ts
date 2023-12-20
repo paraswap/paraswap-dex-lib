@@ -4,8 +4,10 @@ import { Log, Logger, Token } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState } from './types';
+import { DecodedStateMultiCallResult, PoolState } from './types';
 import TraderJoeV2_1PoolABI from '../../abi/trader-joe-v2_1/PairABI.json';
+import { MultiCallParams } from '../../lib/multi-wrapper';
+import { Bytes } from 'ethers';
 
 export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -20,6 +22,11 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   addressesSubscribed: string[];
 
+  public readonly binStep: bigint;
+
+  protected _stateRequestCallData?: MultiCallParams<
+    bigint | DecodedStateMultiCallResult
+  >[];
   public readonly poolIface = new Interface(TraderJoeV2_1PoolABI);
 
   constructor(
@@ -28,12 +35,13 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     private token0: Token,
     private token1: Token,
+    binStep: bigint,
     logger: Logger,
   ) {
     // TODO: Add pool name
     super(
       parentName,
-      `${token0.address}_${token1.address}`,
+      `${token0.address}_${token1.address}_${binStep}`,
       dexHelper,
       logger,
       // true,
@@ -44,6 +52,10 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     this.addressesSubscribed = [
       /* subscribed addresses */
     ];
+
+    this.binStep = binStep;
+    this.token0 = token0;
+    this.token1 = token1;
 
     // Add handlers
     this.handlers['TransferBatch'] = this.handleTransferBatch.bind(this);
@@ -94,8 +106,51 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
     // TODO: complete me!
-    return {};
+    return {} as any;
   }
+
+  // protected _getStateRequestCallData() {
+  //   if (!this._stateRequestCallData) {
+  //     const callData: MultiCallParams<
+  //       bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+  //     >[] = [
+  //       {
+  //         target: this.token0,
+  //         callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+  //           this.poolAddress,
+  //         ]),
+  //         decodeFunction: uint256ToBigInt,
+  //       },
+  //       {
+  //         target: this.token1,
+  //         callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+  //           this.poolAddress,
+  //         ]),
+  //         decodeFunction: uint256ToBigInt,
+  //       },
+  //       {
+  //         target: this.stateMultiContract.options.address,
+  //         callData: this.stateMultiContract.methods
+  //           .getFullStateWithRelativeBitmaps(
+  //             this.factoryAddress,
+  //             this.token0,
+  //             this.token1,
+  //             this.feeCode,
+  //             this.getBitmapRangeToRequest(),
+  //             this.getBitmapRangeToRequest(),
+  //           )
+  //           .encodeABI(),
+  //         decodeFunction:
+  //           this.decodeStateMultiCallResultWithRelativeBitmaps !== undefined
+  //             ? this.decodeStateMultiCallResultWithRelativeBitmaps
+  //             : decodeStateMultiCallResultWithRelativeBitmaps,
+  //       },
+  //     ];
+
+  //     this._stateRequestCallData = callData;
+  //   }
+  //   return this._stateRequestCallData;
+  // }
 
   handleTransferBatch(
     event: any,
@@ -159,5 +214,43 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     return null;
+  }
+
+  // private decodeAmounts(amounts: Bytes): [bigint, bigint] {
+  private decodeAmounts(amounts: number[]): [bigint, bigint] {
+    /**
+     * Decodes the amounts bytes input as 2 integers.
+     *
+     * @param amounts - amounts to decode.
+     * @return tuple of BigInts with the values decoded.
+     */
+
+    // Convert amounts to a BigInt
+    const amountsBigInt = BigInt(`0x${Buffer.from(amounts).toString('hex')}`);
+
+    // Read the right 128 bits of the 256 bits
+    const amountsX = amountsBigInt & (BigInt(2) ** BigInt(128) - BigInt(1));
+
+    // Read the left 128 bits of the 256 bits
+    const amountsY = amountsBigInt >> BigInt(128);
+
+    return [amountsX, amountsY];
+  }
+
+  // private decodeFees(feesBytes: Bytes): bigint {
+  private decodeFees(feesBytes: number[]): bigint {
+    /**
+     * Decode the fee value from the bytes input and return it as in integer.
+     * Fee values are stored in the first 128 bits of the input.
+     *
+     * @param feesBytes - Bytes containing the encoded value.
+     * @return Fee values.
+     */
+
+    // Convert feesBytes to a BigInt
+    const feesBigInt = BigInt(`0x${Buffer.from(feesBytes).toString('hex')}`);
+
+    // Retrieve the fee value from the right 128 bits
+    return feesBigInt & (BigInt(2) ** BigInt(128) - BigInt(1));
   }
 }

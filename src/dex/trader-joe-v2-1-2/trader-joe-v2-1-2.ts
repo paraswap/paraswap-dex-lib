@@ -27,6 +27,7 @@ import { Adapters, TraderJoeV2_1Config } from './config';
 import { TraderJoeV2_1EventPool } from './trader-joe-v2-1-2-pool';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import TraderJoeV21RouterABI from '../../abi/TraderJoeV21Router.json';
+import { SUPPORTED_BIN_STEPS } from './constants';
 
 export class TraderJoeV2_1
   extends SimpleExchange
@@ -44,6 +45,8 @@ export class TraderJoeV2_1
 
   factoryAddress: string;
   routerAddress: string;
+
+  readonly eventPools: Record<string, TraderJoeV2_1EventPool | null> = {};
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(TraderJoeV2_1Config);
@@ -87,6 +90,11 @@ export class TraderJoeV2_1
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
+  // TODO: Get it from the factory
+  get supportedBinSteps() {
+    return SUPPORTED_BIN_STEPS;
+  }
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
@@ -97,8 +105,29 @@ export class TraderJoeV2_1
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
+
+    const [_srcAddress, _destAddress] = this._getLoweredAddresses(
+      _srcToken,
+      _destToken,
+    );
+
+    if (_srcAddress === _destAddress) return [];
+
+    const pools = (
+      await Promise.all(
+        this.supportedBinSteps.map(async binStep =>
+          this.getPool(_srcAddress, _destAddress, binStep, blockNumber),
+        ),
+      )
+    ).filter(pool => pool);
+
+    if (pools.length === 0) return [];
+
+    return pools.map(pool =>
+      this.getPoolIdentifier(_srcAddress, _destAddress, pool!.binStep),
+    );
   }
 
   // Returns pool prices for amounts.
@@ -113,16 +142,81 @@ export class TraderJoeV2_1
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<TraderJoeV2_1Data>> {
-    // TODO: complete me!
+    try {
+      const _srcToken = this.dexHelper.config.wrapETH(from);
+      const _destToken = this.dexHelper.config.wrapETH(to);
+
+      const [_srcAddress, _destAddress] = this._getLoweredAddresses(
+        _srcToken,
+        _destToken,
+      );
+
+      if (_srcAddress === _destAddress) return null;
+
+      let selectedPools: TraderJoeV2_1EventPool[] = [];
+    } catch (error) {
+      this.logger.error(
+        `Error_getPricesVolume ${from.symbol || from.address}, ${
+          to.symbol || to.address
+        }, ${side}:`,
+        error,
+      );
+      return null;
+    }
+
     return null;
+  }
+
+  getPoolIdentifier(
+    srcAddress: Address,
+    destAddress: Address,
+    binStep: bigint,
+  ): string {
+    const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
+    return `${this.dexKey}_${tokenAddresses}_${binStep}`;
+  }
+
+  private getPool(
+    srcAddress: Address,
+    destAddress: Address,
+    binStep: bigint,
+    blockNumber: number,
+  ) {
+    let pool =
+      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, binStep)];
+
+    // if (pool === null) return null;
+    return pool;
+
+    // TODO: Try to init pool
+  }
+
+  private _sortTokens(srcAddress: Address, destAddress: Address) {
+    return [srcAddress, destAddress].sort((a, b) => (a < b ? -1 : 1));
+  }
+
+  private _getLoweredAddresses(srcToken: Token, destToken: Token) {
+    return [srcToken.address.toLowerCase(), destToken.address.toLowerCase()];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(
     poolPrices: PoolPrices<TraderJoeV2_1Data>,
   ): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> path header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> deadline
+      CALLDATA_GAS_COST.TIMESTAMP +
+      // ParentStruct -> path (20+3+20 = 43 = 32+11 bytes)
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      CALLDATA_GAS_COST.FULL_WORD +
+      CALLDATA_GAS_COST.wordNonZeroBytes(11)
+    );
   }
 
   // Encode params required by the exchange adapter
@@ -164,10 +258,6 @@ export class TraderJoeV2_1
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
