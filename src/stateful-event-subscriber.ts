@@ -415,6 +415,13 @@ export abstract class StatefulEventSubscriber<State>
       'info',
     );
 
+    if (state === null) {
+      this._logBatchTypicalMessages(
+        `${this.parentName}: Trying to save null in the state for block ${blockNumber}`,
+        'info',
+      );
+    }
+
     this.dexHelper.cache.hset(
       this.mapKey,
       this.name,
