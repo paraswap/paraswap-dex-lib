@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -26,8 +26,14 @@ import {
 import { Adapters, TraderJoeV2_1Config } from './config';
 import { TraderJoeV2_1EventPool } from './trader-joe-v2-1-2-pool';
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import TraderJoeV21RouterABI from '../../abi/TraderJoeV21Router.json';
-import { SUPPORTED_BIN_STEPS } from './constants';
+import TraderJoeV21RouterABI from '../../abi/trader-joe-v2_1/RouterABI.json';
+// import TraderJoeV21RouterABI from '../../abi/TraderJoeV21Router.json';
+import TraderJoeV21FactoryABI from '../../abi/trader-joe-v2_1/FactoryABI.json';
+import UniswapMultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
+import { MinLBPairAbi, SUPPORTED_BIN_STEPS } from './constants';
+import { Contract } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
+import { UniswapV3Config } from '../uniswap-v3/config';
 
 export class TraderJoeV2_1
   extends SimpleExchange
@@ -43,7 +49,10 @@ export class TraderJoeV2_1
 
   exchangeRouterInterface: Interface;
 
-  factoryAddress: string;
+  uniswapMulti: Contract;
+  factory: Contract;
+  pair: Contract;
+  // factoryAddress: string;
   routerAddress: string;
 
   readonly eventPools: Record<string, TraderJoeV2_1EventPool | null> = {};
@@ -69,7 +78,18 @@ export class TraderJoeV2_1
     //   this.logger,
     // );
     this.routerAddress = config[network].routerAddress;
-    this.factoryAddress = config[network].factoryAddress;
+    // this.factoryAddress = config[network].factoryAddress;
+    this.factory = new this.dexHelper.web3Provider.eth.Contract(
+      TraderJoeV21FactoryABI as AbiItem[],
+      config[network].factoryAddress,
+    );
+    this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
+      UniswapMultiABI as AbiItem[],
+      UniswapV3Config['UniswapV3'][network].uniswapMulticall,
+    );
+    this.pair = new this.dexHelper.web3Provider.eth.Contract(
+      MinLBPairAbi as AbiItem[],
+    );
 
     this.exchangeRouterInterface = new Interface(
       TraderJoeV21RouterABI as JsonFragment[],
@@ -154,6 +174,61 @@ export class TraderJoeV2_1
       if (_srcAddress === _destAddress) return null;
 
       let selectedPools: TraderJoeV2_1EventPool[] = [];
+
+      if (!limitPools) {
+        selectedPools = (
+          await Promise.all(
+            this.supportedBinSteps.map(async fee => {
+              const locallyFoundPool =
+                this.eventPools[
+                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
+                ];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const newlyFetchedPool = await this.getPool(
+                _srcAddress,
+                _destAddress,
+                fee,
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
+      } else {
+        const pairIdentifierWithoutFee = this.getPoolIdentifier(
+          _srcAddress,
+          _destAddress,
+          0n,
+          // Trim from 0 fee postfix, so it become comparable
+        ).slice(0, -1);
+
+        const poolIdentifiers = limitPools.filter(identifier =>
+          identifier.startsWith(pairIdentifierWithoutFee),
+        );
+
+        selectedPools = (
+          await Promise.all(
+            poolIdentifiers.map(async identifier => {
+              let locallyFoundPool = this.eventPools[identifier];
+              if (locallyFoundPool) return locallyFoundPool;
+
+              const [, srcAddress, destAddress, fee] = identifier.split('_');
+              const newlyFetchedPool = await this.getPool(
+                srcAddress,
+                destAddress,
+                BigInt(fee),
+                blockNumber,
+              );
+              return newlyFetchedPool;
+            }),
+          )
+        ).filter(isTruthy);
+      }
+
+      if (selectedPools.length === 0) return null;
+
+      // TODO: Handle pools
     } catch (error) {
       this.logger.error(
         `Error_getPricesVolume ${from.symbol || from.address}, ${
@@ -182,13 +257,37 @@ export class TraderJoeV2_1
     binStep: bigint,
     blockNumber: number,
   ) {
-    let pool =
-      this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, binStep)];
+    const poolIdentifier = this.getPoolIdentifier(
+      srcAddress,
+      destAddress,
+      binStep,
+    );
+    let pool = this.eventPools[poolIdentifier];
 
-    // if (pool === null) return null;
+    if (pool === null) {
+      const poolInfo = this.factory.methods
+        .getLBPairInformation(srcAddress, destAddress, binStep)
+        .call();
+
+      // TODO: Handle non existent pool, possibly add to non-existent set
+      if (!poolInfo) return null;
+
+      // get address
+      const pool = new TraderJoeV2_1EventPool(
+        this.dexKey,
+        this.network,
+        this.dexHelper,
+        srcAddress,
+        destAddress,
+        poolInfo.address,
+        binStep,
+        this.logger,
+      );
+      this.eventPools[poolIdentifier] = pool;
+      return pool;
+    }
+
     return pool;
-
-    // TODO: Try to init pool
   }
 
   private _sortTokens(srcAddress: Address, destAddress: Address) {

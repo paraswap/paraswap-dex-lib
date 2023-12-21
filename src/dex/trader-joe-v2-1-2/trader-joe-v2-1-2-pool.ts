@@ -1,13 +1,22 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { Log, Logger, Token } from '../../types';
+import { Address, Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DecodedStateMultiCallResult, PoolState } from './types';
 import TraderJoeV2_1PoolABI from '../../abi/trader-joe-v2_1/PairABI.json';
 import { MultiCallParams } from '../../lib/multi-wrapper';
+import UniswapMultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import { Bytes } from 'ethers';
+import { Contract } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
+import { UniswapV3Config } from '../uniswap-v3/config';
+import {
+  generalDecoder,
+  uint128ToBigNumber,
+  uint256ToBigInt,
+} from '../../lib/decoders';
 
 export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -24,6 +33,9 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   public readonly binStep: bigint;
 
+  private contract: Contract;
+  private uniswapMulti: Contract;
+
   protected _stateRequestCallData?: MultiCallParams<
     bigint | DecodedStateMultiCallResult
   >[];
@@ -33,15 +45,16 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
-    private token0: Token,
-    private token1: Token,
+    private token0: Address,
+    private token1: Address,
+    address: Address,
     binStep: bigint,
     logger: Logger,
   ) {
     // TODO: Add pool name
     super(
       parentName,
-      `${token0.address}_${token1.address}_${binStep}`,
+      `${token0}_${token1}_${binStep}`,
       dexHelper,
       logger,
       // true,
@@ -49,13 +62,17 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     );
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
+    this.addressesSubscribed = [address];
 
     this.binStep = binStep;
     this.token0 = token0;
     this.token1 = token1;
+
+    this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
+      UniswapMultiABI as AbiItem[],
+      UniswapV3Config['UniswapV3'][network].uniswapMulticall,
+    );
+    this.contract = new Contract(TraderJoeV2_1PoolABI as AbiItem[], address);
 
     // Add handlers
     this.handlers['TransferBatch'] = this.handleTransferBatch.bind(this);
@@ -69,6 +86,10 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['FlashLoan'] = this.handleFlashLoan.bind(this);
     this.handlers['ForcedDecay'] = this.handleForcedDecay.bind(this);
   }
+
+  getSwapOut() {}
+
+  getSwapIn() {}
 
   /**
    * The function is called every time any of the subscribed
@@ -109,48 +130,68 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     return {} as any;
   }
 
-  // protected _getStateRequestCallData() {
-  //   if (!this._stateRequestCallData) {
-  //     const callData: MultiCallParams<
-  //       bigint | DecodedStateMultiCallResultWithRelativeBitmaps
-  //     >[] = [
-  //       {
-  //         target: this.token0,
-  //         callData: this.erc20Interface.encodeFunctionData('balanceOf', [
-  //           this.poolAddress,
-  //         ]),
-  //         decodeFunction: uint256ToBigInt,
-  //       },
-  //       {
-  //         target: this.token1,
-  //         callData: this.erc20Interface.encodeFunctionData('balanceOf', [
-  //           this.poolAddress,
-  //         ]),
-  //         decodeFunction: uint256ToBigInt,
-  //       },
-  //       {
-  //         target: this.stateMultiContract.options.address,
-  //         callData: this.stateMultiContract.methods
-  //           .getFullStateWithRelativeBitmaps(
-  //             this.factoryAddress,
-  //             this.token0,
-  //             this.token1,
-  //             this.feeCode,
-  //             this.getBitmapRangeToRequest(),
-  //             this.getBitmapRangeToRequest(),
-  //           )
-  //           .encodeABI(),
-  //         decodeFunction:
-  //           this.decodeStateMultiCallResultWithRelativeBitmaps !== undefined
-  //             ? this.decodeStateMultiCallResultWithRelativeBitmaps
-  //             : decodeStateMultiCallResultWithRelativeBitmaps,
-  //       },
-  //     ];
+  protected _getStateRequestCallData() {
+    if (!this._stateRequestCallData) {
+      // const callData: MultiCallParams<bigint | bigint[]>[] = [
+      const callData: MultiCallParams<any>[] = [
+        {
+          target: this.addressesSubscribed[0],
+          callData: this.poolIface.encodeFunctionData('getReserves', []),
+          decodeFunction: (result: any) => {
+            return generalDecoder(
+              result,
+              ['uint128', 'uint128'],
+              [0n, 0n],
+              value => [value[0].toBigInt(), value[1].toBigInt()],
+            );
+          },
+        },
+        {
+          target: this.addressesSubscribed[0],
+          callData: this.poolIface.encodeFunctionData('getActiveId', []),
+          decodeFunction: uint128ToBigNumber,
+        },
+      ];
+      // const callData: MultiCallParams<
+      //   bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+      // >[] = [
+      //   {
+      //     target: this.token0,
+      //     callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+      //       this.poolAddress,
+      //     ]),
+      // decodeFunction: uint256ToBigInt,
+      //   },
+      //   {
+      //     target: this.token1,
+      //     callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+      //       this.poolAddress,
+      //     ]),
+      //     decodeFunction: uint256ToBigInt,
+      //   },
+      //   {
+      //     target: this.stateMultiContract.options.address,
+      //     callData: this.stateMultiContract.methods
+      //       .getFullStateWithRelativeBitmaps(
+      //         this.factoryAddress,
+      //         this.token0,
+      //         this.token1,
+      //         this.feeCode,
+      //         this.getBitmapRangeToRequest(),
+      //         this.getBitmapRangeToRequest(),
+      //       )
+      //       .encodeABI(),
+      //     decodeFunction:
+      //       this.decodeStateMultiCallResultWithRelativeBitmaps !== undefined
+      //         ? this.decodeStateMultiCallResultWithRelativeBitmaps
+      //         : decodeStateMultiCallResultWithRelativeBitmaps,
+      //   },
+      // ];
 
-  //     this._stateRequestCallData = callData;
-  //   }
-  //   return this._stateRequestCallData;
-  // }
+      this._stateRequestCallData = callData;
+    }
+    return this._stateRequestCallData;
+  }
 
   handleTransferBatch(
     event: any,
