@@ -5,9 +5,16 @@ import { DexAdapterService } from './dex';
 
 export class TransactionBuilder {
   routerService: RouterService;
+  augustusAddress: Address;
 
   constructor(protected dexAdapterService: DexAdapterService) {
     this.routerService = new RouterService(this.dexAdapterService);
+    this.augustusAddress =
+      this.dexAdapterService.dexHelper.config.data.augustusAddress;
+  }
+
+  public getContractAddress(): Address {
+    return this.augustusAddress;
   }
 
   public async build({

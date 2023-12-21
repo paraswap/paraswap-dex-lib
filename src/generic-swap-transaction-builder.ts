@@ -12,12 +12,12 @@ import { IWethDepositorWithdrawer } from './dex/weth/types';
 import { DexAdapterService } from './dex';
 import { Weth } from './dex/weth/weth';
 import ERC20ABI from './abi/erc20.json';
-import { Executor01BytecodeBuilder } from './executor/Executor01BytecodeBuilder';
 import { ExecutorDetector, Executors } from './executor/ExecutorDetector';
 import { IExecutorBytecodeBuilder } from './executor/IExecutorBytecodeBuilder';
 
 export class GenericSwapTransactionBuilder {
   augustusV6Interface: Interface;
+  augustusV6Address: Address;
 
   erc20Interface: Interface;
 
@@ -39,10 +39,24 @@ export class GenericSwapTransactionBuilder {
     this.abiCoder = new AbiCoder();
     this.erc20Interface = new Interface(ERC20ABI);
     this.augustusV6Interface = new Interface(AugustusV6ABI);
+    this.augustusV6Address =
+      this.dexAdapterService.dexHelper.config.data.augustusV6Address!;
 
     this.executorDetector = new ExecutorDetector(
       this.dexAdapterService.dexHelper,
     );
+  }
+
+  public getContractAddress(priceRoute: OptimalRate): Address {
+    // TODO-v6
+    // for now, v6 supports only direct swaps
+    const isDirectMethod = false;
+    if (isDirectMethod) return this.augustusV6Address;
+
+    const executorName =
+      this.executorDetector.getExecutorByPriceRoute(priceRoute);
+
+    return this.executorDetector.getAddress(executorName);
   }
 
   protected getDepositWithdrawWethCallData(
