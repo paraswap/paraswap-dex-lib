@@ -415,6 +415,11 @@ export abstract class StatefulEventSubscriber<State>
     this.state = state;
     this.stateBlockNumber = blockNumber;
 
+    this._logBatchTypicalMessages(
+      `${this.parentName} (${this.name})-: isSlave: ${this.dexHelper.config.isSlave}, !this.masterPoolNeeded: ${this.masterPoolNeeded}`,
+      'info',
+    );
+
     if (this.dexHelper.config.isSlave || !this.masterPoolNeeded) {
       return;
     }
