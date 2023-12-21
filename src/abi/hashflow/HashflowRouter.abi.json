@@ -5,36 +5,11 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "governance",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "prevGovernance",
+        "name": "guardian",
         "type": "address"
       }
     ],
-    "name": "UpdateGovernance",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "migrationRouter",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "authorized",
-        "type": "bool"
-      }
-    ],
-    "name": "UpdateMigrationRouterStatus",
+    "name": "UpdateLimitOrderGuardian",
     "type": "event"
   },
   {
@@ -60,19 +35,112 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
-        "name": "xChainUa",
+        "name": "pool",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "otherHashflowChainId",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "caller",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "authorized",
+        "type": "bool"
+      }
+    ],
+    "name": "UpdateXChainCallerAuthorization",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "pool",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "address",
-        "name": "prevXChainUa",
+        "name": "xChainMessenger",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "authorized",
+        "type": "bool"
       }
     ],
-    "name": "UpdateXChainUA",
+    "name": "UpdateXChainMessengerAuthorization",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "callee",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "xChainMessenger",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "authorized",
+        "type": "bool"
+      }
+    ],
+    "name": "UpdateXChainMessengerCallerAuthorization",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "pool",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "otherHashflowChainId",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "otherChainPool",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "authorized",
+        "type": "bool"
+      }
+    ],
+    "name": "UpdateXChainPoolAuthorization",
     "type": "event"
   },
   {
@@ -81,21 +149,136 @@
         "internalType": "address",
         "name": "pool",
         "type": "address"
-      },
+      }
+    ],
+    "name": "authorizedPools",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "address",
-        "name": "token",
+        "name": "dstContract",
         "type": "address"
       },
       {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
+        "internalType": "uint16",
+        "name": "srcHashflowChainId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "caller",
+        "type": "bytes32"
       }
     ],
-    "name": "addLiquidityPrivatePool",
-    "outputs": [],
-    "stateMutability": "payable",
+    "name": "authorizedXChainCallers",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "callee",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "messenger",
+        "type": "address"
+      }
+    ],
+    "name": "authorizedXChainMessengersByCallee",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "pool",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "messenger",
+        "type": "address"
+      }
+    ],
+    "name": "authorizedXChainMessengersByPool",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "dstPool",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "srcHChainId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "srcPool",
+        "type": "bytes32"
+      }
+    ],
+    "name": "authorizedXChainPools",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "factory",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -103,39 +286,69 @@
       {
         "components": [
           {
+            "internalType": "uint16",
+            "name": "srcHashflowChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "srcPool",
+            "type": "bytes32"
+          },
+          {
             "internalType": "address",
-            "name": "pool",
+            "name": "dstPool",
             "type": "address"
           },
           {
             "internalType": "address",
-            "name": "token",
+            "name": "dstExternalAccount",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dstTrader",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteToken",
             "type": "address"
           },
           {
             "internalType": "uint256",
-            "name": "amount",
+            "name": "quoteTokenAmount",
             "type": "uint256"
           },
           {
-            "internalType": "uint256",
-            "name": "nonce",
-            "type": "uint256"
+            "internalType": "bytes32",
+            "name": "txid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "srcCaller",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "dstContract",
+            "type": "address"
           },
           {
             "internalType": "bytes",
-            "name": "signature",
+            "name": "dstContractCalldata",
             "type": "bytes"
           }
         ],
-        "internalType": "struct IQuote.Deposit",
-        "name": "deposit",
+        "internalType": "struct IHashflowRouter.XChainFillMessage",
+        "name": "fillMessage",
         "type": "tuple"
       }
     ],
-    "name": "addLiquidityPublicPool",
+    "name": "fillXChain",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -146,15 +359,22 @@
         "type": "address"
       }
     ],
-    "name": "isPoolAuthorized",
-    "outputs": [
+    "name": "forceUnauthorizePool",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
+        "internalType": "address",
+        "name": "factory",
+        "type": "address"
       }
     ],
-    "stateMutability": "view",
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -178,180 +398,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "migrationRouter",
-        "type": "address"
-      }
-    ],
-    "name": "migratePoolAuthorization",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "pool",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "burnAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "removeLiquidityPublicPool",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "pool",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "burnAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "deadline",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint8",
-        "name": "v",
-        "type": "uint8"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "r",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "s",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bool",
-        "name": "approveMax",
-        "type": "bool"
-      }
-    ],
-    "name": "removeLiquidityPublicPoolWithPermit",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "pool",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "externalAccount",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "trader",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "effectiveTrader",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "baseToken",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "quoteToken",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "effectiveBaseTokenAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "maxBaseTokenAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "maxQuoteTokenAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quoteExpiry",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "nonce",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "txid",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "bytes",
-            "name": "signature",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct IQuote.RFQTQuote[]",
-        "name": "quotes",
-        "type": "tuple[]"
-      },
-      {
-        "internalType": "address",
-        "name": "baseToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "quoteToken",
-        "type": "address"
-      }
-    ],
-    "name": "tradeMultiHop",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "components": [
           {
             "internalType": "address",
@@ -414,7 +460,7 @@
         "type": "tuple"
       }
     ],
-    "name": "tradeRFQm",
+    "name": "tradeRFQM",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -484,6 +530,86 @@
         "type": "tuple"
       },
       {
+        "internalType": "bytes",
+        "name": "guardianSignature",
+        "type": "bytes"
+      }
+    ],
+    "name": "tradeRFQMLimitOrder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "pool",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "externalAccount",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "baseToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteExpiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "txid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "takerSignature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "makerSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IQuote.RFQMQuote",
+        "name": "quote",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "guardianSignature",
+        "type": "bytes"
+      },
+      {
         "internalType": "uint256",
         "name": "deadline",
         "type": "uint256"
@@ -504,12 +630,107 @@
         "type": "bytes32"
       },
       {
-        "internalType": "bool",
-        "name": "approveMax",
-        "type": "bool"
+        "internalType": "uint256",
+        "name": "amountToApprove",
+        "type": "uint256"
       }
     ],
-    "name": "tradeRFQmWithPermit",
+    "name": "tradeRFQMLimitOrderWithPermit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "pool",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "externalAccount",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "baseToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteExpiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "txid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "takerSignature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "makerSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IQuote.RFQMQuote",
+        "name": "quote",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountToApprove",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeRFQMWithPermit",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -555,12 +776,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "maxBaseTokenAmount",
+            "name": "baseTokenAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "maxQuoteTokenAmount",
+            "name": "quoteTokenAmount",
             "type": "uint256"
           },
           {
@@ -589,7 +810,7 @@
         "type": "tuple"
       }
     ],
-    "name": "tradeSingleHop",
+    "name": "tradeRFQT",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -599,38 +820,23 @@
       {
         "components": [
           {
-            "internalType": "uint16",
-            "name": "srcChainId",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint16",
-            "name": "dstChainId",
-            "type": "uint16"
-          },
-          {
             "internalType": "address",
-            "name": "srcPool",
+            "name": "pool",
             "type": "address"
           },
           {
-            "internalType": "bytes32",
-            "name": "dstPool",
-            "type": "bytes32"
-          },
-          {
             "internalType": "address",
-            "name": "srcExternalAccount",
+            "name": "externalAccount",
             "type": "address"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "dstExternalAccount",
-            "type": "bytes32"
           },
           {
             "internalType": "address",
             "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "effectiveTrader",
             "type": "address"
           },
           {
@@ -642,6 +848,11 @@
             "internalType": "address",
             "name": "quoteToken",
             "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "effectiveBaseTokenAmount",
+            "type": "uint256"
           },
           {
             "internalType": "uint256",
@@ -674,204 +885,9 @@
             "type": "bytes"
           }
         ],
-        "internalType": "struct IQuote.XChainRFQTQuote",
+        "internalType": "struct IQuote.RFQTQuote",
         "name": "quote",
         "type": "tuple"
-      },
-      {
-        "internalType": "enum IHashflowXChainUA.XChainMessageProtocol",
-        "name": "protocol",
-        "type": "uint8"
-      }
-    ],
-    "name": "tradeXChain",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint16",
-            "name": "srcChainId",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint16",
-            "name": "dstChainId",
-            "type": "uint16"
-          },
-          {
-            "internalType": "address",
-            "name": "srcPool",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "dstPool",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address",
-            "name": "srcExternalAccount",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "dstExternalAccount",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address",
-            "name": "trader",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "baseToken",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "quoteToken",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "baseTokenAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quoteTokenAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quoteExpiry",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "txid",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "bytes",
-            "name": "takerSignature",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "makerSignature",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct IQuote.XChainRFQMQuote",
-        "name": "quote",
-        "type": "tuple"
-      },
-      {
-        "internalType": "enum IHashflowXChainUA.XChainMessageProtocol",
-        "name": "protocol",
-        "type": "uint8"
-      }
-    ],
-    "name": "tradeXChainRFQm",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint16",
-            "name": "srcChainId",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint16",
-            "name": "dstChainId",
-            "type": "uint16"
-          },
-          {
-            "internalType": "address",
-            "name": "srcPool",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "dstPool",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address",
-            "name": "srcExternalAccount",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "dstExternalAccount",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address",
-            "name": "trader",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "baseToken",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "quoteToken",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "baseTokenAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quoteTokenAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quoteExpiry",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "txid",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "bytes",
-            "name": "takerSignature",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "makerSignature",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct IQuote.XChainRFQMQuote",
-        "name": "quote",
-        "type": "tuple"
-      },
-      {
-        "internalType": "enum IHashflowXChainUA.XChainMessageProtocol",
-        "name": "protocol",
-        "type": "uint8"
       },
       {
         "internalType": "uint256",
@@ -894,12 +910,502 @@
         "type": "bytes32"
       },
       {
-        "internalType": "bool",
-        "name": "approveMax",
-        "type": "bool"
+        "internalType": "uint256",
+        "name": "amountToApprove",
+        "type": "uint256"
       }
     ],
-    "name": "tradeXChainRFQmWithPermit",
+    "name": "tradeRFQTWithPermit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint16",
+            "name": "srcChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "dstChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "address",
+            "name": "srcPool",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstPool",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "srcExternalAccount",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstExternalAccount",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstTrader",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "baseToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "quoteToken",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteExpiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "txid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "xChainMessenger",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "takerSignature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "makerSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IQuote.XChainRFQMQuote",
+        "name": "quote",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "dstContract",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "dstCalldata",
+        "type": "bytes"
+      }
+    ],
+    "name": "tradeXChainRFQM",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint16",
+            "name": "srcChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "dstChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "address",
+            "name": "srcPool",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstPool",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "srcExternalAccount",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstExternalAccount",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstTrader",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "baseToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "quoteToken",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteExpiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "txid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "xChainMessenger",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "takerSignature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "makerSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IQuote.XChainRFQMQuote",
+        "name": "quote",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "dstContract",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "dstCalldata",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountToApprove",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeXChainRFQMWithPermit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint16",
+            "name": "srcChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "dstChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "address",
+            "name": "srcPool",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstPool",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "srcExternalAccount",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstExternalAccount",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstTrader",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "baseToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "quoteToken",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "effectiveBaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteExpiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "txid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "xChainMessenger",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IQuote.XChainRFQTQuote",
+        "name": "quote",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "dstContract",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "dstCalldata",
+        "type": "bytes"
+      }
+    ],
+    "name": "tradeXChainRFQT",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint16",
+            "name": "srcChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "dstChainId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "address",
+            "name": "srcPool",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstPool",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "srcExternalAccount",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstExternalAccount",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dstTrader",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "baseToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "quoteToken",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "effectiveBaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteExpiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "txid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "xChainMessenger",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IQuote.XChainRFQTQuote",
+        "name": "quote",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "dstContract",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "dstCalldata",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountToApprove",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeXChainRFQTWithPermit",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -908,29 +1414,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "governance",
+        "name": "guardian",
         "type": "address"
       }
     ],
-    "name": "updateGovernance",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "router",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "status",
-        "type": "bool"
-      }
-    ],
-    "name": "updateMigrationRouterStatus",
+    "name": "updateLimitOrderGuardian",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -956,12 +1444,94 @@
   {
     "inputs": [
       {
+        "internalType": "uint16",
+        "name": "otherHashflowChainId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "caller",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bool",
+        "name": "authorized",
+        "type": "bool"
+      }
+    ],
+    "name": "updateXChainCallerAuthorization",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
-        "name": "xChainUa",
+        "name": "xChainMessenger",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "authorized",
+        "type": "bool"
+      }
+    ],
+    "name": "updateXChainMessengerAuthorization",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "xChainMessenger",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "authorized",
+        "type": "bool"
+      }
+    ],
+    "name": "updateXChainMessengerCallerAuthorization",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "otherHashflowChainId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "otherPool",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bool",
+        "name": "authorized",
+        "type": "bool"
+      }
+    ],
+    "name": "updateXChainPoolAuthorization",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
         "type": "address"
       }
     ],
-    "name": "updateXChainUa",
+    "name": "withdrawFunds",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

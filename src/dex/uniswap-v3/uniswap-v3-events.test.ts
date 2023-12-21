@@ -13,6 +13,7 @@ import { Interface } from '@ethersproject/abi';
 import ERC20ABI from '../../abi/erc20.json';
 import StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import { AbiItem } from 'web3-utils';
+import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 
 jest.setTimeout(300 * 1000);
 const dexKey = 'UniswapV3';
@@ -100,6 +101,7 @@ describe('UniswapV3 Event', function () {
               StateMulticallABI as AbiItem[],
               config.stateMulticall,
             ),
+            decodeStateMultiCallResultWithRelativeBitmaps,
             new Interface(ERC20ABI),
             config.factory,
             poolFeeCode,
@@ -155,6 +157,7 @@ describe('UniswapV3 Event', function () {
         StateMulticallABI as AbiItem[],
         config.stateMulticall,
       ),
+      decodeStateMultiCallResultWithRelativeBitmaps,
       new Interface(ERC20ABI),
       _config.factory,
       _feeCode,
