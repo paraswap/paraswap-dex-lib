@@ -220,6 +220,9 @@ export abstract class StatefulEventSubscriber<State>
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
+      this.logger.info(
+        `${this.parentName} restart: (${this.name})-null: Trying to save null in the state for block ${blockNumber}`,
+      );
       this._setState(null, blockNumber);
     }
   }
@@ -331,8 +334,14 @@ export abstract class StatefulEventSubscriber<State>
       }
 
       if (lastBn) {
+        this.logger.info(
+          `${this.parentName} rollback: (${this.name})-not-null: Trying to save not null in the state for block ${blockNumber}`,
+        );
         this._setState(this.stateHistory[lastBn], lastBn);
       } else {
+        this.logger.info(
+          `${this.parentName} rollback: (${this.name})-null: Trying to save null in the state for block ${blockNumber}`,
+        );
         this._setState(null, blockNumber);
       }
     } else {
@@ -474,6 +483,9 @@ export abstract class StatefulEventSubscriber<State>
     }
     this.stateHistory[blockNumber] = state;
     if (!this.state || blockNumber >= this.stateBlockNumber) {
+      this.logger.info(
+        `${this.parentName} setState: (${this.name})-: Trying to save state for block ${blockNumber}`,
+      );
       this._setState(state, blockNumber);
       this.invalid = false;
     }
