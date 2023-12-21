@@ -425,12 +425,14 @@ export abstract class StatefulEventSubscriber<State>
     }
 
     if (state === null) {
-      this._logBatchTypicalMessages(
+      const regex = /at\s+(.*?)\s+\(/;
+      this.logger.info(
         `${this.parentName} (${
           this.name
-        })-null: Trying to save null in the state for block ${blockNumber}, trace: ${
-          new Error().stack
-        }`,
+        })-null: Trying to save null in the state for block ${blockNumber}, trace: ${new Error().stack
+          ?.split('\n')
+          .map(line => regex.exec(line)?.[1])
+          .join(' -> ')}`,
         'info',
       );
     } else {
