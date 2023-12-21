@@ -416,7 +416,7 @@ export abstract class StatefulEventSubscriber<State>
     this.stateBlockNumber = blockNumber;
 
     this._logBatchTypicalMessages(
-      `${this.parentName} (${this.name})-: isSlave: ${this.dexHelper.config.isSlave}, !this.masterPoolNeeded: ${this.masterPoolNeeded}`,
+      `${this.parentName} (${this.name})-: isSlave: ${this.dexHelper.config.isSlave}, !this.masterPoolNeeded: ${this.masterPoolNeeded} for block ${blockNumber}`,
       'info',
     );
 
@@ -426,7 +426,11 @@ export abstract class StatefulEventSubscriber<State>
 
     if (state === null) {
       this._logBatchTypicalMessages(
-        `${this.parentName} (${this.name})-null: Trying to save null in the state for block ${blockNumber}`,
+        `${this.parentName} (${
+          this.name
+        })-null: Trying to save null in the state for block ${blockNumber}, trace: ${
+          new Error().stack
+        }`,
         'info',
       );
     } else {
