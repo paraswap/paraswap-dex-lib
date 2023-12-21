@@ -417,7 +417,7 @@ export abstract class StatefulEventSubscriber<State>
 
     if (state === null) {
       this._logBatchTypicalMessages(
-        `${this.parentName}: Trying to save null in the state for block ${blockNumber}`,
+        `${this.parentName} (${this.name}:${this.cacheName}): Trying to save null in the state for block ${blockNumber}`,
         'info',
       );
     }
