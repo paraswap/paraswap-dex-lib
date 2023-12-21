@@ -410,14 +410,14 @@ export abstract class StatefulEventSubscriber<State>
       return;
     }
 
-    this._logBatchTypicalMessages(
-      `${this.parentName}: saving state in cache`,
-      'info',
-    );
-
     if (state === null) {
       this._logBatchTypicalMessages(
-        `${this.parentName} (${this.name}:${this.cacheName}): Trying to save null in the state for block ${blockNumber}`,
+        `${this.parentName} (${this.name})-null: Trying to save null in the state for block ${blockNumber}`,
+        'info',
+      );
+    } else {
+      this._logBatchTypicalMessages(
+        `${this.parentName} (${this.name})-not-null: saving state in cache for block ${blockNumber}}`,
         'info',
       );
     }
