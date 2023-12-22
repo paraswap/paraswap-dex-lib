@@ -88,6 +88,7 @@ function testForNetwork(
         contractMethods.forEach((contractMethod: ContractMethod) => {
           const tokenASymbol = 'USDC';
           const tokenBSymbol = 'TRY';
+          const dexKey = 'DFXV3';
 
           describe(`${contractMethod}`, () => {
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {

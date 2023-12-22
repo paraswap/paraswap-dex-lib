@@ -9,8 +9,7 @@ import { DFXPoolConfig } from './types';
 import CurvepoolABI from '../../abi/dfx/Curve-pool.json';
 import { DfxConfig } from './config';
 import erc20ABI from '../../abi/erc20.json';
-import { typeCastPoolState } from '../nerve/utils';
-import { PoolState } from '../nerve/types';
+import { PoolState } from './types';
 import { DecodedStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/types';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { Contract } from 'web3-eth-contract';
@@ -44,6 +43,7 @@ export class DfxEventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
+    readonly stateMultiContract: Contract,
     readonly erc20Interface: Interface,
     token0: Address,
     token1: Address,
@@ -133,7 +133,7 @@ export class DfxEventPool extends StatefulEventSubscriber<PoolState> {
   ): DeepReadonly<PoolState> {
     try {
       const event = this.logDecoder(log);
-      const _state: PoolState = typeCastPoolState(state);
+      const _state: PoolState = _.cloneDeep(state);
       if (event.name in this.handlers)
         return this.handlers[event.name](event, _state, log, blockHeader);
       return state;

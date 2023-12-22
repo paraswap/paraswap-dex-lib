@@ -68,7 +68,7 @@ import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { SwaapV1 } from './swaap-v1/swaap-v1';
 import { WstETH } from './wsteth/wsteth';
 import { Camelot } from './camelot/camelot';
-import { Hashflow } from './hashflow/hashflow';
+// import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
@@ -154,7 +154,7 @@ const Dexes = [
   CurveV1Factory,
   SwaapV1,
   WstETH,
-  Hashflow,
+  // Hashflow,
   MaverickV1,
   Camelot,
   SwaapV2,

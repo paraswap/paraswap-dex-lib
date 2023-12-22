@@ -58,7 +58,7 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
     protected config = DfxConfig['DFXV3'][network], // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
   ) {
-    super(dexHelper);
+    super(dexHelper, 'DFXV3');
     this.dexKey = 'DFXV3';
     this.logger = dexHelper.getLogger('DFXV3' + '-' + network);
     this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(

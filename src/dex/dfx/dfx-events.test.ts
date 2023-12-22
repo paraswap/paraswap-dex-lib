@@ -10,6 +10,9 @@ import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
 import erc20ABI from '../../abi/erc20.json';
 import { Interface } from 'ethers/lib/utils';
+import CurvepoolABI from '../../abi/dfx/Curve-pool.json';
+import { AbiItem } from 'web3-utils';
+import { DfxConfig } from './config';
 
 /*
   README
@@ -76,6 +79,10 @@ describe('Dfx EventPool Mainnet', function () {
     dfxPool = new DfxEventPool(
       dexHelper,
       dexKey,
+      new dexHelper.web3Provider.eth.Contract(
+        CurvepoolABI as AbiItem[],
+        DfxConfig['DFXV3'][network].curve,
+      ),
       erc20Interface,
       token0,
       token1,
