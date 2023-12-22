@@ -52,8 +52,8 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
 
   constructor(
     readonly network: Network,
-    readonly dexHelper: IDexHelper,
     dexKey: string,
+    readonly dexHelper: IDexHelper,
     readonly routerIface = new Interface(RouterABI),
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
     protected config = DfxConfig['DFXV3'][network], // protected poolsToPreload = PoolsToPreload[dexKey][network] || [],
@@ -70,59 +70,11 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     this.dexHelper.web3Provider.eth.handleRevert = false;
   }
   needsSequentialPreprocessing?: boolean | undefined;
-  getNetworkFee?(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: DfxData,
-    side: SwapSide,
-  ): string {
-    throw new Error('Method not implemented.');
+
+  getTokenFromAddress(address: string): Token {
+    return { address, decimals: 0 };
   }
-  preProcessTransaction?(
-    optimalSwapExchange: OptimalSwapExchange<DfxData>,
-    srcToken: Token,
-    destToken: Token,
-    side: SwapSide,
-    options: PreprocessTransactionOptions,
-  ): AsyncOrSync<[OptimalSwapExchange<DfxData>, ExchangeTxInfo]> {
-    throw new Error('Method not implemented.');
-  }
-  getTokenFromAddress?(address: string): Token {
-    throw new Error('Method not implemented.');
-  }
-  getDirectParam?(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    expectedAmount: string,
-    data: DfxData,
-    side: SwapSide,
-    permit: string,
-    uuid: string,
-    feePercent: string,
-    deadline: string,
-    partner: string,
-    beneficiary: string,
-    contractMethod?: string | undefined,
-  ): TxInfo<null> {
-    throw new Error('Method not implemented.');
-  }
-  isStatePollingDex?: boolean | undefined;
-  addMasterPool?(poolKey: string, blockNumber: number): AsyncOrSync<boolean> {
-    throw new Error('Method not implemented.');
-  }
-  isBlacklisted?(userAddress?: string | undefined): AsyncOrSync<boolean> {
-    throw new Error('Method not implemented.');
-  }
-  setBlacklist?(userAddress?: string | undefined): AsyncOrSync<boolean> {
-    throw new Error('Method not implemented.');
-  }
-  updatePoolState?(): AsyncOrSync<void> {
-    throw new Error('Method not implemented.');
-  }
+
   private _sortTokens(srcAddress: Address, destAddress: Address) {
     return [srcAddress, destAddress].sort((a, b) => (a < b ? -1 : 1));
   }
@@ -354,7 +306,7 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
       },
       { _path: [], types: [] },
     );
-
+    console.log(_path, types);
     return pack(types.reverse(), _path.reverse());
   }
 }

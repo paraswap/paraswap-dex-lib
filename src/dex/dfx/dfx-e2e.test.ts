@@ -120,7 +120,6 @@ describe('Dfx E2E', () => {
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'TRY';
-    ``;
 
     const tokenAAmount: string = '10000000';
     const tokenBAmount: string = '290000000000000000000';

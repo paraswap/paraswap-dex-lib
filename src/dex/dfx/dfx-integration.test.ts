@@ -194,7 +194,7 @@ describe('Dfx', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      dfx = new Dfx(network, dexHelper, dexKey);
+      dfx = new Dfx(network, dexKey, dexHelper);
       if (dfx.initializePricing) {
         await dfx.initializePricing(blockNumber);
       }
@@ -231,7 +231,7 @@ describe('Dfx', function () {
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newDfx = new Dfx(network, dexHelper, dexKey);
+      const newDfx = new Dfx(network, dexKey, dexHelper);
 
       const poolLiquidity = await newDfx.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,

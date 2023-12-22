@@ -83,6 +83,7 @@ import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
 import { Smardex } from './smardex/smardex';
+import { Dfx } from './dfx/dfx';
 
 const LegacyDexes = [
   CurveV2,
@@ -121,6 +122,7 @@ const Dexes = [
   PancakeswapV3,
   BiSwap,
   MDEX,
+  Dfx,
   Dfyn,
   Excalibur,
   AaveV1,
