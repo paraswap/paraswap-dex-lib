@@ -223,13 +223,13 @@ export class Camelot
     );
   }
 
-  private _constructPoolKey(token0: string, token1: string) {
+  private getPoolIdentifier(token0: string, token1: string) {
     const [_token0, _token1] =
       token0.toLowerCase() < token1.toLowerCase()
         ? [token0, token1]
         : [token1, token0];
 
-    const poolKey = `${_token0}-${_token1}`.toLowerCase();
+    const poolKey = `${this.dexKey}_${_token0}_${_token1}`.toLowerCase();
 
     return poolKey;
   }
@@ -245,7 +245,7 @@ export class Camelot
     const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
 
     try {
-      const poolKey = this._constructPoolKey(token0, token1);
+      const poolKey = this.getPoolIdentifier(token0, token1);
 
       this.newlyCreatedPoolKeys.add(poolKey);
 
@@ -382,7 +382,7 @@ export class Camelot
         ? [from, to]
         : [to, from];
 
-    const key = this._constructPoolKey(token0.address, token1.address);
+    const key = this.getPoolIdentifier(token0.address, token1.address);
     let pair = this.pairs[key];
     if (pair) return pair;
     const exchange = await this.factory.methods
@@ -533,12 +533,9 @@ export class Camelot
       return [];
     }
 
-    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
-      .sort((a, b) => (a > b ? 1 : -1))
-      .join('_');
+    const poolKey = this.getPoolIdentifier(from.address, to.address);
 
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-    return [poolIdentifier];
+    return [poolKey];
   }
 
   async getPricesVolume(
@@ -564,14 +561,7 @@ export class Camelot
         return null;
       }
 
-      const tokenAddress = [
-        from.address.toLowerCase(),
-        to.address.toLowerCase(),
-      ]
-        .sort((a, b) => (a > b ? 1 : -1))
-        .join('_');
-
-      const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+      const poolIdentifier = this.getPoolIdentifier(from.address, to.address);
 
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
