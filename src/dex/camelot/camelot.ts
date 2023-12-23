@@ -245,11 +245,6 @@ export class Camelot
     const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
 
     try {
-      const [_token0, _token1] =
-        token0.toLowerCase() < token1.toLowerCase()
-          ? [token0, token1]
-          : [token1, token0];
-
       const poolKey = this._constructPoolKey(token0, token1);
 
       this.newlyCreatedPoolKeys.add(poolKey);
