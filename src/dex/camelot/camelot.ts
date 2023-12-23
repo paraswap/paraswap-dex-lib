@@ -256,6 +256,7 @@ export class Camelot
     } catch (e) {
       this.logger.error(
         `${logPrefix} LOGIC ERROR on ack new pool (token0=${token0},token1=${token1})`,
+        e,
       );
     }
   };
