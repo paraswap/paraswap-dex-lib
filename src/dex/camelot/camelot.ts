@@ -223,6 +223,11 @@ export class Camelot
     );
   }
 
+  async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    await this.factoryInst.initialize(blockNumber);
+  }
+
   private getPoolIdentifier(token0: string, token1: string) {
     const [_token0, _token1] =
       token0.toLowerCase() < token1.toLowerCase()
