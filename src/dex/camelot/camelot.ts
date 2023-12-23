@@ -229,7 +229,7 @@ export class Camelot
         ? [token0, token1]
         : [token1, token0];
 
-    const poolKey = `${token0}-${token1}`.toLowerCase();
+    const poolKey = `${_token0}-${_token1}`.toLowerCase();
 
     return poolKey;
   }
