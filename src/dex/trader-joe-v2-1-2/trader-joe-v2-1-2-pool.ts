@@ -126,6 +126,10 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
+    // const params = [false, 0];
+    // const result = await this.uniswapMulti.methods
+    //   .getReserves(this.addressesSubscribed[0])
+    //   .call({}, blockNumber);
     // TODO: complete me!
     return {} as any;
   }

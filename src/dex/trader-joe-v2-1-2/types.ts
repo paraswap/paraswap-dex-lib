@@ -2,17 +2,38 @@ import { Address } from '../../types';
 import { BigNumber } from 'ethers';
 import { NumberAsString } from '@paraswap/core';
 
+export type Bin = {
+  id: bigint;
+  reserveX: bigint;
+  reserveY: bigint;
+};
+
 export type PoolState = {
-  pool: string;
-  blockTimestamp: bigint;
-  balance0: bigint;
-  balance1: bigint;
-  liquidity: bigint;
+  // This I have on pool init
+  tokenX: Address;
+  tokenY: Address;
   binStep: bigint;
-  protocolFeeX: bigint;
-  protocolFeeY: bigint;
-  totalFee: bigint;
+
+  bins: Bin[];
+  pairAddress: string;
+  blockTimestamp: bigint;
+
+  // ?
+  // liquidity: bigint;
+
+  // getReserves()
+  reserves: {
+    reserveX: bigint;
+    reserveY: bigint;
+  };
+  //? totalFee: bigint;
   activeId: bigint;
+  // getProtocolFees()
+  protocolFees: {
+    protocolFeeX: bigint;
+    protocolFeeY: bigint;
+  };
+  // getStaticFeeParameters()
   staticFeeParameters: {
     baseFactor: bigint;
     filterPeriod: bigint;
@@ -21,6 +42,13 @@ export type PoolState = {
     variableFeeControl: bigint;
     protocolShare: bigint;
     maxVolatilityAccumulator: bigint;
+  };
+  // getVariableFeeParameters()
+  variableFeeParameters: {
+    volatilityAccumulator: bigint;
+    volatilityReference: bigint;
+    idReference: bigint;
+    timeOfLastUpdate: bigint;
   };
 };
 
