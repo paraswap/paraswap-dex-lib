@@ -83,6 +83,7 @@ import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
 import { Smardex } from './smardex/smardex';
+import { Wombat } from './wombat/wombat';
 
 const LegacyDexes = [
   CurveV2,
@@ -162,7 +163,7 @@ const Dexes = [
   NomiswapV2,
   SolidlyV3,
   Smardex,
-  //Wombat,
+  Wombat,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

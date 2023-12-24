@@ -73,6 +73,10 @@ export const Tokens: {
       address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
       decimals: 18,
     },
+    frxETH: {
+      address: '0x5E8422345238F34275888049021821E8E08CAa1f',
+      decimals: 18,
+    },
     WETH: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
@@ -936,6 +940,10 @@ export const Tokens: {
       address: '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
       decimals: 8,
     },
+    frxETH: {
+      address: '0x6806411765Af15Bddd26f8f544A34cC40cb9838B',
+      decimals: 18,
+    },
   },
   [Network.ZKEVM]: {
     ETH: {
@@ -1068,6 +1076,7 @@ export const Holders: {
     MATIC: '0x7073783eee7e9b3e6e4ddac4d7f49dc46044dd9a',
     POL: '0x57B6Ad484ccdd902C4419424bA648ba6Ed45dc68',
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
+    frxETH: '0x5964871e0F14564FDDAE54F5ff32f62E423731b1',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -1228,6 +1237,7 @@ export const Holders: {
     wstETH: '0xf7626459234e9249808a06aa08dc6b67c8e0a2fc',
     rETH: '0x4c2e69e58b14de9afedfb94319519ce34e087283',
     WBTC: '0xb9c8f0d3254007ee4b98970b94544e473cd610ec',
+    frxETH: '0x4d4edf8291d169f975b99914b6ab3326abb45938',
   },
   [Network.ZKEVM]: {
     ETH: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
@@ -1242,7 +1252,7 @@ export const Holders: {
     ETH: '0xdd9176ea3e7559d6b68b537ef555d3e89403f742',
     MAV: '0x7499785aa5d1bdf0a0ac862c1ef3698d3cba6568',
     USDC: '0xaac391f166f33cdaefaa4afa6616a3bea66b694d',
-    USDbC: '0xc68a33de9ceac7bdaed242ae1dc40d673ed4f643',
+    USDbC: '0xcc46564eb2063b60cd457da49d09dca9544dfeae',
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
     BAL: '0x854b004700885a61107b458f11ecc169a019b764',
     GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
