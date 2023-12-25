@@ -210,6 +210,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
       options.txOrigin,
+      options.executionContractAddress,
       options.partner,
     );
 

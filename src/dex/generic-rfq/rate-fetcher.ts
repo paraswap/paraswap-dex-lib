@@ -25,7 +25,7 @@ import {
 import { checkOrder } from './utils';
 import {
   blacklistResponseValidator,
-  firmRateResponseValidator,
+  firmRateWithTakerValidator,
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
@@ -376,6 +376,7 @@ export class RateFetcher {
     srcAmount: string,
     side: SwapSide,
     userAddress: Address,
+    taker: Address,
     partner?: string,
   ): Promise<OrderInfo> {
     const srcToken = this.dexHelper.config.wrapETH(_srcToken);
@@ -391,6 +392,7 @@ export class RateFetcher {
       makerAmount: side === SwapSide.BUY ? srcAmount : undefined,
       takerAmount: side === SwapSide.SELL ? srcAmount : undefined,
       userAddress,
+      taker,
       partner,
     };
 
@@ -418,7 +420,7 @@ export class RateFetcher {
       );
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
-        firmRateResponseValidator,
+        firmRateWithTakerValidator(taker),
       );
 
       await checkOrder(

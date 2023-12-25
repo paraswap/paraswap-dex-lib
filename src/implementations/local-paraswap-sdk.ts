@@ -220,6 +220,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     );
 
     const contractMethod = priceRoute.contractMethod;
+    const executionContractAddress =
+      this.transactionBuilder.getContractAddress(priceRoute);
 
     // Call preprocessTransaction for each exchange before we build transaction
     try {
@@ -250,6 +252,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         {
                           slippageFactor,
                           txOrigin: userAddress,
+                          executionContractAddress,
                           isDirectMethod: DirectContractMethods.includes(
                             contractMethod as ContractMethod,
                           ),
