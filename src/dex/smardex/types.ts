@@ -41,7 +41,7 @@ export type BuyOnSmardexParam = [
 
 export type SmardexParam = SellOnSmardexParam | BuyOnSmardexParam;
 
-export type DexParams = Omit<UniswapV2DexParams, 'feeCode'>;
+export type DexParams = Omit<UniswapV2DexParams, 'feeCode'> & { legacyInitCode?: string; legacyPairs?: string[] };
 
 export type SmardexFees = {
   feesLP: bigint;
@@ -67,3 +67,13 @@ export interface SmardexPair extends Omit<UniswapV2Pair, 'pool'> {
 }
 
 export type SmardexPool = UniswapPool;
+
+export type SubgraphPairReserve = {
+  id: string;
+  reserveUSD: number;
+};
+
+export type USDReserve = {
+  pairAddress: string;
+  reserveUSD: number;
+};

@@ -13,6 +13,14 @@ export const SmardexConfig: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       factoryAddress: '0xB878DC600550367e14220d4916Ff678fB284214F',
       router: '0xC33984ABcAe20f47a754eF78f6526FeF266c0C6F',
+      legacyInitCode:
+        '0xb477a06204165d50e6d795c7c216306290eff5d6015f8b65bb46002a8775b548',
+      legacyPairs: [
+        '0xd2bf378cea07fe117ffdfd3f5b7e53c2b0b78c05',
+        '0xf3a4b8efe3e3049f6bc71b47ccb7ce6665420179',
+        '0xe547ff1c20a6fb24f4afc20a3a02c6d7b0210799',
+        '0xd2df60073c0a9c0b607ca6ac809acecc0d9250bd',
+      ],
       initCode: MAINNET_INIT_HASH,
       subgraphURL: `${GATEWAY_SUBGRAPH}/ethereum`,
     },

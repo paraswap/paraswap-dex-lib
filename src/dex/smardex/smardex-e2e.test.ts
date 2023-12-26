@@ -79,27 +79,39 @@ describe('SmarDex E2E', () => {
       [
         {
           name: 'USDT',
-          sellAmount: '1200000000',
-          buyAmount: '120000',
+          sellAmount: '1200000000', // USDT to sell
+          buyAmount: '1200000000000000000000000', // SDEX to buy
         },
         {
           name: 'SDEX',
-          sellAmount: '300000000000000000000000',
-          buyAmount: '30000000000',
+          sellAmount: '300000000000000000000000', // SDEX to sell
+          buyAmount: '30000000000', // USDT to buy
         },
       ],
       [
         {
           name: 'SDEX',
           sellAmount: '300000000000000000000000',
-          buyAmount: '30000000000',
+          buyAmount: '3000000000',
         },
         {
           name: 'ETH',
           sellAmount: '11000000000000000',
-          buyAmount: '1100000000',
+          buyAmount: '1100000000000000000000000',
         },
       ],
+      [
+        {
+          name: 'WASSIE',
+          sellAmount: '567000789000000000000000000',
+          buyAmount: '1200000000000000000',
+        },
+        {
+          name: 'WETH',
+          sellAmount: '1200000000000000000',
+          buyAmount: '567000789000000000000000000',
+        },
+      ]
     ];
 
     testForNetwork(network, dexKey, pairs);
@@ -113,7 +125,7 @@ describe('SmarDex E2E', () => {
         {
           name: 'USDC',
           sellAmount: '1200000000',
-          buyAmount: '120000',
+          buyAmount: '1200000000000000000000000',
         },
         {
           name: 'SDEX',
@@ -125,12 +137,12 @@ describe('SmarDex E2E', () => {
         {
           name: 'SDEX',
           sellAmount: '300000000000000000000000',
-          buyAmount: '11000000000000000',
+          buyAmount: '800000000000000000',
         },
         {
           name: 'ETH',
           sellAmount: '11000000000000000',
-          buyAmount: '11000000',
+          buyAmount: '1100000000000000000000000',
         },
       ],
     ];
@@ -223,18 +235,6 @@ describe('SmarDex E2E', () => {
           buyAmount: '2500000000',
         },
       ],
-      [
-        {
-          name: 'SDEX',
-          sellAmount: '190000000000000000000000',
-          buyAmount: '8000000',
-        },
-        {
-          name: 'WBTC',
-          sellAmount: '8000000',
-          buyAmount: '190000000000000000000000',
-        },
-      ],
     ];
 
     testForNetwork(network, dexKey, pairs);
@@ -245,6 +245,7 @@ describe('SmarDex E2E', () => {
 
     const pairs = [
       [
+        // Success when holder has enough balance. eg: USDbC: '0x13a13869b814be8f13b86e9875ab51bda882e391'
         {
           name: 'WETH',
           sellAmount: '1500000000000000000',
