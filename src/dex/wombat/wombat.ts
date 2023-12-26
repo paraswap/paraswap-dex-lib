@@ -29,8 +29,9 @@ import ERC20ABI from '../../abi/erc20.json';
 import { WombatQuoter } from './wombat-quoter';
 import { WombatBmw } from './wombat-bmw';
 import { fromWad } from './utils';
-import { WombatPool } from './wombat-pool';
+import { WombatPool } from './wombat-pool-poller';
 import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
+import { WombatEventPool } from './wombat-pool';
 
 export class Wombat extends SimpleExchange implements IDex<WombatData> {
   // contract interfaces
@@ -43,6 +44,7 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
   protected poolLiquidityUSD?: { [poolAddress: string]: number };
   public bmw: WombatBmw;
   public pools: { [poolAddress: string]: WombatPool } = {};
+  public eventPools: { [poolAddress: string]: WombatEventPool } = {};
 
   readonly isStatePollingDex = true;
 
@@ -104,18 +106,32 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     blockNumber: number,
   ): Promise<void> => {
     if (!this.pools[pool]) {
-      this.pools[pool] = new WombatPool(
+      this.eventPools[pool] = new WombatEventPool(
         this.dexKey,
         this.getPoolIdentifier(pool),
+        this.network,
         this.dexHelper,
+        this.logger,
         pool,
-        asset2TokenMap,
       );
-      await this.pools[pool].getState('latest', true);
-      this.pollingManager.initializeAllPendingPools();
-    } else {
-      this.pools[pool].addAssets(asset2TokenMap);
+
+      await this.eventPools[pool].initialize(blockNumber);
     }
+    // if (!this.pools[pool]) {
+    //   this.pools[pool] = new WombatPool(
+    //     this.dexKey,
+    //     this.getPoolIdentifier(pool),
+    //     this.network,
+    //     this.dexHelper,
+    //     this.logger,
+    //     pool,
+    //     asset2TokenMap,
+    //   );
+    //   await this.pools[pool].getState('latest', true);
+    //   this.pollingManager.initializeAllPendingPools();
+    // } else {
+    //   this.pools[pool].addAssets(asset2TokenMap);
+    // }
   };
 
   // Returns the list of contract adapters (name and index)
