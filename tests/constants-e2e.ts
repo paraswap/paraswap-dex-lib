@@ -327,6 +327,10 @@ export const Tokens: {
       address: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6',
       decimals: 19,
     },
+    WASSIE: {
+      address: '0x2c95D751DA37A5C1d9c5a7Fd465c1d50F3d96160',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -1068,6 +1072,8 @@ export const Holders: {
     MATIC: '0x7073783eee7e9b3e6e4ddac4d7f49dc46044dd9a',
     POL: '0x57B6Ad484ccdd902C4419424bA648ba6Ed45dc68',
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
+    ALPH: '0xA344855388C9f2760e998eb2207B58de6E7d0360',
+    WASSIE: '0x9Faf7Ad8711f6B87CFcF39c235b0A03eF4bDD7C2',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -1242,7 +1248,7 @@ export const Holders: {
     ETH: '0xdd9176ea3e7559d6b68b537ef555d3e89403f742',
     MAV: '0x7499785aa5d1bdf0a0ac862c1ef3698d3cba6568',
     USDC: '0xaac391f166f33cdaefaa4afa6616a3bea66b694d',
-    USDbC: '0xc68a33de9ceac7bdaed242ae1dc40d673ed4f643',
+    USDbC: '0x13a13869b814be8f13b86e9875ab51bda882e391', //'0xc68a33de9ceac7bdaed242ae1dc40d673ed4f643', -> this holder does not have balance anymore...
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
     BAL: '0x854b004700885a61107b458f11ecc169a019b764',
     GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',

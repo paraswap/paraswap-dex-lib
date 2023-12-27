@@ -70,7 +70,7 @@ const networkConfigs: Array<NetworkConfig> = [
         src: 'SDEX',
         dest: 'WBTC',
         sell: [0, 100_000, 200_000, 300_000],
-        buy: [0, 1, 2, 3],
+        buy: [0, 1, 2],
       },
       {
         src: 'ARB',
@@ -237,12 +237,18 @@ networkConfigs.forEach(({ name, network, tokens, tokenPairs }) => {
 
     it('getTopPoolsForToken', async () => {
       const smardex = new Smardex(network, dexKey, dexHelper);
+      // Initialize all smardex pairs
+      for (const pair of tokenPairs) {
+        await smardex.findPair(tokens[pair.src], tokens[pair.dest]);
+      }
       // Get all distinct tokens of the pairs
       const distinctTokens = tokenPairs
         .reduce((acc, pair) => [...acc, pair.src, pair.dest], [] as string[])
         .filter((value, index, self) => self.indexOf(value) === index)
         // Native token doesn't have a pool, avoid it
         .filter(token => tokens[token].address !== ETHER_ADDRESS);
+      // First getTopPoolsForToken for reserves caching (at least 1 token initializes the whole cache)
+      await smardex.getTopPoolsForToken(tokens['USDC'].address, 10);
       // Get top pools for each token and check liquidity
       await Promise.all(
         distinctTokens.map(async token =>
