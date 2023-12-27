@@ -56,8 +56,8 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
     protected poolAddress: Address,
   ) {
     super(
-      `${dexKey}-${name}`,
-      `${dexKey}-${network}-${name}`,
+      `${dexKey}_${name}`,
+      `${dexKey}_${network}_${name}`,
       dexHelper,
       logger,
     );
