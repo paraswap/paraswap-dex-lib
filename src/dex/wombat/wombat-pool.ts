@@ -112,10 +112,7 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
         const event = this.poolInterface.parseLog(log);
         if (this.eventRefetched.includes(event.name)) {
           // if the state is refetched, no need to deal with the left logs in the block
-          if (!this.dexHelper.config.isSlave) {
-            return await this.generateState(log.blockNumber);
-          }
-          return null;
+          return await this.generateState(log.blockNumber);
         }
       } catch (e) {
         catchParseLogError(e, this.logger);
