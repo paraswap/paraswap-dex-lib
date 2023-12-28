@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import {
@@ -18,7 +19,10 @@ import PoolV3ABI from '../../abi/wombat/pool-v3.json';
 import AssetABI from '../../abi/wombat/asset.json';
 import { convertUint256ToInt256, toWad, WAD, wdiv, wmul } from './utils';
 import { BlockHeader } from 'web3-eth';
-import { AssetState, PoolState } from './types';
+import { AssetState, PoolState, StateGenerator } from './types';
+
+const GENERATE_STATE_THROTTLE = 1000 * 60 * 5; // 5 minutes
+// const GENERATE_STATE_THROTTLE = 100;
 
 export class WombatPool extends StatefulEventSubscriber<PoolState> {
   static readonly poolV2Interface = new Interface(PoolV2ABI);
@@ -34,6 +38,8 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
   } = {};
   private poolInterface: Interface = WombatPool.poolV2Interface;
   private eventRefetched: string[];
+
+  generateState: StateGenerator;
 
   blankState: PoolState = {
     asset: {},
@@ -80,6 +86,11 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['UnpausedAsset'] = this.handleUnpausedAsset.bind(this);
 
     this.eventRefetched = ['Deposit', 'Withdraw'];
+
+    this.generateState = _.throttle(
+      this._generateState.bind(this),
+      GENERATE_STATE_THROTTLE,
+    ) as StateGenerator;
   }
 
   async initialize(
@@ -167,7 +178,7 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
+  async _generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
     let multiCallInputs: MultiCallInput[] = [];
 
     // 1.A generate pool params requests
