@@ -34,7 +34,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   public readonly binStep: bigint;
 
   private contract: Contract;
-  private uniswapMulti: Contract;
+  private multiState: Contract;
 
   protected _stateRequestCallData?: MultiCallParams<
     bigint | DecodedStateMultiCallResult
@@ -47,7 +47,8 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     private token0: Address,
     private token1: Address,
-    address: Address,
+    private address: Address,
+    private readonly multiStateAddress: Address,
     binStep: bigint,
     logger: Logger,
   ) {
@@ -62,13 +63,13 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     );
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
-    this.addressesSubscribed = [address];
+    this.addressesSubscribed = Array(1);
 
     this.binStep = binStep;
     this.token0 = token0;
     this.token1 = token1;
 
-    this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
+    this.multiState = new this.dexHelper.web3Provider.eth.Contract(
       UniswapMultiABI as AbiItem[],
       UniswapV3Config['UniswapV3'][network].uniswapMulticall,
     );
@@ -130,7 +131,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     // const result = await this.uniswapMulti.methods
     //   .getReserves(this.addressesSubscribed[0])
     //   .call({}, blockNumber);
-    // TODO: complete me!
+    // // TODO: complete me!
     return {} as any;
   }
 

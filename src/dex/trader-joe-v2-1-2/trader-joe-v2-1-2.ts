@@ -264,30 +264,33 @@ export class TraderJoeV2_1
     );
     let pool = this.eventPools[poolIdentifier];
 
-    if (pool === null) {
-      const poolInfo = this.factory.methods
-        .getLBPairInformation(srcAddress, destAddress, binStep)
-        .call();
+    if (pool) return pool;
 
-      // TODO: Handle non existent pool, possibly add to non-existent set
-      if (!poolInfo) return null;
+    // if (pool === null) {
+    //   const poolInfo = this.factory.methods
+    //     .getLBPairInformation(srcAddress, destAddress, binStep)
+    //     .call();
 
-      // get address
-      const pool = new TraderJoeV2_1EventPool(
-        this.dexKey,
-        this.network,
-        this.dexHelper,
-        srcAddress,
-        destAddress,
-        poolInfo.address,
-        binStep,
-        this.logger,
-      );
-      this.eventPools[poolIdentifier] = pool;
-      return pool;
-    }
+    //   // TODO: Handle non existent pool, possibly add to non-existent set
+    //   if (!poolInfo) return null;
 
-    return pool;
+    //   // get address
+    //   const pool = new TraderJoeV2_1EventPool(
+    //     this.dexKey,
+    //     this.network,
+    //     this.dexHelper,
+    //     srcAddress,
+    //     destAddress,
+    //     poolInfo.address,
+    //     poolInfo.multiStateAddress,
+    //     binStep,
+    //     this.logger,
+    //   );
+    //   this.eventPools[poolIdentifier] = pool;
+    //   return pool;
+    // }
+
+    // return pool;
   }
 
   private _sortTokens(srcAddress: Address, destAddress: Address) {
