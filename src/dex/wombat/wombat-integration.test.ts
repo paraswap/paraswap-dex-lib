@@ -170,20 +170,6 @@ describe('Wombat', function () {
         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
       ];
 
-      // let amountsForBuy = [
-      //   0n,
-      //   1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      //   10n * BI_POWS[tokens[destTokenSymbol].decimals],
-      // ];
-
       beforeAll(async () => {
         blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
         wombat = new Wombat(network, dexKey, dexHelper);
@@ -226,23 +212,6 @@ describe('Wombat', function () {
           'quotePotentialSwap',
         );
       });
-
-      // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      //   if (wombat.initializePricing) {
-      //     await wombat.initializePricing(blockNumber);
-      //   }
-      //   await testPricingOnNetwork(
-      //     wombat,
-      //     network,
-      //     dexKey,
-      //     blockNumber,
-      //     srcTokenSymbol,
-      //     destTokenSymbol,
-      //     SwapSide.BUY,
-      //     amountsForBuy,
-      //     'quotePotentialSwap',
-      //   );
-      // });
     });
   });
 });
