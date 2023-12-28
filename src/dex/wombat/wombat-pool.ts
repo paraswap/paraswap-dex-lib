@@ -22,7 +22,6 @@ import { BlockHeader } from 'web3-eth';
 import { AssetState, PoolState, StateGenerator } from './types';
 
 const GENERATE_STATE_THROTTLE = 1000 * 60 * 5; // 5 minutes
-// const GENERATE_STATE_THROTTLE = 100;
 
 export class WombatPool extends StatefulEventSubscriber<PoolState> {
   static readonly poolV2Interface = new Interface(PoolV2ABI);
