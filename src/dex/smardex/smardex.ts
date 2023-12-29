@@ -237,7 +237,9 @@ export class Smardex
             router: this.routerAddress,
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
             factory: this.factoryAddress,
-            initCode: this.legacyPairs.includes(pairParam.exchange) ? this.legacyInitCode : this.initCode,
+            initCode: this.legacyPairs.includes(pairParam.exchange)
+              ? this.legacyInitCode
+              : this.initCode,
             pools: [
               {
                 address: pairParam.exchange,
@@ -426,10 +428,7 @@ export class Smardex
       callData: smardexPool.encodeFunctionData('getPairFees'),
     };
     const callDecoder = (values: any[]): SmardexFees => {
-      const feesData = smardexPool.decodeFunctionResult(
-        'getPairFees',
-        values,
-      );
+      const feesData = smardexPool.decodeFunctionResult('getPairFees', values);
       return {
         feesLP: feesData.feesLP_.toBigInt(),
         feesPool: feesData.feesPool_.toBigInt(),
@@ -508,7 +507,8 @@ export class Smardex
             },
           ];
           // Exclude legacy pairs from fees call
-          !this.legacyPairs.includes(pair.exchange!.toLowerCase()) && calldata.push(multiCallFeeData[i]!.callEntry);
+          !this.legacyPairs.includes(pair.exchange!.toLowerCase()) &&
+            calldata.push(multiCallFeeData[i]!.callEntry);
           return calldata;
         })
         .flat();
