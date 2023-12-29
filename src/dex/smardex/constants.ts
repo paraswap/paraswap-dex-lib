@@ -29,7 +29,7 @@ export const SUBGRAPH_TIMEOUT = 20 * 1000;
 
 export const DefaultSmardexPoolGasCost = 130 * 1000;
 
-export const FEES_LAYER_ONE: SmardexFees = {
+export const FEES_LEGACY_LAYER_ONE: SmardexFees = {
   feesLP: 500n,
   feesPool: 200n,
 };

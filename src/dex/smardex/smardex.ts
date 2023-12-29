@@ -20,28 +20,25 @@ import {
   SimpleExchangeParam,
   Token,
   TransferFeeParams,
-  TxInfo,
 } from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
 import {
   SmardexFees,
   SmardexPair,
-  SmardexPool,
   SmardexPoolOrderedParams,
   SmardexPoolState,
 } from './types';
 import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
-import SmardexFactoryLayerOneABI from '../../abi/smardex/layer-1/smardex-factory.json';
-import SmardexFactoryLayerTwoABI from '../../abi/smardex/layer-2/smardex-factory.json';
+import SmardexFactoryABI from '../../abi/smardex/smardex-factory.json';
+import SmardexPoolABI from '../../abi/smardex/smardex-pool.json';
+import SmardexRouterABI from '../../abi/smardex/smardex-router.json';
 
-import SmardexRouterABI from '../../abi/smardex/all/smardex-router.json';
 import { SimpleExchange } from '../simple-exchange';
 import {
   SmardexRouterFunctions,
   directSmardexFunctionName,
   DefaultSmardexPoolGasCost,
-  SUBGRAPH_TIMEOUT,
-  FEES_LAYER_ONE,
+  FEES_LEGACY_LAYER_ONE,
 } from '../smardex/constants';
 import { SmardexData, SmardexParam } from '../smardex/types';
 import { IDex } from '../..';
@@ -51,23 +48,11 @@ import ParaSwapABI from '../../abi/IParaswap.json';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { computeAmountIn, computeAmountOut } from './sdk/core';
 import { SmardexEventPool } from './smardex-event-pool';
-import SmardexPoolLayerOneABI from '../../abi/smardex/layer-1/smardex-pool.json';
-import SmardexPoolLayerTwoABI from '../../abi/smardex/layer-2/smardex-pool.json';
+import { USDReservesService } from './usd-reserves';
 
-const smardexPoolL1 = new Interface(SmardexPoolLayerOneABI);
-const smardexPoolL2 = new Interface(SmardexPoolLayerTwoABI);
+const smardexPool = new Interface(SmardexPoolABI);
 
 const coder = new AbiCoder();
-
-function encodePools(pools: SmardexPool[]): NumberAsString[] {
-  return pools.map(({ fee, direction, address }) => {
-    return (
-      (BigInt(fee) << 161n) +
-      ((direction ? 0n : 1n) << 160n) +
-      BigInt(address)
-    ).toString();
-  });
-}
 
 export class Smardex
   extends SimpleExchange
@@ -85,12 +70,21 @@ export class Smardex
 
   protected subgraphURL: string | undefined;
   protected initCode: string;
+  protected legacyInitCode: string;
+
+  public legacyPairs: string[];
 
   logger: Logger;
   readonly hasConstantPriceLargeAmounts = false;
-  readonly isFeeOnTransferSupported: boolean = true;
+  readonly isFeeOnTransferSupported: boolean = false;
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
+
+  // Constants for top pools caching
+  readonly CACHED_RESERVES_USD_TTL = 3000;
+  readonly CACHED_RESERVES_USD_KEY = 'cachedReservesUSD';
+
+  readonly usdReserves: USDReservesService;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SmardexConfig);
@@ -108,15 +102,21 @@ export class Smardex
     this.factoryAddress = config[network].factoryAddress;
     this.subgraphURL = config[network].subgraphURL;
     this.initCode = config[network].initCode;
-    const factoryAbi = this.isLayer1()
-      ? SmardexFactoryLayerOneABI
-      : SmardexFactoryLayerTwoABI;
+    this.legacyInitCode = config[network].legacyInitCode || '';
+    this.legacyPairs = config[network].legacyPairs || [];
+    const factoryAbi = SmardexFactoryABI;
     this.factory = new dexHelper.web3Provider.eth.Contract(
       factoryAbi as any,
       this.factoryAddress,
     );
     this.routerInterface = new Interface(ParaSwapABI);
     this.exchangeRouterInterface = new Interface(SmardexRouterABI);
+    this.usdReserves = new USDReservesService(
+      this.dexKey,
+      this.network,
+      this.dexHelper,
+      this.subgraphURL!,
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -237,7 +237,9 @@ export class Smardex
             router: this.routerAddress,
             path: [from.address.toLowerCase(), to.address.toLowerCase()],
             factory: this.factoryAddress,
-            initCode: this.initCode,
+            initCode: this.legacyPairs.includes(pairParam.exchange)
+              ? this.legacyInitCode
+              : this.initCode,
             pools: [
               {
                 address: pairParam.exchange,
@@ -418,18 +420,15 @@ export class Smardex
 
   // On Smardex the fees are upgradable on layer 2.
   public getFeesMultiCallData(pairAddress: string) {
-    if (this.isLayer1()) {
+    if (this.legacyPairs.includes(pairAddress.toLowerCase())) {
       return null;
     }
     const callEntry = {
       target: pairAddress,
-      callData: smardexPoolL2.encodeFunctionData('getPairFees'),
+      callData: smardexPool.encodeFunctionData('getPairFees'),
     };
     const callDecoder = (values: any[]): SmardexFees => {
-      const feesData = smardexPoolL2.decodeFunctionResult(
-        'getPairFees',
-        values,
-      );
+      const feesData = smardexPool.decodeFunctionResult('getPairFees', values);
       return {
         feesLP: feesData.feesLP_.toBigInt(),
         feesPool: feesData.feesPool_.toBigInt(),
@@ -456,16 +455,15 @@ export class Smardex
   ) {
     const multiCallFeeData = this.getFeesMultiCallData(pair.exchange!);
     pair.pool = new SmardexEventPool(
-      this.isLayer1() ? smardexPoolL1 : smardexPoolL2,
+      smardexPool,
       this.dexHelper,
       pair.exchange!,
       pair.token0,
       pair.token1,
       this.logger,
-      // For layer 2 we need to fetch the fees
       multiCallFeeData?.callEntry,
       multiCallFeeData?.callDecoder,
-      this.isLayer1(),
+      this.legacyPairs,
     );
     pair.pool.addressesSubscribed.push(pair.exchange!);
 
@@ -497,19 +495,20 @@ export class Smardex
           let calldata = [
             {
               target: pair.exchange!,
-              callData: smardexPoolL1.encodeFunctionData('getReserves'),
+              callData: smardexPool.encodeFunctionData('getReserves'),
             },
             {
               target: pair.exchange!,
-              callData: smardexPoolL1.encodeFunctionData('getFictiveReserves'),
+              callData: smardexPool.encodeFunctionData('getFictiveReserves'),
             },
             {
               target: pair.exchange!,
-              callData: smardexPoolL1.encodeFunctionData('getPriceAverage'),
+              callData: smardexPool.encodeFunctionData('getPriceAverage'),
             },
           ];
-          // Fetch fees only on layer 2
-          !this.isLayer1() && calldata.push(multiCallFeeData[i]!.callEntry);
+          // Exclude legacy pairs from fees call
+          !this.legacyPairs.includes(pair.exchange!.toLowerCase()) &&
+            calldata.push(multiCallFeeData[i]!.callEntry);
           return calldata;
         })
         .flat();
@@ -542,11 +541,11 @@ export class Smardex
         priceAverageLastTimestamp: coder
           .decode(['uint256', 'uint256', 'uint256'], returnData[i][2])[2]
           .toString(),
-        feesLP: this.isLayer1()
-          ? FEES_LAYER_ONE.feesLP
+        feesLP: this.legacyPairs.includes(_pair.exchange!.toLowerCase())
+          ? FEES_LEGACY_LAYER_ONE.feesLP
           : multiCallFeeData[i]!.callDecoder(returnData[i][3]).feesLP,
-        feesPool: this.isLayer1()
-          ? FEES_LAYER_ONE.feesPool
+        feesPool: this.legacyPairs.includes(_pair.exchange!.toLowerCase())
+          ? FEES_LEGACY_LAYER_ONE.feesPool
           : multiCallFeeData[i]!.callDecoder(returnData[i][3]).feesPool,
       }));
     } catch (e) {
@@ -688,83 +687,36 @@ export class Smardex
     );
   }
 
-  isLayer1(): boolean {
-    return this.network === Network.MAINNET;
-  }
-
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (!this.subgraphURL) return [];
-    const query = `
-      query ($token: Bytes!, $limit: Int) {
-        pools0: pairs(first: $limit, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
-        id
-        token0 {
-          id
-          decimals
-        }
-        token1 {
-          id
-          decimals
-        }
-        reserveUSD
-      }
-      pools1: pairs(first: $limit, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 1, reserve1_gt: 1}) {
-        id
-        token0 {
-          id
-          decimals
-        }
-        token1 {
-          id
-          decimals
-        }
-        reserveUSD
-      }
-    }`;
-
-    const { data } = await this.dexHelper.httpRequest.post(
-      this.subgraphURL,
-      {
-        query,
-        variables: { token: tokenAddress.toLowerCase(), limit },
-      },
-      SUBGRAPH_TIMEOUT,
-      { 'x-api-key': this.dexHelper.config.data.smardexSubgraphAuthToken! },
-    );
-
-    if (!(data && data.pools0 && data.pools1))
-      throw new Error("Couldn't fetch the pools from the subgraph");
-    const pools0 = _.map(data.pools0, pool => ({
-      exchange: this.dexKey,
-      address: pool.id.toLowerCase(),
-      connectorTokens: [
-        {
-          address: pool.token1.id.toLowerCase(),
-          decimals: parseInt(pool.token1.decimals),
-        },
-      ],
-      liquidityUSD: parseFloat(pool.reserveUSD),
-    }));
-
-    const pools1 = _.map(data.pools1, pool => ({
-      exchange: this.dexKey,
-      address: pool.id.toLowerCase(),
-      connectorTokens: [
-        {
-          address: pool.token0.id.toLowerCase(),
-          decimals: parseInt(pool.token0.decimals),
-        },
-      ],
-      liquidityUSD: parseFloat(pool.reserveUSD),
-    }));
-
-    return _.slice(
-      _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
-      0,
-      limit,
-    );
+    tokenAddress = tokenAddress.toLowerCase();
+    const liquidityPromises = Object.values(this.pairs)
+      .filter(
+        pair =>
+          pair.token0.address.toLowerCase() === tokenAddress ||
+          pair.token1.address.toLowerCase() === tokenAddress,
+      )
+      .filter(pair => pair.exchange)
+      .map(async pair => {
+        const usdReserve = await this.usdReserves.getUSDReserveForPair(
+          pair.exchange!,
+        );
+        return {
+          exchange: this.dexKey,
+          address: pair.exchange!,
+          liquidityUSD: usdReserve,
+          connectorTokens: [
+            tokenAddress === pair.token0.address.toLowerCase()
+              ? pair.token1
+              : pair.token0,
+          ],
+        };
+      });
+    const resolvedLiquidity = await Promise.all(liquidityPromises);
+    return resolvedLiquidity
+      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
+      .slice(0, limit);
   }
 }

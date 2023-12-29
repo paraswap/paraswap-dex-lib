@@ -4,8 +4,7 @@ import { Interface } from '@ethersproject/abi';
 import { Tokens } from '../../../tests/constants-e2e';
 dotenv.config();
 
-import SmardexPoolLayerOneABI from '../../abi/smardex/layer-1/smardex-pool.json';
-import SmardexPoolLayerTwoABI from '../../abi/smardex/layer-2/smardex-pool.json';
+import SmardexPoolABI from '../../abi/smardex/smardex-pool.json';
 import { Smardex } from './smardex';
 import { SmardexEventPool } from './smardex-event-pool';
 import { Network } from '../../constants';
@@ -50,7 +49,7 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
           ],
           ['Burn']: [17231921, 17762042, 17762668],
           ['Mint']: [17739609, 17973926, 18062443],
-          // ['FeesChanged']: [], // none on L1
+          // ['FeesChanged']: [], // none on Legacy pair
           ['Sync']: [
             18064045,
             18064060,
@@ -61,7 +60,6 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
           ['Transfer']: [18064025, 18064045, 18065266],
         },
       },
-
       {
         address: '0xf3a4B8eFe3e3049F6BC71B47ccB7Ce6665420179',
         symbol0: 'SDEX',
@@ -76,7 +74,7 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
           ],
           ['Burn']: [18114357, 18089610, 18026115],
           ['Mint']: [18115825, 18109975, 18093408],
-          // ['FeesChanged']: [], // none on L1
+          // ['FeesChanged']: [], // none on Legacy pair
           ['Sync']: [
             18120396,
             18120367, // multiple Sync events
@@ -85,6 +83,24 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
             18120209,
           ],
           ['Transfer']: [18108643, 18105778, 18105793],
+        },
+      },
+      {
+        // New pool created after the Factory migration (it has configurable fees enabled)
+        address: '0xf178ADc7D707Cea43FBB3206b3364CB416F044A2',
+        symbol0: 'WASSIE',
+        symbol1: 'WETH',
+        events: {
+          ['Swap']: [18588928, 18572677, 18571765],
+          ['Burn']: [18572334, 18569122],
+          ['Mint']: [18571808, 18688592],
+          ['FeesChanged']: [18562522],
+          ['Sync']: [
+            18588928, 18572677, 18572334, 18571808, 18571765, 18569122,
+          ],
+          ['Transfer']: [
+            18588928, 18572677, 18572334, 18571808, 18571765, 18569122,
+          ],
         },
       },
     ],
@@ -115,7 +131,7 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
           ['Swap']: [47448993, 47449888, 47449861, 47448993, 47449214],
           ['Burn']: [47434291, 47433030, 47426957],
           ['Mint']: [47354112, 47268128, 47252146],
-          ['FeesChanged']: [], // Fees didn't change on this pool
+          ['FeesChanged']: [50575166],
           ['Sync']: [47448993, 47449888, 47449861, 47448993, 47449214],
           ['Transfer']: [47338250, 47338178, 47333469],
         },
@@ -135,7 +151,7 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
           ['Swap']: [130424308, 130422563, 130418994, 130415253, 130382808],
           ['Burn']: [129969327, 129138853, 126200497],
           ['Mint']: [130028302, 129940404, 129728771],
-          ['FeesChanged']: [], // Fees didn't change on this pool
+          ['FeesChanged']: [117755384],
           ['Sync']: [130424308, 130422563, 130418994, 130415253, 130382808],
           ['Transfer']: [130028373, 129918802, 129668897],
         },
@@ -148,7 +164,7 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
           ['Swap']: [130429535, 130419879, 130417306, 130414469, 130416990],
           ['Burn']: [130200966, 127933595, 125698828],
           ['Mint']: [130263032, 130331095, 128594710],
-          ['FeesChanged']: [], // Fees didn't change on this pool
+          ['FeesChanged']: [155564828],
           ['Sync']: [130429535, 130419879, 130417306, 130414469, 130416990],
           ['Transfer']: [130423567, 130423514, 130331095],
         },
@@ -181,7 +197,7 @@ const NETWORK_CONFIGS: NetworkConfig[] = [
           ['Swap']: [31678534, 31675409, 31678534, 31675014, 31674391],
           ['Burn']: [31666734, 31586726, 31462652],
           ['Mint']: [31662048, 31554796, 31524123],
-          ['FeesChanged']: [], // Fees didn't change on this pool
+          ['FeesChanged']: [33946671],
           ['Sync']: [31678534, 31675409, 31678534, 31675014, 31674391],
           ['Transfer']: [31666734, 31632200, 31586970],
         },
@@ -255,11 +271,7 @@ NETWORK_CONFIGS.forEach(({ name, network, pools, tokens }) => {
               const smardex = new Smardex(network, dexKey, dexHelper);
               const multicall = smardex.getFeesMultiCallData(poolAddress);
               const SmardexPool = new SmardexEventPool(
-                new Interface(
-                  smardex.isLayer1()
-                    ? SmardexPoolLayerOneABI
-                    : SmardexPoolLayerTwoABI,
-                ),
+                new Interface(SmardexPoolABI),
                 dexHelper,
                 poolAddress,
                 token0,
@@ -267,7 +279,7 @@ NETWORK_CONFIGS.forEach(({ name, network, pools, tokens }) => {
                 logger,
                 multicall?.callEntry,
                 multicall?.callDecoder,
-                smardex.isLayer1(),
+                smardex.legacyPairs,
               );
 
               // It is done in generateState. But here have to make it manually
