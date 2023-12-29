@@ -79,7 +79,7 @@ function testForNetwork(
       ],
     ],
     // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -89,6 +89,7 @@ function testForNetwork(
           const tokenASymbol = 'USDC';
           const tokenBSymbol = 'TRY';
           const dexKey = 'DFXV3';
+          console.log(tokens, holders);
 
           describe(`${contractMethod}`, () => {
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {

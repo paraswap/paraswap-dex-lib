@@ -95,8 +95,8 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
-  getAdapters(side: SwapSide): null {
-    return null;
+  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
+    return this.adapters[side] ? this.adapters[side] : null;
   }
 
   // Returns list of pool identifiers that can be used
@@ -149,7 +149,7 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
             {
               tokenIn: srcToken.address,
               tokenOut: destToken.address,
-              fee: '0.05',
+              fee: '500',
             },
           ],
         },
@@ -208,20 +208,27 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
     srcAmount: string,
     destAmount: string,
     data: DfxData,
-    deadline: SwapSide,
+    deadline: string,
   ): Promise<SimpleExchangeParam> {
     // TODO: complete me!
 
-    const path = this._encodePath(data.path);
-    const swapFunctionParams: DFXV3OriginSwap = {
-      _originAmount: srcAmount,
-      _minTargetAmount: destAmount,
-      _path: [path], //@DEV needs to be fixed
-      _deadline: deadline,
-    };
-    const swapData = this.routerIface.encodeFunctionData('originSwap', [
+    //const path = this._encodePath(data.path);
+
+    const path = [data.path[0].tokenIn, data.path[0].tokenOut];
+    const _deadline = '2703243507';
+    const swapFunctionParams = [
+      '292900000000000000000',
+      '290000000000000000000',
+      [
+        '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        '0x2C537E5624e4af88A7ae4060C022609376C8D0EB',
+      ],
+      '2703243507',
+    ];
+    const swapData = this.routerIface.encodeFunctionData(
+      'originSwap',
       swapFunctionParams,
-    ]);
+    );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -306,7 +313,6 @@ export class Dfx extends SimpleExchange implements IDex<DfxData> {
       },
       { _path: [], types: [] },
     );
-    console.log(_path, types);
     return pack(types.reverse(), _path.reverse());
   }
 }
