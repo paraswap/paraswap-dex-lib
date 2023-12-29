@@ -31,6 +31,10 @@ export const Tokens: {
       address: '0xd46ba6d942050d489dbd938a2c909a5d5039a161',
       decimals: 9,
     },
+    TRY: {
+      address: '0x2C537E5624e4af88A7ae4060C022609376C8D0EB',
+      decimals: 6,
+    },
     USDC: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,

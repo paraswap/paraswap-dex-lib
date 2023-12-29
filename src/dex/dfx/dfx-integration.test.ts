@@ -2,20 +2,96 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Tokens } from '../../../tests/constants-e2e';
+import { Interface, Result } from '@ethersproject/abi';
+import { DummyDexHelper } from '../../dex-helper/index';
+import { Network, SwapSide } from '../../constants';
+import { BI_POWS } from '../../bigint-constants';
+import { Dfx } from './dfx';
 import {
-  checkConstantPoolPrices,
   checkPoolPrices,
   checkPoolsLiquidity,
-  sleep,
+  checkConstantPoolPrices,
 } from '../../../tests/utils';
-import { BI_POWS } from '../../bigint-constants';
-import { Network, SwapSide } from '../../constants';
-import { DummyDexHelper } from '../../dex-helper/index';
-import { Hashflow } from './hashflow';
+import { Tokens } from '../../../tests/constants-e2e';
+
+/*
+  README
+  ======
+
+  This test script adds tests for Dfx general integration
+  with the DEX interface. The test cases below are example tests.
+  It is recommended to add tests which cover Dfx specific
+  logic.
+
+  You can run this individual test script by running:
+  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
+
+  (This comment should be removed from the final implementation)
+*/
+
+function getReaderCalldata(
+  exchangeAddress: string,
+  readerIface: Interface,
+  amounts: bigint[],
+  funcName: string,
+  // TODO: Put here additional arguments you need
+) {
+  return amounts.map(amount => ({
+    target: exchangeAddress,
+    callData: readerIface.encodeFunctionData(funcName, [
+      // TODO: Put here additional arguments to encode them
+      amount,
+    ]),
+  }));
+}
+
+function decodeReaderResult(
+  results: Result,
+  readerIface: Interface,
+  funcName: string,
+) {
+  // TODO: Adapt this function for your needs
+  return results.map(result => {
+    const parsed = readerIface.decodeFunctionResult(funcName, result);
+    return BigInt(parsed[0]._hex);
+  });
+}
+
+async function checkOnChainPricing(
+  dfx: Dfx,
+  funcName: string,
+  blockNumber: number,
+  prices: bigint[],
+  amounts: bigint[],
+) {
+  const exchangeAddress = ''; // TODO: Put here the real exchange address
+
+  // TODO: Replace dummy interface with the real one
+  // Normally you can get it from dfx.Iface or from eventPool.
+  // It depends on your implementation
+  const readerIface = new Interface('');
+
+  const readerCallData = getReaderCalldata(
+    exchangeAddress,
+    readerIface,
+    amounts.slice(1),
+    funcName,
+  );
+  const readerResult = (
+    await dfx.dexHelper.multiContract.methods
+      .aggregate(readerCallData)
+      .call({}, blockNumber)
+  ).returnData;
+
+  const expectedPrices = [0n].concat(
+    decodeReaderResult(readerResult, readerIface, funcName),
+  );
+
+  expect(prices).toEqual(expectedPrices);
+}
 
 async function testPricingOnNetwork(
-  hashflow: Hashflow,
+  dfx: Dfx,
   network: Network,
   dexKey: string,
   blockNumber: number,
@@ -23,10 +99,11 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
+  funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
 
-  const pools = await hashflow.getPoolIdentifiers(
+  const pools = await dfx.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     side,
@@ -39,7 +116,7 @@ async function testPricingOnNetwork(
 
   expect(pools.length).toBeGreaterThan(0);
 
-  const poolPrices = await hashflow.getPricesVolume(
+  const poolPrices = await dfx.getPricesVolume(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     amounts,
@@ -53,17 +130,28 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
-  if (hashflow.hasConstantPriceLargeAmounts) {
+
+  if (dfx.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
+
+  //@DEV do this whne pricing is available
+  // Check if onchain pricing equals to calculated ones
+  // await checkOnChainPricing(
+  //   dfx,
+  //   funcNameToCheck,
+  //   blockNumber,
+  //   poolPrices![0].prices,
+  //   amounts,
+  // );
 }
 
-describe('Hashflow', function () {
-  const dexKey = 'Hashflow';
+describe('Dfx', function () {
+  const dexKey = 'DFXV3';
   let blockNumber: number;
-  let hashflow: Hashflow;
+  let dfx: Dfx;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -71,7 +159,9 @@ describe('Hashflow', function () {
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'USDT';
+    // TODO: Put here token Symbol to check against
+    // Don't forget to update relevant tokens in constant-e2e.ts
+    const srcTokenSymbol = 'TRY';
     const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
@@ -104,14 +194,15 @@ describe('Hashflow', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      hashflow = new Hashflow(network, dexKey, dexHelper);
-      await hashflow.initializePricing(0);
-      await sleep(5000);
+      dfx = new Dfx(network, dexKey, dexHelper);
+      if (dfx.initializePricing) {
+        await dfx.initializePricing(blockNumber);
+      }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
-        hashflow,
+        dfx,
         network,
         dexKey,
         blockNumber,
@@ -119,12 +210,13 @@ describe('Hashflow', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
+        '', // TODO: Put here proper function name to check pricing
       );
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       await testPricingOnNetwork(
-        hashflow,
+        dfx,
         network,
         dexKey,
         blockNumber,
@@ -132,24 +224,25 @@ describe('Hashflow', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
+        '', // TODO: Put here proper function name to check pricing
       );
     });
 
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newHashflow = new Hashflow(network, dexKey, dexHelper);
-      const poolLiquidity = await newHashflow.getTopPoolsForToken(
+      const newDfx = new Dfx(network, dexKey, dexHelper);
+
+      const poolLiquidity = await newDfx.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newHashflow.hasConstantPriceLargeAmounts) {
+      if (!newDfx.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,
-          dexKey,
+          'DFX',
         );
       }
     });

@@ -43,6 +43,7 @@ export class StablePool
     'snowball',
     'axial',
     'zyberswapstable',
+    'DFXV3',
   ];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
