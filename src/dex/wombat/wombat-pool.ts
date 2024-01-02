@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import {
@@ -19,14 +18,16 @@ import PoolV3ABI from '../../abi/wombat/pool-v3.json';
 import AssetABI from '../../abi/wombat/asset.json';
 import { convertUint256ToInt256, toWad, WAD, wdiv, wmul } from './utils';
 import { BlockHeader } from 'web3-eth';
-import { AssetState, PoolState, StateGenerator } from './types';
+import { AssetState, PoolState } from './types';
 
-const GENERATE_STATE_THROTTLE = 1000 * 60 * 5; // 5 minutes
+const CLEAR_RPC_CALL_COUNT_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
 export class WombatPool extends StatefulEventSubscriber<PoolState> {
   static readonly poolV2Interface = new Interface(PoolV2ABI);
   static readonly poolV3Interface = new Interface(PoolV3ABI);
   static readonly assetInterface = new Interface(AssetABI);
+
+  private rpcCallCount = 0;
 
   private handlers: {
     [event: string]: (
@@ -37,8 +38,6 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
   } = {};
   private poolInterface: Interface = WombatPool.poolV2Interface;
   private eventRefetched: string[];
-
-  generateState: StateGenerator;
 
   blankState: PoolState = {
     asset: {},
@@ -86,10 +85,9 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
 
     this.eventRefetched = ['Deposit', 'Withdraw'];
 
-    this.generateState = _.throttle(
-      this._generateState.bind(this),
-      GENERATE_STATE_THROTTLE,
-    ) as StateGenerator;
+    setInterval(() => {
+      this.rpcCallCount = 0;
+    }, CLEAR_RPC_CALL_COUNT_INTERVAL);
   }
 
   async initialize(
@@ -177,7 +175,18 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async _generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
+  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
+    this.rpcCallCount++;
+
+    if (this.rpcCallCount > 1) {
+      this.logger.warn(
+        `WombatPool generateState excessive RPC call. Name: ${
+          this.name
+        }; pool: ${this.poolAddress}. Called ${
+          this.rpcCallCount + 1
+        } times during ${CLEAR_RPC_CALL_COUNT_INTERVAL / 1000} s interval`,
+      );
+    }
     let multiCallInputs: MultiCallInput[] = [];
 
     // 1.A generate pool params requests

@@ -1,4 +1,3 @@
-import { DeepReadonly } from 'ts-essentials';
 import { Address } from '../../types';
 
 // State-related types
@@ -16,10 +15,6 @@ export type PoolState = {
   underlyingAddresses: Address[];
   asset: { [underlyingAddress: string]: AssetState };
 };
-
-export type StateGenerator = (
-  blockNumber: number,
-) => Promise<DeepReadonly<PoolState>>;
 
 export type AssetState = {
   address: Address;
