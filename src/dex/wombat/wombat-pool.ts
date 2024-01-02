@@ -59,12 +59,7 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
     logger: Logger,
     protected poolAddress: Address,
   ) {
-    super(
-      `${dexKey}_${name}`,
-      `${dexKey}_${network}_${name}`,
-      dexHelper,
-      logger,
-    );
+    super(dexKey, `${network}_${name}`, dexHelper, logger);
 
     this.addressesSubscribed = [this.poolAddress];
 
@@ -182,9 +177,9 @@ export class WombatPool extends StatefulEventSubscriber<PoolState> {
       this.logger.warn(
         `WombatPool generateState excessive RPC call. Name: ${
           this.name
-        }; pool: ${this.poolAddress}. Called ${
-          this.rpcCallCount + 1
-        } times during ${CLEAR_RPC_CALL_COUNT_INTERVAL / 1000} s interval`,
+        }. Called ${this.rpcCallCount} times during ${
+          CLEAR_RPC_CALL_COUNT_INTERVAL / 1000
+        }s interval`,
       );
     }
     let multiCallInputs: MultiCallInput[] = [];
