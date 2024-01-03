@@ -60,3 +60,23 @@ export const uint120ToBigInt = (
 ): bigint => {
   return generalDecoder(result, ['uint120'], 0n, value => value[0].toBigInt());
 };
+
+export function convertUint256ToInt256(uint256Value: bigint): bigint {
+  const isNegative =
+    (uint256Value &
+      BigInt(
+        '0x8000000000000000000000000000000000000000000000000000000000000000',
+      )) !==
+    BigInt(0);
+
+  if (isNegative) {
+    return (
+      uint256Value -
+      BigInt(
+        '0x10000000000000000000000000000000000000000000000000000000000000000',
+      )
+    );
+  } else {
+    return uint256Value;
+  }
+}

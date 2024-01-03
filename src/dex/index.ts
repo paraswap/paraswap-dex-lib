@@ -38,7 +38,6 @@ import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { Platypus } from './platypus/platypus';
-//import { Wombat } from './wombat/wombat';
 import { GMX } from './gmx/gmx';
 import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
@@ -83,6 +82,7 @@ import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
 import { Smardex } from './smardex/smardex';
+import { Wombat } from './wombat/wombat';
 
 const LegacyDexes = [
   CurveV2,
@@ -162,7 +162,7 @@ const Dexes = [
   NomiswapV2,
   SolidlyV3,
   Smardex,
-  //Wombat,
+  Wombat,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
