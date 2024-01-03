@@ -235,9 +235,6 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     for (const [poolAddress, pool] of Object.entries(this.pools)) {
       const state = await pool.getState(blockNumber);
       if (!state) {
-        this.logger.warn(
-          `State of pool ${poolAddress} is null in findPools, skipping...`,
-        );
         continue;
       }
 
