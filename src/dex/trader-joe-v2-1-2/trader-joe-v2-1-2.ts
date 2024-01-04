@@ -194,19 +194,6 @@ export class TraderJoeV2_1
                 binStep,
                 blockNumber,
               );
-              // const locallyFoundPool =
-              //   this.eventPools[
-              //     this.getPoolIdentifier(_srcAddress, _destAddress, fee)
-              //   ];
-              // if (locallyFoundPool) return locallyFoundPool;
-
-              // const newlyFetchedPool = await this.getPool(
-              //   _srcAddress,
-              //   _destAddress,
-              //   fee,
-              //   blockNumber,
-              // );
-              // return newlyFetchedPool;
             }),
           )
         ).filter(isTruthy);
