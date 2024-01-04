@@ -22,7 +22,7 @@ export const TraderJoeV2_1Config: DexConfigMap<DexParams> = {
     [Network.AVALANCHE]: {
       factory: '0x8e42f2F4101563bF679975178e880FD87d3eFd4e',
       router: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
-      stateMulticall: '0x9517FfE5Cd4b1F26fdB351F4db00fDaEc2Ece0c1',
+      stateMulticall: '0x2df9f089c85c22215a3af6fb89dc5FAe39dA0711',
     },
   },
 };

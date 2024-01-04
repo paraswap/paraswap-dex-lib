@@ -1,4 +1,4 @@
-import { AsyncOrSync } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -15,6 +15,7 @@ import { getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
+  PoolState,
   TraderJoeV2RouterFunctions,
   TraderJoeV2RouterParam,
   TraderJoeV2_1Data,
@@ -34,6 +35,7 @@ import { MinLBPairAbi, SUPPORTED_BIN_STEPS } from './constants';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { UniswapV3Config } from '../uniswap-v3/config';
+import { add } from 'lodash';
 
 export class TraderJoeV2_1
   extends SimpleExchange
@@ -42,19 +44,17 @@ export class TraderJoeV2_1
   // protected eventPools: TraderJoeV2_1EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
 
   exchangeRouterInterface: Interface;
 
-  // uniswapMulti: Contract;
   factory: Contract;
   pair: Contract;
   factoryAddress: string;
   routerAddress: string;
-
+  stateMulticallAddress: string;
   readonly eventPools: Record<string, TraderJoeV2_1EventPool | null> = {};
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -79,6 +79,7 @@ export class TraderJoeV2_1
     // );
     this.routerAddress = config[network].router;
     this.factoryAddress = config[network].factory;
+    this.stateMulticallAddress = config[network].stateMulticall;
     this.factory = new this.dexHelper.web3Provider.eth.Contract(
       TraderJoeV21FactoryABI as AbiItem[],
       config[network].factory,
@@ -150,6 +151,14 @@ export class TraderJoeV2_1
     );
   }
 
+  getPoolIdentifier(
+    srcAddress: Address,
+    destAddress: Address,
+    binStep: bigint,
+  ): string {
+    const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
+    return `${this.dexKey}_${tokenAddresses}_${binStep}`;
+  }
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
@@ -178,20 +187,26 @@ export class TraderJoeV2_1
       if (!limitPools) {
         selectedPools = (
           await Promise.all(
-            this.supportedBinSteps.map(async fee => {
-              const locallyFoundPool =
-                this.eventPools[
-                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
-                ];
-              if (locallyFoundPool) return locallyFoundPool;
-
-              const newlyFetchedPool = await this.getPool(
+            this.supportedBinSteps.map(async binStep => {
+              return this.getPool(
                 _srcAddress,
                 _destAddress,
-                fee,
+                binStep,
                 blockNumber,
               );
-              return newlyFetchedPool;
+              // const locallyFoundPool =
+              //   this.eventPools[
+              //     this.getPoolIdentifier(_srcAddress, _destAddress, fee)
+              //   ];
+              // if (locallyFoundPool) return locallyFoundPool;
+
+              // const newlyFetchedPool = await this.getPool(
+              //   _srcAddress,
+              //   _destAddress,
+              //   fee,
+              //   blockNumber,
+              // );
+              // return newlyFetchedPool;
             }),
           )
         ).filter(isTruthy);
@@ -214,7 +229,7 @@ export class TraderJoeV2_1
               if (locallyFoundPool) return locallyFoundPool;
 
               const [, srcAddress, destAddress, fee] = identifier.split('_');
-              const newlyFetchedPool = await this.getPool(
+              const newlyFetchedPool = await this.addPool(
                 srcAddress,
                 destAddress,
                 BigInt(fee),
@@ -242,16 +257,39 @@ export class TraderJoeV2_1
     return null;
   }
 
-  getPoolIdentifier(
+  // TODO: Check if it's non-existent pool
+  private async addPool(
     srcAddress: Address,
     destAddress: Address,
     binStep: bigint,
-  ): string {
-    const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
-    return `${this.dexKey}_${tokenAddresses}_${binStep}`;
+    blockNumber: number,
+  ) {
+    const pool = new TraderJoeV2_1EventPool(
+      this.dexKey,
+      this.network,
+      this.dexHelper,
+      srcAddress,
+      destAddress,
+      binStep,
+      this.stateMulticallAddress,
+      this.logger,
+    );
+    await pool.initialize(blockNumber, {
+      initCallback: (state: DeepReadonly<PoolState>) => {
+        // need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
+        pool!.addressesSubscribed[0] = state.pairAddress;
+        pool!.poolAddress = state.pairAddress;
+        pool!.initFailed = false;
+        pool!.initRetryAttemptCount = 0;
+      },
+    });
+    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, binStep)] =
+      pool;
+
+    return pool;
   }
 
-  private getPool(
+  private async getPool(
     srcAddress: Address,
     destAddress: Address,
     binStep: bigint,
@@ -266,35 +304,15 @@ export class TraderJoeV2_1
 
     if (pool) return pool;
 
-    // if (pool === null) {
-    //   const poolInfo = this.factory.methods
-    //     .getLBPairInformation(srcAddress, destAddress, binStep)
-    //     .call();
+    pool = await this.addPool(srcAddress, destAddress, binStep, blockNumber);
 
-    //   // TODO: Handle non existent pool, possibly add to non-existent set
-    //   if (!poolInfo) return null;
-
-    //   // get address
-    //   const pool = new TraderJoeV2_1EventPool(
-    //     this.dexKey,
-    //     this.network,
-    //     this.dexHelper,
-    //     srcAddress,
-    //     destAddress,
-    //     poolInfo.address,
-    //     poolInfo.multiStateAddress,
-    //     binStep,
-    //     this.logger,
-    //   );
-    //   this.eventPools[poolIdentifier] = pool;
-    //   return pool;
-    // }
-
-    // return pool;
+    return pool;
   }
 
   private _sortTokens(srcAddress: Address, destAddress: Address) {
-    return [srcAddress, destAddress].sort((a, b) => (a < b ? -1 : 1));
+    return [srcAddress.toLowerCase(), destAddress.toLowerCase()].sort((a, b) =>
+      a < b ? -1 : 1,
+    );
   }
 
   private _getLoweredAddresses(srcToken: Token, destToken: Token) {

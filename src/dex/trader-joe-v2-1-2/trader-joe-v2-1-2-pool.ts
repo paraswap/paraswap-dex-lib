@@ -7,13 +7,9 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DecodedStateMultiCallResult, PoolState } from './types';
 import TraderJoeV2_1PoolABI from '../../abi/trader-joe-v2_1/PairABI.json';
 import StateMulticallABI from '../../abi/trader-joe-v2_1/StateMulticall.json';
-// import { MultiCallParams } from '../../lib/multi-wrapper';
-
-// import UniswapMultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import { Bytes } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-// import { UniswapV3Config } from '../uniswap-v3/config';
 import {
   generalDecoder,
   uint128ToBigNumber,
@@ -35,7 +31,9 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   public readonly binStep: bigint;
 
-  private contract: Contract;
+  public initFailed = false;
+  public initRetryAttemptCount = 0;
+  poolAddress?: Address;
   private stateMulti: Contract;
 
   // protected _stateRequestCallData?: MultiCallParams<
@@ -49,9 +47,8 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     private token0: Address,
     private token1: Address,
-    private address: Address,
-    private readonly stateMultiAddress: Address,
     binStep: bigint,
+    private readonly stateMultiAddress: Address,
     logger: Logger,
   ) {
     super(
@@ -74,7 +71,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
       StateMulticallABI as AbiItem[],
       stateMultiAddress,
     );
-    this.contract = new Contract(TraderJoeV2_1PoolABI as AbiItem[], address);
+    // this.contract = new Contract(TraderJoeV2_1PoolABI as AbiItem[], address);
 
     // Add handlers
     this.handlers['TransferBatch'] = this.handleTransferBatch.bind(this);
@@ -88,6 +85,14 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['FlashLoan'] = this.handleFlashLoan.bind(this);
     this.handlers['ForcedDecay'] = this.handleForcedDecay.bind(this);
   }
+
+  // get poolAddress() {
+  //   return this._poolAddress;
+  // }
+
+  // set poolAddress(address: Address) {
+  //   this._poolAddress = address.toLowerCase();
+  // }
 
   getSwapOut() {}
 
@@ -128,8 +133,10 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    const state = this.stateMulti.methods.getFullState().call({}, blockNumber);
-    return state as PoolState;
+    const state = this.stateMulti.methods
+      .getFullState()
+      .call({}, blockNumber) as PoolState;
+    return state;
   }
 
   // protected _getStateRequestCallData() {
