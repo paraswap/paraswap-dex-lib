@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork, isTruthy } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -70,13 +70,9 @@ export class TraderJoeV2_1
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
+
     const config = TraderJoeV2_1Config[dexKey];
-    // this.eventPools = new TraderJoeV2_1EventPool(
-    //   dexKey,
-    //   network,
-    //   dexHelper,
-    //   this.logger,
-    // );
+
     this.routerAddress = config[network].router;
     this.factoryAddress = config[network].factory;
     this.stateMulticallAddress = config[network].stateMulticall;
@@ -182,55 +178,210 @@ export class TraderJoeV2_1
 
       if (_srcAddress === _destAddress) return null;
 
-      let selectedPools: TraderJoeV2_1EventPool[] = [];
-
-      if (!limitPools) {
-        selectedPools = (
-          await Promise.all(
-            this.supportedBinSteps.map(async binStep => {
-              return this.getPool(
-                _srcAddress,
-                _destAddress,
-                binStep,
-                blockNumber,
-              );
-            }),
-          )
-        ).filter(isTruthy);
-      } else {
-        const pairIdentifierWithoutFee = this.getPoolIdentifier(
-          _srcAddress,
-          _destAddress,
-          0n,
-          // Trim from 0 fee postfix, so it become comparable
-        ).slice(0, -1);
-
-        const poolIdentifiers = limitPools.filter(identifier =>
-          identifier.startsWith(pairIdentifierWithoutFee),
+      const pools = (
+        await Promise.all(
+          this.supportedBinSteps.map(async binStep => {
+            return this.getPool(
+              _srcAddress,
+              _destAddress,
+              binStep,
+              blockNumber,
+            );
+          }),
+        )
+      )
+        .filter(isTruthy)
+        .filter(
+          pool =>
+            !limitPools ||
+            limitPools.includes((pool.poolAddress || '').toLowerCase()),
         );
+      const promises = [];
+      const isSell = side === SwapSide.SELL;
+      const unitAmount = getBigIntPow(
+        isSell ? _srcToken.decimals : _destToken.decimals,
+      );
 
-        selectedPools = (
-          await Promise.all(
-            poolIdentifiers.map(async identifier => {
-              let locallyFoundPool = this.eventPools[identifier];
-              if (locallyFoundPool) return locallyFoundPool;
-
-              const [, srcAddress, destAddress, fee] = identifier.split('_');
-              const newlyFetchedPool = await this.addPool(
-                srcAddress,
-                destAddress,
-                BigInt(fee),
-                blockNumber,
-              );
-              return newlyFetchedPool;
-            }),
-          )
-        ).filter(isTruthy);
+      this.logger.log('POOOOOLS:', pools);
+      for (const pool of pools) {
+        const [unit, ...prices] = this.computePrices(
+          pool,
+          [unitAmount, ...amounts],
+          side,
+        );
+        promises.push({
+          prices,
+          unit,
+          data: {
+            tokenIn: _srcAddress, // redundant, fix by contract change
+            tokenOut: _destAddress, // same
+            binStep: pool.binStep.toString(),
+          },
+          poolAddresses: [pool.poolAddress as string],
+          exchange: this.routerAddress,
+          /** @todo specify gas cost */
+          gasCost: 260 * 1000,
+          poolIdentifier: this.getPoolIdentifier(
+            _srcAddress,
+            _destAddress,
+            pool.binStep,
+          ) as string,
+        });
       }
 
-      if (selectedPools.length === 0) return null;
+      const result = await Promise.all(promises);
+      this.logger.log('PRICE_VOLUME_result', result);
+      return result;
+      // const pools = (
+      //   await this.findPools(_srcAddress, _destAddress, blockNumber)
+      // ).filter(
+      //   poolAddress =>
+      //     !limitPools ||
+      //     limitPools.includes(this.getPoolIdentifier(poolAddress)),
+      // );
 
-      // TODO: Handle pools
+      // let selectedPools: TraderJoeV2_1EventPool[] = [];
+
+      // if (!limitPools) {
+      // selectedPools = (
+      //   await Promise.all(
+      //     this.supportedBinSteps.map(async binStep => {
+      //       return this.getPool(
+      //         _srcAddress,
+      //         _destAddress,
+      //         binStep,
+      //         blockNumber,
+      //       );
+      //     }),
+      //   )
+      // ).filter(isTruthy);
+      // } else {
+      //   const pairIdentifierWithoutFee = this.getPoolIdentifier(
+      //     _srcAddress,
+      //     _destAddress,
+      //     0n,
+      //     // Trim from 0 fee postfix, so it become comparable
+      //   ).slice(0, -1);
+
+      //   const poolIdentifiers = limitPools.filter(identifier =>
+      //     identifier.startsWith(pairIdentifierWithoutFee),
+      //   );
+
+      //   selectedPools = (
+      //     await Promise.all(
+      //       poolIdentifiers.map(async identifier => {
+      //         let locallyFoundPool = this.eventPools[identifier];
+      //         if (locallyFoundPool) return locallyFoundPool;
+
+      //         const [, srcAddress, destAddress, fee] = identifier.split('_');
+      //         const newlyFetchedPool = await this.addPool(
+      //           srcAddress,
+      //           destAddress,
+      //           BigInt(fee),
+      //           blockNumber,
+      //         );
+      //         return newlyFetchedPool;
+      //       }),
+      //     )
+      //   ).filter(isTruthy);
+      // }
+
+      // if (selectedPools.length === 0) return null;
+
+      // const isSell = side === SwapSide.SELL;
+      // const unitAmount = getBigIntPow(
+      //   isSell ? _srcToken.decimals : _destToken.decimals,
+      // );
+      // // TODO: Add rpc calls for fetching prices & filter pools with/without state
+      // const states = selectedPools.map(p => p.getState(blockNumber)!);
+      // const _amounts = [...amounts.slice(1)];
+
+      // const [token0] = this._sortTokens(_srcAddress, _destAddress);
+
+      // const zeroForOne = token0 === _srcAddress ? true : false;
+
+      // const result = await Promise.all(
+      //   selectedPools.map(async (pool, i) => {
+      //     const state = states[i];
+
+      //     // if (state.liquidity <= 0n) {
+      //     //   if (state.liquidity < 0) {
+      //     //     this.logger.error(
+      //     //       `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+      //     //     );
+      //     //   }
+      //     //   this.logger.trace(`pool have 0 liquidity`);
+      //     //   return null;
+      //     // }
+
+      //     // const balanceDestToken =
+      //     //   _destAddress === pool.token0 ? state.balance0 : state.balance1;
+
+      //     // const unitResult = this._getOutputs(
+      //     //   state,
+      //     //   [unitAmount],
+      //     //   zeroForOne,
+      //     //   side,
+      //     //   balanceDestToken,
+      //     // );
+      //     // const pricesResult = this._getOutputs(
+      //     //   state,
+      //     //   _amounts,
+      //     //   zeroForOne,
+      //     //   side,
+      //     //   balanceDestToken,
+      //     // );
+
+      //     // if (!unitResult || !pricesResult) {
+      //     //   this.logger.debug('Prices or unit is not calculated');
+      //     //   return null;
+      //     // }
+
+      //     // const prices = [0n, ...pricesResult.outputs];
+      //     // TODO: Gas cost?
+      //     // const gasCost = [
+      //     //   0,
+      //     //   ...pricesResult.outputs.map((p, index) => {
+      //     //     if (p == 0n) {
+      //     //       return 0;
+      //     //     } else {
+      //     //       return (
+      //     //         UNISWAPV3_POOL_SEARCH_OVERHEAD +
+      //     //         UNISWAPV3_TICK_BASE_OVERHEAD +
+      //     //         pricesResult.tickCounts[index] * UNISWAPV3_TICK_GAS_COST
+      //     //       );
+      //     //     }
+      //     //   }),
+      //     // ];
+      //     return {
+      //       unit: unitResult.outputs[0],
+      //       prices,
+      //       data: {
+      //         path: [
+      //           {
+      //             tokenIn: _srcAddress,
+      //             tokenOut: _destAddress,
+      //             fee: pool.feeCode.toString(),
+      //             currentFee: state.fee.toString(),
+      //           },
+      //         ],
+      //       },
+      //       poolIdentifier: this.getPoolIdentifier(
+      //         pool.token0,
+      //         pool.token1,
+      //         pool.feeCode,
+      //       ),
+      //       exchange: this.dexKey,
+      //       gasCost: gasCost,
+      //       poolAddresses: [pool.poolAddress],
+      //     };
+      //   }),
+      // );
+      // const notNullResult = result.filter(
+      //   res => res !== null,
+      // ) as ExchangePrices<TraderJoeV2_1Data>;
+
+      // return notNullResult;
     } catch (error) {
       this.logger.error(
         `Error_getPricesVolume ${from.symbol || from.address}, ${
@@ -241,9 +392,20 @@ export class TraderJoeV2_1
       return null;
     }
 
-    return null;
+    // return null;
   }
 
+  protected computePrices(
+    pool: TraderJoeV2_1EventPool,
+    amounts: bigint[],
+    side: SwapSide,
+  ): bigint[] {
+    return amounts.map(amount => {
+      return side === SwapSide.SELL
+        ? pool.getSwapOut(amount)
+        : pool.getSwapIn(amount);
+    });
+  }
   // TODO: Check if it's non-existent pool
   private async addPool(
     srcAddress: Address,
@@ -258,6 +420,7 @@ export class TraderJoeV2_1
       srcAddress,
       destAddress,
       binStep,
+      this.factoryAddress,
       this.stateMulticallAddress,
       this.logger,
     );
@@ -275,6 +438,31 @@ export class TraderJoeV2_1
 
     return pool;
   }
+
+  // protected async findPools(
+  //   srcTokenAddress: Address,
+  //   destTokenAddress: Address,
+  //   blockNumber: number,
+  // ): Promise<Address[]> {
+  //   const pools: Address[] = [];
+  //   for (const [poolAddress, pool] of Object.entries(this.eventPools)) {
+  //     const state = await pool.getState(blockNumber);
+  //     if (!state) {
+  //       continue;
+  //     }
+
+  //     if (
+  //       state &&
+  //       !state.params.paused &&
+  //       state.asset[srcTokenAddress] &&
+  //       state.asset[destTokenAddress]
+  //     ) {
+  //       pools.push(poolAddress);
+  //     }
+  //   }
+
+  //   return pools;
+  // }
 
   private async getPool(
     srcAddress: Address,

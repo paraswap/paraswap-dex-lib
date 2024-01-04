@@ -75,7 +75,8 @@ import { ThenaFusion } from './quickswap/thena-fusion';
 import { TraderJoeV2 } from './trader-joe-v2';
 import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
-import { TraderJoeV21 } from './trader-joe-v2.1';
+import { TraderJoeV2_1 } from './trader-joe-v2-1-2/trader-joe-v2-1-2';
+// import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
 import { QuickPerps } from './quick-perps/quick-perps';
@@ -102,7 +103,7 @@ const LegacyDexes = [
   ThenaFusion,
   SpiritSwapV3,
   TraderJoeV2,
-  TraderJoeV21,
+  // TraderJoeV21,
   Jarvis,
   Lido,
   AugustusRFQOrder,
@@ -163,6 +164,7 @@ const Dexes = [
   SolidlyV3,
   Smardex,
   Wombat,
+  TraderJoeV2_1,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

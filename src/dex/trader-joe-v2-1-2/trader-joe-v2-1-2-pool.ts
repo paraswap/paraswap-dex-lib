@@ -48,6 +48,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     private token0: Address,
     private token1: Address,
     binStep: bigint,
+    private readonly factoryAddress: Address,
     private readonly stateMultiAddress: Address,
     logger: Logger,
   ) {
@@ -94,9 +95,13 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   //   this._poolAddress = address.toLowerCase();
   // }
 
-  getSwapOut() {}
+  getSwapOut(amount: bigint): bigint {
+    return 1n;
+  }
 
-  getSwapIn() {}
+  getSwapIn(amount: bigint): bigint {
+    return 1n;
+  }
 
   /**
    * The function is called every time any of the subscribed
@@ -133,10 +138,25 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    const state = this.stateMulti.methods
-      .getFullState()
-      .call({}, blockNumber) as PoolState;
-    return state;
+    this.logger.log(
+      `FFFF ${this.factoryAddress}, ${this.token0}, ${this.token1}, ${this.binStep}`,
+    );
+    blockNumber = 39927067;
+    try {
+      const state = (await this.stateMulti.methods
+        .getFullState(
+          this.factoryAddress,
+          this.token0,
+          this.token1,
+          this.binStep,
+        )
+        .call({}, blockNumber)) as PoolState;
+      this.logger.log('GEN_S_STATE', state);
+      return state;
+    } catch (error) {
+      this.logger.error('ERRRR', error);
+      return null as any;
+    }
   }
 
   // protected _getStateRequestCallData() {

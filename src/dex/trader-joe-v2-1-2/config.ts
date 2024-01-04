@@ -3,7 +3,7 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
 export const TraderJoeV2_1Config: DexConfigMap<DexParams> = {
-  TraderJoeV21: {
+  TraderJoeV2_1: {
     [Network.MAINNET]: {
       factory: '0xDC8d77b69155c7E68A95a4fb0f06a71FF90B943a',
       router: '0x9A93a421b74F1c5755b83dD2C211614dC419C44b',

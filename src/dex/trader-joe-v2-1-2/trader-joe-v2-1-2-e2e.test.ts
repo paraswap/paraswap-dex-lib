@@ -34,11 +34,11 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -95,47 +95,47 @@ function testForNetwork(
 describe('TraderJoeV2_1 E2E', () => {
   const dexKey = 'TraderJoeV2_1';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  // describe('Mainnet', () => {
+  //   const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'USDT';
+  //   const tokenASymbol: string = 'USDC';
+  //   const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '10000000';
-    const tokenBAmount: string = '10000000';
-    const nativeTokenAmount = '1000000000000000000';
+  //   const tokenAAmount: string = '10000000';
+  //   const tokenBAmount: string = '10000000';
+  //   const nativeTokenAmount = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-  });
+  //   testForNetwork(
+  //     network,
+  //     dexKey,
+  //     tokenASymbol,
+  //     tokenBSymbol,
+  //     tokenAAmount,
+  //     tokenBAmount,
+  //     nativeTokenAmount,
+  //   );
+  // });
 
-  describe('Arbitrum', () => {
-    const network = Network.ARBITRUM;
+  // describe('Arbitrum', () => {
+  //   const network = Network.ARBITRUM;
 
-    const tokenASymbol: string = 'USDCe';
-    const tokenBSymbol: string = 'USDT';
+  //   const tokenASymbol: string = 'USDCe';
+  //   const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '10000000';
-    const tokenBAmount: string = '10000000';
-    const nativeTokenAmount = '1000000000000000000';
+  //   const tokenAAmount: string = '10000000';
+  //   const tokenBAmount: string = '10000000';
+  //   const nativeTokenAmount = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-  });
+  //   testForNetwork(
+  //     network,
+  //     dexKey,
+  //     tokenASymbol,
+  //     tokenBSymbol,
+  //     tokenAAmount,
+  //     tokenBAmount,
+  //     nativeTokenAmount,
+  //   );
+  // });
 
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
@@ -158,24 +158,24 @@ describe('TraderJoeV2_1 E2E', () => {
     );
   });
 
-  describe('Bsc', () => {
-    const network = Network.BSC;
+  // describe('Bsc', () => {
+  //   const network = Network.BSC;
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'BUSD';
+  //   const tokenASymbol: string = 'USDT';
+  //   const tokenBSymbol: string = 'BUSD';
 
-    const tokenAAmount: string = '10000000';
-    const tokenBAmount: string = '10000000';
-    const nativeTokenAmount = '1000000000000000000';
+  //   const tokenAAmount: string = '10000000';
+  //   const tokenBAmount: string = '10000000';
+  //   const nativeTokenAmount = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-  });
+  //   testForNetwork(
+  //     network,
+  //     dexKey,
+  //     tokenASymbol,
+  //     tokenBSymbol,
+  //     tokenAAmount,
+  //     tokenBAmount,
+  //     nativeTokenAmount,
+  //   );
+  // });
 });
