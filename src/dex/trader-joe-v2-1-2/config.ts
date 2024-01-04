@@ -5,20 +5,24 @@ import { Network, SwapSide } from '../../constants';
 export const TraderJoeV2_1Config: DexConfigMap<DexParams> = {
   TraderJoeV21: {
     [Network.MAINNET]: {
-      factoryAddress: '0xDC8d77b69155c7E68A95a4fb0f06a71FF90B943a',
-      routerAddress: '0x9A93a421b74F1c5755b83dD2C211614dC419C44b',
+      factory: '0xDC8d77b69155c7E68A95a4fb0f06a71FF90B943a',
+      router: '0x9A93a421b74F1c5755b83dD2C211614dC419C44b',
+      stateMulticall: '',
     },
     [Network.ARBITRUM]: {
-      factoryAddress: '0x8e42f2F4101563bF679975178e880FD87d3eFd4e',
-      routerAddress: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
+      factory: '0x8e42f2F4101563bF679975178e880FD87d3eFd4e',
+      router: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
+      stateMulticall: '',
     },
     [Network.BSC]: {
-      factoryAddress: '0x8e42f2F4101563bF679975178e880FD87d3eFd4e',
-      routerAddress: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
+      factory: '0x8e42f2F4101563bF679975178e880FD87d3eFd4e',
+      router: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
+      stateMulticall: '',
     },
     [Network.AVALANCHE]: {
-      factoryAddress: '0x8e42f2F4101563bF679975178e880FD87d3eFd4e',
-      routerAddress: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
+      factory: '0x8e42f2F4101563bF679975178e880FD87d3eFd4e',
+      router: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
+      stateMulticall: '0x9517FfE5Cd4b1F26fdB351F4db00fDaEc2Ece0c1',
     },
   },
 };

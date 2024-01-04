@@ -49,10 +49,10 @@ export class TraderJoeV2_1
 
   exchangeRouterInterface: Interface;
 
-  uniswapMulti: Contract;
+  // uniswapMulti: Contract;
   factory: Contract;
   pair: Contract;
-  // factoryAddress: string;
+  factoryAddress: string;
   routerAddress: string;
 
   readonly eventPools: Record<string, TraderJoeV2_1EventPool | null> = {};
@@ -77,16 +77,16 @@ export class TraderJoeV2_1
     //   dexHelper,
     //   this.logger,
     // );
-    this.routerAddress = config[network].routerAddress;
-    // this.factoryAddress = config[network].factoryAddress;
+    this.routerAddress = config[network].router;
+    this.factoryAddress = config[network].factory;
     this.factory = new this.dexHelper.web3Provider.eth.Contract(
       TraderJoeV21FactoryABI as AbiItem[],
-      config[network].factoryAddress,
+      config[network].factory,
     );
-    this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
-      UniswapMultiABI as AbiItem[],
-      UniswapV3Config['UniswapV3'][network].uniswapMulticall,
-    );
+    // this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
+    //   UniswapMultiABI as AbiItem[],
+    //   UniswapV3Config['UniswapV3'][network].uniswapMulticall,
+    // );
     this.pair = new this.dexHelper.web3Provider.eth.Contract(
       MinLBPairAbi as AbiItem[],
     );

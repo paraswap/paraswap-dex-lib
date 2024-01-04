@@ -65,8 +65,9 @@ export type TraderJoeV2_1Data = {
 };
 
 export type DexParams = {
-  factoryAddress: Address;
-  routerAddress: Address;
+  factory: Address;
+  router: Address;
+  stateMulticall: Address;
 };
 
 export type LBPairsAvailable = {

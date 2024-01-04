@@ -1,0 +1,183 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "factoryAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IERC20",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IERC20",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "uint24",
+        "name": "binStep",
+        "type": "uint24"
+      }
+    ],
+    "name": "getFullState",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "contract ILBPair",
+            "name": "pair",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint24",
+                "name": "id",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint128",
+                "name": "reserveX",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "reserveY",
+                "type": "uint128"
+              }
+            ],
+            "internalType": "struct ITraderJoeV21StateMulticall.Bin[]",
+            "name": "bins",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "address",
+            "name": "pairAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "int128",
+            "name": "blockTimestamp",
+            "type": "int128"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint128",
+                "name": "reserveX",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "reserveY",
+                "type": "uint128"
+              }
+            ],
+            "internalType": "struct ITraderJoeV21StateMulticall.Reserves",
+            "name": "reserves",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint24",
+            "name": "activeId",
+            "type": "uint24"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint128",
+                "name": "protocolFeeX",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "protocolFeeY",
+                "type": "uint128"
+              }
+            ],
+            "internalType": "struct ITraderJoeV21StateMulticall.ProtocolFees",
+            "name": "protocolFees",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint16",
+                "name": "baseFactor",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint16",
+                "name": "filterPeriod",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint16",
+                "name": "decayPeriod",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint16",
+                "name": "reductionFactor",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint24",
+                "name": "variableFeeControl",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint16",
+                "name": "protocolShare",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint24",
+                "name": "maxVolatilityAccumulator",
+                "type": "uint24"
+              }
+            ],
+            "internalType": "struct ITraderJoeV21StateMulticall.StaticFeeParameters",
+            "name": "staticFeeParameters",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint24",
+                "name": "volatilityAccumulator",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint24",
+                "name": "volatilityReference",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint24",
+                "name": "idReference",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint40",
+                "name": "timeOfLastUpdate",
+                "type": "uint40"
+              }
+            ],
+            "internalType": "struct ITraderJoeV21StateMulticall.VariableFeeParameters",
+            "name": "variableFeeParameters",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct ITraderJoeV21StateMulticall.StateResult",
+        "name": "state",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
