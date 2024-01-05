@@ -187,7 +187,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     }
 
     if (
-      // isLast &&
       !exchangeParams[index].dexFuncHasRecipient &&
       !isETHAddress(priceRoute.destToken)
     ) {

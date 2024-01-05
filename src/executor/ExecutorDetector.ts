@@ -3,19 +3,7 @@ import { Address, OptimalRate } from '@paraswap/core';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { Executor01BytecodeBuilder } from './Executor01BytecodeBuilder';
 import { Executor02BytecodeBuilder } from './Executor02BytecodeBuilder';
-
-export enum Executors {
-  ONE = 'Executor01',
-  TWO = 'Executor02',
-}
-
-enum RouteExecutionType {
-  SINGLE_STEP = 0, // simpleSwap with 100% on a path and single DEX
-  HORIZONTAL_SEQUENCE = 1, // multiSwap with 100% on each path
-  VERTICAL_BRANCH = 3, // simpleSwap with N DEXs on a path
-  // VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 4, // megaSwap
-  // NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 5, // megaSwap
-}
+import { Executors, RouteExecutionType } from './types';
 
 export class ExecutorDetector {
   private executor01BytecodeBuilder: ExecutorBytecodeBuilder;
@@ -25,6 +13,7 @@ export class ExecutorDetector {
     [RouteExecutionType.SINGLE_STEP]: Executors.ONE,
     [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE,
     [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO,
+    [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO,
     // [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO,
     // [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]:
     //   Executors.TWO,
@@ -72,6 +61,8 @@ export class ExecutorDetector {
 
       if (has100PercentOnEachPath) {
         return RouteExecutionType.HORIZONTAL_SEQUENCE;
+      } else {
+        return RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE;
       }
     }
 
@@ -80,7 +71,6 @@ export class ExecutorDetector {
 
   getExecutorByPriceRoute(priceRoute: OptimalRate): Executors {
     const routeExecutionType = this.getRouteExecutionType(priceRoute);
-
     const executorName =
       this.routeExecutionTypeToExecutorMap[routeExecutionType];
 

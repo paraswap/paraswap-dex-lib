@@ -17,10 +17,11 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
     const tokens = Tokens[network];
     const holders = Holders[network];
-    const contractMethod = ContractMethod.simpleSwap;
     const slippage = undefined;
 
     describe('SimpleSwap', () => {
+      const contractMethod = ContractMethod.simpleSwap;
+
       describe('ETH -> SUSHI via SushiSwapV3 and UniswapV3', () => {
         const dexKeys = ['SushiSwapV3', 'UniswapV3'];
 
@@ -137,12 +138,45 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         });
       });
 
-      describe('USDT -> DAI via UniswapV3 and CurveV1', () => {
+      describe('USDT -> USDC via UniswapV3 and CurveV1', () => {
         const dexKeys = ['UniSwapV3', 'CurveV1'];
 
         const tokenASymbol: string = 'USDT';
-        const tokenBSymbol: string = 'DAI';
-        const tokenAAmount: string = '10000500000000';
+        const tokenBSymbol: string = 'USDC';
+        const tokenAAmount: string = '11000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+          );
+        });
+      });
+    });
+
+    describe('MultiSwap', () => {
+      const contractMethod = ContractMethod.multiSwap;
+
+      describe('DAI -> ETH -> SUSHI via SushiSwapV3 and UniswapV3', () => {
+        const dexKeys = ['SushiSwapV3', 'UniswapV3'];
+
+        const tokenASymbol: string = 'DAI';
+        const tokenBSymbol: string = 'SUSHI';
+        const tokenAAmount: string = '10000000000000000000000';
 
         const side = SwapSide.SELL;
 

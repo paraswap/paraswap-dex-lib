@@ -1,6 +1,7 @@
 import { Address, DexExchangeParam, OptimalRate, TxObject } from './types';
 import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
+import { ethers } from 'ethers';
 import AugustusV6ABI from './abi/AugustusV6.abi.json';
 import {
   encodeFeePercent,
@@ -12,8 +13,12 @@ import { IWethDepositorWithdrawer } from './dex/weth/types';
 import { DexAdapterService } from './dex';
 import { Weth } from './dex/weth/weth';
 import ERC20ABI from './abi/erc20.json';
-import { ExecutorDetector, Executors } from './executor/ExecutorDetector';
+import { ExecutorDetector } from './executor/ExecutorDetector';
+import { Executors } from './executor/types';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
+const {
+  utils: { hexlify, hexConcat, hexZeroPad },
+} = ethers;
 
 export class GenericSwapTransactionBuilder {
   augustusV6Interface: Interface;
@@ -222,13 +227,13 @@ export class GenericSwapTransactionBuilder {
 
     const side = priceRoute.side;
     const isSell = side === SwapSide.SELL;
-    const [partner, feePercent] = this.buildFees(
-      referrerAddress,
-      partnerAddress,
-      partnerFeePercent,
-      takeSurplus,
-      side,
-    );
+    // const [partner, feePercent] = this.buildFees(
+    //   referrerAddress,
+    //   partnerAddress,
+    //   partnerFeePercent,
+    //   takeSurplus,
+    //   side,
+    // );
 
     const swapParams = [
       this.executorDetector.getAddress(executorName),
@@ -238,11 +243,13 @@ export class GenericSwapTransactionBuilder {
         isSell ? priceRoute.srcAmount : minMaxAmount,
         isSell ? minMaxAmount : priceRoute.destAmount,
         isSell ? priceRoute.destAmount : priceRoute.srcAmount,
-        deadline,
-        uuidToBytes16(uuid),
+        hexConcat([
+          hexZeroPad(uuidToBytes16(uuid), 16),
+          hexZeroPad(hexlify(priceRoute.blockNumber), 16),
+        ]),
         beneficiary,
       ],
-      [partner, feePercent],
+      '0', // hexConcat([partner, hexZeroPad(hexlify(95), 12)]),
       permit,
       bytecode,
     ];
