@@ -17,3 +17,16 @@ export enum SpecialDex {
   // SWAP_ON_SWAAP_V2 = 3, // swapOnSwaapV2
   SEND_NATIVE = 4, // sendNative
 }
+
+export enum Executors {
+  ONE = 'Executor01',
+  TWO = 'Executor02',
+}
+
+export enum RouteExecutionType {
+  SINGLE_STEP = 0, // simpleSwap with 100% on a path and single DEX
+  HORIZONTAL_SEQUENCE = 1, // multiSwap with 100% on each path
+  VERTICAL_BRANCH = 3, // simpleSwap with N DEXs on a path
+  VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 4, // multiSwap, megaSwap
+  // NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 5, // megaSwap
+}
