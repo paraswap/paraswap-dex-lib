@@ -140,6 +140,7 @@ describe('TraderJoeV2_1 E2E', () => {
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 
+    // const tokenASymbol: string = 'AVAX';
     const tokenASymbol: string = 'AVAX';
     const tokenBSymbol: string = 'USDC';
 

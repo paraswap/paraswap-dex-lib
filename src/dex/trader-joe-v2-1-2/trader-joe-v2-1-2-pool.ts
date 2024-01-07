@@ -141,17 +141,63 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     this.logger.log(
       `FFFF ${this.factoryAddress}, ${this.token0}, ${this.token1}, ${this.binStep}`,
     );
-    blockNumber = 39927067;
     try {
-      const state = (await this.stateMulti.methods
+      const stateRaw = await this.stateMulti.methods
         .getFullState(
           this.factoryAddress,
           this.token0,
           this.token1,
           this.binStep,
         )
-        .call({}, blockNumber)) as PoolState;
-      this.logger.log('GEN_S_STATE', state);
+        .call({}, blockNumber);
+      // this.logger.log('GEN_S_STATE', stateRaw);
+      const state = {
+        tokenX: this.token0,
+        tokenY: this.token1,
+        binStep: this.binStep,
+        pairAddress: stateRaw.pair,
+        bins: stateRaw.bins.map((bin: any) => ({
+          id: BigInt(bin.id),
+          reserveX: BigInt(bin.reserveX),
+          reserveY: BigInt(bin.reserveY),
+        })),
+        blockTimestamp: BigInt(stateRaw.blockTimestamp),
+        reserves: {
+          reserveX: BigInt(stateRaw.reserves.reserveX),
+          reserveY: BigInt(stateRaw.reserves.reserveY),
+        },
+        activeId: BigInt(stateRaw.activeId),
+        protocolFees: {
+          protocolFeeX: BigInt(stateRaw.protocolFees.protocolFeeX),
+          protocolFeeY: BigInt(stateRaw.protocolFees.protocolFeeY),
+        },
+        staticFeeParameters: {
+          baseFactor: BigInt(stateRaw.staticFeeParameters.baseFactor),
+          filterPeriod: BigInt(stateRaw.staticFeeParameters.filterPeriod),
+          decayPeriod: BigInt(stateRaw.staticFeeParameters.decayPeriod),
+          reductionFactor: BigInt(stateRaw.staticFeeParameters.reductionFactor),
+          variableFeeControl: BigInt(
+            stateRaw.staticFeeParameters.variableFeeControl,
+          ),
+          protocolShare: BigInt(stateRaw.staticFeeParameters.protocolShare),
+          maxVolatilityAccumulator: BigInt(
+            stateRaw.staticFeeParameters.maxVolatilityAccumulator,
+          ),
+        },
+        variableFeeParameters: {
+          volatilityAccumulator: BigInt(
+            stateRaw.variableFeeParameters.volatilityAccumulator,
+          ),
+          volatilityReference: BigInt(
+            stateRaw.variableFeeParameters.volatilityReference,
+          ),
+          idReference: BigInt(stateRaw.variableFeeParameters.idReference),
+          timeOfLastUpdate: BigInt(
+            stateRaw.variableFeeParameters.timeOfLastUpdate,
+          ),
+        },
+      };
+      this.logger.log('STATE_PARSED', state);
       return state;
     } catch (error) {
       this.logger.error('ERRRR', error);
