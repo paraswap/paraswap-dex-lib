@@ -15,6 +15,7 @@ import {
   uint128ToBigNumber,
   uint256ToBigInt,
 } from '../../lib/decoders';
+import { NULL_ADDRESS } from '../../constants';
 
 export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -95,11 +96,34 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   //   this._poolAddress = address.toLowerCase();
   // }
 
-  getSwapOut(amount: bigint): bigint {
-    return 1n;
+  getSwapOut(amounts: bigint, swapForY: boolean, blockNumber: number): bigint {
+    let amountOut = 0n;
+
+    const state = this.getState(blockNumber);
+
+    if (
+      !state ||
+      !state.bins ||
+      state?.bins?.length === 0 ||
+      (state.reserves.reserveX === 0n && state.reserves.reserveY === 0n)
+    ) {
+      return 0n;
+    }
+    for (let i = 0; i < state.bins.length; i++) {
+      const bin = state.bins[i];
+      const binAmount = swapForY ? bin.reserveY : bin.reserveX;
+      if (binAmount >= amounts) {
+        amountOut += amounts;
+        break;
+      } else {
+        amountOut += binAmount;
+        amounts -= binAmount;
+      }
+    }
+    return amountOut;
   }
 
-  getSwapIn(amount: bigint): bigint {
+  getSwapIn(amount: bigint, swapForY: boolean, blockNumber: number): bigint {
     return 1n;
   }
 
@@ -197,7 +221,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
           ),
         },
       };
-      this.logger.log('STATE_PARSED', state);
+      this.logger.info('STATE_PARSED', state);
       return state;
     } catch (error) {
       this.logger.error('ERRRR', error);
@@ -205,6 +229,15 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     }
   }
 
+  isValid() {
+    return (
+      this.state?.pairAddress !== NULL_ADDRESS &&
+      this.state?.reserves?.reserveX != null &&
+      this.state?.reserves?.reserveY != null &&
+      (this.state?.reserves?.reserveY > 0n ||
+        this.state?.reserves?.reserveX > 0n)
+    );
+  }
   // protected _getStateRequestCallData() {
   //   if (!this._stateRequestCallData) {
   //     // const callData: MultiCallParams<bigint | bigint[]>[] = [

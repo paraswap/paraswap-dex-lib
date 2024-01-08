@@ -151,16 +151,16 @@ describe('TraderJoeV2_1', function () {
   let blockNumber: number;
   let traderJoeV2_1: TraderJoeV2_1;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('AVALANCHE', () => {
+    const network = Network.AVALANCHE;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'USDC';
-    const destTokenSymbol = 'USDT';
+    const srcTokenSymbol = 'AVAX';
+    const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,
