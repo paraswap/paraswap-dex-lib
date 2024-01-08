@@ -1,11 +1,19 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { NumberAsString, SwapSide } from '@paraswap/core';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDexTxBuilder } from './idex';
-import SWETH_ABI from '../abi/swETH.json';
-import { NULL_ADDRESS } from '../constants';
+import {
+  AdapterExchangeParam,
+  Address,
+  SimpleExchangeParam,
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import SWETH_ABI from '../../abi/swETH.json';
+import { NULL_ADDRESS } from '../../constants';
 import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
+import { IDexHelper } from '../../dex-helper';
+import { SimpleExchange } from '../simple-exchange';
+import { BI_POWS } from '../../bigint-constants';
+
+const unitPrice = BI_POWS[18];
 
 export const swETH: any = {
   1: '0xf951E335afb289353dc249e82926178EaC7DEd78',
@@ -17,15 +25,19 @@ export enum swETHFunctions {
 
 export type SwellData = {};
 
-export class Swell implements IDexTxBuilder<SwellData, any> {
+export class Swell
+  extends SimpleExchange
+  implements IDexTxBuilder<SwellData, any>
+{
   static dexKeys = ['swell'];
   swETHInterface: Interface;
 
   needWrapNative = false;
 
-  private network: number;
+  network: number;
 
   constructor(dexHelper: IDexHelper) {
+    super(dexHelper, 'swell');
     this.network = dexHelper.config.data.network;
 
     this.swETHInterface = new Interface(SWETH_ABI as JsonFragment[]);
