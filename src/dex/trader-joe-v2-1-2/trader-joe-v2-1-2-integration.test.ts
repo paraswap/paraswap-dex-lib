@@ -2,7 +2,12 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, JsonFragment, Result } from '@ethersproject/abi';
+import {
+  Interface,
+  JsonFragment,
+  Result,
+  defaultAbiCoder,
+} from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
@@ -34,6 +39,7 @@ function getReaderCalldata(
   }));
 }
 
+// TODO: Update for BUY, diff router return values
 function decodeReaderResult(
   results: Result,
   readerIface: Interface,

@@ -16,6 +16,7 @@ import {
   uint256ToBigInt,
 } from '../../lib/decoders';
 import { NULL_ADDRESS } from '../../constants';
+import { BASIS_POINT_MAX, SCALE_OFFSET } from './constants';
 
 export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -86,7 +87,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['ForcedDecay'] = this.handleForcedDecay.bind(this);
   }
 
-  getSwapOut(amounts: bigint, swapForY: boolean, blockNumber: number): bigint {
+  getSwapOut(amount: bigint, swapForY: boolean, blockNumber: number): bigint {
     let amountOut = 0n;
 
     const state = this.getState(blockNumber);
@@ -99,22 +100,76 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     ) {
       return 0n;
     }
-    for (let i = 0; i < state.bins.length; i++) {
+
+    // decrement until we fill the order, order is filled if amountsInLeft = 0;
+    // if amountInLeft > 0, then we only have the liquidity to fill amountIn - amountInLeft
+    let amountsInLeft = amount;
+
+    let i = state.bins.findIndex(bin => bin.id === state.activeId);
+    for (; i < state.bins.length; i++) {
       const bin = state.bins[i];
-      const binAmount = swapForY ? bin.reserveY : bin.reserveX;
-      if (binAmount >= amounts) {
-        amountOut += amounts;
-        break;
-      } else {
-        amountOut += binAmount;
-        amounts -= binAmount;
+      const binReserves = swapForY ? bin.reserveY : bin.reserveX;
+      if (binReserves >= 0n) {
+        const [amountsInWithFees, amountsOutOfBin, totalFees] =
+          this.getAmountsFromReserves(bin.id, amountsInLeft, binReserves);
       }
+      if (amountsInLeft == 0n) {
+        break;
+      }
+      // if (binReserves >= amount) {
+      //   amountOut += amount;
+      //   break;
+      // } else {
+      //   amountOut += binReserves;
+      //   amount -= binReserves;
+      // }
     }
     return amountOut;
   }
 
   getSwapIn(amount: bigint, swapForY: boolean, blockNumber: number): bigint {
     return 1n;
+  }
+
+  // MATH
+
+  getPriceFromId(id: bigint) {
+    const base = 1n + this.binStep / BASIS_POINT_MAX;
+    const exponent = id - BigInt(1 << 23);
+
+    return base ** exponent;
+  }
+
+  getAmountsFromReserves(
+    binId: bigint,
+    amountsInLeft: bigint,
+    binReserves: bigint,
+  ): [bigint, bigint, bigint] {
+    const result = [0n, 0n, 0n] as [bigint, bigint, bigint];
+    const price = this.getPriceFromId(binId);
+
+    // TODO: Not 1:1 mapping
+    const maxAmountIn = binReserves << (SCALE_OFFSET / price);
+    const totalFee = this.getBaseFee() + this.getVariableFee();
+    return result;
+  }
+
+  getBaseFee() {
+    return (
+      this.state?.staticFeeParameters?.baseFactor! * this.binStep * BigInt(1e10)
+    );
+  }
+
+  getVariableFee() {
+    const variableFeeControl =
+      this.state?.staticFeeParameters?.variableFeeControl!;
+    if (variableFeeControl === 0n) {
+      return 0n;
+    }
+    const prod =
+      this.state?.variableFeeParameters?.volatilityAccumulator! * this.binStep;
+    const variableFee = (prod * prod * variableFeeControl + 99n) / 100n;
+    return variableFee;
   }
 
   /**
