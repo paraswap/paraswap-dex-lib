@@ -39,7 +39,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -74,12 +73,10 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
 
-  console.log('READER_RESULT: ', readerResult);
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
 
-  console.log('EXPECTED_Prices: ', expectedPrices);
   expect(prices).toEqual(expectedPrices);
 }
 
