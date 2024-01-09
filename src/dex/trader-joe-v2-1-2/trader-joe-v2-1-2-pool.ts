@@ -34,20 +34,18 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   public initFailed = false;
   public initRetryAttemptCount = 0;
-  poolAddress?: Address;
   private stateMulti: Contract;
-
-  // protected _stateRequestCallData?: MultiCallParams<
-  //   bigint | DecodedStateMultiCallResult
-  // >[];
+  poolAddress?: Address;
+  token0: Address;
+  token1: Address;
   public readonly poolIface = new Interface(TraderJoeV2_1PoolABI);
 
   constructor(
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
-    private token0: Address,
-    private token1: Address,
+    token0: Address,
+    token1: Address,
     binStep: bigint,
     private readonly factoryAddress: Address,
     private readonly stateMultiAddress: Address,
@@ -66,8 +64,8 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     this.addressesSubscribed = Array(1);
 
     this.binStep = binStep;
-    this.token0 = token0;
-    this.token1 = token1;
+    this.token0 = token0.toLowerCase();
+    this.token1 = token1.toLowerCase();
 
     this.stateMulti = new this.dexHelper.web3Provider.eth.Contract(
       StateMulticallABI as AbiItem[],
@@ -87,14 +85,6 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['FlashLoan'] = this.handleFlashLoan.bind(this);
     this.handlers['ForcedDecay'] = this.handleForcedDecay.bind(this);
   }
-
-  // get poolAddress() {
-  //   return this._poolAddress;
-  // }
-
-  // set poolAddress(address: Address) {
-  //   this._poolAddress = address.toLowerCase();
-  // }
 
   getSwapOut(amounts: bigint, swapForY: boolean, blockNumber: number): bigint {
     let amountOut = 0n;

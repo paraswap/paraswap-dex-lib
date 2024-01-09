@@ -141,7 +141,7 @@ export class TraderJoeV2_1
           this.getPool(_srcAddress, _destAddress, binStep, blockNumber),
         ),
       )
-    ).filter(pool => pool);
+    ).filter(pool => pool.isValid());
 
     if (pools.length === 0) return [];
 

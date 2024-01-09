@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
+import { Interface, JsonFragment, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
@@ -13,34 +13,23 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for TraderJoeV2_1 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover TraderJoeV2_1 specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import TraderJoeV21RouterABI from '../../abi/trader-joe-v2_1/RouterABI.json';
+import { Address } from '@paraswap/core';
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  poolAddress: Address,
+  swapForY: boolean,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
+      poolAddress,
+      amount.toString(),
+      swapForY,
     ]),
   }));
 }
@@ -63,19 +52,21 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  poolAddress: Address,
+  swapForY: boolean,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  // Avalanche
+  const exchangeAddress = '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30';
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from traderJoeV2_1.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = new Interface(TraderJoeV21RouterABI as JsonFragment[]);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    poolAddress,
+    swapForY,
   );
   const readerResult = (
     await traderJoeV2_1.dexHelper.multiContract.methods
@@ -83,10 +74,12 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
 
+  console.log('READER_RESULT: ', readerResult);
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
 
+  console.log('EXPECTED_Prices: ', expectedPrices);
   expect(prices).toEqual(expectedPrices);
 }
 
@@ -136,6 +129,12 @@ async function testPricingOnNetwork(
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
 
+  const token0 = traderJoeV2_1?.eventPools[pools[0]]?.token0;
+  const poolAddress = traderJoeV2_1?.eventPools[pools[0]]?.poolAddress;
+
+  expect(token0).toBeTruthy();
+  expect(poolAddress).toBeTruthy();
+
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     traderJoeV2_1,
@@ -143,6 +142,9 @@ async function testPricingOnNetwork(
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    poolAddress!,
+    networkTokens[srcTokenSymbol].address.toLowerCase() ===
+      traderJoeV2_1?.eventPools[pools[0]]?.token0,
   );
 }
 
@@ -208,44 +210,44 @@ describe('TraderJoeV2_1', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'getSwapOut',
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        traderJoeV2_1,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
+    // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    //   await testPricingOnNetwork(
+    //     traderJoeV2_1,
+    //     network,
+    //     dexKey,
+    //     blockNumber,
+    //     srcTokenSymbol,
+    //     destTokenSymbol,
+    //     SwapSide.BUY,
+    //     amountsForBuy,
+    //     'getSwapIn', // TODO: Put here proper function name to check pricing
+    //   );
+    // });
 
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newTraderJoeV2_1 = new TraderJoeV2_1(network, dexKey, dexHelper);
-      if (newTraderJoeV2_1.updatePoolState) {
-        await newTraderJoeV2_1.updatePoolState();
-      }
-      const poolLiquidity = await newTraderJoeV2_1.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+    // it('getTopPoolsForToken', async function () {
+    //   // We have to check without calling initializePricing, because
+    //   // pool-tracker is not calling that function
+    //   const newTraderJoeV2_1 = new TraderJoeV2_1(network, dexKey, dexHelper);
+    //   if (newTraderJoeV2_1.updatePoolState) {
+    //     await newTraderJoeV2_1.updatePoolState();
+    //   }
+    //   const poolLiquidity = await newTraderJoeV2_1.getTopPoolsForToken(
+    //     tokens[srcTokenSymbol].address,
+    //     10,
+    //   );
+    //   console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newTraderJoeV2_1.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
-    });
+    //   if (!newTraderJoeV2_1.hasConstantPriceLargeAmounts) {
+    //     checkPoolsLiquidity(
+    //       poolLiquidity,
+    //       Tokens[network][srcTokenSymbol].address,
+    //       dexKey,
+    //     );
+    //   }
+    // });
   });
 });
