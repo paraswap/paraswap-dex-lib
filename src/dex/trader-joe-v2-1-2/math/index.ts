@@ -1,5 +1,8 @@
 import { DeepReadonly } from 'ts-essentials';
 import { PoolState } from '../types';
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 export class TraderJoeV21Math {
   private readonly BASIS_POINT_MAX = 10_000n;
@@ -7,6 +10,7 @@ export class TraderJoeV21Math {
   private readonly PRECISION = BigInt(1e18);
   private readonly REAL_ID_SHIFT = 1 << 23;
   private readonly SCALE = 1n << this.SCALE_OFFSET;
+  private readonly MAX_FEE = 0.1e18; // 10%
 
   getSwapOut(
     state: DeepReadonly<PoolState>,
@@ -17,14 +21,21 @@ export class TraderJoeV21Math {
     let amountOut = 0n;
     let fee = 0n;
     let amountsInLeft = amountIn;
+    // // console.log('JSON.bins', JSON.stringify(state.bins, null, 2));
+    // console.log('state.liquidity: ', state.reserves);
+    // console.log('activeId: ', state.activeId);
 
     let i = state.bins.findIndex(bin => bin.id === state.activeId);
+    // console.log('activeIdIndex: ', i);
+    // console.log('binAtActiveId', state.bins[i]);
+
     for (; i < state.bins.length; i++) {
       const bin = state.bins[i];
       const binReserves = swapForY ? bin.reserveY : bin.reserveX;
       if (binReserves >= 0n) {
         // TODO: ?
         // parameters = parameters.updateVolatilityAccumulator(id)
+        const volatilityAccumulator = this.updateVolatilityAccumulator(state);
         const [amountsInWithFees, amountsOutOfBin, totalFees] =
           this.getAmountsFromReserves(
             state,
@@ -33,6 +44,7 @@ export class TraderJoeV21Math {
             amountsInLeft,
             binReserves,
             swapForY,
+            volatilityAccumulator,
           );
         // console.log(
         //   `amountsInWithFees: ${amountsInWithFees}, amountsOutOfBin: ${amountsOutOfBin}, totalFees: ${totalFees}}`,
@@ -51,6 +63,22 @@ export class TraderJoeV21Math {
     return amountOut;
   }
 
+  updateVolatilityAccumulator(state: DeepReadonly<PoolState>): bigint {
+    const activeId = state.activeId;
+    const idReference = state?.variableFeeParameters?.idReference!;
+    const deltaId =
+      activeId > idReference ? activeId - idReference : idReference - activeId;
+    let volAcc =
+      state?.variableFeeParameters?.volatilityReference +
+      deltaId * this.BASIS_POINT_MAX;
+
+    const maxVolAcc = state?.staticFeeParameters?.maxVolatilityAccumulator;
+
+    volAcc = volAcc > maxVolAcc ? maxVolAcc : volAcc;
+
+    return volAcc;
+  }
+
   getAmountsFromReserves(
     state: DeepReadonly<PoolState>,
     binStep: bigint,
@@ -58,23 +86,36 @@ export class TraderJoeV21Math {
     amountInLeft: bigint,
     binReserves: bigint,
     swapForY: boolean,
+    volatilityAccumulator: bigint,
   ): [bigint, bigint, bigint] {
+    // if (binReserves > 0n) {
+    //   console.log(
+    //     `FUNC.swapForY: ${swapForY}, binReserves: ${binReserves}, binStep: ${binStep}, binId: ${binId}, amountInLeft: ${amountInLeft}`,
+    //   );
+    // }
     const result = [0n, 0n, 0n] as [bigint, bigint, bigint];
-    const price = this.getPriceFromId(binStep, binId);
+    const price = this.getPriceFromId(binStep, binId); // ok
 
     let maxAmountIn = swapForY
       ? this.shiftDivRoundUp(binReserves, this.SCALE_OFFSET, price)
       : this.mulShiftRoundUp(binReserves, price, this.SCALE_OFFSET);
 
-    // console.log('price: ', price);
-    // console.log(`maxAmountIn: ${maxAmountIn}`);
+    // if (binReserves > 0n) {
+    //   console.log('FUNC.swapForY: ', swapForY);
+    //   console.log('FUNC.price: ', price);
+    //   console.log(`FUNC.maxAmountIn: ${maxAmountIn}`);
+    // }
 
     const totalFee =
-      this.getBaseFee(state, binId) + this.getVariableFee(state, binId);
+      this.getBaseFee(state, binId) +
+      this.getVariableFee(state, binId, volatilityAccumulator); // ok
+    // const totalFee = 46274932115421274402048800n;
     const maxFee = this.getFeeAmount(maxAmountIn, totalFee);
 
-    // console.log('totalFee: ', totalFee);
-    // console.log('maxFee: ', maxFee);
+    // if (binReserves > 0n) {
+    //   console.log('FUNC.totalFee: ', totalFee);
+    //   console.log('FUNC.maxFee: ', maxFee);
+    // }
 
     maxAmountIn += maxFee;
 
@@ -91,7 +132,7 @@ export class TraderJoeV21Math {
 
       const amountInTemp = amountIn - fee;
 
-      amountOut = amountOut = swapForY
+      amountOut = swapForY
         ? this.mulShiftRoundDown(amountInTemp, price, this.SCALE_OFFSET)
         : this.shiftDivRoundDown(amountInTemp, this.SCALE_OFFSET, price);
 
@@ -156,27 +197,67 @@ export class TraderJoeV21Math {
     return invert ? (BigInt(2) ** 256n - 1n) / result : result;
   }
 
+  getTotalFee(
+    state: PoolState,
+    binStep: bigint,
+    newVolatilityAccumulator: bigint,
+  ): bigint {
+    return (
+      this.getBaseFee(state, binStep) +
+      this.getVariableFee(state, binStep, newVolatilityAccumulator)
+    );
+  }
+
+  //   getBaseFee(params: string, binStep: bigint): bigint {
+  //     // Assuming getBaseFactor returns a bigint
+  //     return this.getBaseFactor(params) * binStep * 1e10n;
+  // }
+
   getBaseFee(state: DeepReadonly<PoolState>, binStep: bigint) {
+    // console.log(
+    //   'state?.staticFeeParameters?.baseFactor: ',
+    //   state?.staticFeeParameters?.baseFactor!,
+    // );
     return state?.staticFeeParameters?.baseFactor! * binStep * BigInt(1e10);
   }
 
-  getVariableFee(state: DeepReadonly<PoolState>, binStep: bigint) {
+  getVariableFee(
+    state: DeepReadonly<PoolState>,
+    binStep: bigint,
+    newVolatilityAccumulator: bigint,
+  ) {
+    // console.log(
+    //   'state?.staticFeeParameters?.variableFeeControl: ',
+    //   state?.staticFeeParameters?.variableFeeControl!,
+    // );
+    // console.log(
+    //   'state?.variableFeeParameters?.volatilityAccumulator: ',
+    //   state?.variableFeeParameters?.volatilityAccumulator!,
+    // );
     const variableFeeControl = state?.staticFeeParameters?.variableFeeControl!;
     if (variableFeeControl === 0n) {
       return 0n;
     }
-    const prod = state?.variableFeeParameters?.volatilityAccumulator! * binStep;
+    const prod = newVolatilityAccumulator * binStep;
     const variableFee = (prod * prod * variableFeeControl + 99n) / 100n;
     return variableFee;
   }
 
   getFeeAmount(maxAmountIn: bigint, totalFee: bigint) {
+    // this.verifyFee(totalFee);
     const denominator = this.PRECISION - totalFee;
     return (maxAmountIn * totalFee + denominator - 1n) / denominator;
   }
 
   getFeeAmountFrom(amountInWithFees: bigint, totalFee: bigint) {
+    // this.verifyFee(totalFee);
     return amountInWithFees * totalFee + this.PRECISION - 1n / this.PRECISION;
+  }
+
+  verifyFee(fee: bigint): void {
+    if (fee > this.MAX_FEE) {
+      throw new Error('FeeHelper__FeeTooLarge');
+    }
   }
 
   shiftDivRoundUp(x: bigint, offset: bigint, denominator: bigint) {

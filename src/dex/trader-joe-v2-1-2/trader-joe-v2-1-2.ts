@@ -71,7 +71,6 @@ export class TraderJoeV2_1
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.logger.info('TrAderJoeV2_1_constructor.dexKey', dexKey);
 
     this.config = TraderJoeV2_1Config[dexKey][network];
 
