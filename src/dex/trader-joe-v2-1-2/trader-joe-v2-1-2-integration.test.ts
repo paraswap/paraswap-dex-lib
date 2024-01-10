@@ -47,7 +47,8 @@ function decodeReaderResult(
 ) {
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
+    console.log('PARSED: ', parsed);
+    return BigInt(parsed['amountOut']._hex);
   });
 }
 
@@ -164,7 +165,7 @@ describe('TraderJoeV2_1', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'AVAX';
+    const srcTokenSymbol = 'WAVAX';
     const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
