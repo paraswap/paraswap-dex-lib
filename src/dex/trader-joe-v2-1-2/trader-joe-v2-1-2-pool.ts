@@ -16,7 +16,7 @@ import {
   uint256ToBigInt,
 } from '../../lib/decoders';
 import { NULL_ADDRESS } from '../../constants';
-import { BASIS_POINT_MAX, SCALE_OFFSET } from './constants';
+import { BASIS_POINT_MAX, PRECISION, SCALE_OFFSET } from './constants';
 
 export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -142,15 +142,34 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   getAmountsFromReserves(
     binId: bigint,
-    amountsInLeft: bigint,
+    amountInLeft: bigint,
     binReserves: bigint,
   ): [bigint, bigint, bigint] {
     const result = [0n, 0n, 0n] as [bigint, bigint, bigint];
     const price = this.getPriceFromId(binId);
 
     // TODO: Not 1:1 mapping
-    const maxAmountIn = binReserves << (SCALE_OFFSET / price);
+    let maxAmountIn = binReserves << (SCALE_OFFSET / price);
     const totalFee = this.getBaseFee() + this.getVariableFee();
+    const maxFee = this.getFeeAmount(maxAmountIn, totalFee);
+
+    maxAmountIn += maxFee;
+    let amountIn = amountInLeft;
+    let fee: bigint;
+    let amountOut: bigint;
+
+    if (amountInLeft >= maxAmountIn) {
+      fee = maxFee;
+      amountIn = maxAmountIn;
+      amountOut = binReserves;
+    } else {
+      fee = this.getFeeAmountFrom(amountInLeft, totalFee);
+      // TODO: Implement
+      amountOut = 0n;
+    }
+    result[0] = amountIn;
+    result[1] = amountOut;
+    result[2] = fee;
     return result;
   }
 
@@ -170,6 +189,15 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
       this.state?.variableFeeParameters?.volatilityAccumulator! * this.binStep;
     const variableFee = (prod * prod * variableFeeControl + 99n) / 100n;
     return variableFee;
+  }
+
+  getFeeAmount(maxAmountIn: bigint, totalFee: bigint) {
+    const denominator = PRECISION - totalFee;
+    return (maxAmountIn * totalFee + denominator - 1n) / denominator;
+  }
+
+  getFeeAmountFrom(amountInWithFees: bigint, totalFee: bigint) {
+    return amountInWithFees * totalFee + PRECISION - 1n / PRECISION;
   }
 
   /**

@@ -6,6 +6,7 @@ export const POPULATED_POOL_CACHE_TTL = 12 * 60 * 60;
 
 export const BASIS_POINT_MAX = 10_000n;
 export const SCALE_OFFSET = 128n;
+export const PRECISION = BigInt(1e18);
 export const CACHE_PREFIX = 'dl';
 
 export const MinLBPairAbi = [
