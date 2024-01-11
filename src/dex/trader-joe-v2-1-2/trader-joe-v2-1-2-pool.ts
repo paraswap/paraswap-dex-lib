@@ -105,99 +105,22 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     }
 
     return this.math.getSwapOut(state, amount, this.binStep, swapForY);
-
-    // let amountOut = 0n;
-    // // decrement until we fill the order, order is filled if amountsInLeft = 0;
-    // // if amountInLeft > 0, then we only have the liquidity to fill amountIn - amountInLeft
-    // let amountsInLeft = amount;
-
-    // let i = state.bins.findIndex(bin => bin.id === state.activeId);
-    // for (; i < state.bins.length; i++) {
-    //   const bin = state.bins[i];
-    //   const binReserves = swapForY ? bin.reserveY : bin.reserveX;
-    //   if (binReserves >= 0n) {
-    //     const [amountsInWithFees, amountsOutOfBin, totalFees] =
-    //       this.getAmountsFromReserves(bin.id, amountsInLeft, binReserves);
-    //   }
-    //   if (amountsInLeft == 0n) {
-    //     break;
-    //   }
-    // }
-    // return amountOut;
   }
 
   getSwapIn(amount: bigint, swapForY: boolean, blockNumber: number): bigint {
-    return 1n;
+    const state = this.getState(blockNumber);
+
+    if (
+      !state ||
+      !state.bins ||
+      state?.bins?.length === 0 ||
+      (state.reserves.reserveX === 0n && state.reserves.reserveY === 0n)
+    ) {
+      return 0n;
+    }
+
+    return this.math.getSwapIn(state, amount, this.binStep, swapForY);
   }
-
-  // MATH
-
-  // getPriceFromId(id: bigint) {
-  //   const base = 1n + this.binStep / BASIS_POINT_MAX;
-  //   const exponent = id - BigInt(1 << 23);
-
-  //   return base ** exponent;
-  // }
-
-  // getAmountsFromReserves(
-  //   binId: bigint,
-  //   amountInLeft: bigint,
-  //   binReserves: bigint,
-  // ): [bigint, bigint, bigint] {
-  //   const result = [0n, 0n, 0n] as [bigint, bigint, bigint];
-  //   const price = this.getPriceFromId(binId);
-
-  //   // TODO: Not 1:1 mapping
-  //   let maxAmountIn = binReserves << (SCALE_OFFSET / price);
-  //   const totalFee = this.getBaseFee() + this.getVariableFee();
-  //   const maxFee = this.getFeeAmount(maxAmountIn, totalFee);
-
-  //   maxAmountIn += maxFee;
-  //   let amountIn = amountInLeft;
-  //   let fee: bigint;
-  //   let amountOut: bigint;
-
-  //   if (amountInLeft >= maxAmountIn) {
-  //     fee = maxFee;
-  //     amountIn = maxAmountIn;
-  //     amountOut = binReserves;
-  //   } else {
-  //     fee = this.getFeeAmountFrom(amountInLeft, totalFee);
-  //     // TODO: Implement
-  //     amountOut = 0n;
-  //   }
-  //   result[0] = amountIn;
-  //   result[1] = amountOut;
-  //   result[2] = fee;
-  //   return result;
-  // }
-
-  // getBaseFee() {
-  //   return (
-  //     this.state?.staticFeeParameters?.baseFactor! * this.binStep * BigInt(1e10)
-  //   );
-  // }
-
-  // getVariableFee() {
-  //   const variableFeeControl =
-  //     this.state?.staticFeeParameters?.variableFeeControl!;
-  //   if (variableFeeControl === 0n) {
-  //     return 0n;
-  //   }
-  //   const prod =
-  //     this.state?.variableFeeParameters?.volatilityAccumulator! * this.binStep;
-  //   const variableFee = (prod * prod * variableFeeControl + 99n) / 100n;
-  //   return variableFee;
-  // }
-
-  // getFeeAmount(maxAmountIn: bigint, totalFee: bigint) {
-  //   const denominator = PRECISION - totalFee;
-  //   return (maxAmountIn * totalFee + denominator - 1n) / denominator;
-  // }
-
-  // getFeeAmountFrom(amountInWithFees: bigint, totalFee: bigint) {
-  //   return amountInWithFees * totalFee + PRECISION - 1n / PRECISION;
-  // }
 
   /**
    * The function is called every time any of the subscribed

@@ -12,6 +12,58 @@ export class TraderJoeV21Math {
   private readonly SCALE = 1n << this.SCALE_OFFSET;
   private readonly MAX_FEE = 0.1e18; // 10%
 
+  getSwapIn(
+    state: DeepReadonly<PoolState>,
+    amountOut: bigint,
+    binStep: bigint,
+    swapForY: boolean,
+  ): bigint {
+    let amountIn = 0n;
+    let fee = 0n;
+    let amountOutLeft = amountOut;
+
+    const parameters = this.updateReferences(state);
+
+    let i = state.bins.findIndex(bin => bin.id === state.activeId);
+
+    for (; i < state.bins.length; i++) {
+      const bin = state.bins[i];
+      const binReserves = swapForY ? bin.reserveY : bin.reserveX;
+      if (binReserves > 0n) {
+        const price = this.getPriceFromId(binStep, bin.id);
+
+        const amountOutOfBin =
+          binReserves > amountOutLeft ? amountOutLeft : binReserves;
+        const volatilityAccumulator = this.updateVolatilityAccumulator(
+          state,
+          parameters.idReference,
+          parameters.volatilityReference,
+        );
+
+        const amountInWithoutFee = swapForY
+          ? this.shiftDivRoundUp(amountOutOfBin, this.SCALE_OFFSET, price)
+          : this.mulShiftRoundUp(amountOutOfBin, price, this.SCALE_OFFSET);
+
+        const baseFee = this.getBaseFee(state, binStep);
+        const variableFee = this.getVariableFee(
+          state,
+          binStep,
+          volatilityAccumulator,
+        );
+        const totalFee = baseFee + variableFee;
+        const maxFee = this.getFeeAmount(amountInWithoutFee, totalFee);
+
+        amountIn += amountInWithoutFee + maxFee;
+        amountOutLeft -= amountOutOfBin;
+        fee += totalFee;
+      }
+      if (amountOutLeft == 0n) {
+        break;
+      }
+    }
+    return amountIn;
+  }
+
   getSwapOut(
     state: DeepReadonly<PoolState>,
     amountIn: bigint,
@@ -22,19 +74,14 @@ export class TraderJoeV21Math {
     let fee = 0n;
     let amountsInLeft = amountIn;
 
-    // console.log('GET_SWAP.state', state);
-    // console.log('state.liquidity: ', state.reserves);
-    // console.log('activeId: ', state.activeId);
+    const parameters = this.updateReferences(state);
 
     let i = state.bins.findIndex(bin => bin.id === state.activeId);
-    // console.log('activeIdIndex: ', i);
-    // console.log('binAtActiveId', state.bins[i]);
 
-    const parameters = this.updateReferences(state);
     for (; i < state.bins.length; i++) {
       const bin = state.bins[i];
       const binReserves = swapForY ? bin.reserveY : bin.reserveX;
-      if (binReserves >= 0n) {
+      if (binReserves > 0n) {
         const volatilityAccumulator = this.updateVolatilityAccumulator(
           state,
           parameters.idReference,
@@ -50,9 +97,6 @@ export class TraderJoeV21Math {
             swapForY,
             volatilityAccumulator,
           );
-        // console.log(
-        //   `amountsInWithFees: ${amountsInWithFees}, amountsOutOfBin: ${amountsOutOfBin}, totalFees: ${totalFees}}`,
-        // );
 
         if (amountsInWithFees > 0n) {
           amountsInLeft -= amountsInWithFees;
@@ -94,23 +138,12 @@ export class TraderJoeV21Math {
     swapForY: boolean,
     volatilityAccumulator: bigint,
   ): [bigint, bigint, bigint] {
-    // if (binReserves > 0n) {
-    //   console.log(
-    //     `FUNC.swapForY: ${swapForY}, binReserves: ${binReserves}, binStep: ${binStep}, binId: ${binId}, amountInLeft: ${amountInLeft}`,
-    //   );
-    // }
     const result = [0n, 0n, 0n] as [bigint, bigint, bigint];
     const price = this.getPriceFromId(binStep, binId); // ok
 
     let maxAmountIn = swapForY
       ? this.shiftDivRoundUp(binReserves, this.SCALE_OFFSET, price)
       : this.mulShiftRoundUp(binReserves, price, this.SCALE_OFFSET);
-
-    // if (binReserves > 0n) {
-    //   console.log('FUNC.swapForY: ', swapForY);
-    //   console.log('FUNC.price: ', price);
-    //   console.log(`FUNC.maxAmountIn: ${maxAmountIn}`);
-    // }
 
     const baseFee = this.getBaseFee(state, binStep);
     const variableFee = this.getVariableFee(
@@ -120,11 +153,6 @@ export class TraderJoeV21Math {
     );
     const totalFee = baseFee + variableFee;
     const maxFee = this.getFeeAmount(maxAmountIn, totalFee);
-
-    // if (binReserves > 0n) {
-    //   console.log('FUNC.totalFee: ', totalFee);
-    //   console.log('FUNC.maxFee: ', maxFee);
-    // }
 
     maxAmountIn += maxFee;
 
@@ -161,9 +189,6 @@ export class TraderJoeV21Math {
     const base = this.getBase(binStep);
     const exponent = BigInt(Number(id) - this.REAL_ID_SHIFT);
 
-    // console.log(`binStep: ${binStep}, id: ${id}`);
-    // console.log(`Base: ${base}, exponent: ${exponent}`);
-    // return BigInt(base ** Number(exponent));
     return this.pow(base, exponent);
   }
 
@@ -199,7 +224,6 @@ export class TraderJoeV21Math {
       }
     }
 
-    // Check for underflow
     if (result === 0n)
       throw new Error(`Uint128x128Math__PowUnderflow: x=${x}, y=${y}`);
 
@@ -217,16 +241,7 @@ export class TraderJoeV21Math {
     );
   }
 
-  //   getBaseFee(params: string, binStep: bigint): bigint {
-  //     // Assuming getBaseFactor returns a bigint
-  //     return this.getBaseFactor(params) * binStep * 1e10n;
-  // }
-
   getBaseFee(state: DeepReadonly<PoolState>, binStep: bigint) {
-    // console.log(
-    //   'state?.staticFeeParameters?.baseFactor: ',
-    //   state?.staticFeeParameters?.baseFactor!,
-    // );
     return state?.staticFeeParameters?.baseFactor! * binStep * BigInt(1e10);
   }
 
@@ -235,14 +250,6 @@ export class TraderJoeV21Math {
     binStep: bigint,
     newVolatilityAccumulator: bigint,
   ) {
-    // console.log(
-    //   'state?.staticFeeParameters?.variableFeeControl: ',
-    //   state?.staticFeeParameters?.variableFeeControl!,
-    // );
-    // console.log(
-    //   'state?.variableFeeParameters?.volatilityAccumulator: ',
-    //   state?.variableFeeParameters?.volatilityAccumulator!,
-    // );
     const variableFeeControl = state?.staticFeeParameters?.variableFeeControl!;
     if (variableFeeControl === 0n) {
       return 0n;
@@ -270,7 +277,6 @@ export class TraderJoeV21Math {
   }
 
   shiftDivRoundUp(x: bigint, offset: bigint, denominator: bigint) {
-    // return x << (offset / denominator);
     let result = this.shiftDivRoundDown(x, offset, denominator);
     if (this.mulMod(x, 1n << offset, denominator) !== 0n) {
       result += 1n;
@@ -279,10 +285,8 @@ export class TraderJoeV21Math {
   }
 
   shiftDivRoundDown(x: bigint, offset: bigint, denominator: bigint): bigint {
-    const prod0 = x << offset; // Least significant 256 bits of the product
-    // JavaScript doesn't support shifting of bigint more than 64 bits directly.
-    // Hence, a manual method to shift is required for larger values.
-    const prod1 = this.manualShiftRight(x, 256n - offset); // Most significant 256 bits of the product
+    const prod0 = x << offset;
+    const prod1 = this.manualShiftRight(x, 256n - offset);
 
     return this.getEndOfDivRoundDown(
       x,
@@ -300,43 +304,33 @@ export class TraderJoeV21Math {
     prod0: bigint,
     prod1: bigint,
   ): bigint {
-    // Handle non-overflow cases, 256 by 256 division
     if (prod1 === 0n) {
       return prod0 / denominator;
     } else {
-      // Make sure the result is less than 2^256. Also prevents denominator == 0
       if (prod1 >= denominator) {
         throw new Error('Uint256x256Math__MulDivOverflow');
       }
 
-      // Compute remainder using mulMod.
       const remainder = this.mulMod(x, y, denominator);
 
-      // Subtract 256 bit number from 512 bit number.
       let adjustedProd0 = prod0 - remainder;
       let adjustedProd1 = prod1 - (remainder > prod0 ? 1n : 0n);
 
-      // Factor powers of two out of denominator and compute largest power of two divisor of denominator. Always >= 1
       const lpotdod = denominator & (~denominator + 1n);
       denominator /= lpotdod;
       adjustedProd0 /= lpotdod;
 
-      // Shift in bits from prod1 into prod0
       adjustedProd0 |= adjustedProd1 * (2n ** 256n / lpotdod);
 
-      // Compute modular inverse
       let inverse = (3n * denominator) ^ 2n;
       inverse = this.improvePrecision(denominator, inverse);
 
-      // Multiply with the modular inverse of denominator
       return adjustedProd0 * inverse;
     }
   }
 
   manualShiftRight(x: bigint, shift: bigint): bigint {
-    // Implement the logic to shift right by a large number of bits
-    // Placeholder return
-    return x / (1n << shift); // Simplified implementation
+    return x / (1n << shift);
   }
 
   // TODO: Check if this is required
@@ -360,7 +354,6 @@ export class TraderJoeV21Math {
   // }
 
   // divideBigInt(value: bigint): bigint {
-  //   // Handling division by 2 with proper flooring
   //   return value > 0n ? value / 2n : (value - 1n) / 2n;
   // }
 
@@ -390,7 +383,6 @@ export class TraderJoeV21Math {
     let result = prod0 >> BigInt(offset);
 
     if (prod1 !== 0n) {
-      // Check for potential overflow
       if (prod1 >= 1n << BigInt(offset)) {
         throw new Error('Uint256x256Math__MulShiftOverflow');
       }
@@ -403,62 +395,15 @@ export class TraderJoeV21Math {
 
   getMulProds(x: bigint, y: bigint): [bigint, bigint] {
     const prod0 = x * y;
-    // Calculating the higher bits of the product involves complex arithmetic that JavaScript cannot handle natively.
-    // The approximation below may not be accurate for extremely large numbers.
     const prod1 = (x * y - prod0) / (1n << 256n);
 
     return [prod0, prod1];
   }
 
-  ////
-  // /**
-  //  * Calculates floor(x * y / 2**offset) with full precision
-  //  * The result will be rounded down
-  //  * Requirements:
-  //  * - The offset needs to be strictly lower than 256
-  //  * - The result must fit within uint256
-  //  * Caveats:
-  //  * - This function does not work with fixed-point numbers
-  //  * @param x The multiplicand as a bigint
-  //  * @param y The multiplier as a bigint
-  //  * @param offset The offset as a bigint, can't be greater than 256
-  //  * @return The result as a bigint
-  //  */
-  // mulShiftRoundDown(x: bigint, y: bigint, offset: bigint): bigint {
-  //   let [prod0, prod1] = this.getMulProds(x, y);
-  //   let result: bigint = 0n;
-
-  //   if (prod0 !== 0n) result = prod0 >> offset;
-  //   if (prod1 !== 0n) {
-  //     // Make sure the result is less than 2^256.
-  //     if (prod1 >= 1n << offset) throw new Error('MulShiftOverflow');
-
-  //     result += prod1 << (256n - offset);
-  //   }
-
-  //   return result;
-  // }
-
-  // /**
-  //  * Helper function to return the result of `x * y` as 2 bigints
-  //  * @param x The multiplicand as a bigint
-  //  * @param y The multiplier as a bigint
-  //  * @return The least and most significant 256 bits of the product
-  //  */
-  // getMulProds(x: bigint, y: bigint): [bigint, bigint] {
-  //   const MOD = 1n << 256n;
-  //   const fullProduct = x * y;
-  //   const prod0 = fullProduct % MOD;
-  //   const prod1 = fullProduct / MOD;
-
-  //   return [prod0, prod1];
-  // }
-
-  updateReferences(
-    state: DeepReadonly<PoolState>,
-    // timestamp: bigint,
-  ): { idReference: bigint; volatilityReference: bigint } {
-    // const dt = timestamp - state.variableFeeParameters.timeOfLastUpdate;
+  updateReferences(state: DeepReadonly<PoolState>): {
+    idReference: bigint;
+    volatilityReference: bigint;
+  } {
     const dt =
       state.blockTimestamp - state.variableFeeParameters.timeOfLastUpdate;
 
@@ -466,12 +411,11 @@ export class TraderJoeV21Math {
     let volatilityReference: bigint | null = null;
 
     if (dt >= state.staticFeeParameters.filterPeriod) {
-      // Assuming getFilterPeriod returns bigint
       idReference = state.activeId;
       volatilityReference =
         dt < state.staticFeeParameters.decayPeriod
           ? this.updateVolatilityReference(state)
-          : 0n; // : this.setVolatilityReference(state, 0n);
+          : 0n;
     }
 
     return {

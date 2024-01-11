@@ -44,11 +44,14 @@ function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
+  side: SwapSide,
 ) {
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     console.log('PARSED: ', parsed);
-    return BigInt(parsed['amountOut']._hex);
+    return side === SwapSide.SELL
+      ? BigInt(parsed['amountOut']._hex)
+      : BigInt(parsed['amountIn']._hex);
   });
 }
 
@@ -60,6 +63,7 @@ async function checkOnChainPricing(
   amounts: bigint[],
   poolAddress: Address,
   swapForY: boolean,
+  side: SwapSide,
 ) {
   // Avalanche
   const exchangeAddress = '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30';
@@ -81,7 +85,7 @@ async function checkOnChainPricing(
   ).returnData;
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
+    decodeReaderResult(readerResult, readerIface, funcName, side),
   );
 
   expect(prices).toEqual(expectedPrices);
@@ -149,6 +153,7 @@ async function testPricingOnNetwork(
     poolAddress!,
     networkTokens[srcTokenSymbol].address.toLowerCase() ===
       traderJoeV2_1?.eventPools[pools[0]]?.token0,
+    side,
   );
 }
 
@@ -216,19 +221,19 @@ describe('TraderJoeV2_1', function () {
       );
     });
 
-    // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    //   await testPricingOnNetwork(
-    //     traderJoeV2_1,
-    //     network,
-    //     dexKey,
-    //     blockNumber,
-    //     srcTokenSymbol,
-    //     destTokenSymbol,
-    //     SwapSide.BUY,
-    //     amountsForBuy,
-    //     'getSwapIn', // TODO: Put here proper function name to check pricing
-    //   );
-    // });
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        traderJoeV2_1,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        'getSwapIn',
+      );
+    });
 
     // it('getTopPoolsForToken', async function () {
     //   // We have to check without calling initializePricing, because
