@@ -17,6 +17,7 @@ import {
 } from '../../lib/decoders';
 import { NULL_ADDRESS } from '../../constants';
 import { BASIS_POINT_MAX, PRECISION, SCALE_OFFSET } from './constants';
+// import { TraderJoeV21Math } from './mathv2';
 import { TraderJoeV21Math } from './math';
 
 export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
@@ -245,7 +246,8 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
           this.binStep,
         )
         .call({}, blockNumber);
-      // this.logger.log('GEN_S_STATE', stateRaw);
+      // this.logger.log('GEN_S_STATE', JSON.stringify(stateRaw, null, 2));
+      this.logger.log('GEN_S_STATE', stateRaw, null, 2);
       const state = {
         tokenX: this.token0,
         tokenY: this.token1,

@@ -34,8 +34,8 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
     // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
@@ -141,10 +141,11 @@ describe('TraderJoeV2_1 E2E', () => {
     const network = Network.AVALANCHE;
 
     // const tokenASymbol: string = 'AVAX';
-    const tokenASymbol: string = 'AVAX';
+    const tokenASymbol: string = 'WAVAX';
     const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '10000000';
+    // const tokenAAmount: string = '10000000';
+    const tokenAAmount: string = '1000000000000000000';
     const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '1000000000000000000';
 

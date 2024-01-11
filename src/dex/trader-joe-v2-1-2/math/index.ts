@@ -21,7 +21,8 @@ export class TraderJoeV21Math {
     let amountOut = 0n;
     let fee = 0n;
     let amountsInLeft = amountIn;
-    // // console.log('JSON.bins', JSON.stringify(state.bins, null, 2));
+
+    // console.log('GET_SWAP.state', state);
     // console.log('state.liquidity: ', state.reserves);
     // console.log('activeId: ', state.activeId);
 
@@ -29,13 +30,16 @@ export class TraderJoeV21Math {
     // console.log('activeIdIndex: ', i);
     // console.log('binAtActiveId', state.bins[i]);
 
+    const parameters = this.updateReferences(state);
     for (; i < state.bins.length; i++) {
       const bin = state.bins[i];
       const binReserves = swapForY ? bin.reserveY : bin.reserveX;
       if (binReserves >= 0n) {
-        // TODO: ?
-        // parameters = parameters.updateVolatilityAccumulator(id)
-        const volatilityAccumulator = this.updateVolatilityAccumulator(state);
+        const volatilityAccumulator = this.updateVolatilityAccumulator(
+          state,
+          parameters.idReference,
+          parameters.volatilityReference,
+        );
         const [amountsInWithFees, amountsOutOfBin, totalFees] =
           this.getAmountsFromReserves(
             state,
@@ -63,14 +67,16 @@ export class TraderJoeV21Math {
     return amountOut;
   }
 
-  updateVolatilityAccumulator(state: DeepReadonly<PoolState>): bigint {
+  updateVolatilityAccumulator(
+    state: DeepReadonly<PoolState>,
+    newIdReference: bigint,
+    newVolatilityReference: bigint,
+  ): bigint {
     const activeId = state.activeId;
-    const idReference = state?.variableFeeParameters?.idReference!;
+    const idReference = newIdReference;
     const deltaId =
       activeId > idReference ? activeId - idReference : idReference - activeId;
-    let volAcc =
-      state?.variableFeeParameters?.volatilityReference +
-      deltaId * this.BASIS_POINT_MAX;
+    let volAcc = newVolatilityReference + deltaId * this.BASIS_POINT_MAX;
 
     const maxVolAcc = state?.staticFeeParameters?.maxVolatilityAccumulator;
 
@@ -106,10 +112,13 @@ export class TraderJoeV21Math {
     //   console.log(`FUNC.maxAmountIn: ${maxAmountIn}`);
     // }
 
-    const totalFee =
-      this.getBaseFee(state, binId) +
-      this.getVariableFee(state, binId, volatilityAccumulator); // ok
-    // const totalFee = 46274932115421274402048800n;
+    const baseFee = this.getBaseFee(state, binStep);
+    const variableFee = this.getVariableFee(
+      state,
+      binStep,
+      volatilityAccumulator,
+    );
+    const totalFee = baseFee + variableFee;
     const maxFee = this.getFeeAmount(maxAmountIn, totalFee);
 
     // if (binReserves > 0n) {
@@ -244,14 +253,14 @@ export class TraderJoeV21Math {
   }
 
   getFeeAmount(maxAmountIn: bigint, totalFee: bigint) {
-    // this.verifyFee(totalFee);
+    this.verifyFee(totalFee);
     const denominator = this.PRECISION - totalFee;
     return (maxAmountIn * totalFee + denominator - 1n) / denominator;
   }
 
   getFeeAmountFrom(amountInWithFees: bigint, totalFee: bigint) {
-    // this.verifyFee(totalFee);
-    return amountInWithFees * totalFee + this.PRECISION - 1n / this.PRECISION;
+    this.verifyFee(totalFee);
+    return (amountInWithFees * totalFee + this.PRECISION - 1n) / this.PRECISION;
   }
 
   verifyFee(fee: bigint): void {
@@ -444,4 +453,45 @@ export class TraderJoeV21Math {
 
   //   return [prod0, prod1];
   // }
+
+  updateReferences(
+    state: DeepReadonly<PoolState>,
+    // timestamp: bigint,
+  ): { idReference: bigint; volatilityReference: bigint } {
+    // const dt = timestamp - state.variableFeeParameters.timeOfLastUpdate;
+    const dt =
+      state.blockTimestamp - state.variableFeeParameters.timeOfLastUpdate;
+
+    let idReference: bigint | null = null;
+    let volatilityReference: bigint | null = null;
+
+    if (dt >= state.staticFeeParameters.filterPeriod) {
+      // Assuming getFilterPeriod returns bigint
+      idReference = state.activeId;
+      volatilityReference =
+        dt < state.staticFeeParameters.decayPeriod
+          ? this.updateVolatilityReference(state)
+          : 0n; // : this.setVolatilityReference(state, 0n);
+    }
+
+    return {
+      idReference: idReference || state.variableFeeParameters.idReference,
+      volatilityReference:
+        volatilityReference || state.variableFeeParameters.volatilityReference,
+    };
+
+    // TODO: Do we need it for pricing?
+    // return updateTimeOfLastUpdate(params, timestamp); // Assuming updateTimeOfLastUpdate is implemented
+  }
+
+  updateVolatilityReference(state: DeepReadonly<PoolState>): bigint {
+    const volAcc = state.variableFeeParameters.volatilityAccumulator;
+    const reductionFactor = state.staticFeeParameters.reductionFactor;
+
+    const volRef = BigInt.asUintN(
+      24,
+      (volAcc * reductionFactor) / this.BASIS_POINT_MAX,
+    );
+    return volRef;
+  }
 }
