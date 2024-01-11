@@ -169,8 +169,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
           this.binStep,
         )
         .call({}, blockNumber);
-      // this.logger.log('GEN_S_STATE', JSON.stringify(stateRaw, null, 2));
-      this.logger.log('GEN_S_STATE', stateRaw, null, 2);
+
       const state = {
         tokenX: this.token0,
         tokenY: this.token1,

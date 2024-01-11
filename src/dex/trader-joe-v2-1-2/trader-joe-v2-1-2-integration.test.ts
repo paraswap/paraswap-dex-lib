@@ -39,7 +39,6 @@ function getReaderCalldata(
   }));
 }
 
-// TODO: Update for BUY, diff router return values
 function decodeReaderResult(
   results: Result,
   readerIface: Interface,
@@ -65,7 +64,7 @@ async function checkOnChainPricing(
   swapForY: boolean,
   side: SwapSide,
 ) {
-  // Avalanche
+  // Avalanche router
   const exchangeAddress = '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30';
 
   const readerIface = new Interface(TraderJoeV21RouterABI as JsonFragment[]);

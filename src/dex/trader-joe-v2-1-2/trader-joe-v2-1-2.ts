@@ -36,7 +36,7 @@ import { MinLBPairAbi, SUPPORTED_BIN_STEPS } from './constants';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { UniswapV3Config } from '../uniswap-v3/config';
-import { add } from 'lodash';
+// import _, { add } from 'lodash';
 
 export class TraderJoeV2_1
   extends SimpleExchange
@@ -305,12 +305,16 @@ export class TraderJoeV2_1
     binStep: bigint,
     blockNumber: number,
   ) {
+    const [_srcAddress, _destAddress] = this._sortTokens(
+      srcAddress,
+      destAddress,
+    );
     const pool = new TraderJoeV2_1EventPool(
       this.dexKey,
       this.network,
       this.dexHelper,
-      srcAddress,
-      destAddress,
+      _srcAddress,
+      _destAddress,
       binStep,
       this.factoryAddress,
       this.stateMulticallAddress,
@@ -378,7 +382,7 @@ export class TraderJoeV2_1
 
   private _sortTokens(srcAddress: Address, destAddress: Address) {
     return [srcAddress.toLowerCase(), destAddress.toLowerCase()].sort((a, b) =>
-      a < b ? -1 : 1,
+      a > b ? 1 : -1,
     );
   }
 
