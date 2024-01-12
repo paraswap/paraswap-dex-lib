@@ -36,36 +36,36 @@ describe('TraderJoeV2.1 Events Avalanche', function () {
   const binStep = 20n;
 
   const blockNumbers: { [eventName: string]: number[] } = {
-    // ['DepositedToBins']: [
-    //   40265174,
-    //   // 40258737, 40258967, 40259019, 40259075, 40260226, 40261211, 40261465,
-    //   // 40261552, 40261699, 40262152, 40262281, 40262584, 40262678, 40262911,
-    //   // 40263088, 40263238, 40263507, 40263563, 40265174,
-    // ],
-    // ['WithdrawnFromBins']: [
-    //   40264029,
-    //   // 40256521, 40257151, 40258274, 40260226, 40261192, 40261411, 40261604,
-    //   // 40261793, 40262171, 40263718, 40264029, 40264197, 40264248, 40264366,
-    //   // 40265426,
-    // ],
-    // ['CompositionFees']: [
-    //   40262584,
-    //   // 40262584, 40262678, 40263088, 40263238, 40263507, 40264029, 40264082,
-    //   // 40264274, 40264443,
-    // ],
-    ['Swap']: [
-      40246980,
-      // 40246327, 40246348, 40246422, 40246458, 40246767, 40246773, 40246778,
-      // 40246785, 40246926, 40246937, 40246975, 40246980, 40246984, 40246994,
-      // 40247012,
+    ['DepositedToBins']: [
+      // 40265174,
+      40258737, 40258967, 40259019, 40259075, 40260226, 40261211, 40261465,
+      40261552, 40261699, 40262152, 40262281, 40262584, 40262678, 40262911,
+      40263088, 40263238, 40263507, 40263563, 40265174,
     ],
-    // // there are only 2 events in the same block
-    // ['StaticFeeParametersSet']: [29154475],
-    // ['FlashLoan']: [
-    //   40146073,
-    //   // 40146073, 40177710, 40187861, 40187921, 40254154
-    // ],
-    // ['ForcedDecay']: [],
+    ['WithdrawnFromBins']: [
+      // 40264029,
+      40256521, 40257151, 40258274, 40260226, 40261192, 40261411, 40261604,
+      40261793, 40262171, 40263718, 40264029, 40264197, 40264248, 40264366,
+      40265426,
+    ],
+    ['CompositionFees']: [
+      // 40262584,
+      40262584, 40262678, 40263088, 40263238, 40263507, 40264029, 40264082,
+      40264274, 40264443,
+    ],
+    ['Swap']: [
+      // 40246980,
+      40246327, 40246422, 40246348, 40246458, 40246767, 40246773, 40246778,
+      40246785, 40246926, 40246937, 40246975, 40246980, 40246984, 40246994,
+      40247012,
+    ],
+    // there are only 2 events in the same block
+    ['StaticFeeParametersSet']: [29154475],
+    ['FlashLoan']: [
+      // 40146073,
+      40146073, 40177710, 40187861, 40187921, 40254154,
+    ],
+    ['ForcedDecay']: [],
   };
 
   describe('TraderJoeV2.1 Events', function () {
@@ -90,7 +90,7 @@ describe('TraderJoeV2.1 Events Avalanche', function () {
           // done when adding pool, manually here
           traderJoeV2_1_2Pool.poolAddress = poolAddress.toLowerCase();
           traderJoeV2_1_2Pool.addressesSubscribed = [poolAddress.toLowerCase()];
-          // await traderJoeV2_1_2Pool.initialize(blockNumber, {
+          // await traderJoeV2_1_2Pool.initialize(blockNumber - 1, {
           //   initCallback: (state: DeepReadonly<PoolState>) => {
           //     // need to push poolAddress so that we subscribeToLogs in StatefulEventSubscriber
           //     traderJoeV2_1_2Pool.addressesSubscribed[0] = state.pairAddress;
@@ -99,6 +99,8 @@ describe('TraderJoeV2.1 Events Avalanche', function () {
           //     traderJoeV2_1_2Pool.initRetryAttemptCount = 0;
           //   },
           // });
+
+          // waitFor(10_000);
 
           await testEventSubscriber(
             traderJoeV2_1_2Pool as any,
@@ -114,3 +116,7 @@ describe('TraderJoeV2.1 Events Avalanche', function () {
     });
   });
 });
+
+function waitFor(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

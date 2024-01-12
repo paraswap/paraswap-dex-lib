@@ -326,13 +326,14 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    state.variableFeeParameters.volatilityAccumulator =
-      event.args.volatilityAccumulator;
+    state.variableFeeParameters.volatilityAccumulator = BigInt(
+      event.args.volatilityAccumulator,
+    );
 
     // console.log(
     //   `state.activeId: ${state.activeId}, event.args.id: ${event.args.id}`,
     // );
-    state.activeId = event.args.id;
+    state.activeId = BigInt(event.args.id);
     return state;
   }
 
@@ -363,7 +364,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    return state;
   }
 
   handleForcedDecay(
