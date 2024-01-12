@@ -329,9 +329,9 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     state.variableFeeParameters.volatilityAccumulator =
       event.args.volatilityAccumulator;
 
-    console.log(
-      `state.activeId: ${state.activeId}, event.args.id: ${event.args.id}`,
-    );
+    // console.log(
+    //   `state.activeId: ${state.activeId}, event.args.id: ${event.args.id}`,
+    // );
     state.activeId = event.args.id;
     return state;
   }

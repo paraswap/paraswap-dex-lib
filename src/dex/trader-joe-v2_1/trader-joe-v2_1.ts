@@ -26,7 +26,7 @@ import {
   getLocalDeadlineAsFriendlyPlaceholder,
 } from '../simple-exchange';
 import { Adapters, TraderJoeV2_1Config } from './config';
-import { TraderJoeV2_1EventPool } from './trader-joe-v2-1-2-pool';
+import { TraderJoeV2_1EventPool } from './trader-joe-v2_1-pool';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import TraderJoeV21RouterABI from '../../abi/trader-joe-v2_1/RouterABI.json';
 // import TraderJoeV21RouterABI from '../../abi/TraderJoeV21Router.json';

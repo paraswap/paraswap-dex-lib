@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { TraderJoeV2_1EventPool } from './trader-joe-v2-1-2-pool';
+import { TraderJoeV2_1EventPool } from './trader-joe-v2_1-pool';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';

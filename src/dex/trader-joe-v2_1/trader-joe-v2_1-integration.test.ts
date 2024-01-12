@@ -11,7 +11,7 @@ import {
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { TraderJoeV2_1 } from './trader-joe-v2-1-2';
+import { TraderJoeV2_1 } from './trader-joe-v2_1';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
