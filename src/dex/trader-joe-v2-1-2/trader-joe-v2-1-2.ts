@@ -81,10 +81,6 @@ export class TraderJoeV2_1
       TraderJoeV21FactoryABI as AbiItem[],
       this.config.factory,
     );
-    // this.uniswapMulti = new this.dexHelper.web3Provider.eth.Contract(
-    //   UniswapMultiABI as AbiItem[],
-    //   UniswapV3Config['UniswapV3'][network].uniswapMulticall,
-    // );
     this.pair = new this.dexHelper.web3Provider.eth.Contract(
       MinLBPairAbi as AbiItem[],
     );

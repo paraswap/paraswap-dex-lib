@@ -8,17 +8,11 @@ import { Address, Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { DecodedStateMultiCallResult, PoolState } from './types';
+import { PoolState } from './types';
 import TraderJoeV2_1PoolABI from '../../abi/trader-joe-v2_1/PairABI.json';
 import StateMulticallABI from '../../abi/trader-joe-v2_1/StateMulticall.json';
-import { Bytes } from 'ethers';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-import {
-  generalDecoder,
-  uint128ToBigNumber,
-  uint256ToBigInt,
-} from '../../lib/decoders';
 import { NULL_ADDRESS } from '../../constants';
 import { TraderJoeV21Math } from './math';
 import _ from 'lodash';
@@ -59,14 +53,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     private readonly stateMultiAddress: Address,
     logger: Logger,
   ) {
-    super(
-      parentName,
-      `${token0}_${token1}_${binStep}`,
-      dexHelper,
-      logger,
-      // true,
-      // mapKey,
-    );
+    super(parentName, `${token0}_${token1}_${binStep}`, dexHelper, logger);
 
     this.logDecoder = (log: Log) => this.poolIface.parseLog(log);
     this.addressesSubscribed = Array(1);
@@ -249,33 +236,6 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
       this.state.reserves.reserveX > 0n
     );
   }
-  // protected _getStateRequestCallData() {
-  //   if (!this._stateRequestCallData) {
-  //     // const callData: MultiCallParams<bigint | bigint[]>[] = [
-  //     const callData: MultiCallParams<any>[] = [
-  //       {
-  //         target: this.addressesSubscribed[0],
-  //         callData: this.poolIface.encodeFunctionData('getReserves', []),
-  //         decodeFunction: (result: any) => {
-  //           return generalDecoder(
-  //             result,
-  //             ['uint128', 'uint128'],
-  //             [0n, 0n],
-  //             value => [value[0].toBigInt(), value[1].toBigInt()],
-  //           );
-  //         },
-  //       },
-  //       {
-  //         target: this.addressesSubscribed[0],
-  //         callData: this.poolIface.encodeFunctionData('getActiveId', []),
-  //         decodeFunction: uint128ToBigNumber,
-  //       },
-  //     ];
-
-  //     this._stateRequestCallData = callData;
-  //   }
-  //   return this._stateRequestCallData;
-  // }
 
   handleTransferBatch(
     event: any,
@@ -334,6 +294,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     return state;
   }
 
+  // TODO: Do we need those at all?
   handleCompositionFees(
     event: any,
     state: PoolState,
@@ -359,12 +320,20 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     return state;
   }
 
+  // TODO: Possibly we need to re-calculate bin reserves from current activeId to id from event
   handleSwap(
     event: any,
     state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    state.variableFeeParameters.volatilityAccumulator =
+      event.args.volatilityAccumulator;
+
+    console.log(
+      `state.activeId: ${state.activeId}, event.args.id: ${event.args.id}`,
+    );
+    state.activeId = event.args.id;
+    return state;
   }
 
   handleStaticFeeParametersSet(
@@ -372,7 +341,21 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    state.staticFeeParameters.baseFactor = BigInt(event.args.baseFactor);
+    state.staticFeeParameters.filterPeriod = BigInt(event.args.filterPeriod);
+    state.staticFeeParameters.decayPeriod = BigInt(event.args.decayPeriod);
+    state.staticFeeParameters.reductionFactor = BigInt(
+      event.args.reductionFactor,
+    );
+    state.staticFeeParameters.variableFeeControl = BigInt(
+      event.args.variableFeeControl,
+    );
+    state.staticFeeParameters.protocolShare = BigInt(event.args.protocolShare);
+    state.staticFeeParameters.maxVolatilityAccumulator = BigInt(
+      event.args.maxVolatilityAccumulator,
+    );
+
+    return state;
   }
 
   handleFlashLoan(
@@ -388,25 +371,14 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    state.variableFeeParameters.idReference = BigInt(event.args.idReference);
+    state.variableFeeParameters.volatilityReference = BigInt(
+      event.args.volatilityReference,
+    );
+    return state;
   }
 
-  // // Assemblyscript API
-  // // https://thegraph.com/docs/en/developing/assemblyscript-api/
-  // decodeX(packedAmounts: Bytes): BigInt {
-  //   // Read the right 128 bits of the 256 bits
-  //   return BigInt.fromUnsignedBytes(packedAmounts).bitAnd(
-  //     BigInt.fromI32(2).pow(128).minus(BigInt.fromI32(1)),
-  //   );
-  // }
-
-  // decodeY(packedAmounts: Bytes): BigInt {
-  //   // Read the left 128 bits of the 256 bits
-  //   return BigInt.fromUnsignedBytes(packedAmounts).rightShift(128);
-  // }
   private decodeAmounts(amounts: string): [bigint, bigint] {
-    // Convert amounts to a BigInt
-    // const amountsBigInt = BigInt(`0x${Buffer.from(amounts).toString('hex')}`);
     const amountsBigInt = BigInt(amounts);
 
     // Read the right 128 bits of the 256 bits
@@ -417,13 +389,4 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
     return [amountsX, amountsY];
   }
-
-  // private decodeFees(feesBytes: Bytes): bigint {
-  // private decodeFees(fees: string): bigint {
-  //   // const feesBigInt = BigInt(fees);
-
-  //   // Retrieve the fee value from the right 128 bits
-  //   // return feesBigInt & (BigInt(2) ** BigInt(128) - BigInt(1));
-  //   return BigInt(fees) >> 128n;
-  // }
 }

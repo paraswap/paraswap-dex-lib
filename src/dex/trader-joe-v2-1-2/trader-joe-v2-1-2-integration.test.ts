@@ -136,7 +136,9 @@ async function testPricingOnNetwork(
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
 
-  const token0 = traderJoeV2_1?.eventPools[pools[0]]?.token0;
+  const state = traderJoeV2_1?.eventPools[pools[0]]?.getState(blockNumber);
+  const token0 = state?.tokenX;
+
   const poolAddress = traderJoeV2_1?.eventPools[pools[0]]?.poolAddress;
 
   expect(token0).toBeTruthy();
@@ -150,8 +152,7 @@ async function testPricingOnNetwork(
     poolPrices![0].prices,
     amounts,
     poolAddress!,
-    networkTokens[srcTokenSymbol].address.toLowerCase() ===
-      traderJoeV2_1?.eventPools[pools[0]]?.token0,
+    networkTokens[srcTokenSymbol].address.toLowerCase() === token0,
     side,
   );
 }
