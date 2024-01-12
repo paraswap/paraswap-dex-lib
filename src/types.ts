@@ -269,6 +269,7 @@ export type Config = {
   privateHttpProvider: string;
   adapterAddresses: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
+  airSwapOverrideServerURLs: string[];
   rfqConfigs: Record<string, RFQConfig>;
   rpcPollingMaxAllowedStateDelayInBlocks: number;
   rpcPollingBlocksBackToTriggerUpdate: number;
