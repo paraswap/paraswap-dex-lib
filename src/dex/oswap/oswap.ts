@@ -74,11 +74,12 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
   }
 
   // Returns the pool matching the specified token pair or null if none found.
+  // Note: OSwap V1 does not support more than 1 pool per pair.
   getPoolByTokenPair(srcToken: Token, destToken: Token): OSwapPool | null {
     const srcAddress = srcToken.address.toLowerCase();
     const destAddress = destToken.address.toLowerCase();
 
-    // A pair can only be made of 2 different tokens.
+    // A pair must have 2 different tokens.
     if (srcAddress === destAddress) return null;
 
     for (const pool of this.pools) {
