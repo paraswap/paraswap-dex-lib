@@ -180,10 +180,6 @@ export class TraderJoeV2_1
 
       if (_srcAddress === _destAddress) return null;
 
-      const [token0] = this._sortTokens(_srcAddress, _destAddress);
-
-      const swapForY = token0 === _srcAddress ? true : false;
-
       let selectedPools: TraderJoeV2_1EventPool[] = [];
 
       if (!limitPools) {
@@ -248,7 +244,7 @@ export class TraderJoeV2_1
           pool,
           [unitAmount, ...amounts],
           side,
-          swapForY,
+          _srcAddress,
           blockNumber,
         );
         promises.push({
@@ -289,13 +285,13 @@ export class TraderJoeV2_1
     pool: TraderJoeV2_1EventPool,
     amounts: bigint[],
     side: SwapSide,
-    swapForY: boolean,
+    fromAddress: Address,
     blockNumber: number,
   ): bigint[] {
     return amounts.map(amount => {
       return side === SwapSide.SELL
-        ? pool.getSwapOut(amount, swapForY, blockNumber)
-        : pool.getSwapIn(amount, swapForY, blockNumber);
+        ? pool.getSwapOut(amount, fromAddress, blockNumber)
+        : pool.getSwapIn(amount, fromAddress, blockNumber);
     });
   }
   // TODO: Check if it's non-existent pool

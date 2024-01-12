@@ -55,13 +55,23 @@
           },
           {
             "internalType": "address",
+            "name": "tokenX",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenY",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
             "name": "pairAddress",
             "type": "address"
           },
           {
-            "internalType": "int128",
+            "internalType": "uint256",
             "name": "blockTimestamp",
-            "type": "int128"
+            "type": "uint256"
           },
           {
             "components": [

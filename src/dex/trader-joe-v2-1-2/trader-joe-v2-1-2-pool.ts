@@ -1,3 +1,7 @@
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Address, Log, Logger } from '../../types';
@@ -16,8 +20,6 @@ import {
   uint256ToBigInt,
 } from '../../lib/decoders';
 import { NULL_ADDRESS } from '../../constants';
-import { BASIS_POINT_MAX, PRECISION, SCALE_OFFSET } from './constants';
-// import { TraderJoeV21Math } from './mathv2';
 import { TraderJoeV21Math } from './math';
 
 export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
@@ -92,7 +94,11 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['ForcedDecay'] = this.handleForcedDecay.bind(this);
   }
 
-  getSwapOut(amount: bigint, swapForY: boolean, blockNumber: number): bigint {
+  getSwapOut(
+    amount: bigint,
+    fromAddress: Address,
+    blockNumber: number,
+  ): bigint {
     const state = this.getState(blockNumber);
 
     if (
@@ -104,10 +110,15 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
       return 0n;
     }
 
-    return this.math.getSwapOut(state, amount, this.binStep, swapForY);
+    return this.math.getSwapOut(
+      state,
+      amount,
+      this.binStep,
+      state.tokenX === fromAddress,
+    );
   }
 
-  getSwapIn(amount: bigint, swapForY: boolean, blockNumber: number): bigint {
+  getSwapIn(amount: bigint, fromAddress: Address, blockNumber: number): bigint {
     const state = this.getState(blockNumber);
 
     if (
@@ -119,7 +130,12 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
       return 0n;
     }
 
-    return this.math.getSwapIn(state, amount, this.binStep, swapForY);
+    return this.math.getSwapIn(
+      state,
+      amount,
+      this.binStep,
+      state.tokenX === fromAddress,
+    );
   }
 
   /**
@@ -171,8 +187,8 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
         .call({}, blockNumber);
 
       const state = {
-        tokenX: this.token0,
-        tokenY: this.token1,
+        tokenX: stateRaw.tokenX?.toLowerCase(),
+        tokenY: stateRaw.tokenY?.toLowerCase(),
         binStep: this.binStep,
         pairAddress: stateRaw.pair,
         bins: stateRaw.bins.map((bin: any) => ({
@@ -216,7 +232,6 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
           ),
         },
       };
-      this.logger.info('STATE_PARSED', state);
       return state;
     } catch (error) {
       this.logger.error('ERRRR', error);
