@@ -21,12 +21,13 @@ import {
 } from '../../lib/decoders';
 import { NULL_ADDRESS } from '../../constants';
 import { TraderJoeV21Math } from './math';
+import _ from 'lodash';
 
 export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
-      state: DeepReadonly<PoolState>,
+      state: PoolState,
       log: Readonly<Log>,
     ) => DeepReadonly<PoolState> | null;
   } = {};
@@ -79,7 +80,6 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
       stateMultiAddress,
     );
     this.math = new TraderJoeV21Math();
-    // this.contract = new Contract(TraderJoeV2_1PoolABI as AbiItem[], address);
 
     // Add handlers
     this.handlers['TransferBatch'] = this.handleTransferBatch.bind(this);
@@ -154,7 +154,8 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
+        const _state = _.cloneDeep(state) as PoolState;
+        return this.handlers[event.name](event, _state, log);
       }
     } catch (e) {
       catchParseLogError(e, this.logger);
@@ -234,7 +235,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
       };
       return state;
     } catch (error) {
-      this.logger.error('ERRRR', error);
+      this.logger.error('generateState_ERROR', error);
       return null as any;
     }
   }
@@ -244,8 +245,8 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
       this.state?.pairAddress !== NULL_ADDRESS &&
       this.state?.reserves?.reserveX != null &&
       this.state?.reserves?.reserveY != null &&
-      this.state?.reserves?.reserveY > 0n &&
-      this.state?.reserves?.reserveX > 0n
+      this.state.reserves.reserveY > 0n &&
+      this.state.reserves.reserveX > 0n
     );
   }
   // protected _getStateRequestCallData() {
@@ -278,7 +279,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   handleTransferBatch(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     return null;
@@ -286,31 +287,81 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   handleDepositedToBins(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    // console.log('HandlerDepositedEvent.event', event);
+    // console.log('HandlerDepositedEvent.log', log);
+
+    for (let i = 0; i < event.args.ids.length; i++) {
+      const [amountX, amountY] = this.decodeAmounts(event.args.amounts[i]);
+      const bin = state.bins.find(bin => bin.id == BigInt(event.args.ids[i]));
+      // console.log(
+      //   `bin: ${bin}, amountX: ${amountX}, amountY: ${amountY}, args.id: ${event.args.ids[i]}}`,
+      // );
+      if (bin) {
+        bin.reserveX += amountX;
+        bin.reserveY += amountY;
+        state.reserves.reserveX += amountX;
+        state.reserves.reserveY += amountY;
+      }
+    }
+
+    // state.blockTimestamp = BigInt(event.args.blockTimestamp);
+    return state;
   }
 
   handleWithdrawnFromBins(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    for (let i = 0; i < event.args.ids.length; i++) {
+      const [amountX, amountY] = this.decodeAmounts(event.args.amounts[i]);
+      const bin = state.bins.find(bin => bin.id == BigInt(event.args.ids[i]));
+      // console.log(
+      //   `bin: ${bin}, amountX: ${amountX}, amountY: ${amountY}, args.id: ${event.args.ids[i]}}`,
+      // );
+      if (bin) {
+        bin.reserveX -= amountX;
+        bin.reserveY -= amountY;
+        state.reserves.reserveX -= amountX;
+        state.reserves.reserveY -= amountY;
+      }
+    }
+
+    // state.blockTimestamp = BigInt(event.args.blockTimestamp);
+    return state;
   }
 
   handleCompositionFees(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    // return null;
+    const [protocolFeesDecodedX, protocolFeesDecodedY] = this.decodeAmounts(
+      event.args.protocolFees,
+    );
+    const [totalFeeDecodedX, totalFeeDecodedY] = this.decodeAmounts(
+      event.args.totalFees,
+    );
+
+    state.protocolFees.protocolFeeX += protocolFeesDecodedX;
+    state.protocolFees.protocolFeeY += protocolFeesDecodedY;
+    // console.log('protocolFees', event.args.protocolFees);
+    // console.log('totalFees', event.args.totalFees);
+    // console.log('protocolFeesDecodedX', protocolFeesDecodedX);
+    // console.log('protocolFeesDecodedY', protocolFeesDecodedY);
+    // console.log('totalFeeDecodedX', totalFeeDecodedX);
+    // console.log('totalFeeDecodedY', totalFeeDecodedY);
+
+    return state;
   }
 
   handleSwap(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     return null;
@@ -318,7 +369,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   handleStaticFeeParametersSet(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     return null;
@@ -326,7 +377,7 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   handleFlashLoan(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     return null;
@@ -334,23 +385,29 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
 
   handleForcedDecay(
     event: any,
-    state: DeepReadonly<PoolState>,
+    state: PoolState,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
     return null;
   }
 
-  // private decodeAmounts(amounts: Bytes): [bigint, bigint] {
-  private decodeAmounts(amounts: number[]): [bigint, bigint] {
-    /**
-     * Decodes the amounts bytes input as 2 integers.
-     *
-     * @param amounts - amounts to decode.
-     * @return tuple of BigInts with the values decoded.
-     */
+  // // Assemblyscript API
+  // // https://thegraph.com/docs/en/developing/assemblyscript-api/
+  // decodeX(packedAmounts: Bytes): BigInt {
+  //   // Read the right 128 bits of the 256 bits
+  //   return BigInt.fromUnsignedBytes(packedAmounts).bitAnd(
+  //     BigInt.fromI32(2).pow(128).minus(BigInt.fromI32(1)),
+  //   );
+  // }
 
+  // decodeY(packedAmounts: Bytes): BigInt {
+  //   // Read the left 128 bits of the 256 bits
+  //   return BigInt.fromUnsignedBytes(packedAmounts).rightShift(128);
+  // }
+  private decodeAmounts(amounts: string): [bigint, bigint] {
     // Convert amounts to a BigInt
-    const amountsBigInt = BigInt(`0x${Buffer.from(amounts).toString('hex')}`);
+    // const amountsBigInt = BigInt(`0x${Buffer.from(amounts).toString('hex')}`);
+    const amountsBigInt = BigInt(amounts);
 
     // Read the right 128 bits of the 256 bits
     const amountsX = amountsBigInt & (BigInt(2) ** BigInt(128) - BigInt(1));
@@ -362,19 +419,11 @@ export class TraderJoeV2_1EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   // private decodeFees(feesBytes: Bytes): bigint {
-  private decodeFees(feesBytes: number[]): bigint {
-    /**
-     * Decode the fee value from the bytes input and return it as in integer.
-     * Fee values are stored in the first 128 bits of the input.
-     *
-     * @param feesBytes - Bytes containing the encoded value.
-     * @return Fee values.
-     */
+  // private decodeFees(fees: string): bigint {
+  //   // const feesBigInt = BigInt(fees);
 
-    // Convert feesBytes to a BigInt
-    const feesBigInt = BigInt(`0x${Buffer.from(feesBytes).toString('hex')}`);
-
-    // Retrieve the fee value from the right 128 bits
-    return feesBigInt & (BigInt(2) ** BigInt(128) - BigInt(1));
-  }
+  //   // Retrieve the fee value from the right 128 bits
+  //   // return feesBigInt & (BigInt(2) ** BigInt(128) - BigInt(1));
+  //   return BigInt(fees) >> 128n;
+  // }
 }

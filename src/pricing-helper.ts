@@ -117,7 +117,8 @@ export class PricingHelper {
         try {
           return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
-              () => reject(new Error(`Timeout`)),
+              // () => reject(new Error(`Timeout`)),
+              () => {},
               FETCH_POOL_IDENTIFIER_TIMEOUT,
             );
             const dexInstance = this.dexAdapterService.getDexByKey(key);
