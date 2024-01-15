@@ -31,7 +31,7 @@ import { validateAndCast } from '../../lib/validators';
 
 const network = 1;
 
-const AgustusAddress = {
+const AugustusAddress = {
   1: '0xdef171fe48cf0115b1d80b88dc8eab59176fee57',
 };
 
@@ -273,7 +273,7 @@ const mainFirm = async () => {
       network,
       config.multicallV2Address,
       multiWrapper,
-      AgustusAddress[network],
+      AugustusAddress[network],
       firmRateResp.order,
     );
 
