@@ -99,6 +99,23 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<DirectParam>;
+
+  // Same as above but for V6
+  getDirectParamV6?(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod?: string,
+  ): TxInfo<DirectParam>;
 }
 
 export interface IDexPricing<ExchangeData> {

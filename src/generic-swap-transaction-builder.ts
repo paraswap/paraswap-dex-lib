@@ -263,6 +263,83 @@ export class GenericSwapTransactionBuilder {
     };
   }
 
+  // TODO: Improve
+  protected async _buildDirect(
+    priceRoute: OptimalRate,
+    minMaxAmount: string,
+    referrerAddress: Address | undefined,
+    partnerAddress: Address,
+    partnerFeePercent: string,
+    takeSurplus: boolean,
+    permit: string,
+    uuid: string,
+    beneficiary: Address,
+  ) {
+    if (
+      priceRoute.bestRoute.length !== 1 ||
+      priceRoute.bestRoute[0].percent !== 100 ||
+      priceRoute.bestRoute[0].swaps.length !== 1 ||
+      priceRoute.bestRoute[0].swaps[0].swapExchanges.length !== 1 ||
+      priceRoute.bestRoute[0].swaps[0].swapExchanges[0].percent !== 100
+    )
+      throw new Error(`DirectSwap invalid bestRoute`);
+
+    const dexName = priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange;
+    if (!dexName) throw new Error(`Invalid dex name`);
+
+    const dex = this.dexAdapterService.getTxBuilderDexByKey(dexName);
+    if (!dex) throw new Error(`Failed to find dex : ${dexName}`);
+
+    if (!dex.getDirectParamV6)
+      throw new Error(
+        `Invalid DEX: dex should have getDirectParamV6: ${dexName}`,
+      );
+
+    const swapExchange = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];
+
+    const srcAmount =
+      priceRoute.side === SwapSide.SELL ? swapExchange.srcAmount : minMaxAmount;
+    const destAmount =
+      priceRoute.side === SwapSide.SELL
+        ? minMaxAmount
+        : swapExchange.destAmount;
+
+    const expectedAmount =
+      priceRoute.side === SwapSide.SELL
+        ? priceRoute.destAmount
+        : priceRoute.srcAmount;
+
+    const [partner, feePercent] = referrerAddress
+      ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
+      : [
+          encodePartnerAddressForFeeLogic({
+            partnerAddress,
+            partnerFeePercent,
+            takeSurplus,
+          }),
+          encodeFeePercent(partnerFeePercent, takeSurplus, priceRoute.side),
+        ];
+
+    // TODO: Fix
+    const partnerAndFee = hexConcat([partner, feePercent]);
+
+    return dex.getDirectParamV6!(
+      priceRoute.srcToken,
+      priceRoute.destToken,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      swapExchange.data,
+      priceRoute.side,
+      permit,
+      uuid,
+      partnerAndFee,
+      beneficiary,
+      priceRoute.blockNumber,
+      priceRoute.contractMethod,
+    );
+  }
+
   public async build({
     priceRoute,
     minMaxAmount,
@@ -299,19 +376,37 @@ export class GenericSwapTransactionBuilder {
     const _beneficiary =
       beneficiary && beneficiary !== NULL_ADDRESS ? beneficiary : userAddress;
 
-    const { encoder, params } = await this._build(
-      priceRoute,
-      minMaxAmount,
-      userAddress,
-      referrerAddress,
-      partnerAddress,
-      partnerFeePercent,
-      takeSurplus ?? false,
-      _beneficiary,
-      permit || '0x',
-      deadline,
-      uuid,
-    );
+    let encoder: (...params: any[]) => string;
+    let params: (string | string[])[];
+
+    // TODO: Add real check
+    if (priceRoute.contractMethod === 'swap') {
+      ({ encoder, params } = await this._buildDirect(
+        priceRoute,
+        minMaxAmount,
+        referrerAddress,
+        partnerAddress,
+        partnerFeePercent,
+        takeSurplus ?? false,
+        permit || '0x',
+        uuid,
+        _beneficiary,
+      ));
+    } else {
+      ({ encoder, params } = await this._build(
+        priceRoute,
+        minMaxAmount,
+        userAddress,
+        referrerAddress,
+        partnerAddress,
+        partnerFeePercent,
+        takeSurplus ?? false,
+        _beneficiary,
+        permit || '0x',
+        deadline,
+        uuid,
+      ));
+    }
 
     const value = (
       priceRoute.srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase()

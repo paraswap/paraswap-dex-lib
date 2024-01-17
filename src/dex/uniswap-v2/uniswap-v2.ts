@@ -27,6 +27,7 @@ import {
   UniswapV2Functions,
   UniswapV2FunctionsV6,
   UniswapV2ParamsDirect,
+  UniswapV2ParamsDirectBase,
   UniswapV2PoolOrderedParams,
 } from './types';
 import { IDex } from '../idex';
@@ -59,6 +60,7 @@ import { UniswapV2Config, Adapters } from './config';
 import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import _rebaseTokens from '../../rebase-tokens.json';
+import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
 
 const rebaseTokens = _rebaseTokens as { chainId: number; address: string }[];
 
@@ -210,7 +212,7 @@ function encodePools(
 
 export class UniswapV2
   extends SimpleExchange
-  implements IDex<UniswapV2Data, UniswapParam>
+  implements IDex<UniswapV2Data, UniswapParam | UniswapV2ParamsDirect>
 {
   pairs: { [key: string]: UniswapV2Pair } = {};
   feeFactor = 10000;
@@ -926,6 +928,7 @@ export class UniswapV2
     uuid: string,
     partnerAndFee: string,
     beneficiary: string,
+    blockNumber: number,
     contractMethod?: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
@@ -939,18 +942,24 @@ export class UniswapV2
       side,
     );
 
-    const uniData: UniswapV2ParamsDirect = [
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const uniData: UniswapV2ParamsDirectBase = [
       srcToken,
       destToken,
       fromAmount,
       quotedAmount,
       toAmount,
-      uuidToBytes16(uuid),
+      // uuidToBytes16(uuid),
+      metadata,
       beneficiary,
       path,
     ];
 
-    const swapParams = [uniData, partnerAndFee, permit];
+    const swapParams: UniswapV2ParamsDirect = [uniData, partnerAndFee, permit];
 
     const encoder = (...params: (string | UniswapV2ParamsDirect)[]) => {
       return this.augustusV6Iface.encodeFunctionData(

@@ -33,7 +33,7 @@ export enum UniswapV2FunctionsV6 {
   buy = 'swapExactAmountOutOnUniswapV2',
 }
 
-export type UniswapV2ParamsDirect = [
+export type UniswapV2ParamsDirectBase = [
   srcToken: Address,
   destToken: Address,
   fromAmount: NumberAsString,
@@ -42,6 +42,12 @@ export type UniswapV2ParamsDirect = [
   metadata: string,
   beneficiary: Address,
   pools: string,
+];
+
+export type UniswapV2ParamsDirect = [
+  params: UniswapV2ParamsDirectBase,
+  partnerAndFee: string,
+  permit: string,
 ];
 
 export type SwapOnUniswapParam = [

@@ -35,6 +35,7 @@ import {
   UniswapV3Functions,
   UniswapV3Param,
   UniswapV3ParamsDirect,
+  UniswapV3ParamsDirectBase,
   UniswapV3SimpleSwapParams,
 } from './types';
 import {
@@ -69,6 +70,7 @@ import {
 } from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
+import { hexConcat, hexlify, hexZeroPad } from 'ethers/lib/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -82,7 +84,7 @@ const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
   extends SimpleExchange
-  implements IDex<UniswapV3Data, UniswapV3Param>
+  implements IDex<UniswapV3Data, UniswapV3Param | UniswapV3ParamsDirect>
 {
   private readonly factory: UniswapV3Factory;
   readonly isFeeOnTransferSupported: boolean = false;
@@ -953,6 +955,7 @@ export class UniswapV3
     uuid: string,
     partnerAndFee: string,
     beneficiary: string,
+    blockNumber: number,
     contractMethod?: string,
   ) {
     if (!UniswapV3.getDirectFunctionNamesV6().includes(contractMethod!)) {
@@ -961,18 +964,23 @@ export class UniswapV3
 
     const path = this._encodePath(data.path, side);
 
-    const uniData: UniswapV3ParamsDirect = [
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+    const uniData: UniswapV3ParamsDirectBase = [
       srcToken,
       destToken,
       fromAmount,
       quotedAmount,
       toAmount,
-      uuidToBytes16(uuid),
+      metadata,
+      // uuidToBytes16(uuid),
       beneficiary,
       path,
     ];
 
-    const swapParams = [uniData, partnerAndFee, permit];
+    const swapParams: UniswapV3ParamsDirect = [uniData, partnerAndFee, permit];
 
     const encoder = (...params: (string | UniswapV3ParamsDirect)[]) => {
       return this.augustusV6Iface.encodeFunctionData(
