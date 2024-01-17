@@ -1,6 +1,6 @@
 import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2';
-import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
+import { IDexTxBuilder, DexConstructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool';
@@ -176,7 +176,7 @@ interface IGetDirectFunctionName {
 
 export class DexAdapterService {
   dexToKeyMap: {
-    [key: string]: LegacyDexConstructor | DexContructor<any, any, any>;
+    [key: string]: LegacyDexConstructor | DexConstructor<any, any, any>;
   } = {};
   directFunctionsNames: string[];
   dexInstances: {
