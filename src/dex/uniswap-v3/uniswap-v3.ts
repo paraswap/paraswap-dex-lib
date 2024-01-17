@@ -49,6 +49,7 @@ import DirectSwapABI from '../../abi/DirectSwap.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   DirectMethods,
+  DirectMethodsV6,
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_POOL_SEARCH_OVERHEAD,
   UNISWAPV3_TICK_BASE_OVERHEAD,
@@ -935,6 +936,70 @@ export class UniswapV3
 
   static getDirectFunctionName(): string[] {
     return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: UniswapV3Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
+    contractMethod?: string,
+  ) {
+    if (!UniswapV3.getDirectFunctionNamesV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const path = this._encodePath(data.path, side);
+
+    const swapParams: UniswapV3Param = [
+      srcToken,
+      destToken,
+      this.config.router,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      feePercent,
+      deadline,
+      partner,
+      isApproved,
+      beneficiary,
+      path,
+      permit,
+      uuidToBytes16(uuid),
+    ];
+
+    const encoder = (...params: UniswapV3Param) => {
+      return this.directSwapIface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethods.directSell
+          : DirectMethods.directBuy,
+        [params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionNamesV6(): string[] {
+    return [DirectMethodsV6.directSell, DirectMethodsV6.directBuy];
   }
 
   getAdapterParam(
