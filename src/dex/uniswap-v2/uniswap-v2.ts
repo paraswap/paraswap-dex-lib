@@ -24,6 +24,8 @@ import {
   UniswapPool,
   UniswapV2Data,
   UniswapV2Functions,
+  UniswapV2FunctionsV6,
+  UniswapV2ParamsDirect,
   UniswapV2PoolOrderedParams,
 } from './types';
 import { IDex } from '../idex';
@@ -44,10 +46,12 @@ import {
   isETHAddress,
   prependWithOx,
   getBigIntPow,
+  uuidToBytes16,
 } from '../../utils';
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
+import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
@@ -95,6 +99,11 @@ export const directUniswapFunctionName = [
   UniswapV2Functions.buyOnUniswapFork,
   UniswapV2Functions.swapOnUniswapV2Fork,
   UniswapV2Functions.buyOnUniswapV2Fork,
+];
+
+export const directUniswapFunctionNameV6 = [
+  UniswapV2FunctionsV6.swap,
+  UniswapV2FunctionsV6.buy,
 ];
 
 export interface UniswapV2Pair {
@@ -208,9 +217,13 @@ export class UniswapV2
 
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
-  static directFunctionName = directUniswapFunctionName;
 
   logger: Logger;
+
+  static directFunctionName = directUniswapFunctionName;
+  static directFunctionNameV6 = directUniswapFunctionNameV6;
+
+  readonly augustusV6Iface = new Interface(AugustusV6ABI);
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported: boolean = true;
@@ -898,5 +911,86 @@ export class UniswapV2
 
   static getDirectFunctionName(): string[] {
     return this.directFunctionName;
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: UniswapV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    contractMethod?: string,
+  ) {
+    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+    if (!UniswapV2.getDirectFunctionNamesV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    // univ2 has 1 pool per pair
+    const path = this._encodePathV6(
+      { srcToken, destToken, direction: data.pools[0].direction },
+      side,
+    );
+
+    const uniData: UniswapV2ParamsDirect = [
+      srcToken,
+      destToken,
+      fromAmount,
+      quotedAmount,
+      toAmount,
+      uuidToBytes16(uuid),
+      beneficiary,
+      path,
+    ];
+
+    const swapParams = [uniData, partnerAndFee, permit];
+
+    const encoder = (...params: (string | UniswapV2ParamsDirect)[]) => {
+      return this.augustusV6Iface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? UniswapV2.directFunctionNameV6[0]
+          : UniswapV2.directFunctionNameV6[1],
+        [params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionNamesV6(): string[] {
+    return this.directFunctionNameV6;
+  }
+
+  // univ2 always had 1 pool per pair
+  private _encodePathV6(
+    path: {
+      srcToken: Address;
+      destToken: Address;
+      direction: boolean;
+    },
+    side: SwapSide,
+  ): string {
+    if (path == null) {
+      this.logger.error(
+        `${this.dexKey}: Received invalid path=${path} for side=${side} to encode`,
+      );
+      return '0x';
+    }
+
+    return (
+      ((path.direction ? 0n : 1n) << 320n) +
+      (BigInt(path.srcToken) << 160n) +
+      BigInt(path.destToken)
+    ).toString();
   }
 }

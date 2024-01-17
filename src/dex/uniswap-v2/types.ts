@@ -28,6 +28,22 @@ export enum UniswapV2Functions {
   buyOnUniswapV2ForkWithPermit = 'buyOnUniswapV2ForkWithPermit',
 }
 
+export enum UniswapV2FunctionsV6 {
+  swap = 'swapExactAmountInOnUniswapV2',
+  buy = 'swapExactAmountOutOnUniswapV2',
+}
+
+export type UniswapV2ParamsDirect = [
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  quotedAmount: NumberAsString,
+  toAmount: NumberAsString,
+  metadata: string,
+  beneficiary: Address,
+  pools: string,
+];
+
 export type SwapOnUniswapParam = [
   amountIn: NumberAsString,
   amountOutMin: NumberAsString,
