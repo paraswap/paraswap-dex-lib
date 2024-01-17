@@ -951,9 +951,7 @@ export class UniswapV3
     side: SwapSide,
     permit: string,
     uuid: string,
-    feePercent: NumberAsString,
-    deadline: NumberAsString,
-    partner: string,
+    partnerAndFee: string,
     beneficiary: string,
     contractMethod?: string,
   ) {
@@ -963,7 +961,7 @@ export class UniswapV3
 
     const path = this._encodePath(data.path, side);
 
-    const swapParams: UniswapV3ParamsDirect = [
+    const uniData: UniswapV3ParamsDirect = [
       srcToken,
       destToken,
       fromAmount,
@@ -974,7 +972,9 @@ export class UniswapV3
       path,
     ];
 
-    const encoder = (...params: UniswapV3ParamsDirect) => {
+    const swapParams = [uniData, partnerAndFee, permit];
+
+    const encoder = (...params: (string | UniswapV3ParamsDirect)[]) => {
       return this.augustusV6Iface.encodeFunctionData(
         side === SwapSide.SELL
           ? DirectMethodsV6.directSell
