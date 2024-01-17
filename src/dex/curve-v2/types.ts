@@ -1,17 +1,17 @@
 import { Address, NumberAsString } from '@paraswap/core';
 
 export type CurveV2DirectSwapParam = [
-  NumberAsString, // packed curvedata
-  number, // i
-  number, // j
-  Address, // pool address
-  Address, // src token
-  Address, // dest token,
-  NumberAsString, // fromAmount
-  NumberAsString, // toAmount
-  NumberAsString, // quotedAmount,
-  string, // metadata - bytes32
-  Address, // beneficiary
+  curveData: NumberAsString, // packed curvedata
+  i: number, // i
+  j: number, // j
+  poolAddress: Address, // pool address
+  srcToken: Address, // src token
+  destToken: Address, // dest token,
+  fromAmount: NumberAsString, // fromAmount
+  toAmount: NumberAsString, // toAmount
+  quotedAmount: NumberAsString, // quotedAmount,
+  metadata: string, // metadata - bytes32
+  beneficiary: Address, // beneficiary
 ];
 
 export enum CurveV2SwapType {

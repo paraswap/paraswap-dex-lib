@@ -257,19 +257,17 @@ export class CurveV2
     };
   }
 
-  getv6DirectParam(
+  getDirectParamV6(
     srcToken: string,
     destToken: string,
-    srcAmount: string,
+    fromAmount: string,
     destAmount: string,
-    expectedAmount: string,
+    quotedAmount: string,
     data: CurveV2Data,
     side: SwapSide,
-    _permit: string,
+    permit: string,
     uuid: string,
-    _feePercent: string,
-    _deadline: string,
-    _partner: string,
+    partnerAndFee: string,
     beneficiary: string,
     contractMethod?: string | undefined,
   ): TxInfo<CurveV2DirectSwapParam> {
@@ -296,9 +294,9 @@ export class CurveV2
       data.originalPoolAddress,
       srcToken,
       destToken,
-      srcAmount,
+      fromAmount,
       destAmount,
-      expectedAmount,
+      quotedAmount,
       uuidToBytes16(uuid),
       beneficiary,
     ];
@@ -306,7 +304,7 @@ export class CurveV2
     const encoder = (...params: CurveV2DirectSwapParam) => {
       return this.augustusV6Interface.encodeFunctionData(
         DIRECT_METHOD_NAME_V6,
-        [params],
+        [params, partnerAndFee, permit],
       );
     };
 

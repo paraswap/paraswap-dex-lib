@@ -84,10 +84,14 @@ import {
   CurveSwapFunctions,
   CurveV1SwapType,
   DirectCurveV1Param,
+  DirectCurveV1ParamV6,
 } from './types';
 import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
-import { DIRECT_METHOD_NAME } from './constants';
+import { DIRECT_METHOD_NAME, DIRECT_METHOD_NAME_V6 } from './constants';
+import { packCurveData } from '../../lib/curve/encoder';
+import AugustusV6ABI from '../../abi/AugustusV6.abi.json';
+import { encodeCurveAssets } from './packer';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -102,6 +106,7 @@ export class CurveV1
 {
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
+  augustusV6Interface: Interface;
 
   eventPools = new Array<CurvePool | CurveMetapool>();
   public poolInterface: Interface;
@@ -196,6 +201,7 @@ export class CurveV1
     this.logger = dexHelper.getLogger(dexKey);
 
     this.poolInterface = new Interface(StableSwapBBTC as any);
+    this.augustusV6Interface = new Interface(AugustusV6ABI);
   }
 
   protected getPoolByAddress(address: Address) {
@@ -977,6 +983,64 @@ export class CurveV1
     return {
       params: swapParams,
       encoder,
+      networkFee: '0',
+    };
+  }
+
+  getDirectParamV6(
+    srcToken: string,
+    destToken: string,
+    fromAmount: string,
+    destAmount: string,
+    quotedAmount: string,
+    data: CurveV1Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    contractMethod?: string | undefined,
+  ): TxInfo<DirectCurveV1ParamV6> {
+    if (contractMethod !== DIRECT_METHOD_NAME) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const swapParams: DirectCurveV1ParamV6 = [
+      packCurveData(
+        data.exchange,
+        isApproved,
+        0,
+        data.underlyingSwap
+          ? CurveV1SwapType.EXCHANGE_UNDERLYING
+          : CurveV1SwapType.EXCHANGE,
+      ).toHexString(),
+      // PACK Curve assets
+      encodeCurveAssets(data.i, data.j).toHexString(),
+      srcToken,
+      destToken,
+      fromAmount,
+      destAmount,
+      quotedAmount,
+      uuidToBytes16(uuid),
+      beneficiary,
+    ];
+
+    const encoder = (...params: DirectCurveV1ParamV6) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        DIRECT_METHOD_NAME_V6,
+        [params, partnerAndFee, permit],
+      );
+    };
+
+    return {
+      encoder,
+      params: swapParams,
       networkFee: '0',
     };
   }
