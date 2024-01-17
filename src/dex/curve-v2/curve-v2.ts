@@ -26,7 +26,7 @@ import { OptimalSwapExchange } from '@paraswap/core';
 import { uuidToBytes16 } from '../../utils';
 import { DIRECT_METHOD_NAME_V6 } from './constants';
 import { CurveV2DirectSwapParam, CurveV2SwapType } from './types';
-import { packCurveV2Data } from './packer';
+import { packCurveData } from '../../lib/curve/encoder';
 
 const DIRECT_METHOD_NAME = 'directCurveV2Swap';
 
@@ -283,7 +283,7 @@ export class CurveV2
     }
 
     const swapParams: CurveV2DirectSwapParam = [
-      packCurveV2Data(
+      packCurveData(
         data.exchange,
         isApproved,
         0, // ! FIXME: compute wrap type
