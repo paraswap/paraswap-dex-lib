@@ -1,5 +1,5 @@
 import { UnoptimizedRate } from '../types';
-import { CurveV2 } from './curve-v2';
+import { CurveV2 } from './curve-v2/curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';

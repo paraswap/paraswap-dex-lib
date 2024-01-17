@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from '../constants';
+import { SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -9,26 +9,24 @@ import {
   SimpleExchangeParam,
   Token,
   TxInfo,
-} from '../types';
-import { IDexTxBuilder } from './idex';
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
-} from './simple-exchange';
-import GenericFactoryZapABI from '../abi/curve-v2/GenericFactoryZap.json';
-import DirectSwapABI from '../abi/DirectSwap.json';
-import CurveV2ABI from '../abi/CurveV2.json';
-import { IDexHelper } from '../dex-helper';
+} from '../simple-exchange';
+import GenericFactoryZapABI from '../../abi/curve-v2/GenericFactoryZap.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
+import AugustusV6ABI from '../../abi/AugustusV6.abi.json';
+import CurveV2ABI from '../../abi/CurveV2.json';
+import { IDexHelper } from '../../dex-helper';
 import { assert } from 'ts-essentials';
 import { Logger } from 'log4js';
 import { OptimalSwapExchange } from '@paraswap/core';
-import { uuidToBytes16 } from '../utils';
-
-export enum CurveV2SwapType {
-  EXCHANGE,
-  EXCHANGE_UNDERLYING,
-  EXCHANGE_GENERIC_FACTORY_ZAP,
-}
+import { uuidToBytes16 } from '../../utils';
+import { DIRECT_METHOD_NAME_V6 } from './constants';
+import { CurveV2DirectSwapParam, CurveV2SwapType } from './types';
+import { packCurveV2Data } from './packer';
 
 const DIRECT_METHOD_NAME = 'directCurveV2Swap';
 
@@ -90,6 +88,7 @@ export class CurveV2
   static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
   genericFactoryZapIface: Interface;
+  augustusV6Interface: Interface;
   minConversionRate = '1';
   needWrapNative = true;
   logger: Logger;
@@ -100,6 +99,7 @@ export class CurveV2
     super(dexHelper, 'curvev2');
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
     this.genericFactoryZapIface = new Interface(GenericFactoryZapABI);
+    this.augustusV6Interface = new Interface(AugustusV6ABI);
     this.logger = dexHelper.getLogger(
       `CurveV2_${dexHelper.config.data.network}`,
     );
@@ -248,6 +248,66 @@ export class CurveV2
       return this.directSwapIface.encodeFunctionData(DIRECT_METHOD_NAME, [
         params,
       ]);
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  getv6DirectParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    expectedAmount: string,
+    data: CurveV2Data,
+    side: SwapSide,
+    _permit: string,
+    uuid: string,
+    _feePercent: string,
+    _deadline: string,
+    _partner: string,
+    beneficiary: string,
+    contractMethod?: string | undefined,
+  ): TxInfo<CurveV2DirectSwapParam> {
+    if (contractMethod !== DIRECT_METHOD_NAME_V6) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const swapParams: CurveV2DirectSwapParam = [
+      packCurveV2Data(
+        data.exchange,
+        isApproved,
+        0, // ! FIXME: compute wrap type
+        data.swapType,
+      ).toHexString(),
+      data.i,
+      data.j,
+      data.originalPoolAddress,
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      uuidToBytes16(uuid),
+      beneficiary,
+    ];
+
+    const encoder = (...params: CurveV2DirectSwapParam) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        DIRECT_METHOD_NAME_V6,
+        [params],
+      );
     };
 
     return {
