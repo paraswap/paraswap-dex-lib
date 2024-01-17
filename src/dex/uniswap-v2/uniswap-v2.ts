@@ -1,4 +1,5 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
+import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
@@ -987,10 +988,10 @@ export class UniswapV2
       return '0x';
     }
 
-    return (
-      ((path.direction ? 0n : 1n) << 320n) +
-      (BigInt(path.srcToken) << 160n) +
-      BigInt(path.destToken)
-    ).toString();
+    const tokensEncoded = pack(
+      ['address', 'address'],
+      [path.srcToken, path.destToken],
+    );
+    return tokensEncoded + (path.direction ? '0' : '1');
   }
 }
