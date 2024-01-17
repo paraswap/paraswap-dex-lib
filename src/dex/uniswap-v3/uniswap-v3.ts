@@ -34,6 +34,7 @@ import {
   UniswapV3Data,
   UniswapV3Functions,
   UniswapV3Param,
+  UniswapV3ParamsDirect,
   UniswapV3SimpleSwapParams,
 } from './types';
 import {
@@ -46,6 +47,7 @@ import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
+import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   DirectMethods,
@@ -90,6 +92,7 @@ export class UniswapV3
   readonly needWrapNative = true;
 
   readonly directSwapIface = new Interface(DirectSwapABI);
+  readonly augustusV6Iface = new Interface(AugustusV6ABI);
 
   intervalTask?: NodeJS.Timeout;
 
@@ -941,9 +944,9 @@ export class UniswapV3
   getDirectParamV6(
     srcToken: Address,
     destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    expectedAmount: NumberAsString,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
     data: UniswapV3Data,
     side: SwapSide,
     permit: string,
@@ -958,35 +961,24 @@ export class UniswapV3
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
-    let isApproved: boolean = !!data.isApproved;
-    if (data.isApproved === undefined) {
-      this.logger.warn(`isApproved is undefined, defaulting to false`);
-    }
-
     const path = this._encodePath(data.path, side);
 
-    const swapParams: UniswapV3Param = [
+    const swapParams: UniswapV3ParamsDirect = [
       srcToken,
       destToken,
-      this.config.router,
-      srcAmount,
-      destAmount,
-      expectedAmount,
-      feePercent,
-      deadline,
-      partner,
-      isApproved,
+      fromAmount,
+      quotedAmount,
+      toAmount,
+      uuidToBytes16(uuid),
       beneficiary,
       path,
-      permit,
-      uuidToBytes16(uuid),
     ];
 
-    const encoder = (...params: UniswapV3Param) => {
-      return this.directSwapIface.encodeFunctionData(
+    const encoder = (...params: UniswapV3ParamsDirect) => {
+      return this.augustusV6Iface.encodeFunctionData(
         side === SwapSide.SELL
-          ? DirectMethods.directSell
-          : DirectMethods.directBuy,
+          ? DirectMethodsV6.directSell
+          : DirectMethodsV6.directBuy,
         [params],
       );
     };
