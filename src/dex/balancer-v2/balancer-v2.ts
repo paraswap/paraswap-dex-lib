@@ -1274,7 +1274,7 @@ export class BalancerV2
     beneficiary: string,
     blockNumber: number,
     contractMethod?: string,
-  ): TxInfo<BalancerV2DirectParamV6> {
+  ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
 
     if (!BalancerV2.getDirectFunctionNameV6().includes(contractMethod!)) {
@@ -1298,21 +1298,25 @@ export class BalancerV2
     const swapParams: BalancerV2DirectParamV6 = [
       quotedAmount,
       metadata,
-      beneficiary,
+      beneficiary, // todo encode beneficiary with wrap flag
     ];
 
-    const encoder = (...params: BalancerV2DirectParamV6) => {
+    const encodeParams = [swapParams, partnerAndFee, permit, balancerParams];
+
+    const encoder = (
+      ...params: (string | BalancerV2DirectParamV6 | BalancerParam)[]
+    ) => {
       return this.augustusV6Interface.encodeFunctionData(
         side === SwapSide.SELL
           ? BalancerV2.getDirectFunctionNameV6()[0]
           : BalancerV2.getDirectFunctionNameV6()[1],
-        [params, partnerAndFee, permit, balancerParams],
+        [...params],
       );
     };
 
     return {
       encoder,
-      params: swapParams,
+      params: encodeParams,
       networkFee: '0',
     };
   }
