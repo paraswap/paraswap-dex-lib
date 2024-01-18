@@ -14,7 +14,6 @@ import { DexAdapterService } from './dex';
 import { Weth } from './dex/weth/weth';
 import ERC20ABI from './abi/erc20.json';
 import { ExecutorDetector } from './executor/ExecutorDetector';
-import { Executors } from './executor/types';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
@@ -91,8 +90,8 @@ export class GenericSwapTransactionBuilder {
   protected async buildCalls(
     priceRoute: OptimalRate,
     minMaxAmount: string,
-    executorName: Executors,
     bytecodeBuilder: ExecutorBytecodeBuilder,
+    userAddress: string,
   ): Promise<string> {
     const side = priceRoute.side;
     const wethAddress =
@@ -154,7 +153,7 @@ export class GenericSwapTransactionBuilder {
             _srcAmount,
             _destAmount,
             destTokenIsWeth || !isLastSwap
-              ? this.executorDetector.getAddress(executorName)
+              ? bytecodeBuilder.getAddress()
               : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
             se.data,
             side,
@@ -197,6 +196,7 @@ export class GenericSwapTransactionBuilder {
     return bytecodeBuilder.buildByteCode(
       priceRoute,
       exchangeParams,
+      userAddress,
       maybeWethCallData,
     );
   }
@@ -221,8 +221,8 @@ export class GenericSwapTransactionBuilder {
     const bytecode = await this.buildCalls(
       priceRoute,
       minMaxAmount,
-      executorName,
       bytecodeBuilder,
+      userAddress,
     );
 
     const side = priceRoute.side;
@@ -236,7 +236,7 @@ export class GenericSwapTransactionBuilder {
     // );
 
     const swapParams = [
-      this.executorDetector.getAddress(executorName),
+      bytecodeBuilder.getAddress(),
       [
         priceRoute.srcToken,
         priceRoute.destToken,

@@ -531,7 +531,7 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
           const tokenASymbol: string = 'DAI';
           const tokenBSymbol: string = 'ETH';
 
-          const tokenAAmount: string = '23000000000000000000000';
+          const tokenAAmount: string = '15000000000000000000';
 
           const tokens = Tokens[network];
           const holders = Holders[network];
