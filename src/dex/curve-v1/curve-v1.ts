@@ -1019,9 +1019,9 @@ export class CurveV1
         data.underlyingSwap
           ? CurveV1SwapType.EXCHANGE_UNDERLYING
           : CurveV1SwapType.EXCHANGE,
-      ).toHexString(),
+      ).toString(),
       // PACK Curve assets
-      encodeCurveAssets(data.i, data.j).toHexString(),
+      encodeCurveAssets(data.i, data.j).toString(),
       srcToken,
       destToken,
       fromAmount,
@@ -1043,6 +1043,10 @@ export class CurveV1
       params: swapParams,
       networkFee: '0',
     };
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DIRECT_METHOD_NAME_V6];
   }
 
   getDexParam(

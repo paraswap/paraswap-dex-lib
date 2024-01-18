@@ -27,6 +27,7 @@ import { uuidToBytes16 } from '../../utils';
 import { DIRECT_METHOD_NAME_V6 } from './constants';
 import { CurveV2DirectSwapParam, CurveV2SwapType } from './types';
 import { packCurveData } from '../../lib/curve/encoder';
+import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
 
 const DIRECT_METHOD_NAME = 'directCurveV2Swap';
 
@@ -258,18 +259,19 @@ export class CurveV2
   }
 
   getDirectParamV6(
-    srcToken: string,
-    destToken: string,
-    fromAmount: string,
-    destAmount: string,
-    quotedAmount: string,
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
     data: CurveV2Data,
     side: SwapSide,
     permit: string,
     uuid: string,
     partnerAndFee: string,
     beneficiary: string,
-    contractMethod?: string | undefined,
+    blockNumber: number,
+    contractMethod?: string,
   ): TxInfo<CurveV2DirectSwapParam> {
     if (contractMethod !== DIRECT_METHOD_NAME_V6) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -282,20 +284,25 @@ export class CurveV2
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
     const swapParams: CurveV2DirectSwapParam = [
       packCurveData(
         data.exchange,
         isApproved,
         0, // ! FIXME: compute wrap type
         data.swapType,
-      ).toHexString(),
+      ).toString(),
       data.i,
       data.j,
       data.originalPoolAddress,
       srcToken,
       destToken,
       fromAmount,
-      destAmount,
+      metadata,
       quotedAmount,
       uuidToBytes16(uuid),
       beneficiary,
@@ -313,6 +320,10 @@ export class CurveV2
       encoder,
       networkFee: '0',
     };
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DIRECT_METHOD_NAME_V6];
   }
 
   static getDirectFunctionName(): string[] {
