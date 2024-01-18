@@ -964,9 +964,9 @@ export class UniswapV2
     const encoder = (...params: (string | UniswapV2ParamsDirect)[]) => {
       return this.augustusV6Iface.encodeFunctionData(
         side === SwapSide.SELL
-          ? UniswapV2.directFunctionNameV6[0]
-          : UniswapV2.directFunctionNameV6[1],
-        [params],
+          ? UniswapV2FunctionsV6.swap
+          : UniswapV2FunctionsV6.buy,
+        [...params],
       );
     };
 
@@ -997,10 +997,19 @@ export class UniswapV2
       return '0x';
     }
 
+    // contract expects tokens to be sorted, and direction switched in case sorting changes src/dest order
+    const [srcTokenSorted, destTokenSorted] =
+      BigInt(path.srcToken) > BigInt(path.destToken)
+        ? [path.destToken, path.srcToken]
+        : [path.srcToken, path.destToken];
+
+    const direction =
+      srcTokenSorted !== path.srcToken ? !path.direction : path.direction;
+
     const tokensEncoded = pack(
       ['address', 'address'],
-      [path.srcToken, path.destToken],
+      [srcTokenSorted, destTokenSorted],
     );
-    return tokensEncoded + (path.direction ? '0' : '1');
+    return tokensEncoded + '0'.repeat(47) + (direction ? '0' : '1');
   }
 }

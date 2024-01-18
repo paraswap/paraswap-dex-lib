@@ -987,7 +987,7 @@ export class UniswapV3
         side === SwapSide.SELL
           ? DirectMethodsV6.directSell
           : DirectMethodsV6.directBuy,
-        [params],
+        [...params],
       );
     };
 

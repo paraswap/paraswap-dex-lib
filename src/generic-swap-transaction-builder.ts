@@ -1,4 +1,5 @@
 import { Address, DexExchangeParam, OptimalRate, TxObject } from './types';
+import { BigNumber } from 'ethers';
 import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
@@ -309,19 +310,26 @@ export class GenericSwapTransactionBuilder {
         ? priceRoute.destAmount
         : priceRoute.srcAmount;
 
-    const [partner, feePercent] = referrerAddress
-      ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
-      : [
-          encodePartnerAddressForFeeLogic({
-            partnerAddress,
-            partnerFeePercent,
-            takeSurplus,
-          }),
-          encodeFeePercent(partnerFeePercent, takeSurplus, priceRoute.side),
-        ];
+    // const [partner, feePercent] = referrerAddress
+    //   ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
+    //   : [
+    //       encodePartnerAddressForFeeLogic({
+    //         partnerAddress,
+    //         partnerFeePercent,
+    //         takeSurplus,
+    //       }),
+    //       encodeFeePercent(partnerFeePercent, takeSurplus, priceRoute.side),
+    //     ];
+    // const partnerAndFee = hexConcat([partner, feePercent]);
 
-    // TODO: Fix
-    const partnerAndFee = hexConcat([partner, feePercent]);
+    // TODO: check & improve
+    const partnerAndFee = this.packPartnerAndFeeData(
+      partnerAddress,
+      partnerFeePercent,
+      takeSurplus,
+      false,
+      false,
+    );
 
     return dex.getDirectParamV6!(
       priceRoute.srcToken,
@@ -428,5 +436,26 @@ export class GenericSwapTransactionBuilder {
       maxFeePerGas,
       maxPriorityFeePerGas,
     };
+  }
+
+  private packPartnerAndFeeData(
+    partner: string,
+    feePercent: string,
+    takeSurplus: boolean,
+    referral: boolean,
+    skipWhitelistFlag: boolean,
+  ): string {
+    const partnerBigInt = BigNumber.from(partner).shl(96);
+    let feePercentBigInt = BigNumber.from(feePercent);
+    if (takeSurplus) {
+      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(95));
+    }
+    if (referral) {
+      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(94));
+    }
+    if (skipWhitelistFlag) {
+      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(93));
+    }
+    return partnerBigInt.or(feePercentBigInt).toString();
   }
 }
