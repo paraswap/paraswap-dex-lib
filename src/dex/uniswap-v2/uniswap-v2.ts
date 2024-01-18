@@ -932,7 +932,7 @@ export class UniswapV2
     contractMethod?: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
-    if (!UniswapV2.getDirectFunctionNamesV6().includes(contractMethod!)) {
+    if (!UniswapV2.getDirectFunctionNameV6().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
@@ -977,7 +977,7 @@ export class UniswapV2
     };
   }
 
-  static getDirectFunctionNamesV6(): string[] {
+  static getDirectFunctionNameV6(): string[] {
     return this.directFunctionNameV6;
   }
 

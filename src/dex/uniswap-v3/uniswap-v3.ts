@@ -958,7 +958,7 @@ export class UniswapV3
     blockNumber: number,
     contractMethod?: string,
   ) {
-    if (!UniswapV3.getDirectFunctionNamesV6().includes(contractMethod!)) {
+    if (!UniswapV3.getDirectFunctionNameV6().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
@@ -998,7 +998,7 @@ export class UniswapV3
     };
   }
 
-  static getDirectFunctionNamesV6(): string[] {
+  static getDirectFunctionNameV6(): string[] {
     return [DirectMethodsV6.directSell, DirectMethodsV6.directBuy];
   }
 

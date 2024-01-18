@@ -379,8 +379,9 @@ export class GenericSwapTransactionBuilder {
     let encoder: (...params: any[]) => string;
     let params: (string | string[])[];
 
-    // TODO: Add real check
-    if (priceRoute.contractMethod === 'swap') {
+    if (
+      this.dexAdapterService.isDirectFunctionNameV6(priceRoute.contractMethod)
+    ) {
       ({ encoder, params } = await this._buildDirect(
         priceRoute,
         minMaxAmount,
