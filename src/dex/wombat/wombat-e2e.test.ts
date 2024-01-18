@@ -172,7 +172,7 @@ describe('Wombat E2E', () => {
           buyAmount: '1000000000000000000',
         },
         {
-          name: 'wstETH',
+          name: 'frxETH',
           sellAmount: '1000000000000000000',
           buyAmount: '1000000000000000000',
         },
@@ -250,6 +250,18 @@ describe('Wombat E2E', () => {
           name: 'USDT',
           sellAmount: '100000000',
           buyAmount: '100000000',
+        },
+      ],
+      [
+        {
+          name: 'ETH',
+          sellAmount: '100000000000000000',
+          buyAmount: '100000000000000000',
+        },
+        {
+          name: 'frxETH',
+          sellAmount: '100000000000000000',
+          buyAmount: '100000000000000000',
         },
       ],
     ];
