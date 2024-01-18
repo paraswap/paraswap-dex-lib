@@ -147,7 +147,7 @@ export class TenderlySimulation implements TransactionSimulator {
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,
         {
-          timeout: 20 * 1000,
+          timeout: 30 * 1000,
           headers: {
             'x-access-key': TENDERLY_TOKEN!,
           },

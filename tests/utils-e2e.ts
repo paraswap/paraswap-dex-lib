@@ -37,7 +37,7 @@ import {
 import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
-import { GIFTER_ADDRESS } from './constants-e2e';
+import { GIFTER_ADDRESS, Holders, Tokens } from './constants-e2e';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
@@ -172,6 +172,34 @@ class APIParaswapSDK implements IParaSwapSDK {
       uuid: uuid(),
     });
   }
+}
+
+function send1WeiTo(token: Address, to: Address, network: Network) {
+  const tokens = Tokens[network];
+
+  const tokenSymbol = Object.keys(tokens).find(tokenSymbol => {
+    const curToken = tokens[tokenSymbol];
+    return curToken.address === token;
+  });
+
+  const holders = Holders[network];
+  const holder = holders[tokenSymbol!];
+
+  return {
+    from: holder,
+    to: token,
+    data: erc20Interface.encodeFunctionData('transfer', [to, '1']),
+    value: '0',
+  };
+}
+
+function checkBalanceOf(token: Address, holder: Address) {
+  return {
+    from: NULL_ADDRESS,
+    to: token,
+    data: erc20Interface.encodeFunctionData('balanceOf', [holder]),
+    value: '0',
+  };
 }
 
 function allowAugustusV6(
@@ -418,6 +446,59 @@ export async function testE2E(
     );
 
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
+
+    const config = generateConfig(network);
+    const augustusV6Address = config.augustusV6Address!;
+    const executorsAddresses = Object.values(config.executorsAddresses!);
+    const addresses = [...executorsAddresses, augustusV6Address];
+
+    for await (const a of addresses) {
+      const src =
+        srcToken.address.toLowerCase() === ETHER_ADDRESS
+          ? config.wrappedNativeTokenAddress
+          : srcToken.address.toLowerCase();
+      const dest =
+        destToken.address.toLowerCase() === ETHER_ADDRESS
+          ? config.wrappedNativeTokenAddress
+          : destToken.address.toLowerCase();
+
+      if (priceRoute.bestRoute[0].swaps.length > 0) {
+        const intermediateToken =
+          priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
+          ETHER_ADDRESS
+            ? config.wrappedNativeTokenAddress
+            : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
+
+        await ts.simulate(send1WeiTo(intermediateToken, a, network));
+      }
+
+      await ts.simulate(send1WeiTo(src, a, network));
+      await ts.simulate(send1WeiTo(dest, a, network));
+    }
+    //
+    // for await (const a of addresses) {
+    //   const src =
+    //     srcToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : srcToken.address.toLowerCase();
+    //   const dest =
+    //     destToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : destToken.address.toLowerCase();
+    //
+    //   if (priceRoute.bestRoute[0].swaps.length > 0) {
+    //     const intermediateToken =
+    //       priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
+    //       ETHER_ADDRESS
+    //         ? config.wrappedNativeTokenAddress
+    //         : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
+    //
+    //     await ts.simulate(checkBalanceOf(intermediateToken, a));
+    //   }
+    //
+    //   await ts.simulate(checkBalanceOf(src, a));
+    //   await ts.simulate(checkBalanceOf(dest, a));
+    // }
 
     // Calculate slippage. Default is 1%
     const _slippage = slippage || 100;
