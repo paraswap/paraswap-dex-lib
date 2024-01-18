@@ -1298,7 +1298,10 @@ export class BalancerV2
     const swapParams: BalancerV2DirectParamV6 = [
       quotedAmount,
       metadata,
-      beneficiary, // todo encode beneficiary with wrap flag
+      this.encodeBeneficiaryAndApproveFlag(
+        beneficiary,
+        data.isApproved ?? false,
+      ),
     ];
 
     const encodeParams = [swapParams, partnerAndFee, permit, balancerParams];
@@ -1319,6 +1322,17 @@ export class BalancerV2
       params: encodeParams,
       networkFee: '0',
     };
+  }
+
+  private encodeBeneficiaryAndApproveFlag(
+    beneficiary: Address,
+    approveFlag: boolean,
+  ) {
+    // beneficiary occupies first 20 bits, approveFlag occupies left most bit
+    return hexConcat([
+      hexZeroPad(beneficiary, 20),
+      hexlify(approveFlag ? 1 : 0),
+    ]);
   }
 
   static getDirectFunctionNameV6(): string[] {
