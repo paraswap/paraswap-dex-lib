@@ -591,6 +591,19 @@ describe('UniswapV2 E2E Mainnet', () => {
           provider,
         );
       });
+      it('WETH (amountIn=1000000000000) -> WBTC', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.WBTC,
+          holders.WETH,
+          '1000000000000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
       it('WBTC -> WETH', async () => {
         await testE2E(
           tokens.WBTC,
@@ -617,6 +630,19 @@ describe('UniswapV2 E2E Mainnet', () => {
           provider,
         );
       });
+      it('WBTC -> ETH', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.ETH,
+          holders.WBTC,
+          '100000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
       it('USDC -> WBTC', async () => {
         await testE2E(
           tokens.USDC,
@@ -632,10 +658,10 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
       it('WBTC -> USDC', async () => {
         await testE2E(
-          tokens.USDC,
           tokens.WBTC,
-          holders.USDC,
-          '200000000',
+          tokens.USDC,
+          holders.WBTC,
+          '100000',
           SwapSide.SELL,
           dexKey,
           UniswapV2FunctionsV6.swap as any,
@@ -677,7 +703,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           tokens.WBTC,
           tokens.WETH,
           holders.WBTC,
-          '1000000',
+          '7000000000000000',
           SwapSide.BUY,
           dexKey,
           UniswapV2FunctionsV6.buy as any,
@@ -690,6 +716,19 @@ describe('UniswapV2 E2E Mainnet', () => {
           tokens.ETH,
           tokens.WBTC,
           holders.ETH,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('WBTC -> ETH ', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.ETH,
+          holders.WBTC,
           '7000000000000000',
           SwapSide.BUY,
           dexKey,
@@ -713,10 +752,10 @@ describe('UniswapV2 E2E Mainnet', () => {
       });
       it('WBTC -> USDC', async () => {
         await testE2E(
-          tokens.USDC,
           tokens.WBTC,
-          holders.USDC,
-          '20000',
+          tokens.USDC,
+          holders.WBTC,
+          '1000000',
           SwapSide.BUY,
           dexKey,
           UniswapV2FunctionsV6.buy as any,
