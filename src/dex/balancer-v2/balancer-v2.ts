@@ -53,7 +53,7 @@ import {
   SubgraphPoolBase,
   SwapTypes,
   BalancerV2DirectParamV6,
-  BalancerV2DirectParamV6Direct,
+  BalancerV2DirectParamV6Swap,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -598,7 +598,7 @@ export class BalancerV2
   implements
     IDex<
       BalancerV2Data,
-      BalancerV2DirectParam | BalancerV2DirectParamV6Direct,
+      BalancerV2DirectParam | BalancerV2DirectParamV6Swap,
       OptimizedBalancerV2Data
     >
 {
@@ -1305,14 +1305,14 @@ export class BalancerV2
       ),
     ];
 
-    const encodeParams: BalancerV2DirectParamV6Direct = [
+    const encodeParams: BalancerV2DirectParamV6Swap = [
       swapParams,
       partnerAndFee,
       permit,
       balancerParams,
     ];
 
-    const encoder = (...params: (string | BalancerV2DirectParamV6Direct)[]) => {
+    const encoder = (...params: BalancerV2DirectParamV6Swap) => {
       return this.augustusV6Interface.encodeFunctionData(
         side === SwapSide.SELL
           ? BalancerV2.getDirectFunctionNameV6()[0]
