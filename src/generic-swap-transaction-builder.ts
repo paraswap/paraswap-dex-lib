@@ -273,7 +273,7 @@ export class GenericSwapTransactionBuilder {
     ];
 
     const encoder = (...params: any[]) =>
-      this.augustusV6Interface.encodeFunctionData('swap', params);
+      this.augustusV6Interface.encodeFunctionData('swapExactAmountIn', params);
 
     return {
       encoder,
