@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
-import axios from 'axios';
-import { Address } from '@paraswap/core';
 import { Provider } from '@ethersproject/providers';
+import { Address } from '@paraswap/core';
+import axios from 'axios';
 import { TxObject } from '../src/types';
 import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
 
@@ -76,6 +76,7 @@ export class TenderlySimulation implements TransactionSimulator {
     }
 
     try {
+      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       let res = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork`,
         {
@@ -109,6 +110,7 @@ export class TenderlySimulation implements TransactionSimulator {
     };
     try {
       if (stateOverrides) {
+        await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
         const result = await axios.post(
           `
         https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
@@ -133,6 +135,7 @@ export class TenderlySimulation implements TransactionSimulator {
         );
       }
 
+      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       const { data } = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,

@@ -27,6 +27,6 @@ export const DEXALOT_RESTRICT_TTL_S = 60 * 30; // 30 minutes
 export const DEXALOT_RESTRICTED_CACHE_KEY = 'restricted';
 
 export const DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION =
-  new BigNumber('0.001');
+  new BigNumber('0.005');
 
 export const DEXALOT_FIRM_QUOTE_TIMEOUT_MS = 2000;
