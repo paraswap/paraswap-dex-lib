@@ -1003,13 +1003,12 @@ export class UniswapV2
         ? [path.destToken, path.srcToken]
         : [path.srcToken, path.destToken];
 
-    const direction =
-      srcTokenSorted !== path.srcToken ? !path.direction : path.direction;
+    const direction = srcTokenSorted === path.srcToken ? 1 : 0;
 
     const tokensEncoded = pack(
       ['address', 'address'],
       [srcTokenSorted, destTokenSorted],
     );
-    return tokensEncoded + '0'.repeat(47) + (direction ? '0' : '1');
+    return tokensEncoded + '0'.repeat(47) + direction;
   }
 }
