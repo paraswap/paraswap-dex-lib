@@ -27,7 +27,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'ETH';
         const tokenBSymbol: string = 'SUSHI';
-        const tokenAAmount: string = '4000000000000000000';
+        const tokenAAmount: string = '50000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -56,7 +56,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'SUSHI';
         const tokenBSymbol: string = 'ETH';
-        const tokenAAmount: string = '3000000000000000000000';
+        const tokenAAmount: string = '300000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -143,7 +143,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'USDT';
         const tokenBSymbol: string = 'USDC';
-        const tokenAAmount: string = '11000000000000';
+        const tokenAAmount: string = '1100000000000';
 
         const side = SwapSide.SELL;
 
@@ -171,10 +171,80 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
     describe('MultiSwap', () => {
       const contractMethod = ContractMethod.multiSwap;
 
-      describe('DAI -> ETH -> SUSHI via SushiSwapV3 and UniswapV3', () => {
+      describe('WBTC -> ETH -> SUSHI via SushiSwapV3 and UniswapV3', () => {
         const dexKeys = ['SushiSwapV3', 'UniswapV3'];
 
-        const tokenASymbol: string = 'DAI';
+        const tokenASymbol: string = 'WBTC';
+        const tokenBSymbol: string = 'SUSHI';
+        const tokenAAmount: string = '200000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', // WBTC
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+              '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2', // SUSHI
+            ],
+          );
+        });
+      });
+
+      describe('SUSHI -> ETH -> WBTC via SushiSwapV3 and UniswapV3', () => {
+        const dexKeys = ['SushiSwapV3', 'UniswapV3'];
+
+        const tokenASymbol: string = 'SUSHI';
+        const tokenBSymbol: string = 'WBTC';
+        const tokenAAmount: string = '1000000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2', // SUSHI
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+              '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', // WBTC
+            ],
+          );
+        });
+      });
+
+      describe('BAL -> ETH -> SUSHI via BalancerV1,SushiSwapV3 and UniswapV3', () => {
+        const dexKeys = ['SushiSwapV3', 'UniswapV3', 'BalancerV1'];
+
+        const tokenASymbol: string = 'BAL';
         const tokenBSymbol: string = 'SUSHI';
         const tokenAAmount: string = '10000000000000000000000';
 
@@ -196,6 +266,117 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             slippage,
             2000,
+            false,
+            [
+              '0xba100000625a3754423978a60c9317c58a424e3D', // BAL
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+              '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2', // SUSHI
+            ],
+          );
+        });
+      });
+
+      describe('ETH -> USDC -> MAV via MaverickV1,SushiSwapV3 and UniswapV3', () => {
+        const dexKeys = ['SushiSwapV3', 'UniswapV3', 'MaverickV1'];
+
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'MAV';
+        const tokenAAmount: string = '100000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
+              '0x7448c7456a97769f6cd04f1e83a4a23ccdc46abd', // MAV
+            ],
+          );
+        });
+      });
+
+      describe('USDT -> DAI -> ETH via UniswapV3 on each path', () => {
+        const dexKeys = ['UniswapV3'];
+
+        const tokenASymbol: string = 'USDT';
+        const tokenBSymbol: string = 'ETH';
+        const tokenAAmount: string = '1000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
+              '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+            ],
+          );
+        });
+      });
+
+      describe('DAI -> USDC -> ETH via UniswapV3 and CurveV1', () => {
+        const dexKeys = ['UniswapV3', 'CurveV1'];
+
+        const tokenASymbol: string = 'DAI';
+        const tokenBSymbol: string = 'ETH';
+        const tokenAAmount: string = '100000000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI
+              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+            ],
           );
         });
       });

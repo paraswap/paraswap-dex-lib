@@ -34,7 +34,11 @@ import {
   DummyLimitOrderProvider,
   IDexHelper,
 } from '../src/dex-helper';
-import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
+import {
+  AddressOrSymbol,
+  constructSimpleSDK,
+  SimpleFetchSDK,
+} from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 import { GIFTER_ADDRESS, Holders, Tokens } from './constants-e2e';
@@ -134,23 +138,46 @@ class APIParaswapSDK implements IParaSwapSDK {
     side: SwapSide,
     contractMethod: ContractMethod,
     _poolIdentifiers?: { [key: string]: string[] | null } | null,
+    transferFees?: TransferFeeParams,
+    forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate> {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
 
-    const priceRoute = await this.paraSwap.swap.getRate({
-      srcToken: from.address,
-      destToken: to.address,
-      side,
-      amount: amount.toString(),
-      options: {
-        includeDEXS: this.dexKeys,
-        includeContractMethods: [contractMethod],
-        partner: 'any',
-      },
-      srcDecimals: from.decimals,
-      destDecimals: to.decimals,
-    });
+    let priceRoute;
+    if (forceRoute && forceRoute.length > 0) {
+      const options = {
+        route: forceRoute,
+        amount: amount.toString(),
+        side,
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+      };
+      priceRoute = await this.paraSwap.swap.getRateByRoute(options);
+    } else {
+      const options = {
+        srcToken: from.address,
+        destToken: to.address,
+        side,
+        amount: amount.toString(),
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+      };
+      priceRoute = await this.paraSwap.swap.getRate(options);
+    }
+
     return priceRoute as OptimalRate;
   }
 
@@ -335,6 +362,7 @@ export async function testE2E(
   slippage?: number,
   sleepMs?: number,
   replaceTenderlyWithEstimateGas?: boolean,
+  forceRoute?: AddressOrSymbol[],
 ) {
   const amount = BigInt(_amount);
 
@@ -443,6 +471,7 @@ export async function testE2E(
       contractMethod,
       poolIdentifiers,
       transferFees,
+      forceRoute,
     );
 
     console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));

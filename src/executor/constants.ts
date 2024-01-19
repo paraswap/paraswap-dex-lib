@@ -7,9 +7,12 @@ const {
 export const BYTES_28_LENGTH = 28;
 export const BYTES_64_LENGTH = 64;
 
+export const ZEROS_4_BYTES = hexZeroPad(hexlify(0), 4);
 export const ZEROS_12_BYTES = hexZeroPad(hexlify(0), 12);
 export const ZEROS_28_BYTES = hexZeroPad(hexlify(0), 28);
 export const ZEROS_32_BYTES = hexZeroPad(hexlify(0), 32);
+
+export const SWAP_EXCHANGE_100_PERCENTAGE = 100;
 
 export const EXECUTORS_FUNCTION_CALL_DATA_TYPES: string[] = [
   'bytes20', // address(bytes20)

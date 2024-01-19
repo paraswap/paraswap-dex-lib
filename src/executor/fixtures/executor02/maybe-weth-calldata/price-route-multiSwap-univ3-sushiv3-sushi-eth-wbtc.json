@@ -1,0 +1,12 @@
+{
+  "deposit": {
+    "callee": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "calldata": "0xd0e30db0",
+    "value": "98740492593011019905"
+  },
+  "withdraw": {
+    "callee": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57",
+    "calldata": "0x2e1a7d4d0000000000000000000000000000000000000000000000055a4cb2dd2182d081",
+    "value": "0"
+  }
+}
