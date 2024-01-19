@@ -143,6 +143,13 @@ export type BalancerV2DirectParamV6 = [
   beneficiaryAndApproveFlag: NumberAsString,
 ];
 
+export type BalancerV2DirectParamV6Swap = [
+  params: BalancerV2DirectParamV6,
+  partnerAndFee: string,
+  permit: string,
+  balancerParams: BalancerParam,
+];
+
 export type BalancerV2Data = {
   poolId: string;
 };

@@ -53,6 +53,7 @@ import {
   SubgraphPoolBase,
   SwapTypes,
   BalancerV2DirectParamV6,
+  BalancerV2DirectParamV6Direct,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -73,8 +74,8 @@ import {
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
-import { hexConcat, hexlify, hexZeroPad } from 'ethers/lib/utils';
-import AugustusV6ABI from '../../abi/AugustusV6.abi.json';
+import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
+import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -597,7 +598,7 @@ export class BalancerV2
   implements
     IDex<
       BalancerV2Data,
-      BalancerV2DirectParam | BalancerV2DirectParamV6,
+      BalancerV2DirectParam | BalancerV2DirectParamV6Direct,
       OptimizedBalancerV2Data
     >
 {
@@ -1304,11 +1305,14 @@ export class BalancerV2
       ),
     ];
 
-    const encodeParams = [swapParams, partnerAndFee, permit, balancerParams];
+    const encodeParams: BalancerV2DirectParamV6Direct = [
+      swapParams,
+      partnerAndFee,
+      permit,
+      balancerParams,
+    ];
 
-    const encoder = (
-      ...params: (string | BalancerV2DirectParamV6 | BalancerParam)[]
-    ) => {
+    const encoder = (...params: (string | BalancerV2DirectParamV6Direct)[]) => {
       return this.augustusV6Interface.encodeFunctionData(
         side === SwapSide.SELL
           ? BalancerV2.getDirectFunctionNameV6()[0]
@@ -1328,11 +1332,11 @@ export class BalancerV2
     beneficiary: Address,
     approveFlag: boolean,
   ) {
-    // beneficiary occupies first 20 bits, approveFlag occupies left most bit
-    return hexConcat([
-      hexZeroPad(beneficiary, 20),
-      hexlify(approveFlag ? 1 : 0),
-    ]);
+    const packed = solidityPack(
+      ['address', 'bytes12'],
+      [beneficiary, approveFlag ? '0x01' : '0x00'],
+    );
+    return packed;
   }
 
   static getDirectFunctionNameV6(): string[] {
