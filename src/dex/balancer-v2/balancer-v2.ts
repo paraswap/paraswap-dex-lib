@@ -52,6 +52,7 @@ import {
   BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
+  BalancerV2DirectParamV6,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -66,11 +67,14 @@ import {
 } from './utils';
 import {
   DirectMethods,
+  DirectMethodsV6,
   MIN_USD_LIQUIDITY_TO_FETCH,
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import { hexConcat, hexlify, hexZeroPad } from 'ethers/lib/utils';
+import AugustusV6ABI from '../../abi/AugustusV6.abi.json';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -591,7 +595,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 export class BalancerV2
   extends SimpleExchange
   implements
-    IDex<BalancerV2Data, BalancerV2DirectParam, OptimizedBalancerV2Data>
+    IDex<
+      BalancerV2Data,
+      BalancerV2DirectParam | BalancerV2DirectParamV6,
+      OptimizedBalancerV2Data
+    >
 {
   public eventPools: BalancerV2EventPool;
 
@@ -599,6 +607,7 @@ export class BalancerV2
   readonly isFeeOnTransferSupported = false;
 
   readonly directSwapIface = new Interface(DirectSwapABI);
+  readonly augustusV6Interface = new Interface(AugustusV6ABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -1249,6 +1258,85 @@ export class BalancerV2
       encoder,
       networkFee: '0',
     };
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod?: string,
+  ) {
+    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+
+    if (!BalancerV2.getDirectFunctionNameV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const balancerParams = this.getBalancerParam(
+      srcToken,
+      destToken,
+      fromAmount,
+      toAmount,
+      data,
+      side,
+    );
+
+    const swapParams: BalancerV2DirectParamV6 = [
+      quotedAmount,
+      metadata,
+      this.encodeBeneficiaryAndApproveFlag(
+        beneficiary,
+        data.isApproved ?? false,
+      ),
+    ];
+
+    const encodeParams = [swapParams, partnerAndFee, permit, balancerParams];
+
+    const encoder = (
+      ...params: (string | BalancerV2DirectParamV6 | BalancerParam)[]
+    ) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? BalancerV2.getDirectFunctionNameV6()[0]
+          : BalancerV2.getDirectFunctionNameV6()[1],
+        [...params],
+      );
+    };
+
+    return {
+      encoder,
+      params: encodeParams,
+      networkFee: '0',
+    };
+  }
+
+  private encodeBeneficiaryAndApproveFlag(
+    beneficiary: Address,
+    approveFlag: boolean,
+  ) {
+    // beneficiary occupies first 20 bits, approveFlag occupies left most bit
+    return hexConcat([
+      hexZeroPad(beneficiary, 20),
+      hexlify(approveFlag ? 1 : 0),
+    ]);
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DirectMethodsV6.directSell, DirectMethodsV6.directBuy];
   }
 
   async getSimpleParam(
