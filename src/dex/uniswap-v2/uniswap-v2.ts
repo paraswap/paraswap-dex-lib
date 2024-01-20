@@ -940,6 +940,7 @@ export class UniswapV2
     const path = this._encodePathV6(
       { srcToken, destToken, direction: data.pools[0].direction },
       side,
+      data.wethAddress,
     );
 
     const metadata = hexConcat([
@@ -953,7 +954,6 @@ export class UniswapV2
       fromAmount,
       quotedAmount,
       toAmount,
-      // uuidToBytes16(uuid),
       metadata,
       beneficiary,
       path,
@@ -989,12 +989,24 @@ export class UniswapV2
       direction: boolean;
     },
     side: SwapSide,
+    weth?: Address,
   ): string {
     if (path == null) {
       this.logger.error(
         `${this.dexKey}: Received invalid path=${path} for side=${side} to encode`,
       );
       return '0x';
+    }
+
+    // v6 expects weth for eth in pools
+    if (isETHAddress(path.srcToken)) {
+      path.srcToken =
+        weth || this.dexHelper.config.data.wrappedNativeTokenAddress;
+    }
+
+    if (isETHAddress(path.destToken)) {
+      path.destToken =
+        weth || this.dexHelper.config.data.wrappedNativeTokenAddress;
     }
 
     // contract expects tokens to be sorted, and direction switched in case sorting changes src/dest order
