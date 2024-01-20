@@ -54,15 +54,24 @@ export class SynthereumPoolEvent<State> extends PartialEventSubscriber<
   }
 
   public getGenerateStateMultiCallInputs(): MultiCallInput[] {
-    return [];
+    return [
+      {
+        target: this.poolAddress,
+        callData: this.poolInterface.encodeFunctionData('feePercentage'),
+      },
+    ];
   }
 
   public generateState(
     multicallOutputs: MultiCallOutput[],
     blockNumber?: number | 'latest',
   ): DeepReadonly<SynthereumPoolState> {
+    const decoded = this.poolInterface.decodeFunctionResult(
+      'feePercentage',
+      multicallOutputs[0],
+    );
     return {
-      feesPercentage: 0n,
+      feesPercentage: BigInt(decoded.toString()),
     };
   }
 }
