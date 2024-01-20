@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from '../constants';
+import { SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
@@ -9,26 +9,25 @@ import {
   SimpleExchangeParam,
   Token,
   TxInfo,
-} from '../types';
-import { IDexTxBuilder } from './idex';
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
-} from './simple-exchange';
-import GenericFactoryZapABI from '../abi/curve-v2/GenericFactoryZap.json';
-import DirectSwapABI from '../abi/DirectSwap.json';
-import CurveV2ABI from '../abi/CurveV2.json';
-import { IDexHelper } from '../dex-helper';
+} from '../simple-exchange';
+import GenericFactoryZapABI from '../../abi/curve-v2/GenericFactoryZap.json';
+import DirectSwapABI from '../../abi/DirectSwap.json';
+import AugustusV6ABI from '../../abi/AugustusV6.abi.json';
+import CurveV2ABI from '../../abi/CurveV2.json';
+import { IDexHelper } from '../../dex-helper';
 import { assert } from 'ts-essentials';
 import { Logger } from 'log4js';
 import { OptimalSwapExchange } from '@paraswap/core';
-import { uuidToBytes16 } from '../utils';
-
-export enum CurveV2SwapType {
-  EXCHANGE,
-  EXCHANGE_UNDERLYING,
-  EXCHANGE_GENERIC_FACTORY_ZAP,
-}
+import { uuidToBytes16 } from '../../utils';
+import { DIRECT_METHOD_NAME_V6 } from './constants';
+import { CurveV2DirectSwapParam, CurveV2SwapType } from './types';
+import { packCurveData } from '../../lib/curve/encoder';
+import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
 
 const DIRECT_METHOD_NAME = 'directCurveV2Swap';
 
@@ -90,6 +89,7 @@ export class CurveV2
   static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
   genericFactoryZapIface: Interface;
+  augustusV6Interface: Interface;
   minConversionRate = '1';
   needWrapNative = true;
   logger: Logger;
@@ -100,6 +100,7 @@ export class CurveV2
     super(dexHelper, 'curvev2');
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
     this.genericFactoryZapIface = new Interface(GenericFactoryZapABI);
+    this.augustusV6Interface = new Interface(AugustusV6ABI);
     this.logger = dexHelper.getLogger(
       `CurveV2_${dexHelper.config.data.network}`,
     );
@@ -255,6 +256,74 @@ export class CurveV2
       encoder,
       networkFee: '0',
     };
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: CurveV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod?: string,
+  ): TxInfo<CurveV2DirectSwapParam> {
+    if (contractMethod !== DIRECT_METHOD_NAME_V6) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    let isApproved: boolean = !!data.isApproved;
+    if (data.isApproved === undefined) {
+      this.logger.warn(`isApproved is undefined, defaulting to false`);
+    }
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const swapParams: CurveV2DirectSwapParam = [
+      packCurveData(
+        data.exchange,
+        isApproved,
+        0, // ! FIXME: compute wrap type
+        data.swapType,
+      ).toString(),
+      data.i,
+      data.j,
+      data.originalPoolAddress,
+      srcToken,
+      destToken,
+      fromAmount,
+      metadata,
+      quotedAmount,
+      uuidToBytes16(uuid),
+      beneficiary,
+    ];
+
+    const encoder = (...params: CurveV2DirectSwapParam) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        DIRECT_METHOD_NAME_V6,
+        [params, partnerAndFee, permit],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DIRECT_METHOD_NAME_V6];
   }
 
   static getDirectFunctionName(): string[] {
