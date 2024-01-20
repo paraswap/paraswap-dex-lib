@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
 import { assert, DeepReadonly } from 'ts-essentials';
 import _, { keyBy } from 'lodash';
@@ -76,6 +77,8 @@ import {
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
+import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
+import { BigNumber, utils } from 'ethers';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -609,6 +612,7 @@ export class BalancerV2
 
   readonly directSwapIface = new Interface(DirectSwapABI);
   readonly augustusV6Interface = new Interface(AugustusV6ABI);
+  readonly balancerVaultInterface = new Interface(BalancerVaultABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -1052,6 +1056,7 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
+    isV6Swap?: boolean,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
@@ -1103,7 +1108,14 @@ export class BalancerV2
         t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
       );
 
-      const _limits = _assets.map(_ => MAX_INT);
+      const _limits = isV6Swap
+        ? this.createSwapArray(
+            _assets.length,
+            side === SwapSide.SELL ? 0 : 1,
+            srcAmount,
+            destAmount,
+          )
+        : _assets.map(_ => MAX_INT);
 
       swaps = swaps.concat(_swaps);
       assets = assets.concat(_assets);
@@ -1111,8 +1123,8 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: this.augustusAddress,
-      recipient: this.augustusAddress,
+      sender: isV6Swap ? this.augustusV6Address! : this.augustusAddress,
+      recipient: isV6Swap ? this.augustusV6Address! : this.augustusAddress,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
@@ -1127,6 +1139,23 @@ export class BalancerV2
     ];
 
     return params;
+  }
+
+  private createSwapArray(
+    lengthOfAssets: number,
+    swapKind: 0 | 1,
+    fromAmount: string,
+    toAmount: string,
+  ): string[] {
+    let swapArray = new Array(lengthOfAssets).fill('0');
+
+    // Assign values based on swapKind
+    swapArray[0] =
+      swapKind === 0 ? fromAmount : BigNumber.from(toAmount).mul(-1).toString();
+    swapArray[lengthOfAssets - 1] =
+      swapKind === 0 ? BigNumber.from(toAmount).mul(-1).toString() : fromAmount;
+
+    return swapArray;
   }
 
   static getDirectFunctionName(): string[] {
@@ -1294,6 +1323,7 @@ export class BalancerV2
       toAmount,
       data,
       side,
+      true, // v6 call
     );
 
     const swapParams: BalancerV2DirectParamV6 = [
@@ -1309,7 +1339,7 @@ export class BalancerV2
       swapParams,
       partnerAndFee,
       permit,
-      balancerParams,
+      this.encodeBalancerParam(balancerParams),
     ];
 
     const encoder = (...params: BalancerV2DirectParamV6Swap) => {
@@ -1333,10 +1363,22 @@ export class BalancerV2
     approveFlag: boolean,
   ) {
     const packed = solidityPack(
-      ['address', 'bytes12'],
+      ['address', 'bytes'],
       [beneficiary, approveFlag ? '0x01' : '0x00'],
     );
     return packed;
+  }
+
+  private encodeBalancerParam(param: BalancerParam): string {
+    console.log('balancer params to encode -> ', param);
+    const [kind, swaps, assets, funds, limits, deadline] = param;
+
+    const encoded = this.balancerVaultInterface.encodeFunctionData(
+      'batchSwap',
+      [kind, swaps, assets, funds, limits, deadline],
+    );
+    console.log('balancer encoded data -> ', encoded);
+    return encoded;
   }
 
   static getDirectFunctionNameV6(): string[] {

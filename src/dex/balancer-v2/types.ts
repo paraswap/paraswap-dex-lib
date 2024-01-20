@@ -147,7 +147,7 @@ export type BalancerV2DirectParamV6Swap = [
   params: BalancerV2DirectParamV6,
   partnerAndFee: string,
   permit: string,
-  balancerParams: BalancerParam,
+  balancerParams: string,
 ];
 
 export type BalancerV2Data = {
