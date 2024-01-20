@@ -25,7 +25,11 @@ import { Logger } from 'log4js';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { uuidToBytes16 } from '../../utils';
 import { DIRECT_METHOD_NAME_V6 } from './constants';
-import { CurveV2DirectSwapParam, CurveV2SwapType } from './types';
+import {
+  CurveV2DirectSwap,
+  CurveV2DirectSwapParam,
+  CurveV2SwapType,
+} from './types';
 import { packCurveData } from '../../lib/curve/encoder';
 import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
 
@@ -84,7 +88,7 @@ enum CurveV2SwapFunctions {
 
 export class CurveV2
   extends SimpleExchange
-  implements IDexTxBuilder<CurveV2Data, DirectCurveV2Param>
+  implements IDexTxBuilder<CurveV2Data, DirectCurveV2Param | CurveV2DirectSwap>
 {
   static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
@@ -272,7 +276,7 @@ export class CurveV2
     beneficiary: string,
     blockNumber: number,
     contractMethod?: string,
-  ): TxInfo<CurveV2DirectSwapParam> {
+  ) {
     if (contractMethod !== DIRECT_METHOD_NAME_V6) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
@@ -308,15 +312,17 @@ export class CurveV2
       beneficiary,
     ];
 
-    const encoder = (...params: CurveV2DirectSwapParam) => {
+    const encodeParams: CurveV2DirectSwap = [swapParams, partnerAndFee, permit];
+
+    const encoder = (...params: CurveV2DirectSwap) => {
       return this.augustusV6Interface.encodeFunctionData(
         DIRECT_METHOD_NAME_V6,
-        [params, partnerAndFee, permit],
+        [...params],
       );
     };
 
     return {
-      params: swapParams,
+      params: encodeParams,
       encoder,
       networkFee: '0',
     };

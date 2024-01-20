@@ -85,6 +85,7 @@ import {
   CurveV1SwapType,
   DirectCurveV1Param,
   DirectCurveV1ParamV6,
+  CurveV1DirectSwap,
 } from './types';
 import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
@@ -102,7 +103,7 @@ const coder = new AbiCoder();
 
 export class CurveV1
   extends SimpleExchange
-  implements IDex<CurveV1Data, DirectCurveV1Param>
+  implements IDex<CurveV1Data, DirectCurveV1Param | CurveV1DirectSwap>
 {
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
@@ -988,19 +989,20 @@ export class CurveV1
   }
 
   getDirectParamV6(
-    srcToken: string,
-    destToken: string,
-    fromAmount: string,
-    destAmount: string,
-    quotedAmount: string,
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
     data: CurveV1Data,
     side: SwapSide,
     permit: string,
     uuid: string,
     partnerAndFee: string,
     beneficiary: string,
-    contractMethod?: string | undefined,
-  ): TxInfo<DirectCurveV1ParamV6> {
+    blockNumber: number,
+    contractMethod?: string,
+  ) {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
@@ -1025,22 +1027,24 @@ export class CurveV1
       srcToken,
       destToken,
       fromAmount,
-      destAmount,
+      toAmount,
       quotedAmount,
       uuidToBytes16(uuid),
       beneficiary,
     ];
 
-    const encoder = (...params: DirectCurveV1ParamV6) => {
+    const encodeParams: CurveV1DirectSwap = [swapParams, partnerAndFee, permit];
+
+    const encoder = (...params: CurveV1DirectSwap) => {
       return this.augustusV6Interface.encodeFunctionData(
         DIRECT_METHOD_NAME_V6,
-        [params, partnerAndFee, permit],
+        [...params],
       );
     };
 
     return {
       encoder,
-      params: swapParams,
+      params: encodeParams,
       networkFee: '0',
     };
   }

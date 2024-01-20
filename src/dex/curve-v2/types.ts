@@ -19,3 +19,9 @@ export enum CurveV2SwapType {
   EXCHANGE_UNDERLYING,
   EXCHANGE_GENERIC_FACTORY_ZAP,
 }
+
+export type CurveV2DirectSwap = [
+  params: CurveV2DirectSwapParam,
+  partnerAndFee: string,
+  permit: string,
+];

@@ -80,3 +80,9 @@ export type DirectCurveV1ParamV6 = [
   metadata: string,
   beneficiary: Address,
 ];
+
+export type CurveV1DirectSwap = [
+  params: DirectCurveV1ParamV6,
+  partnerAndFee: string,
+  permit: string,
+];
