@@ -45,7 +45,7 @@ import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
-import { DexAdapterService } from '../src';
+import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
 import { NULL_ADDRESS } from '../build/constants';
 
@@ -106,6 +106,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   paraSwap: SimpleFetchSDK;
   dexKeys: string[];
   dexHelper: IDexHelper;
+  pricingHelper: PricingHelper;
   transactionBuilder: GenericSwapTransactionBuilder;
   dexAdapterService: DexAdapterService;
 
@@ -129,6 +130,16 @@ class APIParaswapSDK implements IParaSwapSDK {
     this.transactionBuilder = new GenericSwapTransactionBuilder(
       this.dexAdapterService,
     );
+
+    this.pricingHelper = new PricingHelper(
+      this.dexAdapterService,
+      this.dexHelper.getLogger,
+    );
+  }
+
+  async initializePricing() {
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    await this.pricingHelper.initialize(blockNumber, this.dexKeys);
   }
 
   async getPrices(

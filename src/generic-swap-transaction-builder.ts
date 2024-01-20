@@ -152,7 +152,7 @@ export class GenericSwapTransactionBuilder {
             _dest,
             _srcAmount,
             _destAmount,
-            destTokenIsWeth || !isLastSwap
+            destTokenIsWeth || !isLastSwap || se.exchange === 'BalancerV2'
               ? bytecodeBuilder.getAddress()
               : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
             se.data,
@@ -255,7 +255,7 @@ export class GenericSwapTransactionBuilder {
     ];
 
     const encoder = (...params: any[]) =>
-      this.augustusV6Interface.encodeFunctionData('swap', params);
+      this.augustusV6Interface.encodeFunctionData('swapExactAmountIn', params);
 
     return {
       encoder,

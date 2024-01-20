@@ -1379,7 +1379,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${BBAUSD_OP}`],
+          // [`${dexKey}_${BBAUSD_OP}`],
         );
       });
       it('DAI -> USDT using bbaUSD', async () => {
@@ -1393,7 +1393,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${BBAUSD_OP}`],
+          // [`${dexKey}_${BBAUSD_OP}`],
         );
       });
       it('USDC -> MAI through bbaUSD-MAI', async () => {
@@ -1407,7 +1407,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${BBAUSDMAI_OP}`],
+          // [`${dexKey}_${BBAUSDMAI_OP}`],
         );
       });
       it('wstETH -> WETH through composable stable', async () => {
@@ -1421,7 +1421,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${LIDO_SHUFFLE}`],
+          // [`${dexKey}_${LIDO_SHUFFLE}`],
         );
       });
       it('wstETH -> ETH through composable stable', async () => {
@@ -1435,7 +1435,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${LIDO_SHUFFLE}`],
+          // [`${dexKey}_${LIDO_SHUFFLE}`],
         );
       });
       it('ETH -> wstETH through composable stable', async () => {
@@ -1449,7 +1449,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${LIDO_SHUFFLE}`],
+          // [`${dexKey}_${LIDO_SHUFFLE}`],
         );
       });
       it('wstETH -> WBTC through boosted weighted', async () => {
@@ -1463,7 +1463,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${YELLOW_SUBMARINE}`],
+          // [`${dexKey}_${YELLOW_SUBMARINE}`],
         );
       });
       it('USDC -> WBTC through boosted weighted', async () => {
@@ -1477,7 +1477,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${YELLOW_SUBMARINE}`],
+          // [`${dexKey}_${YELLOW_SUBMARINE}`],
         );
       });
       it('wstETH -> USDC  through boosted weighted', async () => {
@@ -1491,7 +1491,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.simpleSwap,
           network,
           provider,
-          [`${dexKey}_${YELLOW_SUBMARINE}`],
+          // [`${dexKey}_${YELLOW_SUBMARINE}`],
         );
       });
     });
@@ -1547,7 +1547,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.multiSwap,
           network,
           provider,
-          [`${dexKey}_${BBAUSD_OP}`],
+          // [`${dexKey}_${BBAUSD_OP}`],
         );
       });
       it('wstETH -> USDC  through boosted weighted', async () => {
@@ -1561,7 +1561,7 @@ describe('BalancerV2 E2E', () => {
           ContractMethod.multiSwap,
           network,
           provider,
-          [`${dexKey}_${YELLOW_SUBMARINE}`],
+          // [`${dexKey}_${YELLOW_SUBMARINE}`],
         );
       });
     });

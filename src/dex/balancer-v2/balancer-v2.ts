@@ -4,16 +4,17 @@ import _, { keyBy } from 'lodash';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
+  ExchangeTxInfo,
   Log,
   Logger,
-  TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
+  TxInfo,
 } from '../../types';
 import {
   ETHER_ADDRESS,
@@ -33,8 +34,8 @@ import VaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
-  getDexKeysWithNetwork,
   getBigIntPow,
+  getDexKeysWithNetwork,
   uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -44,12 +45,12 @@ import {
   BalancerPoolTypes,
   BalancerSwap,
   BalancerV2Data,
+  BalancerV2DirectParam,
   OptimizedBalancerV2Data,
   PoolState,
   PoolStateCache,
   PoolStateMap,
   SubgraphPoolAddressDictionary,
-  BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
 } from './types';
@@ -57,7 +58,7 @@ import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { BalancerConfig, Adapters } from './config';
+import { Adapters, BalancerConfig } from './config';
 import {
   getAllPoolsUsedInPaths,
   isSameAddress,
@@ -71,6 +72,13 @@ import {
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import { SpecialDex } from '../../executor/types';
+import { BigNumber, ethers } from 'ethers';
+import { ZEROS_28_BYTES } from '../../executor/constants';
+
+const {
+  utils: { hexlify, hexZeroPad, solidityPack },
+} = ethers;
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -1042,6 +1050,7 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
+    recipient?: string,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
@@ -1101,8 +1110,8 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: this.augustusAddress,
-      recipient: this.augustusAddress,
+      sender: recipient || this.augustusAddress,
+      recipient: recipient || this.augustusAddress,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
@@ -1281,6 +1290,50 @@ export class BalancerV2
       swapData,
       this.vaultAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const params = this.getBalancerParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+      recipient,
+    );
+
+    const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+      'batchSwap',
+      params,
+    );
+
+    const swaps = params[1];
+    const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+      return acc.add(swap.amount);
+    }, BigNumber.from(0));
+
+    const specialDexExchangeData = solidityPack(
+      ['bytes', 'bytes32'],
+      [exchangeData, hexZeroPad(hexlify(totalAmount), 32)],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false, // to force manual transfer
+      dexFuncHasDestToken: true,
+      exchangeData: specialDexExchangeData,
+      specialDexFlag: SpecialDex.SWAP_ON_BALANCER_V2,
+      targetExchange: this.vaultAddress,
+    };
   }
 
   async updatePoolState(): Promise<void> {

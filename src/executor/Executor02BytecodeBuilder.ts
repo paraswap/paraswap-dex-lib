@@ -234,12 +234,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
+    const { specialDexFlag } = exchangeParam;
+
     return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
       exchangeParam.targetExchange, // target exchange
       hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 2), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       exchangeData, // dex calldata

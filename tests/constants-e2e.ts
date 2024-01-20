@@ -1201,7 +1201,6 @@ export const Holders: {
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
     USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
     USDC: '0xb2691fd1297e85affc7c64a2f1549e24c8d13b90',
-    USDC: '0xb38e8c17e38363af6ebdcb3dae12e0243582891d',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
     USDT: '0xf977814e90da44bfa03b6295a0616a897441acec',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
