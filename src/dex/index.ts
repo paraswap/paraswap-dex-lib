@@ -83,6 +83,8 @@ import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
 import { Smardex } from './smardex/smardex';
 import { Wombat } from './wombat/wombat';
+import { DackieswapV2 } from './dackieswap-v2/dackieswap-v2';
+import { DackieswapV3 } from './dackieswap-v3/dackieswap-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -163,6 +165,8 @@ const Dexes = [
   SolidlyV3,
   Smardex,
   Wombat,
+  DackieswapV2,
+  DackieswapV3,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
