@@ -22,6 +22,7 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   interpolate,
+  isETHAddress,
   isTruthy,
   uuidToBytes16,
 } from '../../utils';
@@ -70,7 +71,7 @@ import {
 } from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
-import { hexConcat, hexlify, hexZeroPad } from 'ethers/lib/utils';
+import { hexConcat, hexlify, hexZeroPad, hexValue } from 'ethers/lib/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -695,6 +696,20 @@ export class UniswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
+      this.logger.log(
+        'UNI_POOLS',
+        JSON.stringify(
+          poolsToUse.poolWithState.map(el => ({
+            address: el.poolAddress,
+            token0: el.token0,
+            token1: el.token1,
+            fee: el.feeCode,
+          })),
+          null,
+          2,
+        ),
+      );
+
       const result = await Promise.all(
         poolsToUse.poolWithState.map(async (pool, i) => {
           const state = states[i];
@@ -962,7 +977,7 @@ export class UniswapV3
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
-    const path = this._encodePath(data.path, side);
+    const path = this._encodePathV6(data.path, side);
 
     const metadata = hexConcat([
       hexZeroPad(uuidToBytes16(uuid), 16),
@@ -1356,6 +1371,55 @@ export class UniswapV3
     return side === SwapSide.BUY
       ? pack(types.reverse(), _path.reverse())
       : pack(types, _path);
+  }
+
+  private _encodePathV6(
+    path: {
+      tokenIn: Address;
+      tokenOut: Address;
+      fee: NumberAsString;
+    }[],
+    side: SwapSide,
+  ) {
+    let result = '0x';
+    if (path.length === 0) {
+      this.logger.error(
+        `${this.dexKey}: Received invalid path=${path} for side=${side} to encode`,
+      );
+      return result;
+    }
+
+    for (const p of path) {
+      const poolEncoded = this._encodePool(p.tokenIn, p.tokenOut, p.fee);
+      this.logger.log(
+        `tokenIn: ${p.tokenIn}, tokenOut: ${p.tokenOut}, fee: ${p.fee}\npoolEncoded: ${poolEncoded}`,
+      );
+      result += poolEncoded;
+    }
+
+    return result;
+  }
+
+  private _encodePool(t0: Address, t1: Address, fee: NumberAsString) {
+    // v6 expects weth for eth in pools
+    if (isETHAddress(t0)) {
+      t0 = this.dexHelper.config.data.wrappedNativeTokenAddress;
+    }
+
+    if (isETHAddress(t1)) {
+      t1 = this.dexHelper.config.data.wrappedNativeTokenAddress;
+    }
+
+    // contract expects tokens to be sorted, and direction switched in case sorting changes src/dest order
+    const [tokenInSorted, tokenOutSorted] =
+      BigInt(t0) > BigInt(t1) ? [t1, t0] : [t0, t1];
+
+    const directionEncoded = (tokenInSorted === t0 ? '8' : '0').padEnd(24, '0');
+    const token0Encoded = tokenInSorted.slice(2).padEnd(64, '0');
+    const token1Encoded = tokenOutSorted.slice(2).padEnd(64, '0');
+    const feeEncoded = hexZeroPad(hexValue(parseInt(fee)), 20).slice(2);
+
+    return directionEncoded + token0Encoded + token1Encoded + feeEncoded;
   }
 
   releaseResources() {

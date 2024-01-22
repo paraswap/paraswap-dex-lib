@@ -669,6 +669,32 @@ describe('UniswapV2 E2E Mainnet', () => {
           provider,
         );
       });
+      it('USDT -> USDC', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
+          '100000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('USDC -> USDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '100000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
     });
 
     describe('V6_swapExactAmountOutOnUniswapV2', () => {
@@ -755,6 +781,32 @@ describe('UniswapV2 E2E Mainnet', () => {
           tokens.WBTC,
           tokens.USDC,
           holders.WBTC,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('USDT -> USDC', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('USDC -> USDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
           '1000000',
           SwapSide.BUY,
           dexKey,

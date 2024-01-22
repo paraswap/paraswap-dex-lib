@@ -151,6 +151,8 @@ class APIParaswapSDK implements IParaSwapSDK {
       srcDecimals: from.decimals,
       destDecimals: to.decimals,
     });
+    // TODO: Remove
+    priceRoute.contractMethod = contractMethod;
     return priceRoute as OptimalRate;
   }
 

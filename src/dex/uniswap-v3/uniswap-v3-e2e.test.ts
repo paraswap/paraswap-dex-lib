@@ -41,15 +41,15 @@ function testForNetwork(
         DirectMethodsV6.directSell,
       ],
     ],
-    // [
-    //   SwapSide.BUY,
-    //   [
-    //     ContractMethod.simpleBuy,
-    //     ContractMethod.buy,
-    //     ContractMethod.directUniV3Buy,
-    //     DirectMethodsV6.directBuy,
-    //   ],
-    // ],
+    [
+      SwapSide.BUY,
+      [
+        // ContractMethod.simpleBuy,
+        // ContractMethod.buy,
+        // ContractMethod.directUniV3Buy,
+        DirectMethodsV6.directBuy,
+      ],
+    ],
   ]);
 
   describe(`${network}`, () => {
@@ -112,6 +112,24 @@ function testForNetwork(
                 2000,
               );
             });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+                2000,
+              );
+            });
           });
         });
       }),
@@ -126,11 +144,11 @@ describe('UniswapV3 E2E', () => {
     describe('UniswapV3 MAINNET', () => {
       const network = Network.MAINNET;
 
-      const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'USDT';
+      const tokenASymbol: string = 'USDC';
 
-      const tokenAAmount: string = '11111000000';
-      const tokenBAmount: string = '11000000000';
+      const tokenAAmount: string = '1111100000';
+      const tokenBAmount: string = '1100000000';
       const nativeTokenAmount = '1100000000000000000';
 
       testForNetwork(
