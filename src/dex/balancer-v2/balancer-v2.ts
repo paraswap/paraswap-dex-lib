@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
 import { assert, DeepReadonly } from 'ts-essentials';
 import _, { keyBy } from 'lodash';
@@ -1326,13 +1325,12 @@ export class BalancerV2
       true, // v6 call
     );
 
+    const approveFlag = !(data.isApproved ?? false);
+
     const swapParams: BalancerV2DirectParamV6 = [
       quotedAmount,
       metadata,
-      this.encodeBeneficiaryAndApproveFlag(
-        beneficiary,
-        data.isApproved ?? false,
-      ),
+      this.encodeBeneficiaryAndApproveFlag(beneficiary, approveFlag),
     ];
 
     const encodeParams: BalancerV2DirectParamV6Swap = [
@@ -1362,22 +1360,19 @@ export class BalancerV2
     beneficiary: Address,
     approveFlag: boolean,
   ) {
-    const packed = solidityPack(
-      ['address', 'bytes'],
-      [beneficiary, approveFlag ? '0x01' : '0x00'],
-    );
-    return packed;
+    const addressBN = BigNumber.from(beneficiary);
+    const flagBN = approveFlag ? BigNumber.from(1).shl(255) : BigNumber.from(0);
+
+    return addressBN.or(flagBN).toString();
   }
 
   private encodeBalancerParam(param: BalancerParam): string {
-    console.log('balancer params to encode -> ', param);
     const [kind, swaps, assets, funds, limits, deadline] = param;
 
     const encoded = this.balancerVaultInterface.encodeFunctionData(
       'batchSwap',
       [kind, swaps, assets, funds, limits, deadline],
     );
-    console.log('balancer encoded data -> ', encoded);
     return encoded;
   }
 
