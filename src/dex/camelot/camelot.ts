@@ -44,6 +44,10 @@ import { SimpleExchange } from '../simple-exchange';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { SolidlyData } from '../solidly/types';
+import {
+  OnPoolCreatedCallback,
+  UniswapV2Factory,
+} from '../uniswap-v2/uniswap-v2-factory';
 
 const DefaultCamelotPoolGasCost = 90 * 1000;
 
@@ -171,6 +175,10 @@ export class Camelot
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
   logger: Logger;
 
+  private readonly factoryInst: UniswapV2Factory;
+
+  private newlyCreatedPoolKeys: Set<string> = new Set();
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CamelotConfig);
 
@@ -205,7 +213,58 @@ export class Camelot
 
     this.routerInterface = new Interface(ParaSwapABI);
     this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
+
+    this.factoryInst = new UniswapV2Factory(
+      dexHelper,
+      dexKey,
+      factoryAddress,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet,
+    );
   }
+
+  async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    await this.factoryInst.initialize(blockNumber);
+  }
+
+  private getPoolIdentifier(token0: string, token1: string) {
+    const [_token0, _token1] =
+      token0.toLowerCase() < token1.toLowerCase()
+        ? [token0, token1]
+        : [token1, token0];
+
+    const poolKey = `${this.dexKey}_${_token0}_${_token1}`.toLowerCase();
+
+    return poolKey;
+  }
+
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+  }) => {
+    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
+
+    try {
+      const poolKey = this.getPoolIdentifier(token0, token1);
+
+      this.newlyCreatedPoolKeys.add(poolKey);
+
+      // delete entry locally to let local instance discover the pool
+      delete this.pairs[poolKey];
+
+      this.logger.info(`${logPrefix} discovered new pool ${poolKey}`);
+    } catch (e) {
+      this.logger.error(
+        `${logPrefix} LOGIC ERROR on ack new pool (token0=${token0},token1=${token1})`,
+        e,
+      );
+    }
+  };
 
   getPoolStatesMultiCallData(pair: CamelotPair): {
     callEntries: any[];
@@ -328,14 +387,17 @@ export class Camelot
         ? [from, to]
         : [to, from];
 
-    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
+    const key = this.getPoolIdentifier(token0.address, token1.address);
     let pair = this.pairs[key];
     if (pair) return pair;
     const exchange = await this.factory.methods
       .getPair(token0.address, token1.address)
       .call();
     if (exchange === NULL_ADDRESS) {
-      pair = { token0, token1 };
+      // if the pool has been newly created to not allow this op as we can run into race condition between pool discovery and concurrent pricing request touching this pool
+      if (!this.newlyCreatedPoolKeys.has(key)) {
+        pair = { token0, token1 };
+      }
     } else {
       pair = { token0, token1, exchange };
     }
@@ -476,12 +538,9 @@ export class Camelot
       return [];
     }
 
-    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
-      .sort((a, b) => (a > b ? 1 : -1))
-      .join('_');
+    const poolKey = this.getPoolIdentifier(from.address, to.address);
 
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-    return [poolIdentifier];
+    return [poolKey];
   }
 
   async getPricesVolume(
@@ -507,14 +566,7 @@ export class Camelot
         return null;
       }
 
-      const tokenAddress = [
-        from.address.toLowerCase(),
-        to.address.toLowerCase(),
-      ]
-        .sort((a, b) => (a > b ? 1 : -1))
-        .join('_');
-
-      const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+      const poolIdentifier = this.getPoolIdentifier(from.address, to.address);
 
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
