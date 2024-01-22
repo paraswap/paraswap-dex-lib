@@ -85,8 +85,16 @@ export const Tokens: {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
       decimals: 18,
     },
+    SDEX: {
+      address: '0x5DE8ab7E27f6E7A1fFf3E5B337584Aa43961BEeF',
+      decimals: 18,
+    },
     wstETH: {
       address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
+      decimals: 18,
+    },
+    frxETH: {
+      address: '0x5E8422345238F34275888049021821E8E08CAa1f',
       decimals: 18,
     },
     WETH: {
@@ -473,6 +481,10 @@ export const Tokens: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
       decimals: 18,
     },
+    SDEX: {
+      address: '0x6899fAcE15c14348E1759371049ab64A3a06bFA6',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -570,6 +582,10 @@ export const Tokens: {
       address: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
       decimals: 18,
     },
+    BNBx: {
+      address: '0x1bdd3Cf7F79cfB8EdbB955f20ad99211551BA275',
+      decimals: 18,
+    },
     BUSD: {
       address: '0xe9e7cea3dedca5984780bafc599bd69add087d56',
       decimals: 18,
@@ -629,6 +645,10 @@ export const Tokens: {
     },
     XRP: {
       address: '0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe',
+      decimals: 18,
+    },
+    SDEX: {
+      address: '0xFdc66A08B0d0Dc44c17bbd471B88f49F50CdD20F',
       decimals: 18,
     },
   },
@@ -782,6 +802,10 @@ export const Tokens: {
       address: '0x502580fc390606b47fc3b741d6d49909383c28a9',
       decimals: 18,
     },
+    AMPL: {
+      address: '0x027dbcA046ca156De9622cD1e2D907d375e53aa7',
+      decimals: 9,
+    },
   },
   [Network.ARBITRUM]: {
     SEN: {
@@ -872,6 +896,10 @@ export const Tokens: {
     GRAIL: {
       address: '0x3d9907f9a368ad0a51be60f7da3b97cf940982d8',
       decimals: 18,
+    },
+    AURY: {
+      address: '0x11bf4f05eb28b802ed3ab672594decb20ffe2313',
+      decimals: 9,
     },
     wstETH: {
       address: '0x5979D7b546E38E414F7E9822514be443A4800529',
@@ -1200,7 +1228,7 @@ export const Holders: {
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
     WETH: '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
     USDCe: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
-    USDC: '0xb2691fd1297e85affc7c64a2f1549e24c8d13b90',
+    USDC: '0xb38e8c17e38363af6ebdcb3dae12e0243582891d',
     OHM: '0xebce5f29ff5ca9aa330ebdf7ec6b5f474bff271e',
     USDT: '0xf977814e90da44bfa03b6295a0616a897441acec',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
