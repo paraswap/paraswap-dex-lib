@@ -346,6 +346,7 @@ export async function testE2E(
   await ts.setup();
 
   if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
+    console.log('APPROVING', srcToken.symbol);
     const allowanceTx = await ts.simulate(
       allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
     );

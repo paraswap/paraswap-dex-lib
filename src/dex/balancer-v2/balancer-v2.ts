@@ -1131,11 +1131,14 @@ export class BalancerV2
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
-      assets,
+      isV6Swap ? (side === SwapSide.SELL ? assets : assets.reverse()) : assets,
       funds,
       limits,
       MAX_UINT,
     ];
+
+    // eslint-disable-next-line no-console
+    console.log('Balancer Params', params);
 
     return params;
   }

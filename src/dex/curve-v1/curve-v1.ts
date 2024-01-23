@@ -91,8 +91,9 @@ import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { DIRECT_METHOD_NAME, DIRECT_METHOD_NAME_V6 } from './constants';
 import { packCurveData } from '../../lib/curve/encoder';
-import AugustusV6ABI from '../../abi/AugustusV6.abi.json';
+import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import { encodeCurveAssets } from './packer';
+import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -1003,7 +1004,7 @@ export class CurveV1
     blockNumber: number,
     contractMethod?: string,
   ) {
-    if (contractMethod !== DIRECT_METHOD_NAME) {
+    if (contractMethod !== DIRECT_METHOD_NAME_V6) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
     assert(side === SwapSide.SELL, 'Buy not supported');
@@ -1016,20 +1017,22 @@ export class CurveV1
     const swapParams: DirectCurveV1ParamV6 = [
       packCurveData(
         data.exchange,
-        isApproved,
+        !isApproved, // approve flag, if not approved then set to true
         0,
         data.underlyingSwap
           ? CurveV1SwapType.EXCHANGE_UNDERLYING
           : CurveV1SwapType.EXCHANGE,
       ).toString(),
-      // PACK Curve assets
       encodeCurveAssets(data.i, data.j).toString(),
       srcToken,
       destToken,
       fromAmount,
       toAmount,
       quotedAmount,
-      uuidToBytes16(uuid),
+      hexConcat([
+        hexZeroPad(uuidToBytes16(uuid), 16),
+        hexZeroPad(hexlify(blockNumber), 16),
+      ]),
       beneficiary,
     ];
 
