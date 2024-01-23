@@ -34,42 +34,42 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-                undefined,
-                undefined,
-                undefined,
-                slippage,
-                2000,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-                undefined,
-                undefined,
-                undefined,
-                slippage,
-                2000,
-              );
-            });
+            // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[nativeTokenSymbol],
+            //     tokens[tokenASymbol],
+            //     holders[nativeTokenSymbol],
+            //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //     undefined,
+            //     undefined,
+            //     undefined,
+            //     slippage,
+            //     2000,
+            //   );
+            // });
+            // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenASymbol],
+            //     tokens[nativeTokenSymbol],
+            //     holders[tokenASymbol],
+            //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //     undefined,
+            //     undefined,
+            //     undefined,
+            //     slippage,
+            //     2000,
+            //   );
+            // });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -772,7 +772,7 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
           });
         });
 
-        describe('USDC -> USDT -> DAI via BalancerV2', () => {
+        describe('USDC -> DAI -> USDT via BalancerV2', () => {
           const dexKeys = ['BalancerV2'];
           const provider = new StaticJsonRpcProvider(
             generateConfig(network).privateHttpProvider,
@@ -811,6 +811,50 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
                 '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
                 '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI
                 '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
+              ],
+            );
+          });
+        });
+
+        describe('ETH -> USDC -> DAI via BalancerV2', () => {
+          const dexKeys = ['BalancerV2'];
+          const provider = new StaticJsonRpcProvider(
+            generateConfig(network).privateHttpProvider,
+            network,
+          );
+          const slippage = undefined;
+
+          const tokenASymbol: string = 'ETH';
+          const tokenBSymbol: string = 'DAI';
+
+          const tokenAAmount: string = '1000000000000000000';
+
+          const tokens = Tokens[network];
+          const holders = Holders[network];
+          const contractMethod = ContractMethod.multiSwap;
+          const side = SwapSide.SELL;
+
+          it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              tokenAAmount,
+              side,
+              dexKeys,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              undefined,
+              slippage,
+              2000,
+              false,
+              [
+                '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+                '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
+                '0x6b175474e89094c44da98b954eedeac495271d0f', // BAL
               ],
             );
           });

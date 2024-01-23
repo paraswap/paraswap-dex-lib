@@ -105,6 +105,10 @@ export class GenericSwapTransactionBuilder {
           let _src = swap.srcToken;
           let wethDeposit = 0n;
           let _dest = swap.destToken;
+
+          // console.log('INIT _SRC: ', _src);
+          // console.log('INIT _DEST: ', _dest);
+
           let wethWithdraw = 0n;
           const isLastSwap =
             swapIndex === priceRoute.bestRoute[0].swaps.length - 1;
@@ -127,6 +131,8 @@ export class GenericSwapTransactionBuilder {
           // should work if the final slippage check passes.
           const _destAmount = side === SwapSide.SELL ? '1' : se.destAmount;
 
+          // console.log('DEX NEED WRAP NATIVE: ', dex.needWrapNative);
+
           if (isETHAddress(swap.srcToken) && dex.needWrapNative) {
             _src = wethAddress;
             wethDeposit = BigInt(_srcAmount);
@@ -137,15 +143,22 @@ export class GenericSwapTransactionBuilder {
             isMultiSwap &&
             !dex.needWrapNative &&
             !isLastSwap;
+
           if (
             (isETHAddress(swap.destToken) && dex.needWrapNative) ||
             forceUnwrap
           ) {
-            _dest = wethAddress;
+            // console.log('FORCE UNWRAP: ', forceUnwrap);
+            _dest = forceUnwrap ? _dest : wethAddress;
+            // _dest = wethAddress;
             wethWithdraw = BigInt(se.destAmount);
           }
 
           const destTokenIsWeth = _dest === wethAddress;
+
+          // console.log('_SRC: ', _src);
+          // console.log('_DEST', _dest);
+          // console.log('========================================');
 
           const dexParams = await dex.getDexParam!(
             _src,

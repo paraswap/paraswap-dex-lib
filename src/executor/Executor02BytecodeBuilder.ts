@@ -234,6 +234,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
+    console.log('dex calldata fromAmountPos: ', fromAmountPos);
+
     const { specialDexFlag } = exchangeParam;
 
     return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
@@ -284,16 +286,23 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       ],
     );
 
-    const destTokenAddr = isETHAddress(swap.destToken)
-      ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
-      : swap.destToken.toLowerCase();
+    const destTokenAddrLowered = swap.destToken.toLowerCase();
 
-    const destTokenAddrIndex = data
-      .replace('0x', '')
-      .indexOf(destTokenAddr.replace('0x', ''));
-    const destTokenPos = destTokenAddrIndex / 2 - 40;
+    let destTokenPos: number;
+    if (isETHAddress(destTokenAddrLowered)) {
+      destTokenPos = 0;
+    } else {
+      const destTokenAddrIndex = data
+        .replace('0x', '')
+        .indexOf(destTokenAddrLowered.replace('0x', ''));
+
+      destTokenPos = destTokenAddrIndex / 2 - 40;
+    }
 
     const fromAmountPos = hexDataLength(data) - 64 - 28; // 64 (position), 28 (selector padding);
+
+    console.log('VERT BRANCHING fromAmountPos: ', fromAmountPos);
+    console.log('destTokenPos: ', destTokenPos);
 
     return solidityPack(
       ['bytes20', 'bytes4', 'bytes2', 'bytes2', 'bytes4', 'bytes'],
@@ -488,6 +497,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       return swapCallData;
     }
 
+    console.log('applyVerticalBranching: ', applyVerticalBranching);
     if (applyVerticalBranching) {
       let flag = Flag.ELEVEN; // (flag 11 mod 4) = case 3: insert fromAmount, (flag 11 mod 3) = case 2: check "srcToken" balance after swap
 
@@ -561,6 +571,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       maybeWethCallData,
     );
 
+    console.log('FLAGS: ', flags);
+
     let swapsCalldata = priceRoute.bestRoute[0].swaps.reduce<string>(
       (acc, swap, index) =>
         hexConcat([
@@ -578,12 +590,13 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       '0x',
     );
 
-    if (needWrapEth && isMultiSwap) {
-      swapsCalldata = this.addMultiSwapMetadata(
-        swapsCalldata,
-        SWAP_EXCHANGE_100_PERCENTAGE,
-      );
-    }
+    // if (needWrapEth && isMultiSwap) {
+    console.log('addMultiSwapMetadata before');
+    swapsCalldata = this.addMultiSwapMetadata(
+      swapsCalldata,
+      SWAP_EXCHANGE_100_PERCENTAGE,
+    );
+    // }
 
     // ETH wrap
     if (needWrapEth) {
@@ -631,6 +644,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     }
 
     if (!needWrapEth && isMultiSwap) {
+      console.log('ADD MULTISWAP METADATA AFTER');
       swapsCalldata = this.addMultiSwapMetadata(
         swapsCalldata,
         SWAP_EXCHANGE_100_PERCENTAGE,
