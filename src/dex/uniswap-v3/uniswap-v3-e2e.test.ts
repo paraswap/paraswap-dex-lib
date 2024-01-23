@@ -58,42 +58,44 @@ function testForNetwork(
         // TODO: Improve typing
         contractMethods.forEach((contractMethod: any) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-                undefined,
-                undefined,
-                undefined,
-                slippage,
-                2000,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-                undefined,
-                undefined,
-                undefined,
-                slippage,
-                2000,
-              );
-            });
+            if (tokenASymbol !== 'WETH') {
+              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[nativeTokenSymbol],
+                  tokens[tokenASymbol],
+                  holders[nativeTokenSymbol],
+                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  slippage,
+                  2000,
+                );
+              });
+              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[nativeTokenSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  slippage,
+                  2000,
+                );
+              });
+            }
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -159,6 +161,57 @@ describe('UniswapV3 E2E', () => {
         tokenAAmount,
         tokenBAmount,
         nativeTokenAmount,
+      );
+    });
+
+    describe('UniswapV3_V6', () => {
+      const network = Network.MAINNET;
+
+      const nativeTokenAmount = '1100000000000000000';
+
+      const pairs = [
+        {
+          tokenA: 'USDT',
+          tokenB: 'USDC',
+          tokenAAmount: '1111100000',
+          tokenBAmount: '1099999999',
+          nativeTokenAmount,
+        },
+        {
+          tokenA: 'WETH',
+          tokenB: 'WBTC',
+          tokenAAmount: '100000000000000000',
+          tokenBAmount: '100000',
+          nativeTokenAmount,
+        },
+        // this pair includes 2 pools
+        {
+          tokenA: 'LINK',
+          tokenB: 'PSP',
+          tokenAAmount: '10000000000000000',
+          tokenBAmount: '10000000000000000',
+          nativeTokenAmount,
+        },
+        // this pair includes 3 pools
+        {
+          tokenA: 'GHO',
+          tokenB: 'STETH',
+          tokenAAmount: '2000287700000000000000',
+          tokenBAmount: '882754574792216661',
+          nativeTokenAmount,
+        },
+      ];
+
+      pairs.forEach(pair =>
+        testForNetwork(
+          network,
+          dexKey,
+          pair.tokenA,
+          pair.tokenB,
+          pair.tokenAAmount,
+          pair.tokenBAmount,
+          pair.nativeTokenAmount,
+        ),
       );
     });
 
