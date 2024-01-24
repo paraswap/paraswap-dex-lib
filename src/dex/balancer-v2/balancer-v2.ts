@@ -1088,7 +1088,7 @@ export class BalancerV2
         path = path.reverse();
       }
 
-      const _swaps = path.map((hop, index) => ({
+      let _swaps = path.map((hop, index) => ({
         poolId: hop.pool.id,
         assetInIndex: swapOffset + index,
         assetOutIndex: swapOffset + index + 1,
@@ -1103,9 +1103,18 @@ export class BalancerV2
       swapOffset += path.length + 1;
 
       // BalancerV2 Uses Address(0) as ETH
-      const _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
+      let _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
         t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
       );
+
+      if (isV6Swap && side === SwapSide.BUY) {
+        _assets = _assets.reverse();
+        _swaps = _swaps.map(swap => ({
+          ...swap,
+          assetInIndex: _assets.length - swap.assetInIndex - 1,
+          assetOutIndex: _assets.length - swap.assetOutIndex - 1,
+        }));
+      }
 
       const _limits = isV6Swap
         ? this.createSwapArray(
@@ -1131,14 +1140,11 @@ export class BalancerV2
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
-      isV6Swap ? (side === SwapSide.SELL ? assets : assets.reverse()) : assets,
+      assets,
       funds,
       limits,
       MAX_UINT,
     ];
-
-    // eslint-disable-next-line no-console
-    console.log('Balancer Params', params);
 
     return params;
   }
