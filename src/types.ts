@@ -13,6 +13,7 @@ export {
 import { Logger } from 'log4js';
 export { Logger } from 'log4js';
 import { OptimalRate } from '@paraswap/core';
+import BigNumber from 'bignumber.js';
 import { RFQConfig } from './dex/generic-rfq/types';
 import { SpecialDex } from './executor/types';
 
