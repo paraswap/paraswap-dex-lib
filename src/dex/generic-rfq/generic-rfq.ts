@@ -7,6 +7,7 @@ import {
   Config,
   PoolLiquidity,
   Address,
+  DexExchangeParam,
 } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
@@ -20,8 +21,9 @@ import {
   RFQConfig,
   SlippageCheckError,
 } from './types';
-import { OptimalSwapExchange } from '@paraswap/core';
+import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { SpecialDex } from '../../executor/types';
 
 export const OVERORDER_BPS = 100;
 export const BPS_MAX_VALUE = 10000n;
@@ -191,6 +193,41 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         },
       },
     ];
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: ParaSwapLimitOrdersData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { orderInfos } = data;
+
+    if (orderInfos === null) {
+      throw new Error(
+        `Error_${this.dexKey}_getDexParam payload is not received. It may be because of` +
+          `not calling preProcessTransaction before`,
+      );
+    }
+
+    const isSell = side === SwapSide.SELL;
+
+    const specialDexExchangeData = this.rfqIface.encodeFunctionData(
+      isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
+      [orderInfos, isSell ? srcAmount : destAmount, this.augustusV6Address],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: specialDexExchangeData,
+      specialDexFlag: SpecialDex.SWAP_ON_AUGUSTUS_RFQ,
+      targetExchange: this.augustusRFQAddress,
+    };
   }
 
   async preProcessTransaction?(
