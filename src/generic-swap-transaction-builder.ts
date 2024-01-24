@@ -105,6 +105,7 @@ export class GenericSwapTransactionBuilder {
           let _src = swap.srcToken;
           let wethDeposit = 0n;
           let _dest = swap.destToken;
+
           let wethWithdraw = 0n;
           const isLastSwap =
             swapIndex === priceRoute.bestRoute[0].swaps.length - 1;
@@ -137,11 +138,12 @@ export class GenericSwapTransactionBuilder {
             isMultiSwap &&
             !dex.needWrapNative &&
             !isLastSwap;
+
           if (
             (isETHAddress(swap.destToken) && dex.needWrapNative) ||
             forceUnwrap
           ) {
-            _dest = wethAddress;
+            _dest = forceUnwrap && !dex.needWrapNative ? _dest : wethAddress;
             wethWithdraw = BigInt(se.destAmount);
           }
 
@@ -152,7 +154,7 @@ export class GenericSwapTransactionBuilder {
             _dest,
             _srcAmount,
             _destAmount,
-            destTokenIsWeth || !isLastSwap
+            destTokenIsWeth || !isLastSwap || se.exchange === 'BalancerV2'
               ? bytecodeBuilder.getAddress()
               : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
             se.data,
@@ -255,7 +257,7 @@ export class GenericSwapTransactionBuilder {
     ];
 
     const encoder = (...params: any[]) =>
-      this.augustusV6Interface.encodeFunctionData('swap', params);
+      this.augustusV6Interface.encodeFunctionData('swapExactAmountIn', params);
 
     return {
       encoder,

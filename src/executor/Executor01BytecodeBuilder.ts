@@ -8,6 +8,7 @@ import {
   BYTES_28_LENGTH,
   BYTES_64_LENGTH,
   EXECUTORS_FUNCTION_CALL_DATA_TYPES,
+  ZEROS_12_BYTES,
   ZEROS_28_BYTES,
 } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
@@ -157,8 +158,9 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     swapCallData = hexConcat([dexCallData]);
 
     if (
-      !isETHAddress(swap.srcToken) ||
-      (isETHAddress(swap.srcToken) && index !== 0)
+      flags.dexes[index] % 4 !== 1 && // not sendEth
+      (!isETHAddress(swap.srcToken) ||
+        (isETHAddress(swap.srcToken) && index !== 0))
     ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
@@ -264,12 +266,14 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
+    const { specialDexFlag } = exchangeParam;
+
     return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
       exchangeParam.targetExchange, // target exchange
       hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 2), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       exchangeData, // dex calldata

@@ -22,9 +22,7 @@
               "srcAmount": "60000000000",
               "destAmount": "0",
               "percent": 6,
-              "poolAddresses": [
-                "0x6f48eca74b38d2936b02ab603ff4e36a6c0e3a77"
-              ],
+              "poolAddresses": ["0x6f48eca74b38d2936b02ab603ff4e36a6c0e3a77"],
               "data": {
                 "path": [
                   {
@@ -42,9 +40,7 @@
               "srcAmount": "460000000000",
               "destAmount": "457864187951813179132761",
               "percent": 46,
-              "poolAddresses": [
-                "0x48da0965ab2d2cbf1c17c09cfb5cbe67ad5b1406"
-              ],
+              "poolAddresses": ["0x48da0965ab2d2cbf1c17c09cfb5cbe67ad5b1406"],
               "data": {
                 "path": [
                   {
@@ -62,9 +58,7 @@
               "srcAmount": "20000000000",
               "destAmount": "19958385664875089259102",
               "percent": 2,
-              "poolAddresses": [
-                "0x6f48eca74b38d2936b02ab603ff4e36a6c0e3a77"
-              ],
+              "poolAddresses": ["0x6f48eca74b38d2936b02ab603ff4e36a6c0e3a77"],
               "data": {
                 "path": [
                   {
@@ -82,9 +76,7 @@
               "srcAmount": "460000000000",
               "destAmount": "457864187951813179132761",
               "percent": 46,
-              "poolAddresses": [
-                "0x48da0965ab2d2cbf1c17c09cfb5cbe67ad5b1406"
-              ],
+              "poolAddresses": ["0x48da0965ab2d2cbf1c17c09cfb5cbe67ad5b1406"],
               "data": {
                 "path": [
                   {
@@ -110,9 +102,7 @@
               "srcAmount": "400567502627475469685291",
               "destAmount": "159857076481099704731",
               "percent": 42.81,
-              "poolAddresses": [
-                "0xc2e9f25be6257c210d7adf0d4cd6e3e881ba25f8"
-              ],
+              "poolAddresses": ["0xc2e9f25be6257c210d7adf0d4cd6e3e881ba25f8"],
               "data": {
                 "path": [
                   {
@@ -130,9 +120,7 @@
               "srcAmount": "76445608420146568262762",
               "destAmount": "30532348540459551709",
               "percent": 8.17,
-              "poolAddresses": [
-                "0x60594a405d53811d3bc4766596efd80fd545a270"
-              ],
+              "poolAddresses": ["0x60594a405d53811d3bc4766596efd80fd545a270"],
               "data": {
                 "path": [
                   {
@@ -150,9 +138,7 @@
               "srcAmount": "382228042100732841313809",
               "destAmount": "152610946755753173697",
               "percent": 40.85,
-              "poolAddresses": [
-                "0xc2e9f25be6257c210d7adf0d4cd6e3e881ba25f8"
-              ],
+              "poolAddresses": ["0xc2e9f25be6257c210d7adf0d4cd6e3e881ba25f8"],
               "data": {
                 "path": [
                   {
@@ -170,9 +156,7 @@
               "srcAmount": "76445608420146568262762",
               "destAmount": "30532348540459551709",
               "percent": 8.17,
-              "poolAddresses": [
-                "0x60594a405d53811d3bc4766596efd80fd545a270"
-              ],
+              "poolAddresses": ["0x60594a405d53811d3bc4766596efd80fd545a270"],
               "data": {
                 "path": [
                   {

@@ -181,7 +181,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         dexFlag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
         approveFlag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
       } else if (needUnwrap) {
-        dexFlag = Flag.FIFTEEN; // (flag 11 mod 4) = case 3: insert fromAmount, (flag 11 mod 3) = case 2: check "srcToken" balance after swap
+        dexFlag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
         approveFlag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
       } else {
         dexFlag = Flag.FIFTEEN; // (flag 11 mod 4) = case 3: insert fromAmount, (flag 11 mod 3) = case 2: check "srcToken" balance after swap
@@ -234,30 +234,52 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
+    const { specialDexFlag } = exchangeParam;
+
     return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
       exchangeParam.targetExchange, // target exchange
       hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 2), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       exchangeData, // dex calldata
     ]);
   }
 
-  private addMultiSwapMetadata(callData: string, percentage: number) {
+  private addMultiSwapMetadata(
+    callData: string,
+    percentage: number,
+    srcTokenAddress: Address,
+  ) {
+    const srcTokenAddressLowered = srcTokenAddress.toLowerCase();
+    let srcTokenPos: string;
+
+    if (isETHAddress(srcTokenAddressLowered)) {
+      srcTokenPos = '0xEEEEEEEEEEEEEEEE';
+    } else {
+      const srcTokenAddrIndex = callData
+        .replace('0x', '')
+        .indexOf(srcTokenAddressLowered.replace('0x', ''));
+
+      srcTokenPos = hexZeroPad(hexlify(srcTokenAddrIndex / 2), 8);
+    }
+
     return solidityPack(
-      ['bytes16', 'bytes16', 'bytes'],
+      ['bytes16', 'bytes8', 'bytes8', 'bytes'],
       [
-        hexZeroPad(hexlify(hexDataLength(callData)), 16),
-        hexZeroPad(hexlify(Math.ceil(percentage * 100)), 16),
-        callData,
+        hexZeroPad(hexlify(hexDataLength(callData)), 16), // calldata size
+        srcTokenPos, // srcTokenPos
+        hexZeroPad(hexlify(Math.ceil(percentage * 100)), 8), // percentage
+        callData, // swap calldata
       ],
     );
   }
 
   private buildVerticalBranchingCallData(
+    priceRoute: OptimalRate,
+    exchangeParams: DexExchangeParam[],
     swap: OptimalSwap,
     swapCallData: string,
     sender: Address,
@@ -282,14 +304,46 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       ],
     );
 
-    const destTokenAddr = isETHAddress(swap.destToken)
-      ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
-      : swap.destToken.toLowerCase();
+    const destTokenAddrLowered = swap.destToken.toLowerCase();
+    const isEthDest = isETHAddress(destTokenAddrLowered);
+    let anyDexNoNeedWrapNative: boolean = false;
 
-    const destTokenAddrIndex = data
-      .replace('0x', '')
-      .indexOf(destTokenAddr.replace('0x', ''));
-    const destTokenPos = destTokenAddrIndex / 2 - 40;
+    let destTokenPos: number;
+    if (isEthDest) {
+      anyDexNoNeedWrapNative = swap.swapExchanges
+        .map(curSe => {
+          let index = 0;
+          let swapExchangeIndex = 0;
+          priceRoute.bestRoute[0].swaps.map(curSwap =>
+            curSwap.swapExchanges.map(async se => {
+              if (Object.is(se, curSe)) {
+                index = swapExchangeIndex;
+              }
+              swapExchangeIndex++;
+            }),
+          );
+
+          const curExchangeParam = exchangeParams[index];
+
+          return !curExchangeParam.needWrapNative;
+        })
+        .includes(true);
+    }
+
+    if (isEthDest && anyDexNoNeedWrapNative) {
+      destTokenPos = 0;
+    } else {
+      const destTokenAddrIndex = data
+        .replace('0x', '')
+        .indexOf(
+          (isEthDest
+            ? this.dexHelper.config.data.wrappedNativeTokenAddress
+            : destTokenAddrLowered
+          ).replace('0x', ''),
+        );
+
+      destTokenPos = destTokenAddrIndex / 2 - 40;
+    }
 
     const fromAmountPos = hexDataLength(data) - 64 - 28; // 64 (position), 28 (selector padding);
 
@@ -323,9 +377,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     let swapIndex = 0;
     let swapIndexTemp = 0;
     let swapExchangeIndex = 0;
+
     priceRoute.bestRoute[0].swaps.map(curSwap => {
       if (Object.is(curSwap, swap)) {
-        swapIndex = swapExchangeIndex;
+        swapIndex = swapIndexTemp;
       }
       swapIndexTemp++;
 
@@ -348,6 +403,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     );
 
     swapExchangeCallData = hexConcat([dexCallData]);
+
     const isLastSwap = swapIndex === priceRoute.bestRoute[0].swaps.length - 1;
     const isLast = index === exchangeParams.length - 1;
 
@@ -445,6 +501,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       return this.addMultiSwapMetadata(
         swapExchangeCallData,
         swapExchange.percent,
+        exchangeParams[index].needWrapNative
+          ? isETHAddress(swap.srcToken)
+            ? this.dexHelper.config.data.wrappedNativeTokenAddress
+            : swap.srcToken
+          : swap.srcToken,
       );
     }
 
@@ -517,15 +578,43 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           })
           .includes(true);
 
-        const noNeedUnwrap =
-          (isEthDest && !anyDexLastSwapNeedUnwrap) || !isEthDest;
+        const noNeedUnwrap = isEthDest && !anyDexLastSwapNeedUnwrap;
 
         if (noNeedUnwrap) {
           flag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
         }
+      } else {
+        const isEthDest = isETHAddress(swap!.destToken);
+
+        if (isEthDest) {
+          const anyDexOnSwapNoNeedUnwrap = swap!.swapExchanges
+            .map(curSe => {
+              let index = 0;
+              let swapExchangeIndex = 0;
+              priceRoute.bestRoute[0].swaps.map(curSwap =>
+                curSwap.swapExchanges.map(async se => {
+                  if (Object.is(se, curSe)) {
+                    index = swapExchangeIndex;
+                  }
+                  swapExchangeIndex++;
+                }),
+              );
+
+              const curExchangeParam = exchangeParams[index];
+
+              return !curExchangeParam.needWrapNative;
+            })
+            .includes(true);
+
+          if (anyDexOnSwapNoNeedUnwrap) {
+            flag = Flag.SEVEN; // (flag 7 mod 4) = case 3: insert fromAmount, (flag 7 mod 3) = case 1: check eth balance after swap
+          }
+        }
       }
 
       return this.buildVerticalBranchingCallData(
+        priceRoute,
+        exchangeParams,
         swap!,
         swapCallData,
         sender,
@@ -580,6 +669,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       swapsCalldata = this.addMultiSwapMetadata(
         swapsCalldata,
         SWAP_EXCHANGE_100_PERCENTAGE,
+        priceRoute.srcToken,
       );
     }
 
@@ -610,7 +700,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           depositCallData,
         ],
       );
-
       swapsCalldata = hexConcat([depositSwapCallData, swapsCalldata]);
     }
 
@@ -632,6 +721,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       swapsCalldata = this.addMultiSwapMetadata(
         swapsCalldata,
         SWAP_EXCHANGE_100_PERCENTAGE,
+        priceRoute.srcToken,
       );
     }
 

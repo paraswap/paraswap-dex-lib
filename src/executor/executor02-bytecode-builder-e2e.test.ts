@@ -7,6 +7,7 @@ import { ContractMethod, Network, SwapSide } from '../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../config';
 
+jest.setTimeout(50000);
 describe('Executor02ByteCodeBuilder e2e tests', () => {
   describe('MAINNET', () => {
     const network = Network.MAINNET;
@@ -170,6 +171,41 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
     describe('MultiSwap', () => {
       const contractMethod = ContractMethod.multiSwap;
+
+      describe('WBTC -> ETH -> BAL via BalancerV2 and BalancerV1', () => {
+        const dexKeys = ['BalancerV1', 'BalancerV2'];
+
+        const tokenASymbol: string = 'WBTC';
+        const tokenBSymbol: string = 'BAL';
+        const tokenAAmount: string = '1000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', // WBTC
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+              '0xba100000625a3754423978a60c9317c58a424e3d', // BAL
+            ],
+          );
+        });
+      });
 
       describe('WBTC -> ETH -> SUSHI via SushiSwapV3 and UniswapV3', () => {
         const dexKeys = ['SushiSwapV3', 'UniswapV3'];
