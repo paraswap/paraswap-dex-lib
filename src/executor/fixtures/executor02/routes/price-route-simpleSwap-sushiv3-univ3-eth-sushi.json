@@ -22,9 +22,7 @@
               "srcAmount": "3000000000000000000000",
               "destAmount": "1462165766112784720",
               "percent": 100,
-              "poolAddresses": [
-                "0x87c7056bbe6084f03304196be51c6b90b6d85aa2"
-              ],
+              "poolAddresses": ["0x87c7056bbe6084f03304196be51c6b90b6d85aa2"],
               "data": {
                 "path": [
                   {

@@ -7,6 +7,7 @@ import { ContractMethod, Network, SwapSide } from '../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../config';
 
+jest.setTimeout(50000);
 describe('Executor02ByteCodeBuilder e2e tests', () => {
   describe('MAINNET', () => {
     const network = Network.MAINNET;

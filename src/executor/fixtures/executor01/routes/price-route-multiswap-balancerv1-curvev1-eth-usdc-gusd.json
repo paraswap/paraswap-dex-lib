@@ -22,9 +22,7 @@
               "srcAmount": "100000000000000000",
               "destAmount": "212679108",
               "percent": 100,
-              "poolAddresses": [
-                "0x69d460e01070a7ba1bc363885bc8f4f0daa19bf5"
-              ],
+              "poolAddresses": ["0x69d460e01070a7ba1bc363885bc8f4f0daa19bf5"],
               "data": {
                 "swaps": [
                   {
@@ -50,9 +48,7 @@
               "srcAmount": "212679108",
               "destAmount": "21232",
               "percent": 100,
-              "poolAddresses": [
-                "0x4f062658eaaf2c1ccf8c8e36d6824cdf41167956"
-              ],
+              "poolAddresses": ["0x4f062658eaaf2c1ccf8c8e36d6824cdf41167956"],
               "data": {
                 "exchange": "0x4f062658eaaf2c1ccf8c8e36d6824cdf41167956",
                 "i": 2,

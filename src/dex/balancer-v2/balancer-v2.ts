@@ -1097,19 +1097,9 @@ export class BalancerV2
       swapOffset += path.length + 1;
 
       // BalancerV2 Uses Address(0) as ETH
-
-      // console.log('HAS ETH: ', hasEth);
-      //
-      // console.log('init: ', [
-      //   _srcToken,
-      //   ...path.map(hop => hop.tokenOut.address),
-      // ]);
-
       const _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
         t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
       );
-
-      // console.log('ASSETS: ', _assets);
 
       const _limits = _assets.map(_ => MAX_INT);
 
@@ -1310,9 +1300,6 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): DexExchangeParam {
-    // console.log('SRC TOKEN: ', srcToken);
-    // console.log('DEST TOKEN: ', destToken);
-
     const params = this.getBalancerParam(
       srcToken,
       destToken,
@@ -1323,22 +1310,15 @@ export class BalancerV2
       recipient,
     );
 
-    console.log('PARAMS: ', params);
-
     const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',
       params,
     );
 
     const swaps = params[1];
-    // const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
-    //   return acc.add(swap.amount);
-    // }, BigNumber.from(0));
-
-    const totalAmount = BigNumber.from(1n);
-
-    console.log('totalAmount: ', totalAmount);
-    console.log('totalAmount hex: ', hexZeroPad(hexlify(totalAmount), 32));
+    const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+      return acc.add(swap.amount);
+    }, BigNumber.from(0));
 
     const specialDexExchangeData = solidityPack(
       ['bytes', 'bytes32'],
