@@ -1389,12 +1389,18 @@ export class UniswapV3
       return result;
     }
 
-    for (const p of path) {
-      const poolEncoded = this._encodePool(p.tokenIn, p.tokenOut, p.fee);
-      this.logger.log(
-        `tokenIn: ${p.tokenIn}, tokenOut: ${p.tokenOut}, fee: ${p.fee}\npoolEncoded: ${poolEncoded}`,
-      );
-      result += poolEncoded;
+    if (side === SwapSide.SELL) {
+      for (const p of path) {
+        const poolEncoded = this._encodePool(p.tokenIn, p.tokenOut, p.fee);
+        result += poolEncoded;
+      }
+    } else {
+      // For buy order of pools should be reversed
+      for (let i = path.length - 1; i >= 0; i--) {
+        const p = path[i];
+        const poolEncoded = this._encodePool(p.tokenIn, p.tokenOut, p.fee);
+        result += poolEncoded;
+      }
     }
 
     return result;
