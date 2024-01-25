@@ -788,12 +788,12 @@
         "components": [
           {
             "internalType": "contract IERC20",
-            "name": "fromToken",
+            "name": "srcToken",
             "type": "address"
           },
           {
             "internalType": "contract IERC20",
-            "name": "toToken",
+            "name": "destToken",
             "type": "address"
           },
           {
@@ -808,12 +808,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "expectedAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
             "internalType": "bytes32",
-            "name": "uuidAndBlock",
+            "name": "metadata",
             "type": "bytes32"
           },
           {
@@ -822,7 +822,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct GenericSwapData",
+        "internalType": "struct GenericData",
         "name": "swapData",
         "type": "tuple"
       },
@@ -838,11 +838,11 @@
       },
       {
         "internalType": "bytes",
-        "name": "bytecode",
+        "name": "executorData",
         "type": "bytes"
       }
     ],
-    "name": "swap",
+    "name": "swapExactAmountIn",
     "outputs": [
       {
         "internalType": "uint256",
