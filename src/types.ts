@@ -307,6 +307,8 @@ export type PreprocessTransactionOptions = {
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
   partner?: string;
+  executionContractAddress: string
+  recipient: string
 };
 
 export type TransferFeeParams = {
