@@ -252,7 +252,7 @@ export type StateOverrideObject = {
 
 export type UnoptimizedRate = Omit<
   OptimalRate,
-  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
+  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee' | 'version'
 >;
 
 export type MultiCallInput = {
@@ -307,8 +307,8 @@ export type PreprocessTransactionOptions = {
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
   partner?: string;
-  executionContractAddress: string
-  recipient: string
+  executionContractAddress: string;
+  recipient: string;
 };
 
 export type TransferFeeParams = {
