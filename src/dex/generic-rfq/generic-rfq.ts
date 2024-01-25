@@ -217,7 +217,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
 
     const specialDexExchangeData = this.rfqIface.encodeFunctionData(
       isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
-      [orderInfos, isSell ? srcAmount : destAmount, this.augustusV6Address],
+      [orderInfos, isSell ? srcAmount : destAmount, recipient],
     );
 
     return {
@@ -246,7 +246,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         ? overOrder(optimalSwapExchange.srcAmount, OVERORDER_BPS)
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
-      this.augustusAddress,
+      options.executionContractAddress,
       options.txOrigin,
       options.partner,
     );
