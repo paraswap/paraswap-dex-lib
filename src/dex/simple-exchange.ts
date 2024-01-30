@@ -81,13 +81,19 @@ export class SimpleExchange {
       `${CACHE_PREFIX}_${this.network}_approves`.toLowerCase();
   }
 
-  private async hasAugustusAllowance(
+  async hasAugustusAllowance(
     token: Address,
     target: Address,
     amount: string,
+    version: ParaSwapVersion = ParaSwapVersion.V5,
   ): Promise<boolean> {
     if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) return true;
-    const cacheKey = `${token}_${target}`;
+    const augustus =
+      version === ParaSwapVersion.V6
+        ? this.augustusV6Address
+        : this.augustusAddress;
+
+    const cacheKey = `${augustus}_${token}_${target}`;
 
     // as approve is given to an infinite amount, we can cache only the target and token address
     const isCachedApproved = await this.cache.sismember(
@@ -97,11 +103,7 @@ export class SimpleExchange {
 
     if (isCachedApproved) return true;
 
-    const allowance = await this.getAllowance(
-      this.augustusAddress,
-      token,
-      target,
-    );
+    const allowance = await this.getAllowance(augustus!, token, target);
     const isApproved = BigInt(allowance) >= BigInt(amount);
 
     if (isApproved) await this.cache.sadd(this.cacheApprovesKey, cacheKey);

@@ -1,4 +1,4 @@
-import { Address } from '@paraswap/core';
+import { Address, ParaSwapVersion } from '@paraswap/core';
 export { BlockHeader } from 'web3-eth';
 export {
   Address,
@@ -309,6 +309,7 @@ export type PreprocessTransactionOptions = {
   partner?: string;
   executionContractAddress: string;
   recipient: string;
+  version: ParaSwapVersion;
 };
 
 export type TransferFeeParams = {
