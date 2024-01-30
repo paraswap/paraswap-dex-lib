@@ -54,6 +54,17 @@ import { UniswapV2Config, Adapters } from './config';
 import { Uniswapv2ConstantProductPool } from './uniswap-v2-constant-product-pool';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import _rebaseTokens from '../../rebase-tokens.json';
+import { Flag, SpecialDex } from '../../executor/types';
+import {
+  hexZeroPad,
+  hexlify,
+  keccak256,
+  solidityPack,
+  hexDataLength,
+  toUtf8Bytes,
+  id,
+} from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
 
 const rebaseTokens = _rebaseTokens as { chainId: number; address: string }[];
 
@@ -820,6 +831,121 @@ export class UniswapV2
       '0',
       maybeSyncCall,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: UniswapData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const pools = encodePools(data.pools, this.feeFactor);
+    //   console.log(`
+    //  pool: ${data.pools[0].address}
+    //  encoded: ${pools[0]}
+    //   `);
+    // console.log('encoded.pools', pools);
+
+    // const weth = this.getWETHAddress(srcToken, destToken, data.weth);
+    // const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+    //   side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
+    //   [srcToken, srcAmount, destAmount, weth, pools],
+    // );
+
+    // const hasRebaseTokenSrc = rebaseTokensSetsByChain[this.network]?.has(
+    //   srcToken.toLowerCase(),
+    // );
+    // const hasRebaseTokenDest = rebaseTokensSetsByChain[this.network]?.has(
+    //   destToken.toLowerCase(),
+    // );
+
+    // const maybeSyncCall =
+    //   hasRebaseTokenSrc || hasRebaseTokenDest
+    //     ? {
+    //         callees: [
+    //           hasRebaseTokenSrc
+    //             ? data.pools[0].address
+    //             : data.pools[data.pools.length - 1].address,
+    //         ],
+    //         calldata: [uniswapV2PoolIface.encodeFunctionData('sync')],
+    //         values: ['0'],
+    //       }
+    //     : undefined;
+
+    const exchangeDataTypes = ['bytes28', 'bytes4', 'bytes32', 'bytes32'];
+    const exchangeDataToPack = [
+      hexZeroPad(hexlify(0), 28),
+      hexZeroPad(hexlify(0), 4),
+      hexZeroPad(hexlify(data.pools.length), 32), // pool count
+      hexZeroPad(hexlify(BigNumber.from(srcAmount)), 32),
+    ];
+    pools.forEach(pool => {
+      exchangeDataTypes.push('bytes32');
+      exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
+    });
+
+    const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: false,
+      exchangeData,
+      targetExchange: data.router,
+      specialDexFlag: SpecialDex.SWAP_ON_UNISWAP_V2_FORK,
+      generatePrependCalldata: (flag: Flag) => _generatePrependCalldata(flag),
+    };
+
+    function _generatePrependCalldata(flag: Flag) {
+      const functionData_transfer = solidityPack(
+        [
+          'bytes28',
+          'bytes4',
+          'bytes12',
+          'bytes20',
+          'uint256',
+          'bytes12',
+          'bytes20',
+        ],
+        [
+          hexZeroPad(hexlify(0), 28),
+          hexZeroPad(id('transfer(address,uint256)').substring(0, 10), 4),
+          hexZeroPad(hexlify(0), 12),
+          data.pools[0].address,
+          srcAmount,
+          hexZeroPad(hexlify(0), 12),
+          srcToken,
+        ],
+      );
+      const target_transfer = srcToken;
+      const calldataSize_transfer = hexZeroPad(
+        hexlify(hexDataLength(exchangeData) + 28),
+        4,
+      ); // dex calldata length + bytes28(0)
+      const fromAmountPos_transfer = hexZeroPad(hexlify(0), 2);
+      const srcTokenPos_transfer = hexZeroPad(hexlify(0), 2); // TODO: Check position
+      const specialExchange_transfer = hexZeroPad(hexlify(0), 2);
+      const flags_transfer = hexZeroPad(hexlify(flag), 2);
+
+      // TODO: Check if we need to specify byte size here
+      const prependCalldata = solidityPack(
+        ['bytes', 'bytes', 'bytes', 'bytes', 'bytes', 'bytes', 'bytes'],
+        [
+          target_transfer,
+          calldataSize_transfer,
+          fromAmountPos_transfer,
+          srcTokenPos_transfer,
+          specialExchange_transfer,
+          flags_transfer,
+          functionData_transfer,
+        ],
+      );
+
+      return prependCalldata;
+    }
   }
 
   // TODO: Move to new uniswapv2&forks router interface

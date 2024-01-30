@@ -25,5 +25,18 @@ export const EXECUTORS_FUNCTION_CALL_DATA_TYPES: string[] = [
   'bytes', // dex calldata (bytes)
 ];
 
+export const EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND: string[] = [
+  // Transfer data
+  // 'bytes20', // address(bytes20)
+  // 'bytes4', // calldata Size(bytes 4)
+  // 'bytes2', // fromAmount Pos(bytes2)
+  // 'bytes2', // destTokenPos(bytes2)
+  // 'bytes2', // specialExchange (bytes2)
+  // 'bytes2', // flag(bytes2)
+  // // 'bytes28', // zero padding (bytes28)
+  'bytes', // dex calldata (bytes)
+  ...EXECUTORS_FUNCTION_CALL_DATA_TYPES,
+];
+
 export const APPROVE_CALLDATA_DEST_TOKEN_POS = 68;
 export const WRAP_UNWRAP_FROM_AMOUNT_POS = 4;

@@ -8,6 +8,7 @@ import {
   BYTES_28_LENGTH,
   BYTES_64_LENGTH,
   EXECUTORS_FUNCTION_CALL_DATA_TYPES,
+  EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND,
   ZEROS_12_BYTES,
   ZEROS_28_BYTES,
 } from './constants';
@@ -237,7 +238,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData } = exchangeParam;
+    let { exchangeData, specialDexFlag, generatePrependCalldata } =
+      exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -266,9 +268,15 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
-    const { specialDexFlag } = exchangeParam;
+    let data = [];
+    let calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES;
 
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
+    if (generatePrependCalldata) {
+      data.push(generatePrependCalldata(index === 0 ? 0 : 3));
+      calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND;
+    }
+
+    data = data.concat([
       exchangeParam.targetExchange, // target exchange
       hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
@@ -278,6 +286,11 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       ZEROS_28_BYTES, // bytes28(0)
       exchangeData, // dex calldata
     ]);
+    // console.log('json.types', JSON.stringify(calldataTypes));
+    // console.log('json.data', JSON.stringify(data));
+    // console.log('calldata.length', calldataTypes.length);
+    // console.log('data.length', data.length);
+    return solidityPack(calldataTypes, data);
   }
 
   public getAddress(): string {
