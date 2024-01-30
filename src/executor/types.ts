@@ -14,7 +14,6 @@ export enum SpecialDex {
   DEFAULT = 0,
   // SWAP_ON_MAKER_PSM = 3, // swapOnMakerPSM
   SWAP_ON_SWAAP_V2_SINGLE = 1, // swapOnSwaapV2Single
-  SWAP_ON_SWAAP_V2_BATCH = 2, // swapOnSwaapV2Batch
   SEND_NATIVE = 4, // sendNative
   SWAP_ON_BALANCER_V2 = 5, // swapOnBalancerV2
   SWAP_ON_AUGUSTUS_RFQ = 9, // swapOnAugustusRFQ

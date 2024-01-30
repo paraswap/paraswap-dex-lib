@@ -456,6 +456,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     const { router, callData } = data;
     const isBatchSwap = callData.slice(0, 10) === BATCH_SWAP_SELECTOR;
 
+    // at the moment of writing, batch swap is not supported by SwappV2 API
+    assert(isBatchSwap !== true, 'Batch swap is not supported');
+
     assert(
       router !== undefined,
       `${this.dexKey}-${this.network}: router undefined`,
@@ -471,9 +474,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       dexFuncHasRecipient: true,
       dexFuncHasDestToken: true,
       exchangeData: callData,
-      specialDexFlag: isBatchSwap
-        ? SpecialDex.SWAP_ON_SWAAP_V2_BATCH
-        : SpecialDex.SWAP_ON_SWAAP_V2_SINGLE,
+      specialDexFlag: SpecialDex.SWAP_ON_SWAAP_V2_SINGLE,
       targetExchange: router,
     };
   }
