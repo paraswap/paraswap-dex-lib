@@ -22,6 +22,7 @@ import {
   SwapSide,
 } from '@paraswap/core/build/constants';
 import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-builder';
+import { ParaSwapVersion } from '@paraswap/core';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -195,6 +196,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
 
     return {
       ...optimizedRate,
+      version: ParaSwapVersion.V6,
       hmac: '0',
       srcUSD: '0',
       destUSD: '0',
