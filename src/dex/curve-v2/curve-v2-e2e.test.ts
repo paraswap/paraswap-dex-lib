@@ -8,6 +8,8 @@ import { generateConfig } from '../../config';
 import { DIRECT_METHOD_NAME_V6 } from './constants';
 import { testE2E } from '../../../tests/utils-e2e';
 
+// Ensure you have the E2E_ENDPOINT_URL env variable set.
+
 describe('CurveV2 E2E', () => {
   const dexKey = 'CurveV2';
 
@@ -24,11 +26,11 @@ describe('CurveV2 E2E', () => {
     const tokensToTest = [
       [
         {
-          symbol: 'USDT',
+          symbol: 'USDC',
           amount: (10 ** 8).toString(),
         },
         {
-          symbol: 'USDC',
+          symbol: 'USDT',
           amount: (10 ** 8).toString(),
         },
       ],

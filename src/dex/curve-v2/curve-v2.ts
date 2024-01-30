@@ -17,7 +17,7 @@ import {
 } from '../simple-exchange';
 import GenericFactoryZapABI from '../../abi/curve-v2/GenericFactoryZap.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
-import AugustusV6ABI from '../../abi/AugustusV6.abi.json';
+import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import CurveV2ABI from '../../abi/CurveV2.json';
 import { IDexHelper } from '../../dex-helper';
 import { assert } from 'ts-essentials';
@@ -296,7 +296,7 @@ export class CurveV2
     const swapParams: CurveV2DirectSwapParam = [
       packCurveData(
         data.exchange,
-        isApproved,
+        !isApproved, // approve flag, if not approved then set to true
         0, // ! FIXME: compute wrap type
         data.swapType,
       ).toString(),
@@ -306,9 +306,9 @@ export class CurveV2
       srcToken,
       destToken,
       fromAmount,
-      metadata,
+      toAmount,
       quotedAmount,
-      uuidToBytes16(uuid),
+      metadata,
       beneficiary,
     ];
 
