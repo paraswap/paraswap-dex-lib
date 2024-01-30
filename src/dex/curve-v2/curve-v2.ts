@@ -17,7 +17,6 @@ import {
 } from '../simple-exchange';
 import GenericFactoryZapABI from '../../abi/curve-v2/GenericFactoryZap.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
-import AugustusV6ABI from '../../abi/AugustusV6.abi.json';
 import CurveV2ABI from '../../abi/CurveV2.json';
 import { IDexHelper } from '../../dex-helper';
 import { assert } from 'ts-essentials';
@@ -93,7 +92,6 @@ export class CurveV2
   static dexKeys = ['curvev2'];
   exchangeRouterInterface: Interface;
   genericFactoryZapIface: Interface;
-  augustusV6Interface: Interface;
   minConversionRate = '1';
   needWrapNative = true;
   logger: Logger;
@@ -104,7 +102,6 @@ export class CurveV2
     super(dexHelper, 'curvev2');
     this.exchangeRouterInterface = new Interface(CurveV2ABI as JsonFragment[]);
     this.genericFactoryZapIface = new Interface(GenericFactoryZapABI);
-    this.augustusV6Interface = new Interface(AugustusV6ABI);
     this.logger = dexHelper.getLogger(
       `CurveV2_${dexHelper.config.data.network}`,
     );

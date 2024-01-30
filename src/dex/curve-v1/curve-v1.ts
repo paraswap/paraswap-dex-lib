@@ -3,7 +3,6 @@ import _ from 'lodash';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { assert } from 'ts-essentials';
 import BigNumber from 'bignumber.js';
-import { ethers } from 'ethers';
 import CurveABI from '../../abi/Curve.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { Adapters, CurveV1Config } from './config';
@@ -91,7 +90,6 @@ import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { DIRECT_METHOD_NAME, DIRECT_METHOD_NAME_V6 } from './constants';
 import { packCurveData } from '../../lib/curve/encoder';
-import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import { encodeCurveAssets } from './packer';
 import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
 
@@ -108,7 +106,6 @@ export class CurveV1
 {
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
-  augustusV6Interface: Interface;
 
   eventPools = new Array<CurvePool | CurveMetapool>();
   public poolInterface: Interface;
@@ -203,7 +200,6 @@ export class CurveV1
     this.logger = dexHelper.getLogger(dexKey);
 
     this.poolInterface = new Interface(StableSwapBBTC as any);
-    this.augustusV6Interface = new Interface(AugustusV6ABI);
   }
 
   protected getPoolByAddress(address: Address) {

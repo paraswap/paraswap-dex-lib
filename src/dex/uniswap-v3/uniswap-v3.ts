@@ -49,7 +49,6 @@ import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
-import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   DirectMethods,
@@ -95,7 +94,6 @@ export class UniswapV3
   readonly needWrapNative = true;
 
   readonly directSwapIface = new Interface(DirectSwapABI);
-  readonly augustusV6Iface = new Interface(AugustusV6ABI);
 
   intervalTask?: NodeJS.Timeout;
 
@@ -998,7 +996,7 @@ export class UniswapV3
     const swapParams: UniswapV3ParamsDirect = [uniData, partnerAndFee, permit];
 
     const encoder = (...params: (string | UniswapV3ParamsDirect)[]) => {
-      return this.augustusV6Iface.encodeFunctionData(
+      return this.augustusV6Interface.encodeFunctionData(
         side === SwapSide.SELL
           ? DirectMethodsV6.directSell
           : DirectMethodsV6.directBuy,

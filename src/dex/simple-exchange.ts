@@ -16,6 +16,8 @@ import { MAX_UINT } from '../constants';
 import Web3 from 'web3';
 import { ICache, IDexHelper } from '../dex-helper';
 import { AbiItem } from 'web3-utils';
+import { ParaSwapVersion } from '@paraswap/core';
+import augustusV6ABI from '../abi/augustus-v6/ABI.json';
 
 /*
  * Context: Augustus routers have all a deadline protection logic implemented globally.
@@ -41,6 +43,8 @@ export class SimpleExchange {
   protected augustusAddress: Address;
   protected augustusV6Address: Address | undefined;
   protected augustusInterface: Interface;
+  protected augustusV6Interface: Interface;
+
   private provider: Web3;
   private cache: ICache;
 
@@ -62,6 +66,7 @@ export class SimpleExchange {
     this.augustusAddress = dexHelper.config.data.augustusAddress;
     this.augustusV6Address = dexHelper.config.data.augustusV6Address;
     this.augustusInterface = new Interface(augustusABI);
+    this.augustusV6Interface = new Interface(augustusV6ABI);
     this.provider = dexHelper.web3Provider;
     this.cache = dexHelper.cache;
 

@@ -53,7 +53,6 @@ import {
 import uniswapV2ABI from '../../abi/uniswap-v2/uniswap-v2-pool.json';
 import uniswapV2factoryABI from '../../abi/uniswap-v2/uniswap-v2-factory.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
-import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import UniswapV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { UniswapV2Config, Adapters } from './config';
@@ -225,8 +224,6 @@ export class UniswapV2
 
   static directFunctionName = directUniswapFunctionName;
   static directFunctionNameV6 = directUniswapFunctionNameV6;
-
-  readonly augustusV6Iface = new Interface(AugustusV6ABI);
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported: boolean = true;
@@ -962,7 +959,7 @@ export class UniswapV2
     const swapParams: UniswapV2ParamsDirect = [uniData, partnerAndFee, permit];
 
     const encoder = (...params: (string | UniswapV2ParamsDirect)[]) => {
-      return this.augustusV6Iface.encodeFunctionData(
+      return this.augustusV6Interface.encodeFunctionData(
         side === SwapSide.SELL
           ? UniswapV2FunctionsV6.swap
           : UniswapV2FunctionsV6.buy,
