@@ -1,26 +1,26 @@
-import { DexParams } from './types';
-import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
+import { AdapterMappings, DexConfigMap } from '../../types';
+import { DexParams } from './types';
 
 export const HashflowConfig: DexConfigMap<DexParams> = {
   Hashflow: {
     [Network.MAINNET]: {
-      routerAddress: '0xf6a94dfd0e6ea9ddfdffe4762ad4236576136613',
+      routerAddress: '0x55084eE0fEf03f14a305cd24286359A35D735151',
     },
     [Network.POLYGON]: {
-      routerAddress: '0x72550597dc0b2e0bec24e116add353599eff2e35',
+      routerAddress: '0x55084eE0fEf03f14a305cd24286359A35D735151',
     },
     [Network.BSC]: {
-      routerAddress: '0x0acffb0fb2cddd9bd35d03d359f3d899e32facc9',
+      routerAddress: '0x55084eE0fEf03f14a305cd24286359A35D735151',
     },
     [Network.ARBITRUM]: {
-      routerAddress: '0x1f772fa3bc263160ea09bb16ce1a6b8fc0fab36a',
+      routerAddress: '0x55084eE0fEf03f14a305cd24286359A35D735151',
     },
     [Network.AVALANCHE]: {
-      routerAddress: '0x64d2f9f44fe26c157d552ae7eaa613ca6587b59e',
+      routerAddress: '0x55084eE0fEf03f14a305cd24286359A35D735151',
     },
     [Network.OPTIMISM]: {
-      routerAddress: '0xb3999f658c0391d94a37f7ff328f3fec942bcadc',
+      routerAddress: '0xCa310B1B942A30Ff4b40a5E1b69AB4607eC79Bc1',
     },
   },
 };

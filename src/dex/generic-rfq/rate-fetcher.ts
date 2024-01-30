@@ -25,7 +25,7 @@ import {
 import { checkOrder } from './utils';
 import {
   blacklistResponseValidator,
-  firmRateResponseValidator,
+  firmRateWithTakerValidator,
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
@@ -375,6 +375,7 @@ export class RateFetcher {
     _destToken: Token,
     srcAmount: string,
     side: SwapSide,
+    takerAddress: Address,
     userAddress: Address,
     partner?: string,
   ): Promise<OrderInfo> {
@@ -391,6 +392,7 @@ export class RateFetcher {
       makerAmount: side === SwapSide.BUY ? srcAmount : undefined,
       takerAmount: side === SwapSide.SELL ? srcAmount : undefined,
       userAddress,
+      takerAddress,
       partner,
     };
 
@@ -418,7 +420,7 @@ export class RateFetcher {
       );
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
-        firmRateResponseValidator,
+        firmRateWithTakerValidator(takerAddress),
       );
 
       await checkOrder(

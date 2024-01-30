@@ -4,16 +4,17 @@ import _, { keyBy } from 'lodash';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
+  ExchangeTxInfo,
   Log,
   Logger,
-  TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
+  TxInfo,
 } from '../../types';
 import {
   ETHER_ADDRESS,
@@ -33,8 +34,8 @@ import VaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
-  getDexKeysWithNetwork,
   getBigIntPow,
+  getDexKeysWithNetwork,
   uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -44,12 +45,12 @@ import {
   BalancerPoolTypes,
   BalancerSwap,
   BalancerV2Data,
+  BalancerV2DirectParam,
   OptimizedBalancerV2Data,
   PoolState,
   PoolStateCache,
   PoolStateMap,
   SubgraphPoolAddressDictionary,
-  BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
   BalancerV2DirectParamV6,
@@ -59,7 +60,7 @@ import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { BalancerConfig, Adapters } from './config';
+import { Adapters, BalancerConfig } from './config';
 import {
   getAllPoolsUsedInPaths,
   isSameAddress,
@@ -78,6 +79,7 @@ import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import { BigNumber, utils } from 'ethers';
+import { SpecialDex } from '../../executor/types';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -1056,6 +1058,7 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
     isV6Swap?: boolean,
+    recipient?: string,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
@@ -1131,8 +1134,10 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: isV6Swap ? this.augustusV6Address! : this.augustusAddress,
-      recipient: isV6Swap ? this.augustusV6Address! : this.augustusAddress,
+      sender:
+        recipient || isV6Swap ? this.augustusV6Address! : this.augustusAddress,
+      recipient:
+        recipient || isV6Swap ? this.augustusV6Address! : this.augustusAddress,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
@@ -1419,6 +1424,51 @@ export class BalancerV2
       swapData,
       this.vaultAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const params = this.getBalancerParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+      true,
+      recipient,
+    );
+
+    const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+      'batchSwap',
+      params,
+    );
+
+    const swaps = params[1];
+    const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+      return acc.add(swap.amount);
+    }, BigNumber.from(0));
+
+    const specialDexExchangeData = solidityPack(
+      ['bytes', 'bytes32'],
+      [exchangeData, hexZeroPad(hexlify(totalAmount), 32)],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false, // to force manual transfer
+      dexFuncHasDestToken: true,
+      exchangeData: specialDexExchangeData,
+      specialDexFlag: SpecialDex.SWAP_ON_BALANCER_V2,
+      targetExchange: this.vaultAddress,
+    };
   }
 
   async updatePoolState(): Promise<void> {

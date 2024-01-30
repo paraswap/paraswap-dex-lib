@@ -22,9 +22,7 @@
               "srcAmount": "100000000",
               "destAmount": "100089514",
               "percent": 100,
-              "poolAddresses": [
-                "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7"
-              ],
+              "poolAddresses": ["0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7"],
               "data": {
                 "exchange": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
                 "i": 1,

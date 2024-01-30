@@ -22,9 +22,7 @@
               "srcAmount": "2080000000000000000",
               "destAmount": "3666930750962393744865",
               "percent": 52,
-              "poolAddresses": [
-                "0x73a6a761fe483ba19debb8f56ac5bbf14c0cdad1"
-              ],
+              "poolAddresses": ["0x73a6a761fe483ba19debb8f56ac5bbf14c0cdad1"],
               "data": {
                 "path": [
                   {
@@ -42,9 +40,7 @@
               "srcAmount": "1920000000000000000",
               "destAmount": "3430118914162104740275",
               "percent": 48,
-              "poolAddresses": [
-                "0x87c7056bbe6084f03304196be51c6b90b6d85aa2"
-              ],
+              "poolAddresses": ["0x87c7056bbe6084f03304196be51c6b90b6d85aa2"],
               "data": {
                 "path": [
                   {

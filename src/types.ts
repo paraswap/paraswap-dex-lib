@@ -15,6 +15,7 @@ export { Logger } from 'log4js';
 import { OptimalRate } from '@paraswap/core';
 import BigNumber from 'bignumber.js';
 import { RFQConfig } from './dex/generic-rfq/types';
+import { SpecialDex } from './executor/types';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -158,11 +159,12 @@ export type AdapterExchangeParam = {
 
 export type DexExchangeParam = {
   needWrapNative: boolean;
+  returnsWeth?: boolean;
   exchangeData: string;
   targetExchange: string;
   dexFuncHasRecipient: boolean;
   dexFuncHasDestToken: boolean;
-  amountOffset?: number;
+  specialDexFlag?: SpecialDex;
 };
 
 export type AdapterMappings = {
@@ -288,6 +290,7 @@ export type Config = {
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
+  smardexSubgraphAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 
@@ -304,6 +307,8 @@ export type PreprocessTransactionOptions = {
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
   partner?: string;
+  executionContractAddress: string;
+  recipient: string;
 };
 
 export type TransferFeeParams = {

@@ -34,7 +34,11 @@ import {
   DummyLimitOrderProvider,
   IDexHelper,
 } from '../src/dex-helper';
-import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
+import {
+  AddressOrSymbol,
+  constructSimpleSDK,
+  SimpleFetchSDK,
+} from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 import { GIFTER_ADDRESS, Holders, Tokens } from './constants-e2e';
@@ -42,7 +46,7 @@ import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
-import { DexAdapterService } from '../src';
+import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
@@ -93,7 +97,7 @@ const MULTISIG: { [nid: number]: string } = {
   [Network.POLYGON]: '0x46DF4eb6f7A3B0AdF526f6955b15d3fE02c618b7',
   [Network.FANTOM]: '0xECaB2dac955b94e49Ec09D6d68672d3B397BbdAd',
   [Network.AVALANCHE]: '0x1e2ECA5e812D08D2A7F8664D69035163ff5BfEC2',
-  [Network.OPTIMISM]: '0xf01121e808F782d7F34E857c27dA31AD1f151b39',
+  [Network.OPTIMISM]: '0x3b28A6f6291f7e8277751f2911Ac49C585d049f6',
   [Network.ARBITRUM]: '0x90DfD8a6454CFE19be39EaB42ac93CD850c7f339',
   [Network.BASE]: '0x6C674c8Df1aC663b822c4B6A56B4E5e889379AE0',
 };
@@ -102,6 +106,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   paraSwap: SimpleFetchSDK;
   dexKeys: string[];
   dexHelper: IDexHelper;
+  pricingHelper: PricingHelper;
   transactionBuilder: GenericSwapTransactionBuilder;
   dexAdapterService: DexAdapterService;
 
@@ -125,6 +130,15 @@ class APIParaswapSDK implements IParaSwapSDK {
     this.transactionBuilder = new GenericSwapTransactionBuilder(
       this.dexAdapterService,
     );
+    this.pricingHelper = new PricingHelper(
+      this.dexAdapterService,
+      this.dexHelper.getLogger,
+    );
+  }
+
+  async initializePricing() {
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    await this.pricingHelper.initialize(blockNumber, this.dexKeys);
   }
 
   async getPrices(
@@ -134,6 +148,8 @@ class APIParaswapSDK implements IParaSwapSDK {
     side: SwapSide,
     contractMethod: ContractMethod,
     _poolIdentifiers?: { [key: string]: string[] | null } | null,
+    transferFees?: TransferFeeParams,
+    forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate> {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
@@ -145,6 +161,8 @@ class APIParaswapSDK implements IParaSwapSDK {
       amount: amount.toString(),
       options: {
         includeDEXS: this.dexKeys,
+        // TODO-v6: update types in SDK
+        // @ts-ignore
         includeContractMethods: [contractMethod],
         partner: 'any',
       },
@@ -337,6 +355,7 @@ export async function testE2E(
   slippage?: number,
   sleepMs?: number,
   replaceTenderlyWithEstimateGas?: boolean,
+  forceRoute?: AddressOrSymbol[],
 ) {
   const amount = BigInt(_amount);
 
@@ -445,9 +464,9 @@ export async function testE2E(
       contractMethod,
       poolIdentifiers,
       transferFees,
+      forceRoute,
     );
 
-    console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     const config = generateConfig(network);

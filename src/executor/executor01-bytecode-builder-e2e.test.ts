@@ -184,6 +184,26 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
         });
       });
 
+      describe('BalancerV2', () => {
+        const dexKey = 'BalancerV2';
+
+        const tokenASymbol: string = 'USDT';
+        const tokenBSymbol: string = 'DAI';
+        const tokenAAmount: string = '100000000';
+        const tokenBAmount: string = '100000000000000000000';
+        const nativeTokenAmount = '500000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+          nativeTokenAmount,
+        );
+      });
+
       describe('CurveV1', () => {
         const dexKey = 'CurveV1';
 
@@ -531,7 +551,7 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
           const tokenASymbol: string = 'DAI';
           const tokenBSymbol: string = 'ETH';
 
-          const tokenAAmount: string = '23000000000000000000000';
+          const tokenAAmount: string = '15000000000000000000';
 
           const tokens = Tokens[network];
           const holders = Holders[network];
@@ -708,6 +728,134 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
               undefined,
               slippage,
               2000,
+            );
+          });
+        });
+      });
+
+      describe('BalancerV2', () => {
+        describe('WBTC -> ETH -> BAL via BalancerV2', () => {
+          const dexKeys = ['BalancerV2'];
+          const provider = new StaticJsonRpcProvider(
+            generateConfig(network).privateHttpProvider,
+            network,
+          );
+          const slippage = undefined;
+
+          const tokenASymbol: string = 'WBTC';
+          const tokenBSymbol: string = 'BAL';
+
+          const tokenAAmount: string = '500000000';
+
+          const tokens = Tokens[network];
+          const holders = Holders[network];
+          const contractMethod = ContractMethod.multiSwap;
+          const side = SwapSide.SELL;
+
+          it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              tokenAAmount,
+              side,
+              dexKeys,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              undefined,
+              slippage,
+              2000,
+            );
+          });
+        });
+
+        describe('USDC -> DAI -> USDT via BalancerV2', () => {
+          const dexKeys = ['BalancerV2'];
+          const provider = new StaticJsonRpcProvider(
+            generateConfig(network).privateHttpProvider,
+            network,
+          );
+          const slippage = undefined;
+
+          const tokenASymbol: string = 'USDC';
+          const tokenBSymbol: string = 'USDT';
+
+          const tokenAAmount: string = '50000000000';
+
+          const tokens = Tokens[network];
+          const holders = Holders[network];
+          const contractMethod = ContractMethod.multiSwap;
+          const side = SwapSide.SELL;
+
+          it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              tokenAAmount,
+              side,
+              dexKeys,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              undefined,
+              slippage,
+              2000,
+              false,
+              [
+                '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
+                '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI
+                '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
+              ],
+            );
+          });
+        });
+
+        describe('ETH -> USDC -> DAI via BalancerV2', () => {
+          const dexKeys = ['BalancerV2'];
+          const provider = new StaticJsonRpcProvider(
+            generateConfig(network).privateHttpProvider,
+            network,
+          );
+          const slippage = undefined;
+
+          const tokenASymbol: string = 'ETH';
+          const tokenBSymbol: string = 'DAI';
+
+          const tokenAAmount: string = '1000000000000000000';
+
+          const tokens = Tokens[network];
+          const holders = Holders[network];
+          const contractMethod = ContractMethod.multiSwap;
+          const side = SwapSide.SELL;
+
+          it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              tokenAAmount,
+              side,
+              dexKeys,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              undefined,
+              slippage,
+              2000,
+              false,
+              [
+                '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+                '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
+                '0x6b175474e89094c44da98b954eedeac495271d0f', // BAL
+              ],
             );
           });
         });

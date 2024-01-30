@@ -2,14 +2,18 @@ import { Interface } from '@ethersproject/abi';
 import { IDexHelper } from '../dex-helper';
 import ERC20ABI from '../abi/erc20.json';
 import { ethers } from 'ethers';
-import { Address, OptimalRate, OptimalSwap } from '@paraswap/core';
+import {
+  Address,
+  OptimalRate,
+  OptimalSwap,
+  OptimalSwapExchange,
+} from '@paraswap/core';
 import { DexExchangeParam } from '../types';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { isETHAddress } from '../utils';
 import {
   APPROVE_CALLDATA_DEST_TOKEN_POS,
   BYTES_28_LENGTH,
-  BYTES_64_LENGTH,
   EXECUTORS_FUNCTION_CALL_DATA_TYPES,
   WRAP_UNWRAP_FROM_AMOUNT_POS,
   ZEROS_12_BYTES,
@@ -27,6 +31,7 @@ export abstract class ExecutorBytecodeBuilder {
 
   constructor(protected dexHelper: IDexHelper) {
     this.erc20Interface = new Interface(ERC20ABI);
+    this.dexHelper.config.data;
   }
 
   protected abstract buildSimpleSwapFlags(
@@ -48,64 +53,27 @@ export abstract class ExecutorBytecodeBuilder {
     exchangeParams: DexExchangeParam[],
     index: number,
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
+    sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
+    buildSingleSwapCallData?: OptimalSwap,
   ): string;
 
   public abstract buildByteCode(
     priceRoute: OptimalRate,
     exchangeParams: DexExchangeParam[],
+    sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
   ): string;
 
-  protected buildDexCallData(
+  public abstract getAddress(): string;
+
+  protected abstract buildDexCallData(
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
     flag: Flag,
-  ): string {
-    const dontCheckBalanceAfterSwap = flag % 3 === 0;
-    const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
-    const insertFromAmount = flag % 4 === 3;
-    let { exchangeData } = exchangeParam;
-
-    let destTokenPos = 0;
-    if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
-      const destTokenAddr = isETHAddress(swap.destToken)
-        ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
-        : swap.destToken.toLowerCase();
-
-      if (!exchangeParam.dexFuncHasDestToken) {
-        exchangeData = hexConcat([exchangeData, ZEROS_28_BYTES, destTokenAddr]);
-      }
-      const destTokenAddrIndex = exchangeData
-        .replace('0x', '')
-        .indexOf(destTokenAddr.replace('0x', ''));
-      destTokenPos = (destTokenAddrIndex - 24) / 2;
-    }
-
-    let fromAmountPos = 0;
-    if (insertFromAmount) {
-      const fromAmount = ethers.utils.defaultAbiCoder.encode(
-        ['uint256'],
-        [swap.swapExchanges[0].srcAmount],
-      );
-      const fromAmountIndex = exchangeData
-        .replace('0x', '')
-        .indexOf(fromAmount.replace('0x', ''));
-      fromAmountPos = fromAmountIndex / 2;
-    }
-
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
-      exchangeParam.targetExchange, // target exchange
-      hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
-      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
-      hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
-      hexZeroPad(hexlify(flag), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      exchangeData, // dex calldata
-    ]);
-  }
+    swapExchange?: OptimalSwapExchange<any>,
+  ): string;
 
   protected buildApproveCallData(
     approveCalldata: string,

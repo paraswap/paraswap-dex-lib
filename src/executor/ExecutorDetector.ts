@@ -10,12 +10,11 @@ export class ExecutorDetector {
   private executor02BytecodeBuilder: ExecutorBytecodeBuilder;
 
   protected routeExecutionTypeToExecutorMap = {
-    [RouteExecutionType.SINGLE_STEP]: Executors.ONE,
-    [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE,
-    [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO,
-    [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO,
-    // [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO,
-    // [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]:
+    [RouteExecutionType.SINGLE_STEP]: Executors.ONE, // simpleSwap via Executor01
+    [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE, // multiSwap via Executor01
+    [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO, // simpleSwap with percentage on a path via Executor02
+    [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with pecentages on paths via Executor02
+    // [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: // megaSwap
     //   Executors.TWO,
   };
 
@@ -27,10 +26,7 @@ export class ExecutorDetector {
       this.dexHelper,
     );
   }
-  /**
-   * The method supports only simpleSwap and multiSwap with 100% token percent on each path (Executor01)
-   * @param priceRoute
-   */
+
   protected getRouteExecutionType(priceRoute: OptimalRate): RouteExecutionType {
     if (
       priceRoute.bestRoute.length === 1 &&
@@ -79,14 +75,6 @@ export class ExecutorDetector {
     }
 
     throw new Error(`${executorName} is not implemented`);
-  }
-
-  getAddress(executorName: Executors): Address {
-    if (!Object.values(Executors).includes(executorName)) {
-      throw new Error(`${executorName} is not supported`);
-    }
-
-    return this.dexHelper.config.data.executorsAddresses![executorName];
   }
 
   getBytecodeBuilder(executorName: Executors): ExecutorBytecodeBuilder {
