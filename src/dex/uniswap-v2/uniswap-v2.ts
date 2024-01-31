@@ -897,7 +897,7 @@ export class UniswapV2
       getCustomTarget: (isLastSwap, executor) =>
         (isLastSwap
           ? this.dexHelper.config.data.augustusV6Address
-          : this.dexHelper.config.data?.executorsAddresses![executor]) || '', // TODO: Fix types
+          : this.dexHelper.config.data.executorsAddresses![executor]) || '', // TODO: Fix types
     };
 
     function _generatePrependCalldata(flag: Flag) {
