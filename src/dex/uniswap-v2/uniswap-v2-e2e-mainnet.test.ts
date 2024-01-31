@@ -62,7 +62,7 @@ describe('UniswapV2 E2E Mainnet', () => {
       it('TOKEN -> TOKEN', async () => {
         await testE2E(
           tokens.WBTC,
-          tokens.BADGER,
+          tokens.USDT,
           holders.WBTC,
           '20000000',
           SwapSide.SELL,

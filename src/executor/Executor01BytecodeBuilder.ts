@@ -153,6 +153,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       swap,
       curExchangeParam,
       index,
+      index === priceRoute.bestRoute[0].swaps.length - 1,
       flags.dexes[index],
     );
 
@@ -233,13 +234,18 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
+    isLastSwap: boolean,
     flag: Flag,
   ): string {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData, specialDexFlag, generatePrependCalldata } =
-      exchangeParam;
+    let {
+      exchangeData,
+      specialDexFlag,
+      generatePrependCalldata,
+      getCustomTarget,
+    } = exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -276,8 +282,12 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND;
     }
 
+    const targetExchange = getCustomTarget
+      ? getCustomTarget(isLastSwap, Executors.ONE)
+      : exchangeParam.targetExchange;
+
     data = data.concat([
-      exchangeParam.targetExchange, // target exchange
+      targetExchange,
       hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
@@ -286,10 +296,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       ZEROS_28_BYTES, // bytes28(0)
       exchangeData, // dex calldata
     ]);
-    // console.log('json.types', JSON.stringify(calldataTypes));
-    // console.log('json.data', JSON.stringify(data));
-    // console.log('calldata.length', calldataTypes.length);
-    // console.log('data.length', data.length);
+
     return solidityPack(calldataTypes, data);
   }
 

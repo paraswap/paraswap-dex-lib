@@ -843,18 +843,13 @@ export class UniswapV2
     side: SwapSide,
   ): DexExchangeParam {
     const pools = encodePools(data.pools, this.feeFactor);
-    //   console.log(`
+    // console.log(`
     //  pool: ${data.pools[0].address}
     //  encoded: ${pools[0]}
     //   `);
     // console.log('encoded.pools', pools);
 
-    // const weth = this.getWETHAddress(srcToken, destToken, data.weth);
-    // const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
-    //   side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
-    //   [srcToken, srcAmount, destAmount, weth, pools],
-    // );
-
+    // TODO: Rebase tokens handling?
     // const hasRebaseTokenSrc = rebaseTokensSetsByChain[this.network]?.has(
     //   srcToken.toLowerCase(),
     // );
@@ -875,9 +870,9 @@ export class UniswapV2
     //       }
     //     : undefined;
 
-    const exchangeDataTypes = ['bytes28', 'bytes4', 'bytes32', 'bytes32'];
+    // 28 bytes are prepended in the Bytecode builder
+    const exchangeDataTypes = ['bytes4', 'bytes32', 'bytes32'];
     const exchangeDataToPack = [
-      hexZeroPad(hexlify(0), 28),
       hexZeroPad(hexlify(0), 4),
       hexZeroPad(hexlify(data.pools.length), 32), // pool count
       hexZeroPad(hexlify(BigNumber.from(srcAmount)), 32),
@@ -890,13 +885,19 @@ export class UniswapV2
     const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
 
     return {
-      needWrapNative: this.needWrapNative,
+      // TOOD: Check
+      // needWrapNative: this.needWrapNative,
+      needWrapNative: true,
       dexFuncHasRecipient: true,
       dexFuncHasDestToken: false,
       exchangeData,
-      targetExchange: data.router,
+      targetExchange: data.router, // TODO: Update here
       specialDexFlag: SpecialDex.SWAP_ON_UNISWAP_V2_FORK,
       generatePrependCalldata: (flag: Flag) => _generatePrependCalldata(flag),
+      getCustomTarget: (isLastSwap, executor) =>
+        (isLastSwap
+          ? this.dexHelper.config.data.augustusV6Address
+          : this.dexHelper.config.data?.executorsAddresses![executor]) || '', // TODO: Fix types
     };
 
     function _generatePrependCalldata(flag: Flag) {

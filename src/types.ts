@@ -15,7 +15,7 @@ export { Logger } from 'log4js';
 import { OptimalRate } from '@paraswap/core';
 import BigNumber from 'bignumber.js';
 import { RFQConfig } from './dex/generic-rfq/types';
-import { Flag, SpecialDex } from './executor/types';
+import { Executors, Flag, SpecialDex } from './executor/types';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -166,6 +166,7 @@ export type DexExchangeParam = {
   dexFuncHasDestToken: boolean;
   specialDexFlag?: SpecialDex;
   generatePrependCalldata?: (flag: Flag) => string;
+  getCustomTarget?: (isLastSwap: boolean, executor: Executors) => string;
 };
 
 export type AdapterMappings = {
