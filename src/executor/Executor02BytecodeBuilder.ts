@@ -416,22 +416,23 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     });
 
     const curExchangeParam = exchangeParams[index];
+    const isLastSwap = swapIndex === priceRoute.bestRoute[0].swaps.length - 1;
+    const isLast = index === exchangeParams.length - 1;
 
     const dexCallData = this.buildDexCallData(
       swap,
       curExchangeParam,
       index,
-      index === priceRoute.bestRoute[0].swaps.length - 1,
+      isLastSwap,
       flags.dexes[index],
       swapExchange,
     );
 
     swapExchangeCallData = hexConcat([dexCallData]);
 
-    const isLastSwap = swapIndex === priceRoute.bestRoute[0].swaps.length - 1;
-    const isLast = index === exchangeParams.length - 1;
+    const skipApprove = !!curExchangeParam.skipApprove;
 
-    if (!isETHAddress(swap!.srcToken)) {
+    if (!isETHAddress(swap!.srcToken) && !skipApprove) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
         srcAmount,

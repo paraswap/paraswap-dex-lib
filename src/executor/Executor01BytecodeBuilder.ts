@@ -159,10 +159,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     swapCallData = hexConcat([dexCallData]);
 
+    const skipApprove = !!curExchangeParam.skipApprove;
+
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
       (!isETHAddress(swap.srcToken) ||
-        (isETHAddress(swap.srcToken) && index !== 0))
+        (isETHAddress(swap.srcToken) && index !== 0)) &&
+      !skipApprove
     ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,

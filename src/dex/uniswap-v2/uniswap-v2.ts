@@ -891,13 +891,14 @@ export class UniswapV2
       dexFuncHasRecipient: false,
       dexFuncHasDestToken: false,
       exchangeData,
-      targetExchange: data.router, // TODO: Update here
+      targetExchange: data.router, // getCustomTarget is used to get target exchange
       specialDexFlag: SpecialDex.SWAP_ON_UNISWAP_V2_FORK,
       generatePrependCalldata: (flag: Flag) => _generatePrependCalldata(flag),
       getCustomTarget: (isLastSwap, executor) =>
         (isLastSwap
           ? this.dexHelper.config.data.augustusV6Address
           : this.dexHelper.config.data.executorsAddresses![executor]) || '', // TODO: Fix types
+      skipApprove: true,
     };
 
     function _generatePrependCalldata(flag: Flag) {

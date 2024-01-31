@@ -167,6 +167,7 @@ export type DexExchangeParam = {
   specialDexFlag?: SpecialDex;
   generatePrependCalldata?: (flag: Flag) => string;
   getCustomTarget?: (isLastSwap: boolean, executor: Executors) => string;
+  skipApprove?: boolean;
 };
 
 export type AdapterMappings = {
