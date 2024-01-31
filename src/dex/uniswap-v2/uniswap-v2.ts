@@ -221,6 +221,8 @@ export class UniswapV2
   exchangeRouterInterface: Interface;
   static directFunctionName = directUniswapFunctionName;
 
+  needWrapNative = true;
+
   logger: Logger;
 
   readonly hasConstantPriceLargeAmounts = false;
@@ -885,10 +887,8 @@ export class UniswapV2
     const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
 
     return {
-      // TOOD: Check
-      // needWrapNative: this.needWrapNative,
-      needWrapNative: true,
-      dexFuncHasRecipient: true,
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
       dexFuncHasDestToken: false,
       exchangeData,
       targetExchange: data.router, // TODO: Update here

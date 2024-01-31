@@ -250,7 +250,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     }
 
     const targetExchange = getCustomTarget
-      ? getCustomTarget(isLastSwap, Executors.ONE)
+      ? getCustomTarget(
+          // it's never last when dest = eth, since we'll have unwrap
+          isLastSwap && !isETHAddress(swap.destToken),
+          Executors.TWO,
+        )
       : exchangeParam.targetExchange;
 
     data = data.concat([

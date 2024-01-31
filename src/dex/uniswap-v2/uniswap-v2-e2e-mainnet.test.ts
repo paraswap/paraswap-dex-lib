@@ -33,12 +33,12 @@ describe('UniswapV2 E2E Mainnet', () => {
           provider,
         );
       });
-      it('ETH -> TOKEN', async () => {
+      it('ETH -> USDC', async () => {
         await testE2E(
           tokens.ETH,
           tokens.USDC,
           holders.ETH,
-          '7000000000000000000',
+          '700000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.simpleSwap,
@@ -46,7 +46,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           provider,
         );
       });
-      it('TOKEN -> ETH', async () => {
+      it('USDC -> ETH', async () => {
         await testE2E(
           tokens.USDC,
           tokens.ETH,
@@ -59,7 +59,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           provider,
         );
       });
-      it('TOKEN -> TOKEN', async () => {
+      it('WBTC -> USDT', async () => {
         await testE2E(
           tokens.WBTC,
           tokens.USDT,
