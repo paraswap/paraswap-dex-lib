@@ -1199,6 +1199,10 @@ export class BalancerV2
     let isApproved: boolean | undefined;
 
     try {
+      // TODO-v6: current implementation don't support v6
+      // check allowance with hasAugustusAllowance with version param
+      // check this https://github.com/paraswap/paraswap-dex-lib-private/commit/e5578a762596e88e98de3cef0092295c8ae81cee#diff-3ef1f1193622d120609edf4fe56696b3d340b8c6ce7fcf7b1acf1537f0a84dabR84
+      // and this https://github.com/paraswap/paraswap-dex-lib-private/commit/e5578a762596e88e98de3cef0092295c8ae81cee#diff-a4e6a5d9442d649b6ca51a08f5e58c8aa296d7b21b659cd69b5a5755b2c21533R381
       this.erc20Contract.options.address =
         this.dexHelper.config.wrapETH(srcToken).address;
       const allowance = await this.erc20Contract.methods
