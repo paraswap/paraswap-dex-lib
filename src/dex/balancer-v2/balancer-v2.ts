@@ -1334,7 +1334,7 @@ export class BalancerV2
       true, // v6 call
     );
 
-    const approveFlag = !(data.isApproved ?? false);
+    const approveFlag = !!data.isApproved;
 
     const swapParams: BalancerV2DirectParamV6 = [
       quotedAmount,
