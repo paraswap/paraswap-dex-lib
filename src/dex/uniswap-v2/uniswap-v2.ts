@@ -65,6 +65,7 @@ import {
   id,
 } from 'ethers/lib/utils';
 import { BigNumber } from 'ethers';
+import { BYTES_28_LENGTH } from '../../executor/constants';
 
 const rebaseTokens = _rebaseTokens as { chainId: number; address: string }[];
 
@@ -845,10 +846,7 @@ export class UniswapV2
     side: SwapSide,
   ): DexExchangeParam {
     const pools = encodePools(data.pools, this.feeFactor);
-    // console.log(`
-    //  pool: ${data.pools[0].address}
-    //  encoded: ${pools[0]}
-    //   `);
+    // console.log('non-encoded.pools', data.pools);
     // console.log('encoded.pools', pools);
 
     // TODO: Rebase tokens handling?
@@ -924,9 +922,9 @@ export class UniswapV2
       );
       const target_transfer = srcToken;
       const calldataSize_transfer = hexZeroPad(
-        hexlify(hexDataLength(exchangeData) + 28),
+        hexlify(hexDataLength(functionData_transfer)),
         4,
-      ); // dex calldata length + bytes28(0)
+      );
       const fromAmountPos_transfer = hexZeroPad(hexlify(0), 2);
       const srcTokenPos_transfer = hexZeroPad(hexlify(0), 2); // TODO: Check position
       const specialExchange_transfer = hexZeroPad(hexlify(0), 2);
