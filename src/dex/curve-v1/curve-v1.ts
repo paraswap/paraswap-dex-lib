@@ -62,6 +62,7 @@ import {
   getDexKeysWithNetwork,
   interpolate,
   isDestTokenTransferFeeToBeExchanged,
+  isETHAddress,
   isSrcTokenTransferFeeToBeExchanged,
   Utils,
   uuidToBytes16,
@@ -902,6 +903,7 @@ export class CurveV1
     try {
       this.erc20Contract.options.address =
         this.dexHelper.config.wrapETH(srcToken).address;
+      // TODO-v6: same as for BalancerV2, we need to check if the allowance according to version
       const allowance = await this.erc20Contract.methods
         .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
         .call(undefined, 'latest');
@@ -1018,7 +1020,7 @@ export class CurveV1
       packCurveData(
         data.exchange,
         !isApproved, // approve flag, if not approved then set to true
-        0,
+        isETHAddress(destToken) ? 2 : isETHAddress(srcToken) ? 1 : 0,
         data.underlyingSwap
           ? CurveV1SwapType.EXCHANGE_UNDERLYING
           : CurveV1SwapType.EXCHANGE,

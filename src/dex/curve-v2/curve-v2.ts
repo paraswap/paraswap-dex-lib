@@ -23,7 +23,7 @@ import { IDexHelper } from '../../dex-helper';
 import { assert } from 'ts-essentials';
 import { Logger } from 'log4js';
 import { OptimalSwapExchange } from '@paraswap/core';
-import { uuidToBytes16 } from '../../utils';
+import { isETHAddress, uuidToBytes16 } from '../../utils';
 import { DIRECT_METHOD_NAME_V6 } from './constants';
 import {
   CurveV2DirectSwap,
@@ -174,6 +174,7 @@ export class CurveV2
     let isApproved: boolean | undefined;
 
     try {
+      // TODO-v6: adapt for v6 (check balancerv2 comment)
       this.erc20Contract.options.address =
         this.dexHelper.config.wrapETH(srcToken).address;
       const allowance = await this.erc20Contract.methods
@@ -297,7 +298,7 @@ export class CurveV2
       packCurveData(
         data.exchange,
         !isApproved, // approve flag, if not approved then set to true
-        0, // ! FIXME: compute wrap type
+        isETHAddress(destToken) ? 2 : isETHAddress(srcToken) ? 1 : 0,
         data.swapType,
       ).toString(),
       data.i,
