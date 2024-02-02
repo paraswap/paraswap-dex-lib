@@ -88,58 +88,58 @@ describe('UniswapV2 E2E Mainnet', () => {
           provider,
         );
       });
-      // it('EX1: ETH -> USDC', async () => {
-      //   await testE2E(
-      //     tokens.ETH,
-      //     tokens.USDC,
-      //     holders.ETH,
-      //     '700000000000000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
-      // it('EX1: USDC -> ETH', async () => {
-      //   await testE2E(
-      //     tokens.USDC,
-      //     tokens.ETH,
-      //     holders.USDC,
-      //     '2000000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
-      // it('EX1: WBTC -> USDT', async () => {
-      //   await testE2E(
-      //     tokens.WBTC,
-      //     tokens.USDT,
-      //     holders.WBTC,
-      //     '20000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
-      // it('EX1: PSP -> WETH -> USDT', async () => {
-      //   await testE2E(
-      //     tokens.PSP,
-      //     tokens.USDT,
-      //     holders.PSP,
-      //     '1000000000000000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.multiSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
+      it('EX1: ETH -> USDC', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.USDC,
+          holders.ETH,
+          '700000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('EX1: USDC -> ETH', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.ETH,
+          holders.USDC,
+          '2000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('EX1: WBTC -> USDT', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.USDT,
+          holders.WBTC,
+          '20000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('EX1: PSP -> WETH -> USDT', async () => {
+        await testE2E(
+          tokens.PSP,
+          tokens.USDT,
+          holders.PSP,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
       it('EX2: USDT -> USDC', async () => {
         await testE2E(
           tokens.USDT,
