@@ -1,4 +1,4 @@
-import { Address } from '@paraswap/core';
+import { Address, ParaSwapVersion } from '@paraswap/core';
 export { BlockHeader } from 'web3-eth';
 export {
   Address,
@@ -304,6 +304,7 @@ export type PreprocessTransactionOptions = {
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
   partner?: string;
+  version: ParaSwapVersion;
 };
 
 export type TransferFeeParams = {

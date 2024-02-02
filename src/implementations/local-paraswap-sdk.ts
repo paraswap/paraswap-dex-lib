@@ -253,6 +253,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                           isDirectMethod: DirectContractMethods.includes(
                             contractMethod as ContractMethod,
                           ),
+                          version: priceRoute.version,
                         },
                       );
 
