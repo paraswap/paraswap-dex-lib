@@ -23,6 +23,10 @@ export const Tokens: {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    BAT: {
+      address: '0x0d8775f648430679a709e98d2b0cb6250d2887ef',
+      decimals: 18,
+    },
     REQ: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
@@ -989,6 +993,7 @@ export const Holders: {
 } = {
   [Network.MAINNET]: {
     ETH: '0x8696e84aB5e78983f2456bCB5c199eEa9648C8C2',
+    BAT: '0x6F11e332168F7BFDAA72Ba089392Cef4c458D657',
     USDC: '0xAFAaDfa18D9d63d09F19a5445e29CEc601054C5e',
     AMPL: '0x223592a191ECfC7FDC38a9256c3BD96E771539A9',
     WBTC: '0x1Cb17a66DC606a52785f69F08F4256526aBd4943',

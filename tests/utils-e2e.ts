@@ -145,7 +145,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       amount: amount.toString(),
       options: {
         includeDEXS: this.dexKeys,
-        includeContractMethods: [contractMethod],
+        includeContractMethods: [contractMethod as any], // TODO: Remove after sdk upgrade
         partner: 'any',
       },
       srcDecimals: from.decimals,

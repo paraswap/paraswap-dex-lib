@@ -46,14 +46,14 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0x15c41E755F8aBBd4B031e7cF7d539FD8293746f4',
+    augustusV6Address: '0xf883F770476C2461E688157d1F41c02b9adeaE86',
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
     executorsAddresses: {
-      Executor01: '0xa1C39fDFfa045A15A6065dc690386f04F98B74aE',
-      Executor02: '0xf4aa40705B00528F51FBd69A88CD267148250E36',
+      Executor01: '0x2F731f9e3a957E8F2C82aE6F23052004d479c8d7',
+      Executor02: '0x50Ffe073604ab351fed985548f7Bb88bd3EF6a15',
     },
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',

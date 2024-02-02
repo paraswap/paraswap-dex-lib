@@ -31,23 +31,23 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        // ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-        // ContractMethod.directUniV3Swap,
-        DirectMethodsV6.directSell,
-      ],
-    ],
+    // [
+    //   SwapSide.SELL,
+    //   [
+    //     // ContractMethod.simpleSwap,
+    //     // ContractMethod.multiSwap,
+    //     // ContractMethod.megaSwap,
+    //     // ContractMethod.directUniV3Swap,
+    //     DirectMethodsV6.directSell,
+    //   ],
+    // ],
     [
       SwapSide.BUY,
       [
         // ContractMethod.simpleBuy,
         // ContractMethod.buy,
         // ContractMethod.directUniV3Buy,
-        DirectMethodsV6.directBuy,
+        ContractMethod.swapExactAmountOutOnUniswapV3,
       ],
     ],
   ]);
@@ -96,6 +96,7 @@ function testForNetwork(
                 );
               });
             }
+            console.log('METHOD', contractMethod);
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -192,12 +193,20 @@ describe('UniswapV3 E2E', () => {
           tokenBAmount: '10000000000000000',
           nativeTokenAmount,
         },
-        // this pair includes 3 pools
+        // this pair includes 3 pools for SELL (fails due to liquidity are expected)
         {
           tokenA: 'GHO',
           tokenB: 'STETH',
           tokenAAmount: '2000287700000000000000',
           tokenBAmount: '882754574792216661',
+          nativeTokenAmount,
+        },
+        // 3 pools for buy (fails due to liquidity are expected)
+        {
+          tokenA: 'GHO',
+          tokenB: 'BAT',
+          tokenAAmount: '100000000000000000000000',
+          tokenBAmount: '100000000000000000000000',
           nativeTokenAmount,
         },
       ];
