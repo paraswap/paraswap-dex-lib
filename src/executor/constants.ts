@@ -26,15 +26,7 @@ export const EXECUTORS_FUNCTION_CALL_DATA_TYPES: string[] = [
 ];
 
 export const EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND: string[] = [
-  // Transfer data
-  // 'bytes20', // address(bytes20)
-  // 'bytes4', // calldata Size(bytes 4)
-  // 'bytes2', // fromAmount Pos(bytes2)
-  // 'bytes2', // destTokenPos(bytes2)
-  // 'bytes2', // specialExchange (bytes2)
-  // 'bytes2', // flag(bytes2)
-  // // 'bytes28', // zero padding (bytes28)
-  'bytes', // dex calldata (bytes)
+  'bytes', // Transfer data
   ...EXECUTORS_FUNCTION_CALL_DATA_TYPES,
 ];
 

@@ -926,11 +926,10 @@ export class UniswapV2
         4,
       );
       const fromAmountPos_transfer = hexZeroPad(hexlify(0), 2);
-      const srcTokenPos_transfer = hexZeroPad(hexlify(0), 2); // TODO: Check position
+      const srcTokenPos_transfer = hexZeroPad(hexlify(0), 2);
       const specialExchange_transfer = hexZeroPad(hexlify(0), 2);
       const flags_transfer = hexZeroPad(hexlify(flag), 2);
 
-      // TODO: Check if we need to specify byte size here
       const prependCalldata = solidityPack(
         ['bytes', 'bytes', 'bytes', 'bytes', 'bytes', 'bytes', 'bytes'],
         [
