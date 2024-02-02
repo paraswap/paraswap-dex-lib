@@ -16,7 +16,9 @@ export enum SpecialDex {
   // SWAP_ON_SWAAP_V2 = 3, // swapOnSwaapV2
   SEND_NATIVE = 4, // sendNative
   SWAP_ON_BALANCER_V2 = 5, // swapOnBalancerV2
-  SWAP_ON_UNISWAP_V2_FORK = 6, // swapOnUniswapV2Fork
+  SWAP_ON_UNISWAP_V2_FORK = 6,
+  SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK = 7,
+  SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE = 8,
 }
 
 export enum Executors {
