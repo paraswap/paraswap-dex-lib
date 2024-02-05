@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
+    "@ethersproject/abi": "^5.7.0",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.0.2",
     "@paraswap/core": "https://github.com/paraswap/paraswap-core#a02503a8bd5ff24bc8abd583207e333a978d793b",
@@ -59,7 +60,7 @@
     "bignumber.js": "9.1.0",
     "cross-fetch": "^3.1.5",
     "es6-promise": "^4.2.8",
-    "ethers": "^5.6.5",
+    "ethers": "^5.7.2",
     "joi": "^17.7.0",
     "lens.ts": "^0.5.1",
     "lodash": "4.17.21",

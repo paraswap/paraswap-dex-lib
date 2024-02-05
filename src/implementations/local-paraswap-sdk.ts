@@ -23,6 +23,7 @@ import {
 } from '@paraswap/core/build/constants';
 import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-builder';
 import { ParaSwapVersion } from '@paraswap/core';
+import { AddressOrSymbol } from '@paraswap/sdk';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -33,6 +34,7 @@ export interface IParaSwapSDK {
     contractMethod: ContractMethod,
     _poolIdentifiers?: { [key: string]: string[] | null } | null,
     transferFees?: TransferFeeParams,
+    forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate>;
 
   buildTransaction(
@@ -105,6 +107,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     contractMethod: ContractMethod,
     _poolIdentifiers?: { [key: string]: string[] | null } | null,
     transferFees?: TransferFeeParams,
+    forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate> {
     const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
     const poolIdentifiers =

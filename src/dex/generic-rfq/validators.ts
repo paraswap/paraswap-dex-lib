@@ -149,7 +149,7 @@ const stringStartWithHex0x = (
   return value;
 };
 
-const mustBeAugustusSwapper = (
+const mustBeAllowedTaker = (
   value: string,
   helpers: CustomHelpers,
 ): string | ErrorReport => {
@@ -168,7 +168,7 @@ export const orderWithSignatureValidator = joi
     nonceAndMeta: joi.string().custom(stringPositiveBigIntValidator),
     expiry: joi.number().min(0),
     maker: addressSchema.required(),
-    taker: addressSchema.required().custom(mustBeAugustusSwapper),
+    taker: addressSchema.required().custom(mustBeAllowedTaker),
     makerAsset: addressSchema.required(),
     takerAsset: addressSchema.required(),
     makerAmount: joi
