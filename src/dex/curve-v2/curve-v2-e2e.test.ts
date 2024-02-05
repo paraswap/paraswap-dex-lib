@@ -1,7 +1,11 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Holders, Tokens } from '../../../tests/constants-e2e';
+import {
+  Holders,
+  NativeTokenSymbols,
+  Tokens,
+} from '../../../tests/constants-e2e';
 import { Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -17,6 +21,8 @@ describe('CurveV2 E2E', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
+
+    const nativeSymbol = NativeTokenSymbols[network];
 
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
@@ -36,7 +42,7 @@ describe('CurveV2 E2E', () => {
       ],
       [
         {
-          symbol: 'USDC',
+          symbol: 'USDT',
           amount: (10 ** 8).toString(),
         },
         {
@@ -60,6 +66,20 @@ describe('CurveV2 E2E', () => {
                 tokens[pair[1].symbol],
                 holders[pair[0].symbol],
                 side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
+                side,
+                dexKey,
+                contractMethod as any,
+                network,
+                provider,
+              );
+            });
+
+            it(`${nativeSymbol} -> ${pair[0].symbol}`, async () => {
+              await testE2E(
+                tokens[nativeSymbol],
+                tokens[pair[0].symbol],
+                holders[nativeSymbol],
+                side === SwapSide.SELL ? '1000000000000000000' : pair[0].amount,
                 side,
                 dexKey,
                 contractMethod as any,
