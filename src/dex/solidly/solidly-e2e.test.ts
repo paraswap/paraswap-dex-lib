@@ -464,6 +464,19 @@ describe('Solidly E2E', () => {
           provider,
         );
       });
+      it('EX1: USDT -> USDC', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
+          '1000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
       it('EX1: ETH -> USDC', async () => {
         await testE2E(
           tokens.ETH,
@@ -481,6 +494,32 @@ describe('Solidly E2E', () => {
         await testE2E(
           tokens.USDC,
           tokens.ETH,
+          holders.USDC,
+          '2000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('EX1: WETH -> USDC', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.USDC,
+          holders.WETH,
+          '700000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+      it('EX1: USDC -> WETH', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WETH,
           holders.USDC,
           '2000000000',
           SwapSide.SELL,
