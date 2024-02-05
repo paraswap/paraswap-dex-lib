@@ -71,6 +71,7 @@ export abstract class ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
+    isLastSwap: boolean,
     flag: Flag,
     swapExchange?: OptimalSwapExchange<any>,
   ): string;

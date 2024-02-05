@@ -8,6 +8,7 @@ import {
   BYTES_28_LENGTH,
   BYTES_64_LENGTH,
   EXECUTORS_FUNCTION_CALL_DATA_TYPES,
+  EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND,
   ZEROS_12_BYTES,
   ZEROS_28_BYTES,
 } from './constants';
@@ -152,15 +153,19 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       swap,
       curExchangeParam,
       index,
+      index === priceRoute.bestRoute[0].swaps.length - 1,
       flags.dexes[index],
     );
 
     swapCallData = hexConcat([dexCallData]);
 
+    const skipApprove = !!curExchangeParam.skipApprove;
+
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
       (!isETHAddress(swap.srcToken) ||
-        (isETHAddress(swap.srcToken) && index !== 0))
+        (isETHAddress(swap.srcToken) && index !== 0)) &&
+      !skipApprove
     ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
@@ -232,12 +237,18 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
+    isLastSwap: boolean,
     flag: Flag,
   ): string {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData } = exchangeParam;
+    let {
+      exchangeData,
+      specialDexFlag,
+      generatePrependCalldata,
+      getCustomTarget,
+    } = exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -266,10 +277,24 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
-    const { specialDexFlag } = exchangeParam;
+    let data = [];
+    let calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES;
 
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
-      exchangeParam.targetExchange, // target exchange
+    if (generatePrependCalldata) {
+      data.push(generatePrependCalldata(index === 0 ? 0 : 3));
+      calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND;
+    }
+
+    const targetExchange = getCustomTarget
+      ? getCustomTarget(
+          // it's never last when dest = eth, since we'll have unwrap
+          isLastSwap && !isETHAddress(swap.destToken),
+          Executors.ONE,
+        )
+      : exchangeParam.targetExchange;
+
+    data = data.concat([
+      targetExchange,
       hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
@@ -278,6 +303,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       ZEROS_28_BYTES, // bytes28(0)
       exchangeData, // dex calldata
     ]);
+
+    return solidityPack(calldataTypes, data);
   }
 
   public getAddress(): string {

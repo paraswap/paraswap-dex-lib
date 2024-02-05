@@ -25,5 +25,10 @@ export const EXECUTORS_FUNCTION_CALL_DATA_TYPES: string[] = [
   'bytes', // dex calldata (bytes)
 ];
 
+export const EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND: string[] = [
+  'bytes', // Transfer data
+  ...EXECUTORS_FUNCTION_CALL_DATA_TYPES,
+];
+
 export const APPROVE_CALLDATA_DEST_TOKEN_POS = 68;
 export const WRAP_UNWRAP_FROM_AMOUNT_POS = 4;

@@ -53,8 +53,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
     executorsAddresses: {
-      Executor01: '0xA26B4e8d21c0bAbA95E1d0f4d571b71063BeD635',
-      Executor02: '0x95a7D5BbFfc8652554AA4769De48Cd1573550501',
+      Executor01: '0xc831c9a7Eb713621cbABCb1277a8AF754E55518D',
+      Executor02: '0xD3E3e7F49FB5D3Dd649952a4994BD9A8f4810727',
     },
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',

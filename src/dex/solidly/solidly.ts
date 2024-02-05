@@ -9,6 +9,7 @@ import {
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   PoolLiquidity,
   SimpleExchangeParam,
@@ -35,6 +36,15 @@ import {
 } from './types';
 import { SolidlyConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import {
+  hexDataLength,
+  hexZeroPad,
+  hexlify,
+  id,
+  solidityPack,
+} from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
+import { Flag, SpecialDex } from '../../executor/types';
 
 const erc20Iface = new Interface(erc20ABI);
 const solidlyPairIface = new Interface(solidlyPair);
@@ -633,5 +643,95 @@ export class Solidly extends UniswapV2 {
       payload,
       networkFee: '0',
     };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SolidlyData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    let exchangeDataTypes = ['bytes4', 'bytes32'];
+
+    let exchangeDataToPack = [
+      hexZeroPad(hexlify(0), 4),
+      hexZeroPad(hexlify(data.pools.length), 32),
+    ];
+
+    const pools = encodePools(data.pools, this.feeFactor);
+    pools.forEach(pool => {
+      exchangeDataTypes.push('bytes32');
+      exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
+    });
+
+    const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: false,
+      exchangeData,
+      targetExchange: data.router, // getCustomTarget is used to get target exchange
+      // TODO: Test with/without fee tokens in route
+      specialDexFlag: data.isFeeTokenInRoute
+        ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
+        : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
+      generatePrependCalldata: (flag: Flag) => _generatePrependCalldata(flag),
+      getCustomTarget: (isLastSwap, executor) =>
+        (isLastSwap
+          ? this.dexHelper.config.data.augustusV6Address
+          : this.dexHelper.config.data.executorsAddresses![executor]) || '',
+      skipApprove: true,
+    };
+
+    function _generatePrependCalldata(flag: Flag) {
+      const functionData_transfer = solidityPack(
+        [
+          'bytes28',
+          'bytes4',
+          'bytes12',
+          'bytes20',
+          'uint256',
+          'bytes12',
+          'bytes20',
+        ],
+        [
+          hexZeroPad(hexlify(0), 28),
+          hexZeroPad(id('transfer(address,uint256)').substring(0, 10), 4),
+          hexZeroPad(hexlify(0), 12),
+          data.pools[0].address,
+          srcAmount,
+          hexZeroPad(hexlify(0), 12),
+          srcToken,
+        ],
+      );
+      const target_transfer = srcToken;
+      const calldataSize_transfer = hexZeroPad(
+        hexlify(hexDataLength(functionData_transfer)),
+        4,
+      );
+      const fromAmountPos_transfer = hexZeroPad(hexlify(0), 2);
+      const srcTokenPos_transfer = hexZeroPad(hexlify(0), 2);
+      const specialExchange_transfer = hexZeroPad(hexlify(0), 2);
+      const flags_transfer = hexZeroPad(hexlify(flag), 2);
+
+      const prependCalldata = solidityPack(
+        ['bytes', 'bytes', 'bytes', 'bytes', 'bytes', 'bytes', 'bytes'],
+        [
+          target_transfer,
+          calldataSize_transfer,
+          fromAmountPos_transfer,
+          srcTokenPos_transfer,
+          specialExchange_transfer,
+          flags_transfer,
+          functionData_transfer,
+        ],
+      );
+
+      return prependCalldata;
+    }
   }
 }
