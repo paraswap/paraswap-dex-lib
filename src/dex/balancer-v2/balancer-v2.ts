@@ -612,7 +612,6 @@ export class BalancerV2
   readonly isFeeOnTransferSupported = false;
 
   readonly directSwapIface = new Interface(DirectSwapABI);
-  readonly augustusV6Interface = new Interface(AugustusV6ABI);
   readonly balancerVaultInterface = new Interface(BalancerVaultABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
