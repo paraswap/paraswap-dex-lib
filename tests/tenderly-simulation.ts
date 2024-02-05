@@ -1,14 +1,16 @@
 /* eslint-disable no-console */
 import axios from 'axios';
 import { Address } from '@paraswap/core';
-import { Provider } from '@ethersproject/providers';
 import { TxObject } from '../src/types';
 import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
+import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
+import Web3 from 'web3';
 
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
 const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID;
 const TENDERLY_PROJECT = process.env.TENDERLY_PROJECT;
 const TENDERLY_FORK_ID = process.env.TENDERLY_FORK_ID;
+const TENDERLY_TEST_NET_RPC = process.env.TENDERLY_TEST_NET_RPC;
 const TENDERLY_FORK_LAST_TX_ID = process.env.TENDERLY_FORK_LAST_TX_ID;
 
 export type SimulationResult = {
@@ -55,6 +57,7 @@ export class EstimateGasSimulation implements TransactionSimulator {
 }
 
 export class TenderlySimulation implements TransactionSimulator {
+  testNetRPC: StaticJsonRpcProvider | null = null;
   lastTx: string = '';
   forkId: string = '';
   maxGasLimit = 80000000;
@@ -75,7 +78,13 @@ export class TenderlySimulation implements TransactionSimulator {
       return;
     }
 
+    if (TENDERLY_TEST_NET_RPC) {
+      this.testNetRPC = new StaticJsonRpcProvider(TENDERLY_TEST_NET_RPC);
+      return;
+    }
+
     try {
+      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       let res = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork`,
         {
@@ -108,7 +117,10 @@ export class TenderlySimulation implements TransactionSimulator {
       state_objects: {},
     };
     try {
+      if (this.testNetRPC) return this.executeTransactionOnTestnet(params);
+
       if (stateOverrides) {
+        await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
         const result = await axios.post(
           `
         https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
@@ -133,6 +145,7 @@ export class TenderlySimulation implements TransactionSimulator {
         );
       }
 
+      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       const { data } = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,
@@ -163,6 +176,34 @@ export class TenderlySimulation implements TransactionSimulator {
       console.error(`TenderlySimulation_simulate:`, e);
       return {
         success: false,
+      };
+    }
+  }
+
+  async executeTransactionOnTestnet(params: TxObject) {
+    const txParams = {
+      from: params.from,
+      to: params.to,
+      value: Web3.utils.toHex(params.value || '0'),
+      data: params.data,
+      gas: '0x4c4b40', // 5,000,000
+      gasPrice: '0x0', // 0
+    };
+    const txHash = await this.testNetRPC!.send('eth_sendTransaction', [
+      txParams,
+    ]);
+    const transaction = await this.testNetRPC!.waitForTransaction(txHash);
+    if (transaction.status) {
+      return {
+        success: true,
+        url: txHash,
+        gasUsed: transaction.gasUsed.toString(),
+        transaction,
+      };
+    } else {
+      return {
+        success: false,
+        error: `Transaction on testnet failed, hash: ${txHash}`,
       };
     }
   }

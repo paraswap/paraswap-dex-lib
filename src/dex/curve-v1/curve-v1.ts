@@ -1020,7 +1020,7 @@ export class CurveV1
       packCurveData(
         data.exchange,
         !isApproved, // approve flag, if not approved then set to true
-        isETHAddress(destToken) ? 2 : isETHAddress(srcToken) ? 1 : 0,
+        isETHAddress(destToken) ? 0 : isETHAddress(srcToken) ? 3 : 0,
         data.underlyingSwap
           ? CurveV1SwapType.EXCHANGE_UNDERLYING
           : CurveV1SwapType.EXCHANGE,

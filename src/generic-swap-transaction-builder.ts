@@ -3,7 +3,7 @@ import { BigNumber } from 'ethers';
 import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
-import AugustusV6ABI from './abi/AugustusV6.abi.json';
+import AugustusV6ABI from './abi/augustus-v6/ABI.json';
 import {
   encodeFeePercent,
   encodeFeePercentForReferrer,
@@ -256,7 +256,7 @@ export class GenericSwapTransactionBuilder {
     ];
 
     const encoder = (...params: any[]) =>
-      this.augustusV6Interface.encodeFunctionData('swap', params);
+      this.augustusV6Interface.encodeFunctionData('swapExactAmountIn', params);
 
     return {
       encoder,
