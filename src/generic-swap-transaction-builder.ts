@@ -230,13 +230,14 @@ export class GenericSwapTransactionBuilder {
 
     const side = priceRoute.side;
     const isSell = side === SwapSide.SELL;
-    // const [partner, feePercent] = this.buildFees(
-    //   referrerAddress,
-    //   partnerAddress,
-    //   partnerFeePercent,
-    //   takeSurplus,
-    //   side,
-    // );
+
+    const partnerAndFee = this.buildFeesV6({
+      referrerAddress,
+      partnerAddress,
+      partnerFeePercent,
+      takeSurplus,
+      priceRoute,
+    });
 
     const swapParams = [
       bytecodeBuilder.getAddress(),
@@ -252,7 +253,7 @@ export class GenericSwapTransactionBuilder {
         ]),
         beneficiary,
       ],
-      '0', // hexConcat([partner, hexZeroPad(hexlify(95), 12)]),
+      partnerAndFee,
       permit,
       bytecode,
     ];
@@ -312,26 +313,13 @@ export class GenericSwapTransactionBuilder {
         ? priceRoute.destAmount
         : priceRoute.srcAmount;
 
-    // const [partner, feePercent] = referrerAddress
-    //   ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
-    //   : [
-    //       encodePartnerAddressForFeeLogic({
-    //         partnerAddress,
-    //         partnerFeePercent,
-    //         takeSurplus,
-    //       }),
-    //       encodeFeePercent(partnerFeePercent, takeSurplus, priceRoute.side),
-    //     ];
-    // const partnerAndFee = hexConcat([partner, feePercent]);
-
-    // TODO: check & improve
-    const partnerAndFee = this.packPartnerAndFeeData(
+    const partnerAndFee = this.buildFeesV6({
+      referrerAddress,
       partnerAddress,
       partnerFeePercent,
       takeSurplus,
-      false,
-      false,
-    );
+      priceRoute,
+    });
 
     return dex.getDirectParamV6!(
       priceRoute.srcToken,
@@ -348,6 +336,38 @@ export class GenericSwapTransactionBuilder {
       priceRoute.blockNumber,
       priceRoute.contractMethod,
     );
+  }
+
+  private buildFeesV6({
+    referrerAddress,
+    priceRoute,
+    takeSurplus,
+    partnerAddress,
+    partnerFeePercent,
+  }: {
+    referrerAddress?: Address;
+    partnerAddress: Address;
+    partnerFeePercent: string;
+    takeSurplus: boolean;
+    priceRoute: OptimalRate;
+  }) {
+    const partnerAndFee = referrerAddress
+      ? this.packPartnerAndFeeData(
+          referrerAddress,
+          encodeFeePercentForReferrer(priceRoute.side),
+          takeSurplus,
+          false,
+          false,
+        )
+      : this.packPartnerAndFeeData(
+          partnerAddress,
+          partnerFeePercent,
+          takeSurplus,
+          false,
+          false,
+        );
+
+    return partnerAndFee;
   }
 
   public async build({
