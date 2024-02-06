@@ -8,6 +8,7 @@ import {
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Log,
   Logger,
@@ -818,5 +819,32 @@ export class Camelot
       swapData,
       data.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SolidlyData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error('Buy not supported');
+
+    const pools = encodePools(data.pools, this.feeFactor);
+    const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
+    const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+      side === SwapSide.SELL ? UniswapV2Functions.swap : UniswapV2Functions.buy,
+      [srcToken, srcAmount, destAmount, weth, pools],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: true, // TODO: ??
+      exchangeData,
+      targetExchange: data.router,
+    };
   }
 }
