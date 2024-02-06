@@ -22,6 +22,7 @@ export enum SpecialDex {
 export enum Executors {
   ONE = 'Executor01',
   TWO = 'Executor02',
+  THREE = 'Executor03',
 }
 
 export enum RouteExecutionType {
