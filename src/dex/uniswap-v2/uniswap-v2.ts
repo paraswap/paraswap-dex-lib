@@ -64,14 +64,12 @@ import { Flag, SpecialDex } from '../../executor/types';
 import {
   hexZeroPad,
   hexlify,
-  keccak256,
   solidityPack,
   hexDataLength,
-  toUtf8Bytes,
   id,
+  hexConcat,
 } from 'ethers/lib/utils';
 import { BigNumber } from 'ethers';
-import { BYTES_28_LENGTH } from '../../executor/constants';
 
 const rebaseTokens = _rebaseTokens as { chainId: number; address: string }[];
 
