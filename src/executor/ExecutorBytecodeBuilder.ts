@@ -14,24 +14,25 @@ import { isETHAddress } from '../utils';
 import {
   APPROVE_CALLDATA_DEST_TOKEN_POS,
   BYTES_28_LENGTH,
-  EXECUTORS_FUNCTION_CALL_DATA_TYPES,
+  EXECUTOR_01_02_FUNCTION_CALL_DATA_TYPES,
+  EXECUTOR_03_FUNCTION_CALL_DATA_TYPES,
   WRAP_UNWRAP_FROM_AMOUNT_POS,
   ZEROS_12_BYTES,
   ZEROS_28_BYTES,
-  ZEROS_32_BYTES,
+  ZEROS_4_BYTES,
 } from './constants';
-import { Flag, SpecialDex } from './types';
+import { Executors, Flag, SpecialDex } from './types';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
 } = ethers;
 
 export abstract class ExecutorBytecodeBuilder {
+  type!: Executors;
   erc20Interface: Interface;
 
   constructor(protected dexHelper: IDexHelper) {
     this.erc20Interface = new Interface(ERC20ABI);
-    this.dexHelper.config.data;
   }
 
   protected abstract buildSimpleSwapFlags(
@@ -101,73 +102,93 @@ export abstract class ExecutorBytecodeBuilder {
       approveCalldata = hexConcat([approveCalldata, ZEROS_12_BYTES, tokenAddr]);
     }
 
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
-      tokenAddr, // token address to approve
-      hexZeroPad(hexlify(hexDataLength(approveCalldata) + BYTES_28_LENGTH), 4), // approve calldata length + bytes(28)
-      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
-      hexZeroPad(hexlify(APPROVE_CALLDATA_DEST_TOKEN_POS), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
-      hexZeroPad(hexlify(flag), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      approveCalldata, // approve calldata
-    ]);
+    return this.buildCallData(
+      tokenAddr,
+      approveCalldata,
+      fromAmountPos,
+      APPROVE_CALLDATA_DEST_TOKEN_POS,
+      SpecialDex.DEFAULT,
+      flag,
+    );
   }
 
   protected buildWrapEthCallData(depositCallData: string, flag: Flag): string {
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
+    return this.buildCallData(
       this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
-      hexZeroPad(hexlify(hexDataLength(depositCallData) + BYTES_28_LENGTH), 4), // wrap calldata length + bytes(28)
-      hexZeroPad(hexlify(WRAP_UNWRAP_FROM_AMOUNT_POS), 2), // fromAmountPos
-      hexZeroPad(hexlify(0), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
-      hexZeroPad(hexlify(flag), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      depositCallData, // wrap calldata
-    ]);
+      depositCallData,
+      WRAP_UNWRAP_FROM_AMOUNT_POS,
+      0,
+      SpecialDex.DEFAULT,
+      flag,
+    );
   }
 
   protected buildUnwrapEthCallData(withdrawCallData: string): string {
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
+    return this.buildCallData(
       this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
-      hexZeroPad(hexlify(hexDataLength(withdrawCallData) + BYTES_28_LENGTH), 4), // unwrap calldata length + bytes28(0)
-      hexZeroPad(hexlify(WRAP_UNWRAP_FROM_AMOUNT_POS), 2), // fromAmountPos
-      hexZeroPad(hexlify(0), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
-      hexZeroPad(hexlify(Flag.SEVEN), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      withdrawCallData, // unwrap calldata
-    ]);
+      withdrawCallData,
+      WRAP_UNWRAP_FROM_AMOUNT_POS,
+      0,
+      SpecialDex.DEFAULT,
+      Flag.SEVEN,
+    );
   }
 
   protected buildTransferCallData(
     transferCallData: string,
     tokenAddr: Address,
   ): string {
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
-      tokenAddr, // token address
-      hexZeroPad(hexlify(hexDataLength(transferCallData) + BYTES_28_LENGTH), 4), // unwrap calldata length + bytes28(0)
-      hexZeroPad(hexlify(36), 2), // fromAmountPos
-      hexZeroPad(hexlify(0), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
-      hexZeroPad(hexlify(Flag.THREE), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      transferCallData, // unwrap calldata
-    ]);
+    return this.buildCallData(
+      tokenAddr,
+      transferCallData,
+      36,
+      0,
+      SpecialDex.DEFAULT,
+      Flag.THREE,
+    );
   }
 
   protected buildFinalSpecialFlagCalldata(): string {
-    return solidityPack(
-      ['bytes20', 'bytes4', 'bytes2', 'bytes2', 'bytes2', 'bytes2', 'bytes32'],
-      [
-        this.dexHelper.config.data.augustusV6Address, // augusutus v6 address
-        hexZeroPad(hexlify(28 + 4), 4), // final unwrap calldata size bytes28(0) + bytes4(0)
-        hexZeroPad(hexlify(0), 2), // fromAmountPos
-        hexZeroPad(hexlify(0), 2), // destTokenPos
-        hexZeroPad(hexlify(SpecialDex.SEND_NATIVE), 2), // special
-        hexZeroPad(hexlify(9), 2), // flag
-        ZEROS_32_BYTES, // bytes28(0) + bytes4(0)
-      ],
+    return this.buildCallData(
+      this.dexHelper.config.data.augustusV6Address!, // augustus v6 address
+      ZEROS_4_BYTES,
+      0,
+      0,
+      SpecialDex.SEND_NATIVE,
+      Flag.NINE,
     );
+  }
+
+  buildCallData(
+    tokenAddress: string,
+    calldata: string,
+    fromAmountPos: number,
+    destTokenPos: number,
+    specialDexFlag: SpecialDex,
+    flag: Flag,
+  ): string {
+    const isBuyExecutor = this.type === Executors.THREE;
+
+    const types = isBuyExecutor
+      ? EXECUTOR_03_FUNCTION_CALL_DATA_TYPES
+      : EXECUTOR_01_02_FUNCTION_CALL_DATA_TYPES;
+
+    const callDataLength = isBuyExecutor ? 2 : 4;
+
+    return solidityPack(types, [
+      tokenAddress, // token address
+      hexZeroPad(
+        hexlify(hexDataLength(calldata) + BYTES_28_LENGTH),
+        callDataLength,
+      ), // calldata length + bytes28(0)
+      ...(isBuyExecutor ? [hexZeroPad(hexlify(0), 2)] : []), // toAmountPos
+      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
+      hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
+      hexZeroPad(hexlify(specialDexFlag), 2), // special
+      hexZeroPad(hexlify(flag), 2), // flag
+      ZEROS_28_BYTES, // bytes28(0)
+      calldata, // calldata
+    ]);
   }
 
   protected buildFlags(

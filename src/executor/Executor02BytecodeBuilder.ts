@@ -11,9 +11,7 @@ import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import {
-  BYTES_28_LENGTH,
   BYTES_64_LENGTH,
-  EXECUTORS_FUNCTION_CALL_DATA_TYPES,
   SWAP_EXCHANGE_100_PERCENTAGE,
   ZEROS_12_BYTES,
   ZEROS_28_BYTES,
@@ -28,6 +26,7 @@ const {
  * Class to build bytecode for Executor02 - simpleSwap with N DEXs (VERTICAL_BRANCH), multiSwaps (VERTICAL_BRANCH_HORIZONTAL_SEQUENCE) and megaswaps (NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE)
  */
 export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
+  type = Executors.TWO;
   /**
    * Executor02 Flags:
    * switch (flag % 4):
@@ -236,16 +235,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     const { specialDexFlag } = exchangeParam;
 
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
-      exchangeParam.targetExchange, // target exchange
-      hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
-      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
-      hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 2), // special
-      hexZeroPad(hexlify(flag), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      exchangeData, // dex calldata
-    ]);
+    return this.buildCallData(
+      exchangeParam.targetExchange,
+      exchangeData,
+      fromAmountPos,
+      destTokenPos,
+      specialDexFlag || SpecialDex.DEFAULT,
+      flag,
+    );
   }
 
   private addMultiSwapMetadata(

@@ -4,13 +4,7 @@ import { OptimalRate, OptimalSwap } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
-import {
-  BYTES_28_LENGTH,
-  BYTES_64_LENGTH,
-  EXECUTORS_FUNCTION_CALL_DATA_TYPES,
-  ZEROS_12_BYTES,
-  ZEROS_28_BYTES,
-} from './constants';
+import { BYTES_64_LENGTH, ZEROS_28_BYTES } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 
 const {
@@ -21,6 +15,7 @@ const {
  * Class to build bytecode for Executor01 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
  */
 export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
+  type = Executors.ONE;
   /**
    * Executor01 Flags:
    * switch (flag % 4):
@@ -268,16 +263,14 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     const { specialDexFlag } = exchangeParam;
 
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
-      exchangeParam.targetExchange, // target exchange
-      hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
-      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
-      hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 2), // special
-      hexZeroPad(hexlify(flag), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      exchangeData, // dex calldata
-    ]);
+    return this.buildCallData(
+      exchangeParam.targetExchange,
+      exchangeData,
+      fromAmountPos,
+      destTokenPos,
+      specialDexFlag || SpecialDex.DEFAULT,
+      flag,
+    );
   }
 
   public getAddress(): string {
