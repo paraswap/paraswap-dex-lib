@@ -1116,7 +1116,7 @@ export const Holders: {
     DAI: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
     WETH: '0x62ac55b745f9b08f1a81dcbbe630277095cf4be1',
     WMATIC: '0x016ba20db4b681f83e5fbbe0c433c96268ab5815',
-    AMWMATIC: '0x8832924854e3Cedb0a6Abf372e6CCFF9F7654332',
+    AMWMATIC: '0x975779102B2A82384f872EE759801DB5204CE331',
     USDC: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     POPS: '0x2693b57ee51f4e2a26dfb339a911fa8731061f49',
     MUST: '0x9f2a409848fb9b7bd058b24a23e8dbf1e166a109',
@@ -1310,4 +1310,15 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
   [Network.BASE]: 'ETH',
+};
+
+export const WrappedNativeTokenSymbols: { [network: number]: string } = {
+  [Network.MAINNET]: 'WETH',
+  [Network.POLYGON]: 'WMATIC',
+  [Network.BSC]: 'WBNB',
+  [Network.AVALANCHE]: 'WAVAX',
+  [Network.FANTOM]: 'WFTM',
+  [Network.ARBITRUM]: 'WETH',
+  [Network.OPTIMISM]: 'WETH',
+  [Network.BASE]: 'WETH',
 };

@@ -194,10 +194,15 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    augustusV6Address: '0xB9E4404998561495e3eDDd92A0D0cf86f7E5b6be',
     augustusRFQAddress: '0xF3CD476C3C4D3Ac5cA2724767f269070CA09A043',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
+    executorsAddresses: {
+      Executor01: '0xa0c7Cbce016CEb71ECDeE7b4b50C0498622022f9',
+      Executor02: '0x42334851535C2A3AD45aC2DaaE9422Bc8b47745b',
+    },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:

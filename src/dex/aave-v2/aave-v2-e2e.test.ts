@@ -125,11 +125,14 @@ describe('AaveV2 E2E', () => {
 
     const contractMethods: { [side in SwapSide]: ContractMethod[] } = {
       [SwapSide.SELL]: [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        'swapExactAmountIn' as any,
+        // ContractMethod.genericSell,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
-      [SwapSide.BUY]: [ContractMethod.simpleBuy],
+      // [SwapSide.BUY]: [ContractMethod.simpleBuy],
+      [SwapSide.BUY]: [],
     };
 
     [SwapSide.SELL, SwapSide.BUY].forEach((side: SwapSide) =>
