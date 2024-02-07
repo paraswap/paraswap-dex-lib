@@ -19,6 +19,9 @@ import {
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
+  NumberAsString,
+  Address,
+  DexExchangeParam,
 } from '../../types';
 import {
   KyberDmmData,
@@ -227,6 +230,40 @@ export class KyberDmm
       swapData,
       data.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: KyberDmmData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const isSell = side === SwapSide.SELL;
+    const swapFunctionParams: KyberDmmParam = [
+      isSell ? srcAmount : destAmount,
+      isSell ? destAmount : srcAmount,
+      data.pools.map(p => p.address),
+      data.path,
+      this.augustusAddress,
+      Number.MAX_SAFE_INTEGER.toString(),
+    ];
+    const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+      isSell
+        ? KyberDMMFunctions.swapExactTokensForTokens
+        : KyberDMMFunctions.swapTokensForExactTokens,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData,
+      targetExchange: data.router,
+    };
   }
 
   private async addPool(
