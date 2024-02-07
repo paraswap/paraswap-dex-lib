@@ -1,6 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { NumberAsString, SwapSide } from '@paraswap/core';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import stETHAbi from '../abi/stETH.json';
 import { NULL_ADDRESS } from '../constants';
@@ -64,6 +69,29 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
       calldata: [swapData],
       values: [srcAmount],
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: LidoData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapData = this.stETHInterface.encodeFunctionData(
+      stETHFunctions.submit,
+      [NULL_ADDRESS],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: stETH[this.network],
     };
   }
 }

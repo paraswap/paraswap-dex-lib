@@ -1,6 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  NumberAsString,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BProtocolABI from '../abi/BProtocol.json';
@@ -70,5 +76,33 @@ export class BProtocol
       swapData,
       data.exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: BProtocolData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction = BProtocolFunctions.swap;
+    const swapFunctionParams: BProtocolParam = [
+      srcAmount,
+      destAmount,
+      recipient,
+    ];
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: data.exchange,
+    };
   }
 }

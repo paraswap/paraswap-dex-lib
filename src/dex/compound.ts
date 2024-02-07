@@ -1,6 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { SwapSide, NULL_ADDRESS } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  NumberAsString,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import Ceth from '../abi/Compound_CETH.json'; // CETH abi
@@ -80,5 +86,31 @@ export class Compound
       swapData,
       cToken,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: CompoundData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const cToken = data.fromCToken ? srcToken : destToken;
+    const swapData = isETHAddress(srcToken)
+      ? this.cethInterface.encodeFunctionData(CompoundFunctions.mint)
+      : this.erc20Interface.encodeFunctionData(
+          data.fromCToken ? CompoundFunctions.redeem : CompoundFunctions.mint,
+          [srcAmount],
+        );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: cToken,
+    };
   }
 }

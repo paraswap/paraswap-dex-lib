@@ -1,7 +1,13 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { Provider } from '@ethersproject/providers';
 import { SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  NumberAsString,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import OnebitABI from '../abi/Onebit.json';
@@ -79,5 +85,36 @@ export class Onebit
       swapData,
       data.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: OnebitData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction = OnebitFunctions.swapTokensWithTrust;
+    const swapFunctionParams: OnebitParam = [
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      recipient,
+    ];
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: data.router,
+    };
   }
 }
