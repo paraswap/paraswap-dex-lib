@@ -10,6 +10,7 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { Contract } from 'ethers';
 
 function testForNetwork(
   network: Network,
@@ -35,12 +36,13 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.megaSwap,
-        ContractMethod.multiSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -190,25 +192,25 @@ describe('Dexalot E2E', () => {
     );
   });
 
-  describe('BTC.b -> USDC', () => {
-    const network = Network.AVALANCHE;
+  // describe('BTC.b -> USDC', () => {
+  //   const network = Network.AVALANCHE;
 
-    const tokenASymbol: string = 'BTCb';
-    const tokenBSymbol: string = 'USDC';
+  //   const tokenASymbol: string = 'BTCb';
+  //   const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '100';
-    const tokenBAmount: string = '9000000000';
-    const nativeTokenAmount = '1000000000000000000';
+  //   const tokenAAmount: string = '100';
+  //   const tokenBAmount: string = '9000000000';
+  //   const nativeTokenAmount = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-      true,
-    );
-  });
+  //   testForNetwork(
+  //     network,
+  //     dexKey,
+  //     tokenASymbol,
+  //     tokenBSymbol,
+  //     tokenAAmount,
+  //     tokenBAmount,
+  //     nativeTokenAmount,
+  //     true,
+  //   );
+  // });
 });

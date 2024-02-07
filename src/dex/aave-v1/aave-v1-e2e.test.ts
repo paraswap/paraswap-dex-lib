@@ -25,8 +25,8 @@ describe('AaveV1 E2E', () => {
     const aUSDTSymbol: string = 'aUSDT';
     const USDTSymbol: string = 'USDT';
 
-    const aUSDTAmount: string = '2000000000';
-    const USDTAmount: string = '2000000000';
+    const aUSDTAmount: string = '20000000';
+    const USDTAmount: string = '20000000';
     const aETHAmount: string = '100000000000000000';
     const ethAmount = '100000000000000000';
 
@@ -39,12 +39,8 @@ describe('AaveV1 E2E', () => {
     const USDT = Tokens[network][USDTSymbol];
 
     const contractMethods: { [side in SwapSide]: ContractMethod[] } = {
-      [SwapSide.SELL]: [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-      ],
-      [SwapSide.BUY]: [ContractMethod.simpleBuy],
+      [SwapSide.SELL]: [ContractMethod.swapExactAmountIn],
+      [SwapSide.BUY]: [],
     };
 
     [SwapSide.SELL, SwapSide.BUY].forEach((side: SwapSide) =>

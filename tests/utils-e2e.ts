@@ -153,7 +153,8 @@ class APIParaswapSDK implements IParaSwapSDK {
     to: Token,
     amount: bigint,
     side: SwapSide,
-    contractMethod: ContractMethod,
+    // contractMethod: ContractMethod,
+    contractMethod: any,
     _poolIdentifiers?: { [key: string]: string[] | null } | null,
     transferFees?: TransferFeeParams,
     forceRoute?: AddressOrSymbol[],
@@ -839,12 +840,7 @@ export function testE2E_V6(
   const wrappedNativeTokenSymbol = WrappedNativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.genericSell, // TODO: Update contract method
-      ],
-    ],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
   ]);
 
   describe(`${network}`, () => {

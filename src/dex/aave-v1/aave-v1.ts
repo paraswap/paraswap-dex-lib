@@ -8,6 +8,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -194,6 +196,54 @@ export class AaveV1
       swapCallee,
       spender,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AaveV1Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const amount = side === SwapSide.SELL ? srcAmount : destAmount;
+    const [Interface, swapFunction, swapFunctionParams, swapCallee] = ((): [
+      Interface,
+      AaveV1Functions,
+      AaveV1Param,
+      Address,
+    ] => {
+      if (data.fromAToken) {
+        return [this.aContract, AaveV1Functions.redeem, [amount], srcToken];
+      }
+
+      return [
+        this.aavePool,
+        AaveV1Functions.deposit,
+        [srcToken, amount, REF_CODE],
+        AAVE_LENDING_POOL,
+        // AAVE_PROXY,
+      ];
+    })();
+
+    const exchangeData = Interface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: false, // TODO: ??
+      exchangeData,
+      targetExchange: swapCallee,
+      // TODO: Check
+      getCustomTarget: (isLastSwap, executor) =>
+        (isLastSwap
+          ? this.dexHelper.config.data.augustusV6Address
+          : this.dexHelper.config.data.executorsAddresses![executor]) || '',
+    };
   }
 
   // This is called once before getTopPoolsForToken is
