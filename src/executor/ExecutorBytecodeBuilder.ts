@@ -145,6 +145,7 @@ export abstract class ExecutorBytecodeBuilder {
       0,
       SpecialDex.DEFAULT,
       Flag.THREE,
+      this.type === Executors.THREE ? hexDataLength(transferCallData) : 0,
     );
   }
 
@@ -166,6 +167,7 @@ export abstract class ExecutorBytecodeBuilder {
     destTokenPos: number,
     specialDexFlag: SpecialDex,
     flag: Flag,
+    toAmountPos = 0,
   ): string {
     const isBuyExecutor = this.type === Executors.THREE;
 
@@ -181,7 +183,7 @@ export abstract class ExecutorBytecodeBuilder {
         hexlify(hexDataLength(calldata) + BYTES_28_LENGTH),
         callDataLength,
       ), // calldata length + bytes28(0)
-      ...(isBuyExecutor ? [hexZeroPad(hexlify(0), 2)] : []), // toAmountPos
+      ...(isBuyExecutor ? [hexZeroPad(hexlify(toAmountPos), 2)] : []), // toAmountPos
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
       hexZeroPad(hexlify(specialDexFlag), 2), // special
