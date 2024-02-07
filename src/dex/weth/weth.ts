@@ -150,6 +150,30 @@ export class Weth
     );
   }
 
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: WethData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapData = isETHAddress(srcToken)
+      ? this.erc20Interface.encodeFunctionData(WethFunctions.deposit)
+      : this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+          srcAmount,
+        ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: this.address,
+    };
+  }
+
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
