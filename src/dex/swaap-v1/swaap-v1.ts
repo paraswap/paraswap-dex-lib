@@ -283,7 +283,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
+      dexFuncHasRecipient: false,
       dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: data.pool,

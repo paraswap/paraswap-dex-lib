@@ -247,7 +247,7 @@ export class KyberDmm
       isSell ? destAmount : srcAmount,
       data.pools.map(p => p.address),
       data.path,
-      this.augustusAddress,
+      recipient,
       Number.MAX_SAFE_INTEGER.toString(),
     ];
     const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
@@ -260,7 +260,7 @@ export class KyberDmm
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasDestToken: false,
       exchangeData,
       targetExchange: data.router,
     };
