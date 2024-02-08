@@ -466,10 +466,10 @@ export class JarvisV6
     let swapFunctionParams: JarvisV6Params;
     switch (swapFunction) {
       case JarvisSwapFunctions.MINT:
-        swapFunctionParams = ['1', srcAmount, timestamp, this.augustusAddress];
+        swapFunctionParams = ['1', srcAmount, timestamp, recipient];
         break;
       case JarvisSwapFunctions.REDEEM:
-        swapFunctionParams = [srcAmount, '1', timestamp, this.augustusAddress];
+        swapFunctionParams = [srcAmount, '1', timestamp, recipient];
         break;
       default:
         throw new Error(`Unknown function ${swapFunction}`);
@@ -481,7 +481,7 @@ export class JarvisV6
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasDestToken: false,
       exchangeData,
       targetExchange: data.poolAddress.toLowerCase(),
     };
