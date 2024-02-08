@@ -107,7 +107,8 @@ export abstract class ExecutorBytecodeBuilder {
       hexZeroPad(hexlify(hexDataLength(approveCalldata) + BYTES_28_LENGTH), 4), // approve calldata length + bytes(28)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(APPROVE_CALLDATA_DEST_TOKEN_POS), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
+      hexZeroPad(hexlify(SpecialDex.DEFAULT), 1), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       approveCalldata, // approve calldata
@@ -120,7 +121,8 @@ export abstract class ExecutorBytecodeBuilder {
       hexZeroPad(hexlify(hexDataLength(depositCallData) + BYTES_28_LENGTH), 4), // wrap calldata length + bytes(28)
       hexZeroPad(hexlify(WRAP_UNWRAP_FROM_AMOUNT_POS), 2), // fromAmountPos
       hexZeroPad(hexlify(0), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
+      hexZeroPad(hexlify(SpecialDex.DEFAULT), 1), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       depositCallData, // wrap calldata
@@ -133,7 +135,8 @@ export abstract class ExecutorBytecodeBuilder {
       hexZeroPad(hexlify(hexDataLength(withdrawCallData) + BYTES_28_LENGTH), 4), // unwrap calldata length + bytes28(0)
       hexZeroPad(hexlify(WRAP_UNWRAP_FROM_AMOUNT_POS), 2), // fromAmountPos
       hexZeroPad(hexlify(0), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
+      hexZeroPad(hexlify(SpecialDex.DEFAULT), 1), // special
       hexZeroPad(hexlify(Flag.SEVEN), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       withdrawCallData, // unwrap calldata
@@ -149,7 +152,8 @@ export abstract class ExecutorBytecodeBuilder {
       hexZeroPad(hexlify(hexDataLength(transferCallData) + BYTES_28_LENGTH), 4), // unwrap calldata length + bytes28(0)
       hexZeroPad(hexlify(36), 2), // fromAmountPos
       hexZeroPad(hexlify(0), 2), // destTokenPos
-      hexZeroPad(hexlify(SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
+      hexZeroPad(hexlify(SpecialDex.DEFAULT), 1), // special
       hexZeroPad(hexlify(Flag.THREE), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       transferCallData, // unwrap calldata
@@ -164,7 +168,8 @@ export abstract class ExecutorBytecodeBuilder {
         hexZeroPad(hexlify(28 + 4), 4), // final unwrap calldata size bytes28(0) + bytes4(0)
         hexZeroPad(hexlify(0), 2), // fromAmountPos
         hexZeroPad(hexlify(0), 2), // destTokenPos
-        hexZeroPad(hexlify(SpecialDex.SEND_NATIVE), 2), // special
+        hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
+        hexZeroPad(hexlify(SpecialDex.SEND_NATIVE), 1), // special
         hexZeroPad(hexlify(9), 2), // flag
         ZEROS_32_BYTES, // bytes28(0) + bytes4(0)
       ],
