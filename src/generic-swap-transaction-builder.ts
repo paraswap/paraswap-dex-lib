@@ -1,6 +1,14 @@
 import { Address, DexExchangeParam, OptimalRate, TxObject } from './types';
 import { BigNumber } from 'ethers';
-import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from './constants';
+import {
+  ETHER_ADDRESS,
+  FEE_PERCENT_IN_BASIS_POINTS_MASK,
+  IS_REFERRAL_MASK,
+  IS_SKIP_BLACKLIST_MASK,
+  IS_TAKE_SURPLUS_MASK,
+  NULL_ADDRESS,
+  SwapSide,
+} from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
 import AugustusV6ABI from './abi/augustus-v6/ABI.json';
@@ -344,26 +352,28 @@ export class GenericSwapTransactionBuilder {
     takeSurplus,
     partnerAddress,
     partnerFeePercent,
+    skipBlacklist = false,
   }: {
     referrerAddress?: Address;
     partnerAddress: Address;
     partnerFeePercent: string;
     takeSurplus: boolean;
     priceRoute: OptimalRate;
+    skipBlacklist?: boolean;
   }) {
     const partnerAndFee = referrerAddress
       ? this.packPartnerAndFeeData(
           referrerAddress,
           encodeFeePercentForReferrer(priceRoute.side),
           takeSurplus,
-          false,
-          false,
+          true, // it's a referral
+          skipBlacklist,
         )
       : this.packPartnerAndFeeData(
           partnerAddress,
           partnerFeePercent,
           takeSurplus,
-          false,
+          skipBlacklist,
           false,
         );
 
@@ -465,19 +475,28 @@ export class GenericSwapTransactionBuilder {
     feePercent: string,
     takeSurplus: boolean,
     referral: boolean,
-    skipWhitelistFlag: boolean,
+    skipBlacklist: boolean,
   ): string {
+    // Partner address shifted left to make room for flags and fee percent
     const partnerBigInt = BigNumber.from(partner).shl(96);
-    let feePercentBigInt = BigNumber.from(feePercent);
+
+    // Ensure feePercent fits within the FEE_PERCENT_IN_BASIS_POINTS_MASK range
+    let feePercentBigInt = BigNumber.from(feePercent).and(
+      FEE_PERCENT_IN_BASIS_POINTS_MASK,
+    );
+
+    // Apply flags using bitwise OR with the appropriate masks
     if (takeSurplus) {
-      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(95));
+      feePercentBigInt = feePercentBigInt.or(IS_TAKE_SURPLUS_MASK);
     }
     if (referral) {
-      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(94));
+      feePercentBigInt = feePercentBigInt.or(IS_REFERRAL_MASK);
     }
-    if (skipWhitelistFlag) {
-      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(93));
+    if (skipBlacklist) {
+      feePercentBigInt = feePercentBigInt.or(IS_SKIP_BLACKLIST_MASK);
     }
+
+    // Combine partnerBigInt and feePercentBigInt
     return partnerBigInt.or(feePercentBigInt).toString();
   }
 }
