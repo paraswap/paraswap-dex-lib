@@ -101,7 +101,7 @@ describe('AaveV2 E2E', () => {
       }),
     );
   });
-  describe('AaveV2 POLYGON', () => {
+  describe('AaveV2 POLYGON V6', () => {
     const dexKey = 'AaveV2';
     const network = Network.POLYGON;
     const tokens = Tokens[network];
@@ -125,7 +125,7 @@ describe('AaveV2 E2E', () => {
 
     const contractMethods: { [side in SwapSide]: ContractMethod[] } = {
       [SwapSide.SELL]: [
-        'swapExactAmountIn' as any,
+        ContractMethod.swapExactAmountIn,
         // ContractMethod.genericSell,
         // ContractMethod.simpleSwap,
         // ContractMethod.multiSwap,

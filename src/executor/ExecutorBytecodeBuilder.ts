@@ -168,8 +168,7 @@ export abstract class ExecutorBytecodeBuilder {
         hexZeroPad(hexlify(28 + 4), 4), // final unwrap calldata size bytes28(0) + bytes4(0)
         hexZeroPad(hexlify(0), 2), // fromAmountPos
         hexZeroPad(hexlify(0), 2), // destTokenPos
-        hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
-        hexZeroPad(hexlify(SpecialDex.SEND_NATIVE), 1), // special
+        hexZeroPad(hexlify(SpecialDex.SEND_NATIVE), 2), // special
         hexZeroPad(hexlify(9), 2), // flag
         ZEROS_32_BYTES, // bytes28(0) + bytes4(0)
       ],

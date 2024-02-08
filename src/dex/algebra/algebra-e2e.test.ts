@@ -80,7 +80,7 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        'swapExactAmountIn' as any,
+        ContractMethod.swapExactAmountIn,
         // ContractMethod.simpleSwap,
         // ContractMethod.multiSwap,
         // ContractMethod.megaSwap,
