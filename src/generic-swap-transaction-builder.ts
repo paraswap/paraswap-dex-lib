@@ -3,6 +3,7 @@ import { BigNumber } from 'ethers';
 import {
   ETHER_ADDRESS,
   FEE_PERCENT_IN_BASIS_POINTS_MASK,
+  IS_CAP_SURPLUS_MASK,
   IS_REFERRAL_MASK,
   IS_SKIP_BLACKLIST_MASK,
   IS_TAKE_SURPLUS_MASK,
@@ -364,7 +365,7 @@ export class GenericSwapTransactionBuilder {
     const partnerAndFee = referrerAddress
       ? this.packPartnerAndFeeData(
           referrerAddress,
-          encodeFeePercentForReferrer(priceRoute.side),
+          '0',
           takeSurplus,
           true, // it's a referral
           skipBlacklist,
@@ -478,25 +479,42 @@ export class GenericSwapTransactionBuilder {
     skipBlacklist: boolean,
   ): string {
     // Partner address shifted left to make room for flags and fee percent
-    const partnerBigInt = BigNumber.from(partner).shl(96);
+    const partialFeeCodeWithPartnerAddress = BigNumber.from(partner).shl(96);
+    let partialFeeCodeWithBitFlags = BigNumber.from(0); // default 0 is safe if none the conditions pass
 
-    // Ensure feePercent fits within the FEE_PERCENT_IN_BASIS_POINTS_MASK range
-    let feePercentBigInt = BigNumber.from(feePercent).and(
-      FEE_PERCENT_IN_BASIS_POINTS_MASK,
-    );
+    const isFixedFees = !BigNumber.from(feePercent).isZero();
 
-    // Apply flags using bitwise OR with the appropriate masks
-    if (takeSurplus) {
-      feePercentBigInt = feePercentBigInt.or(IS_TAKE_SURPLUS_MASK);
+    if (isFixedFees) {
+      // Ensure feePercent fits within the FEE_PERCENT_IN_BASIS_POINTS_MASK range
+      partialFeeCodeWithBitFlags = BigNumber.from(feePercent).and(
+        FEE_PERCENT_IN_BASIS_POINTS_MASK,
+      );
+
+      // Apply flags using bitwise OR with the appropriate masks
+    } else {
+      partialFeeCodeWithBitFlags =
+        partialFeeCodeWithBitFlags.or(IS_CAP_SURPLUS_MASK);
+
+      if (takeSurplus) {
+        partialFeeCodeWithBitFlags =
+          partialFeeCodeWithBitFlags.or(IS_TAKE_SURPLUS_MASK);
+      } else if (referral) {
+        partialFeeCodeWithBitFlags =
+          partialFeeCodeWithBitFlags.or(IS_REFERRAL_MASK);
+      }
     }
-    if (referral) {
-      feePercentBigInt = feePercentBigInt.or(IS_REFERRAL_MASK);
-    }
+
     if (skipBlacklist) {
-      feePercentBigInt = feePercentBigInt.or(IS_SKIP_BLACKLIST_MASK);
+      partialFeeCodeWithBitFlags = partialFeeCodeWithBitFlags.or(
+        IS_SKIP_BLACKLIST_MASK,
+      );
     }
 
     // Combine partnerBigInt and feePercentBigInt
-    return partnerBigInt.or(feePercentBigInt).toString();
+    const feeCode = partialFeeCodeWithPartnerAddress.or(
+      partialFeeCodeWithBitFlags,
+    );
+
+    return feeCode.toString();
   }
 }
