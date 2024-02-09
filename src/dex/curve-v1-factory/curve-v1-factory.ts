@@ -956,6 +956,7 @@ export class CurveV1Factory
     ];
   }
 
+  // FIXME: need v6 function
   getDirectParam(
     srcToken: Address,
     destToken: Address,

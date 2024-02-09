@@ -1349,12 +1349,12 @@ export class BalancerV2
       true, // v6 call
     );
 
-    const approveFlag = !!data.isApproved;
+    const isApproved = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
 
     const swapParams: BalancerV2DirectParamV6 = [
       quotedAmount,
       metadata,
-      this.encodeBeneficiaryAndApproveFlag(beneficiary, approveFlag),
+      this.encodeBeneficiaryAndApproveFlag(beneficiary, !isApproved),
     ];
 
     const encodeParams: BalancerV2DirectParamV6Swap = [

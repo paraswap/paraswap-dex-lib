@@ -1011,10 +1011,12 @@ export class CurveV1
     }
     assert(side === SwapSide.SELL, 'Buy not supported');
 
-    let isApproved: boolean = !!data.isApproved;
-    if (data.isApproved === undefined) {
-      this.logger.warn(`isApproved is undefined, defaulting to false`);
-    }
+    let isApproved: boolean = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
 
     const swapParams: DirectCurveV1ParamV6 = [
       packCurveData(
@@ -1031,10 +1033,7 @@ export class CurveV1
       fromAmount,
       toAmount,
       quotedAmount,
-      hexConcat([
-        hexZeroPad(uuidToBytes16(uuid), 16),
-        hexZeroPad(hexlify(blockNumber), 16),
-      ]),
+      metadata,
       beneficiary,
     ];
 
