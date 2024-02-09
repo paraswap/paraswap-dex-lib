@@ -889,10 +889,7 @@ export class UniswapV2
       exchangeData,
       targetExchange: recipient,
       specialDexFlag: SpecialDex.SWAP_ON_UNISWAP_V2_FORK,
-      transferData: {
-        to: data.pools[0].address,
-        srcToken: srcToken,
-      },
+      transferSrcTokenBeforeSwap: data.pools[0].address,
       skipApprove: true,
     };
   }

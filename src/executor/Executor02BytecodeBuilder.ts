@@ -207,8 +207,12 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData, specialDexFlag, targetExchange, transferData } =
-      exchangeParam;
+    let {
+      exchangeData,
+      specialDexFlag,
+      targetExchange,
+      transferSrcTokenBeforeSwap,
+    } = exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -240,13 +244,15 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     let data = [];
     let calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES;
 
-    if (transferData) {
+    if (transferSrcTokenBeforeSwap) {
       const transferCallData = this.buildTransferCallData(
         this.erc20Interface.encodeFunctionData('transfer', [
-          transferData.to,
+          transferSrcTokenBeforeSwap,
           swapExchange.srcAmount,
         ]),
-        transferData.srcToken, // will be wrapped for dexes that require it; swap.srcToken is not wrapped
+        isETHAddress(swap.srcToken)
+          ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+          : swap.srcToken.toLowerCase(),
       );
       data.push(transferCallData);
       calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND;

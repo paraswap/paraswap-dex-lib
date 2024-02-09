@@ -165,10 +165,7 @@ export type DexExchangeParam = {
   dexFuncHasRecipient: boolean;
   dexFuncHasDestToken: boolean;
   specialDexFlag?: SpecialDex;
-  transferData?: {
-    to: Address;
-    srcToken: Address;
-  };
+  transferSrcTokenBeforeSwap?: Address;
   skipApprove?: boolean;
 };
 
