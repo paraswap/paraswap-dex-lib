@@ -62,6 +62,7 @@ import {
   getDexKeysWithNetwork,
   interpolate,
   isDestTokenTransferFeeToBeExchanged,
+  isETHAddress,
   isSrcTokenTransferFeeToBeExchanged,
   Utils,
   uuidToBytes16,
@@ -84,10 +85,16 @@ import {
   CurveSwapFunctions,
   CurveV1SwapType,
   DirectCurveV1Param,
+  DirectCurveV1ParamV6,
+  CurveV1DirectSwap,
 } from './types';
 import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
-import { DIRECT_METHOD_NAME } from './constants';
+import { DIRECT_METHOD_NAME, DIRECT_METHOD_NAME_V6 } from './constants';
+import { packCurveData } from '../../lib/curve/encoder';
+import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
+import { encodeCurveAssets } from './packer';
+import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -98,10 +105,11 @@ const coder = new AbiCoder();
 
 export class CurveV1
   extends SimpleExchange
-  implements IDex<CurveV1Data, DirectCurveV1Param>
+  implements IDex<CurveV1Data, DirectCurveV1Param | CurveV1DirectSwap>
 {
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
+  augustusV6Interface: Interface;
 
   eventPools = new Array<CurvePool | CurveMetapool>();
   public poolInterface: Interface;
@@ -196,6 +204,7 @@ export class CurveV1
     this.logger = dexHelper.getLogger(dexKey);
 
     this.poolInterface = new Interface(StableSwapBBTC as any);
+    this.augustusV6Interface = new Interface(AugustusV6ABI);
   }
 
   protected getPoolByAddress(address: Address) {
@@ -894,6 +903,7 @@ export class CurveV1
     try {
       this.erc20Contract.options.address =
         this.dexHelper.config.wrapETH(srcToken).address;
+      // TODO-v6: same as for BalancerV2, we need to check if the allowance according to version
       const allowance = await this.erc20Contract.methods
         .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
         .call(undefined, 'latest');
@@ -979,6 +989,72 @@ export class CurveV1
       encoder,
       networkFee: '0',
     };
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: CurveV1Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod?: string,
+  ) {
+    if (contractMethod !== DIRECT_METHOD_NAME_V6) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    let isApproved: boolean = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const swapParams: DirectCurveV1ParamV6 = [
+      packCurveData(
+        data.exchange,
+        !isApproved, // approve flag, if not approved then set to true
+        isETHAddress(destToken) ? 0 : isETHAddress(srcToken) ? 3 : 0,
+        data.underlyingSwap
+          ? CurveV1SwapType.EXCHANGE_UNDERLYING
+          : CurveV1SwapType.EXCHANGE,
+      ).toString(),
+      encodeCurveAssets(data.i, data.j).toString(),
+      srcToken,
+      destToken,
+      fromAmount,
+      toAmount,
+      quotedAmount,
+      metadata,
+      beneficiary,
+    ];
+
+    const encodeParams: CurveV1DirectSwap = [swapParams, partnerAndFee, permit];
+
+    const encoder = (...params: CurveV1DirectSwap) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        DIRECT_METHOD_NAME_V6,
+        [...params],
+      );
+    };
+
+    return {
+      encoder,
+      params: encodeParams,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DIRECT_METHOD_NAME_V6];
   }
 
   getDexParam(

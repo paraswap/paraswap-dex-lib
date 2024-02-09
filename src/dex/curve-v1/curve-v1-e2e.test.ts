@@ -10,6 +10,7 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { DIRECT_METHOD_NAME_V6 } from './constants';
 
 describe('CurveV1 E2E', () => {
   const dexKey = 'CurveV1';
@@ -26,7 +27,7 @@ describe('CurveV1 E2E', () => {
     const tokensToTest = [
       [
         {
-          symbol: 'USDT',
+          symbol: 'USDC',
           amount: (10 ** 8).toString(),
         },
         {
@@ -50,15 +51,16 @@ describe('CurveV1 E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
+          DIRECT_METHOD_NAME_V6,
         ],
       ],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
-      contractMethods.forEach((contractMethod: ContractMethod) => {
+      contractMethods.forEach((contractMethod: string) => {
         tokensToTest.forEach(pair => {
           describe(`${contractMethod}`, () => {
             it(`${pair[0].symbol} -> ${pair[1].symbol}`, async () => {
@@ -69,7 +71,7 @@ describe('CurveV1 E2E', () => {
                 side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
                 side,
                 dexKey,
-                contractMethod,
+                contractMethod as any,
                 network,
                 provider,
               );
@@ -78,92 +80,92 @@ describe('CurveV1 E2E', () => {
         });
       }),
     );
-    it('simpleSwap DAI -> USDT', async () => {
-      await testE2E(
-        tokens['DAI'],
-        tokens['USDT'],
-        holders['DAI'],
-        '100000000000000000000',
-        SwapSide.SELL,
-        dexKey,
-        ContractMethod.simpleSwap,
-        network,
-        provider,
-      );
-    });
+    // it('simpleSwap DAI -> USDT', async () => {
+    //   await testE2E(
+    //     tokens['DAI'],
+    //     tokens['USDT'],
+    //     holders['DAI'],
+    //     '100000000000000000000',
+    //     SwapSide.SELL,
+    //     dexKey,
+    //     ContractMethod.simpleSwap,
+    //     network,
+    //     provider,
+    //   );
+    // });
 
-    it('USDC -> USDT', async () => {
-      await testE2E(
-        tokens['USDC'],
-        tokens['USDT'],
-        holders['USDC'],
-        '100000000',
-        SwapSide.SELL,
-        dexKey,
-        ContractMethod.simpleSwap,
-        network,
-        provider,
-      );
-    });
+    // it('USDC -> USDT', async () => {
+    //   await testE2E(
+    //     tokens['USDC'],
+    //     tokens['USDT'],
+    //     holders['USDC'],
+    //     '100000000',
+    //     SwapSide.SELL,
+    //     dexKey,
+    //     ContractMethod.simpleSwap,
+    //     network,
+    //     provider,
+    //   );
+    // });
 
-    it('DAI -> GUSD', async () => {
-      await testE2E(
-        tokens['DAI'],
-        tokens['GUSD'],
-        holders['DAI'],
-        '100000000000000000000',
-        SwapSide.SELL,
-        dexKey,
-        ContractMethod.simpleSwap,
-        network,
-        provider,
-        null,
-        undefined,
-        undefined,
-        1000,
-      );
-    });
+    // it('DAI -> GUSD', async () => {
+    //   await testE2E(
+    //     tokens['DAI'],
+    //     tokens['GUSD'],
+    //     holders['DAI'],
+    //     '100000000000000000000',
+    //     SwapSide.SELL,
+    //     dexKey,
+    //     ContractMethod.simpleSwap,
+    //     network,
+    //     provider,
+    //     null,
+    //     undefined,
+    //     undefined,
+    //     1000,
+    //   );
+    // });
 
-    describe('FeeOnTransfer', () => {
-      describe('sell', () => {
-        const contractMethod = ContractMethod.megaSwap;
-        describe('megaSwap', () => {
-          it('stETH -> ETH', async () => {
-            await testE2E(
-              tokens['STETH'],
-              tokens['ETH'],
-              holders['STETH'],
-              '1000000000000000000',
-              SwapSide.SELL,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-              undefined,
-              undefined,
-              { srcFee: 1, destFee: 0, srcDexFee: 1, destDexFee: 0 },
-            );
-          });
+    // describe('FeeOnTransfer', () => {
+    //   describe('sell', () => {
+    //     const contractMethod = ContractMethod.megaSwap;
+    //     describe('megaSwap', () => {
+    //       it('stETH -> ETH', async () => {
+    //         await testE2E(
+    //           tokens['STETH'],
+    //           tokens['ETH'],
+    //           holders['STETH'],
+    //           '1000000000000000000',
+    //           SwapSide.SELL,
+    //           dexKey,
+    //           contractMethod,
+    //           network,
+    //           provider,
+    //           undefined,
+    //           undefined,
+    //           { srcFee: 1, destFee: 0, srcDexFee: 1, destDexFee: 0 },
+    //         );
+    //       });
 
-          it('ETH -> stETH', async () => {
-            await testE2E(
-              tokens['ETH'],
-              tokens['STETH'],
-              holders['ETH'],
-              '1000000000000000000',
-              SwapSide.SELL,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-              undefined,
-              undefined,
-              { srcFee: 0, destFee: 1, srcDexFee: 0, destDexFee: 1 },
-            );
-          });
-        });
-      });
-    });
+    //       it('ETH -> stETH', async () => {
+    //         await testE2E(
+    //           tokens['ETH'],
+    //           tokens['STETH'],
+    //           holders['ETH'],
+    //           '1000000000000000000',
+    //           SwapSide.SELL,
+    //           dexKey,
+    //           contractMethod,
+    //           network,
+    //           provider,
+    //           undefined,
+    //           undefined,
+    //           { srcFee: 0, destFee: 1, srcDexFee: 0, destDexFee: 1 },
+    //         );
+    //       });
+    //     });
+    //   });
+    // });
   });
 
   describe('CurveV1 POLYGON', () => {

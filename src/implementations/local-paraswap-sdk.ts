@@ -200,12 +200,12 @@ export class LocalParaswapSDK implements IParaSwapSDK {
 
     return {
       ...optimizedRate,
+      version: ParaSwapVersion.V6,
       hmac: '0',
       srcUSD: '0',
       destUSD: '0',
       contractMethod,
       partnerFee: 0,
-      version: ParaSwapVersion.V6,
     };
   }
 
@@ -257,6 +257,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                           isDirectMethod: DirectContractMethods.includes(
                             contractMethod as ContractMethod,
                           ),
+                          version: priceRoute.version,
                         },
                       );
 

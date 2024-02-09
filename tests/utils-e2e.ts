@@ -570,7 +570,11 @@ export async function testE2E(
         }, Difference: ${parseInt(priceRoute.gasCost) - parseInt(gasUsed)}`,
       );
     }
-    console.log(`Tenderly URL: ${swapTx!.url}`);
+    console.log(
+      `${swapSide}: ${srcToken.address} -> ${destToken.address} (${
+        priceRoute.contractMethod
+      })\nTenderly URL: ${swapTx!.url}`,
+    );
     expect(swapTx!.success).toEqual(true);
   } finally {
     if (paraswap.releaseResources) {

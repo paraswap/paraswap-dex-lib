@@ -6,6 +6,8 @@ import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { directUniswapFunctionNameV6 } from './uniswap-v2';
+import { UniswapV2FunctionsV6 } from './types';
 
 describe('UniswapV2 E2E Mainnet', () => {
   const network = Network.MAINNET;
@@ -650,6 +652,246 @@ describe('UniswapV2 E2E Mainnet', () => {
           SwapSide.SELL,
           dexKey,
           ContractMethod.megaSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('V6_swapExactAmountInOnUniswapV2', () => {
+      it('WETH -> WBTC', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.WBTC,
+          holders.WETH,
+          '7000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('WETH (amountIn=1000000000000) -> WBTC', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.WBTC,
+          holders.WETH,
+          '1000000000000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('WBTC -> WETH', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.WETH,
+          holders.WBTC,
+          '100000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> WBTC', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.WBTC,
+          holders.ETH,
+          '7000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('WBTC -> ETH', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.ETH,
+          holders.WBTC,
+          '100000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('USDC -> WBTC', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WBTC,
+          holders.USDC,
+          '200000000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('WBTC -> USDC', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.USDC,
+          holders.WBTC,
+          '100000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('USDT -> USDC', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
+          '100000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+      it('USDC -> USDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '100000',
+          SwapSide.SELL,
+          dexKey,
+          UniswapV2FunctionsV6.swap as any,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('V6_swapExactAmountOutOnUniswapV2', () => {
+      it('WETH -> WBTC', async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens.WBTC,
+          holders.WETH,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('WBTC -> WETH', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.WETH,
+          holders.WBTC,
+          '7000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('WBTC -> WETH (amountOut=1000000)', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.WETH,
+          holders.WBTC,
+          '7000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('ETH -> WBTC', async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens.WBTC,
+          holders.ETH,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('WBTC -> ETH ', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.ETH,
+          holders.WBTC,
+          '7000000000000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('USDC -> WBTC', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.WBTC,
+          holders.USDC,
+          '20000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('WBTC -> USDC', async () => {
+        await testE2E(
+          tokens.WBTC,
+          tokens.USDC,
+          holders.WBTC,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('USDT -> USDC', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.USDC,
+          holders.USDT,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
+          network,
+          provider,
+        );
+      });
+      it('USDC -> USDT', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.USDT,
+          holders.USDC,
+          '1000000',
+          SwapSide.BUY,
+          dexKey,
+          UniswapV2FunctionsV6.buy as any,
           network,
           provider,
         );

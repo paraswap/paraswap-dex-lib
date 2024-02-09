@@ -23,6 +23,10 @@ export const Tokens: {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    BAT: {
+      address: '0x0d8775f648430679a709e98d2b0cb6250d2887ef',
+      decimals: 18,
+    },
     REQ: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
@@ -1074,7 +1078,7 @@ export const Holders: {
     tBTC: '0xC25099792E9349C7DD09759744ea681C7de2cb66',
     HBTC: '0x52885fF60Cd7Ae081e0665968C457DdACF888C90',
     GUSD: '0x550Def3DB74F583c7A1eDf2DFFE84a7398850D0c',
-    LINK: '0x98c63b7b319dfbdf3d811530f2ab9dfe4983af9d',
+    LINK: '0x8d4169cCf3aD88EaFBB09580e7441D3eD2b4B922',
     ADAIv1: '0x3021026e4ff227571a5a563ad19ea657c7027e59',
     CETH: '0x712d0f306956a6a4b4f9319ad9b9de48c5345996',
     CDAI: '0xab4ce310054a11328685ece1043211b68ba5d082',

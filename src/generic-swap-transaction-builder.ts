@@ -1,8 +1,9 @@
 import { Address, DexExchangeParam, OptimalRate, TxObject } from './types';
+import { BigNumber } from 'ethers';
 import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
-import AugustusV6ABI from './abi/AugustusV6.abi.json';
+import AugustusV6ABI from './abi/augustus-v6/ABI.json';
 import {
   encodeFeePercent,
   encodeFeePercentForReferrer,
@@ -265,6 +266,90 @@ export class GenericSwapTransactionBuilder {
     };
   }
 
+  // TODO: Improve
+  protected async _buildDirect(
+    priceRoute: OptimalRate,
+    minMaxAmount: string,
+    referrerAddress: Address | undefined,
+    partnerAddress: Address,
+    partnerFeePercent: string,
+    takeSurplus: boolean,
+    permit: string,
+    uuid: string,
+    beneficiary: Address,
+  ) {
+    if (
+      priceRoute.bestRoute.length !== 1 ||
+      priceRoute.bestRoute[0].percent !== 100 ||
+      priceRoute.bestRoute[0].swaps.length !== 1 ||
+      priceRoute.bestRoute[0].swaps[0].swapExchanges.length !== 1 ||
+      priceRoute.bestRoute[0].swaps[0].swapExchanges[0].percent !== 100
+    )
+      throw new Error(`DirectSwap invalid bestRoute`);
+
+    const dexName = priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange;
+    if (!dexName) throw new Error(`Invalid dex name`);
+
+    const dex = this.dexAdapterService.getTxBuilderDexByKey(dexName);
+    if (!dex) throw new Error(`Failed to find dex : ${dexName}`);
+
+    if (!dex.getDirectParamV6)
+      throw new Error(
+        `Invalid DEX: dex should have getDirectParamV6: ${dexName}`,
+      );
+
+    const swapExchange = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];
+
+    const srcAmount =
+      priceRoute.side === SwapSide.SELL ? swapExchange.srcAmount : minMaxAmount;
+    const destAmount =
+      priceRoute.side === SwapSide.SELL
+        ? minMaxAmount
+        : swapExchange.destAmount;
+
+    const expectedAmount =
+      priceRoute.side === SwapSide.SELL
+        ? priceRoute.destAmount
+        : priceRoute.srcAmount;
+
+    // const [partner, feePercent] = referrerAddress
+    //   ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
+    //   : [
+    //       encodePartnerAddressForFeeLogic({
+    //         partnerAddress,
+    //         partnerFeePercent,
+    //         takeSurplus,
+    //       }),
+    //       encodeFeePercent(partnerFeePercent, takeSurplus, priceRoute.side),
+    //     ];
+    // const partnerAndFee = hexConcat([partner, feePercent]);
+
+    // TODO: check & improve
+    const partnerAndFee = this.packPartnerAndFeeData(
+      partnerAddress,
+      partnerFeePercent,
+      takeSurplus,
+      false,
+      false,
+    );
+
+    return dex.getDirectParamV6!(
+      priceRoute.srcToken,
+      priceRoute.destToken,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      swapExchange.data,
+      priceRoute.side,
+      permit,
+      uuid,
+      partnerAndFee,
+      beneficiary,
+      priceRoute.blockNumber,
+      priceRoute.contractMethod,
+    );
+  }
+
   public async build({
     priceRoute,
     minMaxAmount,
@@ -301,19 +386,38 @@ export class GenericSwapTransactionBuilder {
     const _beneficiary =
       beneficiary && beneficiary !== NULL_ADDRESS ? beneficiary : userAddress;
 
-    const { encoder, params } = await this._build(
-      priceRoute,
-      minMaxAmount,
-      userAddress,
-      referrerAddress,
-      partnerAddress,
-      partnerFeePercent,
-      takeSurplus ?? false,
-      _beneficiary,
-      permit || '0x',
-      deadline,
-      uuid,
-    );
+    let encoder: (...params: any[]) => string;
+    let params: (string | string[])[];
+
+    if (
+      this.dexAdapterService.isDirectFunctionNameV6(priceRoute.contractMethod)
+    ) {
+      ({ encoder, params } = await this._buildDirect(
+        priceRoute,
+        minMaxAmount,
+        referrerAddress,
+        partnerAddress,
+        partnerFeePercent,
+        takeSurplus ?? false,
+        permit || '0x',
+        uuid,
+        _beneficiary,
+      ));
+    } else {
+      ({ encoder, params } = await this._build(
+        priceRoute,
+        minMaxAmount,
+        userAddress,
+        referrerAddress,
+        partnerAddress,
+        partnerFeePercent,
+        takeSurplus ?? false,
+        _beneficiary,
+        permit || '0x',
+        deadline,
+        uuid,
+      ));
+    }
 
     const value = (
       priceRoute.srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase()
@@ -334,5 +438,26 @@ export class GenericSwapTransactionBuilder {
       maxFeePerGas,
       maxPriorityFeePerGas,
     };
+  }
+
+  private packPartnerAndFeeData(
+    partner: string,
+    feePercent: string,
+    takeSurplus: boolean,
+    referral: boolean,
+    skipWhitelistFlag: boolean,
+  ): string {
+    const partnerBigInt = BigNumber.from(partner).shl(96);
+    let feePercentBigInt = BigNumber.from(feePercent);
+    if (takeSurplus) {
+      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(95));
+    }
+    if (referral) {
+      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(94));
+    }
+    if (skipWhitelistFlag) {
+      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(93));
+    }
+    return partnerBigInt.or(feePercentBigInt).toString();
   }
 }

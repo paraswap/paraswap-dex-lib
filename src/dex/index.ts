@@ -1,5 +1,5 @@
 import { UnoptimizedRate } from '../types';
-import { CurveV2 } from './curve-v2';
+import { CurveV2 } from './curve-v2/curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
@@ -172,6 +172,7 @@ export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
 
 interface IGetDirectFunctionName {
   getDirectFunctionName?(): string[];
+  getDirectFunctionNameV6?(): string[];
 }
 
 export class DexAdapterService {
@@ -179,6 +180,7 @@ export class DexAdapterService {
     [key: string]: LegacyDexConstructor | DexContructor<any, any, any>;
   } = {};
   directFunctionsNames: string[];
+  directFunctionsNamesV6: string[];
   dexInstances: {
     [key: string]: IDexTxBuilder<any, any> | IDex<any, any, any>;
   } = {};
@@ -263,6 +265,16 @@ export class DexAdapterService {
       .filter(x => !!x)
       .map(v => v.toLowerCase());
 
+    this.directFunctionsNamesV6 = [...LegacyDexes, ...Dexes]
+      .flatMap(dexAdapter => {
+        const _dexAdapter = dexAdapter as IGetDirectFunctionName;
+        return _dexAdapter.getDirectFunctionNameV6
+          ? _dexAdapter.getDirectFunctionNameV6()
+          : [];
+      })
+      .filter(x => !!x)
+      .map(v => v.toLowerCase());
+
     this.uniswapV2Alias =
       this.network in UniswapV2Alias
         ? UniswapV2Alias[this.network].toLowerCase()
@@ -289,6 +301,10 @@ export class DexAdapterService {
 
   isDirectFunctionName(functionName: string): boolean {
     return this.directFunctionsNames.includes(functionName.toLowerCase());
+  }
+
+  isDirectFunctionNameV6(functionName: string): boolean {
+    return this.directFunctionsNamesV6.includes(functionName.toLowerCase());
   }
 
   getAllDexKeys() {
