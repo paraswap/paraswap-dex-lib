@@ -140,19 +140,20 @@ describe('UniswapV2 E2E Mainnet', () => {
           provider,
         );
       });
-      it('EX2: USDT -> USDC', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.USDC,
-          holders.USDT,
-          '1000000000000',
-          SwapSide.SELL,
-          [dexKey, 'BalancerV2' /* , 'TraderJoeV2.1'  'SolidlyV3'*/],
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
+      // TODO: Update: goes through balancer only
+      // it('EX2: USDT -> USDC', async () => {
+      //   await testE2E(
+      //     tokens.USDT,
+      //     tokens.USDC,
+      //     holders.USDT,
+      //     '1000000000000',
+      //     SwapSide.SELL,
+      //     [dexKey, 'BalancerV2' /* , 'TraderJoeV2.1'  'SolidlyV3'*/],
+      //     ContractMethod.multiSwap,
+      //     network,
+      //     provider,
+      //   );
+      // });
     });
 
     describe('Multiswap', () => {

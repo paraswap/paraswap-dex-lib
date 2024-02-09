@@ -165,8 +165,10 @@ export type DexExchangeParam = {
   dexFuncHasRecipient: boolean;
   dexFuncHasDestToken: boolean;
   specialDexFlag?: SpecialDex;
-  generatePrependCalldata?: (flag: Flag) => string;
-  getCustomTarget?: (isLastSwap: boolean, executor: Executors) => string;
+  transferData?: {
+    to: Address;
+    srcToken: Address;
+  };
   skipApprove?: boolean;
 };
 

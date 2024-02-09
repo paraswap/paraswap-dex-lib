@@ -198,6 +198,7 @@ export class AaveV1
     );
   }
 
+  // DEAD
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -223,7 +224,6 @@ export class AaveV1
         AaveV1Functions.deposit,
         [srcToken, amount, REF_CODE],
         AAVE_LENDING_POOL,
-        // AAVE_PROXY,
       ];
     })();
 
@@ -238,11 +238,6 @@ export class AaveV1
       dexFuncHasDestToken: false, // TODO: ??
       exchangeData,
       targetExchange: swapCallee,
-      // TODO: Check
-      getCustomTarget: (isLastSwap, executor) =>
-        (isLastSwap
-          ? this.dexHelper.config.data.augustusV6Address
-          : this.dexHelper.config.data.executorsAddresses![executor]) || '',
     };
   }
 
