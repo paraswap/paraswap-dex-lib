@@ -36,7 +36,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     index: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
-    const { srcToken, destToken } = priceRoute.bestRoute[0].swaps[index];
+    const { srcToken, destToken } = priceRoute.bestRoute[0].swaps[0];
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
@@ -102,6 +102,8 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       flags.dexes[index] % 4 !== 1 && // not sendEth
       !isETHAddress(swap.srcToken)
     ) {
+      // TODO: as we give approve for MAX_UINT and approve for current targetExchange was given
+      // in previous paths, then for current path we can skip it
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
         MAX_UINT,
@@ -121,8 +123,10 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     if (
       maybeWethCallData?.deposit &&
+      isETHAddress(swap.srcToken) &&
+      curExchangeParam.needWrapNative
       // do deposit only for the first path with wrapping
-      exchangeParams.findIndex(p => p.needWrapNative) === index
+      // exchangeParams.findIndex(p => p.needWrapNative) === index
     ) {
       const approveWethCalldata = this.buildApproveCallData(
         this.erc20Interface.encodeFunctionData('approve', [

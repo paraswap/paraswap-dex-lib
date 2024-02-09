@@ -25,7 +25,8 @@ export class ExecutorDetector {
       //   Executors.TWO,
     },
     [SwapSide.BUY]: {
-      [RouteExecutionType.SINGLE_STEP]: Executors.THREE, // simpleBuy via Executor01
+      [RouteExecutionType.SINGLE_STEP]: Executors.THREE, // simpleBuy via Executor03
+      [RouteExecutionType.VERTICAL_BRANCH]: Executors.THREE, // simpleBuy via Executor03
     },
   };
 
