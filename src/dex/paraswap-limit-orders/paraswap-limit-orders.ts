@@ -13,6 +13,8 @@ import {
   OptimalSwapExchange,
   ExchangeTxInfo,
   PreprocessTransactionOptions,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -365,6 +367,39 @@ export class ParaSwapLimitOrders
       swapData,
       this.augustusRFQAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: ParaSwapLimitOrdersData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { orderInfos } = data;
+
+    if (orderInfos === null) {
+      throw new Error(
+        `Error_${this.dexKey}_getAdapterParam payload is not received. It may be because of` +
+          `not calling preProcessTransaction before`,
+      );
+    }
+
+    const isSell = side === SwapSide.SELL;
+    const swapData = this.rfqIface.encodeFunctionData(
+      isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
+      [orderInfos, isSell ? srcAmount : destAmount, this.augustusAddress],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: this.augustusRFQAddress,
+    };
   }
 
   async getTopPoolsForToken(

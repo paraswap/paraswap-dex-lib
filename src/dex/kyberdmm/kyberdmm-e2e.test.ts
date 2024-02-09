@@ -92,7 +92,7 @@ describe('KyberDmm E2E', () => {
     );
   });
 
-  describe('KyberDmm POLYGON', () => {
+  describe('KyberDmm POLYGON_V6', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -113,12 +113,13 @@ describe('KyberDmm E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      // [SwapSide.BUY, [ContractMethod.simpleBuy]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>

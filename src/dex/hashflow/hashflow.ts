@@ -23,9 +23,11 @@ import { IDex } from '../../dex/idex';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   ExchangeTxInfo,
   Logger,
+  NumberAsString,
   OptimalSwapExchange,
   PoolLiquidity,
   PoolPrices,
@@ -888,6 +890,50 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       swapData,
       this.routerAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: HashflowData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { quoteData, signature } = data;
+
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    // Encode here the transaction arguments
+    const exchangeData = this.routerInterface.encodeFunctionData('tradeRFQT', [
+      [
+        quoteData.pool,
+        quoteData.externalAccount ?? ZERO_ADDRESS,
+        quoteData.trader,
+        quoteData.effectiveTrader ?? quoteData.trader,
+        quoteData.baseToken,
+        quoteData.quoteToken,
+        quoteData.baseTokenAmount,
+        quoteData.baseTokenAmount,
+        quoteData.quoteTokenAmount,
+        quoteData.quoteExpiry,
+        quoteData.nonce ?? 0,
+        quoteData.txid,
+        signature,
+      ],
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData,
+      targetExchange: this.routerAddress,
+    };
   }
 
   extractQuoteToken = (pair: {

@@ -1116,7 +1116,7 @@ export const Holders: {
     DAI: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
     WETH: '0x62ac55b745f9b08f1a81dcbbe630277095cf4be1',
     WMATIC: '0x016ba20db4b681f83e5fbbe0c433c96268ab5815',
-    AMWMATIC: '0x8832924854e3Cedb0a6Abf372e6CCFF9F7654332',
+    AMWMATIC: '0x975779102B2A82384f872EE759801DB5204CE331',
     USDC: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     POPS: '0x2693b57ee51f4e2a26dfb339a911fa8731061f49',
     MUST: '0x9f2a409848fb9b7bd058b24a23e8dbf1e166a109',
@@ -1126,7 +1126,7 @@ export const Holders: {
     WBTC: '0xdc9232e2df177d7a12fdff6ecbab114e2231198d',
     AMWETH: '0x6f1c28c40b5fed4fb546f85959ae2f7c16365cad',
     KNC: '0x41Af7fd16dFC29bdA8D8aAA4CeFfC0E8046992eC',
-    jEUR: '0x4f15818dc2Ae5FA84D519D88Cb2CAAe9cd18EE6d',
+    jEUR: '0x807B465fC3f72aF3AAfda74480CA7E4E55964cd3',
     aUSDT: '0x027ffd3c119567e85998f4e6b9c3d83d5702660c',
     aPolUSDT: '0x941da3d6759147736456cee36647213183079337',
     aPolWMATIC: '0xC948eB5205bDE3e18CAc4969d6ad3a56ba7B2347',
@@ -1134,7 +1134,7 @@ export const Holders: {
     HANZO: '0x8a151b6ec99c7b90b342ab401d511b480309b220',
     RVLT: '0x815f87ca3db2b9491115a7769aeacb140361c5a9',
     stMATIC: '0x6725b8cd3cdbc82a6044689a8bbc64a915d200e7',
-    axlUSDC: '0xe743a49f04f2f77eb2d3b753ae3ad599de8cea84',
+    axlUSDC: '0x44034e2261eDE365B20Eb18B109Ca3698C19ddc9',
     deUSDC: '0x94d5ead1f80cf0b4d3480ab59dff16d47c93e9fe',
     amUSDT: '0x832b11846a27b3ba25d68ae80c39fab155d18c49',
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
@@ -1310,4 +1310,15 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
   [Network.BASE]: 'ETH',
+};
+
+export const WrappedNativeTokenSymbols: { [network: number]: string } = {
+  [Network.MAINNET]: 'WETH',
+  [Network.POLYGON]: 'WMATIC',
+  [Network.BSC]: 'WBNB',
+  [Network.AVALANCHE]: 'WAVAX',
+  [Network.FANTOM]: 'WFTM',
+  [Network.ARBITRUM]: 'WETH',
+  [Network.OPTIMISM]: 'WETH',
+  [Network.BASE]: 'WETH',
 };

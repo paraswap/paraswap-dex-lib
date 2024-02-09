@@ -3,6 +3,7 @@ import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangeTxInfo,
   NumberAsString,
   PreprocessTransactionOptions,
@@ -314,5 +315,60 @@ export class CurveV2
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: CurveV2Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, i, j, originalPoolAddress, swapType } = data;
+
+    const args: CurveV2Param | CurveV2ParamsForGenericFactoryZap =
+      swapType === CurveV2SwapType.EXCHANGE_GENERIC_FACTORY_ZAP
+        ? [
+            originalPoolAddress,
+            i.toString(),
+            j.toString(),
+            srcAmount,
+            this.minConversionRate,
+          ]
+        : [i.toString(), j.toString(), srcAmount, this.minConversionRate];
+
+    let swapMethod: string;
+    switch (swapType) {
+      case CurveV2SwapType.EXCHANGE:
+        swapMethod = CurveV2SwapFunctions.exchange;
+        break;
+      case CurveV2SwapType.EXCHANGE_UNDERLYING:
+        swapMethod = CurveV2SwapFunctions.exchange_underlying;
+        break;
+      case CurveV2SwapType.EXCHANGE_GENERIC_FACTORY_ZAP:
+        swapMethod = CurveV2SwapFunctions.exchange_in_generic_factory_zap;
+        break;
+      default:
+        throw new Error(
+          `getSimpleParam: not all cases covered for CurveV2SwapTypes`,
+        );
+    }
+
+    const swapData =
+      swapMethod === CurveV2SwapFunctions.exchange_in_generic_factory_zap
+        ? this.genericFactoryZapIface.encodeFunctionData(swapMethod, args)
+        : this.exchangeRouterInterface.encodeFunctionData(swapMethod, args);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+    };
   }
 }

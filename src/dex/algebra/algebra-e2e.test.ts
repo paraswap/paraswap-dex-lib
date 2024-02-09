@@ -80,13 +80,14 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
     // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     // [SwapSide.BUY, [ContractMethod.simpleBuy]],
   ]);
 
@@ -183,7 +184,7 @@ describe('Algebra', () => {
   describe('QuickSwapV3 E2E', () => {
     const dexKey = 'QuickSwapV3';
 
-    describe('Polygon', () => {
+    describe('Polygon_V6', () => {
       const network = Network.POLYGON;
       const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'DAI';

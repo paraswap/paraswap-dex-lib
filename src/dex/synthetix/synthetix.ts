@@ -9,6 +9,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -320,6 +322,43 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SynthetixData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, srcKey, destKey } = data;
+
+    const swapData =
+      this.network === Network.OPTIMISM
+        ? this.combinedIface.encodeFunctionData('exchange', [
+            srcKey,
+            srcAmount,
+            destKey,
+          ])
+        : this.combinedIface.encodeFunctionData('exchangeAtomically', [
+            srcKey,
+            srcAmount,
+            destKey,
+            this.config.trackingCode,
+            '1',
+          ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+    };
   }
 
   async updatePoolState(): Promise<void> {

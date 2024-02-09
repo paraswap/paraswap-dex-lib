@@ -1,6 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { SwapSide, MAX_UINT } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
@@ -115,5 +120,39 @@ export class DodoV1
       DODOV2ProxyAddress[this.network],
       DODOAproveAddress[this.network], // Warning
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: DodoV1Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction = DodoV1Functions.dodoSwapV1;
+    const swapFunctionParams: DodoV1Param = [
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data.dodoPairs,
+      data.directions,
+      data.isIncentive,
+      MAX_UINT,
+    ];
+    const swapData = this.dodoV2Proxy.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: DODOV2ProxyAddress[this.network],
+    };
   }
 }
