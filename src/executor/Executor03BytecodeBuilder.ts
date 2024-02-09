@@ -150,28 +150,33 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (index === exchangeParams.length - 1) {
       // if some of dexes doesn't have recipient add one transfer in the end
       if (
-        // !exchangeParams[exchangeParams.length - 1].dexFuncHasRecipient &&
         exchangeParams.some(param => !param.dexFuncHasRecipient) &&
-        !isETHAddress(priceRoute.destToken)
+        !isETHAddress(swap.destToken)
       ) {
         const transferCallData = this.buildTransferCallData(
           this.erc20Interface.encodeFunctionData('transfer', [
             this.dexHelper.config.data.augustusV6Address,
             // insert 0 because it's still gonna be replaced with balance check result
             '0',
-            // priceRoute.destAmount,
           ]),
-          priceRoute.destToken,
+          swap.destToken,
         );
 
         swapCallData = hexConcat([swapCallData, transferCallData]);
       }
 
+      // withdraw WETH
+      if (isETHAddress(swap.destToken) && maybeWethCallData?.withdraw) {
+        const withdrawCallData = this.buildUnwrapEthCallData(
+          maybeWethCallData.withdraw.calldata,
+        );
+        swapCallData = hexConcat([swapCallData, withdrawCallData]);
+      }
+
+      // send ETH to augustus
       if (
-        // (maybeWethCallData?.withdraw && isETHAddress(priceRoute.destToken)) ||
-        // !exchangeParams[exchangeParams.length - 1].dexFuncHasRecipient &&
-        !curExchangeParam.dexFuncHasRecipient &&
-        isETHAddress(priceRoute.destToken)
+        isETHAddress(swap.destToken) &&
+        (!curExchangeParam.dexFuncHasRecipient || maybeWethCallData?.withdraw)
       ) {
         const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
         swapCallData = hexConcat([swapCallData, finalSpecialFlagCalldata]);
@@ -181,13 +186,11 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     return this.addMetadata(
       swapCallData,
       swap.swapExchanges[index].percent,
-      priceRoute.bestRoute[0].swaps[0].srcToken,
-      priceRoute.bestRoute[0].swaps[priceRoute.bestRoute[0].swaps.length - 1]
-        .destToken,
+      swap.srcToken,
+      swap.destToken,
       // to withdraw if there is a deposit to prevent leaving WETH dust
-      // or withdraw if some of the paths need that
-      exchangeParams.some(param => param.needWrapNative) ||
-        !!maybeWethCallData?.withdraw?.calldata,
+      exchangeParams.some(param => param.needWrapNative) &&
+        isETHAddress(swap.srcToken),
     );
   }
 
@@ -205,16 +208,21 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     let { exchangeData, specialDexFlag } = exchangeParam;
 
+    exchangeData = this.addTokenAddressToCallData(
+      exchangeData,
+      swap.srcToken.toLowerCase(),
+    );
+    exchangeData = this.addTokenAddressToCallData(
+      exchangeData,
+      swap.destToken.toLowerCase(),
+    );
+
     let tokenBalanceCheckPos = 0;
-    // TODO: check balance for which token ??
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
       const destTokenAddr = isETHAddress(swap.destToken)
         ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
         : swap.destToken.toLowerCase();
 
-      if (!exchangeParam.dexFuncHasDestToken) {
-        exchangeData = hexConcat([exchangeData, ZEROS_28_BYTES, destTokenAddr]);
-      }
       const destTokenAddrIndex = exchangeData
         .replace('0x', '')
         .indexOf(destTokenAddr.replace('0x', ''));
@@ -326,28 +334,20 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
   ) {
     const srcTokenAddressLowered = srcTokenAddress.toLowerCase();
     const destTokenAddressLowered = destTokenAddress.toLowerCase();
-    let srcTokenPos: string;
-    let destTokenPos: string;
 
-    if (isETHAddress(srcTokenAddressLowered)) {
-      srcTokenPos = '0xEEEEEEEEEEEEEEEE';
-    } else {
-      const srcTokenAddrIndex = callData
-        .replace('0x', '')
-        .indexOf(srcTokenAddressLowered.replace('0x', ''));
+    // as src and dest token address were added with addTokenAddressToCallData
+    // it's safe here to do indexOf without checking if it's present
+    const srcTokenAddrIndex = callData
+      .replace('0x', '')
+      .indexOf(srcTokenAddressLowered.replace('0x', ''));
 
-      srcTokenPos = hexZeroPad(hexlify(srcTokenAddrIndex / 2), 8);
-    }
+    const srcTokenPos = hexZeroPad(hexlify(srcTokenAddrIndex / 2), 8);
 
-    if (isETHAddress(destTokenAddressLowered)) {
-      destTokenPos = '0xEEEEEEEEEEEEEEEE';
-    } else {
-      const destTokenAddrIndex = callData
-        .replace('0x', '')
-        .indexOf(destTokenAddressLowered.replace('0x', ''));
+    const destTokenAddrIndex = callData
+      .replace('0x', '')
+      .indexOf(destTokenAddressLowered.replace('0x', ''));
 
-      destTokenPos = hexZeroPad(hexlify(destTokenAddrIndex / 2), 8);
-    }
+    const destTokenPos = hexZeroPad(hexlify(destTokenAddrIndex / 2), 8);
 
     return solidityPack(
       ['bytes4', 'bytes4', 'bytes8', 'bytes8', 'bytes8', 'bytes'],

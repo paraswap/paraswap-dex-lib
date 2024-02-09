@@ -131,6 +131,8 @@ export abstract class ExecutorBytecodeBuilder {
       0,
       SpecialDex.DEFAULT,
       Flag.SEVEN,
+      // do that to prevent toAmountPos to be set
+      this.type === Executors.THREE ? hexDataLength(withdrawCallData) : 0,
     );
   }
 
@@ -145,6 +147,7 @@ export abstract class ExecutorBytecodeBuilder {
       0,
       SpecialDex.DEFAULT,
       Flag.THREE,
+      // do that to prevent toAmountPos to be set
       this.type === Executors.THREE ? hexDataLength(transferCallData) : 0,
     );
   }
