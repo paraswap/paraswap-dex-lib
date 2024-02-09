@@ -262,7 +262,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 2), // special
+      hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
+      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 1), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       exchangeData, // dex calldata

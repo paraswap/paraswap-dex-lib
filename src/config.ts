@@ -47,14 +47,14 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0x8E55Cb60a95bB31e572CB5cC909dB8d51d84b262',
+    augustusV6Address: '0xd7ebE6cb1786e59711b64e19F1Ad3FCcF6Af0d85',
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
     executorsAddresses: {
-      Executor01: '0xc831c9a7Eb713621cbABCb1277a8AF754E55518D',
-      Executor02: '0xD3E3e7F49FB5D3Dd649952a4994BD9A8f4810727',
+      Executor01: '0x1042FC11825D91f2457F9EF121809B4f6030D4Cb',
+      Executor02: '0x03E2e9228a8d192d318df0268A4082C884d199d0',
     },
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
@@ -194,10 +194,15 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    augustusV6Address: '0x80492bC2A01172A6796af80576D185018BF34d5B',
     augustusRFQAddress: '0xF3CD476C3C4D3Ac5cA2724767f269070CA09A043',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
+    executorsAddresses: {
+      Executor01: '0x00aeCC0E97060628f88282805FCfb80cc8877740',
+      Executor02: '0xa11ADAdFAd58Aad4827B973b24CF595c201dfc22',
+    },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:
@@ -225,7 +230,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0x692aF0a7956FF165F438568b7D95B9cC288bE6c5',
+    augustusV6Address: '0xe8a4Ec22b7BaC07a7e2b5A1eD93d2944c397e71b',
     augustusRFQAddress: '0x34302c4267d0dA0A8c65510282Cc22E9e39df51f',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
@@ -236,8 +241,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     executorsAddresses: {
-      Executor01: '0x3AEeB8f4D543a06b687997313b668816fea385fF',
-      Executor02: '0x81Fa49c0Ba598527D9C483819248e2E9FE677DCA',
+      Executor01: '0x958F695C0755CBD505AB6EBC9Ece9eC1370a8617',
+      Executor02: '0xBda365702750af180abEd5f53318Ae61c002e674',
     },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
@@ -289,7 +294,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     hasEIP1559: false,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0x95a7CE91b8478449FE9454538E357A26A535d102',
+    augustusV6Address: '0x205ca600811Dab8c01d807851bbB32a1fEf454fF',
     augustusRFQAddress: '0x0927FD43a7a87E3E8b81Df2c44B03C4756849F6D',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
@@ -300,8 +305,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     executorsAddresses: {
-      Executor01: '0x2927e4a2cFDAE27B27bd3F6c0A6376fF1608C354',
-      Executor02: '0xD095802e643E663C5Af0d62dDfe727aD85f18618',
+      Executor01: '0x1F08e050B296c0FfA9161420fd1277a17588f324',
+      Executor02: '0x4465c0F6E5802FD54c44398807A6036A9e649052',
     },
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',

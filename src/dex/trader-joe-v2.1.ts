@@ -1,5 +1,10 @@
 import { Network, SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { IDexHelper } from '../dex-helper';
 import {
@@ -152,5 +157,50 @@ export class TraderJoeV21
       swapData,
       this.routerAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: TraderJoeV2Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction =
+      side === SwapSide.SELL
+        ? TraderJoeV2RouterFunctions.swapExactTokensForTokens
+        : TraderJoeV2RouterFunctions.swapTokensForExactTokens;
+
+    const swapFunctionParams: TraderJoeV2RouterParam =
+      side === SwapSide.SELL
+        ? [
+            srcAmount,
+            destAmount,
+            [[data.binStep], ['2'], [srcToken, destToken]],
+            recipient,
+            getLocalDeadlineAsFriendlyPlaceholder(),
+          ]
+        : [
+            destAmount,
+            srcAmount,
+            [[data.binStep], ['2'], [srcToken, destToken]],
+            recipient,
+            getLocalDeadlineAsFriendlyPlaceholder(),
+          ];
+
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: this.routerAddress,
+    };
   }
 }

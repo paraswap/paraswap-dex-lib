@@ -15,14 +15,15 @@ export const ZEROS_32_BYTES = hexZeroPad(hexlify(0), 32);
 export const SWAP_EXCHANGE_100_PERCENTAGE = 100;
 
 export const EXECUTORS_FUNCTION_CALL_DATA_TYPES: string[] = [
-  'bytes20', // address(bytes20)
-  'bytes4', // calldata Size(bytes 4)
-  'bytes2', // fromAmount Pos(bytes2)
-  'bytes2', // destTokenPos(bytes2)
-  'bytes2', // specialExchange (bytes2)
-  'bytes2', // flag(bytes2)
-  'bytes28', // zero padding (bytes28)
-  'bytes', // dex calldata (bytes)
+  'bytes20', // address
+  'bytes4', // calldata Size
+  'bytes2', // fromAmount Pos
+  'bytes2', // srcTokenPos
+  'bytes1', // returnAmount Pos
+  'bytes1', // specialExchange
+  'bytes2', // flag
+  'bytes28', // zero padding
+  'bytes', // dex calldata
 ];
 
 export const EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND: string[] = [

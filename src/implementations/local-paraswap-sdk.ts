@@ -22,8 +22,8 @@ import {
   SwapSide,
 } from '@paraswap/core/build/constants';
 import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-builder';
-import { ParaSwapVersion } from '@paraswap/core';
 import { AddressOrSymbol } from '@paraswap/sdk';
+import { ParaSwapVersion } from '@paraswap/core';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -193,6 +193,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       side,
       tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
       contractAddress: this.dexHelper.config.data.augustusAddress,
+      version: ParaSwapVersion.V6,
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);
