@@ -96,7 +96,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '700000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -109,7 +109,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '2000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -122,7 +122,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '20000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
