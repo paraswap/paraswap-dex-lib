@@ -346,7 +346,8 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       _destToken,
       srcAmount,
       MIN_CONVERSION_RATE,
-      this.augustusAddress,
+      recipient,
+      // this.augustusAddress,
       rebateTo,
     ]);
 

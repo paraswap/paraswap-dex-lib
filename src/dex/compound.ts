@@ -107,8 +107,8 @@ export class Compound
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: false,
       exchangeData: swapData,
       targetExchange: cToken,
     };

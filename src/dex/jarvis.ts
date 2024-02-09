@@ -205,7 +205,7 @@ export class Jarvis
           srcAmount,
           data.fee,
           timestamp,
-          this.augustusAddress,
+          recipient,
         ];
         break;
       case JarvisFunctions.redeem:
@@ -215,7 +215,7 @@ export class Jarvis
           destAmount,
           data.fee,
           timestamp,
-          this.augustusAddress,
+          recipient,
         ];
         break;
       case JarvisFunctions.exchange:
@@ -227,7 +227,7 @@ export class Jarvis
           destAmount,
           data.fee,
           timestamp,
-          this.augustusAddress,
+          recipient,
         ];
         break;
       default:
