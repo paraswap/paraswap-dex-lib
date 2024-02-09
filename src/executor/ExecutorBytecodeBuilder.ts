@@ -228,4 +228,16 @@ export abstract class ExecutorBytecodeBuilder {
           : Flag.SEVEN,
     };
   }
+
+  addTokenAddressToCallData(callData: string, tokenAddr: Address): string {
+    const isTokenInCallData = callData
+      .replace('0x', '')
+      .indexOf(tokenAddr.replace('0x', ''));
+
+    if (isTokenInCallData === -1) {
+      callData = hexConcat([callData, ZEROS_12_BYTES, tokenAddr]);
+    }
+
+    return callData;
+  }
 }

@@ -212,9 +212,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
         : swap.destToken.toLowerCase();
 
-      if (!exchangeParam.dexFuncHasDestToken) {
-        exchangeData = hexConcat([exchangeData, ZEROS_28_BYTES, destTokenAddr]);
-      }
+      exchangeData = this.addTokenAddressToCallData(
+        exchangeData,
+        destTokenAddr,
+      );
       const destTokenAddrIndex = exchangeData
         .replace('0x', '')
         .indexOf(destTokenAddr.replace('0x', ''));
