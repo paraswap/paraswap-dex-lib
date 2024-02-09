@@ -1,6 +1,14 @@
 import { Address, DexExchangeParam, OptimalRate, TxObject } from './types';
 import { BigNumber } from 'ethers';
-import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from './constants';
+import {
+  ETHER_ADDRESS,
+  FEE_PERCENT_IN_BASIS_POINTS_MASK,
+  IS_REFERRAL_MASK,
+  IS_SKIP_BLACKLIST_MASK,
+  IS_TAKE_SURPLUS_MASK,
+  NULL_ADDRESS,
+  SwapSide,
+} from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
 import AugustusV6ABI from './abi/augustus-v6/ABI.json';
@@ -230,13 +238,14 @@ export class GenericSwapTransactionBuilder {
 
     const side = priceRoute.side;
     const isSell = side === SwapSide.SELL;
-    // const [partner, feePercent] = this.buildFees(
-    //   referrerAddress,
-    //   partnerAddress,
-    //   partnerFeePercent,
-    //   takeSurplus,
-    //   side,
-    // );
+
+    const partnerAndFee = this.buildFeesV6({
+      referrerAddress,
+      partnerAddress,
+      partnerFeePercent,
+      takeSurplus,
+      priceRoute,
+    });
 
     const swapParams = [
       bytecodeBuilder.getAddress(),
@@ -252,7 +261,7 @@ export class GenericSwapTransactionBuilder {
         ]),
         beneficiary,
       ],
-      '0', // hexConcat([partner, hexZeroPad(hexlify(95), 12)]),
+      partnerAndFee,
       permit,
       bytecode,
     ];
@@ -312,26 +321,13 @@ export class GenericSwapTransactionBuilder {
         ? priceRoute.destAmount
         : priceRoute.srcAmount;
 
-    // const [partner, feePercent] = referrerAddress
-    //   ? [referrerAddress, encodeFeePercentForReferrer(priceRoute.side)]
-    //   : [
-    //       encodePartnerAddressForFeeLogic({
-    //         partnerAddress,
-    //         partnerFeePercent,
-    //         takeSurplus,
-    //       }),
-    //       encodeFeePercent(partnerFeePercent, takeSurplus, priceRoute.side),
-    //     ];
-    // const partnerAndFee = hexConcat([partner, feePercent]);
-
-    // TODO: check & improve
-    const partnerAndFee = this.packPartnerAndFeeData(
+    const partnerAndFee = this.buildFeesV6({
+      referrerAddress,
       partnerAddress,
       partnerFeePercent,
       takeSurplus,
-      false,
-      false,
-    );
+      priceRoute,
+    });
 
     return dex.getDirectParamV6!(
       priceRoute.srcToken,
@@ -348,6 +344,40 @@ export class GenericSwapTransactionBuilder {
       priceRoute.blockNumber,
       priceRoute.contractMethod,
     );
+  }
+
+  private buildFeesV6({
+    referrerAddress,
+    priceRoute,
+    takeSurplus,
+    partnerAddress,
+    partnerFeePercent,
+    skipBlacklist = false,
+  }: {
+    referrerAddress?: Address;
+    partnerAddress: Address;
+    partnerFeePercent: string;
+    takeSurplus: boolean;
+    priceRoute: OptimalRate;
+    skipBlacklist?: boolean;
+  }) {
+    const partnerAndFee = referrerAddress
+      ? this.packPartnerAndFeeData(
+          referrerAddress,
+          encodeFeePercentForReferrer(priceRoute.side),
+          takeSurplus,
+          true, // it's a referral
+          skipBlacklist,
+        )
+      : this.packPartnerAndFeeData(
+          partnerAddress,
+          partnerFeePercent,
+          takeSurplus,
+          skipBlacklist,
+          false,
+        );
+
+    return partnerAndFee;
   }
 
   public async build({
@@ -445,19 +475,28 @@ export class GenericSwapTransactionBuilder {
     feePercent: string,
     takeSurplus: boolean,
     referral: boolean,
-    skipWhitelistFlag: boolean,
+    skipBlacklist: boolean,
   ): string {
+    // Partner address shifted left to make room for flags and fee percent
     const partnerBigInt = BigNumber.from(partner).shl(96);
-    let feePercentBigInt = BigNumber.from(feePercent);
+
+    // Ensure feePercent fits within the FEE_PERCENT_IN_BASIS_POINTS_MASK range
+    let feePercentBigInt = BigNumber.from(feePercent).and(
+      FEE_PERCENT_IN_BASIS_POINTS_MASK,
+    );
+
+    // Apply flags using bitwise OR with the appropriate masks
     if (takeSurplus) {
-      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(95));
+      feePercentBigInt = feePercentBigInt.or(IS_TAKE_SURPLUS_MASK);
     }
     if (referral) {
-      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(94));
+      feePercentBigInt = feePercentBigInt.or(IS_REFERRAL_MASK);
     }
-    if (skipWhitelistFlag) {
-      feePercentBigInt = feePercentBigInt.or(BigNumber.from(1).shl(93));
+    if (skipBlacklist) {
+      feePercentBigInt = feePercentBigInt.or(IS_SKIP_BLACKLIST_MASK);
     }
+
+    // Combine partnerBigInt and feePercentBigInt
     return partnerBigInt.or(feePercentBigInt).toString();
   }
 }
