@@ -1,13 +1,12 @@
 export enum Flag {
-  FIFTEEN = 15,
-  ELEVEN = 11,
-  NINE = 9,
-  EIGHT = 8,
-  SEVEN = 7,
-  FIVE = 5,
-  FOUR = 4,
-  THREE = 3,
-  ZERO = 0,
+  INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP = 11, // (flag 11 mod 4) = case 3: insert fromAmount, (flag 11 mod 3) = case 2: check "srcToken" balance after swap
+  SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP = 9, // (flag 9 mod 4) = case 1: sendEth equal to fromAmount, (flag 9 mod 3) = case 0: don't check balance after swap
+  DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP = 8, // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+  INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP = 7, // (flag 7 mod 4) = case 3: insert fromAmount, (flag 7 mod 3) = case 1: check eth balance after swap
+  SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP = 5, // (flag 5 mod 4) = case 1: sendEth equal to fromAmount, (flag 5 mod 3) = case 2: check "srcToken" balance after swap
+  DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP = 4, // (flag 4 mod 4) = case 0: don't insert fromAmount, (flag 4 mod 3) = case 1: check eth balance after swap
+  INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP = 3, // (flag 3 mod 4) = case 3: insert fromAmount, (flag 3 mod 3) = case 0: don't check balance after swap
+  DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP = 0, // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
 }
 
 export enum SpecialDex {
@@ -16,6 +15,7 @@ export enum SpecialDex {
   // SWAP_ON_SWAAP_V2 = 3, // swapOnSwaapV2
   SEND_NATIVE = 4, // sendNative
   SWAP_ON_BALANCER_V2 = 5, // swapOnBalancerV2
+  EXECUTE_VERTICAL_BRANCHING = 10,
 }
 
 export enum Executors {
@@ -28,5 +28,5 @@ export enum RouteExecutionType {
   HORIZONTAL_SEQUENCE = 1, // multiSwap with 100% on each path
   VERTICAL_BRANCH = 3, // simpleSwap with N DEXs on a path
   VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 4, // multiSwap, megaSwap
-  // NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 5, // megaSwap
+  NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 5, // megaSwap
 }

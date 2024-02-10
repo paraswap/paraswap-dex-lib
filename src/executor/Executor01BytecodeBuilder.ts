@@ -7,8 +7,9 @@ import { Executors, Flag, SpecialDex } from './types';
 import {
   BYTES_28_LENGTH,
   BYTES_64_LENGTH,
+  DEFAULT_RETURN_AMOUNT_POS,
   EXECUTORS_FUNCTION_CALL_DATA_TYPES,
-  ZEROS_12_BYTES,
+  ZERO_ROUTE_INDEX,
   ZEROS_28_BYTES,
 } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
@@ -37,10 +38,14 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
   protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
     exchangeParam: DexExchangeParam,
-    index: number,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
-    const { srcToken, destToken } = priceRoute.bestRoute[0].swaps[index];
+    const { srcToken, destToken } =
+      priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
@@ -50,15 +55,17 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
-    let dexFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
-    let approveFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
+    let dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
+    let approveFlag =
+      Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
     if (isEthSrc && !needWrap) {
-      dexFlag = Flag.FIVE; // (flag 5 mod 4) = case 1: sendEth equal to fromAmount, (flag 5 mod 3) = case 2: check "srcToken" balance after swap
+      dexFlag =
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
-      dexFlag = Flag.FOUR; // (flag 4 mod 4) = case 0: don't insert fromAmount, (flag 4 mod 3) = case 1: check eth balance after swap
+      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
     } else if (!dexFuncHasRecipient || (isEthDest && needUnwrap)) {
-      dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
     }
 
     return {
@@ -80,15 +87,19 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
    * case 1: check eth balance after swap
    * case 2: check destToken balance after swap
    */
-  protected buildMultiSwapFlags(
+  // Executor01 doesn't support mega swap routes, flags are built for multi swap routes only here
+  protected buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
     exchangeParam: DexExchangeParam,
-    index: number,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
-    const swap = priceRoute.bestRoute[0].swaps[index];
+    const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     const { srcToken, destToken } = swap;
-    const isFirstSwap = index === 0;
+    const isFirstSwap = swapIndex === 0;
     const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
@@ -101,31 +112,38 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     let approveFlag: Flag;
 
     if (isFirstSwap) {
-      approveFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
+      approveFlag = Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
       if (isEthSrc && !needWrap) {
-        dexFlag = Flag.FIVE; // (flag 5 mod 4) = case 1: sendEth equal to fromAmount, (flag 5 mod 3) = case 2: check "srcToken" balance after swap
+        dexFlag =
+          Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
       } else if (isEthSrc && needWrap) {
-        dexFlag = Flag.EIGHT; // (flag 0 mod 4) = case 0: don't insert fromAmount, (flag 0 mod 3) = case 0: don't check balance after swap
+        dexFlag =
+          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       } else if (!isEthSrc && !isEthDest) {
-        dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+        dexFlag =
+          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       } else if (isEthDest && needUnwrap) {
-        dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
-        approveFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+        dexFlag =
+          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
+        approveFlag =
+          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       } else if (isEthDest && !needUnwrap) {
-        dexFlag = Flag.FOUR; // (flag 4 mod 4) = case 0: don't insert fromAmount, (flag 4 mod 3) = case 1: check eth balance after swap
+        dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
       } else {
-        dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+        dexFlag =
+          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       }
     } else {
-      approveFlag = Flag.THREE; // (flag 3 mod 4) = case 3: insert fromAmount, (flag 3 mod 3) = case 0: don't check balance after swap
+      approveFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       if (isEthSrc && !needWrap) {
-        dexFlag = Flag.FIVE; // (flag 5 mod 4) = case 1: sendEth equal to fromAmount, (flag 5 mod 3) = case 2: check "srcToken" balance after swap
+        dexFlag =
+          Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
       } else if (isEthSrc && needWrap) {
-        dexFlag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
+        dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (dexFuncHasRecipient && !needUnwrap) {
-        dexFlag = Flag.FIFTEEN; // (flag 15 mod 4) = case 3: insert fromAmount, (flag 15 mod 3) = case 0: don't check balance after swap
+        dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else {
-        dexFlag = Flag.ELEVEN; // (flag 11 mod 4) = case 3: insert fromAmount, (flag 11 mod 3) = case 2: check "srcToken" balance after swap
+        dexFlag = Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       }
     }
 
@@ -138,29 +156,30 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
   protected buildSingleSwapCallData(
     priceRoute: OptimalRate,
     exchangeParams: DexExchangeParam[],
-    index: number,
+    routeIndex: number,
+    swapIndex: number,
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
     sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
   ): string {
     let swapCallData = '';
-    const swap = priceRoute.bestRoute[0].swaps[index];
-    const curExchangeParam = exchangeParams[index];
+    const swap = priceRoute.bestRoute[0].swaps[swapIndex];
+    const curExchangeParam = exchangeParams[swapIndex];
     const srcAmount = swap.swapExchanges[0].srcAmount;
 
     const dexCallData = this.buildDexCallData(
       swap,
       curExchangeParam,
-      index,
-      flags.dexes[index],
+      swapIndex,
+      flags.dexes[swapIndex],
     );
 
     swapCallData = hexConcat([dexCallData]);
 
     if (
-      flags.dexes[index] % 4 !== 1 && // not sendEth
+      flags.dexes[swapIndex] % 4 !== 1 && // not sendEth
       (!isETHAddress(swap.srcToken) ||
-        (isETHAddress(swap.srcToken) && index !== 0))
+        (isETHAddress(swap.srcToken) && swapIndex !== 0))
     ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
@@ -169,11 +188,11 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
 
       const approveCallData = this.buildApproveCallData(
         approve,
-        isETHAddress(swap.srcToken) && index !== 0
+        isETHAddress(swap.srcToken) && swapIndex !== 0
           ? this.dexHelper.config.data.wrappedNativeTokenAddress
           : swap.srcToken,
         srcAmount,
-        flags.approves[index],
+        flags.approves[swapIndex],
       );
 
       swapCallData = hexConcat([approveCallData, swapCallData]);
@@ -181,7 +200,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     if (curExchangeParam.needWrapNative && maybeWethCallData) {
       if (maybeWethCallData.deposit && isETHAddress(swap.srcToken)) {
-        const prevExchangeParam = exchangeParams[index - 1];
+        const prevExchangeParam = exchangeParams[swapIndex - 1];
 
         if (
           !prevExchangeParam ||
@@ -194,12 +213,12 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
             ]),
             this.dexHelper.config.data.wrappedNativeTokenAddress,
             srcAmount,
-            flags.approves[index],
+            flags.approves[swapIndex],
           );
 
           const depositCallData = this.buildWrapEthCallData(
             maybeWethCallData.deposit.calldata,
-            Flag.NINE,
+            Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
           );
 
           swapCallData = hexConcat([
@@ -211,7 +230,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       }
 
       if (maybeWethCallData.withdraw && isETHAddress(priceRoute.destToken)) {
-        const nextExchangeParam = exchangeParams[index + 1];
+        const nextExchangeParam = exchangeParams[swapIndex + 1];
 
         if (
           !nextExchangeParam ||
@@ -273,7 +292,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 2), // special
+      DEFAULT_RETURN_AMOUNT_POS, // return amount position
+      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 1), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
       exchangeData, // dex calldata
@@ -297,13 +317,14 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     );
 
     let swapsCalldata = exchangeParams.reduce<string>(
-      (acc, ep, index) =>
+      (acc, ep, swapIndex) =>
         hexConcat([
           acc,
           this.buildSingleSwapCallData(
             priceRoute,
             exchangeParams,
-            index,
+            ZERO_ROUTE_INDEX,
+            swapIndex,
             flags,
             sender,
             maybeWethCallData,

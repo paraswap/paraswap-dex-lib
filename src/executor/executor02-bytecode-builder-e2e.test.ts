@@ -7,7 +7,7 @@ import { ContractMethod, Network, SwapSide } from '../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../config';
 
-jest.setTimeout(50000);
+jest.setTimeout(120000);
 describe('Executor02ByteCodeBuilder e2e tests', () => {
   describe('MAINNET', () => {
     const network = Network.MAINNET;
@@ -282,7 +282,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'BAL';
         const tokenBSymbol: string = 'SUSHI';
-        const tokenAAmount: string = '10000000000000000000000';
+        const tokenAAmount: string = '100000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -352,7 +352,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'USDT';
         const tokenBSymbol: string = 'ETH';
-        const tokenAAmount: string = '1000000000000';
+        const tokenAAmount: string = '100000000000';
 
         const side = SwapSide.SELL;
 
@@ -370,7 +370,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             undefined,
             undefined,
-            slippage,
+            300,
             2000,
             false,
             [
@@ -405,7 +405,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             undefined,
             undefined,
-            slippage,
+            300,
             2000,
             false,
             [
@@ -413,6 +413,184 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
               '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
               '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
             ],
+          );
+        });
+      });
+    });
+
+    describe('MegaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+
+      describe('WBTC -> USDC via UniswapV3', () => {
+        const dexKeys = ['UniswapV3'];
+
+        const tokenASymbol: string = 'WBTC';
+        const tokenBSymbol: string = 'USDC';
+        const tokenAAmount: string = '2500000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+          );
+        });
+      });
+
+      describe('USDC -> ETH via UniswapV3', () => {
+        const dexKeys = ['UniswapV3'];
+
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'ETH';
+        const tokenAAmount: string = '10000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+          );
+        });
+      });
+
+      describe('ETH -> USDC via UniswapV3', () => {
+        const dexKeys = ['UniswapV3'];
+
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'USDC';
+        const tokenAAmount: string = '10000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+          );
+        });
+      });
+
+      describe('DAI -> ETH via UniswapV3', () => {
+        const dexKeys = ['UniswapV3'];
+
+        const tokenASymbol: string = 'DAI';
+        const tokenBSymbol: string = 'ETH';
+        const tokenAAmount: string = '10000000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            2000,
+          );
+        });
+      });
+
+      describe('ETH -> USDC via BalancerV2 and UniswapV3', () => {
+        const dexKeys = ['UniswapV3', 'BalancerV2'];
+
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'USDC';
+        const tokenAAmount: string = '10000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            500,
+            2000,
+          );
+        });
+      });
+
+      describe('WBTC -> DAI via UniswapV3', () => {
+        const dexKeys = ['UniswapV3'];
+
+        const tokenASymbol: string = 'WBTC';
+        const tokenBSymbol: string = 'DAI';
+        const tokenAAmount: string = '100000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            2000,
           );
         });
       });

@@ -1,5 +1,5 @@
 import { IDexHelper } from '../dex-helper';
-import { Address, OptimalRate } from '@paraswap/core';
+import { OptimalRate } from '@paraswap/core';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { Executor01BytecodeBuilder } from './Executor01BytecodeBuilder';
 import { Executor02BytecodeBuilder } from './Executor02BytecodeBuilder';
@@ -13,9 +13,9 @@ export class ExecutorDetector {
     [RouteExecutionType.SINGLE_STEP]: Executors.ONE, // simpleSwap via Executor01
     [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE, // multiSwap via Executor01
     [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO, // simpleSwap with percentage on a path via Executor02
-    [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with pecentages on paths via Executor02
-    // [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: // megaSwap
-    //   Executors.TWO,
+    [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with percentages on paths via Executor02
+    [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]:
+      Executors.TWO, // megaSwap via Executor02
   };
 
   constructor(protected dexHelper: IDexHelper) {
@@ -60,6 +60,8 @@ export class ExecutorDetector {
       } else {
         return RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE;
       }
+    } else if (priceRoute.bestRoute.length > 1) {
+      return RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE;
     }
 
     throw new Error('Route type is not supported yet');
