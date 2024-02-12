@@ -10,7 +10,7 @@ import { generateConfig } from '../../config';
 describe('Platypus E2E', () => {
   const dexKey = 'Platypus';
 
-  describe('Platypus AVALANCHE', () => {
+  describe('Platypus AVALANCHE_V6', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -29,9 +29,10 @@ describe('Platypus E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
     ]);
