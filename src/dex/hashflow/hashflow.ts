@@ -929,8 +929,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasRecipient: false,
       exchangeData,
       targetExchange: this.routerAddress,
     };
