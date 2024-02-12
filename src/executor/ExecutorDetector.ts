@@ -1,10 +1,9 @@
 import { IDexHelper } from '../dex-helper';
-import { Address, OptimalRate } from '@paraswap/core';
+import { OptimalRate, SwapSide } from '@paraswap/core';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { Executor01BytecodeBuilder } from './Executor01BytecodeBuilder';
 import { Executor02BytecodeBuilder } from './Executor02BytecodeBuilder';
 import { Executors, RouteExecutionType } from './types';
-import { SwapSide } from '@paraswap/sdk';
 import { Executor03BytecodeBuilder } from './Executor03BytecodeBuilder';
 
 export class ExecutorDetector {
