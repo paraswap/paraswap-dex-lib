@@ -4,18 +4,30 @@ import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { Executor01BytecodeBuilder } from './Executor01BytecodeBuilder';
 import { Executor02BytecodeBuilder } from './Executor02BytecodeBuilder';
 import { Executors, RouteExecutionType } from './types';
+import { SwapSide } from '@paraswap/sdk';
+import { Executor03BytecodeBuilder } from './Executor03BytecodeBuilder';
 
 export class ExecutorDetector {
   private executor01BytecodeBuilder: ExecutorBytecodeBuilder;
   private executor02BytecodeBuilder: ExecutorBytecodeBuilder;
+  private executor03BytecodeBuilder: ExecutorBytecodeBuilder;
 
-  protected routeExecutionTypeToExecutorMap = {
-    [RouteExecutionType.SINGLE_STEP]: Executors.ONE, // simpleSwap via Executor01
-    [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE, // multiSwap via Executor01
-    [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO, // simpleSwap with percentage on a path via Executor02
-    [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with pecentages on paths via Executor02
-    // [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: // megaSwap
-    //   Executors.TWO,
+  protected routeExecutionTypeToExecutorMap: Record<
+    SwapSide,
+    Partial<Record<RouteExecutionType, Executors>>
+  > = {
+    [SwapSide.SELL]: {
+      [RouteExecutionType.SINGLE_STEP]: Executors.ONE, // simpleSwap via Executor01
+      [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE, // multiSwap via Executor01
+      [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO, // simpleSwap with percentage on a path via Executor02
+      [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with pecentages on paths via Executor02
+      // [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: // megaSwap
+      //   Executors.TWO,
+    },
+    [SwapSide.BUY]: {
+      [RouteExecutionType.SINGLE_STEP]: Executors.THREE, // simpleBuy via Executor03
+      [RouteExecutionType.VERTICAL_BRANCH]: Executors.THREE, // simpleBuy via Executor03
+    },
   };
 
   constructor(protected dexHelper: IDexHelper) {
@@ -23,6 +35,9 @@ export class ExecutorDetector {
       this.dexHelper,
     );
     this.executor02BytecodeBuilder = new Executor02BytecodeBuilder(
+      this.dexHelper,
+    );
+    this.executor03BytecodeBuilder = new Executor03BytecodeBuilder(
       this.dexHelper,
     );
   }
@@ -68,7 +83,7 @@ export class ExecutorDetector {
   getExecutorByPriceRoute(priceRoute: OptimalRate): Executors {
     const routeExecutionType = this.getRouteExecutionType(priceRoute);
     const executorName =
-      this.routeExecutionTypeToExecutorMap[routeExecutionType];
+      this.routeExecutionTypeToExecutorMap[priceRoute.side][routeExecutionType];
 
     if (executorName) {
       return executorName;
@@ -83,6 +98,8 @@ export class ExecutorDetector {
         return this.executor01BytecodeBuilder;
       case Executors.TWO:
         return this.executor02BytecodeBuilder;
+      case Executors.THREE:
+        return this.executor03BytecodeBuilder;
       default:
         throw new Error(`${executorName} is not supported`);
     }

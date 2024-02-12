@@ -4,15 +4,8 @@ import { OptimalRate, OptimalSwap } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
-import {
-  BYTES_28_LENGTH,
-  BYTES_64_LENGTH,
-  EXECUTORS_FUNCTION_CALL_DATA_TYPES,
-  EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND,
-  ZEROS_12_BYTES,
-  ZEROS_28_BYTES,
-} from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
+import { BYTES_64_LENGTH } from './constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -22,6 +15,7 @@ const {
  * Class to build bytecode for Executor01 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
  */
 export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
+  type = Executors.ONE;
   /**
    * Executor01 Flags:
    * switch (flag % 4):
@@ -161,6 +155,20 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     const skipApprove = !!curExchangeParam.skipApprove;
 
+    if (curExchangeParam.transferSrcTokenBeforeSwap) {
+      const transferCallData = this.buildTransferCallData(
+        this.erc20Interface.encodeFunctionData('transfer', [
+          curExchangeParam.transferSrcTokenBeforeSwap,
+          swap.swapExchanges[index].srcAmount,
+        ]),
+        isETHAddress(swap.srcToken)
+          ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+          : swap.srcToken.toLowerCase(),
+      );
+
+      swapCallData = hexConcat([transferCallData, swapCallData]);
+    }
+
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
       (!isETHAddress(swap.srcToken) ||
@@ -243,12 +251,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let {
-      exchangeData,
-      specialDexFlag,
-      transferSrcTokenBeforeSwap,
-      targetExchange,
-    } = exchangeParam;
+    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -256,9 +259,10 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
         : swap.destToken.toLowerCase();
 
-      if (!exchangeParam.dexFuncHasDestToken) {
-        exchangeData = hexConcat([exchangeData, ZEROS_28_BYTES, destTokenAddr]);
-      }
+      exchangeData = this.addTokenAddressToCallData(
+        exchangeData,
+        destTokenAddr,
+      );
       const destTokenAddrIndex = exchangeData
         .replace('0x', '')
         .indexOf(destTokenAddr.replace('0x', ''));
@@ -277,36 +281,14 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
-    let data = [];
-    let calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES;
-
-    if (transferSrcTokenBeforeSwap) {
-      const transferCallData = this.buildTransferCallData(
-        this.erc20Interface.encodeFunctionData('transfer', [
-          transferSrcTokenBeforeSwap,
-          swap.swapExchanges[index].srcAmount,
-        ]),
-        isETHAddress(swap.srcToken)
-          ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
-          : swap.srcToken.toLowerCase(),
-      );
-      data.push(transferCallData);
-      calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND;
-    }
-
-    data = data.concat([
-      targetExchange,
-      hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
-      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
-      hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
-      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 1), // special
-      hexZeroPad(hexlify(flag), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      exchangeData, // dex calldata
-    ]);
-
-    return solidityPack(calldataTypes, data);
+    return this.buildCallData(
+      exchangeParam.targetExchange,
+      exchangeData,
+      fromAmountPos,
+      destTokenPos,
+      specialDexFlag || SpecialDex.DEFAULT,
+      flag,
+    );
   }
 
   public getAddress(): string {

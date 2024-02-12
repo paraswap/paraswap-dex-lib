@@ -19,11 +19,13 @@ export enum SpecialDex {
   SWAP_ON_UNISWAP_V2_FORK = 6,
   SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK = 7,
   SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE = 8,
+  SWAP_ON_AUGUSTUS_RFQ = 9, // swapOnAugustusRFQ
 }
 
 export enum Executors {
   ONE = 'Executor01',
   TWO = 'Executor02',
+  THREE = 'Executor03',
 }
 
 export enum RouteExecutionType {

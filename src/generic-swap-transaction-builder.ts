@@ -157,14 +157,16 @@ export class GenericSwapTransactionBuilder {
             wethWithdraw = BigInt(se.destAmount);
           }
 
-          const destTokenIsWeth = _dest === wethAddress;
+          const needToWithdrawAfterSwap = _dest === wethAddress && wethWithdraw;
 
           const dexParams = await dex.getDexParam!(
             _src,
             _dest,
             _srcAmount,
             _destAmount,
-            destTokenIsWeth || !isLastSwap || se.exchange === 'BalancerV2'
+            needToWithdrawAfterSwap ||
+              !isLastSwap ||
+              se.exchange === 'BalancerV2'
               ? bytecodeBuilder.getAddress()
               : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
             se.data,
@@ -268,7 +270,10 @@ export class GenericSwapTransactionBuilder {
     ];
 
     const encoder = (...params: any[]) =>
-      this.augustusV6Interface.encodeFunctionData('swapExactAmountIn', params);
+      this.augustusV6Interface.encodeFunctionData(
+        isSell ? 'swapExactAmountIn' : 'swapExactAmountOut',
+        params,
+      );
 
     return {
       encoder,
