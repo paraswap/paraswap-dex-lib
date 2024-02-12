@@ -459,7 +459,7 @@ describe('Solidly E2E', () => {
           '1000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -472,7 +472,7 @@ describe('Solidly E2E', () => {
           '1000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -485,7 +485,7 @@ describe('Solidly E2E', () => {
           '700000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -498,7 +498,7 @@ describe('Solidly E2E', () => {
           '2000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -511,7 +511,7 @@ describe('Solidly E2E', () => {
           '700000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -524,7 +524,7 @@ describe('Solidly E2E', () => {
           '2000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );

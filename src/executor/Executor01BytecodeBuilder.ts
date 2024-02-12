@@ -246,8 +246,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     let {
       exchangeData,
       specialDexFlag,
-      generatePrependCalldata,
-      getCustomTarget,
+      transferSrcTokenBeforeSwap,
+      targetExchange,
     } = exchangeParam;
 
     let destTokenPos = 0;
@@ -280,18 +280,19 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     let data = [];
     let calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES;
 
-    if (generatePrependCalldata) {
-      data.push(generatePrependCalldata(index === 0 ? 0 : 3));
+    if (transferSrcTokenBeforeSwap) {
+      const transferCallData = this.buildTransferCallData(
+        this.erc20Interface.encodeFunctionData('transfer', [
+          transferSrcTokenBeforeSwap,
+          swap.swapExchanges[index].srcAmount,
+        ]),
+        isETHAddress(swap.srcToken)
+          ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+          : swap.srcToken.toLowerCase(),
+      );
+      data.push(transferCallData);
       calldataTypes = EXECUTORS_FUNCTION_CALL_DATA_TYPES_WITH_PREPEND;
     }
-
-    const targetExchange = getCustomTarget
-      ? getCustomTarget(
-          // it's never last when dest = eth, since we'll have unwrap
-          isLastSwap && !isETHAddress(swap.destToken),
-          Executors.ONE,
-        )
-      : exchangeParam.targetExchange;
 
     data = data.concat([
       targetExchange,

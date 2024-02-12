@@ -859,8 +859,6 @@ export class UniswapV2
     side: SwapSide,
   ): DexExchangeParam {
     const pools = encodePools(data.pools, this.feeFactor);
-    // console.log('non-encoded.pools', data.pools);
-    // console.log('encoded.pools', pools);
 
     // TODO: Rebase tokens handling?
     // const hasRebaseTokenSrc = rebaseTokensSetsByChain[this.network]?.has(
@@ -902,62 +900,11 @@ export class UniswapV2
       dexFuncHasRecipient: false,
       dexFuncHasDestToken: false,
       exchangeData,
-      targetExchange: data.router, // getCustomTarget is used to get target exchange
+      targetExchange: recipient,
       specialDexFlag: SpecialDex.SWAP_ON_UNISWAP_V2_FORK,
-      generatePrependCalldata: (flag: Flag) => _generatePrependCalldata(flag),
-      getCustomTarget: (isLastSwap, executor) =>
-        (isLastSwap
-          ? this.dexHelper.config.data.augustusV6Address
-          : this.dexHelper.config.data.executorsAddresses![executor]) || '', // TODO: Fix types
+      transferSrcTokenBeforeSwap: data.pools[0].address,
       skipApprove: true,
     };
-
-    function _generatePrependCalldata(flag: Flag) {
-      const functionData_transfer = solidityPack(
-        [
-          'bytes28',
-          'bytes4',
-          'bytes12',
-          'bytes20',
-          'uint256',
-          'bytes12',
-          'bytes20',
-        ],
-        [
-          hexZeroPad(hexlify(0), 28),
-          hexZeroPad(id('transfer(address,uint256)').substring(0, 10), 4),
-          hexZeroPad(hexlify(0), 12),
-          data.pools[0].address,
-          srcAmount,
-          hexZeroPad(hexlify(0), 12),
-          srcToken,
-        ],
-      );
-      const target_transfer = srcToken;
-      const calldataSize_transfer = hexZeroPad(
-        hexlify(hexDataLength(functionData_transfer)),
-        4,
-      );
-      const fromAmountPos_transfer = hexZeroPad(hexlify(0), 2);
-      const srcTokenPos_transfer = hexZeroPad(hexlify(0), 2);
-      const specialExchange_transfer = hexZeroPad(hexlify(0), 2);
-      const flags_transfer = hexZeroPad(hexlify(flag), 2);
-
-      const prependCalldata = solidityPack(
-        ['bytes', 'bytes', 'bytes', 'bytes', 'bytes', 'bytes', 'bytes'],
-        [
-          target_transfer,
-          calldataSize_transfer,
-          fromAmountPos_transfer,
-          srcTokenPos_transfer,
-          specialExchange_transfer,
-          flags_transfer,
-          functionData_transfer,
-        ],
-      );
-
-      return prependCalldata;
-    }
   }
 
   // TODO: Move to new uniswapv2&forks router interface
