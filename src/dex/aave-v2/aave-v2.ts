@@ -304,18 +304,11 @@ export class AaveV2
     side: SwapSide,
   ): DexExchangeParam {
     const amount = side === SwapSide.SELL ? srcAmount : destAmount;
-    const [
-      Interface,
-      swapCallee,
-      swapFunction,
-      swapFunctionParams,
-      dexFuncHasDestToken,
-    ] = ((): [
+    const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,
       AaveV2PoolAndWethFunctions,
       AaveV2Param,
-      boolean,
     ] => {
       if (isETHAddress(srcToken)) {
         switch (this.network) {
@@ -325,7 +318,6 @@ export class AaveV2
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.depositETH,
               [recipient, REF_CODE],
-              false,
             ];
           case Network.POLYGON:
             return [
@@ -333,7 +325,6 @@ export class AaveV2
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.depositETH,
               [aaveLendingPool[this.network], recipient, REF_CODE],
-              false,
             ];
           case Network.AVALANCHE:
             return [
@@ -341,7 +332,6 @@ export class AaveV2
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.depositETH,
               [aaveLendingPool[this.network], recipient, REF_CODE],
-              false,
             ];
           default:
             throw new Error(`Network ${this.network} not supported`);
@@ -356,7 +346,6 @@ export class AaveV2
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.withdrawETH,
               [amount, recipient],
-              false,
             ];
           case Network.POLYGON:
             return [
@@ -364,7 +353,6 @@ export class AaveV2
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.withdrawETH,
               [aaveLendingPool[this.network], amount, recipient],
-              false,
             ];
           case Network.AVALANCHE:
             return [
@@ -372,7 +360,6 @@ export class AaveV2
               WETH_GATEWAY[this.network],
               AaveV2PoolAndWethFunctions.withdrawETH,
               [aaveLendingPool[this.network], amount, recipient],
-              false,
             ];
           default:
             throw new Error(`Network ${this.network} not supported`);
@@ -385,7 +372,6 @@ export class AaveV2
           aaveLendingPool[this.network],
           AaveV2PoolAndWethFunctions.withdraw,
           [destToken, amount, recipient],
-          true,
         ];
       }
 
@@ -394,7 +380,6 @@ export class AaveV2
         aaveLendingPool[this.network],
         AaveV2PoolAndWethFunctions.deposit,
         [srcToken, amount, recipient, REF_CODE],
-        false,
       ];
     })();
 
