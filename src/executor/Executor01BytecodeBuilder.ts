@@ -4,8 +4,8 @@ import { OptimalRate, OptimalSwap } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
-import { BYTES_64_LENGTH, ZEROS_28_BYTES } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
+import { BYTES_64_LENGTH } from './constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -147,15 +147,33 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       swap,
       curExchangeParam,
       index,
+      index === priceRoute.bestRoute[0].swaps.length - 1,
       flags.dexes[index],
     );
 
     swapCallData = hexConcat([dexCallData]);
 
+    const skipApprove = !!curExchangeParam.skipApprove;
+
+    if (curExchangeParam.transferSrcTokenBeforeSwap) {
+      const transferCallData = this.buildTransferCallData(
+        this.erc20Interface.encodeFunctionData('transfer', [
+          curExchangeParam.transferSrcTokenBeforeSwap,
+          swap.swapExchanges[index].srcAmount,
+        ]),
+        isETHAddress(swap.srcToken)
+          ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+          : swap.srcToken.toLowerCase(),
+      );
+
+      swapCallData = hexConcat([transferCallData, swapCallData]);
+    }
+
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
       (!isETHAddress(swap.srcToken) ||
-        (isETHAddress(swap.srcToken) && index !== 0))
+        (isETHAddress(swap.srcToken) && index !== 0)) &&
+      !skipApprove
     ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
@@ -227,12 +245,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
+    isLastSwap: boolean,
     flag: Flag,
   ): string {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData } = exchangeParam;
+    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -261,8 +280,6 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         .indexOf(fromAmount.replace('0x', ''));
       fromAmountPos = fromAmountIndex / 2;
     }
-
-    const { specialDexFlag } = exchangeParam;
 
     return this.buildCallData(
       exchangeParam.targetExchange,

@@ -56,10 +56,7 @@ export class Tick {
     delete state.ticks[Number(tick)];
   }
 
-  static cross(
-    ticks: Record<NumberAsString, TickInfo>,
-    tick: bigint,
-  ): bigint {
+  static cross(ticks: Record<NumberAsString, TickInfo>, tick: bigint): bigint {
     const info = ticks[Number(tick)];
     return info.liquidityNet;
   }

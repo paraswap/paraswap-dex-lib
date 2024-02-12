@@ -11,11 +11,11 @@ import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import {
-  BYTES_64_LENGTH,
-  SWAP_EXCHANGE_100_PERCENTAGE,
-  ZEROS_12_BYTES,
   ZEROS_28_BYTES,
+  ZEROS_12_BYTES,
   ZEROS_4_BYTES,
+  SWAP_EXCHANGE_100_PERCENTAGE,
+  BYTES_64_LENGTH,
 } from './constants';
 
 const {
@@ -198,13 +198,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
+    isLastSwap: boolean,
     flag: Flag,
     swapExchange: OptimalSwapExchange<any>,
   ): string {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData } = exchangeParam;
+    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -234,10 +235,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
-    const { specialDexFlag } = exchangeParam;
-
     return this.buildCallData(
-      exchangeParam.targetExchange,
+      targetExchange,
       exchangeData,
       fromAmountPos,
       destTokenPos,
@@ -391,21 +390,40 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     });
 
     const curExchangeParam = exchangeParams[index];
+    const isLastSwap = swapIndex === priceRoute.bestRoute[0].swaps.length - 1;
+    const isLast = index === exchangeParams.length - 1;
 
     const dexCallData = this.buildDexCallData(
       swap,
       curExchangeParam,
       index,
+      isLastSwap,
       flags.dexes[index],
       swapExchange,
     );
 
     swapExchangeCallData = hexConcat([dexCallData]);
 
-    const isLastSwap = swapIndex === priceRoute.bestRoute[0].swaps.length - 1;
-    const isLast = index === exchangeParams.length - 1;
+    const skipApprove = !!curExchangeParam.skipApprove;
 
-    if (!isETHAddress(swap!.srcToken)) {
+    if (curExchangeParam.transferSrcTokenBeforeSwap) {
+      const transferCallData = this.buildTransferCallData(
+        this.erc20Interface.encodeFunctionData('transfer', [
+          curExchangeParam.transferSrcTokenBeforeSwap,
+          swap.swapExchanges[index].srcAmount,
+        ]),
+        isETHAddress(swap.srcToken)
+          ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+          : swap.srcToken.toLowerCase(),
+      );
+
+      swapExchangeCallData = hexConcat([
+        transferCallData,
+        swapExchangeCallData,
+      ]);
+    }
+
+    if (!isETHAddress(swap!.srcToken) && !skipApprove) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
         srcAmount,

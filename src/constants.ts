@@ -1,3 +1,5 @@
+import { BigNumber } from 'ethers';
+
 export { SwapSide, ContractMethod } from '@paraswap/core';
 
 export const PORT_TEST_SERVER = process.env.TEST_PORT;
@@ -21,7 +23,8 @@ export const MAX_BLOCKS_HISTORY = 7;
 
 export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 
-export const FETCH_POOL_IDENTIFIER_TIMEOUT = 1 * 1000; // 1s
+// TODO: Undo
+export const FETCH_POOL_IDENTIFIER_TIMEOUT = 100 * 1000; // 1s
 export const FETCH_POOL_PRICES_TIMEOUT = 3 * 1000; // 3s
 
 // How frequently logs wil be printed
@@ -57,3 +60,9 @@ export const DEST_TOKEN_PARASWAP_TRANSFERS = 1;
 export const DEST_TOKEN_DEX_TRANSFERS = 1;
 
 export const BPS_MAX_VALUE = 10000n;
+
+export const FEE_PERCENT_IN_BASIS_POINTS_MASK = BigNumber.from('0x3FFF');
+export const IS_CAP_SURPLUS_MASK = BigNumber.from('1').shl(92);
+export const IS_SKIP_BLACKLIST_MASK = BigNumber.from('1').shl(93);
+export const IS_REFERRAL_MASK = BigNumber.from('1').shl(94);
+export const IS_TAKE_SURPLUS_MASK = BigNumber.from('1').shl(95);

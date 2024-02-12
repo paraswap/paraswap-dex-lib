@@ -16,6 +16,7 @@ import {
   TxInfo,
   PreprocessTransactionOptions,
   ExchangeTxInfo,
+  DexExchangeParam,
 } from '../../types';
 import {
   SwapSide,
@@ -955,6 +956,7 @@ export class CurveV1Factory
     ];
   }
 
+  // FIXME: need v6 function
   getDirectParam(
     srcToken: Address,
     destToken: Address,
@@ -1049,6 +1051,36 @@ export class CurveV1Factory
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: CurveV1FactoryData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, i, j, underlyingSwap } = data;
+    const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
+    const swapMethod = underlyingSwap
+      ? CurveSwapFunctions.exchange_underlying
+      : CurveSwapFunctions.exchange;
+    const exchangeData = this.ifaces.exchangeRouter.encodeFunctionData(
+      swapMethod,
+      defaultArgs,
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: false,
+      targetExchange: exchange,
+    };
   }
 
   async updatePoolState(): Promise<void> {

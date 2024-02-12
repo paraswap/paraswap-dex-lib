@@ -4,6 +4,7 @@ import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
 } from '../types';
@@ -95,5 +96,32 @@ export class Smoothy
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SmoothyData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, i, j } = data;
+    const swapFunctionParams: SmoothyParam = [i, j, srcAmount, destAmount];
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      SmoothyFunctions.swap,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+    };
   }
 }

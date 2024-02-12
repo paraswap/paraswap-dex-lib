@@ -11,6 +11,8 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
   TransferFeeParams,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import {
   SwapSide,
@@ -975,6 +977,51 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       swapData,
       this.mainnetRFQAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: DexalotData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { quoteData } = data;
+
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    const swapFunction = 'simpleSwap';
+    const swapFunctionParams = [
+      [
+        quoteData.nonceAndMeta,
+        quoteData.expiry,
+        quoteData.makerAsset,
+        quoteData.takerAsset,
+        quoteData.maker,
+        quoteData.taker,
+        quoteData.makerAmount,
+        quoteData.takerAmount,
+      ],
+      quoteData.signature,
+    ];
+
+    const exchangeData = this.rfqInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: false,
+      targetExchange: this.mainnetRFQAddress,
+    };
   }
 
   async getTopPoolsForToken(

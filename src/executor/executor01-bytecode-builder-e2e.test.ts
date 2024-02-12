@@ -204,6 +204,26 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
         );
       });
 
+      describe('UniswapV2Fork', () => {
+        const dexKey = 'UniswapV2';
+
+        const tokenASymbol: string = 'USDT';
+        const tokenBSymbol: string = 'DAI';
+        const tokenAAmount: string = '100000000';
+        const tokenBAmount: string = '100000000000000000000';
+        const nativeTokenAmount = '500000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+          nativeTokenAmount,
+        );
+      });
+
       describe('CurveV1', () => {
         const dexKey = 'CurveV1';
 

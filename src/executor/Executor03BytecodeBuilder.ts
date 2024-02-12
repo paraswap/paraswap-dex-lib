@@ -93,6 +93,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       swap,
       curExchangeParam,
       index,
+      true,
       flags.dexes[index],
     );
 
@@ -202,6 +203,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
+    isLastSwap: boolean,
     flag: Flag,
   ): string {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;

@@ -1,4 +1,4 @@
-import { Address } from '@paraswap/core';
+import { Address, ParaSwapVersion } from '@paraswap/core';
 export { BlockHeader } from 'web3-eth';
 export {
   Address,
@@ -15,7 +15,7 @@ export { Logger } from 'log4js';
 import { OptimalRate } from '@paraswap/core';
 import BigNumber from 'bignumber.js';
 import { RFQConfig } from './dex/generic-rfq/types';
-import { SpecialDex } from './executor/types';
+import { Executors, Flag, SpecialDex } from './executor/types';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -166,6 +166,8 @@ export type DexExchangeParam = {
   // Deprecated, for now use addTokenAddressToCallData
   dexFuncHasDestToken: boolean;
   specialDexFlag?: SpecialDex;
+  transferSrcTokenBeforeSwap?: Address;
+  skipApprove?: boolean;
 };
 
 export type AdapterMappings = {
@@ -308,6 +310,7 @@ export type PreprocessTransactionOptions = {
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
   partner?: string;
+  version: ParaSwapVersion;
 };
 
 export type TransferFeeParams = {

@@ -1,6 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { NULL_ADDRESS, SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  NumberAsString,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import BancorABI from '../abi/Bancor.json';
@@ -103,5 +109,38 @@ export class Bancor
       swapData,
       data.bancorNetwork || BANCOR_NETWORK[this.network],
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: BancorData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const defaultArgs = [
+      data.path,
+      srcAmount,
+      data.minDestToken || '1',
+      NULL_ADDRESS,
+      '0',
+    ];
+    const swapMethod = BancorFunctions.convert2;
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      swapMethod,
+      defaultArgs,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: false,
+      exchangeData: swapData,
+      targetExchange: data.bancorNetwork || BANCOR_NETWORK[this.network],
+    };
   }
 }

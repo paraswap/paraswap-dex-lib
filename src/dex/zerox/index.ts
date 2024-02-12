@@ -14,6 +14,7 @@ import type { IDexTxBuilder } from '../idex';
 import type {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
   TxInfo,
@@ -262,6 +263,62 @@ export class ZeroX
       ZRX_EXCHANGE_ERC20PROXY[this.network][data.version],
       networkFees,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: ZeroXData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) {
+      // Adjust the srcAmount according to the exact order price (rounding up)
+      if (data.version === 4) {
+        const order = data.order as ZeroXSignedOrderV4;
+        if (BigInt(destAmount) > BigInt(order.makerAmount)) {
+          throw new Error(
+            `ZeroX destAmount ${destAmount} > makerAmount ${order.makerAmount}`,
+          );
+        }
+        const calc =
+          (BigInt(destAmount) * BigInt(order.takerAmount) +
+            BigInt(order.makerAmount) -
+            1n) /
+          BigInt(order.makerAmount);
+        if (calc > BigInt(srcAmount)) {
+          throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
+        }
+        srcAmount = calc.toString();
+      } else {
+        const order = data.order as ZeroXSignedOrderV2;
+        if (BigInt(destAmount) > BigInt(order.makerAssetAmount)) {
+          throw new Error(
+            `ZeroX destAmount ${destAmount} > makerAmount ${order.makerAssetAmount}`,
+          );
+        }
+        const calc =
+          (BigInt(destAmount) * BigInt(order.takerAssetAmount) +
+            BigInt(order.makerAssetAmount) -
+            1n) /
+          BigInt(order.makerAssetAmount);
+        if (calc > BigInt(srcAmount)) {
+          throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
+        }
+        srcAmount = calc.toString();
+      }
+    }
+    const swapData = this.buildSimpleSwapData(data, srcAmount);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: this.getExchange(data),
+    };
   }
 
   getDirectParam(

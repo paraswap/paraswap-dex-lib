@@ -72,6 +72,7 @@ export abstract class ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
+    isLastSwap: boolean,
     flag: Flag,
     swapExchange?: OptimalSwapExchange<any>,
   ): string;
@@ -131,8 +132,7 @@ export abstract class ExecutorBytecodeBuilder {
       0,
       SpecialDex.DEFAULT,
       Flag.SEVEN,
-      // do that to prevent toAmountPos to be set
-      this.type === Executors.THREE ? hexDataLength(withdrawCallData) : 0,
+      hexDataLength(withdrawCallData),
     );
   }
 
@@ -147,8 +147,7 @@ export abstract class ExecutorBytecodeBuilder {
       0,
       SpecialDex.DEFAULT,
       Flag.THREE,
-      // do that to prevent toAmountPos to be set
-      this.type === Executors.THREE ? hexDataLength(transferCallData) : 0,
+      hexDataLength(transferCallData),
     );
   }
 
@@ -172,21 +171,56 @@ export abstract class ExecutorBytecodeBuilder {
     flag: Flag,
     toAmountPos = 0,
   ): string {
-    const isBuyExecutor = this.type === Executors.THREE;
+    const builder =
+      this.type !== Executors.THREE
+        ? this.buildExecutor0102CallData.bind(this)
+        : this.buildExecutor03CallData.bind(this);
 
-    const types = isBuyExecutor
-      ? EXECUTOR_03_FUNCTION_CALL_DATA_TYPES
-      : EXECUTOR_01_02_FUNCTION_CALL_DATA_TYPES;
+    return builder(
+      tokenAddress,
+      calldata,
+      fromAmountPos,
+      destTokenPos,
+      specialDexFlag,
+      flag,
+      toAmountPos,
+    );
+  }
 
-    const callDataLength = isBuyExecutor ? 2 : 4;
-
-    return solidityPack(types, [
+  private buildExecutor0102CallData(
+    tokenAddress: string,
+    calldata: string,
+    fromAmountPos: number,
+    destTokenPos: number,
+    specialDexFlag: SpecialDex,
+    flag: Flag,
+  ) {
+    return solidityPack(EXECUTOR_01_02_FUNCTION_CALL_DATA_TYPES, [
       tokenAddress, // token address
-      hexZeroPad(
-        hexlify(hexDataLength(calldata) + BYTES_28_LENGTH),
-        callDataLength,
-      ), // calldata length + bytes28(0)
-      ...(isBuyExecutor ? [hexZeroPad(hexlify(toAmountPos), 2)] : []), // toAmountPos
+      hexZeroPad(hexlify(hexDataLength(calldata) + BYTES_28_LENGTH), 4), // calldata length + bytes28(0)
+      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
+      hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
+      hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
+      hexZeroPad(hexlify(specialDexFlag), 1), // special
+      hexZeroPad(hexlify(flag), 2), // flag
+      ZEROS_28_BYTES, // bytes28(0)
+      calldata, // calldata
+    ]);
+  }
+
+  private buildExecutor03CallData(
+    tokenAddress: string,
+    calldata: string,
+    fromAmountPos: number,
+    destTokenPos: number,
+    specialDexFlag: SpecialDex,
+    flag: Flag,
+    toAmountPos = 0,
+  ) {
+    return solidityPack(EXECUTOR_03_FUNCTION_CALL_DATA_TYPES, [
+      tokenAddress, // token address
+      hexZeroPad(hexlify(hexDataLength(calldata) + BYTES_28_LENGTH), 2), // calldata length + bytes28(0)
+      hexZeroPad(hexlify(toAmountPos), 2), // toAmountPos
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
       hexZeroPad(hexlify(specialDexFlag), 2), // special
