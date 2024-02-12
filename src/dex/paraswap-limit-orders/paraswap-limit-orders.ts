@@ -395,7 +395,7 @@ export class ParaSwapLimitOrders
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
+      dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.augustusRFQAddress,
     };

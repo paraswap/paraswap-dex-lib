@@ -1019,7 +1019,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       exchangeData,
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
       targetExchange: this.mainnetRFQAddress,
     };
   }
