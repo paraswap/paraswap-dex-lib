@@ -858,7 +858,6 @@ export class Camelot
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
       exchangeData,
       targetExchange: recipient,
       specialDexFlag: data.isFeeTokenInRoute

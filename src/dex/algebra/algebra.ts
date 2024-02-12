@@ -935,7 +935,6 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true, // TODO: ?
       exchangeData,
       targetExchange: this.config.router,
     };

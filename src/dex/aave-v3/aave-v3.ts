@@ -248,7 +248,6 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken,
       exchangeData,
       targetExchange: swapCallee,
     };

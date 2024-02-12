@@ -493,6 +493,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     );
   }
 
+  // TODO: Check spender?
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -512,14 +513,12 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
 
     const exchangeData = psmInterface.encodeFunctionData(
       isGemSell ? 'sellGem' : 'buyGem',
-      // TODO: ?
       [recipient, gemAmount],
     );
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData,
       targetExchange: data.psmAddress,
     };
