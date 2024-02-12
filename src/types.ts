@@ -163,6 +163,7 @@ export type DexExchangeParam = {
   exchangeData: string;
   targetExchange: string;
   dexFuncHasRecipient: boolean;
+  // Deprecated, for now use addTokenAddressToCallData
   dexFuncHasDestToken: boolean;
   specialDexFlag?: SpecialDex;
 };
@@ -252,7 +253,7 @@ export type StateOverrideObject = {
 
 export type UnoptimizedRate = Omit<
   OptimalRate,
-  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
+  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee' | 'version'
 >;
 
 export type MultiCallInput = {
