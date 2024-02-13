@@ -160,6 +160,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     swapIndex: number,
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
     sender: string,
+    appendedWrapToSwapMap: { [key: number]: boolean },
     maybeWethCallData?: DepositWithdrawReturn,
   ): string {
     let swapCallData = '';
@@ -327,6 +328,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
             swapIndex,
             flags,
             sender,
+            {},
             maybeWethCallData,
           ),
         ]),

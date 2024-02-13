@@ -62,6 +62,7 @@ export abstract class ExecutorBytecodeBuilder {
     swapIndex: number,
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
     sender: string,
+    appendedWrapToSwapMap: { [key: number]: boolean },
     maybeWethCallData?: DepositWithdrawReturn,
     buildSingleSwapCallData?: OptimalSwap,
   ): string;
