@@ -522,10 +522,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: data.psmAddress,
-      specialDexFlag:
-        side === SwapSide.SELL
-          ? SpecialDex.SWAP_ON_MAKER_PSM
-          : SpecialDex.DEFAULT,
+      specialDexFlag: SpecialDex.SWAP_ON_MAKER_PSM,
       spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
     };
   }
