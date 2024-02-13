@@ -141,7 +141,6 @@ export class StablePool
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: exchange,
     };

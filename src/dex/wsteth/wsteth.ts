@@ -276,7 +276,6 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData,
       targetExchange: this.config.wstETHAddress,
     };

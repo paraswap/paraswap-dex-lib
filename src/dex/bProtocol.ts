@@ -100,7 +100,6 @@ export class BProtocol
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: false,
       exchangeData: swapData,
       targetExchange: data.exchange,
     };

@@ -198,7 +198,6 @@ export class TraderJoeV21
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: this.routerAddress,
     };

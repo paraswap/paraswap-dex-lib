@@ -364,7 +364,6 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData,
       targetExchange: this.config.wooPPV2Address,
     };

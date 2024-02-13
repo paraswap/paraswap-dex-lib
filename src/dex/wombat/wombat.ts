@@ -337,7 +337,6 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: exchange,
     };
