@@ -26,6 +26,7 @@ import { MakerPsmConfig, Adapters } from './config';
 import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
 import { BI_POWS } from '../../bigint-constants';
+import { SpecialDex } from '../../executor/types';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
@@ -493,7 +494,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     );
   }
 
-  // TODO: Check spender?
+  // TODO: Implement special case
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -521,6 +522,11 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: data.psmAddress,
+      specialDexFlag:
+        side === SwapSide.SELL
+          ? SpecialDex.SWAP_ON_MAKER_PSM
+          : SpecialDex.DEFAULT,
+      spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
     };
   }
   // Returns list of top pools based on liquidity. Max

@@ -481,7 +481,6 @@ export class JarvisV6
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: false,
       exchangeData,
       targetExchange: data.poolAddress.toLowerCase(),
     };
