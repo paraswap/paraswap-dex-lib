@@ -146,6 +146,7 @@ export class TenderlySimulation implements TransactionSimulator {
           },
         },
       );
+
       const lastTx = data.simulation.id;
       if (data.transaction.status) {
         this.lastTx = lastTx;
@@ -163,7 +164,6 @@ export class TenderlySimulation implements TransactionSimulator {
         };
       }
     } catch (e) {
-      console.error(`TenderlySimulation_simulate:`, e);
       return {
         success: false,
       };

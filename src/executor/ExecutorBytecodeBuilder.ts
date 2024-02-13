@@ -63,6 +63,7 @@ export abstract class ExecutorBytecodeBuilder {
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
     sender: string,
     appendedWrapToSwapMap: { [key: number]: boolean },
+    addedWrapToSwapMap: { [key: string]: boolean },
     maybeWethCallData?: DepositWithdrawReturn,
     buildSingleSwapCallData?: OptimalSwap,
   ): string;
@@ -193,7 +194,12 @@ export abstract class ExecutorBytecodeBuilder {
         hexZeroPad(hexlify(0), 2), // destTokenPos
         DEFAULT_RETURN_AMOUNT_POS, // return amount position
         hexZeroPad(hexlify(SpecialDex.SEND_NATIVE), 1), // special
-        hexZeroPad(hexlify(9), 2), // flag
+        hexZeroPad(
+          hexlify(
+            Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP,
+          ),
+          2,
+        ), // flag
         ZEROS_32_BYTES, // bytes28(0) + bytes4(0)
       ],
     );
