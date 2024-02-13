@@ -172,19 +172,19 @@ describe('UniswapV2 E2E Mainnet', () => {
             provider,
           );
         });
-        // it('EX3: ETH -> USDC', async () => {
-        //   await testE2E(
-        //     tokens.ETH,
-        //     tokens.USDC,
-        //     holders.ETH,
-        //     '700000000000000000',
-        //     SwapSide.BUY,
-        //     dexKey,
-        //     ContractMethod.swapExactAmountOut,
-        //     network,
-        //     provider,
-        //   );
-        // });
+        it('EX3: ETH -> USDC', async () => {
+          await testE2E(
+            tokens.ETH,
+            tokens.USDC,
+            holders.ETH,
+            '7000000000000000',
+            SwapSide.BUY,
+            dexKey,
+            ContractMethod.swapExactAmountOut,
+            network,
+            provider,
+          );
+        });
         it('EX3: USDC -> ETH', async () => {
           await testE2E(
             tokens.USDC,

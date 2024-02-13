@@ -840,6 +840,7 @@ export class Camelot
     data: SolidlyData,
     side: SwapSide,
   ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error('Buy not supported');
     let exchangeDataTypes = ['bytes4', 'bytes32'];
 
     let exchangeDataToPack = [
