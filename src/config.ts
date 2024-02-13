@@ -208,6 +208,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     executorsAddresses: {
       Executor01: '0x00aeCC0E97060628f88282805FCfb80cc8877740',
       Executor02: '0xa11ADAdFAd58Aad4827B973b24CF595c201dfc22',
+      Executor03: '0x46f3661c7c5a2C1fBcCC177DD431bAc8c9AE11fe',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
@@ -236,7 +237,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0xe8a4Ec22b7BaC07a7e2b5A1eD93d2944c397e71b',
+    augustusV6Address: '0xB16Cb3aAeb51D2c75f180747415F8ECaAfB9a7dF',
     augustusRFQAddress: '0x34302c4267d0dA0A8c65510282Cc22E9e39df51f',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
@@ -247,8 +248,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     executorsAddresses: {
-      Executor01: '0x958F695C0755CBD505AB6EBC9Ece9eC1370a8617',
-      Executor02: '0xBda365702750af180abEd5f53318Ae61c002e674',
+      Executor01: '0xb945B80747F96dE03523c3c069FaFCda23B14Dc4',
+      Executor02: '0x7fB3a0D8aC2c1414B2B5faA519F5BE4C4871a970',
     },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',

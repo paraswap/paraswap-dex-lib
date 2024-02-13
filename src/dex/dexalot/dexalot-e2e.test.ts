@@ -171,7 +171,7 @@ function testForNetwork(
 describe('Dexalot E2E', () => {
   const dexKey = 'Dexalot';
 
-  describe('Avalanche', () => {
+  describe('Avalanche_V6', () => {
     const network = Network.AVALANCHE;
 
     const tokenASymbol: string = 'USDC';
