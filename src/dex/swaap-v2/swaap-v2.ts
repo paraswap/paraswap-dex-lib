@@ -10,6 +10,7 @@ import {
   ExchangeTxInfo,
   OptimalSwapExchange,
   PreprocessTransactionOptions,
+  DexExchangeParam,
 } from '../../types';
 import {
   SwapSide,
@@ -38,7 +39,7 @@ import routerAbi from '../../abi/swaap-v2/vault.json';
 import BigNumber from 'bignumber.js';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import { Interface } from 'ethers/lib/utils';
-import { assert } from 'ts-essentials';
+import { AsyncOrSync, assert } from 'ts-essentials';
 import {
   SWAAP_RFQ_API_URL,
   SWAAP_RFQ_PRICES_ENDPOINT,
@@ -75,6 +76,7 @@ import {
   TooStrictSlippageCheckError,
 } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { SpecialDex } from '../../executor/types';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -442,6 +444,41 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     return poolIdentifier.split('_')[1];
   }
 
+  getDexParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    recipient: string,
+    data: SwaapV2Data,
+    side: SwapSide,
+  ): AsyncOrSync<DexExchangeParam> {
+    const { router, callData } = data;
+    const isBatchSwap = callData.slice(0, 10) === BATCH_SWAP_SELECTOR;
+
+    // at the moment of writing, batch swap is not supported by SwappV2 API
+    assert(isBatchSwap !== true, 'Batch swap is not supported');
+
+    assert(
+      router !== undefined,
+      `${this.dexKey}-${this.network}: router undefined`,
+    );
+
+    assert(
+      callData !== undefined,
+      `${this.dexKey}-${this.network}: callData undefined`,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: callData,
+      specialDexFlag: SpecialDex.SWAP_ON_SWAAP_V2_SINGLE,
+      targetExchange: router,
+    };
+  }
+
   async preProcessTransaction(
     optimalSwapExchange: OptimalSwapExchange<SwaapV2Data>,
     srcToken: Token,
@@ -479,7 +516,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
         isSell ? SWAAP_ORDER_TYPE_SELL : SWAAP_ORDER_TYPE_BUY,
         options.txOrigin,
-        this.augustusAddress,
+        options.executionContractAddress,
+        options.recipient,
         tolerance,
         this.getQuoteReqParams(),
       );
