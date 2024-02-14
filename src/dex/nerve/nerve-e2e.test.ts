@@ -199,7 +199,7 @@ describe('Axial', () => {
 describe('IronV2', () => {
   const dexKey = 'IronV2';
 
-  describe('Polygon', () => {
+  describe('Polygon_V6', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -207,14 +207,14 @@ describe('IronV2', () => {
       generateConfig(network).privateHttpProvider,
       network,
     );
-    describe('simpleSwap', () => {
-      const contractMethod = ContractMethod.simpleSwap;
+    describe('swapExactAmountIn', () => {
+      const contractMethod = ContractMethod.swapExactAmountIn;
       it('SELL DAI -> USDC', async () => {
         await testE2E(
           tokens.DAI,
           tokens.USDC,
           holders.DAI,
-          '11000000000000000000',
+          '1100000000000000',
           SwapSide.SELL,
           dexKey,
           contractMethod,
@@ -223,38 +223,38 @@ describe('IronV2', () => {
         );
       });
     });
-    describe('multiSwap', () => {
-      const contractMethod = ContractMethod.multiSwap;
-      it('SELL DAI -> USDC', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.USDC,
-          holders.DAI,
-          '11000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
-    describe('megaSwap', () => {
-      const contractMethod = ContractMethod.megaSwap;
-      it('SELL DAI -> USDC', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.USDC,
-          holders.DAI,
-          '11000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
+    // describe('multiSwap', () => {
+    //   const contractMethod = ContractMethod.multiSwap;
+    //   it('SELL DAI -> USDC', async () => {
+    //     await testE2E(
+    //       tokens.DAI,
+    //       tokens.USDC,
+    //       holders.DAI,
+    //       '11000000000000000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       contractMethod,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
+    // describe('megaSwap', () => {
+    //   const contractMethod = ContractMethod.megaSwap;
+    //   it('SELL DAI -> USDC', async () => {
+    //     await testE2E(
+    //       tokens.DAI,
+    //       tokens.USDC,
+    //       holders.DAI,
+    //       '11000000000000000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       contractMethod,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
   });
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
@@ -788,7 +788,7 @@ describe('Synapse', () => {
     });
   });
 
-  describe('Polygon', () => {
+  describe('Polygon_V6', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -797,13 +797,13 @@ describe('Synapse', () => {
       network,
     );
     describe('simpleSwap', () => {
-      const contractMethod = ContractMethod.simpleSwap;
+      const contractMethod = ContractMethod.swapExactAmountIn;
       it('SELL USDC -> USDT', async () => {
         await testE2E(
           tokens.USDC,
           tokens.USDT,
           holders.USDC,
-          '111000000',
+          '1110000',
           SwapSide.SELL,
           dexKey,
           contractMethod,
@@ -812,39 +812,39 @@ describe('Synapse', () => {
         );
       });
     });
-    describe('multiSwap', () => {
-      const contractMethod = ContractMethod.multiSwap;
+    // describe('multiSwap', () => {
+    //   const contractMethod = ContractMethod.multiSwap;
 
-      it('SELL USDC -> USDT', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          '111000000',
-          SwapSide.SELL,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
-    describe('megaSwap', () => {
-      const contractMethod = ContractMethod.megaSwap;
-      it('SELL USDC -> USDT', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          '111000000',
-          SwapSide.SELL,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
+    //   it('SELL USDC -> USDT', async () => {
+    //     await testE2E(
+    //       tokens.USDC,
+    //       tokens.USDT,
+    //       holders.USDC,
+    //       '111000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       contractMethod,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
+    // describe('megaSwap', () => {
+    //   const contractMethod = ContractMethod.megaSwap;
+    //   it('SELL USDC -> USDT', async () => {
+    //     await testE2E(
+    //       tokens.USDC,
+    //       tokens.USDT,
+    //       holders.USDC,
+    //       '111000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       contractMethod,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
   });
 
   describe('Fantom', () => {

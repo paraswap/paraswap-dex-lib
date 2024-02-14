@@ -81,10 +81,10 @@ export type TokenWithAmount = Token & {
 export type RFQPayload = {
   makerAsset: Address;
   takerAsset: Address;
-  taker: Address;
   makerAmount?: string;
   takerAmount?: string;
   userAddress: Address;
+  takerAddress: Address;
   partner?: string;
 };
 

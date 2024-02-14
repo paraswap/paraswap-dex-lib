@@ -1,15 +1,15 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { testE2E } from '../../../tests/utils-e2e';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import {
-  Tokens,
   Holders,
   NativeTokenSymbols,
+  Tokens,
 } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { testE2E } from '../../../tests/utils-e2e';
 import { generateConfig } from '../../config';
+import { ContractMethod, Network, SwapSide } from '../../constants';
 
 // Give time for rate fetcher to fill the cache
 const sleepMs = 3000;
@@ -36,12 +36,13 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -190,7 +191,7 @@ describe('Hashflow E2E', () => {
       nativeTokenAmount,
     );
   });
-  describe('Polygon', () => {
+  describe('Polygon_V6', () => {
     const network = Network.POLYGON;
 
     const tokenASymbol: string = 'USDC';

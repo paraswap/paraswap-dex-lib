@@ -8,6 +8,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -20,6 +22,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { GMXConfig, Adapters } from './config';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
+import { solidityPack } from 'ethers/lib/utils';
 
 const GMXGasCost = 300 * 1000;
 
@@ -204,6 +207,37 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       ],
       values: ['0', '0'],
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: GMXData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const calldata = [
+      GMX.erc20Interface.encodeFunctionData('transfer', [
+        this.params.vault,
+        srcAmount,
+      ]),
+      Vault.interface.encodeFunctionData('swap', [
+        srcToken,
+        destToken,
+        this.augustusAddress,
+      ]),
+    ];
+    const exchangeData = solidityPack(['bytes', 'bytes'], calldata);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData,
+      targetExchange: this.params.vault,
     };
   }
 

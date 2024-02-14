@@ -84,6 +84,7 @@ export class TenderlySimulation implements TransactionSimulator {
     }
 
     try {
+      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       let res = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork`,
         {
@@ -119,6 +120,7 @@ export class TenderlySimulation implements TransactionSimulator {
       if (this.testNetRPC) return this.executeTransactionOnTestnet(params);
 
       if (stateOverrides) {
+        await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
         const result = await axios.post(
           `
         https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
@@ -143,6 +145,7 @@ export class TenderlySimulation implements TransactionSimulator {
         );
       }
 
+      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       const { data } = await axios.post(
         `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
         _params,

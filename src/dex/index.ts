@@ -1,5 +1,5 @@
 import { UnoptimizedRate } from '../types';
-import { CurveV2 } from './curve-v2';
+import { CurveV2 } from './curve-v2/curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
@@ -43,6 +43,7 @@ import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
 import { ParaSwapLimitOrders } from './paraswap-limit-orders/paraswap-limit-orders';
 import { AugustusRFQOrder } from './augustus-rfq';
 import { Solidly } from './solidly/solidly';
+import { SolidlyV3 } from './solidly-v3/solidly-v3';
 import { Ramses } from './solidly/forks-override/ramses';
 import { Thena } from './solidly/forks-override/thena';
 import { Chronos } from './solidly/forks-override/chronos';
@@ -80,6 +81,8 @@ import { Algebra } from './algebra/algebra';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
+import { Smardex } from './smardex/smardex';
+import { Wombat } from './wombat/wombat';
 
 const LegacyDexes = [
   CurveV2,
@@ -157,6 +160,9 @@ const Dexes = [
   SwaapV2,
   QuickPerps,
   NomiswapV2,
+  SolidlyV3,
+  Smardex,
+  Wombat,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
@@ -166,6 +172,7 @@ export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
 
 interface IGetDirectFunctionName {
   getDirectFunctionName?(): string[];
+  getDirectFunctionNameV6?(): string[];
 }
 
 export class DexAdapterService {
@@ -173,6 +180,7 @@ export class DexAdapterService {
     [key: string]: LegacyDexConstructor | DexContructor<any, any, any>;
   } = {};
   directFunctionsNames: string[];
+  directFunctionsNamesV6: string[];
   dexInstances: {
     [key: string]: IDexTxBuilder<any, any> | IDex<any, any, any>;
   } = {};
@@ -257,6 +265,16 @@ export class DexAdapterService {
       .filter(x => !!x)
       .map(v => v.toLowerCase());
 
+    this.directFunctionsNamesV6 = [...LegacyDexes, ...Dexes]
+      .flatMap(dexAdapter => {
+        const _dexAdapter = dexAdapter as IGetDirectFunctionName;
+        return _dexAdapter.getDirectFunctionNameV6
+          ? _dexAdapter.getDirectFunctionNameV6()
+          : [];
+      })
+      .filter(x => !!x)
+      .map(v => v.toLowerCase());
+
     this.uniswapV2Alias =
       this.network in UniswapV2Alias
         ? UniswapV2Alias[this.network].toLowerCase()
@@ -283,6 +301,10 @@ export class DexAdapterService {
 
   isDirectFunctionName(functionName: string): boolean {
     return this.directFunctionsNames.includes(functionName.toLowerCase());
+  }
+
+  isDirectFunctionNameV6(functionName: string): boolean {
+    return this.directFunctionsNamesV6.includes(functionName.toLowerCase());
   }
 
   getAllDexKeys() {

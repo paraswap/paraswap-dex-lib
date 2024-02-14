@@ -26,10 +26,11 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-        ContractMethod.directCurveV1Swap,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
+        // ContractMethod.directCurveV1Swap,
+        'swapExactAmountIn' as any,
       ],
     ],
   ]);
@@ -166,14 +167,14 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
-  describe('Polygon', () => {
+  describe('Polygon_V6', () => {
     const network = Network.POLYGON;
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'axlUSDC';
 
-    const tokenAAmount: string = '111000000';
-    const tokenBAmount: string = '111000000';
+    const tokenAAmount: string = '1110000';
+    const tokenBAmount: string = '1110000';
 
     testForNetwork(
       network,
@@ -204,7 +205,7 @@ describe('CurveV1Factory E2E', () => {
   //   );
   // });
 
-  describe('Polygon amUSDC', () => {
+  describe('Polygon amUSDC V6', () => {
     const network = Network.POLYGON;
 
     const tokenASymbol: string = 'deUSDC';

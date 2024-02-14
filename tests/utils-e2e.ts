@@ -34,15 +34,26 @@ import {
   DummyLimitOrderProvider,
   IDexHelper,
 } from '../src/dex-helper';
-import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
+import {
+  AddressOrSymbol,
+  constructSimpleSDK,
+  SimpleFetchSDK,
+} from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
-import { GIFTER_ADDRESS, Holders, Tokens } from './constants-e2e';
+import {
+  GIFTER_ADDRESS,
+  Holders,
+  NativeTokenSymbols,
+  Tokens,
+  WrappedNativeTokenSymbols,
+} from './constants-e2e';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
-import { DexAdapterService } from '../src';
+import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
@@ -93,7 +104,7 @@ const MULTISIG: { [nid: number]: string } = {
   [Network.POLYGON]: '0x46DF4eb6f7A3B0AdF526f6955b15d3fE02c618b7',
   [Network.FANTOM]: '0xECaB2dac955b94e49Ec09D6d68672d3B397BbdAd',
   [Network.AVALANCHE]: '0x1e2ECA5e812D08D2A7F8664D69035163ff5BfEC2',
-  [Network.OPTIMISM]: '0xf01121e808F782d7F34E857c27dA31AD1f151b39',
+  [Network.OPTIMISM]: '0x3b28A6f6291f7e8277751f2911Ac49C585d049f6',
   [Network.ARBITRUM]: '0x90DfD8a6454CFE19be39EaB42ac93CD850c7f339',
   [Network.BASE]: '0x6C674c8Df1aC663b822c4B6A56B4E5e889379AE0',
 };
@@ -102,6 +113,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   paraSwap: SimpleFetchSDK;
   dexKeys: string[];
   dexHelper: IDexHelper;
+  pricingHelper: PricingHelper;
   transactionBuilder: GenericSwapTransactionBuilder;
   dexAdapterService: DexAdapterService;
 
@@ -125,6 +137,15 @@ class APIParaswapSDK implements IParaSwapSDK {
     this.transactionBuilder = new GenericSwapTransactionBuilder(
       this.dexAdapterService,
     );
+    this.pricingHelper = new PricingHelper(
+      this.dexAdapterService,
+      this.dexHelper.getLogger,
+    );
+  }
+
+  async initializePricing() {
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    await this.pricingHelper.initialize(blockNumber, this.dexKeys);
   }
 
   async getPrices(
@@ -132,25 +153,49 @@ class APIParaswapSDK implements IParaSwapSDK {
     to: Token,
     amount: bigint,
     side: SwapSide,
-    contractMethod: ContractMethod,
+    // contractMethod: ContractMethod,
+    contractMethod: any,
     _poolIdentifiers?: { [key: string]: string[] | null } | null,
+    transferFees?: TransferFeeParams,
+    forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate> {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
 
-    const priceRoute = await this.paraSwap.swap.getRate({
-      srcToken: from.address,
-      destToken: to.address,
-      side,
-      amount: amount.toString(),
-      options: {
-        includeDEXS: this.dexKeys,
-        includeContractMethods: [contractMethod],
-        partner: 'any',
-      },
-      srcDecimals: from.decimals,
-      destDecimals: to.decimals,
-    });
+    let priceRoute;
+    if (forceRoute && forceRoute.length > 0) {
+      const options = {
+        route: forceRoute,
+        amount: amount.toString(),
+        side,
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+      };
+      priceRoute = await this.paraSwap.swap.getRateByRoute(options);
+    } else {
+      const options = {
+        srcToken: from.address,
+        destToken: to.address,
+        side,
+        amount: amount.toString(),
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+      };
+      priceRoute = await this.paraSwap.swap.getRate(options);
+    }
+
     return priceRoute as OptimalRate;
   }
 
@@ -335,6 +380,7 @@ export async function testE2E(
   slippage?: number,
   sleepMs?: number,
   replaceTenderlyWithEstimateGas?: boolean,
+  forceRoute?: AddressOrSymbol[],
 ) {
   const amount = BigInt(_amount);
 
@@ -443,6 +489,7 @@ export async function testE2E(
       contractMethod,
       poolIdentifiers,
       transferFees,
+      forceRoute,
     );
 
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
@@ -522,7 +569,11 @@ export async function testE2E(
         }, Difference: ${parseInt(priceRoute.gasCost) - parseInt(gasUsed)}`,
       );
     }
-    console.log(`Tenderly URL: ${swapTx!.url}`);
+    console.log(
+      `${swapSide}: ${srcToken.address} -> ${destToken.address} (${
+        priceRoute.contractMethod
+      })\nTenderly URL: ${swapTx!.url}`,
+    );
     expect(swapTx!.success).toEqual(true);
   } finally {
     if (paraswap.releaseResources) {
@@ -763,3 +814,124 @@ export const getEnv = (envName: string, optional: boolean = false): string => {
 
   return process.env[envName]!;
 };
+
+// poolIdentifiers?: { [key: string]: string[] | null } | null,
+// limitOrderProvider?: DummyLimitOrderProvider,
+// transferFees?: TransferFeeParams,
+// // Specified in BPS: part of 10000
+// slippage?: number,
+// sleepMs?: number,
+// replaceTenderlyWithEstimateGas?: boolean,
+// forceRoute?: AddressOrSymbol[],
+export function testE2E_V6(
+  network: Network,
+  dexKey: string,
+  tokenASymbol: string,
+  tokenBSymbol: string,
+  tokenAAmount: string,
+  tokenBAmount: string,
+  nativeTokenAmount: string,
+  forceRoute: AddressOrSymbol[],
+) {
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
+  const tokens = Tokens[network];
+  const holders = Holders[network];
+  const nativeTokenSymbol = NativeTokenSymbols[network];
+  const wrappedNativeTokenSymbol = WrappedNativeTokenSymbols[network];
+
+  const sideToContractMethods = new Map([
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+  ]);
+
+  describe(`${network}`, () => {
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[nativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[nativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${wrappedNativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[wrappedNativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[wrappedNativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${wrappedNativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[wrappedNativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        });
+      }),
+    );
+  });
+}

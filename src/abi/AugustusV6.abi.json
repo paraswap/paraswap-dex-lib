@@ -88,6 +88,11 @@
   },
   {
     "inputs": [],
+    "name": "InsufficientBalanceToPayFees",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InsufficientReturnAmount",
     "type": "error"
   },
@@ -104,11 +109,6 @@
   {
     "inputs": [],
     "name": "InvalidToAmount",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "IssuficientBalanceToPayFees",
     "type": "error"
   },
   {
@@ -201,7 +201,7 @@
   },
   {
     "inputs": [],
-    "name": "BALACER_VAULT",
+    "name": "BALANCER_VAULT",
     "outputs": [
       {
         "internalType": "address payable",
@@ -254,6 +254,19 @@
   {
     "inputs": [],
     "name": "IS_REFERRAL_MASK",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "IS_SKIP_WHITELIST_MASK",
     "outputs": [
       {
         "internalType": "uint256",
@@ -434,300 +447,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "executor",
-        "type": "address"
-      },
-      {
-        "components": [
-          {
-            "internalType": "contract IERC20",
-            "name": "fromToken",
-            "type": "address"
-          },
-          {
-            "internalType": "contract IERC20",
-            "name": "toToken",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fromAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "toAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "expectedAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "uuidAndBlock",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address payable",
-            "name": "beneficiary",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fromTokenPosAndUnwrap",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct GenericBuyData",
-        "name": "buyData",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "partnerAndFee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "permit",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "bytecode",
-        "type": "bytes"
-      }
-    ],
-    "name": "buy",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "receivedAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "usedAmount",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "expectedAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "uuidAndBlock",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "uint256",
-            "name": "beneficiaryAndApproveFlag",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct BalancerV2Data",
-        "name": "balancerData",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "partnerAndFee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "permit",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "bytecode",
-        "type": "bytes"
-      }
-    ],
-    "name": "buyOnBalancerV2",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "receivedAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "usedAmount",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "contract IERC20",
-            "name": "fromToken",
-            "type": "address"
-          },
-          {
-            "internalType": "contract IERC20",
-            "name": "toToken",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fromAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "expectedAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "toAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "uuidAndBlock",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address payable",
-            "name": "beneficiary",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes",
-            "name": "pools",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct UniswapV2Data",
-        "name": "uniData",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "partnerAndFee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "permit",
-        "type": "bytes"
-      }
-    ],
-    "name": "buyOnUniswapV2",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "receivedAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "usedAmount",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "contract IERC20",
-            "name": "fromToken",
-            "type": "address"
-          },
-          {
-            "internalType": "contract IERC20",
-            "name": "toToken",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fromAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "expectedAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "toAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "uuidAndBlock",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address payable",
-            "name": "beneficiary",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes",
-            "name": "pools",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct UniswapV3Data",
-        "name": "uniData",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "partnerAndFee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "permit",
-        "type": "bytes"
-      }
-    ],
-    "name": "buyOnUniswapV3",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "receivedAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "usedAmount",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "feeWallet",
     "outputs": [
@@ -742,7 +461,7 @@
   },
   {
     "inputs": [],
-    "name": "feeWallet2",
+    "name": "feeWalletDelegate",
     "outputs": [
       {
         "internalType": "address payable",
@@ -874,7 +593,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "uuidAndBlock",
+            "name": "metadata",
             "type": "bytes32"
           },
           {
@@ -967,7 +686,7 @@
         "type": "bytes"
       }
     ],
-    "name": "swapOnAugustusRFQTryBatchFill",
+    "name": "swapExactAmountInOnAugustusRFQTryBatchFill",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -978,12 +697,12 @@
         "components": [
           {
             "internalType": "uint256",
-            "name": "expectedAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
             "internalType": "bytes32",
-            "name": "uuidAndBlock",
+            "name": "metadata",
             "type": "bytes32"
           },
           {
@@ -1008,11 +727,11 @@
       },
       {
         "internalType": "bytes",
-        "name": "bytecode",
+        "name": "data",
         "type": "bytes"
       }
     ],
-    "name": "swapOnBalancerV2",
+    "name": "swapExactAmountInOnBalancerV2",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1039,12 +758,12 @@
           },
           {
             "internalType": "contract IERC20",
-            "name": "fromToken",
+            "name": "srcToken",
             "type": "address"
           },
           {
             "internalType": "contract IERC20",
-            "name": "toToken",
+            "name": "destToken",
             "type": "address"
           },
           {
@@ -1059,12 +778,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "expectedAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
             "internalType": "bytes32",
-            "name": "uuidAndBlock",
+            "name": "metadata",
             "type": "bytes32"
           },
           {
@@ -1088,7 +807,7 @@
         "type": "bytes"
       }
     ],
-    "name": "swapOnCurveV1",
+    "name": "swapExactAmountInOnCurveV1",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1125,12 +844,12 @@
           },
           {
             "internalType": "contract IERC20",
-            "name": "fromToken",
+            "name": "srcToken",
             "type": "address"
           },
           {
             "internalType": "contract IERC20",
-            "name": "toToken",
+            "name": "destToken",
             "type": "address"
           },
           {
@@ -1145,12 +864,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "expectedAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
             "internalType": "bytes32",
-            "name": "uuidAndBlock",
+            "name": "metadata",
             "type": "bytes32"
           },
           {
@@ -1174,7 +893,7 @@
         "type": "bytes"
       }
     ],
-    "name": "swapOnCurveV2",
+    "name": "swapExactAmountInOnCurveV2",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1191,12 +910,12 @@
         "components": [
           {
             "internalType": "contract IERC20",
-            "name": "fromToken",
+            "name": "srcToken",
             "type": "address"
           },
           {
             "internalType": "contract IERC20",
-            "name": "toToken",
+            "name": "destToken",
             "type": "address"
           },
           {
@@ -1231,7 +950,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "uuidAndBlock",
+            "name": "metadata",
             "type": "bytes32"
           },
           {
@@ -1250,7 +969,7 @@
         "type": "bytes"
       }
     ],
-    "name": "swapOnMakerPSM",
+    "name": "swapExactAmountInOnMakerPSM",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -1261,12 +980,12 @@
         "components": [
           {
             "internalType": "contract IERC20",
-            "name": "fromToken",
+            "name": "srcToken",
             "type": "address"
           },
           {
             "internalType": "contract IERC20",
-            "name": "toToken",
+            "name": "destToken",
             "type": "address"
           },
           {
@@ -1276,7 +995,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "expectedAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
@@ -1286,7 +1005,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "uuidAndBlock",
+            "name": "metadata",
             "type": "bytes32"
           },
           {
@@ -1315,7 +1034,7 @@
         "type": "bytes"
       }
     ],
-    "name": "swapOnUniswapV2",
+    "name": "swapExactAmountInOnUniswapV2",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1332,12 +1051,12 @@
         "components": [
           {
             "internalType": "contract IERC20",
-            "name": "fromToken",
+            "name": "srcToken",
             "type": "address"
           },
           {
             "internalType": "contract IERC20",
-            "name": "toToken",
+            "name": "destToken",
             "type": "address"
           },
           {
@@ -1347,7 +1066,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "expectedAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
@@ -1357,7 +1076,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "uuidAndBlock",
+            "name": "metadata",
             "type": "bytes32"
           },
           {
@@ -1386,11 +1105,300 @@
         "type": "bytes"
       }
     ],
-    "name": "swapOnUniswapV3",
+    "name": "swapExactAmountInOnUniswapV3",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "receivedAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "executor",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "contract IERC20",
+            "name": "srcToken",
+            "type": "address"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "destToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quotedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadata",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address payable",
+            "name": "beneficiary",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct GenericData",
+        "name": "swapData",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "partnerAndFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "executorData",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapExactAmountOut",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "spentAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "quotedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadata",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "beneficiaryAndApproveFlag",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BalancerV2Data",
+        "name": "balancerData",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "partnerAndFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapExactAmountOutOnBalancerV2",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "usedAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "contract IERC20",
+            "name": "srcToken",
+            "type": "address"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "destToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quotedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadata",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address payable",
+            "name": "beneficiary",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "pools",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct UniswapV2Data",
+        "name": "uniData",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "partnerAndFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapExactAmountOutOnUniswapV2",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "usedAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "contract IERC20",
+            "name": "srcToken",
+            "type": "address"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "destToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quotedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadata",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address payable",
+            "name": "beneficiary",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "pools",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct UniswapV3Data",
+        "name": "uniData",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "partnerAndFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapExactAmountOutOnUniswapV3",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "spentAmount",
         "type": "uint256"
       }
     ],

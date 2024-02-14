@@ -246,7 +246,7 @@ describe('Weth E2E', () => {
     });
   });
 
-  describe('Wmatic Polygon', () => {
+  describe('Wmatic Polygon_V6', () => {
     const dexKey = 'Wmatic';
     const network = Network.POLYGON;
 
@@ -270,7 +270,7 @@ describe('Weth E2E', () => {
     const wrappedHolder = holders[wrappedTokenSymbol];
 
     describe('SimpleSwap SELL', () => {
-      const contractMethod = ContractMethod.simpleSwap;
+      const contractMethod = ContractMethod.swapExactAmountIn;
       const side = SwapSide.SELL;
 
       it('native -> wrapped', async () => {
@@ -300,69 +300,69 @@ describe('Weth E2E', () => {
         );
       });
     });
-    describe('MultiSwap SELL', () => {
-      const contractMethod = ContractMethod.multiSwap;
-      const side = SwapSide.SELL;
+    // describe('MultiSwap SELL', () => {
+    //   const contractMethod = ContractMethod.multiSwap;
+    //   const side = SwapSide.SELL;
 
-      it('native -> wrapped', async () => {
-        await testE2E(
-          nativeToken,
-          wrappedToken,
-          nativeHolder,
-          nativeAmount,
-          side,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-      it('wrapped -> native', async () => {
-        await testE2E(
-          wrappedToken,
-          nativeToken,
-          wrappedHolder,
-          wrappedAmount,
-          side,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
+    //   it('native -> wrapped', async () => {
+    //     await testE2E(
+    //       nativeToken,
+    //       wrappedToken,
+    //       nativeHolder,
+    //       nativeAmount,
+    //       side,
+    //       dexKey,
+    //       contractMethod,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    //   it('wrapped -> native', async () => {
+    //     await testE2E(
+    //       wrappedToken,
+    //       nativeToken,
+    //       wrappedHolder,
+    //       wrappedAmount,
+    //       side,
+    //       dexKey,
+    //       contractMethod,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
 
-    describe('MegaSwap SELL', () => {
-      const contractMethod = ContractMethod.megaSwap;
-      const side = SwapSide.SELL;
+    // describe('MegaSwap SELL', () => {
+    //   const contractMethod = ContractMethod.megaSwap;
+    //   const side = SwapSide.SELL;
 
-      it('native -> wrapped', async () => {
-        await testE2E(
-          nativeToken,
-          wrappedToken,
-          nativeHolder,
-          nativeAmount,
-          side,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-      it('wrapped -> native', async () => {
-        await testE2E(
-          wrappedToken,
-          nativeToken,
-          wrappedHolder,
-          wrappedAmount,
-          side,
-          dexKey,
-          contractMethod,
-          network,
-          provider,
-        );
-      });
-    });
+    //   it('native -> wrapped', async () => {
+    //     await testE2E(
+    //       nativeToken,
+    //       wrappedToken,
+    //       nativeHolder,
+    //       nativeAmount,
+    //       side,
+    //       dexKey,
+    //       contractMethod,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    //   it('wrapped -> native', async () => {
+    //     await testE2E(
+    //       wrappedToken,
+    //       nativeToken,
+    //       wrappedHolder,
+    //       wrappedAmount,
+    //       side,
+    //       dexKey,
+    //       contractMethod,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
   });
 
   describe('Wftm Fantom', () => {

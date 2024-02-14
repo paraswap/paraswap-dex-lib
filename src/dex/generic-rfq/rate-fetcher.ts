@@ -375,6 +375,7 @@ export class RateFetcher {
     _destToken: Token,
     srcAmount: string,
     side: SwapSide,
+    takerAddress: Address,
     userAddress: Address,
     taker: Address,
     partner?: string,
@@ -392,7 +393,7 @@ export class RateFetcher {
       makerAmount: side === SwapSide.BUY ? srcAmount : undefined,
       takerAmount: side === SwapSide.SELL ? srcAmount : undefined,
       userAddress,
-      taker,
+      takerAddress,
       partner,
     };
 
@@ -427,6 +428,7 @@ export class RateFetcher {
         this.dexHelper.config.data.network,
         this.dexHelper.config.data.augustusRFQAddress,
         this.dexHelper.multiWrapper,
+        takerAddress,
         firmRateResp.order,
         this.verifierContract,
       );

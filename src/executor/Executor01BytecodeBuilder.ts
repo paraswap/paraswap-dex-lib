@@ -1,11 +1,11 @@
 import { ethers } from 'ethers';
 import { DexExchangeParam } from '../types';
-import { OptimalRate } from '@paraswap/core';
+import { OptimalRate, OptimalSwap } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
-import { Flag } from './types';
-import { BYTES_64_LENGTH } from './constants';
+import { Executors, Flag, SpecialDex } from './types';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
+import { BYTES_64_LENGTH } from './constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -15,6 +15,7 @@ const {
  * Class to build bytecode for Executor01 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
  */
 export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
+  type = Executors.ONE;
   /**
    * Executor01 Flags:
    * switch (flag % 4):
@@ -26,7 +27,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
    * switch (flag % 3):
    * case 0: don't check balance after swap
    * case 1: check eth balance after swap
-   * case 2: check desTtoken balance after swap
+   * case 2: check destToken balance after swap
    */
   protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
@@ -72,7 +73,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
    * switch (flag % 3):
    * case 0: don't check balance after swap
    * case 1: check eth balance after swap
-   * case 2: check desTtoken balance after swap
+   * case 2: check destToken balance after swap
    */
   protected buildMultiSwapFlags(
     priceRoute: OptimalRate,
@@ -134,6 +135,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     exchangeParams: DexExchangeParam[],
     index: number,
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
+    sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
   ): string {
     let swapCallData = '';
@@ -145,14 +147,33 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       swap,
       curExchangeParam,
       index,
+      index === priceRoute.bestRoute[0].swaps.length - 1,
       flags.dexes[index],
     );
 
     swapCallData = hexConcat([dexCallData]);
 
+    const skipApprove = !!curExchangeParam.skipApprove;
+
+    if (curExchangeParam.transferSrcTokenBeforeSwap) {
+      const transferCallData = this.buildTransferCallData(
+        this.erc20Interface.encodeFunctionData('transfer', [
+          curExchangeParam.transferSrcTokenBeforeSwap,
+          swap.swapExchanges[index].srcAmount,
+        ]),
+        isETHAddress(swap.srcToken)
+          ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+          : swap.srcToken.toLowerCase(),
+      );
+
+      swapCallData = hexConcat([transferCallData, swapCallData]);
+    }
+
     if (
-      !isETHAddress(swap.srcToken) ||
-      (isETHAddress(swap.srcToken) && index !== 0)
+      flags.dexes[index] % 4 !== 1 && // not sendEth
+      (!isETHAddress(swap.srcToken) ||
+        (isETHAddress(swap.srcToken) && index !== 0)) &&
+      !skipApprove
     ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
@@ -220,9 +241,64 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     return swapCallData;
   }
 
+  protected buildDexCallData(
+    swap: OptimalSwap,
+    exchangeParam: DexExchangeParam,
+    index: number,
+    isLastSwap: boolean,
+    flag: Flag,
+  ): string {
+    const dontCheckBalanceAfterSwap = flag % 3 === 0;
+    const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
+    const insertFromAmount = flag % 4 === 3;
+    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
+
+    let destTokenPos = 0;
+    if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
+      const destTokenAddr = isETHAddress(swap.destToken)
+        ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+        : swap.destToken.toLowerCase();
+
+      exchangeData = this.addTokenAddressToCallData(
+        exchangeData,
+        destTokenAddr,
+      );
+      const destTokenAddrIndex = exchangeData
+        .replace('0x', '')
+        .indexOf(destTokenAddr.replace('0x', ''));
+      destTokenPos = (destTokenAddrIndex - 24) / 2;
+    }
+
+    let fromAmountPos = 0;
+    if (insertFromAmount) {
+      const fromAmount = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'],
+        [swap.swapExchanges[0].srcAmount],
+      );
+      const fromAmountIndex = exchangeData
+        .replace('0x', '')
+        .indexOf(fromAmount.replace('0x', ''));
+      fromAmountPos = fromAmountIndex / 2;
+    }
+
+    return this.buildCallData(
+      exchangeParam.targetExchange,
+      exchangeData,
+      fromAmountPos,
+      destTokenPos,
+      specialDexFlag || SpecialDex.DEFAULT,
+      flag,
+    );
+  }
+
+  public getAddress(): string {
+    return this.dexHelper.config.data.executorsAddresses![Executors.ONE];
+  }
+
   public buildByteCode(
     priceRoute: OptimalRate,
     exchangeParams: DexExchangeParam[],
+    sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
   ): string {
     const flags = this.buildFlags(
@@ -240,6 +316,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
             exchangeParams,
             index,
             flags,
+            sender,
             maybeWethCallData,
           ),
         ]),

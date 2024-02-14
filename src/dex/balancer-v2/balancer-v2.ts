@@ -4,16 +4,17 @@ import _, { keyBy } from 'lodash';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
+  ExchangeTxInfo,
   Log,
   Logger,
-  TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
+  TxInfo,
 } from '../../types';
 import {
   ETHER_ADDRESS,
@@ -33,8 +34,8 @@ import VaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
-  getDexKeysWithNetwork,
   getBigIntPow,
+  getDexKeysWithNetwork,
   uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -44,20 +45,22 @@ import {
   BalancerPoolTypes,
   BalancerSwap,
   BalancerV2Data,
+  BalancerV2DirectParam,
   OptimizedBalancerV2Data,
   PoolState,
   PoolStateCache,
   PoolStateMap,
   SubgraphPoolAddressDictionary,
-  BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
+  BalancerV2DirectParamV6,
+  BalancerV2DirectParamV6Swap,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { BalancerConfig, Adapters } from './config';
+import { Adapters, BalancerConfig } from './config';
 import {
   getAllPoolsUsedInPaths,
   isSameAddress,
@@ -66,11 +69,20 @@ import {
 } from './utils';
 import {
   DirectMethods,
+  DirectMethodsV6,
   MIN_USD_LIQUIDITY_TO_FETCH,
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
+import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
+import { BigNumber, ethers } from 'ethers';
+import { SpecialDex } from '../../executor/types';
+
+const {
+  utils: { hexlify, hexZeroPad, solidityPack, hexConcat },
+} = ethers;
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -591,7 +603,11 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 export class BalancerV2
   extends SimpleExchange
   implements
-    IDex<BalancerV2Data, BalancerV2DirectParam, OptimizedBalancerV2Data>
+    IDex<
+      BalancerV2Data,
+      BalancerV2DirectParam | BalancerV2DirectParamV6Swap,
+      OptimizedBalancerV2Data
+    >
 {
   public eventPools: BalancerV2EventPool;
 
@@ -599,6 +615,8 @@ export class BalancerV2
   readonly isFeeOnTransferSupported = false;
 
   readonly directSwapIface = new Interface(DirectSwapABI);
+  readonly augustusV6Interface = new Interface(AugustusV6ABI);
+  readonly balancerVaultInterface = new Interface(BalancerVaultABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -1042,6 +1060,8 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
+    recipient?: string,
+    isV6Swap?: boolean,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
@@ -1074,7 +1094,7 @@ export class BalancerV2
         path = path.reverse();
       }
 
-      const _swaps = path.map((hop, index) => ({
+      let _swaps = path.map((hop, index) => ({
         poolId: hop.pool.id,
         assetInIndex: swapOffset + index,
         assetOutIndex: swapOffset + index + 1,
@@ -1089,11 +1109,27 @@ export class BalancerV2
       swapOffset += path.length + 1;
 
       // BalancerV2 Uses Address(0) as ETH
-      const _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
+      let _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
         t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
       );
 
-      const _limits = _assets.map(_ => MAX_INT);
+      if (isV6Swap && side === SwapSide.BUY) {
+        _assets = _assets.reverse();
+        _swaps = _swaps.map(swap => ({
+          ...swap,
+          assetInIndex: _assets.length - swap.assetInIndex - 1,
+          assetOutIndex: _assets.length - swap.assetOutIndex - 1,
+        }));
+      }
+
+      const _limits = isV6Swap
+        ? this.createSwapArray(
+            _assets.length,
+            side === SwapSide.SELL ? 0 : 1,
+            srcAmount,
+            destAmount,
+          )
+        : _assets.map(_ => MAX_INT);
 
       swaps = swaps.concat(_swaps);
       assets = assets.concat(_assets);
@@ -1101,8 +1137,12 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: this.augustusAddress,
-      recipient: this.augustusAddress,
+      sender: isV6Swap
+        ? this.augustusV6Address!
+        : recipient || this.augustusAddress,
+      recipient: isV6Swap
+        ? this.augustusV6Address!
+        : recipient || this.augustusAddress,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
@@ -1117,6 +1157,23 @@ export class BalancerV2
     ];
 
     return params;
+  }
+
+  private createSwapArray(
+    lengthOfAssets: number,
+    swapKind: 0 | 1,
+    fromAmount: string,
+    toAmount: string,
+  ): string[] {
+    let swapArray = new Array(lengthOfAssets).fill('0');
+
+    // Assign values based on swapKind
+    swapArray[0] =
+      swapKind === 0 ? fromAmount : BigNumber.from(toAmount).mul(-1).toString();
+    swapArray[lengthOfAssets - 1] =
+      swapKind === 0 ? BigNumber.from(toAmount).mul(-1).toString() : fromAmount;
+
+    return swapArray;
   }
 
   static getDirectFunctionName(): string[] {
@@ -1152,6 +1209,10 @@ export class BalancerV2
     let isApproved: boolean | undefined;
 
     try {
+      // TODO-v6: current implementation don't support v6
+      // check allowance with hasAugustusAllowance with version param
+      // check this https://github.com/paraswap/paraswap-dex-lib-private/commit/e5578a762596e88e98de3cef0092295c8ae81cee#diff-3ef1f1193622d120609edf4fe56696b3d340b8c6ce7fcf7b1acf1537f0a84dabR84
+      // and this https://github.com/paraswap/paraswap-dex-lib-private/commit/e5578a762596e88e98de3cef0092295c8ae81cee#diff-a4e6a5d9442d649b6ca51a08f5e58c8aa296d7b21b659cd69b5a5755b2c21533R381
       this.erc20Contract.options.address =
         this.dexHelper.config.wrapETH(srcToken).address;
       const allowance = await this.erc20Contract.methods
@@ -1251,6 +1312,98 @@ export class BalancerV2
     };
   }
 
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod?: string,
+  ) {
+    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+
+    if (!BalancerV2.getDirectFunctionNameV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const balancerParams = this.getBalancerParam(
+      srcToken,
+      destToken,
+      fromAmount,
+      toAmount,
+      data,
+      side,
+      beneficiary,
+      true, // v6 call
+    );
+
+    const isApproved = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
+
+    const swapParams: BalancerV2DirectParamV6 = [
+      quotedAmount,
+      metadata,
+      this.encodeBeneficiaryAndApproveFlag(beneficiary, !isApproved),
+    ];
+
+    const encodeParams: BalancerV2DirectParamV6Swap = [
+      swapParams,
+      partnerAndFee,
+      permit,
+      this.encodeBalancerParam(balancerParams),
+    ];
+
+    const encoder = (...params: BalancerV2DirectParamV6Swap) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? BalancerV2.getDirectFunctionNameV6()[0]
+          : BalancerV2.getDirectFunctionNameV6()[1],
+        [...params],
+      );
+    };
+
+    return {
+      encoder,
+      params: encodeParams,
+      networkFee: '0',
+    };
+  }
+
+  private encodeBeneficiaryAndApproveFlag(
+    beneficiary: Address,
+    approveFlag: boolean,
+  ) {
+    const addressBN = BigNumber.from(beneficiary);
+    const flagBN = approveFlag ? BigNumber.from(1).shl(255) : BigNumber.from(0);
+
+    return addressBN.or(flagBN).toString();
+  }
+
+  private encodeBalancerParam(param: BalancerParam): string {
+    const [kind, swaps, assets, funds, limits, deadline] = param;
+
+    const encoded = this.balancerVaultInterface.encodeFunctionData(
+      'batchSwap',
+      [kind, swaps, assets, funds, limits, deadline],
+    );
+    return encoded;
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DirectMethodsV6.directSell, DirectMethodsV6.directBuy];
+  }
+
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -1281,6 +1434,50 @@ export class BalancerV2
       swapData,
       this.vaultAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const params = this.getBalancerParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+      recipient,
+    );
+
+    const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+      'batchSwap',
+      params,
+    );
+
+    const swaps = params[1];
+    const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+      return acc.add(swap.amount);
+    }, BigNumber.from(0));
+
+    const specialDexExchangeData = solidityPack(
+      ['bytes', 'bytes32'],
+      [exchangeData, hexZeroPad(hexlify(totalAmount), 32)],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false, // to force manual transfer
+      dexFuncHasDestToken: true,
+      exchangeData: specialDexExchangeData,
+      specialDexFlag: SpecialDex.SWAP_ON_BALANCER_V2,
+      targetExchange: this.vaultAddress,
+    };
   }
 
   async updatePoolState(): Promise<void> {
