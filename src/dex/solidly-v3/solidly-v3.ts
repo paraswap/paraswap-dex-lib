@@ -762,7 +762,7 @@ export class SolidlyV3
     );
 
     const swapFunctionParams: SolidlyV3SimpleSwapParams = {
-      recipient: recipient,
+      recipient,
       zeroForOne: data.zeroForOne,
       amountSpecified:
         side === SwapSide.SELL
@@ -782,7 +782,6 @@ export class SolidlyV3
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: data.poolAddress,
     };

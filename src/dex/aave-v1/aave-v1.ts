@@ -234,8 +234,7 @@ export class AaveV1
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      dexFuncHasDestToken: false, // TODO: ??
+      dexFuncHasRecipient: false,
       exchangeData,
       targetExchange: swapCallee,
     };

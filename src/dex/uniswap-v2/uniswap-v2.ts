@@ -846,6 +846,7 @@ export class UniswapV2
     );
   }
 
+  // TODO: Rebase tokens handling?
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -857,50 +858,50 @@ export class UniswapV2
   ): DexExchangeParam {
     const pools = encodePools(data.pools, this.feeFactor);
 
-    // TODO: Rebase tokens handling?
-    // const hasRebaseTokenSrc = rebaseTokensSetsByChain[this.network]?.has(
-    //   srcToken.toLowerCase(),
-    // );
-    // const hasRebaseTokenDest = rebaseTokensSetsByChain[this.network]?.has(
-    //   destToken.toLowerCase(),
-    // );
+    let exchangeData: string;
+    let specialDexFlag: SpecialDex;
+    let transferSrcTokenBeforeSwap: Address | undefined;
+    let skipApprove: boolean;
+    let targetExchange: Address;
 
-    // const maybeSyncCall =
-    //   hasRebaseTokenSrc || hasRebaseTokenDest
-    //     ? {
-    //         callees: [
-    //           hasRebaseTokenSrc
-    //             ? data.pools[0].address
-    //             : data.pools[data.pools.length - 1].address,
-    //         ],
-    //         calldata: [uniswapV2PoolIface.encodeFunctionData('sync')],
-    //         values: ['0'],
-    //       }
-    //     : undefined;
+    if (side === SwapSide.SELL) {
+      // 28 bytes are prepended in the Bytecode builder
+      const exchangeDataTypes = ['bytes4', 'bytes32', 'bytes32'];
+      const exchangeDataToPack = [
+        hexZeroPad(hexlify(0), 4),
+        hexZeroPad(hexlify(data.pools.length), 32), // pool count
+        hexZeroPad(hexlify(BigNumber.from(srcAmount)), 32),
+      ];
+      pools.forEach(pool => {
+        exchangeDataTypes.push('bytes32');
+        exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
+      });
 
-    // 28 bytes are prepended in the Bytecode builder
-    const exchangeDataTypes = ['bytes4', 'bytes32', 'bytes32'];
-    const exchangeDataToPack = [
-      hexZeroPad(hexlify(0), 4),
-      hexZeroPad(hexlify(data.pools.length), 32), // pool count
-      hexZeroPad(hexlify(BigNumber.from(srcAmount)), 32),
-    ];
-    pools.forEach(pool => {
-      exchangeDataTypes.push('bytes32');
-      exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
-    });
+      exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+      specialDexFlag = SpecialDex.SWAP_ON_UNISWAP_V2_FORK;
+      transferSrcTokenBeforeSwap = data.pools[0].address;
+      skipApprove = true;
+      targetExchange = recipient;
+    } else {
+      const weth = this.getWETHAddress(srcToken, destToken, data.weth);
 
-    const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+      exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+        UniswapV2Functions.buy,
+        [srcToken, srcAmount, destAmount, weth, pools],
+      );
+      specialDexFlag = SpecialDex.DEFAULT;
+      skipApprove = false;
+      targetExchange = data.router;
+    }
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
       exchangeData,
-      targetExchange: recipient,
-      specialDexFlag: SpecialDex.SWAP_ON_UNISWAP_V2_FORK,
-      transferSrcTokenBeforeSwap: data.pools[0].address,
-      skipApprove: true,
+      targetExchange,
+      specialDexFlag,
+      transferSrcTokenBeforeSwap,
+      skipApprove,
     };
   }
 

@@ -14,7 +14,7 @@ import { generateConfig } from '../../config';
 describe('MakerPsm E2E', () => {
   const dexKey = 'MakerPsm';
 
-  describe('MakerPsm MAINNET', () => {
+  describe('MakerPsm MAINNET_V6', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -33,12 +33,13 @@ describe('MakerPsm E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>

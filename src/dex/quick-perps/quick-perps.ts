@@ -228,27 +228,18 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
     data: QuickPerpsData,
     side: SwapSide,
   ): DexExchangeParam {
-    const swapData = solidityPack(
-      ['bytes', 'bytes'],
-      [
-        QuickPerps.erc20Interface.encodeFunctionData('transfer', [
-          this.params.vault,
-          srcAmount,
-        ]),
-        Vault.interface.encodeFunctionData('swap', [
-          srcToken,
-          destToken,
-          recipient,
-        ]),
-      ],
-    );
+    const swapData = Vault.interface.encodeFunctionData('swap', [
+      srcToken,
+      destToken,
+      recipient,
+    ]);
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: this.params.vault,
+      transferSrcTokenBeforeSwap: this.params.vault,
     };
   }
 

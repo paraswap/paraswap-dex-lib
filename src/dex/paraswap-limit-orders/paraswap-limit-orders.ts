@@ -390,13 +390,12 @@ export class ParaSwapLimitOrders
     const isSell = side === SwapSide.SELL;
     const swapData = this.rfqIface.encodeFunctionData(
       isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
-      [orderInfos, isSell ? srcAmount : destAmount, this.augustusAddress],
+      [orderInfos, isSell ? srcAmount : destAmount, recipient],
     );
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: this.augustusRFQAddress,
     };

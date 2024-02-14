@@ -1078,7 +1078,6 @@ export class CurveV1Factory
       exchangeData,
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
       targetExchange: exchange,
     };
   }
