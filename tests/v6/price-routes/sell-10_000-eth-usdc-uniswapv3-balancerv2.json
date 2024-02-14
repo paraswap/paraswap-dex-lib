@@ -3,7 +3,7 @@
     "network": 1,
     "blockNumber": 19225505,
     "forkId": "8c097e08-0d10-4c8b-8eb0-863d2109bde5",
-    "lastTx": "4905d35f-dd1a-416d-b349-d1e8031b8639",
+    "lastTx": "753a44d9-240e-4b11-8407-043febfbd438",
     "contracts": {
       "AugustusV6": "0xA0C3E30e07A963eD2A05F8FA0ec929A1Ac712303",
       "Executor01": "0x905C8F75b98DDDA09A40f0e74cd7f2661e726389",
