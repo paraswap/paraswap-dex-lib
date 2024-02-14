@@ -494,7 +494,6 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     );
   }
 
-  // TODO: Implement special case
   getDexParam(
     srcToken: Address,
     destToken: Address,

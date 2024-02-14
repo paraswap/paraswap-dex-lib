@@ -191,7 +191,7 @@ describe('Hashflow E2E', () => {
       nativeTokenAmount,
     );
   });
-  describe('Polygon_v6', () => {
+  describe('Polygon_V6', () => {
     const network = Network.POLYGON;
 
     const tokenASymbol: string = 'USDC';
