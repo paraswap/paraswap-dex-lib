@@ -1055,9 +1055,11 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
-    isV6Swap?: boolean,
     recipient?: string,
   ): BalancerParam {
+    // for now recipient passed only for v6
+    let isV6Swap = !!recipient;
+
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
@@ -1338,7 +1340,6 @@ export class BalancerV2
       toAmount,
       data,
       side,
-      true, // v6 call
       beneficiary,
     );
 
@@ -1445,7 +1446,6 @@ export class BalancerV2
       destAmount,
       data,
       side,
-      true,
       recipient,
     );
 
