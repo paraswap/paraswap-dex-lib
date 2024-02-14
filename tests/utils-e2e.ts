@@ -500,29 +500,29 @@ export async function testE2E(
     const executorsAddresses = Object.values(config.executorsAddresses!);
     const addresses = [...executorsAddresses, augustusV6Address];
 
-    for await (const a of addresses) {
-      const src =
-        srcToken.address.toLowerCase() === ETHER_ADDRESS
-          ? config.wrappedNativeTokenAddress
-          : srcToken.address.toLowerCase();
-      const dest =
-        destToken.address.toLowerCase() === ETHER_ADDRESS
-          ? config.wrappedNativeTokenAddress
-          : destToken.address.toLowerCase();
-
-      if (priceRoute.bestRoute[0].swaps.length > 0) {
-        const intermediateToken =
-          priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
-          ETHER_ADDRESS
-            ? config.wrappedNativeTokenAddress
-            : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
-
-        await ts.simulate(send1WeiTo(intermediateToken, a, network));
-      }
-
-      await ts.simulate(send1WeiTo(src, a, network));
-      await ts.simulate(send1WeiTo(dest, a, network));
-    }
+    // for await (const a of addresses) {
+    //   const src =
+    //     srcToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : srcToken.address.toLowerCase();
+    //   const dest =
+    //     destToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : destToken.address.toLowerCase();
+    //
+    //   if (priceRoute.bestRoute[0].swaps.length > 0) {
+    //     const intermediateToken =
+    //       priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
+    //       ETHER_ADDRESS
+    //         ? config.wrappedNativeTokenAddress
+    //         : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
+    //
+    //     await ts.simulate(send1WeiTo(intermediateToken, a, network));
+    //   }
+    //
+    //   await ts.simulate(send1WeiTo(src, a, network));
+    //   await ts.simulate(send1WeiTo(dest, a, network));
+    // }
     //
     // for await (const a of addresses) {
     //   const src =

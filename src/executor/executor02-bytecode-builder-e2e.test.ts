@@ -744,36 +744,35 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         });
       });
 
-      // BalancerV1 needs special dex flag which is not implemented
-      // describe('ETH -> WBTC via SushiSwapV3 and BalancerV1', () => {
-      //   const dexKeys = ['SushiSwapV3', 'BalancerV1'];
-      //
-      //   const tokenASymbol: string = 'ETH';
-      //   const tokenBSymbol: string = 'WBTC';
-      //   const tokenAAmount: string = '1000000000000000000000';
-      //
-      //   const side = SwapSide.SELL;
-      //
-      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-      //     await testE2E(
-      //       tokens[tokenASymbol],
-      //       tokens[tokenBSymbol],
-      //       holders[tokenASymbol],
-      //       tokenAAmount,
-      //       side,
-      //       dexKeys,
-      //       contractMethod,
-      //       network,
-      //       provider,
-      //       undefined,
-      //       undefined,
-      //       undefined,
-      //       300,
-      //       2000,
-      //       false,
-      //     );
-      //   });
-      // });
+      describe('ETH -> WBTC via SushiSwapV3 and BalancerV1', () => {
+        const dexKeys = ['SushiSwapV3', 'BalancerV1'];
+
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'WBTC';
+        const tokenAAmount: string = '1000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+            false,
+          );
+        });
+      });
     });
   });
 });

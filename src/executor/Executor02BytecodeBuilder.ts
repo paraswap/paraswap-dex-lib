@@ -130,7 +130,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
-    let dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
+    let dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
@@ -155,20 +155,16 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         dexFlag =
           isHorizontalSequence && !applyVerticalBranching && !isSpecialDex
             ? Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
-            : // : isSpecialDex
-              // ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
-              Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 0
+            : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       } else if (isEthDest && !needUnwrap) {
         dexFlag =
           isHorizontalSequence && !applyVerticalBranching
-            ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
-            : Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
+            ? Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
+            : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isEthDest && needUnwrap) {
-        dexFlag =
-          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
+        dexFlag = Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       } else if (!dexFuncHasRecipient) {
-        dexFlag =
-          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
+        dexFlag = Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       }
     } else {
       if (isSpecialDex && !isLastSwap) {
@@ -189,16 +185,16 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         if (isEthDest && !needUnwrap) {
           dexFlag =
             isHorizontalSequence && !isLastSwap && !applyVerticalBranching
-              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
-              : Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
+              ? Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
+              : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
         } else if (isEthSrc && !needWrap) {
           dexFlag =
             Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
         } else {
           dexFlag =
             isHorizontalSequence && !isLastSwap && !applyVerticalBranching
-              ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-              : Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
+              ? Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 3
+              : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
         }
       } else if (!dexFuncHasRecipient) {
         dexFlag = Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
