@@ -1241,6 +1241,148 @@ describe('Retro', () => {
   });
 });
 
+describe('Blueprint', () => {
+  const dexKey = 'Blueprint';
+
+  describe('Polygon', () => {
+    let blockNumber: number;
+    let blueprint: UniswapV3;
+
+    const network = Network.POLYGON;
+    const dexHelper = new DummyDexHelper(network);
+    const TokenASymbol = 'USDC';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDT';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    beforeEach(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      blueprint = new UniswapV3(network, dexKey, dexHelper);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await blueprint.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await blueprint.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = blueprint.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            blueprint,
+            'quoteExactInputSingle',
+            blockNumber,
+            '0x4C78D1Ad9895125Cd6A693a5b3AeAe3C9478af0d',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await blueprint.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await blueprint.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = blueprint.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            blueprint,
+            'quoteExactOutputSingle',
+            blockNumber,
+            '0x4C78D1Ad9895125Cd6A693a5b3AeAe3C9478af0d',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getTopPoolsForToken', async function () {
+      const poolLiquidity = await blueprint.getTopPoolsForToken(
+        TokenB.address,
+        10,
+      );
+      console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+      checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+    });
+  });
+});
+
 describe('BaseswapV3', function () {
   const dexKey = 'BaseswapV3';
 

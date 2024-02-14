@@ -289,6 +289,20 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/ruvlol/univ3-test',
     },
   },
+  Blueprint: {
+    [Network.MAINNET]: {
+      factory: '0xe777c3da43ec554ec845649323215afaa34d6c23',
+      quoter: '0x4c78d1ad9895125cd6a693a5b3aeae3c9478af0d',
+      router: '0x269ae88aa04e7b9b81f2d89263fbcd2cef1c58fc',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x9c764D2e92dA68E4CDfD784B902283A095ff8b63',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0x1417ef7c0315e5b350728160ff200770f951cb2756ad82a6522c6e62c93ced9f`,
+      subgraphURL: 'https://api.thegraph.com/subgraphs/name/ruvlol/blue-helper',
+    },
+  },
   BaseswapV3: {
     [Network.BASE]: {
       factory: '0x38015D05f4fEC8AFe15D7cc0386a126574e8077B',
