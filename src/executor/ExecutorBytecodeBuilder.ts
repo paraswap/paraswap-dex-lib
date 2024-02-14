@@ -128,7 +128,7 @@ export abstract class ExecutorBytecodeBuilder {
       WRAP_UNWRAP_FROM_AMOUNT_POS,
       0,
       SpecialDex.DEFAULT,
-      Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP,
+      Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP, // 7
       hexDataLength(withdrawCallData),
     );
   }
@@ -143,7 +143,7 @@ export abstract class ExecutorBytecodeBuilder {
       36,
       0,
       SpecialDex.DEFAULT,
-      Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP,
+      Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 3
       hexDataLength(transferCallData),
     );
   }
@@ -155,7 +155,7 @@ export abstract class ExecutorBytecodeBuilder {
       0,
       0,
       SpecialDex.SEND_NATIVE,
-      Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP,
+      Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
     );
   }
 
