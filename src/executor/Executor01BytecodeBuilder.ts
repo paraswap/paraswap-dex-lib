@@ -170,13 +170,14 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     }
 
     if (
-      flags.dexes[index] % 4 !== 1 && // not sendEth
-      (!isETHAddress(swap.srcToken) ||
-        (isETHAddress(swap.srcToken) && index !== 0)) &&
-      !skipApprove
+      (flags.dexes[index] % 4 !== 1 && // not sendEth
+        (!isETHAddress(swap.srcToken) ||
+          (isETHAddress(swap.srcToken) && index !== 0)) &&
+        !skipApprove) ||
+      curExchangeParam.spender // always do approve if spender is set
     ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
-        curExchangeParam.targetExchange,
+        curExchangeParam.spender || curExchangeParam.targetExchange,
         srcAmount,
       ]);
 

@@ -423,9 +423,12 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       ]);
     }
 
-    if (!isETHAddress(swap!.srcToken) && !skipApprove) {
+    if (
+      (!isETHAddress(swap!.srcToken) && !skipApprove) ||
+      curExchangeParam.spender // always do approve if spender is set
+    ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
-        curExchangeParam.targetExchange,
+        curExchangeParam.spender || curExchangeParam.targetExchange,
         srcAmount,
       ]);
 

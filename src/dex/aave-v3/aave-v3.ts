@@ -197,20 +197,18 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     side: SwapSide,
   ): DexExchangeParam {
     const amount = side === SwapSide.SELL ? srcAmount : destAmount;
-    const [
+    const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
-      swapCallee,
-      swapFunction,
-      swapFunctionParams,
-      dexFuncHasDestToken,
-    ] = ((): [Interface, Address, PoolAndWethFunctions, Param, boolean] => {
+      Address,
+      PoolAndWethFunctions,
+      Param,
+    ] => {
       if (isETHAddress(srcToken))
         return [
           this.wethGateway,
           this.config.wethGatewayAddress,
           PoolAndWethFunctions.depositETH,
           [this.config.poolAddress, recipient, REF_CODE],
-          false,
         ];
 
       if (isETHAddress(destToken))
@@ -219,7 +217,6 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
           this.config.wethGatewayAddress,
           PoolAndWethFunctions.withdrawETH,
           [this.config.poolAddress, amount, recipient],
-          false,
         ];
 
       if (data.fromAToken)
@@ -228,7 +225,6 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
           this.config.poolAddress,
           PoolAndWethFunctions.withdraw,
           [destToken, amount, recipient],
-          true,
         ];
 
       return [
@@ -236,7 +232,6 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
         this.config.poolAddress,
         PoolAndWethFunctions.supply,
         [srcToken, amount, recipient, REF_CODE],
-        false,
       ];
     })();
 
@@ -248,7 +243,6 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken,
       exchangeData,
       targetExchange: swapCallee,
     };

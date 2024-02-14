@@ -111,7 +111,7 @@ describe('Nerve', () => {
 describe('Axial', () => {
   const dexKey = 'Axial';
 
-  describe('Avalanche', () => {
+  describe('Avalanche_V6', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -119,8 +119,9 @@ describe('Axial', () => {
       generateConfig(network).privateHttpProvider,
       network,
     );
+    const contractMethod = ContractMethod.swapExactAmountIn;
     describe('simpleSwap', () => {
-      const contractMethod = ContractMethod.simpleSwap;
+      // const contractMethod = ContractMethod.simpleSwap;
       it('SELL newFRAX -> MIM', async () => {
         await testE2E(
           tokens.newFRAX,
@@ -136,7 +137,7 @@ describe('Axial', () => {
       });
     });
     describe('multiSwap', () => {
-      const contractMethod = ContractMethod.multiSwap;
+      // const contractMethod = ContractMethod.multiSwap;
       it('SELL MIM -> USDCe', async () => {
         await testE2E(
           tokens.MIM,

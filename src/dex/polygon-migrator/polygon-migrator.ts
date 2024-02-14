@@ -178,8 +178,7 @@ export class PolygonMigrator
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.migratorAddress,
     };
