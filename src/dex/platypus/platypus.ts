@@ -497,7 +497,6 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     data: PlatypusData,
     side: SwapSide,
   ): DexExchangeParam {
-    // TODO: Check recipient
     const swapData = isETHAddress(srcToken)
       ? Platypus.avaxPoolInterface.encodeFunctionData('swapFromETH', [
           destToken,
@@ -525,7 +524,6 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: data.pool,
     };

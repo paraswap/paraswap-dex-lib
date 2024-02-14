@@ -354,8 +354,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
     };

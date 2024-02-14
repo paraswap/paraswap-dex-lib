@@ -168,6 +168,7 @@ export type DexExchangeParam = {
   specialDexFlag?: SpecialDex;
   transferSrcTokenBeforeSwap?: Address;
   skipApprove?: boolean;
+  spender?: Address;
 };
 
 export type AdapterMappings = {

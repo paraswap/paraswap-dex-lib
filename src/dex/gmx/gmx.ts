@@ -219,23 +219,16 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     data: GMXData,
     side: SwapSide,
   ): DexExchangeParam {
-    const calldata = [
-      GMX.erc20Interface.encodeFunctionData('transfer', [
-        this.params.vault,
-        srcAmount,
-      ]),
-      Vault.interface.encodeFunctionData('swap', [
-        srcToken,
-        destToken,
-        this.augustusAddress,
-      ]),
-    ];
-    const exchangeData = solidityPack(['bytes', 'bytes'], calldata);
+    const exchangeData = Vault.interface.encodeFunctionData('swap', [
+      srcToken,
+      destToken,
+      recipient,
+    ]);
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      transferSrcTokenBeforeSwap: this.params.vault,
       exchangeData,
       targetExchange: this.params.vault,
     };

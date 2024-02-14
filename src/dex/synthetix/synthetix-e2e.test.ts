@@ -29,9 +29,10 @@ async function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
   ]);
@@ -127,7 +128,7 @@ async function testForNetwork(
 }
 
 describe('Synthetix E2E', () => {
-  describe('Synthetix MAINNET', () => {
+  describe('Synthetix MAINNET_V6', () => {
     const network = Network.MAINNET;
 
     const tokenChainlinkSymbol = 'sETH';
