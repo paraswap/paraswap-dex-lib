@@ -105,7 +105,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     let dexFlag: Flag;
 
-    const approveFlag =
+    let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
     if (isFirstSwap) {
@@ -120,6 +120,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
           Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       } else if (isEthDest && needUnwrap) {
         dexFlag =
+          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
+        approveFlag =
           Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       } else if (isEthDest && !needUnwrap) {
         dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
