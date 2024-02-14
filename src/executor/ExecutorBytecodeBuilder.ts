@@ -75,6 +75,7 @@ export abstract class ExecutorBytecodeBuilder {
     isLastSwap: boolean,
     flag: Flag,
     swapExchange?: OptimalSwapExchange<any>,
+    maybeWethCallData?: DepositWithdrawReturn,
   ): string;
 
   protected buildApproveCallData(

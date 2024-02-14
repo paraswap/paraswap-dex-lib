@@ -6,7 +6,6 @@ import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
-import { directUniswapFunctionNameV6 } from './uniswap-v2';
 import { UniswapV2FunctionsV6 } from './types';
 
 describe('UniswapV2 E2E Mainnet', () => {
@@ -172,10 +171,10 @@ describe('UniswapV2 E2E Mainnet', () => {
             provider,
           );
         });
-        it('EX3: ETH -> USDC', async () => {
+        it('EX3: ETH -> USDT', async () => {
           await testE2E(
             tokens.ETH,
-            tokens.USDC,
+            tokens.USDT,
             holders.ETH,
             '7000000000000000',
             SwapSide.BUY,

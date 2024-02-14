@@ -192,25 +192,25 @@ describe('Dexalot E2E', () => {
     );
   });
 
-  // describe('BTC.b -> USDC', () => {
-  //   const network = Network.AVALANCHE;
+  describe('BTC.b -> USDC V6', () => {
+    const network = Network.AVALANCHE;
 
-  //   const tokenASymbol: string = 'BTCb';
-  //   const tokenBSymbol: string = 'USDC';
+    const tokenASymbol: string = 'BTCb';
+    const tokenBSymbol: string = 'USDC';
 
-  //   const tokenAAmount: string = '100';
-  //   const tokenBAmount: string = '9000000000';
-  //   const nativeTokenAmount = '1000000000000000000';
+    const tokenAAmount: string = '100';
+    const tokenBAmount: string = '9000000000';
+    const nativeTokenAmount = '1000000000000000000';
 
-  //   testForNetwork(
-  //     network,
-  //     dexKey,
-  //     tokenASymbol,
-  //     tokenBSymbol,
-  //     tokenAAmount,
-  //     tokenBAmount,
-  //     nativeTokenAmount,
-  //     true,
-  //   );
-  // });
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+      true,
+    );
+  });
 });

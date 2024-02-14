@@ -1,6 +1,11 @@
 import { ethers } from 'ethers';
 import { DexExchangeParam } from '../types';
-import { Address, OptimalRate, OptimalSwap } from '@paraswap/core';
+import {
+  Address,
+  OptimalRate,
+  OptimalSwap,
+  OptimalSwapExchange,
+} from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn, WethFunctions } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
@@ -95,6 +100,8 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       index,
       true,
       flags.dexes[index],
+      undefined,
+      maybeWethCallData,
     );
 
     swapCallData = hexConcat([dexCallData]);
@@ -205,6 +212,8 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     index: number,
     isLastSwap: boolean,
     flag: Flag,
+    _?: OptimalSwapExchange<any>,
+    maybeWethCalldata?: DepositWithdrawReturn,
   ): string {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
@@ -222,6 +231,18 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       exchangeData,
       swap.destToken.toLowerCase(),
     );
+
+    // swap.destToken is never wrapped, need to put weth for destToken for dexes that require wrap
+    if (
+      isETHAddress(swap.destToken) &&
+      exchangeParam.needWrapNative &&
+      maybeWethCalldata?.withdraw
+    ) {
+      exchangeData = this.addTokenAddressToCallData(
+        exchangeData,
+        this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
+      );
+    }
 
     let tokenBalanceCheckPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
