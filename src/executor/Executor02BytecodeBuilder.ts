@@ -12,10 +12,7 @@ import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import {
-  BYTES_28_LENGTH,
   BYTES_64_LENGTH,
-  DEFAULT_RETURN_AMOUNT_POS,
-  EXECUTORS_FUNCTION_CALL_DATA_TYPES,
   SWAP_EXCHANGE_100_PERCENTAGE,
   ZEROS_20_BYTES,
   ZEROS_28_BYTES,
@@ -30,6 +27,7 @@ const {
  * Class to build bytecode for Executor02 - simpleSwap with N DEXs (VERTICAL_BRANCH), multiSwaps (VERTICAL_BRANCH_HORIZONTAL_SEQUENCE) and megaswaps (NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE)
  */
 export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
+  type = Executors.TWO;
   /**
    * Executor02 Flags:
    * switch (flag % 4):
@@ -215,13 +213,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
     index: number,
+    isLastSwap: boolean,
     flag: Flag,
     swapExchange: OptimalSwapExchange<any>,
   ): string {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData } = exchangeParam;
+    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -229,10 +228,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
         : swap.destToken.toLowerCase();
 
-      if (!exchangeParam.dexFuncHasDestToken) {
-        exchangeData = hexConcat([exchangeData, ZEROS_28_BYTES, destTokenAddr]);
-      }
-
+      exchangeData = this.addTokenAddressToCallData(
+        exchangeData,
+        destTokenAddr,
+      );
       const destTokenAddrIndex = exchangeData
         .replace('0x', '')
         .indexOf(destTokenAddr.replace('0x', ''));
@@ -251,19 +250,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       fromAmountPos = fromAmountIndex / 2;
     }
 
-    const { specialDexFlag } = exchangeParam;
-
-    return solidityPack(EXECUTORS_FUNCTION_CALL_DATA_TYPES, [
-      exchangeParam.targetExchange, // target exchange
-      hexZeroPad(hexlify(hexDataLength(exchangeData) + BYTES_28_LENGTH), 4), // dex calldata length + bytes28(0)
-      hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
-      hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      DEFAULT_RETURN_AMOUNT_POS, // return amount position
-      hexZeroPad(hexlify(specialDexFlag || SpecialDex.DEFAULT), 1), // special
-      hexZeroPad(hexlify(flag), 2), // flag
-      ZEROS_28_BYTES, // bytes28(0)
-      exchangeData, // dex calldata
-    ]);
+    return this.buildCallData(
+      targetExchange,
+      exchangeData,
+      fromAmountPos,
+      destTokenPos,
+      specialDexFlag || SpecialDex.DEFAULT,
+      flag,
+    );
   }
 
   private addMultiSwapMetadata(
@@ -462,6 +456,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       swap,
       curExchangeParam,
       exchangeParamIndex,
+      false,
       flags.dexes[exchangeParamIndex],
       swapExchange,
     );
@@ -704,8 +699,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isMegaSwap = priceRoute.bestRoute.length > 1;
     const isMultiSwap =
       !isMegaSwap && priceRoute.bestRoute[routeIndex].swaps.length > 1;
-
-    // return (isMultiSwap || isMegaSwap) && swap.swapExchanges.length > 1;
 
     return (
       (isMultiSwap || isMegaSwap) &&

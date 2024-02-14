@@ -1,8 +1,18 @@
 import { Address, DexExchangeParam, OptimalRate, TxObject } from './types';
-import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from './constants';
+import { BigNumber } from 'ethers';
+import {
+  ETHER_ADDRESS,
+  FEE_PERCENT_IN_BASIS_POINTS_MASK,
+  IS_CAP_SURPLUS_MASK,
+  IS_REFERRAL_MASK,
+  IS_SKIP_BLACKLIST_MASK,
+  IS_TAKE_SURPLUS_MASK,
+  NULL_ADDRESS,
+  SwapSide,
+} from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
-import AugustusV6ABI from './abi/AugustusV6.abi.json';
+import AugustusV6ABI from './abi/augustus-v6/ABI.json';
 import {
   encodeFeePercent,
   encodeFeePercentForReferrer,
@@ -64,27 +74,6 @@ export class GenericSwapTransactionBuilder {
       destAmountWeth.toString(),
       side,
     );
-  }
-
-  protected buildFees(
-    referrerAddress: string | undefined,
-    partnerAddress: string,
-    partnerFeePercent: string,
-    takeSurplus: boolean,
-    side: SwapSide,
-  ): [string, string] {
-    const [partner, feePercent] = referrerAddress
-      ? [referrerAddress, encodeFeePercentForReferrer(side)]
-      : [
-          encodePartnerAddressForFeeLogic({
-            partnerAddress,
-            partnerFeePercent,
-            takeSurplus,
-          }),
-          encodeFeePercent(partnerFeePercent, takeSurplus, side),
-        ];
-
-    return [partner, feePercent];
   }
 
   protected async buildCalls(
@@ -152,14 +141,17 @@ export class GenericSwapTransactionBuilder {
               wethWithdraw = BigInt(se.destAmount);
             }
 
-            const destTokenIsWeth = _dest === wethAddress;
+            const needToWithdrawAfterSwap =
+              _dest === wethAddress && wethWithdraw;
 
             const dexParams = await dex.getDexParam!(
               _src,
               _dest,
               _srcAmount,
               _destAmount,
-              destTokenIsWeth || !isLastSwap || se.exchange === 'BalancerV2'
+              needToWithdrawAfterSwap ||
+                !isLastSwap ||
+                se.exchange === 'BalancerV2'
                 ? bytecodeBuilder.getAddress()
                 : this.dexAdapterService.dexHelper.config.data
                     .augustusV6Address!,
@@ -236,13 +228,14 @@ export class GenericSwapTransactionBuilder {
 
     const side = priceRoute.side;
     const isSell = side === SwapSide.SELL;
-    // const [partner, feePercent] = this.buildFees(
-    //   referrerAddress,
-    //   partnerAddress,
-    //   partnerFeePercent,
-    //   takeSurplus,
-    //   side,
-    // );
+
+    const partnerAndFee = this.buildFeesV6({
+      referrerAddress,
+      partnerAddress,
+      partnerFeePercent,
+      takeSurplus,
+      priceRoute,
+    });
 
     const swapParams = [
       bytecodeBuilder.getAddress(),
@@ -258,18 +251,126 @@ export class GenericSwapTransactionBuilder {
         ]),
         beneficiary,
       ],
-      '0', // hexConcat([partner, hexZeroPad(hexlify(95), 12)]),
+      partnerAndFee,
       permit,
       bytecode,
     ];
 
     const encoder = (...params: any[]) =>
-      this.augustusV6Interface.encodeFunctionData('swapExactAmountIn', params);
+      this.augustusV6Interface.encodeFunctionData(
+        isSell ? 'swapExactAmountIn' : 'swapExactAmountOut',
+        params,
+      );
 
     return {
       encoder,
       params: swapParams,
     };
+  }
+
+  // TODO: Improve
+  protected async _buildDirect(
+    priceRoute: OptimalRate,
+    minMaxAmount: string,
+    referrerAddress: Address | undefined,
+    partnerAddress: Address,
+    partnerFeePercent: string,
+    takeSurplus: boolean,
+    permit: string,
+    uuid: string,
+    beneficiary: Address,
+  ) {
+    if (
+      priceRoute.bestRoute.length !== 1 ||
+      priceRoute.bestRoute[0].percent !== 100 ||
+      priceRoute.bestRoute[0].swaps.length !== 1 ||
+      priceRoute.bestRoute[0].swaps[0].swapExchanges.length !== 1 ||
+      priceRoute.bestRoute[0].swaps[0].swapExchanges[0].percent !== 100
+    )
+      throw new Error(`DirectSwap invalid bestRoute`);
+
+    const dexName = priceRoute.bestRoute[0].swaps[0].swapExchanges[0].exchange;
+    if (!dexName) throw new Error(`Invalid dex name`);
+
+    const dex = this.dexAdapterService.getTxBuilderDexByKey(dexName);
+    if (!dex) throw new Error(`Failed to find dex : ${dexName}`);
+
+    if (!dex.getDirectParamV6)
+      throw new Error(
+        `Invalid DEX: dex should have getDirectParamV6: ${dexName}`,
+      );
+
+    const swapExchange = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];
+
+    const srcAmount =
+      priceRoute.side === SwapSide.SELL ? swapExchange.srcAmount : minMaxAmount;
+    const destAmount =
+      priceRoute.side === SwapSide.SELL
+        ? minMaxAmount
+        : swapExchange.destAmount;
+
+    const expectedAmount =
+      priceRoute.side === SwapSide.SELL
+        ? priceRoute.destAmount
+        : priceRoute.srcAmount;
+
+    const partnerAndFee = this.buildFeesV6({
+      referrerAddress,
+      partnerAddress,
+      partnerFeePercent,
+      takeSurplus,
+      priceRoute,
+    });
+
+    return dex.getDirectParamV6!(
+      priceRoute.srcToken,
+      priceRoute.destToken,
+      srcAmount,
+      destAmount,
+      expectedAmount,
+      swapExchange.data,
+      priceRoute.side,
+      permit,
+      uuid,
+      partnerAndFee,
+      beneficiary,
+      priceRoute.blockNumber,
+      priceRoute.contractMethod,
+    );
+  }
+
+  private buildFeesV6({
+    referrerAddress,
+    priceRoute,
+    takeSurplus,
+    partnerAddress,
+    partnerFeePercent,
+    skipBlacklist = false,
+  }: {
+    referrerAddress?: Address;
+    partnerAddress: Address;
+    partnerFeePercent: string;
+    takeSurplus: boolean;
+    priceRoute: OptimalRate;
+    skipBlacklist?: boolean;
+  }) {
+    const partnerAndFee = referrerAddress
+      ? this.packPartnerAndFeeData(
+          referrerAddress,
+          '0',
+          takeSurplus,
+          true, // it's a referral
+          skipBlacklist,
+        )
+      : this.packPartnerAndFeeData(
+          partnerAddress,
+          partnerFeePercent,
+          takeSurplus,
+          skipBlacklist,
+          false,
+        );
+
+    return partnerAndFee;
   }
 
   public async build({
@@ -308,19 +409,38 @@ export class GenericSwapTransactionBuilder {
     const _beneficiary =
       beneficiary && beneficiary !== NULL_ADDRESS ? beneficiary : userAddress;
 
-    const { encoder, params } = await this._build(
-      priceRoute,
-      minMaxAmount,
-      userAddress,
-      referrerAddress,
-      partnerAddress,
-      partnerFeePercent,
-      takeSurplus ?? false,
-      _beneficiary,
-      permit || '0x',
-      deadline,
-      uuid,
-    );
+    let encoder: (...params: any[]) => string;
+    let params: (string | string[])[];
+
+    if (
+      this.dexAdapterService.isDirectFunctionNameV6(priceRoute.contractMethod)
+    ) {
+      ({ encoder, params } = await this._buildDirect(
+        priceRoute,
+        minMaxAmount,
+        referrerAddress,
+        partnerAddress,
+        partnerFeePercent,
+        takeSurplus ?? false,
+        permit || '0x',
+        uuid,
+        _beneficiary,
+      ));
+    } else {
+      ({ encoder, params } = await this._build(
+        priceRoute,
+        minMaxAmount,
+        userAddress,
+        referrerAddress,
+        partnerAddress,
+        partnerFeePercent,
+        takeSurplus ?? false,
+        _beneficiary,
+        permit || '0x',
+        deadline,
+        uuid,
+      ));
+    }
 
     const value = (
       priceRoute.srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase()
@@ -341,5 +461,52 @@ export class GenericSwapTransactionBuilder {
       maxFeePerGas,
       maxPriorityFeePerGas,
     };
+  }
+
+  private packPartnerAndFeeData(
+    partner: string,
+    feePercent: string,
+    takeSurplus: boolean,
+    referral: boolean,
+    skipBlacklist: boolean,
+  ): string {
+    // Partner address shifted left to make room for flags and fee percent
+    const partialFeeCodeWithPartnerAddress = BigNumber.from(partner).shl(96);
+    let partialFeeCodeWithBitFlags = BigNumber.from(0); // default 0 is safe if none the conditions pass
+
+    const isFixedFees = !BigNumber.from(feePercent).isZero();
+
+    if (isFixedFees) {
+      // Ensure feePercent fits within the FEE_PERCENT_IN_BASIS_POINTS_MASK range
+      partialFeeCodeWithBitFlags = BigNumber.from(feePercent).and(
+        FEE_PERCENT_IN_BASIS_POINTS_MASK,
+      );
+
+      // Apply flags using bitwise OR with the appropriate masks
+    } else {
+      partialFeeCodeWithBitFlags =
+        partialFeeCodeWithBitFlags.or(IS_CAP_SURPLUS_MASK);
+
+      if (takeSurplus) {
+        partialFeeCodeWithBitFlags =
+          partialFeeCodeWithBitFlags.or(IS_TAKE_SURPLUS_MASK);
+      } else if (referral) {
+        partialFeeCodeWithBitFlags =
+          partialFeeCodeWithBitFlags.or(IS_REFERRAL_MASK);
+      }
+    }
+
+    if (skipBlacklist) {
+      partialFeeCodeWithBitFlags = partialFeeCodeWithBitFlags.or(
+        IS_SKIP_BLACKLIST_MASK,
+      );
+    }
+
+    // Combine partnerBigInt and feePercentBigInt
+    const feeCode = partialFeeCodeWithPartnerAddress.or(
+      partialFeeCodeWithBitFlags,
+    );
+
+    return feeCode.toString();
   }
 }

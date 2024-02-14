@@ -4,6 +4,7 @@ import { SwapSide } from '../constants';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
 } from '../types';
@@ -111,5 +112,38 @@ export class StablePool
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: StablePoolData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, i, j, deadline } = data;
+    const swapFunctionParams: StablePoolParam = [
+      i,
+      j,
+      srcAmount,
+      this.minConversionRate,
+      deadline,
+    ];
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      StabePoolFunctions.swap,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+    };
   }
 }

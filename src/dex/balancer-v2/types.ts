@@ -137,6 +137,19 @@ export type BalancerV2DirectParam = [
   uuid: string,
 ];
 
+export type BalancerV2DirectParamV6 = [
+  quotedAmount: NumberAsString,
+  metadata: string,
+  beneficiaryAndApproveFlag: NumberAsString,
+];
+
+export type BalancerV2DirectParamV6Swap = [
+  params: BalancerV2DirectParamV6,
+  partnerAndFee: string,
+  permit: string,
+  balancerParams: string,
+];
+
 export type BalancerV2Data = {
   poolId: string;
 };

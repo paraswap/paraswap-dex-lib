@@ -11,6 +11,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -491,6 +493,37 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     );
   }
 
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: MakerPsmData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { isGemSell, gemAmount } = this.getPsmParams(
+      srcToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+
+    const exchangeData = psmInterface.encodeFunctionData(
+      isGemSell ? 'sellGem' : 'buyGem',
+      // TODO: ?
+      [recipient, gemAmount],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData,
+      targetExchange: data.psmAddress,
+    };
+  }
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
