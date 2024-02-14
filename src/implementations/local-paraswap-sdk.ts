@@ -23,6 +23,7 @@ import {
 } from '@paraswap/core/build/constants';
 import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-builder';
 import { AddressOrSymbol } from '@paraswap/sdk';
+import { ParaSwapVersion } from '@paraswap/core';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -192,12 +193,14 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       side,
       tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
       contractAddress: this.dexHelper.config.data.augustusAddress,
+      version: ParaSwapVersion.V6,
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);
 
     return {
       ...optimizedRate,
+      version: ParaSwapVersion.V6,
       hmac: '0',
       srcUSD: '0',
       destUSD: '0',
@@ -254,6 +257,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                           isDirectMethod: DirectContractMethods.includes(
                             contractMethod as ContractMethod,
                           ),
+                          version: priceRoute.version,
                         },
                       );
 

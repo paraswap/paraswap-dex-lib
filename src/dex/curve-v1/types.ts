@@ -68,3 +68,21 @@ export type DirectCurveV1Param = [
   permit: string,
   uuid: string,
 ];
+
+export type DirectCurveV1ParamV6 = [
+  curveData: NumberAsString,
+  curveAssets: NumberAsString,
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  quotedAmount: NumberAsString,
+  metadata: string,
+  beneficiary: Address,
+];
+
+export type CurveV1DirectSwap = [
+  params: DirectCurveV1ParamV6,
+  partnerAndFee: string,
+  permit: string,
+];

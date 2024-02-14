@@ -124,6 +124,23 @@ export type UniswapV3Param = [
   uuid: string,
 ];
 
+export type UniswapV3ParamsDirectBase = [
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  quotedAmount: NumberAsString,
+  toAmount: NumberAsString,
+  metadata: string,
+  beneficiary: Address,
+  pools: string,
+];
+
+export type UniswapV3ParamsDirect = [
+  params: UniswapV3ParamsDirectBase,
+  partnerAndFee: string,
+  permit: string,
+];
+
 export enum UniswapV3Functions {
   exactInput = 'exactInput',
   exactOutput = 'exactOutput',

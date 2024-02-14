@@ -41,7 +41,14 @@ import {
 } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
-import { GIFTER_ADDRESS, Holders, Tokens } from './constants-e2e';
+import {
+  GIFTER_ADDRESS,
+  Holders,
+  NativeTokenSymbols,
+  Tokens,
+  WrappedNativeTokenSymbols,
+} from './constants-e2e';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
@@ -146,7 +153,8 @@ class APIParaswapSDK implements IParaSwapSDK {
     to: Token,
     amount: bigint,
     side: SwapSide,
-    contractMethod: ContractMethod,
+    // contractMethod: ContractMethod,
+    contractMethod: any,
     _poolIdentifiers?: { [key: string]: string[] | null } | null,
     transferFees?: TransferFeeParams,
     forceRoute?: AddressOrSymbol[],
@@ -484,150 +492,6 @@ export async function testE2E(
       forceRoute,
     );
 
-    // const priceRoute = {
-    //   blockNumber: 19218101,
-    //   network: 1,
-    //   srcToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-    //   srcDecimals: 18,
-    //   srcAmount: '50000000000000000000',
-    //   destToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    //   destDecimals: 6,
-    //   destAmount: '130605210827',
-    //   bestRoute: [
-    //     {
-    //       percent: 68,
-    //       swaps: [
-    //         {
-    //           srcToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-    //           srcDecimals: 18,
-    //           destToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    //           destDecimals: 6,
-    //           swapExchanges: [
-    //             {
-    //               exchange: 'MaverickV1',
-    //               srcAmount: '19998800000000000000',
-    //               destAmount: '52213043863',
-    //               percent: 58.82,
-    //               poolAddresses: ['0x11a653ddfbb61e0feff5484919f06d9d254bf65f'],
-    //               data: {
-    //                 fee: '0.0004',
-    //                 exchange: '0x4a585e0f7c18e2c414221d6402652d5e0990e5f8',
-    //                 pool: '0x11a653ddfbb61e0feff5484919f06d9d254bf65f',
-    //                 tokenA: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    //                 tokenB: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-    //                 tickSpacing: '198',
-    //                 protocolFeeRatio: '0',
-    //                 lookback: '10800000000000000000000',
-    //                 gasUSD: '14.650924',
-    //               },
-    //             },
-    //             {
-    //               exchange: 'BalancerV2',
-    //               srcAmount: '14001200000000000000',
-    //               destAmount: '36245284021',
-    //               percent: 41.18,
-    //               poolAddresses: [
-    //                 '0x6f0ed6f346007563d3266de350d174a831bde0ca',
-    //                 '0x08775ccb6674d6bdceb0797c364c2653ed84f384',
-    //                 '0x96646936b91d6b9d7d0c47c496afbf3d6ec7b6f8',
-    //               ],
-    //               data: {
-    //                 swaps: [
-    //                   {
-    //                     poolId:
-    //                       '0x6f0ed6f346007563d3266de350d174a831bde0ca0001000000000000000005db',
-    //                     amount: '9999400000000000000',
-    //                   },
-    //                   {
-    //                     poolId:
-    //                       '0x08775ccb6674d6bdceb0797c364c2653ed84f3840002000000000000000004f0',
-    //                     amount: '3002200000000000000',
-    //                   },
-    //                   {
-    //                     poolId:
-    //                       '0x96646936b91d6b9d7d0c47c496afbf3d6ec7b6f8000200000000000000000019',
-    //                     amount: '999600000000000000',
-    //                   },
-    //                 ],
-    //                 gasUSD: '28.150794',
-    //               },
-    //             },
-    //           ],
-    //         },
-    //       ],
-    //     },
-    //     {
-    //       percent: 32,
-    //       swaps: [
-    //         {
-    //           srcToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-    //           srcDecimals: 18,
-    //           destToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-    //           destDecimals: 6,
-    //           swapExchanges: [
-    //             {
-    //               exchange: 'MaverickV1',
-    //               srcAmount: '16000000000000000000',
-    //               destAmount: '42142699201',
-    //               percent: 100,
-    //               poolAddresses: ['0x352b186090068eb35d532428676ce510e17ab581'],
-    //               data: {
-    //                 fee: '0.0004',
-    //                 exchange: '0x4a585e0f7c18e2c414221d6402652d5e0990e5f8',
-    //                 pool: '0x352b186090068eb35d532428676ce510e17ab581',
-    //                 tokenA: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-    //                 tokenB: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-    //                 tickSpacing: '198',
-    //                 protocolFeeRatio: '0',
-    //                 lookback: '10800000000000000000000',
-    //                 gasUSD: '14.650924',
-    //               },
-    //             },
-    //           ],
-    //         },
-    //         {
-    //           srcToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-    //           srcDecimals: 6,
-    //           destToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    //           destDecimals: 6,
-    //           swapExchanges: [
-    //             {
-    //               exchange: 'BalancerV2',
-    //               srcAmount: '42142699201',
-    //               destAmount: '42146882943',
-    //               percent: 100,
-    //               poolAddresses: ['0x79c58f70905f734641735bc61e45c19dd9ad60bc'],
-    //               data: {
-    //                 swaps: [
-    //                   {
-    //                     poolId:
-    //                       '0x79c58f70905f734641735bc61e45c19dd9ad60bc0000000000000000000004e7',
-    //                     amount: '42142699201',
-    //                   },
-    //                 ],
-    //                 gasUSD: '8.210648',
-    //               },
-    //             },
-    //           ],
-    //         },
-    //       ],
-    //     },
-    //   ],
-    //   gasCostUSD: '72.606031',
-    //   gasCost: '1299908',
-    //   side: 'SELL',
-    //   tokenTransferProxy: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
-    //   contractAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    //   contractMethod: 'megaSwap',
-    //   partnerFee: 0,
-    //   srcUSD: '132987.5000000000',
-    //   destUSD: '130539.7776163757',
-    //   maxImpact: 100,
-    //   partner: 'any',
-    //   maxImpactReached: false,
-    //   hmac: '6c563bee49412bd346465b7a6d4407fd262e66ba',
-    // } as OptimalRate;
-
     console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
@@ -706,7 +570,11 @@ export async function testE2E(
         }, Difference: ${parseInt(priceRoute.gasCost) - parseInt(gasUsed)}`,
       );
     }
-    console.log(`Tenderly URL: ${swapTx!.url}`);
+    console.log(
+      `${swapSide}: ${srcToken.address} -> ${destToken.address} (${
+        priceRoute.contractMethod
+      })\nTenderly URL: ${swapTx!.url}`,
+    );
     expect(swapTx!.success).toEqual(true);
   } finally {
     if (paraswap.releaseResources) {
@@ -947,3 +815,124 @@ export const getEnv = (envName: string, optional: boolean = false): string => {
 
   return process.env[envName]!;
 };
+
+// poolIdentifiers?: { [key: string]: string[] | null } | null,
+// limitOrderProvider?: DummyLimitOrderProvider,
+// transferFees?: TransferFeeParams,
+// // Specified in BPS: part of 10000
+// slippage?: number,
+// sleepMs?: number,
+// replaceTenderlyWithEstimateGas?: boolean,
+// forceRoute?: AddressOrSymbol[],
+export function testE2E_V6(
+  network: Network,
+  dexKey: string,
+  tokenASymbol: string,
+  tokenBSymbol: string,
+  tokenAAmount: string,
+  tokenBAmount: string,
+  nativeTokenAmount: string,
+  forceRoute: AddressOrSymbol[],
+) {
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
+  const tokens = Tokens[network];
+  const holders = Holders[network];
+  const nativeTokenSymbol = NativeTokenSymbols[network];
+  const wrappedNativeTokenSymbol = WrappedNativeTokenSymbols[network];
+
+  const sideToContractMethods = new Map([
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+  ]);
+
+  describe(`${network}`, () => {
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[nativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[nativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${wrappedNativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[wrappedNativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[wrappedNativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${wrappedNativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[wrappedNativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        });
+      }),
+    );
+  });
+}

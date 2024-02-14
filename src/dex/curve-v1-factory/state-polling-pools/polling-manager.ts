@@ -127,9 +127,9 @@ export class StatePollingManager {
         }),
       );
 
-      logger.info(
-        `${dexKey}: all (${pools.length}) pools state was successfully updated on network ${dexHelper.config.data.network}`,
-      );
+      // logger.info(
+      //   `${dexKey}: all (${pools.length}) pools state was successfully updated on network ${dexHelper.config.data.network}`,
+      // );
     } catch (e) {
       logger.error(
         `${dexKey}: On network ${

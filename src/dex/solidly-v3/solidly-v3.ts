@@ -13,6 +13,7 @@ import {
   PoolPrices,
   PreprocessTransactionOptions,
   ExchangeTxInfo,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -745,6 +746,46 @@ export class SolidlyV3
       swapData,
       data.poolAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SolidlyV3Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction = this.poolIface.getFunction(
+      'swap(address,bool,int256,uint160)',
+    );
+
+    const swapFunctionParams: SolidlyV3SimpleSwapParams = {
+      recipient: recipient,
+      zeroForOne: data.zeroForOne,
+      amountSpecified:
+        side === SwapSide.SELL
+          ? srcAmount.toString()
+          : (-destAmount).toString(),
+      sqrtPriceLimitX96: data.zeroForOne
+        ? (TickMath.MIN_SQRT_RATIO + BigInt(1)).toString()
+        : (TickMath.MAX_SQRT_RATIO - BigInt(1)).toString(),
+    };
+    const swapData = this.poolIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams.recipient,
+      swapFunctionParams.zeroForOne,
+      swapFunctionParams.amountSpecified,
+      swapFunctionParams.sqrtPriceLimitX96,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: data.poolAddress,
+    };
   }
 
   async getTopPoolsForToken(

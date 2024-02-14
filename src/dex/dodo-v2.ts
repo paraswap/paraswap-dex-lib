@@ -1,6 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { SwapSide, MAX_UINT, Network } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
@@ -172,5 +177,79 @@ export class DodoV2
       data.dodoProxy,
       maybeSpender,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: DodoV2Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const [swapFunction, swapFunctionParams, maybeSpender] = ((): [
+      DodoV2Functions,
+      DodoV2Param,
+      Address?,
+    ] => {
+      if (isETHAddress(srcToken)) {
+        return [
+          DodoV2Functions.dodoSwapV2ETHToToken,
+          [
+            destToken,
+            destAmount,
+            data.dodoPairs,
+            data.directions,
+            false,
+            MAX_UINT,
+          ],
+        ];
+      }
+
+      if (isETHAddress(destToken)) {
+        return [
+          DodoV2Functions.dodoSwapV2TokenToETH,
+          [
+            srcToken,
+            srcAmount,
+            destAmount,
+            data.dodoPairs,
+            data.directions,
+            false,
+            MAX_UINT,
+          ],
+          DODOAproveAddress[this.network],
+        ];
+      }
+
+      return [
+        DodoV2Functions.dodoSwapV2TokenToToken,
+        [
+          srcToken,
+          destToken,
+          srcAmount,
+          destAmount,
+          data.dodoPairs,
+          data.directions,
+          false,
+          MAX_UINT,
+        ],
+        DODOAproveAddress[this.network],
+      ];
+    })();
+
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      dexFuncHasDestToken: true,
+      exchangeData: swapData,
+      targetExchange: data.dodoProxy,
+    };
   }
 }

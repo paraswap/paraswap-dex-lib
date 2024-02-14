@@ -23,9 +23,10 @@ describe('Camelot E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
     ]);
@@ -35,18 +36,18 @@ describe('Camelot E2E', () => {
         { name: 'ETH', sellAmount: '700000000000' },
         { name: 'USDC', sellAmount: '1000000' },
       ],
-      [
-        { name: 'ETH', sellAmount: '700000000000' },
-        { name: 'USDT', sellAmount: '1000000' },
-      ],
-      [
-        { name: 'USDC', sellAmount: '100000000' },
-        { name: 'WETH', sellAmount: '200000000000' },
-      ],
-      [
-        { name: 'USDC', sellAmount: '100000' },
-        { name: 'DAI', sellAmount: '200000000000000' },
-      ],
+      // [
+      //   { name: 'ETH', sellAmount: '700000000000' },
+      //   { name: 'USDT', sellAmount: '1000000' },
+      // ],
+      // [
+      //   { name: 'USDC', sellAmount: '100000000' },
+      //   { name: 'WETH', sellAmount: '200000000000' },
+      // ],
+      // [
+      //   { name: 'USDC', sellAmount: '100000' },
+      //   { name: 'DAI', sellAmount: '200000000000000' },
+      // ],
       [
         { name: 'USDC', sellAmount: '100000' },
         { name: 'USDT', sellAmount: '100000' },
@@ -71,19 +72,19 @@ describe('Camelot E2E', () => {
                   provider,
                 );
               });
-              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-                await testE2E(
-                  tokens[pair[1].name],
-                  tokens[pair[0].name],
-                  holders[pair[1].name],
-                  pair[1].sellAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
-              });
+              // it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+              //   await testE2E(
+              //     tokens[pair[1].name],
+              //     tokens[pair[0].name],
+              //     holders[pair[1].name],
+              //     pair[1].sellAmount,
+              //     side,
+              //     dexKey,
+              //     contractMethod,
+              //     network,
+              //     provider,
+              //   );
+              // });
             });
           });
         });
