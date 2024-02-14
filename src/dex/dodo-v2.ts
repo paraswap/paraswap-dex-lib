@@ -184,9 +184,9 @@ export class DodoV2
     destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    recipient: Address,
+    _recipient: Address,
     data: DodoV2Data,
-    side: SwapSide,
+    _side: SwapSide,
   ): DexExchangeParam {
     const [swapFunction, swapFunctionParams, maybeSpender] = ((): [
       DodoV2Functions,

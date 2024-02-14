@@ -99,11 +99,11 @@ export class Smoothy
   }
 
   getDexParam(
-    srcToken: Address,
-    destToken: Address,
+    _srcToken: Address,
+    _destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    recipient: Address,
+    _recipient: Address,
     data: SmoothyData,
     side: SwapSide,
   ): DexExchangeParam {
@@ -118,7 +118,7 @@ export class Smoothy
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
+      dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
     };

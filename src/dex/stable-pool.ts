@@ -115,11 +115,11 @@ export class StablePool
   }
 
   getDexParam(
-    srcToken: Address,
-    destToken: Address,
+    _srcToken: Address,
+    _destToken: Address,
     srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    recipient: Address,
+    _destAmount: NumberAsString,
+    _recipient: Address,
     data: StablePoolData,
     side: SwapSide,
   ): DexExchangeParam {
