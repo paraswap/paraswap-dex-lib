@@ -470,17 +470,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       (!isETHAddress(swap!.srcToken) && !skipApprove) ||
       curExchangeParam.spender // always do approve if spender is set
     ) {
-      const approve = this.erc20Interface.encodeFunctionData('approve', [
-        curExchangeParam.spender || curExchangeParam.targetExchange,
-        MAX_UINT,
-      ]);
-
       const approveCallData = this.buildApproveCallData(
-        approve,
+        curExchangeParam.spender || curExchangeParam.targetExchange,
         isETHAddress(swap!.srcToken) && exchangeParamIndex !== 0
           ? this.dexHelper.config.data.wrappedNativeTokenAddress
           : swap!.srcToken,
-        MAX_UINT,
         flags.approves[exchangeParamIndex],
       );
 
@@ -490,12 +484,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (curExchangeParam.needWrapNative && maybeWethCallData) {
       if (maybeWethCallData.deposit && isETHAddress(swap!.srcToken)) {
         const approveWethCalldata = this.buildApproveCallData(
-          this.erc20Interface.encodeFunctionData('approve', [
-            curExchangeParam.targetExchange,
-            MAX_UINT,
-          ]),
+          curExchangeParam.targetExchange,
           this.dexHelper.config.data.wrappedNativeTokenAddress,
-          MAX_UINT,
           flags.approves[exchangeParamIndex],
         );
 

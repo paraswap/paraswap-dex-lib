@@ -23,6 +23,7 @@ import {
   ZEROS_4_BYTES,
 } from './constants';
 import { Executors, Flag, SpecialDex } from './types';
+import { MAX_UINT } from '../constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -76,11 +77,16 @@ export abstract class ExecutorBytecodeBuilder {
   ): string;
 
   protected buildApproveCallData(
-    approveCalldata: string,
+    spender: string,
     tokenAddr: Address,
-    amount: string,
     flag: Flag,
   ): string {
+    const amount = MAX_UINT;
+    let approveCalldata = this.erc20Interface.encodeFunctionData('approve', [
+      spender,
+      amount,
+    ]);
+
     const insertFromAmount = flag % 4 === 3;
     const checkSrcTokenBalance = flag % 3 === 2;
 

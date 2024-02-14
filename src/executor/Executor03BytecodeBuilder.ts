@@ -120,17 +120,11 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     ) {
       // TODO: as we give approve for MAX_UINT and approve for current targetExchange was given
       // in previous paths, then for current path we can skip it
-      const approve = this.erc20Interface.encodeFunctionData('approve', [
-        curExchangeParam.targetExchange,
-        MAX_UINT,
-      ]);
-
       const approveCallData = this.buildApproveCallData(
-        approve,
+        curExchangeParam.targetExchange,
         isETHAddress(swap.srcToken) && index !== 0
           ? this.dexHelper.config.data.wrappedNativeTokenAddress
           : swap.srcToken,
-        MAX_UINT,
         flags.approves[index],
       );
 
@@ -145,12 +139,8 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       // exchangeParams.findIndex(p => p.needWrapNative) === index
     ) {
       const approveWethCalldata = this.buildApproveCallData(
-        this.erc20Interface.encodeFunctionData('approve', [
-          curExchangeParam.targetExchange,
-          MAX_UINT,
-        ]),
+        curExchangeParam.targetExchange,
         this.dexHelper.config.data.wrappedNativeTokenAddress,
-        MAX_UINT,
         flags.approves[index],
       );
 
