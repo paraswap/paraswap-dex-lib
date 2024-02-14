@@ -6,6 +6,7 @@ import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
 import { BYTES_64_LENGTH } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
+import { MAX_UINT } from '../constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -103,10 +104,11 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
     let dexFlag: Flag;
-    let approveFlag: Flag;
+
+    const approveFlag =
+      Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
     if (isFirstSwap) {
-      approveFlag = Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
       if (isEthSrc && !needWrap) {
         dexFlag =
           Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
@@ -119,8 +121,6 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       } else if (isEthDest && needUnwrap) {
         dexFlag =
           Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
-        approveFlag =
-          Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       } else if (isEthDest && !needUnwrap) {
         dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
       } else {
@@ -128,7 +128,6 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
           Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       }
     } else {
-      approveFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       if (isEthSrc && !needWrap) {
         dexFlag =
           Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
@@ -194,7 +193,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
         curExchangeParam.targetExchange,
-        srcAmount,
+        MAX_UINT,
       ]);
 
       const approveCallData = this.buildApproveCallData(
@@ -202,7 +201,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         isETHAddress(swap.srcToken) && index !== 0
           ? this.dexHelper.config.data.wrappedNativeTokenAddress
           : swap.srcToken,
-        srcAmount,
+        MAX_UINT,
         flags.approves[index],
       );
 
@@ -220,10 +219,10 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
           const approveWethCalldata = this.buildApproveCallData(
             this.erc20Interface.encodeFunctionData('approve', [
               curExchangeParam.targetExchange,
-              swap.swapExchanges[0].srcAmount,
+              MAX_UINT,
             ]),
             this.dexHelper.config.data.wrappedNativeTokenAddress,
-            srcAmount,
+            MAX_UINT,
             flags.approves[index],
           );
 
