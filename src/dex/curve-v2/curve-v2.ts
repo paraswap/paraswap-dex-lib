@@ -438,8 +438,7 @@ export class CurveV2
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
     };

@@ -173,6 +173,8 @@ export class TraderJoeV21
         ? TraderJoeV2RouterFunctions.swapExactTokensForTokens
         : TraderJoeV2RouterFunctions.swapTokensForExactTokens;
 
+    const placeholder = getLocalDeadlineAsFriendlyPlaceholder();
+
     const swapFunctionParams: TraderJoeV2RouterParam =
       side === SwapSide.SELL
         ? [
@@ -180,14 +182,14 @@ export class TraderJoeV21
             destAmount,
             [[data.binStep], ['2'], [srcToken, destToken]],
             recipient,
-            getLocalDeadlineAsFriendlyPlaceholder(),
+            placeholder,
           ]
         : [
             destAmount,
             srcAmount,
             [[data.binStep], ['2'], [srcToken, destToken]],
             recipient,
-            getLocalDeadlineAsFriendlyPlaceholder(),
+            placeholder,
           ];
 
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
@@ -198,7 +200,6 @@ export class TraderJoeV21
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: this.routerAddress,
     };

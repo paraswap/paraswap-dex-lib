@@ -260,6 +260,7 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
         this.config.wstETHAddress,
         srcAmount,
       );
+      // encode here is failing, not sure if approve related or what.
       exchangeData = solidityPack(
         ['bytes', 'bytes'],
         [
@@ -275,8 +276,7 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasRecipient: false,
       exchangeData,
       targetExchange: this.config.wstETHAddress,
     };

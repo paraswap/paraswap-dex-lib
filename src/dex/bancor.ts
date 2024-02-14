@@ -138,7 +138,6 @@ export class Bancor
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
       exchangeData: swapData,
       targetExchange: data.bancorNetwork || BANCOR_NETWORK[this.network],
     };

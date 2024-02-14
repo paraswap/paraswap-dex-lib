@@ -112,7 +112,6 @@ export class Onebit
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: data.router,
     };
