@@ -713,6 +713,67 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
           );
         });
       });
+
+      describe('WBTC -> USDT via UniSwapV3 and CurveV1', () => {
+        const dexKeys = ['UniSwapV3', 'CurveV1'];
+
+        const tokenASymbol: string = 'WBTC';
+        const tokenBSymbol: string = 'USDT';
+        const tokenAAmount: string = '100000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+            false,
+          );
+        });
+      });
+
+      // BalancerV1 needs special dex flag which is not implemented
+      // describe('ETH -> WBTC via SushiSwapV3 and BalancerV1', () => {
+      //   const dexKeys = ['SushiSwapV3', 'BalancerV1'];
+      //
+      //   const tokenASymbol: string = 'ETH';
+      //   const tokenBSymbol: string = 'WBTC';
+      //   const tokenAAmount: string = '1000000000000000000000';
+      //
+      //   const side = SwapSide.SELL;
+      //
+      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+      //     await testE2E(
+      //       tokens[tokenASymbol],
+      //       tokens[tokenBSymbol],
+      //       holders[tokenASymbol],
+      //       tokenAAmount,
+      //       side,
+      //       dexKeys,
+      //       contractMethod,
+      //       network,
+      //       provider,
+      //       undefined,
+      //       undefined,
+      //       undefined,
+      //       300,
+      //       2000,
+      //       false,
+      //     );
+      //   });
+      // });
     });
   });
 });
