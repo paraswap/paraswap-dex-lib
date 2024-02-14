@@ -1,13 +1,18 @@
 import { Interface } from '@ethersproject/abi';
 import { Address, OptimalRate, SwapSide } from '@paraswap/core';
-import { util } from 'prettier';
 import Erc20ABI from '../../src/abi/erc20.json';
 import { generateConfig } from '../../src/config';
 import { Network, MAX_UINT, ETHER_ADDRESS } from '../../src/constants';
 import {
+  TenderlySimulation,
+  TransactionSimulator,
+} from '../tenderly-simulation';
+import {
   IParaSwapSDK,
   LocalParaswapSDK,
 } from '../../src/implementations/local-paraswap-sdk';
+import { sleep } from '../utils';
+import * as util from 'util';
 
 export type ContractsAugustusV6 = {
   AugustusV6: string;

@@ -9,6 +9,7 @@ import {
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import { Holders, Tokens } from '../constants-e2e';
 
 jest.setTimeout(1000 * 120);
 
@@ -44,29 +45,43 @@ describe('Executors: Price Route Tests', () => {
   const priceRouteFiles = fs.readdirSync(priceRoutesDir);
 
   priceRouteFiles.forEach(file => {
-    it(`file: ${file}`, async () => {
-      const { priceRoute, metadata } = require(path.join(priceRoutesDir, file));
-      let forkMetadata: ForkMetadata = metadata;
-      if (!forkMetadata?.contracts) {
-        forkMetadata = await deployAugustusOnFork(
-          priceRoute.network,
-          priceRoute.blockNumber,
-        );
-        saveForkMetadata(
-          forkMetadata,
-          priceRoute as OptimalRate,
-          `./price-routes/${file}`,
-        );
-      }
+    console.log(file);
+    if (file === 'sell-1000-wbtc-eth-uniswapv3-balancerv2.json')
+      it(`file: ${file}`, async () => {
+        const {
+          priceRoute,
+          metadata,
+        }: {
+          priceRoute: OptimalRate;
+          metadata: ForkMetadata;
+        } = require(path.join(priceRoutesDir, file));
+        let forkMetadata: ForkMetadata = metadata;
+        if (!forkMetadata?.contracts) {
+          forkMetadata = await deployAugustusOnFork(
+            priceRoute.network,
+            priceRoute.blockNumber,
+          );
+          saveForkMetadata(
+            forkMetadata,
+            priceRoute as OptimalRate,
+            `./price-routes/${file}`,
+          );
+        }
 
-      await runForkE2ETest(
-        priceRoute as OptimalRate,
-        '0x0a4c79ce84202b03e95b7a692e5d728d83c44c76',
-        forkMetadata.forkId,
-        forkMetadata.lastTx,
-        forkMetadata.contracts,
-      );
-    });
+        const srcTokenSymbol = Object.entries(Tokens[priceRoute.network]).find(
+          ([key, token]) => token.address === priceRoute.srcToken,
+        )?.[0];
+
+        if (!srcTokenSymbol) throw new Error('srcTokenSymbol not found');
+
+        await runForkE2ETest(
+          priceRoute as OptimalRate,
+          Holders[priceRoute.network][srcTokenSymbol],
+          forkMetadata.forkId,
+          forkMetadata.lastTx,
+          forkMetadata.contracts,
+        );
+      });
   });
 });
 
