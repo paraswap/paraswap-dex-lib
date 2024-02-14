@@ -267,19 +267,20 @@ describe('QuickSwap', () => {
       generateConfig(network).privateHttpProvider,
       network,
     );
-    describe('ThenaFusion', () => {
+    describe('ThenaFusion_V6', () => {
       const dexKey = 'ThenaFusion';
 
       const sideToContractMethods = new Map([
         [
           SwapSide.SELL,
           [
-            ContractMethod.simpleSwap,
-            ContractMethod.multiSwap,
-            ContractMethod.megaSwap,
+            ContractMethod.swapExactAmountIn,
+            // ContractMethod.simpleSwap,
+            // ContractMethod.multiSwap,
+            // ContractMethod.megaSwap,
           ],
         ],
-        [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+        // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
       ]);
 
       const pairs: {

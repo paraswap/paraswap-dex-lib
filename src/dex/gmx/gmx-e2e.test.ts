@@ -14,7 +14,7 @@ import { generateConfig } from '../../config';
 describe('GMX E2E', () => {
   const dexKey = 'GMX';
 
-  describe('GMX AVALANCHE', () => {
+  describe('GMX AVALANCHE_V6', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -35,9 +35,10 @@ describe('GMX E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
     ]);

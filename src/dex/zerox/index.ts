@@ -315,7 +315,6 @@ export class ZeroX
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: this.getExchange(data),
     };

@@ -260,7 +260,6 @@ export class KyberDmm
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: false,
       exchangeData,
       targetExchange: data.router,
     };

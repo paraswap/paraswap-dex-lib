@@ -351,22 +351,12 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       rebateTo,
     ]);
 
-    const transferParams = this.erc20Interface.encodeFunctionData('transfer', [
-      this.config.wooPPV2Address,
-      srcAmount,
-    ]);
-
-    const exchangeData = solidityPack(
-      ['bytes', 'bytes'],
-      [swapData, transferParams],
-    );
-
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
-      exchangeData,
+      exchangeData: swapData,
       targetExchange: this.config.wooPPV2Address,
+      transferSrcTokenBeforeSwap: this.config.wooPPV2Address,
     };
   }
 

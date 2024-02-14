@@ -150,7 +150,6 @@ export class DodoV1
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: DODOV2ProxyAddress[this.network],
     };

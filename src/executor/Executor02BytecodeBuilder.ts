@@ -1,8 +1,7 @@
 import { ethers } from 'ethers';
 import {
-  Address,
-  OptimalRate,
   OptimalRoute,
+  OptimalRate,
   OptimalSwap,
   OptimalSwapExchange,
 } from '@paraswap/core';
@@ -434,7 +433,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     let swapExchangeCallData = '';
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     const swapExchange = swap.swapExchanges[swapExchangeIndex];
-    const srcAmount = swapExchange.srcAmount;
 
     let exchangeParamIndex = 0;
     let tempExchangeParamIndex = 0;
@@ -462,14 +460,18 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     );
 
     swapExchangeCallData = hexConcat([dexCallData]);
+    const skipApprove = !!curExchangeParam.skipApprove;
 
     const isLastSwap =
       swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
     const isLast = exchangeParamIndex === exchangeParams.length - 1;
 
-    if (!isETHAddress(swap!.srcToken)) {
+    if (
+      (!isETHAddress(swap!.srcToken) && !skipApprove) ||
+      curExchangeParam.spender // always do approve if spender is set
+    ) {
       const approve = this.erc20Interface.encodeFunctionData('approve', [
-        curExchangeParam.targetExchange,
+        curExchangeParam.spender || curExchangeParam.targetExchange,
         MAX_UINT,
       ]);
 
