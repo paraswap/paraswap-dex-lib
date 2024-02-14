@@ -16,6 +16,8 @@ import { MAX_UINT } from '../constants';
 import Web3 from 'web3';
 import { ICache, IDexHelper } from '../dex-helper';
 import { AbiItem } from 'web3-utils';
+import { ParaSwapVersion } from '@paraswap/core';
+import augustusV6ABI from '../abi/augustus-v6/ABI.json';
 
 /*
  * Context: Augustus routers have all a deadline protection logic implemented globally.
@@ -41,6 +43,8 @@ export class SimpleExchange {
   protected augustusAddress: Address;
   protected augustusV6Address: Address | undefined;
   protected augustusInterface: Interface;
+  protected augustusV6Interface: Interface;
+
   private provider: Web3;
   private cache: ICache;
 
@@ -62,6 +66,7 @@ export class SimpleExchange {
     this.augustusAddress = dexHelper.config.data.augustusAddress;
     this.augustusV6Address = dexHelper.config.data.augustusV6Address;
     this.augustusInterface = new Interface(augustusABI);
+    this.augustusV6Interface = new Interface(augustusV6ABI);
     this.provider = dexHelper.web3Provider;
     this.cache = dexHelper.cache;
 
@@ -76,13 +81,19 @@ export class SimpleExchange {
       `${CACHE_PREFIX}_${this.network}_approves`.toLowerCase();
   }
 
-  private async hasAugustusAllowance(
+  async hasAugustusAllowance(
     token: Address,
     target: Address,
     amount: string,
+    version: ParaSwapVersion = ParaSwapVersion.V5,
   ): Promise<boolean> {
     if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) return true;
-    const cacheKey = `${token}_${target}`;
+    const augustus =
+      version === ParaSwapVersion.V6
+        ? this.augustusV6Address
+        : this.augustusAddress;
+
+    const cacheKey = `${augustus}_${token}_${target}`;
 
     // as approve is given to an infinite amount, we can cache only the target and token address
     const isCachedApproved = await this.cache.sismember(
@@ -92,11 +103,7 @@ export class SimpleExchange {
 
     if (isCachedApproved) return true;
 
-    const allowance = await this.getAllowance(
-      this.augustusAddress,
-      token,
-      target,
-    );
+    const allowance = await this.getAllowance(augustus!, token, target);
     const isApproved = BigInt(allowance) >= BigInt(amount);
 
     if (isApproved) await this.cache.sadd(this.cacheApprovesKey, cacheKey);

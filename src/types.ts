@@ -311,6 +311,7 @@ export type PreprocessTransactionOptions = {
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
   partner?: string;
+  recipient: string;
   version: ParaSwapVersion;
 };
 

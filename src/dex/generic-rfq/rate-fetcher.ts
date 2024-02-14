@@ -421,14 +421,13 @@ export class RateFetcher {
       );
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
-        firmRateWithTakerValidator(taker),
+        firmRateWithTakerValidator(takerAddress),
       );
 
       await checkOrder(
         this.dexHelper.config.data.network,
         this.dexHelper.config.data.augustusRFQAddress,
         this.dexHelper.multiWrapper,
-        takerAddress,
         firmRateResp.order,
         this.verifierContract,
       );

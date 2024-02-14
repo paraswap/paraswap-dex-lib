@@ -52,6 +52,7 @@ export type ParaSwapOrderBook = {
 export type ParaSwapLimitOrdersData = {
   orderInfos: OrderInfo[] | null;
   maxOrdersCount?: number;
+  isApproved?: boolean;
 };
 
 export type DexParams = {

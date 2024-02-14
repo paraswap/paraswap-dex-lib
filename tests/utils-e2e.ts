@@ -162,40 +162,23 @@ class APIParaswapSDK implements IParaSwapSDK {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
 
-    let priceRoute;
-    if (forceRoute && forceRoute.length > 0) {
-      const options = {
-        route: forceRoute,
-        amount: amount.toString(),
-        side,
-        srcDecimals: from.decimals,
-        destDecimals: to.decimals,
-        options: {
-          includeDEXS: this.dexKeys,
-          includeContractMethods: [contractMethod],
-          partner: 'any',
-          maxImpact: 100,
-        },
-      };
-      priceRoute = await this.paraSwap.swap.getRateByRoute(options);
-    } else {
-      const options = {
-        srcToken: from.address,
-        destToken: to.address,
-        side,
-        amount: amount.toString(),
-        options: {
-          includeDEXS: this.dexKeys,
-          includeContractMethods: [contractMethod],
-          partner: 'any',
-          maxImpact: 100,
-        },
-        srcDecimals: from.decimals,
-        destDecimals: to.decimals,
-      };
-      priceRoute = await this.paraSwap.swap.getRate(options);
-    }
-
+    const priceRoute = await this.paraSwap.swap.getRate({
+      srcToken: from.address,
+      destToken: to.address,
+      side,
+      amount: amount.toString(),
+      options: {
+        includeDEXS: this.dexKeys,
+        // TODO-v6: update types in SDK
+        // @ts-ignore
+        includeContractMethods: [contractMethod],
+        partner: 'any',
+      },
+      srcDecimals: from.decimals,
+      destDecimals: to.decimals,
+    });
+    // TODO: Remove
+    priceRoute.contractMethod = contractMethod;
     return priceRoute as OptimalRate;
   }
 
