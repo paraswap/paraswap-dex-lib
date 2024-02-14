@@ -63,12 +63,9 @@ export class GenericSwapTransactionBuilder {
     this.augustusV6Interface = new Interface(AugustusV6ABI);
     this.augustusV6Address =
       this.dexAdapterService.dexHelper.config.data.augustusV6Address!;
-
     this.executorDetector = new ExecutorDetector(
       this.dexAdapterService.dexHelper,
     );
-    this.augustusV6Address =
-      this.dexAdapterService.dexHelper.config.data.augustusV6Address!;
   }
 
   protected getDepositWithdrawWethCallData(
