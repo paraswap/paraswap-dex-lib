@@ -46,7 +46,7 @@ describe('Executors: Price Route Tests', () => {
 
   priceRouteFiles.forEach(file => {
     console.log(file);
-    if (file === 'sell-10_000-eth-usdc-uniswapv3-balancerv2.json')
+    if (file === 'sell-50-eth-usdc.json')
       it(`file: ${file}`, async () => {
         const {
           priceRoute,
