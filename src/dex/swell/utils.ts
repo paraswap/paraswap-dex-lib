@@ -11,13 +11,15 @@ export async function getOnChainState(
   blockNumber: number | 'latest',
 ): Promise<SWETHPoolState> {
   const data: { returnData: any[] } = await multiContract.methods
-    .aggregate({
-      to: poolAddress,
-      data: poolInterface.encodeFunctionData('swETHToETHRate', []),
-    })
+    .aggregate([
+      {
+        target: poolAddress,
+        callData: poolInterface.encodeFunctionData('swETHToETHRate', []),
+      },
+    ])
     .call({}, blockNumber);
 
-  const decodedData = coder.decode(['uint256'], data.returnData);
+  const decodedData = coder.decode(['uint256'], data.returnData[0]);
 
   const swETHToETHRateFixed = BigInt(decodedData[0].toString());
 

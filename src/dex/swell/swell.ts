@@ -13,21 +13,18 @@ import {
 } from '../../types';
 import { IDex } from '../idex';
 import SWETH_ABI from '../../abi/swETH.json';
-import { ETHER_ADDRESS } from '../../constants';
+import { ETHER_ADDRESS, Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { SimpleExchange } from '../simple-exchange';
 import { BI_POWS } from '../../bigint-constants';
 import { AsyncOrSync } from 'ts-essentials';
 import { getOnChainState } from './utils';
 import { SwethPool } from './sweth-pool';
-import { isETHAddress } from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { WethFunctions } from '../weth/types';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { Adapters } from '../jarvis-v6/config';
-
-export const swETH: any = {
-  1: '0xf951E335afb289353dc249e82926178EaC7DEd78',
-};
+import _ from 'lodash';
+import { SwellConfig, Adapters } from './config';
 
 export enum swETHFunctions {
   deposit = 'deposit',
@@ -40,21 +37,29 @@ export class Swell
   extends SimpleExchange
   implements IDex<SwellData, SwellParams>
 {
-  static dexKeys = ['swell'];
+  static dexKeys = ['Swell'];
   swETHInterface: Interface;
   needWrapNative = false;
   hasConstantPriceLargeAmounts: boolean = true;
-  network: number;
   swETHAddress: string;
   eventPool: SwethPool;
   logger: Logger;
 
-  constructor(protected dexHelper: IDexHelper) {
-    super(dexHelper, 'swell');
+  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
+    getDexKeysWithNetwork(_.pick(SwellConfig, ['Swell']));
+
+  constructor(
+    protected network: Network,
+    dexKey: string,
+    protected dexHelper: IDexHelper,
+    protected config = SwellConfig[dexKey][network],
+    protected adapters = Adapters[network],
+  ) {
+    super(dexHelper, 'Swell');
 
     this.network = dexHelper.config.data.network;
     this.swETHInterface = new Interface(SWETH_ABI as JsonFragment[]);
-    this.swETHAddress = swETH[this.network];
+    this.swETHAddress = this.config.swETH.toLowerCase();
     this.logger = dexHelper.getLogger(this.dexKey);
     this.eventPool = new SwethPool(
       this.dexKey,
@@ -98,7 +103,7 @@ export class Swell
 
     return (
       (isETHAddress(srcTokenAddress) || this.isWETH(srcTokenAddress)) &&
-      destTokenAddress === this.swETHAddress.toLowerCase()
+      destTokenAddress === this.swETHAddress
     );
   }
 
@@ -133,8 +138,7 @@ export class Swell
     transferFees?: TransferFeeParams | undefined,
     isFirstSwap?: boolean | undefined,
   ): Promise<ExchangePrices<SwellData> | null> {
-    this.assertEligibility(srcToken, destToken, side);
-
+    if (!this.isEligibleSwap(srcToken, destToken, side)) return null;
     if (this.eventPool.getState(blockNumber) === null) return null;
 
     const unitIn = BI_POWS[18];
@@ -228,7 +232,7 @@ export class Swell
     return CALLDATA_GAS_COST.DEX_OVERHEAD + CALLDATA_GAS_COST.LENGTH_SMALL;
   }
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return Adapters[this.network][side] || null;
+    return this.adapters?.[side] || null;
   }
   getTopPoolsForToken(
     tokenAddress: string,
