@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { Network } from '../constants';
 
 const {
   utils: { hexlify, hexZeroPad },
@@ -45,3 +46,12 @@ export const EXECUTOR_03_FUNCTION_CALL_DATA_TYPES: string[] = [
 export const APPROVE_CALLDATA_DEST_TOKEN_POS = 68;
 export const WRAP_UNWRAP_FROM_AMOUNT_POS = 4;
 export const DEFAULT_RETURN_AMOUNT_POS = '0xff';
+
+// TODO-v6?: can it be removed  after approval/cache task, because we are going to give approvals only once,
+// therefore for any case initial allowance would be 0
+export const DISABLED_MAX_UNIT_APPROVAL_TOKENS: Partial<
+  Record<Network, string[]>
+> = {
+  // USDT don't allow approve for MAX_UINT if current approval is not 0
+  [Network.MAINNET]: ['0xdac17f958d2ee523a2206206994597c13d831ec7'],
+};

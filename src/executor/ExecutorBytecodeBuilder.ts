@@ -21,9 +21,10 @@ import {
   ZEROS_12_BYTES,
   ZEROS_28_BYTES,
   ZEROS_4_BYTES,
+  DISABLED_MAX_UNIT_APPROVAL_TOKENS,
 } from './constants';
 import { Executors, Flag, SpecialDex } from './types';
-import { MAX_UINT } from '../constants';
+import { MAX_UINT, Network } from '../constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -80,41 +81,43 @@ export abstract class ExecutorBytecodeBuilder {
     spender: string,
     tokenAddr: Address,
     flag: Flag,
+    amount = MAX_UINT,
   ): string {
-    const amount = MAX_UINT;
     let approveCalldata = this.erc20Interface.encodeFunctionData('approve', [
       spender,
       amount,
     ]);
 
-    const insertFromAmount = flag % 4 === 3;
+    // as approval given only for MAX_UNIT or 0, no need to use insertFromAmount flag
     const checkSrcTokenBalance = flag % 3 === 2;
-
-    let fromAmountPos = 0;
-    if (insertFromAmount) {
-      const fromAmount = ethers.utils.defaultAbiCoder.encode(
-        ['uint256'],
-        [amount],
-      );
-
-      const fromAmountIndex = approveCalldata
-        .replace('0x', '')
-        .indexOf(fromAmount.replace('0x', ''));
-      fromAmountPos = fromAmountIndex / 2;
-    }
 
     if (checkSrcTokenBalance) {
       approveCalldata = hexConcat([approveCalldata, ZEROS_12_BYTES, tokenAddr]);
     }
 
-    return this.buildCallData(
+    let approvalCalldata = this.buildCallData(
       tokenAddr,
       approveCalldata,
-      fromAmountPos,
+      0,
       APPROVE_CALLDATA_DEST_TOKEN_POS,
       SpecialDex.DEFAULT,
       flag,
     );
+
+    // add additional approval 0 for special cases
+    if (
+      amount !== '0' &&
+      DISABLED_MAX_UNIT_APPROVAL_TOKENS?.[
+        this.dexHelper.config.data.network as Network
+      ]?.includes(tokenAddr)
+    ) {
+      approvalCalldata = hexConcat([
+        this.buildApproveCallData(spender, tokenAddr, flag, '0'),
+        approvalCalldata,
+      ]);
+    }
+
+    return approvalCalldata;
   }
 
   protected buildWrapEthCallData(depositCallData: string, flag: Flag): string {
