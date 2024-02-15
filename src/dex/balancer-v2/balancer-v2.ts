@@ -31,7 +31,6 @@ import { WeightedPool } from './pools/weighted/WeightedPool';
 import { PhantomStablePool } from './pools/phantom-stable/PhantomStablePool';
 import { LinearPool } from './pools/linear/LinearPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
-import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
