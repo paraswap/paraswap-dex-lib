@@ -221,6 +221,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const insertFromAmount = flag % 4 === 3;
     let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
 
+    exchangeData = this.addTokenAddressToCallData(
+      exchangeData,
+      swap.srcToken.toLowerCase(),
+    );
+
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
       const destTokenAddr = isETHAddress(swap.destToken)
@@ -399,8 +404,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         .replace('0x', '')
         .indexOf(
           (isEthDest
-            ? this.dexHelper.config.data.wrappedNativeTokenAddress
-            : destTokenAddrLowered
+            ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+            : destTokenAddrLowered.toLowerCase()
           ).replace('0x', ''),
         );
 
