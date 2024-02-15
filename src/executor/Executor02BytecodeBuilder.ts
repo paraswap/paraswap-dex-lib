@@ -489,11 +489,26 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           flags.approves[exchangeParamIndex],
         );
 
+        const isNotFirstSwap = swapIndex !== 0;
+        let skipWrap = false;
+        if (isNotFirstSwap) {
+          const prevSwap =
+            priceRoute.bestRoute[routeIndex].swaps[swapIndex - 1];
+          const anyDexOnSwapDoesntNeedWrapNative =
+            this.anyDexOnSwapDoesntNeedWrapNative(
+              priceRoute,
+              prevSwap,
+              exchangeParams,
+            );
+          skipWrap = !anyDexOnSwapDoesntNeedWrapNative;
+        }
+
         let depositCallData = '0x';
         if (
           !this.routeNeedsRootWrapEth(priceRoute, exchangeParams) &&
           allowToAddWrap &&
-          !addedWrapToSwapMap[`${routeIndex}_${swapIndex}`]
+          !addedWrapToSwapMap[`${routeIndex}_${swapIndex}`] &&
+          !skipWrap
         ) {
           depositCallData = this.buildWrapEthCallData(
             maybeWethCallData.deposit.calldata,
