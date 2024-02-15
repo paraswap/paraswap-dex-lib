@@ -26,10 +26,8 @@ const erc20Interface = new Interface(Erc20ABI);
 function allowAugustusV6(
   tokenAddress: Address,
   holderAddress: Address,
-  network: Network,
+  augustusV6Address: Address,
 ) {
-  const augustusV6Address = generateConfig(network).augustusV6Address;
-
   return {
     from: holderAddress,
     to: tokenAddress,
@@ -74,7 +72,7 @@ export async function runE2ETest(
 
   if (srcToken.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
     const augustusV6Allowance = await ts.simulate(
-      allowAugustusV6(srcToken, senderAddress, network),
+      allowAugustusV6(srcToken, senderAddress, contracts.AugustusV6),
     );
     if (!augustusV6Allowance.success) console.log(augustusV6Allowance.url);
     expect(augustusV6Allowance!.success).toEqual(true);

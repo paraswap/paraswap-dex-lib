@@ -167,7 +167,6 @@ export type DexExchangeParam = {
   dexFuncHasDestToken?: boolean;
   specialDexFlag?: SpecialDex;
   transferSrcTokenBeforeSwap?: Address;
-  skipApprove?: boolean;
   spender?: Address;
 };
 

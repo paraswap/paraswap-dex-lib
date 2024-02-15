@@ -864,7 +864,6 @@ export class UniswapV2
     let exchangeData: string;
     let specialDexFlag: SpecialDex;
     let transferSrcTokenBeforeSwap: Address | undefined;
-    let skipApprove: boolean;
     let targetExchange: Address;
 
     if (side === SwapSide.SELL) {
@@ -883,7 +882,6 @@ export class UniswapV2
       exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
       specialDexFlag = SpecialDex.SWAP_ON_UNISWAP_V2_FORK;
       transferSrcTokenBeforeSwap = data.pools[0].address;
-      skipApprove = true;
       targetExchange = recipient;
     } else {
       const weth = this.getWETHAddress(srcToken, destToken, data.weth);
@@ -893,7 +891,6 @@ export class UniswapV2
         [srcToken, srcAmount, destAmount, weth, pools],
       );
       specialDexFlag = SpecialDex.DEFAULT;
-      skipApprove = false;
       targetExchange = data.router;
     }
 
@@ -904,7 +901,6 @@ export class UniswapV2
       targetExchange,
       specialDexFlag,
       transferSrcTokenBeforeSwap,
-      skipApprove,
     };
   }
 
