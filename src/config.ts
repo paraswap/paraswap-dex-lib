@@ -201,8 +201,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     executorsAddresses: {
-      Executor01: '0x00aeCC0E97060628f88282805FCfb80cc8877740',
-      Executor02: '0xa11ADAdFAd58Aad4827B973b24CF595c201dfc22',
+      Executor01: '0x3BAc6875ce3888A297A01046a0022912f8B64DC8',
+      Executor02: '0x2d4B9cCB8497604B01B4F32dc70A0C6519864382',
+      Executor03: '0xcEF4aA30328d1802C0e596fA6090a9eA36103ea3',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
