@@ -505,7 +505,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (curExchangeParam.needWrapNative && maybeWethCallData) {
       if (maybeWethCallData.deposit && isETHAddress(swap!.srcToken)) {
         const approveWethCalldata = this.buildApproveCallData(
-          curExchangeParam.targetExchange,
+          curExchangeParam.spender || curExchangeParam.targetExchange,
           this.dexHelper.config.data.wrappedNativeTokenAddress,
           flags.approves[exchangeParamIndex],
         );

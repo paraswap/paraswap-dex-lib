@@ -211,7 +211,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
           (prevExchangeParam && !prevExchangeParam.needWrapNative)
         ) {
           const approveWethCalldata = this.buildApproveCallData(
-            curExchangeParam.targetExchange,
+            curExchangeParam.spender || curExchangeParam.targetExchange,
             this.dexHelper.config.data.wrappedNativeTokenAddress,
             flags.approves[index],
           );
