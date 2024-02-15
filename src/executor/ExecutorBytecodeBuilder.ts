@@ -16,12 +16,15 @@ import {
   BYTES_28_LENGTH,
   EXECUTOR_01_02_FUNCTION_CALL_DATA_TYPES,
   EXECUTOR_03_FUNCTION_CALL_DATA_TYPES,
+  DEFAULT_RETURN_AMOUNT_POS,
   WRAP_UNWRAP_FROM_AMOUNT_POS,
   ZEROS_12_BYTES,
   ZEROS_28_BYTES,
   ZEROS_4_BYTES,
+  DISABLED_MAX_UNIT_APPROVAL_TOKENS,
 } from './constants';
 import { Executors, Flag, SpecialDex } from './types';
+import { MAX_UINT, Network } from '../constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -38,26 +41,22 @@ export abstract class ExecutorBytecodeBuilder {
   protected abstract buildSimpleSwapFlags(
     priceRoute: OptimalRate,
     exchangeParam: DexExchangeParam,
-    index: number,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag };
 
-  protected abstract buildMultiSwapFlags(
+  protected abstract buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
     exchangeParam: DexExchangeParam,
-    index: number,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag };
-
-  protected abstract buildSingleSwapCallData(
-    priceRoute: OptimalRate,
-    exchangeParams: DexExchangeParam[],
-    index: number,
-    flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
-    sender: string,
-    maybeWethCallData?: DepositWithdrawReturn,
-    buildSingleSwapCallData?: OptimalSwap,
-  ): string;
 
   public abstract buildByteCode(
     priceRoute: OptimalRate,
@@ -79,39 +78,46 @@ export abstract class ExecutorBytecodeBuilder {
   ): string;
 
   protected buildApproveCallData(
-    approveCalldata: string,
+    spender: string,
     tokenAddr: Address,
-    amount: string,
     flag: Flag,
+    amount = MAX_UINT,
   ): string {
-    const insertFromAmount = flag % 4 === 3;
+    let approveCalldata = this.erc20Interface.encodeFunctionData('approve', [
+      spender,
+      amount,
+    ]);
+
+    // as approval given only for MAX_UNIT or 0, no need to use insertFromAmount flag
     const checkSrcTokenBalance = flag % 3 === 2;
-
-    let fromAmountPos = 0;
-    if (insertFromAmount) {
-      const fromAmount = ethers.utils.defaultAbiCoder.encode(
-        ['uint256'],
-        [amount],
-      );
-
-      const fromAmountIndex = approveCalldata
-        .replace('0x', '')
-        .indexOf(fromAmount.replace('0x', ''));
-      fromAmountPos = fromAmountIndex / 2;
-    }
 
     if (checkSrcTokenBalance) {
       approveCalldata = hexConcat([approveCalldata, ZEROS_12_BYTES, tokenAddr]);
     }
 
-    return this.buildCallData(
+    let approvalCalldata = this.buildCallData(
       tokenAddr,
       approveCalldata,
-      fromAmountPos,
+      0,
       APPROVE_CALLDATA_DEST_TOKEN_POS,
       SpecialDex.DEFAULT,
       flag,
     );
+
+    // add additional approval 0 for special cases
+    if (
+      amount !== '0' &&
+      DISABLED_MAX_UNIT_APPROVAL_TOKENS?.[
+        this.dexHelper.config.data.network as Network
+      ]?.includes(tokenAddr)
+    ) {
+      approvalCalldata = hexConcat([
+        this.buildApproveCallData(spender, tokenAddr, flag, '0'),
+        approvalCalldata,
+      ]);
+    }
+
+    return approvalCalldata;
   }
 
   protected buildWrapEthCallData(depositCallData: string, flag: Flag): string {
@@ -132,7 +138,7 @@ export abstract class ExecutorBytecodeBuilder {
       WRAP_UNWRAP_FROM_AMOUNT_POS,
       0,
       SpecialDex.DEFAULT,
-      Flag.SEVEN,
+      Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP, // 7
       hexDataLength(withdrawCallData),
     );
   }
@@ -147,7 +153,7 @@ export abstract class ExecutorBytecodeBuilder {
       36,
       0,
       SpecialDex.DEFAULT,
-      Flag.THREE,
+      Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 3
       hexDataLength(transferCallData),
     );
   }
@@ -159,7 +165,7 @@ export abstract class ExecutorBytecodeBuilder {
       0,
       0,
       SpecialDex.SEND_NATIVE,
-      Flag.NINE,
+      Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
     );
   }
 
@@ -201,7 +207,7 @@ export abstract class ExecutorBytecodeBuilder {
       hexZeroPad(hexlify(hexDataLength(calldata) + BYTES_28_LENGTH), 4), // calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify('0xff'), 1), // TODO: Fix returnAmount Pos
+      hexZeroPad(hexlify(DEFAULT_RETURN_AMOUNT_POS), 1), // TODO: Fix returnAmount Pos
       hexZeroPad(hexlify(specialDexFlag), 1), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
@@ -236,34 +242,49 @@ export abstract class ExecutorBytecodeBuilder {
     exchangeParams: DexExchangeParam[],
     maybeWethCallData?: DepositWithdrawReturn,
   ): { approves: Flag[]; dexes: Flag[]; wrap: Flag } {
-    const isMultiSwap = priceRoute.bestRoute[0].swaps.length > 1;
-    const buildFlagsMethod = isMultiSwap
-      ? this.buildMultiSwapFlags.bind(this)
-      : this.buildSimpleSwapFlags.bind(this);
+    const isMegaSwap = priceRoute.bestRoute.length > 1;
+    const isMultiSwap = !isMegaSwap && priceRoute.bestRoute[0].swaps.length > 1;
 
-    const flags = exchangeParams.reduce<{ dexes: Flag[]; approves: Flag[] }>(
-      (acc, exchangeParam, index) => {
-        const { dexFlag, approveFlag } = buildFlagsMethod(
-          priceRoute,
-          exchangeParam,
-          index,
-          maybeWethCallData,
-        );
+    const buildFlagsMethod =
+      isMultiSwap || isMegaSwap
+        ? this.buildMultiMegaSwapFlags.bind(this)
+        : this.buildSimpleSwapFlags.bind(this);
 
-        acc.dexes.push(dexFlag);
-        acc.approves.push(approveFlag);
+    let exchangeParamIndex = 0;
+    let flags: { dexes: Flag[]; approves: Flag[] } = {
+      dexes: [],
+      approves: [],
+    };
 
-        return acc;
-      },
-      { dexes: [], approves: [] },
-    );
+    priceRoute.bestRoute.map((route, routeIndex) => {
+      route.swaps.map((swap, swapIndex) => {
+        swap.swapExchanges.map((swapExchange, swapExchangeIndex) => {
+          const curExchangeParam = exchangeParams[exchangeParamIndex];
+
+          const { dexFlag, approveFlag } = buildFlagsMethod(
+            priceRoute,
+            curExchangeParam,
+            routeIndex,
+            swapIndex,
+            swapExchangeIndex,
+            exchangeParamIndex,
+            maybeWethCallData,
+          );
+
+          flags.dexes.push(dexFlag);
+          flags.approves.push(approveFlag);
+
+          exchangeParamIndex++;
+        });
+      });
+    });
 
     return {
       ...flags,
       wrap:
         isETHAddress(priceRoute.srcToken) && maybeWethCallData?.deposit
-          ? Flag.NINE
-          : Flag.SEVEN,
+          ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
+          : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP, // 7
     };
   }
 

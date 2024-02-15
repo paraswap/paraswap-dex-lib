@@ -20,8 +20,9 @@ export class ExecutorDetector {
       [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE, // multiSwap via Executor01
       [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO, // simpleSwap with percentage on a path via Executor02
       [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with pecentages on paths via Executor02
-      // [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: // megaSwap
-      //   Executors.TWO,
+      // megaSwap via Executor02
+      [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]:
+        Executors.TWO,
     },
     [SwapSide.BUY]: {
       [RouteExecutionType.SINGLE_STEP]: Executors.THREE, // simpleBuy via Executor03
@@ -74,6 +75,8 @@ export class ExecutorDetector {
       } else {
         return RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE;
       }
+    } else if (priceRoute.bestRoute.length > 1) {
+      return RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE;
     }
 
     throw new Error('Route type is not supported yet');

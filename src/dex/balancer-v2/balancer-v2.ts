@@ -1475,7 +1475,10 @@ export class BalancerV2
       dexFuncHasRecipient: false, // to force manual transfer
       dexFuncHasDestToken: true,
       exchangeData: specialDexExchangeData,
-      specialDexFlag: SpecialDex.SWAP_ON_BALANCER_V2,
+      specialDexFlag:
+        side === SwapSide.SELL
+          ? SpecialDex.SWAP_ON_BALANCER_V2
+          : SpecialDex.DEFAULT,
       targetExchange: this.vaultAddress,
     };
   }

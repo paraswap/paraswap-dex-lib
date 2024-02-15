@@ -12,7 +12,7 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
+import { Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -40,7 +40,13 @@ import { BalancerV1EventPool } from './balancer-v1-pool';
 import { generatePoolStates } from './utils';
 import BalancerV1ExchangeProxyABI from '../../abi/BalancerV1ExchangeProxy.json';
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
-import { NumberAsString } from '@paraswap/core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
+import { BigNumber, ethers } from 'ethers';
+import { SpecialDex } from '../../executor/types';
+
+const {
+  utils: { hexlify, hexZeroPad, solidityPack },
+} = ethers;
 
 const fetchAllPoolsQuery = `query {
     pools(first: ${MAX_POOL_CNT.toString()} 
@@ -384,14 +390,31 @@ export class BalancerV1
       swapFunctionParam,
     );
 
+    const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+      return acc.add(swap.tokenInParam);
+    }, BigNumber.from(0));
+
+    const specialDexExchangeData = solidityPack(
+      ['bytes', 'bytes32', 'bytes32'],
+      [
+        exchangeData,
+        hexZeroPad(hexlify(swaps.length), 32),
+        hexZeroPad(hexlify(totalAmount), 32),
+      ],
+    );
+
     return {
       needWrapNative:
         swapFunction === BalancerFunctions.batchSwapExactIn
           ? true
           : this.needWrapNative,
+      specialDexFlag:
+        side === SwapSide.SELL
+          ? SpecialDex.SWAP_ON_BALANCER_V1
+          : SpecialDex.DEFAULT,
       dexFuncHasRecipient: false,
       dexFuncHasDestToken: true,
-      exchangeData,
+      exchangeData: specialDexExchangeData,
       targetExchange: this.config.exchangeProxy,
     };
   }

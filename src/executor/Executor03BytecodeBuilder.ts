@@ -38,15 +38,15 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
   protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
     exchangeParam: DexExchangeParam,
-    index: number,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
     const { srcToken, destToken } = priceRoute.bestRoute[0].swaps[0];
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
-
-    const isLastSwap =
-      index === priceRoute.bestRoute[0].swaps[0].swapExchanges.length - 1;
 
     const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
 
@@ -54,15 +54,17 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
-    let dexFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount,toAmount (flag 0 mod 3) = case 0: don't check balance after swap
-    let approveFlag = Flag.ZERO; // (flag 0 mod 4) = case 0: don't insert fromAmount,toAmount (flag 0 mod 3) = case 0: don't check balance after swap
+    let dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
+    let approveFlag =
+      Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
     if (isEthSrc && !needWrap) {
-      dexFlag = Flag.FIVE; // (flag 5 mod 4) = case 1: sendEth equal to fromAmount, (flag 5 mod 3) = case 2: check "srcToken" balance after swap
+      dexFlag =
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
-      dexFlag = Flag.FOUR; // (flag 4 mod 4) = case 0: don't insert fromAmount, (flag 4 mod 3) = case 1: check eth balance after swap
+      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
     } else if (!dexFuncHasRecipient || (isEthDest && needUnwrap)) {
-      dexFlag = Flag.EIGHT; // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap
+      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       // dexFlag = Flag.ZERO;
     }
 
@@ -72,13 +74,19 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     };
   }
 
-  protected buildMultiSwapFlags(
+  protected buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
     exchangeParam: DexExchangeParam,
-    index: number,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
-    return { dexFlag: Flag.ZERO, approveFlag: Flag.ZERO };
+    return {
+      dexFlag: Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 0
+      approveFlag: Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 0
+    };
   }
 
   protected buildSingleSwapCallData(
@@ -112,17 +120,11 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     ) {
       // TODO: as we give approve for MAX_UINT and approve for current targetExchange was given
       // in previous paths, then for current path we can skip it
-      const approve = this.erc20Interface.encodeFunctionData('approve', [
-        curExchangeParam.targetExchange,
-        MAX_UINT,
-      ]);
-
       const approveCallData = this.buildApproveCallData(
-        approve,
+        curExchangeParam.targetExchange,
         isETHAddress(swap.srcToken) && index !== 0
           ? this.dexHelper.config.data.wrappedNativeTokenAddress
           : swap.srcToken,
-        MAX_UINT,
         flags.approves[index],
       );
 
@@ -137,18 +139,14 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       // exchangeParams.findIndex(p => p.needWrapNative) === index
     ) {
       const approveWethCalldata = this.buildApproveCallData(
-        this.erc20Interface.encodeFunctionData('approve', [
-          curExchangeParam.targetExchange,
-          MAX_UINT,
-        ]),
+        curExchangeParam.targetExchange,
         this.dexHelper.config.data.wrappedNativeTokenAddress,
-        MAX_UINT,
         flags.approves[index],
       );
 
       const depositCallData = this.buildWrapEthCallData(
         maybeWethCallData.deposit.calldata,
-        Flag.NINE,
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
       );
 
       swapCallData = hexConcat([
