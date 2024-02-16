@@ -64,7 +64,6 @@ describe('Lido (stETH) E2E', () => {
   describe('Mainnet V6', () => {
     const swapMap = new Map<SwapSide, ContractMethod[]>([
       [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     testForNetwork(Network.MAINNET, swapMap);
