@@ -249,6 +249,7 @@ export class DodoV2
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: data.dodoProxy,
+      spender: maybeSpender,
     };
   }
 }
