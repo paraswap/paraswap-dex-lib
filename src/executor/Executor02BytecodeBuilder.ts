@@ -221,10 +221,12 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const insertFromAmount = flag % 4 === 3;
     let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
 
-    exchangeData = this.addTokenAddressToCallData(
-      exchangeData,
-      swap.srcToken.toLowerCase(),
-    );
+    if (!specialDexFlag) {
+      exchangeData = this.addTokenAddressToCallData(
+        exchangeData,
+        swap.srcToken.toLowerCase(),
+      );
+    }
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -435,6 +437,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     addMultiSwapMetadata?: boolean,
     applyVerticalBranching?: boolean,
   ): string {
+    const isSimpleSwap =
+      priceRoute.bestRoute.length === 1 &&
+      priceRoute.bestRoute[0].swaps.length === 1;
     let swapExchangeCallData = '';
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     const swapExchange = swap.swapExchanges[swapExchangeIndex];
@@ -551,11 +556,23 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         isETHAddress(swap.destToken)
       ) {
         let withdrawCallData = '0x';
-        const eachSwapNeedWrapNative = exchangeParams.every(
-          ep => ep.needWrapNative,
-        );
 
-        if (!isLast && !eachSwapNeedWrapNative) {
+        const nextSwap = priceRoute.bestRoute[routeIndex].swaps[swapIndex + 1];
+
+        let eachDexOnNextSwapNeedsWrapNative = false;
+        if (nextSwap) {
+          eachDexOnNextSwapNeedsWrapNative = this.eachDexOnSwapNeedsWrapNative(
+            priceRoute,
+            nextSwap,
+            exchangeParams,
+            routeIndex,
+          );
+        }
+
+        if (
+          (!isLast && !eachDexOnNextSwapNeedsWrapNative) || // unwrap if next swap has dexes which don't need wrap native
+          (isLast && isSimpleSwap) // unwrap after last dex call for simple swap case
+        ) {
           withdrawCallData = this.buildUnwrapEthCallData(
             maybeWethCallData.withdraw.calldata,
           );
@@ -565,6 +582,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           swapExchangeCallData,
           withdrawCallData,
         ]);
+
+        if (isLast && isSimpleSwap) {
+          const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
+          swapExchangeCallData = hexConcat([
+            swapExchangeCallData,
+            finalSpecialFlagCalldata,
+          ]);
+        }
       }
     }
 
