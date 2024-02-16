@@ -1,24 +1,17 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from '../constants';
+import { SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
-import BProtocolABI from '../abi/BProtocol.json';
-import { IDexHelper } from '../dex-helper';
-
-export type BProtocolData = {
-  exchange: string;
-};
-type BProtocolParam = [lusdAmount: string, minEthReturn: string, dest: string];
-enum BProtocolFunctions {
-  swap = 'swap',
-}
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import BProtocolABI from '../../abi/BProtocol.json';
+import { IDexHelper } from '../../dex-helper';
+import { BProtocolData, BProtocolFunctions, BProtocolParam } from './types';
 
 export class BProtocol
   extends SimpleExchange
@@ -79,13 +72,13 @@ export class BProtocol
   }
 
   getDexParam(
-    srcToken: Address,
-    destToken: Address,
+    _srcToken: Address,
+    _destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     recipient: Address,
     data: BProtocolData,
-    side: SwapSide,
+    _side: SwapSide,
   ): DexExchangeParam {
     const swapFunction = BProtocolFunctions.swap;
     const swapFunctionParams: BProtocolParam = [
