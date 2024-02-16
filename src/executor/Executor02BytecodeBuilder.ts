@@ -133,6 +133,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
+    const forceBalanceOfCheck =
+      !applyVerticalBranching && swap.swapExchanges.length > 1;
+
     if (isFirstSwap) {
       if (
         (applyVerticalBranching && !isSpecialDex) ||
@@ -141,8 +144,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         // keep default flags
       } else if (isEthSrc && !needWrap) {
         dexFlag =
-          isHorizontalSequence && !applyVerticalBranching
-            ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 5
+          (isHorizontalSequence && !applyVerticalBranching) ||
+          forceBalanceOfCheck
+            ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
             : dexFuncHasRecipient
             ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
             : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
@@ -152,12 +156,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         (isEthDest && needUnwrap)
       ) {
         dexFlag =
-          isHorizontalSequence && !applyVerticalBranching && !isSpecialDex
+          (isHorizontalSequence && !applyVerticalBranching && !isSpecialDex) ||
+          forceBalanceOfCheck
             ? Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
-            : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
+            : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isEthDest && !needUnwrap) {
         dexFlag =
-          isHorizontalSequence && !applyVerticalBranching
+          (isHorizontalSequence && !applyVerticalBranching) ||
+          forceBalanceOfCheck
             ? Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
             : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isEthDest && needUnwrap) {
@@ -170,20 +176,21 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         // keep default flags
       } else if (isEthSrc && !needWrap && !isSpecialDex) {
         dexFlag =
-          isHorizontalSequence && !isLastSwap
+          (isHorizontalSequence && !isLastSwap) || forceBalanceOfCheck
             ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
             : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 9
       } else if (isEthSrc && needWrap && !isSpecialDex) {
         dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (needUnwrap && !isSpecialDex) {
         dexFlag =
-          isHorizontalSequence && !isLastSwap
+          (isHorizontalSequence && !isLastSwap) || forceBalanceOfCheck
             ? Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
             : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isSpecialDex) {
         if (isEthDest && !needUnwrap) {
           dexFlag =
-            isHorizontalSequence && !isLastSwap && !applyVerticalBranching
+            (isHorizontalSequence && !isLastSwap && !applyVerticalBranching) ||
+            forceBalanceOfCheck
               ? Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
               : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
         } else if (isEthSrc && !needWrap) {
@@ -191,7 +198,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
         } else {
           dexFlag =
-            isHorizontalSequence && !isLastSwap && !applyVerticalBranching
+            (isHorizontalSequence && !isLastSwap && !applyVerticalBranching) ||
+            forceBalanceOfCheck
               ? Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 3
               : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
         }
@@ -510,7 +518,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (curExchangeParam.needWrapNative && maybeWethCallData) {
       if (maybeWethCallData.deposit && isETHAddress(swap!.srcToken)) {
         const approveWethCalldata = this.buildApproveCallData(
-          curExchangeParam.targetExchange,
+          curExchangeParam.spender || curExchangeParam.targetExchange,
           this.dexHelper.config.data.wrappedNativeTokenAddress,
           flags.approves[exchangeParamIndex],
         );
