@@ -475,22 +475,22 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
     const isLast = exchangeParamIndex === exchangeParams.length - 1;
 
-    // if (curExchangeParam.transferSrcTokenBeforeSwap) {
-    //   const transferCallData = this.buildTransferCallData(
-    //     this.erc20Interface.encodeFunctionData('transfer', [
-    //       curExchangeParam.transferSrcTokenBeforeSwap,
-    //       swapExchange.srcAmount,
-    //     ]),
-    //     isETHAddress(swap.srcToken)
-    //       ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
-    //       : swap.srcToken.toLowerCase(),
-    //   );
-    //
-    //   swapExchangeCallData = hexConcat([
-    //     transferCallData,
-    //     swapExchangeCallData,
-    //   ]);
-    // }
+    if (curExchangeParam.transferSrcTokenBeforeSwap) {
+      const transferCallData = this.buildTransferCallData(
+        this.erc20Interface.encodeFunctionData('transfer', [
+          curExchangeParam.transferSrcTokenBeforeSwap,
+          swapExchange.srcAmount,
+        ]),
+        isETHAddress(swap.srcToken)
+          ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+          : swap.srcToken.toLowerCase(),
+      );
+
+      swapExchangeCallData = hexConcat([
+        transferCallData,
+        swapExchangeCallData,
+      ]);
+    }
 
     if (
       !isETHAddress(swap!.srcToken) &&
