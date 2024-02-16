@@ -21,6 +21,8 @@ type ForkMetadata = {
   contracts: ContractsAugustusV6;
 };
 
+const network = 'polygon';
+
 async function deployAugustusOnFork(
   network: number,
   blockNumber: number,
@@ -41,12 +43,15 @@ async function deployAugustusOnFork(
 
 describe('Executors: Price Route Tests', () => {
   // Dynamically load and test each price route file in the directory
-  const priceRoutesDir = path.join(__dirname, './price-routes');
+  const routePath = `./price-routes/${network}`;
+  const priceRoutesDir = path.join(__dirname, routePath);
   const priceRouteFiles = fs.readdirSync(priceRoutesDir);
 
   priceRouteFiles.forEach(file => {
     console.log(file);
-    if (file === 'sell-50-eth-usdc.json')
+    // if (file === 'sell-50-eth-usdc.json')
+    if (file === 'sell-100-WBTC-MATIC.json')
+      // if (file === 'polygon-sell-1_000_000-DAI-MATIC.json')
       it(`file: ${file}`, async () => {
         const {
           priceRoute,
@@ -64,12 +69,13 @@ describe('Executors: Price Route Tests', () => {
           saveForkMetadata(
             forkMetadata,
             priceRoute as OptimalRate,
-            `./price-routes/${file}`,
+            `${routePath}/${file}`,
           );
         }
 
         const srcTokenSymbol = Object.entries(Tokens[priceRoute.network]).find(
-          ([key, token]) => token.address === priceRoute.srcToken,
+          ([key, token]) =>
+            token.address.toLowerCase() === priceRoute.srcToken.toLowerCase(),
         )?.[0];
 
         if (!srcTokenSymbol) throw new Error('srcTokenSymbol not found');

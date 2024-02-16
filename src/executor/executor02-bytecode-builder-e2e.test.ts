@@ -57,7 +57,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'SUSHI';
         const tokenBSymbol: string = 'ETH';
-        const tokenAAmount: string = '300000000000000000000000';
+        const tokenAAmount: string = '3000000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -773,6 +773,82 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
           );
         });
       });
+
+      // describe('USDC -> USDT via CurveV1, CurveV2, UniSwapV3 and PancakeSwapV3', () => {
+      //   const dexKeys = ['CurveV1', 'CurveV2', 'UniSwapV3', 'PancakeSwapV3'];
+      //
+      //   const tokenASymbol: string = 'USDC';
+      //   const tokenBSymbol: string = 'USDT';
+      //   const tokenAAmount: string = '100000000000000';
+      //
+      //   const side = SwapSide.SELL;
+      //
+      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+      //     await testE2E(
+      //       tokens[tokenASymbol],
+      //       tokens[tokenBSymbol],
+      //       holders[tokenASymbol],
+      //       tokenAAmount,
+      //       side,
+      //       dexKeys,
+      //       contractMethod,
+      //       network,
+      //       provider,
+      //       undefined,
+      //       undefined,
+      //       undefined,
+      //       300,
+      //       2000,
+      //       false,
+      //     );
+      //   });
+      // });
+    });
+  });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const slippage = undefined;
+
+    describe('MegaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+
+      // describe('DAI -> MATIC via multiple dexes', () => {
+      //   const dexKeys: string[] = [];
+      //
+      //   const tokenASymbol: string = 'DAI';
+      //   const tokenBSymbol: string = 'MATIC';
+      //   const tokenAAmount: string = '1000000000000000000000000';
+      //
+      //   const side = SwapSide.SELL;
+      //
+      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+      //     await testE2E(
+      //       tokens[tokenASymbol],
+      //       tokens[tokenBSymbol],
+      //       holders[tokenASymbol],
+      //       tokenAAmount,
+      //       side,
+      //       dexKeys,
+      //       contractMethod,
+      //       network,
+      //       provider,
+      //       undefined,
+      //       undefined,
+      //       undefined,
+      //       300,
+      //       2000,
+      //       false,
+      //     );
+      //   });
+      // });
     });
   });
 });

@@ -681,7 +681,6 @@ export class Solidly extends UniswapV2 {
         ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
         : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
       transferSrcTokenBeforeSwap: data.pools[0].address,
-      skipApprove: true,
     };
   }
 }
