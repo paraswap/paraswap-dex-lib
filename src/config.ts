@@ -54,7 +54,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
       Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
       Adapter04: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
-      Adapter05: '0x221cf6d7569b35726e73e5f329bad2ee3836c4fc',
+      Adapter05: '0x3329dfa55A40B450952FBE0203167Ae6908E656d',
       BuyAdapter: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
       BuyAdapter02: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
     },
