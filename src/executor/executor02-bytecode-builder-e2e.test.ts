@@ -57,7 +57,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'SUSHI';
         const tokenBSymbol: string = 'ETH';
-        const tokenAAmount: string = '300000000000000000000000';
+        const tokenAAmount: string = '3000000000000000000000000';
 
         const side = SwapSide.SELL;
 
