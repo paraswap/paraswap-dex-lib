@@ -27,6 +27,7 @@ import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
 import { BI_POWS } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
+import { hexConcat } from 'ethers/lib/utils';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
@@ -511,20 +512,31 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       side,
     );
 
-    const exchangeData = psmInterface.encodeFunctionData(
+    let exchangeData = psmInterface.encodeFunctionData(
       isGemSell ? 'sellGem' : 'buyGem',
       [recipient, gemAmount],
     );
+
+    // append toll and to18ConversionFactor for buyGem
+    if (!isGemSell) {
+      // hexConcat([
+      exchangeData +=
+        data.toll + getBigIntPow(18 - data.gemDecimals).toString();
+      // ]);
+    }
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: data.psmAddress,
+      // specialDexFlag: isGemSell
+      //   ? SpecialDex.DEFAULT
+      //   : SpecialDex.SWAP_ON_MAKER_PSM,
       specialDexFlag:
-        side === SwapSide.BUY
-          ? SpecialDex.SWAP_ON_MAKER_PSM
-          : SpecialDex.DEFAULT,
+        side === SwapSide.SELL
+          ? SpecialDex.DEFAULT
+          : SpecialDex.SWAP_ON_MAKER_PSM,
       spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
     };
   }

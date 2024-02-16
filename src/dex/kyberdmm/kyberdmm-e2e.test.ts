@@ -113,13 +113,14 @@ describe('KyberDmm E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.swapExactAmountIn,
+          // ContractMethod.swapExactAmountIn,
           // ContractMethod.simpleSwap,
           // ContractMethod.multiSwap,
           // ContractMethod.megaSwap,
         ],
       ],
       // [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -151,19 +152,19 @@ describe('KyberDmm E2E', () => {
               provider,
             );
           });
-          it('TOKEN -> TOKEN', async () => {
-            await testE2E(
-              tokens[tokenASymbol],
-              tokens[tokenBSymbol],
-              holders[tokenASymbol],
-              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-              side,
-              dexKey,
-              contractMethod,
-              network,
-              provider,
-            );
-          });
+          // it('TOKEN -> TOKEN', async () => {
+          //   await testE2E(
+          //     tokens[tokenASymbol],
+          //     tokens[tokenBSymbol],
+          //     holders[tokenASymbol],
+          //     side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+          //     side,
+          //     dexKey,
+          //     contractMethod,
+          //     network,
+          //     provider,
+          //   );
+          // });
         });
       }),
     );

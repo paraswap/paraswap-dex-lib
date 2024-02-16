@@ -88,7 +88,7 @@ function testForNetwork(
     ],
     // TODO: If buy is not supported remove the buy contract methods
     // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -187,7 +187,8 @@ describe('Algebra', () => {
     describe('Polygon_V6', () => {
       const network = Network.POLYGON;
       const tokenASymbol: string = 'USDC';
-      const tokenBSymbol: string = 'DAI';
+      // const tokenBSymbol: string = 'DAI';
+      const tokenBSymbol: string = 'USDT';
 
       const tokenAAmount: string = '1000000000';
       const tokenBAmount: string = '1000000000000000000000';
@@ -249,7 +250,7 @@ describe('Algebra', () => {
     });
   });
 
-  describe('CamelotV3', () => {
+  describe('CamelotV3_V6', () => {
     const dexKey = 'CamelotV3';
     const network = Network.ARBITRUM;
 
@@ -279,8 +280,8 @@ describe('Algebra', () => {
     });
 
     describe('Arbitrum: Non-Tax tokens', () => {
-      const tokenASymbol: string = 'USDCe';
-      const tokenBSymbol: string = 'USDT';
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDCe';
 
       const tokenAAmount: string = '1000000000';
       const tokenBAmount: string = '1000000000';
