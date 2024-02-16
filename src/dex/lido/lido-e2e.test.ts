@@ -2,19 +2,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 
 import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-const dexKey = 'bprotocol';
-
-// ! LIQUIDITY ISSUES
+const dexKey = 'lido';
 
 const testForNetwork = (
   network: Network,
@@ -22,8 +16,6 @@ const testForNetwork = (
 ) => {
   const tokens = Tokens[network];
   const holders = Holders[network];
-
-  const nativeSymbol = NativeTokenSymbols[network];
 
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -33,12 +25,12 @@ const testForNetwork = (
   const tokensToTest = [
     [
       {
-        symbol: 'LUSD',
+        symbol: 'ETH',
         amount: '100000000000000000000',
       },
       {
-        symbol: 'ETH',
-        amount: '35360886801038522',
+        symbol: 'STETH',
+        amount: '100000000000000000000',
       },
     ],
   ];
@@ -60,20 +52,6 @@ const testForNetwork = (
               provider,
             );
           });
-
-          it(`${nativeSymbol} -> ${pair[0].symbol}`, async () => {
-            await testE2E(
-              tokens[nativeSymbol],
-              tokens[pair[0].symbol],
-              holders[nativeSymbol],
-              side === SwapSide.SELL ? '1000000000000000000' : pair[0].amount,
-              side,
-              dexKey,
-              contractMethod as any,
-              network,
-              provider,
-            );
-          });
         });
       });
     }),
@@ -82,10 +60,11 @@ const testForNetwork = (
 
 // Ensure you have the E2E_ENDPOINT_URL env variable set.
 
-describe('bProtocol E2E', () => {
+describe('Lido (stETH) E2E', () => {
   describe('Mainnet V6', () => {
     const swapMap = new Map<SwapSide, ContractMethod[]>([
       [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     testForNetwork(Network.MAINNET, swapMap);

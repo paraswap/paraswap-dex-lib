@@ -1,37 +1,18 @@
 import { Interface } from '@ethersproject/abi';
 import { Provider } from '@ethersproject/providers';
-import { SwapSide } from '../constants';
+import { SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
-import StablePoolABI from '../abi/StablePool.json';
-import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
-
-type StablePoolData = {
-  exchange: string;
-  i: string;
-  j: string;
-  deadline: string;
-};
-
-type StablePoolParam = [
-  i: NumberAsString,
-  j: NumberAsString,
-  dx: NumberAsString,
-  min_dy: NumberAsString,
-  deadline?: string,
-];
-
-enum StabePoolFunctions {
-  swap = 'swap',
-}
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import StablePoolABI from '../../abi/StablePool.json';
+import { IDexHelper } from '../../dex-helper';
+import { StablePoolFunctions, StablePoolData, StablePoolParam } from './types';
 
 export class StablePool
   extends SimpleExchange
@@ -54,10 +35,10 @@ export class StablePool
   }
 
   getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
+    _srcToken: string,
+    _destToken: string,
+    _srcAmount: string,
+    _destAmount: string,
     data: StablePoolData,
     side: SwapSide,
   ): AdapterExchangeParam {
@@ -100,7 +81,7 @@ export class StablePool
       deadline,
     ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      StabePoolFunctions.swap,
+      StablePoolFunctions.swap,
       swapFunctionParams,
     );
 
@@ -134,7 +115,7 @@ export class StablePool
       deadline,
     ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      StabePoolFunctions.swap,
+      StablePoolFunctions.swap,
       swapFunctionParams,
     );
 

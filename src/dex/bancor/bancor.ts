@@ -1,43 +1,18 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { NULL_ADDRESS, SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
-import BancorABI from '../abi/Bancor.json';
-import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
-
-const BANCOR_NETWORK: { [network: string]: string } = {
-  1: '0x2F9EC37d6CcFFf1caB21733BdaDEdE11c823cCB0',
-};
-
-const BancorRegistry: { [network: string]: string } = {
-  1: '0x52ae12abe5d8bd778bd5397f99ca900624cfadd4',
-};
-
-export type BancorData = {
-  minDestToken: string;
-  path: Address[];
-  bancorNetwork?: string;
-};
-
-type BancorParam = [
-  path: Address[],
-  srcAmount: string,
-  minDestToken: string,
-  affiliateAccount: string,
-  affiliateFee: string,
-];
-
-enum BancorFunctions {
-  convert2 = 'convert2',
-}
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import BancorABI from '../../abi/Bancor.json';
+import { IDexHelper } from '../../dex-helper';
+import { BancorData, BancorFunctions, BancorParam } from './types';
+import { BANCOR_NETWORK, BancorRegistry } from './config';
 
 export class Bancor
   extends SimpleExchange
@@ -112,11 +87,11 @@ export class Bancor
   }
 
   getDexParam(
-    srcToken: Address,
-    destToken: Address,
+    _srcToken: Address,
+    _destToken: Address,
     srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    recipient: Address,
+    _destAmount: NumberAsString,
+    _recipient: Address,
     data: BancorData,
     side: SwapSide,
   ): DexExchangeParam {

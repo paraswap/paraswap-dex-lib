@@ -12,9 +12,7 @@ import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-const dexKey = 'bprotocol';
-
-// ! LIQUIDITY ISSUES
+const dexKey = 'bancor';
 
 const testForNetwork = (
   network: Network,
@@ -33,12 +31,22 @@ const testForNetwork = (
   const tokensToTest = [
     [
       {
-        symbol: 'LUSD',
-        amount: '100000000000000000000',
+        symbol: 'USDC',
+        amount: (10 ** 8).toString(),
       },
       {
-        symbol: 'ETH',
-        amount: '35360886801038522',
+        symbol: 'USDT',
+        amount: (10 ** 8).toString(),
+      },
+    ],
+    [
+      {
+        symbol: 'USDT',
+        amount: (10 ** 8).toString(),
+      },
+      {
+        symbol: 'DAI',
+        amount: (10 ** 8).toString(),
       },
     ],
   ];
@@ -82,7 +90,7 @@ const testForNetwork = (
 
 // Ensure you have the E2E_ENDPOINT_URL env variable set.
 
-describe('bProtocol E2E', () => {
+describe('Bancor E2E', () => {
   describe('Mainnet V6', () => {
     const swapMap = new Map<SwapSide, ContractMethod[]>([
       [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
