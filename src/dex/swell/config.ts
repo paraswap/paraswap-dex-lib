@@ -19,7 +19,7 @@ export const Adapters: {
   [Network.MAINNET]: {
     [SwapSide.SELL]: [
       {
-        name: 'Adapter04', // FIXME
+        name: 'Adapter05',
         index: 1,
       },
     ],

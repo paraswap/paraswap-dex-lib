@@ -170,18 +170,9 @@ export class Swell
   ): AdapterExchangeParam {
     this.assertEligibility(srcToken, destToken, side);
 
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          shouldWithdraw: 'bool',
-        },
-      },
-      { shouldWithdraw: this.isWETH(srcToken) },
-    );
-
     return {
-      targetExchange: this.swETHAddress,
-      payload,
+      targetExchange: this.swETHAddress, // not used contract side
+      payload: '0x',
       networkFee: '0',
     };
   }
