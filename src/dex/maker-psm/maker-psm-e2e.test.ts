@@ -25,9 +25,11 @@ describe('MakerPsm E2E', () => {
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAI';
+    const nativeTokenSymbol = 'ETH';
 
     const tokenAAmount: string = '1000000000';
     const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount: string = '1000000000000000000';
 
     const sideToContractMethods = new Map([
       [
@@ -73,6 +75,32 @@ describe('MakerPsm E2E', () => {
               provider,
             );
           });
+          // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+          //   await testE2E(
+          //     tokens[nativeTokenSymbol],
+          //     tokens[tokenASymbol],
+          //     holders[nativeTokenSymbol],
+          //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+          //     side,
+          //     dexKey,
+          //     contractMethod,
+          //     network,
+          //     provider,
+          //   );
+          // });
+          // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+          //   await testE2E(
+          //     tokens[tokenASymbol],
+          //     tokens[nativeTokenSymbol],
+          //     holders[tokenASymbol],
+          //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+          //     side,
+          //     dexKey,
+          //     contractMethod,
+          //     network,
+          //     provider,
+          //   );
+          // });
         });
       }),
     );

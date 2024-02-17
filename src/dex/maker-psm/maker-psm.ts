@@ -511,20 +511,30 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       side,
     );
 
-    const exchangeData = psmInterface.encodeFunctionData(
+    let exchangeData = psmInterface.encodeFunctionData(
       isGemSell ? 'sellGem' : 'buyGem',
       [recipient, gemAmount],
     );
+
+    if (!isGemSell) {
+      exchangeData += `${data.toll}${getBigIntPow(18 - data.gemDecimals)}`;
+    }
+    // if (side === SwapSide.BUY) {
+    //   exchangeData += `${data.toll}${getBigIntPow(18 - data.gemDecimals)}`;
+    // }
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: data.psmAddress,
-      specialDexFlag:
-        side === SwapSide.BUY
-          ? SpecialDex.SWAP_ON_MAKER_PSM
-          : SpecialDex.DEFAULT,
+      specialDexFlag: isGemSell
+        ? SpecialDex.DEFAULT
+        : SpecialDex.SWAP_ON_MAKER_PSM,
+      // specialDexFlag:
+      //   side === SwapSide.BUY
+      //     ? SpecialDex.SWAP_ON_MAKER_PSM
+      //     : SpecialDex.DEFAULT,
       spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
     };
   }
