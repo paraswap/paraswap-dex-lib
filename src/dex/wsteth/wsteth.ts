@@ -254,20 +254,9 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
     side: SwapSide,
   ): Promise<DexExchangeParam> {
     let exchangeData: string;
+
     if (srcToken.toLowerCase() === this.config.stETHAddress) {
-      const approveParam = await this.getApproveSimpleParam(
-        this.config.stETHAddress,
-        this.config.wstETHAddress,
-        srcAmount,
-      );
-      // encode here is failing, not sure if approve related or what.
-      exchangeData = solidityPack(
-        ['bytes', 'bytes'],
-        [
-          approveParam,
-          WstETH.wstETHIface.encodeFunctionData('wrap', [srcAmount]),
-        ],
-      );
+      exchangeData = WstETH.wstETHIface.encodeFunctionData('wrap', [srcAmount]);
     } else {
       exchangeData = WstETH.wstETHIface.encodeFunctionData('unwrap', [
         srcAmount,
