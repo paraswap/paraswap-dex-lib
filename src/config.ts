@@ -201,7 +201,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0x80492bC2A01172A6796af80576D185018BF34d5B',
+    augustusV6Address: '0xAbd91E0b4d93019434141bBaAcbD1D25662f150b',
     augustusRFQAddress: '0xF3CD476C3C4D3Ac5cA2724767f269070CA09A043',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x275617327c958bD06b5D6b871E7f491D76113dd8',

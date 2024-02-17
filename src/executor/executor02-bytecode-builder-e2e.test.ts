@@ -57,7 +57,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'SUSHI';
         const tokenBSymbol: string = 'ETH';
-        const tokenAAmount: string = '300000000000000000000000';
+        const tokenAAmount: string = '3000000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -654,11 +654,11 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         });
       });
 
-      describe('ETH -> USDC via MaverickV1 and BalancerV2', () => {
+      describe('ETH -> USDT via MaverickV1 and BalancerV2', () => {
         const dexKeys = ['BalancerV2', 'MaverickV1'];
 
         const tokenASymbol: string = 'ETH';
-        const tokenBSymbol: string = 'USDC';
+        const tokenBSymbol: string = 'USDT';
         const tokenAAmount: string = '50000000000000000000';
 
         const side = SwapSide.SELL;
@@ -806,49 +806,87 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
     });
   });
 
-  describe('Polygon', () => {
-    const network = Network.POLYGON;
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
-      network,
-    );
+  // describe('Polygon', () => {
+  //   const network = Network.POLYGON;
+  //   const provider = new StaticJsonRpcProvider(
+  //     generateConfig(network).privateHttpProvider,
+  //     network,
+  //   );
+  //
+  //   const tokens = Tokens[network];
+  //   const holders = Holders[network];
+  //   const slippage = undefined;
 
-    const tokens = Tokens[network];
-    const holders = Holders[network];
-    const slippage = undefined;
+  // describe('MegaSwap', () => {
+  //   const contractMethod = ContractMethod.megaSwap;
+  //
+  //   describe('WBTC -> DAI', () => {
+  //     const dexKeys = [
+  //       'CurveV2',
+  //       'DODOV2',
+  //       'UniswapV3',
+  //       'QuickSwapV3',
+  //       'IronV2',
+  //       'Synapse',
+  //     ];
+  //
+  //     const tokenASymbol: string = 'WBTC';
+  //     const tokenBSymbol: string = 'DAI';
+  //     const tokenAAmount: string = '1000000000';
+  //
+  //     const side = SwapSide.SELL;
+  //
+  //     it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+  //       await testE2E(
+  //         tokens[tokenASymbol],
+  //         tokens[tokenBSymbol],
+  //         holders[tokenASymbol],
+  //         tokenAAmount,
+  //         side,
+  //         dexKeys,
+  //         contractMethod,
+  //         network,
+  //         provider,
+  //         undefined,
+  //         undefined,
+  //         undefined,
+  //         300,
+  //         2000,
+  //         false,
+  //       );
+  //     });
+  //   });
+  // });
 
-    describe('MegaSwap', () => {
-      const contractMethod = ContractMethod.megaSwap;
-
-      // describe('DAI -> MATIC via multiple dexes', () => {
-      //   const dexKeys: string[] = [];
-      //
-      //   const tokenASymbol: string = 'DAI';
-      //   const tokenBSymbol: string = 'MATIC';
-      //   const tokenAAmount: string = '1000000000000000000000000';
-      //
-      //   const side = SwapSide.SELL;
-      //
-      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-      //     await testE2E(
-      //       tokens[tokenASymbol],
-      //       tokens[tokenBSymbol],
-      //       holders[tokenASymbol],
-      //       tokenAAmount,
-      //       side,
-      //       dexKeys,
-      //       contractMethod,
-      //       network,
-      //       provider,
-      //       undefined,
-      //       undefined,
-      //       undefined,
-      //       300,
-      //       2000,
-      //       false,
-      //     );
-      //   });
-      // });
-    });
-  });
+  // describe('DAI -> MATIC via multiple dexes', () => {
+  //   const dexKeys: string[] = [];
+  //
+  //   const tokenASymbol: string = 'DAI';
+  //   const tokenBSymbol: string = 'MATIC';
+  //   const tokenAAmount: string = '1000000000000000000000000';
+  //
+  //   const side = SwapSide.SELL;
+  //
+  //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+  //     await testE2E(
+  //       tokens[tokenASymbol],
+  //       tokens[tokenBSymbol],
+  //       holders[tokenASymbol],
+  //       tokenAAmount,
+  //       side,
+  //       dexKeys,
+  //       contractMethod,
+  //       network,
+  //       provider,
+  //       undefined,
+  //       undefined,
+  //       undefined,
+  //       300,
+  //       2000,
+  //       false,
+  //     );
+  //   });
+  // });
+  // });
+  //   });
 });

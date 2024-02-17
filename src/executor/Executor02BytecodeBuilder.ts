@@ -133,6 +133,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
+    const forceBalanceOfCheck =
+      !applyVerticalBranching && swap.swapExchanges.length > 1;
+
     if (isFirstSwap) {
       if (
         (applyVerticalBranching && !isSpecialDex) ||
@@ -141,8 +144,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         // keep default flags
       } else if (isEthSrc && !needWrap) {
         dexFlag =
-          isHorizontalSequence && !applyVerticalBranching
-            ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 5
+          (isHorizontalSequence && !applyVerticalBranching) ||
+          forceBalanceOfCheck
+            ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
             : dexFuncHasRecipient
             ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
             : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
@@ -152,12 +156,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         (isEthDest && needUnwrap)
       ) {
         dexFlag =
-          isHorizontalSequence && !applyVerticalBranching && !isSpecialDex
+          (isHorizontalSequence && !applyVerticalBranching && !isSpecialDex) ||
+          forceBalanceOfCheck
             ? Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
-            : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
+            : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isEthDest && !needUnwrap) {
         dexFlag =
-          isHorizontalSequence && !applyVerticalBranching
+          (isHorizontalSequence && !applyVerticalBranching) ||
+          forceBalanceOfCheck
             ? Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
             : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isEthDest && needUnwrap) {
@@ -170,20 +176,21 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         // keep default flags
       } else if (isEthSrc && !needWrap && !isSpecialDex) {
         dexFlag =
-          isHorizontalSequence && !isLastSwap
+          (isHorizontalSequence && !isLastSwap) || forceBalanceOfCheck
             ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
             : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 9
       } else if (isEthSrc && needWrap && !isSpecialDex) {
         dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (needUnwrap && !isSpecialDex) {
         dexFlag =
-          isHorizontalSequence && !isLastSwap
+          (isHorizontalSequence && !isLastSwap) || forceBalanceOfCheck
             ? Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
             : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isSpecialDex) {
         if (isEthDest && !needUnwrap) {
           dexFlag =
-            isHorizontalSequence && !isLastSwap && !applyVerticalBranching
+            (isHorizontalSequence && !isLastSwap && !applyVerticalBranching) ||
+            forceBalanceOfCheck
               ? Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
               : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
         } else if (isEthSrc && !needWrap) {
@@ -191,7 +198,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
         } else {
           dexFlag =
-            isHorizontalSequence && !isLastSwap && !applyVerticalBranching
+            (isHorizontalSequence && !isLastSwap && !applyVerticalBranching) ||
+            forceBalanceOfCheck
               ? Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 3
               : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
         }
@@ -221,10 +229,12 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const insertFromAmount = flag % 4 === 3;
     let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
 
-    exchangeData = this.addTokenAddressToCallData(
-      exchangeData,
-      swap.srcToken.toLowerCase(),
-    );
+    if (!specialDexFlag) {
+      exchangeData = this.addTokenAddressToCallData(
+        exchangeData,
+        swap.srcToken.toLowerCase(),
+      );
+    }
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -435,6 +445,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     addMultiSwapMetadata?: boolean,
     applyVerticalBranching?: boolean,
   ): string {
+    const isSimpleSwap =
+      priceRoute.bestRoute.length === 1 &&
+      priceRoute.bestRoute[0].swaps.length === 1;
     let swapExchangeCallData = '';
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     const swapExchange = swap.swapExchanges[swapExchangeIndex];
@@ -551,11 +564,23 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         isETHAddress(swap.destToken)
       ) {
         let withdrawCallData = '0x';
-        const eachSwapNeedWrapNative = exchangeParams.every(
-          ep => ep.needWrapNative,
-        );
 
-        if (!isLast && !eachSwapNeedWrapNative) {
+        const nextSwap = priceRoute.bestRoute[routeIndex].swaps[swapIndex + 1];
+
+        let eachDexOnNextSwapNeedsWrapNative = false;
+        if (nextSwap) {
+          eachDexOnNextSwapNeedsWrapNative = this.eachDexOnSwapNeedsWrapNative(
+            priceRoute,
+            nextSwap,
+            exchangeParams,
+            routeIndex,
+          );
+        }
+
+        if (
+          (!isLast && !eachDexOnNextSwapNeedsWrapNative) || // unwrap if next swap has dexes which don't need wrap native
+          (isLast && isSimpleSwap) // unwrap after last dex call for simple swap case
+        ) {
           withdrawCallData = this.buildUnwrapEthCallData(
             maybeWethCallData.withdraw.calldata,
           );
@@ -565,6 +590,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           swapExchangeCallData,
           withdrawCallData,
         ]);
+
+        if (isLast && isSimpleSwap) {
+          const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
+          swapExchangeCallData = hexConcat([
+            swapExchangeCallData,
+            finalSpecialFlagCalldata,
+          ]);
+        }
       }
     }
 
