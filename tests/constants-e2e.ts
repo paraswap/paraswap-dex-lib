@@ -1235,7 +1235,7 @@ export const Holders: {
   },
   [Network.ARBITRUM]: {
     SEN: '0xcb19b6b4971bd4206bab176c75b1efe3e28ee5a8',
-    RDPX: '0x2fa6f21ecfe274f594f470c376f5bdd061e08a37',
+    RDPX: '0x115b818593c00da4f9d1d8f5ce7d7f88cce48bee',
     ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
     ETH: '0xF977814e90dA44bFA03b6295A0616a897441aceC',
     DAI: '0x07d7f291e731a41d3f0ea4f1ae5b6d920ffb3fe0',
