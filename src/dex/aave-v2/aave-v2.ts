@@ -25,17 +25,22 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveV2Config, Adapters } from './config';
 import { isAaveV2Pair } from './tokens';
+import {
+  AaveV2Avalanche,
+  AaveV2Ethereum,
+  AaveV2Polygon,
+} from '@bgd-labs/aave-address-book';
 
 const aaveLendingPool: { [network: string]: string } = {
-  [Network.MAINNET]: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9',
-  [Network.POLYGON]: '0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf',
-  [Network.AVALANCHE]: '0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C',
+  [Network.MAINNET]: AaveV2Ethereum.POOL,
+  [Network.POLYGON]: AaveV2Polygon.POOL,
+  [Network.AVALANCHE]: AaveV2Avalanche.POOL,
 };
 
 const WETH_GATEWAY: any = {
-  [Network.MAINNET]: '0xDcD33426BA191383f1c9B431A342498fdac73488',
-  [Network.POLYGON]: '0xbEadf48d62aCC944a06EEaE0A9054A90E5A7dc97',
-  [Network.AVALANCHE]: '0x8a47F74d1eE0e2edEB4F3A7e64EF3bD8e11D27C8',
+  [Network.MAINNET]: AaveV2Ethereum.WETH_GATEWAY,
+  [Network.POLYGON]: AaveV2Polygon.WETH_GATEWAY,
+  [Network.AVALANCHE]: AaveV2Avalanche.WETH_GATEWAY,
 };
 
 const WETH_GATEWAY_ABI: any = {
