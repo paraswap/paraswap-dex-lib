@@ -93,16 +93,25 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
+    const swapExchange = swap.swapExchanges[swapExchangeIndex];
     const { srcToken, destToken } = swap;
     const isFirstSwap = swapIndex === 0;
-    const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
+    const { dexFuncHasRecipient, needWrapNative, exchangeData } = exchangeParam;
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
+
+    const doesExchangeDataContainsSrcAmount =
+      exchangeData.indexOf(
+        ethers.utils.defaultAbiCoder
+          .encode(['uint256'], [swapExchange.srcAmount])
+          .replace('0x', ''),
+      ) > -1;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
+    const forcePreventInsertFromAmount = !doesExchangeDataContainsSrcAmount;
     let dexFlag: Flag;
 
     let approveFlag =
@@ -134,11 +143,17 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         dexFlag =
           Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
       } else if (isEthSrc && needWrap) {
-        dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
+        dexFlag = forcePreventInsertFromAmount
+          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
+          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (dexFuncHasRecipient && !needUnwrap) {
-        dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
+        dexFlag = forcePreventInsertFromAmount
+          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
+          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else {
-        dexFlag = Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
+        dexFlag = forcePreventInsertFromAmount
+          ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+          : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       }
     }
 
