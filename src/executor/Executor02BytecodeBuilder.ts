@@ -576,9 +576,18 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           );
         }
 
+        const isLastSimpleWithUnwrap =
+          isSimpleSwap &&
+          // check if current exchange is the last with needWrapNative
+          exchangeParams.reduceRight(
+            (acc, obj, index) =>
+              obj.needWrapNative === true && acc === -1 ? index : acc,
+            -1,
+          ) === exchangeParamIndex;
+
         if (
           (!isLast && !eachDexOnNextSwapNeedsWrapNative) || // unwrap if next swap has dexes which don't need wrap native
-          (isLast && isSimpleSwap) // unwrap after last dex call for simple swap case
+          isLastSimpleWithUnwrap // unwrap after last dex call with unwrap for simple swap case
         ) {
           withdrawCallData = this.buildUnwrapEthCallData(
             maybeWethCallData.withdraw.calldata,
@@ -590,7 +599,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           withdrawCallData,
         ]);
 
-        if (isLast && isSimpleSwap) {
+        if (isLastSimpleWithUnwrap) {
           const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
           swapExchangeCallData = hexConcat([
             swapExchangeCallData,
