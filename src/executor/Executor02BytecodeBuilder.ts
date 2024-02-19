@@ -133,8 +133,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
-    const forceBalanceOfCheck =
-      !applyVerticalBranching && swap.swapExchanges.length > 1;
+    const forceBalanceOfCheck = false;
 
     if (isFirstSwap) {
       if (
@@ -634,21 +633,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     }
 
     if (addMultiSwapMetadata) {
-      let percent: number;
-      if (!applyVerticalBranching && swap.swapExchanges.length > 1) {
-        const route = priceRoute.bestRoute[routeIndex];
-        const { percent: routePercent } = route;
-        const { percent: swapExchangePercent } = swapExchange;
-        percent = (routePercent / 100) * swapExchangePercent;
-      } else {
-        percent = swapExchange.percent;
-      }
-
       return this.addMultiSwapMetadata(
         priceRoute,
         exchangeParams,
         swapExchangeCallData,
-        percent,
+        swapExchange.percent,
         swap,
         exchangeParamIndex,
         addedWrapToSwapMap[`${routeIndex}_${swapIndex}`],
@@ -761,12 +750,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isMultiSwap =
       !isMegaSwap && priceRoute.bestRoute[routeIndex].swaps.length > 1;
 
-    return (
-      (isMultiSwap || isMegaSwap) &&
-      swap.swapExchanges.length > 1 &&
-      (swap.srcToken !== priceRoute.srcToken ||
-        swap.destToken !== priceRoute.destToken)
-    );
+    return (isMultiSwap || isMegaSwap) && swap.swapExchanges.length > 1;
   }
 
   private buildVerticalBranchingFlag(
