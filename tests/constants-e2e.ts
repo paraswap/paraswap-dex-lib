@@ -23,6 +23,10 @@ export const Tokens: {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    SWETH: {
+      address: '0xf951e335afb289353dc249e82926178eac7ded78',
+      decimals: 18,
+    },
     REQ: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
