@@ -337,7 +337,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
 
     let rebateTo = this.rebateTo;
     if (rebateTo === undefined) {
-      this.logger.error(`rebateTo is undefined in getAdapterParam`);
+      this.logger.error(`rebateTo is undefined in getDexParam`);
       rebateTo = NULL_ADDRESS;
     }
 

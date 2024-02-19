@@ -9,7 +9,7 @@ import { generateConfig } from '../config';
 
 jest.setTimeout(120000);
 describe('Executor02ByteCodeBuilder e2e tests', () => {
-  describe('MAINNET', () => {
+  describe('Mainnet', () => {
     const network = Network.MAINNET;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
@@ -803,6 +803,59 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
       //     );
       //   });
       // });
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const slippage = undefined;
+
+    describe('MegaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+
+      describe('ETH -> DAI', () => {
+        const dexKeys = [
+          'UniswapV3',
+          'GMX',
+          'TraderJoeV2.1',
+          'RamsesV2',
+          'CamelotV3',
+          'WooFiV2',
+          'BalancerV2',
+        ];
+
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'DAI';
+        const tokenAAmount: string = '1000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+          );
+        });
+      });
     });
   });
 

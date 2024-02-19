@@ -104,6 +104,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
   ): { dexFlag: Flag; approveFlag: Flag } {
     const route = priceRoute.bestRoute[routeIndex];
     const swap = route.swaps[swapIndex];
+    const swapExchange = swap.swapExchanges[swapExchangeIndex];
 
     const { srcToken, destToken } = swap;
     const isEthSrc = isETHAddress(srcToken);
@@ -119,8 +120,19 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isFirstSwap = swapIndex === 0;
     const isLastSwap = !isFirstSwap && swapIndex === route.swaps.length - 1;
 
-    const { dexFuncHasRecipient, needWrapNative, specialDexFlag } =
-      exchangeParam;
+    const {
+      dexFuncHasRecipient,
+      needWrapNative,
+      specialDexFlag,
+      exchangeData,
+    } = exchangeParam;
+
+    const doesExchangeDataContainsSrcAmount =
+      exchangeData.indexOf(
+        ethers.utils.defaultAbiCoder
+          .encode(['uint256'], [swapExchange.srcAmount])
+          .replace('0x', ''),
+      ) > -1;
 
     const isSpecialDex =
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
@@ -129,11 +141,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
-    let dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
+    const forcePreventInsertFromAmount = !doesExchangeDataContainsSrcAmount;
+    const forceBalanceOfCheck = false;
+
+    let dexFlag = forcePreventInsertFromAmount
+      ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
+      : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
-
-    const forceBalanceOfCheck = false;
 
     if (isFirstSwap) {
       if (
@@ -157,18 +172,30 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         dexFlag =
           (isHorizontalSequence && !applyVerticalBranching && !isSpecialDex) ||
           forceBalanceOfCheck
-            ? Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
+            ? forcePreventInsertFromAmount
+              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+              : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
+            : forcePreventInsertFromAmount
+            ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
             : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isEthDest && !needUnwrap) {
         dexFlag =
           (isHorizontalSequence && !applyVerticalBranching) ||
           forceBalanceOfCheck
-            ? Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
+            ? forcePreventInsertFromAmount
+              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
+              : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
+            : forcePreventInsertFromAmount
+            ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
             : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isEthDest && needUnwrap) {
-        dexFlag = Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
+        dexFlag = forcePreventInsertFromAmount
+          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
+          : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       } else if (!dexFuncHasRecipient) {
-        dexFlag = Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
+        dexFlag = forcePreventInsertFromAmount
+          ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 0
+          : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       }
     } else {
       if (isSpecialDex && !isLastSwap) {
@@ -179,18 +206,28 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
             : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 9
       } else if (isEthSrc && needWrap && !isSpecialDex) {
-        dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
+        dexFlag = forcePreventInsertFromAmount
+          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
+          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (needUnwrap && !isSpecialDex) {
         dexFlag =
           (isHorizontalSequence && !isLastSwap) || forceBalanceOfCheck
-            ? Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
+            ? forcePreventInsertFromAmount
+              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+              : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
+            : forcePreventInsertFromAmount
+            ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP //0
             : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (isSpecialDex) {
         if (isEthDest && !needUnwrap) {
           dexFlag =
             (isHorizontalSequence && !isLastSwap && !applyVerticalBranching) ||
             forceBalanceOfCheck
-              ? Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
+              ? forcePreventInsertFromAmount
+                ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
+                : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
+              : forcePreventInsertFromAmount
+              ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
               : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
         } else if (isEthSrc && !needWrap) {
           dexFlag =
@@ -199,13 +236,21 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           dexFlag =
             (isHorizontalSequence && !isLastSwap && !applyVerticalBranching) ||
             forceBalanceOfCheck
-              ? Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 3
+              ? forcePreventInsertFromAmount
+                ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+                : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 3
+              : forcePreventInsertFromAmount
+              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
               : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
         }
       } else if (!dexFuncHasRecipient) {
-        dexFlag = Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
+        dexFlag = forcePreventInsertFromAmount
+          ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+          : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       } else {
-        dexFlag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
+        dexFlag = forcePreventInsertFromAmount
+          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
+          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       }
     }
 
@@ -223,10 +268,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     flag: Flag,
     swapExchange: OptimalSwapExchange<any>,
   ): string {
+    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
+
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
 
     if (!specialDexFlag) {
       exchangeData = this.addTokenAddressToCallData(
@@ -255,11 +301,12 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (insertFromAmount) {
       const fromAmount = ethers.utils.defaultAbiCoder.encode(
         ['uint256'],
-        [swapExchange!.srcAmount],
+        [swapExchange.srcAmount],
       );
       const fromAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(fromAmount.replace('0x', ''));
+
       fromAmountPos = fromAmountIndex / 2;
     }
 
