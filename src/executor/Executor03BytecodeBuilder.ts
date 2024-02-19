@@ -121,7 +121,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       // TODO: as we give approve for MAX_UINT and approve for current targetExchange was given
       // in previous paths, then for current path we can skip it
       const approveCallData = this.buildApproveCallData(
-        curExchangeParam.targetExchange,
+        curExchangeParam.spender || curExchangeParam.targetExchange,
         isETHAddress(swap.srcToken) && index !== 0
           ? this.dexHelper.config.data.wrappedNativeTokenAddress
           : swap.srcToken,
@@ -139,7 +139,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       // exchangeParams.findIndex(p => p.needWrapNative) === index
     ) {
       const approveWethCalldata = this.buildApproveCallData(
-        curExchangeParam.targetExchange,
+        curExchangeParam.spender || curExchangeParam.targetExchange,
         this.dexHelper.config.data.wrappedNativeTokenAddress,
         flags.approves[index],
       );
