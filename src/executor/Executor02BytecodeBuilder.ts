@@ -633,7 +633,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           ) === exchangeParamIndex;
 
         if (
-          (!isLast && !eachDexOnNextSwapNeedsWrapNative) || // unwrap if next swap has dexes which don't need wrap native
+          (!isLast && !eachDexOnNextSwapNeedsWrapNative && nextSwap) || // unwrap if next swap has dexes which don't need wrap native
           isLastSimpleWithUnwrap // unwrap after last dex call with unwrap for simple swap case
         ) {
           withdrawCallData = this.buildUnwrapEthCallData(
