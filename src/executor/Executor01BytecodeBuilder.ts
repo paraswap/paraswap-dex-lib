@@ -174,11 +174,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     let swapCallData = '';
     const swap = priceRoute.bestRoute[0].swaps[index];
     const curExchangeParam = exchangeParams[index];
-    const srcAmount = swap.swapExchanges[0].srcAmount;
 
     const dexCallData = this.buildDexCallData(
-      swap,
-      curExchangeParam,
+      priceRoute,
+      0,
+      0,
+      index,
+      exchangeParams,
       index,
       index === priceRoute.bestRoute[0].swaps.length - 1,
       flags.dexes[index],
@@ -263,16 +265,21 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
   }
 
   protected buildDexCallData(
-    swap: OptimalSwap,
-    exchangeParam: DexExchangeParam,
-    index: number,
+    priceRoute: OptimalRate,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParams: DexExchangeParam[],
+    exchangeParamIndex: number,
     isLastSwap: boolean,
     flag: Flag,
   ): string {
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
-    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
+    const exchangeParam = exchangeParams[exchangeParamIndex];
+    const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
+    let { exchangeData, specialDexFlag } = exchangeParam;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {

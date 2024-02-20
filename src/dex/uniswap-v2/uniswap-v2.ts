@@ -897,6 +897,7 @@ export class UniswapV2
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
+      specialDexSupportsInsertFromAmount: true,
       exchangeData,
       targetExchange,
       specialDexFlag,
