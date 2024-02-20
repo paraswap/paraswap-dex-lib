@@ -232,7 +232,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0x4503749995ae321EdD6aB990bf58890dddb573bc',
+    augustusV6Address: '0x30a52f5Ed6830d2a96fC9B4034875aD9a320924f',
     augustusRFQAddress: '0x34302c4267d0dA0A8c65510282Cc22E9e39df51f',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
@@ -243,9 +243,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     executorsAddresses: {
-      Executor01: '0x03f420628c46682B42c97a420840D7440cde5360',
-      Executor02: '0x8EbB3CEf0E4F082994C2bd91f59d859595e19CFd',
-      Executor03: '0xdd07380866a41B5a4c0215877f4908d0AcB179c6',
+      Executor01: '0xB256ee9c3558979c2c83c6995b2394E5CbDc6f52',
+      Executor02: '0x403A1550db5245436d694890620d56C6A15a164E',
+      Executor03: '0x7Ab48575f122D2b7A07E9aFB3bDA3a2a97dd68de',
     },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',

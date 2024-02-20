@@ -399,7 +399,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       [
         hexZeroPad(hexlify(hexDataLength(callData)), 16), // calldata size
         srcTokenPos, // srcTokenPos
-        hexZeroPad(hexlify(Math.ceil(percentage * 100)), 8), // percentage
+        hexZeroPad(hexlify(Math.round(percentage * 100)), 8), // percentage
         callData, // swap calldata
       ],
     );
