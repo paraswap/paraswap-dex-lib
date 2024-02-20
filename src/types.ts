@@ -320,4 +320,11 @@ export type TransferFeeParams = {
   destDexFee: number;
 };
 
+export type TransferFeeParamsForRoute = {
+  srcTokenTransferFee: number;
+  destTokenTransferFee: number;
+  srcTokenDexTransferFee: number;
+  destTokenDexTransferFee: number;
+};
+
 export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';

@@ -359,6 +359,10 @@ export const Tokens: {
       address: '0x5f98805a4e8be255a32880fdec7f6728c6568ba0',
       decimals: 18,
     },
+    SWETH: {
+      address: '0xf951e335afb289353dc249e82926178eac7ded78',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
