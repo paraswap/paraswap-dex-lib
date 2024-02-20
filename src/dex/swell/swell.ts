@@ -3,6 +3,7 @@ import { NumberAsString, SwapSide } from '@paraswap/core';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Logger,
   PoolLiquidity,
@@ -216,6 +217,30 @@ export class Swell
       calldata,
       values,
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SwellData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    this.assertEligibility(srcToken, destToken, side);
+
+    const swapData = this.swETHInterface.encodeFunctionData(
+      swETHFunctions.deposit,
+      [],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: this.swETHAddress,
     };
   }
 
