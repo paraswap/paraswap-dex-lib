@@ -95,8 +95,15 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     const swapExchange = swap.swapExchanges[swapExchangeIndex];
     const { srcToken, destToken } = swap;
+    const {
+      dexFuncHasRecipient,
+      needWrapNative,
+      exchangeData,
+      specialDexFlag,
+      specialDexSupportsInsertFromAmount,
+    } = exchangeParam;
+
     const isFirstSwap = swapIndex === 0;
-    const { dexFuncHasRecipient, needWrapNative, exchangeData } = exchangeParam;
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
@@ -111,7 +118,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
-    const forcePreventInsertFromAmount = !doesExchangeDataContainsSrcAmount;
+    const isSpecialDex =
+      specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
+
+    const forcePreventInsertFromAmount =
+      !doesExchangeDataContainsSrcAmount ||
+      (isSpecialDex && !specialDexSupportsInsertFromAmount);
+
     let dexFlag: Flag;
 
     let approveFlag =
