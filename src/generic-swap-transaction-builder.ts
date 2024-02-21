@@ -504,11 +504,6 @@ export class GenericSwapTransactionBuilder {
     const partialFeeCodeWithPartnerAddress = BigNumber.from(partner).shl(96);
     let partialFeeCodeWithBitFlags = BigNumber.from(0); // default 0 is safe if none the conditions pass
 
-    if (isCapSurplus) {
-      partialFeeCodeWithBitFlags =
-        partialFeeCodeWithBitFlags.or(IS_CAP_SURPLUS_MASK);
-    }
-
     const isFixedFees = !BigNumber.from(feePercent).isZero();
 
     if (isFixedFees) {
@@ -532,6 +527,11 @@ export class GenericSwapTransactionBuilder {
       partialFeeCodeWithBitFlags = partialFeeCodeWithBitFlags.or(
         IS_SKIP_BLACKLIST_MASK,
       );
+    }
+
+    if (isCapSurplus) {
+      partialFeeCodeWithBitFlags =
+        partialFeeCodeWithBitFlags.or(IS_CAP_SURPLUS_MASK);
     }
 
     // Combine partnerBigInt and feePercentBigInt
