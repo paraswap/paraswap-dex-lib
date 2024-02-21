@@ -395,11 +395,11 @@ export class BalancerV1
     }, BigNumber.from(0));
 
     const specialDexExchangeData = solidityPack(
-      ['bytes', 'bytes32', 'bytes32'],
+      ['bytes32', 'bytes32', 'bytes'],
       [
-        exchangeData,
         hexZeroPad(hexlify(swaps.length), 32),
         hexZeroPad(hexlify(totalAmount), 32),
+        exchangeData,
       ],
     );
 

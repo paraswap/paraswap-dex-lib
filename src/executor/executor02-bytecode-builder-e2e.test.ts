@@ -9,7 +9,7 @@ import { generateConfig } from '../config';
 
 jest.setTimeout(120000);
 describe('Executor02ByteCodeBuilder e2e tests', () => {
-  describe('MAINNET', () => {
+  describe('Mainnet', () => {
     const network = Network.MAINNET;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
@@ -174,6 +174,43 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         const tokenASymbol: string = 'ETH';
         const tokenBSymbol: string = 'USDC';
         const tokenAAmount: string = '3000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+          );
+        });
+      });
+
+      describe('ETH -> stETH via Lido, CurveV1, CurveV1Factory, UniswapV3, Solidly, BalancerV2, wstETH', () => {
+        const dexKeys = [
+          'Lido',
+          'CurveV1',
+          'CurveV1Factory',
+          'UniswapV3',
+          'Solidly',
+          'BalancerV2',
+          'wstETH',
+        ];
+
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'STETH';
+        const tokenAAmount: string = '10000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -803,6 +840,111 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
       //     );
       //   });
       // });
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const slippage = undefined;
+
+    describe('MegaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+
+      describe('ETH -> DAI', () => {
+        const dexKeys = [
+          'UniswapV3',
+          'GMX',
+          'TraderJoeV2.1',
+          'RamsesV2',
+          'CamelotV3',
+          'WooFiV2',
+          'BalancerV2',
+        ];
+
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'DAI';
+        const tokenAAmount: string = '1000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+          );
+        });
+      });
+    });
+  });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const slippage = undefined;
+
+    describe('MegaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+
+      describe('WAVAX -> USDC', () => {
+        const dexKeys = [
+          'TraderJoeV2.1',
+          'PangolinSwap',
+          'TraderJoe',
+          'UniswapV3',
+          'GMX',
+          'Wombat',
+        ];
+
+        const tokenASymbol: string = 'WAVAX';
+        const tokenBSymbol: string = 'USDC';
+        const tokenAAmount: string = '100000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+          );
+        });
+      });
     });
   });
 

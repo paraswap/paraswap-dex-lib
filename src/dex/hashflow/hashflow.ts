@@ -584,6 +584,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
               baseTokenAmount: optimalSwapExchange.srcAmount,
             }
           : { quoteTokenAmount: optimalSwapExchange.destAmount }),
+        // TODO-v6: use options.executionContractAddress here
         wallet: this.augustusAddress.toLowerCase(),
         effectiveTrader: options.txOrigin.toLowerCase(),
         marketMakers: [mm],
@@ -929,7 +930,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
+      dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.routerAddress,
     };
