@@ -159,7 +159,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     if (isFirstSwap) {
       if (
-        (applyVerticalBranching && !isSpecialDex) ||
+        (applyVerticalBranching && !isSpecialDex && !isEthSrc) ||
         (isSpecialDex && needWrap)
       ) {
         // keep default flags
@@ -514,7 +514,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     swapExchangeIndex: number,
     exchangeParams: DexExchangeParam[],
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
-    addedWrapToSwapMap: { [key: string]: boolean },
+    addedWrapToSwapExchangeMap: { [key: string]: boolean },
     allowToAddWrap = true,
     maybeWethCallData?: DepositWithdrawReturn,
     addMultiSwapMetadata?: boolean,
@@ -619,14 +619,18 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         if (
           !this.routeNeedsRootWrapEth(priceRoute, exchangeParams) &&
           allowToAddWrap &&
-          !addedWrapToSwapMap[`${routeIndex}_${swapIndex}`] &&
+          !addedWrapToSwapExchangeMap[
+            `${routeIndex}_${swapIndex}_${swapExchangeIndex}`
+          ] &&
           !skipWrap
         ) {
           depositCallData = this.buildWrapEthCallData(
             maybeWethCallData.deposit.calldata,
             Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
           );
-          addedWrapToSwapMap[`${routeIndex}_${swapIndex}`] = true;
+          addedWrapToSwapExchangeMap[
+            `${routeIndex}_${swapIndex}_${swapExchangeIndex}`
+          ] = true;
         }
 
         swapExchangeCallData = hexConcat([
@@ -728,7 +732,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         swapExchange.percent,
         swap,
         exchangeParamIndex,
-        addedWrapToSwapMap[`${routeIndex}_${swapIndex}`],
+        addedWrapToSwapExchangeMap[
+          `${routeIndex}_${swapIndex}_${swapExchangeIndex}`
+        ],
       );
     }
 
@@ -911,7 +917,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
     sender: string,
     appendedWrapToSwapMap: { [key: number]: boolean },
-    addedWrapToSwapMap: { [key: string]: boolean },
+    addedWrapToSwapExchangeMap: { [key: string]: boolean },
     maybeWethCallData?: DepositWithdrawReturn,
     swap?: OptimalSwap,
   ): string {
@@ -948,7 +954,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             swapExchangeIndex,
             exchangeParams,
             flags,
-            addedWrapToSwapMap,
+            addedWrapToSwapExchangeMap,
             !appendedWrapToSwapMap[swapIndex - 1],
             maybeWethCallData,
             swap!.swapExchanges.length > 1,
@@ -1008,7 +1014,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     const { swaps } = route;
 
-    const appendedWrapToSwapMap = {};
+    const appendedWrapToSwapExchangeMap = {};
     const addedWrapToSwapMap = {};
     const callData = swaps.reduce<string>(
       (swapAcc, swap, swapIndex) =>
@@ -1021,7 +1027,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             swapIndex,
             flags,
             sender,
-            appendedWrapToSwapMap,
+            appendedWrapToSwapExchangeMap,
             addedWrapToSwapMap,
             maybeWethCallData,
             swap,
