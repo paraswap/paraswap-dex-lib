@@ -153,19 +153,19 @@ describe('KyberDmm E2E', () => {
               provider,
             );
           });
-          // it('TOKEN -> TOKEN', async () => {
-          //   await testE2E(
-          //     tokens[tokenASymbol],
-          //     tokens[tokenBSymbol],
-          //     holders[tokenASymbol],
-          //     side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-          //     side,
-          //     dexKey,
-          //     contractMethod,
-          //     network,
-          //     provider,
-          //   );
-          // });
+          it('TOKEN -> TOKEN', async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
         });
       }),
     );
