@@ -394,6 +394,10 @@ export const Tokens: {
       address: '0xa92A1576D11dB45c53be71d59245ac97ce0d8147',
       decimals: 18,
     },
+    CRV: {
+      address: '0x172370d5cd63279efa6d502dab29171933a610af',
+      decimals: 18,
+    },
     WETH: {
       address: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
       decimals: 18,
@@ -1153,6 +1157,7 @@ export const Holders: {
     amUSDC: '0x6e7f19cd23049c7118e14470e2bf85d2e26ee0ae',
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
+    CRV: '0x2151578e1fEc29361bB0481312Ea6b935014D636',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
