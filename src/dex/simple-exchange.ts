@@ -50,7 +50,7 @@ export class SimpleExchange {
   readonly cacheStateKey: string;
   private readonly cacheApprovesKey: string;
 
-  constructor(dexHelper: IDexHelper, public dexKey: string) {
+  constructor(protected readonly dexHelper: IDexHelper, public dexKey: string) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
     this.erc20Interface = new Interface(ERC20ABI);
     this.erc20Contract = new dexHelper.web3Provider.eth.Contract(
@@ -189,5 +189,12 @@ export class SimpleExchange {
       values: [...(preCalls?.values || []), ...approveParam.values, swapValue],
       networkFee,
     };
+  }
+
+  protected isWETH(tokenAddress: string) {
+    const weth =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+
+    return tokenAddress.toLowerCase() === weth;
   }
 }

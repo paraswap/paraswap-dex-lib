@@ -68,9 +68,12 @@ export abstract class ExecutorBytecodeBuilder {
   public abstract getAddress(): string;
 
   protected abstract buildDexCallData(
-    swap: OptimalSwap,
-    exchangeParam: DexExchangeParam,
-    index: number,
+    priceRoute: OptimalRate,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParams: DexExchangeParam[],
+    exchangeParamIndex: number,
     isLastSwap: boolean,
     flag: Flag,
     swapExchange?: OptimalSwapExchange<any>,
@@ -120,12 +123,16 @@ export abstract class ExecutorBytecodeBuilder {
     return approvalCalldata;
   }
 
-  protected buildWrapEthCallData(depositCallData: string, flag: Flag): string {
+  protected buildWrapEthCallData(
+    depositCallData: string,
+    flag: Flag,
+    destTokenPos = 0,
+  ): string {
     return this.buildCallData(
       this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
       depositCallData,
       WRAP_UNWRAP_FROM_AMOUNT_POS,
-      0,
+      destTokenPos,
       SpecialDex.DEFAULT,
       flag,
     );

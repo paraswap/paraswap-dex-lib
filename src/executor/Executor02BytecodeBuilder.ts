@@ -125,6 +125,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative,
       specialDexFlag,
       exchangeData,
+      specialDexSupportsInsertFromAmount,
     } = exchangeParam;
 
     const doesExchangeDataContainsSrcAmount =
@@ -141,8 +142,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
-    const forcePreventInsertFromAmount = !doesExchangeDataContainsSrcAmount;
-    const forceBalanceOfCheck = false;
+    const forcePreventInsertFromAmount =
+      !doesExchangeDataContainsSrcAmount ||
+      (isSpecialDex && !specialDexSupportsInsertFromAmount);
+    const forceBalanceOfCheck =
+      isSpecialDex &&
+      isHorizontalSequence &&
+      !applyVerticalBranching &&
+      !isLastSwap;
 
     let dexFlag = forcePreventInsertFromAmount
       ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
@@ -152,8 +159,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     if (isFirstSwap) {
       if (
-        (applyVerticalBranching && !isSpecialDex) ||
-        (isSpecialDex && needWrapNative)
+        (applyVerticalBranching && !isSpecialDex && !isEthSrc) ||
+        (isSpecialDex && needWrap)
       ) {
         // keep default flags
       } else if (isEthSrc && !needWrap) {
@@ -170,7 +177,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         (isEthDest && needUnwrap)
       ) {
         dexFlag =
-          (isHorizontalSequence && !applyVerticalBranching && !isSpecialDex) ||
+          (isHorizontalSequence && !applyVerticalBranching) ||
           forceBalanceOfCheck
             ? forcePreventInsertFromAmount
               ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
@@ -261,39 +268,61 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
   }
 
   protected buildDexCallData(
-    swap: OptimalSwap,
-    exchangeParam: DexExchangeParam,
-    index: number,
+    priceRoute: OptimalRate,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParams: DexExchangeParam[],
+    exchangeParamIndex: number,
     isLastSwap: boolean,
     flag: Flag,
     swapExchange: OptimalSwapExchange<any>,
   ): string {
-    let { exchangeData, specialDexFlag, targetExchange } = exchangeParam;
+    const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
+    let { exchangeData, specialDexFlag, targetExchange, needWrapNative } =
+      exchangeParams[exchangeParamIndex];
 
+    const applyVerticalBranching = this.doesSwapNeedToApplyVerticalBranching(
+      priceRoute,
+      routeIndex,
+      swap,
+    );
+    const isLastSwapExchange =
+      swapExchangeIndex === swap.swapExchanges.length - 1;
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3;
 
-    if (!specialDexFlag) {
+    const srcTokenAddress =
+      isETHAddress(swap.srcToken) && needWrapNative
+        ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+        : swap.srcToken.toLowerCase();
+
+    const destTokenAddress =
+      isETHAddress(swap.destToken) && needWrapNative
+        ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+        : swap.destToken.toLowerCase();
+
+    exchangeData = this.addTokenAddressToCallData(
+      exchangeData,
+      srcTokenAddress,
+    );
+
+    if (
+      (applyVerticalBranching && isLastSwapExchange) ||
+      (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap)
+    ) {
       exchangeData = this.addTokenAddressToCallData(
         exchangeData,
-        swap.srcToken.toLowerCase(),
+        destTokenAddress,
       );
     }
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
-      const destTokenAddr = isETHAddress(swap.destToken)
-        ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
-        : swap.destToken.toLowerCase();
-
-      exchangeData = this.addTokenAddressToCallData(
-        exchangeData,
-        destTokenAddr,
-      );
       const destTokenAddrIndex = exchangeData
         .replace('0x', '')
-        .indexOf(destTokenAddr.replace('0x', ''));
+        .indexOf(destTokenAddress.replace('0x', ''));
       destTokenPos = (destTokenAddrIndex - 24) / 2;
     }
 
@@ -370,7 +399,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       [
         hexZeroPad(hexlify(hexDataLength(callData)), 16), // calldata size
         srcTokenPos, // srcTokenPos
-        hexZeroPad(hexlify(Math.ceil(percentage * 100)), 8), // percentage
+        hexZeroPad(hexlify(Math.round(percentage * 100)), 8), // percentage
         callData, // swap calldata
       ],
     );
@@ -473,7 +502,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     return this.packVerticalBranchingCallData(
       data,
       fromAmountPos,
-      destTokenPos,
+      destTokenPos < 0 ? 0 : destTokenPos,
       flag,
     );
   }
@@ -485,7 +514,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     swapExchangeIndex: number,
     exchangeParams: DexExchangeParam[],
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
-    addedWrapToSwapMap: { [key: string]: boolean },
+    addedWrapToSwapExchangeMap: { [key: string]: boolean },
     allowToAddWrap = true,
     maybeWethCallData?: DepositWithdrawReturn,
     addMultiSwapMetadata?: boolean,
@@ -515,8 +544,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const curExchangeParam = exchangeParams[exchangeParamIndex];
 
     const dexCallData = this.buildDexCallData(
-      swap,
-      curExchangeParam,
+      priceRoute,
+      routeIndex,
+      swapIndex,
+      swapExchangeIndex,
+      exchangeParams,
       exchangeParamIndex,
       false,
       flags.dexes[exchangeParamIndex],
@@ -587,14 +619,18 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         if (
           !this.routeNeedsRootWrapEth(priceRoute, exchangeParams) &&
           allowToAddWrap &&
-          !addedWrapToSwapMap[`${routeIndex}_${swapIndex}`] &&
+          !addedWrapToSwapExchangeMap[
+            `${routeIndex}_${swapIndex}_${swapExchangeIndex}`
+          ] &&
           !skipWrap
         ) {
           depositCallData = this.buildWrapEthCallData(
             maybeWethCallData.deposit.calldata,
             Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
           );
-          addedWrapToSwapMap[`${routeIndex}_${swapIndex}`] = true;
+          addedWrapToSwapExchangeMap[
+            `${routeIndex}_${swapIndex}_${swapExchangeIndex}`
+          ] = true;
         }
 
         swapExchangeCallData = hexConcat([
@@ -696,7 +732,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         swapExchange.percent,
         swap,
         exchangeParamIndex,
-        addedWrapToSwapMap[`${routeIndex}_${swapIndex}`],
+        addedWrapToSwapExchangeMap[
+          `${routeIndex}_${swapIndex}_${swapExchangeIndex}`
+        ],
       );
     }
 
@@ -706,11 +744,22 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
   private appendWrapEthCallData(
     calldata: string,
     maybeWethCallData?: DepositWithdrawReturn,
+    checkWethBalanceAfter = false,
   ) {
     if (maybeWethCallData?.deposit) {
+      const callData = checkWethBalanceAfter
+        ? this.addTokenAddressToCallData(
+            maybeWethCallData.deposit.calldata,
+            this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
+          )
+        : maybeWethCallData.deposit.calldata;
+
       const depositCallData = this.buildWrapEthCallData(
-        maybeWethCallData.deposit.calldata,
-        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
+        callData,
+        checkWethBalanceAfter
+          ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
+          : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
+        checkWethBalanceAfter ? 4 : 0,
       );
 
       return hexConcat([calldata, depositCallData]);
@@ -879,7 +928,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
     sender: string,
     appendedWrapToSwapMap: { [key: number]: boolean },
-    addedWrapToSwapMap: { [key: string]: boolean },
+    addedWrapToSwapExchangeMap: { [key: string]: boolean },
     maybeWethCallData?: DepositWithdrawReturn,
     swap?: OptimalSwap,
   ): string {
@@ -916,7 +965,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             swapExchangeIndex,
             exchangeParams,
             flags,
-            addedWrapToSwapMap,
+            addedWrapToSwapExchangeMap,
             !appendedWrapToSwapMap[swapIndex - 1],
             maybeWethCallData,
             swap!.swapExchanges.length > 1,
@@ -954,7 +1003,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       );
 
       return needToAppendWrapCallData
-        ? this.appendWrapEthCallData(vertBranchingCallData, maybeWethCallData)
+        ? this.appendWrapEthCallData(
+            vertBranchingCallData,
+            maybeWethCallData,
+            true,
+          )
         : vertBranchingCallData;
     }
 
@@ -976,7 +1029,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     const { swaps } = route;
 
-    const appendedWrapToSwapMap = {};
+    const appendedWrapToSwapExchangeMap = {};
     const addedWrapToSwapMap = {};
     const callData = swaps.reduce<string>(
       (swapAcc, swap, swapIndex) =>
@@ -989,7 +1042,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             swapIndex,
             flags,
             sender,
-            appendedWrapToSwapMap,
+            appendedWrapToSwapExchangeMap,
             addedWrapToSwapMap,
             maybeWethCallData,
             swap,

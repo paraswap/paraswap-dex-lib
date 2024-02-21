@@ -23,6 +23,10 @@ export const Tokens: {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    SWETH: {
+      address: '0xf951e335afb289353dc249e82926178eac7ded78',
+      decimals: 18,
+    },
     BAT: {
       address: '0x0d8775f648430679a709e98d2b0cb6250d2887ef',
       decimals: 18,
@@ -1066,7 +1070,7 @@ export const Holders: {
     CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
     AnkETH: '0xF7260D4ADc48fEefd5a19a9Eb23f9747CeE15C92',
-    DAI: '0x6FF8E4DB500cBd77d1D181B8908E022E29e0Ec4A',
+    DAI: '0x60FaAe176336dAb62e284Fe19B885B095d29fB7F',
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     FEI: '0x19c549357034d10db8d75ed812b45be1dd8a7218',
@@ -1203,7 +1207,7 @@ export const Holders: {
   [Network.AVALANCHE]: {
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
     avWAVAX: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
-    WAVAX: '0xbbff2a8ec8d702e61faaccf7cf705968bb6a5bab',
+    WAVAX: '0xbf0018390Dca012FabF38Ef8188184d0B18960Ac',
     sAVAX: '0xC73DF1e68FC203F6E4b6270240D6f82A850e8D38',
     BETS: '0x8cc2284c90d05578633418f9cde104f402375a65',
     HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
