@@ -744,11 +744,22 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
   private appendWrapEthCallData(
     calldata: string,
     maybeWethCallData?: DepositWithdrawReturn,
+    checkWethBalanceAfter = false,
   ) {
     if (maybeWethCallData?.deposit) {
+      const callData = checkWethBalanceAfter
+        ? this.addTokenAddressToCallData(
+            maybeWethCallData.deposit.calldata,
+            this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
+          )
+        : maybeWethCallData.deposit.calldata;
+
       const depositCallData = this.buildWrapEthCallData(
-        maybeWethCallData.deposit.calldata,
-        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
+        callData,
+        checkWethBalanceAfter
+          ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
+          : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
+        checkWethBalanceAfter ? 4 : 0,
       );
 
       return hexConcat([calldata, depositCallData]);
@@ -992,7 +1003,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       );
 
       return needToAppendWrapCallData
-        ? this.appendWrapEthCallData(vertBranchingCallData, maybeWethCallData)
+        ? this.appendWrapEthCallData(
+            vertBranchingCallData,
+            maybeWethCallData,
+            true,
+          )
         : vertBranchingCallData;
     }
 
