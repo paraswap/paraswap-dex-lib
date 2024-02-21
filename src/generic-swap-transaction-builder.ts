@@ -29,6 +29,15 @@ const {
   utils: { hexlify, hexConcat, hexZeroPad },
 } = ethers;
 
+interface FeeParams {
+  partner: string;
+  feePercent: string;
+  isCap: boolean;
+  isTakeSurplus: boolean;
+  isReferral: boolean;
+  isSkipBlacklist: boolean;
+}
+
 export class GenericSwapTransactionBuilder {
   augustusV6Interface: Interface;
 
@@ -354,6 +363,7 @@ export class GenericSwapTransactionBuilder {
     partnerAddress,
     partnerFeePercent,
     skipBlacklist = false,
+    isCap = true,
   }: {
     referrerAddress?: Address;
     partnerAddress: Address;
@@ -361,22 +371,25 @@ export class GenericSwapTransactionBuilder {
     takeSurplus: boolean;
     priceRoute: OptimalRate;
     skipBlacklist?: boolean;
+    isCap?: boolean;
   }) {
     const partnerAndFee = referrerAddress
-      ? this.packPartnerAndFeeData(
-          referrerAddress,
-          '0',
-          takeSurplus,
-          true, // it's a referral
-          skipBlacklist,
-        )
-      : this.packPartnerAndFeeData(
-          partnerAddress,
-          partnerFeePercent,
-          takeSurplus,
-          skipBlacklist,
-          false,
-        );
+      ? this.packPartnerAndFeeData({
+          partner: referrerAddress,
+          feePercent: '0',
+          isTakeSurplus: takeSurplus,
+          isReferral: true,
+          isSkipBlacklist: skipBlacklist,
+          isCap,
+        })
+      : this.packPartnerAndFeeData({
+          partner: partnerAddress,
+          feePercent: partnerFeePercent,
+          isTakeSurplus: takeSurplus,
+          isSkipBlacklist: skipBlacklist,
+          isReferral: false,
+          isCap,
+        });
 
     return partnerAndFee;
   }
@@ -471,16 +484,22 @@ export class GenericSwapTransactionBuilder {
     };
   }
 
-  private packPartnerAndFeeData(
-    partner: string,
-    feePercent: string,
-    takeSurplus: boolean,
-    referral: boolean,
-    skipBlacklist: boolean,
-  ): string {
+  private packPartnerAndFeeData({
+    partner,
+    feePercent,
+    isCap,
+    isTakeSurplus,
+    isReferral,
+    isSkipBlacklist,
+  }: FeeParams): string {
     // Partner address shifted left to make room for flags and fee percent
     const partialFeeCodeWithPartnerAddress = BigNumber.from(partner).shl(96);
     let partialFeeCodeWithBitFlags = BigNumber.from(0); // default 0 is safe if none the conditions pass
+
+    if (isCap) {
+      partialFeeCodeWithBitFlags =
+        partialFeeCodeWithBitFlags.or(IS_CAP_SURPLUS_MASK);
+    }
 
     const isFixedFees = !BigNumber.from(feePercent).isZero();
 
@@ -492,19 +511,16 @@ export class GenericSwapTransactionBuilder {
 
       // Apply flags using bitwise OR with the appropriate masks
     } else {
-      partialFeeCodeWithBitFlags =
-        partialFeeCodeWithBitFlags.or(IS_CAP_SURPLUS_MASK);
-
-      if (takeSurplus) {
+      if (isTakeSurplus) {
         partialFeeCodeWithBitFlags =
           partialFeeCodeWithBitFlags.or(IS_TAKE_SURPLUS_MASK);
-      } else if (referral) {
+      } else if (isReferral) {
         partialFeeCodeWithBitFlags =
           partialFeeCodeWithBitFlags.or(IS_REFERRAL_MASK);
       }
     }
 
-    if (skipBlacklist) {
+    if (isSkipBlacklist) {
       partialFeeCodeWithBitFlags = partialFeeCodeWithBitFlags.or(
         IS_SKIP_BLACKLIST_MASK,
       );
