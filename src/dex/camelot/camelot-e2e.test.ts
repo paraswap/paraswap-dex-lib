@@ -52,6 +52,40 @@ describe('Camelot E2E', () => {
         { name: 'USDC', sellAmount: '100000' },
         { name: 'USDT', sellAmount: '100000' },
       ],
+      // Tax token without config
+      [
+        { name: 'RDPX', sellAmount: '100000000000000000000' },
+        { name: 'ETH', sellAmount: '100000000000000000000' },
+      ],
+      [
+        { name: 'ETH', sellAmount: '100000000000000000000' },
+        { name: 'RDPX', sellAmount: '100000000000000000000' },
+      ],
+      [
+        { name: 'RDPX', sellAmount: '100000000000000000000' },
+        { name: 'WETH', sellAmount: '100000000000000000000' },
+      ],
+      [
+        { name: 'WETH', sellAmount: '100000000000000000000' },
+        { name: 'RDPX', sellAmount: '100000000000000000000' },
+      ],
+      // Tax token with config
+      [
+        { name: 'SEN', sellAmount: '100000000000000000000' },
+        { name: 'ETH', sellAmount: '100000000000000000000' },
+      ],
+      [
+        { name: 'ETH', sellAmount: '100000000000000000000' },
+        { name: 'SEN', sellAmount: '100000000000000000000' },
+      ],
+      [
+        { name: 'SEN', sellAmount: '100000000000000000000' },
+        { name: 'WETH', sellAmount: '100000000000000000000' },
+      ],
+      [
+        { name: 'WETH', sellAmount: '100000000000000000000' },
+        { name: 'SEN', sellAmount: '100000000000000000000' },
+      ],
     ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
