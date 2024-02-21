@@ -191,8 +191,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const dexCallData = this.buildDexCallData(
       priceRoute,
       0,
-      0,
       index,
+      0,
       exchangeParams,
       index,
       index === priceRoute.bestRoute[0].swaps.length - 1,
@@ -205,7 +205,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       const transferCallData = this.buildTransferCallData(
         this.erc20Interface.encodeFunctionData('transfer', [
           curExchangeParam.transferSrcTokenBeforeSwap,
-          swap.swapExchanges[index].srcAmount,
+          swap.swapExchanges[0].srcAmount,
         ]),
         isETHAddress(swap.srcToken)
           ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
@@ -316,6 +316,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         ['uint256'],
         [swap.swapExchanges[0].srcAmount],
       );
+
       const fromAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(fromAmount.replace('0x', ''));
