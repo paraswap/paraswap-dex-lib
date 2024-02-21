@@ -23,25 +23,13 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 
 import { SimpleExchange } from '../simple-exchange';
-import { AaveV2Config, Adapters } from './config';
-import { isAaveV2Pair } from './tokens';
 import {
-  AaveV2Avalanche,
-  AaveV2Ethereum,
-  AaveV2Polygon,
-} from '@bgd-labs/aave-address-book';
-
-const aaveLendingPool: { [network: string]: string } = {
-  [Network.MAINNET]: AaveV2Ethereum.POOL,
-  [Network.POLYGON]: AaveV2Polygon.POOL,
-  [Network.AVALANCHE]: AaveV2Avalanche.POOL,
-};
-
-const WETH_GATEWAY: any = {
-  [Network.MAINNET]: AaveV2Ethereum.WETH_GATEWAY,
-  [Network.POLYGON]: AaveV2Polygon.WETH_GATEWAY,
-  [Network.AVALANCHE]: AaveV2Avalanche.WETH_GATEWAY,
-};
+  AaveV2Config,
+  Adapters,
+  WETH_GATEWAY,
+  aaveLendingPool,
+} from './config';
+import { isAaveV2Pair } from './tokens';
 
 const WETH_GATEWAY_ABI: any = {
   [Network.MAINNET]: WETH_GATEWAY_ABI_MAINNET,

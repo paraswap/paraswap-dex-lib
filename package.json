@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
-    "@bgd-labs/aave-address-book": "^2.20.0",
+    "@bgd-labs/aave-address-book": "2.21.1-be0c0c2323752df82e6faeaadaccd99a239e6e60.0",
     "@ethersproject/abi": "^5.7.0",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.3.4",
