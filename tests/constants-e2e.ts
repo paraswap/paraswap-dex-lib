@@ -359,6 +359,10 @@ export const Tokens: {
       address: '0x5f98805a4e8be255a32880fdec7f6728c6568ba0',
       decimals: 18,
     },
+    BNT: {
+      address: '0x1f573d6fb3f13d689ff844b4ce37794d79a7ff1c',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -1113,6 +1117,7 @@ export const Holders: {
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     frxETH: '0x9df2322bdAEC46627100C999E6dDdD27837fec6e',
     LUSD: '0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA',
+    BNT: '0xf727e20e081aAE428E7c6bE07b156bB21ab587a7',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
