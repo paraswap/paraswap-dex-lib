@@ -1473,7 +1473,6 @@ export class BalancerV2
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false, // to force manual transfer
-      dexFuncHasDestToken: true,
       exchangeData: specialDexExchangeData,
       specialDexFlag:
         side === SwapSide.SELL

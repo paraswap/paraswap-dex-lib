@@ -162,6 +162,8 @@ class APIParaswapSDK implements IParaSwapSDK {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
 
+    console.log('this.dexKeys', this.dexKeys);
+    console.log('contractMethod', contractMethod);
     let priceRoute;
     if (forceRoute && forceRoute.length > 0) {
       const options = {
@@ -172,6 +174,7 @@ class APIParaswapSDK implements IParaSwapSDK {
         destDecimals: to.decimals,
         options: {
           includeDEXS: this.dexKeys,
+          excludeDEXS: ['Camelot'],
           includeContractMethods: [contractMethod],
           partner: 'any',
           maxImpact: 100,
@@ -206,6 +209,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     _minMaxAmount: BigInt,
     userAddress: Address,
   ): Promise<TxObject> {
+    console.log('building trx 2e2');
     const minMaxAmount = _minMaxAmount.toString();
     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
 
@@ -561,6 +565,7 @@ export async function testE2E(
       minMaxAmount,
       senderAddress,
     );
+    console.log('swapParams', swapParams);
 
     const swapTx = await ts.simulate(swapParams);
     // Only log gas estimate if testing against API

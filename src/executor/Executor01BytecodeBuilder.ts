@@ -72,7 +72,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
   /**
    * Executor01 Flags:
    * switch (flag % 4):
-   * case 0: don't instert fromAmount
+   * case 0: don't insert fromAmount
    * case 1: sendEth equal to fromAmount
    * case 2: sendEth equal to fromAmount + insert fromAmount
    * case 3: insert fromAmount

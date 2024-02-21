@@ -163,8 +163,6 @@ export type DexExchangeParam = {
   exchangeData: string;
   targetExchange: string;
   dexFuncHasRecipient: boolean;
-  // Deprecated, for now use addTokenAddressToCallData
-  dexFuncHasDestToken?: boolean;
   specialDexFlag?: SpecialDex;
   transferSrcTokenBeforeSwap?: Address;
   spender?: Address;
