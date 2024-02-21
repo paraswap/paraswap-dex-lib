@@ -8,6 +8,8 @@ import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
+// IronV2 is the dex within the stable-pool group which has the most volume
+// to check it's volume, you can filter psa_volumes.
 const dexKey = 'ironv2';
 
 const testForNetwork = (
