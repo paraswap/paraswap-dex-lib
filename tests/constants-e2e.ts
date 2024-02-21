@@ -23,6 +23,10 @@ export const Tokens: {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    SWETH: {
+      address: '0xf951e335afb289353dc249e82926178eac7ded78',
+      decimals: 18,
+    },
     BAT: {
       address: '0x0d8775f648430679a709e98d2b0cb6250d2887ef',
       decimals: 18,
