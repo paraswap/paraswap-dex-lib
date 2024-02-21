@@ -68,9 +68,12 @@ export abstract class ExecutorBytecodeBuilder {
   public abstract getAddress(): string;
 
   protected abstract buildDexCallData(
-    swap: OptimalSwap,
-    exchangeParam: DexExchangeParam,
-    index: number,
+    priceRoute: OptimalRate,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParams: DexExchangeParam[],
+    exchangeParamIndex: number,
     isLastSwap: boolean,
     flag: Flag,
     swapExchange?: OptimalSwapExchange<any>,

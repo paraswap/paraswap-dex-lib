@@ -103,8 +103,11 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     const curExchangeParam = exchangeParams[index];
 
     const dexCallData = this.buildDexCallData(
-      swap,
-      curExchangeParam,
+      priceRoute,
+      0,
+      0,
+      index,
+      exchangeParams,
       index,
       true,
       flags.dexes[index],
@@ -205,9 +208,12 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
   }
 
   protected buildDexCallData(
-    swap: OptimalSwap,
-    exchangeParam: DexExchangeParam,
-    index: number,
+    priceRoute: OptimalRate,
+    routeIndex: number,
+    swapIndex: number,
+    swapExchangeIndex: number,
+    exchangeParams: DexExchangeParam[],
+    exchangeParamIndex: number,
     isLastSwap: boolean,
     flag: Flag,
     _?: OptimalSwapExchange<any>,
@@ -219,6 +225,8 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     // for cases not 0 or 1
     const insertAmount = flag % 4 !== 0 && flag % 4 !== 1;
 
+    const exchangeParam = exchangeParams[exchangeParamIndex];
+    const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     let { exchangeData, specialDexFlag } = exchangeParam;
 
     exchangeData = this.addTokenAddressToCallData(

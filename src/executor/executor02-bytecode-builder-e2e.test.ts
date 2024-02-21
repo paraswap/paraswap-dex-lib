@@ -859,6 +859,58 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
     });
   });
 
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const slippage = undefined;
+
+    describe('MegaSwap', () => {
+      const contractMethod = ContractMethod.megaSwap;
+
+      describe('WAVAX -> USDC', () => {
+        const dexKeys = [
+          'TraderJoeV2.1',
+          'PangolinSwap',
+          'TraderJoe',
+          'UniswapV3',
+          'GMX',
+          'Wombat',
+        ];
+
+        const tokenASymbol: string = 'WAVAX';
+        const tokenBSymbol: string = 'USDC';
+        const tokenAAmount: string = '100000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+          );
+        });
+      });
+    });
+  });
+
   // describe('Polygon', () => {
   //   const network = Network.POLYGON;
   //   const provider = new StaticJsonRpcProvider(
