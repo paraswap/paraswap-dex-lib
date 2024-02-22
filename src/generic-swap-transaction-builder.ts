@@ -149,9 +149,7 @@ export class GenericSwapTransactionBuilder {
               _dest,
               _srcAmount,
               _destAmount,
-              needToWithdrawAfterSwap ||
-                !isLastSwap ||
-                se.exchange === 'BalancerV2'
+              needToWithdrawAfterSwap || !isLastSwap
                 ? bytecodeBuilder.getAddress()
                 : this.dexAdapterService.dexHelper.config.data
                     .augustusV6Address!,
