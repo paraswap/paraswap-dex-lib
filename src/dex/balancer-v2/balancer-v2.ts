@@ -79,7 +79,6 @@ import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import { BigNumber, ethers } from 'ethers';
 import { SpecialDex } from '../../executor/types';
-import { ZERO_ADDRESS } from '@hashflow/sdk';
 
 const {
   utils: { hexlify, hexZeroPad, solidityPack, hexConcat },
@@ -1139,7 +1138,7 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: recipientV6 ? ZERO_ADDRESS : this.augustusAddress,
+      sender: recipientV6 ? NULL_ADDRESS : this.augustusAddress,
       recipient: recipientV6 ?? this.augustusAddress,
       fromInternalBalance: false,
       toInternalBalance: false,
