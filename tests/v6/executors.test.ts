@@ -21,7 +21,11 @@ type ForkMetadata = {
   contracts: ContractsAugustusV6;
 };
 
-const network = 'polygon';
+const forceNewDeployment = false;
+// const network = 'polygon';
+// const network = 'arbitrum';
+// const network = 'avalanche';
+const network = 'mainnet';
 
 async function deployAugustusOnFork(
   network: number,
@@ -36,6 +40,7 @@ async function deployAugustusOnFork(
     {
       network,
       blockNumber,
+      forceNewDeployment,
     },
   );
   return data;
@@ -48,10 +53,7 @@ describe('Executors: Price Route Tests', () => {
   const priceRouteFiles = fs.readdirSync(priceRoutesDir);
 
   priceRouteFiles.forEach(file => {
-    console.log(file);
-    // if (file === 'sell-50-eth-usdc.json')
-    if (file === 'sell-100-WBTC-MATIC.json')
-      // if (file === 'polygon-sell-1_000_000-DAI-MATIC.json')
+    if (file === 'balancer-v2-2.test.json')
       it(`file: ${file}`, async () => {
         const {
           priceRoute,
@@ -61,7 +63,7 @@ describe('Executors: Price Route Tests', () => {
           metadata: ForkMetadata;
         } = require(path.join(priceRoutesDir, file));
         let forkMetadata: ForkMetadata = metadata;
-        if (!forkMetadata?.contracts) {
+        if (!forkMetadata?.contracts || forceNewDeployment) {
           forkMetadata = await deployAugustusOnFork(
             priceRoute.network,
             priceRoute.blockNumber,
