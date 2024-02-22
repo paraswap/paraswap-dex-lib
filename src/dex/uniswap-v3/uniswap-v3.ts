@@ -1088,7 +1088,6 @@ export class UniswapV3
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData,
       targetExchange: this.config.router,
     };

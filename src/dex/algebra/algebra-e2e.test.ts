@@ -88,7 +88,7 @@ function testForNetwork(
     ],
     // TODO: If buy is not supported remove the buy contract methods
     // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -186,11 +186,11 @@ describe('Algebra', () => {
 
     describe('Polygon_V6', () => {
       const network = Network.POLYGON;
-      const tokenASymbol: string = 'USDC';
-      const tokenBSymbol: string = 'DAI';
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDC';
 
-      const tokenAAmount: string = '1000000000';
-      const tokenBAmount: string = '1000000000000000000000';
+      const tokenAAmount: string = '1000000000000000000000';
+      const tokenBAmount: string = '1000000000';
       const nativeTokenAmount = '1000000000000000000';
 
       testForNetwork(
@@ -249,11 +249,11 @@ describe('Algebra', () => {
     });
   });
 
-  describe('CamelotV3', () => {
+  describe('CamelotV3_V6', () => {
     const dexKey = 'CamelotV3';
     const network = Network.ARBITRUM;
 
-    describe('Arbitrum: Tax Tokens', () => {
+    describe('Arbitrum: TaxTokens', () => {
       const tokenASymbol: string = 'RDPX';
       const tokenBSymbol: string = 'WETH';
 
@@ -270,17 +270,17 @@ describe('Algebra', () => {
         tokenBAmount,
         nativeTokenAmount,
         {
-          srcFee: 0,
-          destFee: 0,
-          srcDexFee: 1000,
-          destDexFee: 0,
-        },
+          srcTokenTransferFee: 0,
+          destTokenTransferFee: 0,
+          srcTokenDexTransferFee: 1000,
+          destTokenDexTransferFee: 0,
+        } as any,
       );
     });
 
     describe('Arbitrum: Non-Tax tokens', () => {
-      const tokenASymbol: string = 'USDCe';
-      const tokenBSymbol: string = 'USDT';
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDCe';
 
       const tokenAAmount: string = '1000000000';
       const tokenBAmount: string = '1000000000';

@@ -3,6 +3,7 @@ import { NumberAsString, SwapSide } from '@paraswap/core';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Logger,
   PoolLiquidity,
@@ -102,8 +103,7 @@ export class Swell
     ).toLowerCase();
 
     return (
-      (isETHAddress(srcTokenAddress) || this.isWETH(srcTokenAddress)) &&
-      destTokenAddress === this.swETHAddress
+      isETHAddress(srcTokenAddress) && destTokenAddress === this.swETHAddress
     );
   }
 
@@ -216,6 +216,31 @@ export class Swell
       calldata,
       values,
       networkFee: '0',
+    };
+  }
+
+  // FIXME: Add WETH -> swWETH support
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SwellData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    this.assertEligibility(srcToken, destToken, side);
+
+    const swapData = this.swETHInterface.encodeFunctionData(
+      swETHFunctions.deposit,
+      [],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: this.swETHAddress,
     };
   }
 

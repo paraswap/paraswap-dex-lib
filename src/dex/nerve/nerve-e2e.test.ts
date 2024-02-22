@@ -105,13 +105,44 @@ describe('Nerve', () => {
         );
       });
     });
+    describe('V6', () => {
+      describe(ContractMethod.swapExactAmountIn, () => {
+        const contractMethod = ContractMethod.swapExactAmountIn;
+        it('SELL BUSD -> USDC', async () => {
+          await testE2E(
+            tokens.BUSD,
+            tokens.USDC,
+            holders.BUSD,
+            '11000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            contractMethod,
+            network,
+            provider,
+          );
+        });
+        it('SELL BTCB -> anyBTC', async () => {
+          await testE2E(
+            tokens.bBTC,
+            tokens.anyBTC,
+            holders.bBTC,
+            '11000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            contractMethod,
+            network,
+            provider,
+          );
+        });
+      });
+    });
   });
 });
 
 describe('Axial', () => {
   const dexKey = 'Axial';
 
-  describe('Avalanche_V6', () => {
+  describe('Avalanche', () => {
     const network = Network.AVALANCHE;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -200,7 +231,7 @@ describe('Axial', () => {
 describe('IronV2', () => {
   const dexKey = 'IronV2';
 
-  describe('Polygon_V6', () => {
+  describe('Polygon', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -209,7 +240,6 @@ describe('IronV2', () => {
       network,
     );
     describe('swapExactAmountIn', () => {
-      const contractMethod = ContractMethod.swapExactAmountIn;
       it('SELL DAI -> USDC', async () => {
         await testE2E(
           tokens.DAI,
@@ -218,7 +248,7 @@ describe('IronV2', () => {
           '1100000000000000',
           SwapSide.SELL,
           dexKey,
-          contractMethod,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -789,7 +819,7 @@ describe('Synapse', () => {
     });
   });
 
-  describe('Polygon_V6', () => {
+  describe('Polygon', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];

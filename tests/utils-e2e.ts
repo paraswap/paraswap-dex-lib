@@ -176,6 +176,7 @@ class APIParaswapSDK implements IParaSwapSDK {
           partner: 'any',
           maxImpact: 100,
         },
+        ...transferFees,
       };
       priceRoute = await this.paraSwap.swap.getRateByRoute(options);
     } else {
@@ -190,6 +191,7 @@ class APIParaswapSDK implements IParaSwapSDK {
           partner: 'any',
           maxImpact: 100,
         },
+        ...transferFees,
         srcDecimals: from.decimals,
         destDecimals: to.decimals,
       };
