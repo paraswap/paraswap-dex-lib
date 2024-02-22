@@ -17,7 +17,7 @@ export const ZEROS_32_BYTES = hexZeroPad(hexlify(0), 32);
 
 export const SWAP_EXCHANGE_100_PERCENTAGE = 100;
 
-export const ZERO_ROUTE_INDEX = 0;
+export const NOT_EXISTING_EXCHANGE_PARAM_INDEX = -1;
 
 export const EXECUTOR_01_02_FUNCTION_CALL_DATA_TYPES: string[] = [
   'bytes20', // address
