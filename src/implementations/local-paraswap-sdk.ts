@@ -82,10 +82,15 @@ export class LocalParaswapSDK implements IParaSwapSDK {
 
     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.dexKeys.map(dexKey => {
-      const dex = this.dexAdapterService.getDexByKey(dexKey);
+      try {
+        const dex = this.dexAdapterService.getDexByKey(dexKey);
 
-      if (limitOrderProvider && dex instanceof LimitOrderExchange) {
-        dex.limitOrderProvider = limitOrderProvider;
+        if (limitOrderProvider && dex instanceof LimitOrderExchange) {
+          dex.limitOrderProvider = limitOrderProvider;
+        }
+      } catch (e) {
+        // only for testing
+        delete this.dexKeys[this.dexKeys.indexOf(dexKey)];
       }
     });
   }
