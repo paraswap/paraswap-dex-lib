@@ -673,7 +673,7 @@ export class Solidly extends UniswapV2 {
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
+      dexFuncHasRecipient: true,
       dexFuncHasDestToken: false,
       exchangeData,
       targetExchange: recipient,
