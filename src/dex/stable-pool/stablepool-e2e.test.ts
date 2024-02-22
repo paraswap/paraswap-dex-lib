@@ -2,17 +2,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 
 import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-const dexKey = 'bancor';
+// IronV2 is the dex within the stable-pool group which has the most volume
+// to check it's volume, you can filter psa_volumes.
+const dexKey = 'ironv2';
 
 const testForNetwork = (
   network: Network,
@@ -20,8 +18,6 @@ const testForNetwork = (
 ) => {
   const tokens = Tokens[network];
   const holders = Holders[network];
-
-  const nativeSymbol = NativeTokenSymbols[network];
 
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -31,12 +27,12 @@ const testForNetwork = (
   const tokensToTest = [
     [
       {
-        symbol: 'BNT',
-        amount: '1000000000000000000000',
+        symbol: 'USDT',
+        amount: (10 ** 8).toString(),
       },
       {
-        symbol: 'USDT',
-        amount: '1000000000000000000000',
+        symbol: 'USDC',
+        amount: (10 ** 8).toString(),
       },
     ],
   ];
@@ -58,20 +54,6 @@ const testForNetwork = (
               provider,
             );
           });
-
-          it(`${nativeSymbol} -> ${pair[0].symbol}`, async () => {
-            await testE2E(
-              tokens[nativeSymbol],
-              tokens[pair[0].symbol],
-              holders[nativeSymbol],
-              side === SwapSide.SELL ? '1000000000000000000' : pair[0].amount,
-              side,
-              dexKey,
-              contractMethod as any,
-              network,
-              provider,
-            );
-          });
         });
       });
     }),
@@ -80,12 +62,12 @@ const testForNetwork = (
 
 // Ensure you have the E2E_ENDPOINT_URL env variable set.
 
-describe('Bancor E2E', () => {
-  describe('Mainnet V6', () => {
+describe('Stable Pool E2E', () => {
+  describe('Polygon V6', () => {
     const swapMap = new Map<SwapSide, ContractMethod[]>([
       [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     ]);
 
-    testForNetwork(Network.MAINNET, swapMap);
+    testForNetwork(Network.POLYGON, swapMap);
   });
 });

@@ -363,6 +363,10 @@ export const Tokens: {
       address: '0x5f98805a4e8be255a32880fdec7f6728c6568ba0',
       decimals: 18,
     },
+    BNT: {
+      address: '0x1f573d6fb3f13d689ff844b4ce37794d79a7ff1c',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -1125,6 +1129,7 @@ export const Holders: {
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     frxETH: '0x9df2322bdAEC46627100C999E6dDdD27837fec6e',
     LUSD: '0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA',
+    BNT: '0xf727e20e081aAE428E7c6bE07b156bB21ab587a7',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -1133,7 +1138,7 @@ export const Holders: {
     USDC: '0xb2dafb6fc7f66526e72027ade0f044beda0ba11e',
   },
   [Network.POLYGON]: {
-    MATIC: '0xB962D7F601bF40eaE0dFFA9552E99c6E91B97670',
+    MATIC: '0xfCbB9e5BB354B6F9fd40362Cee043F510dd3028D',
     DAI: '0x98F911D496Cf46bf9FF9CdD7039Cf579B26F01B9',
     WETH: '0x62ac55b745f9b08f1a81dcbbe630277095cf4be1',
     WMATIC: '0x47231b2EcB18b7724560A78cd7191b121f53FABc',

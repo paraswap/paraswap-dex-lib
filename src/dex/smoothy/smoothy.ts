@@ -1,35 +1,18 @@
 import { Interface } from '@ethersproject/abi';
 import { Provider } from '@ethersproject/providers';
-import { SwapSide } from '../constants';
+import { SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
-import SmoothyABI from '../abi/Smoothy.json';
-import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
-
-type SmoothyData = {
-  exchange: string;
-  i: string;
-  j: string;
-};
-
-type SmoothyParam = [
-  bTokenIdxIn: NumberAsString,
-  bTokenIdxOut: NumberAsString,
-  bTokenInAmount: NumberAsString,
-  bTokenOutMin: NumberAsString,
-];
-
-enum SmoothyFunctions {
-  swap = 'swap',
-}
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import SmoothyABI from '../../abi/Smoothy.json';
+import { IDexHelper } from '../../dex-helper';
+import { SmoothyData, SmoothyFunctions, SmoothyParam } from './types';
 
 export class Smoothy
   extends SimpleExchange

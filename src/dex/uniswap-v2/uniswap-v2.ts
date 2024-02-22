@@ -865,6 +865,7 @@ export class UniswapV2
     let specialDexFlag: SpecialDex;
     let transferSrcTokenBeforeSwap: Address | undefined;
     let targetExchange: Address;
+    let dexFuncHasRecipient: boolean;
 
     if (side === SwapSide.SELL) {
       // 28 bytes are prepended in the Bytecode builder
@@ -883,6 +884,7 @@ export class UniswapV2
       specialDexFlag = SpecialDex.SWAP_ON_UNISWAP_V2_FORK;
       transferSrcTokenBeforeSwap = data.pools[0].address;
       targetExchange = recipient;
+      dexFuncHasRecipient = true;
     } else {
       const weth = this.getWETHAddress(srcToken, destToken, data.weth);
 
@@ -892,12 +894,13 @@ export class UniswapV2
       );
       specialDexFlag = SpecialDex.DEFAULT;
       targetExchange = data.router;
+      dexFuncHasRecipient = false;
     }
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
       specialDexSupportsInsertFromAmount: true,
+      dexFuncHasRecipient,
       exchangeData,
       targetExchange,
       specialDexFlag,
