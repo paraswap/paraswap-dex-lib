@@ -1248,7 +1248,7 @@ export const Holders: {
     AMPL: '0xfcaA5ea7F8eb0631BcA72C345025C0A5a6D93f0E',
   },
   [Network.ARBITRUM]: {
-    SEN: '0xcb19b6b4971bd4206bab176c75b1efe3e28ee5a8',
+    SEN: '0x76d39045d856caf9bfae12ba611ca4a94449a4f1',
     RDPX: '0x115b818593c00da4f9d1d8f5ce7d7f88cce48bee',
     ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
     ETH: '0xfa0a32e5c33b6123122b6b68099001d9371d14e9',
