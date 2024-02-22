@@ -172,7 +172,6 @@ class APIParaswapSDK implements IParaSwapSDK {
         destDecimals: to.decimals,
         options: {
           includeDEXS: this.dexKeys,
-          excludeDEXS: ['Camelot'],
           includeContractMethods: [contractMethod],
           partner: 'any',
           maxImpact: 100,

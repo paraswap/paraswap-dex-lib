@@ -103,8 +103,7 @@ export class Swell
     ).toLowerCase();
 
     return (
-      (isETHAddress(srcTokenAddress) || this.isWETH(srcTokenAddress)) &&
-      destTokenAddress === this.swETHAddress
+      isETHAddress(srcTokenAddress) && destTokenAddress === this.swETHAddress
     );
   }
 
