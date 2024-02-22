@@ -12,6 +12,7 @@ import { DepositWithdrawReturn } from '../dex/weth/types';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import {
   BYTES_64_LENGTH,
+  NOT_EXISTING_EXCHANGE_PARAM_INDEX,
   SWAP_EXCHANGE_100_PERCENTAGE,
   ZEROS_20_BYTES,
   ZEROS_28_BYTES,
@@ -355,13 +356,13 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     callData: string,
     percentage: number,
     swap: OptimalSwap,
-    exchangeParamIndex?: number,
-    wrapWasAddedInSwapExchange?: boolean,
+    exchangeParamIndex: number,
+    wrapWasAddedInSwapExchange: boolean,
   ) {
     let srcTokenAddress = swap.srcToken;
 
     let doesAnyDexOnSwapNeedsWrapNative: boolean;
-    if (exchangeParamIndex) {
+    if (exchangeParamIndex > -1) {
       doesAnyDexOnSwapNeedsWrapNative =
         isETHAddress(srcTokenAddress) &&
         exchangeParams[exchangeParamIndex].needWrapNative;
@@ -1067,7 +1068,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         callData,
         route.percent,
         route.swaps[0],
-        0,
+        NOT_EXISTING_EXCHANGE_PARAM_INDEX,
         Object.values(addedWrapToSwapMap).includes(true),
       );
     }
@@ -1209,6 +1210,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         swapsCalldata,
         SWAP_EXCHANGE_100_PERCENTAGE,
         priceRoute.bestRoute[0].swaps[0],
+        NOT_EXISTING_EXCHANGE_PARAM_INDEX,
+        false,
       );
     }
 
