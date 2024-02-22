@@ -77,6 +77,7 @@ export class Solidly extends UniswapV2 {
       _.omit(SolidlyConfig, [
         'Velodrome',
         'VelodromeV2',
+        'Aerodrome',
         'SpiritSwapV2',
         'Cone',
         'SolidlyV2',
@@ -672,8 +673,7 @@ export class Solidly extends UniswapV2 {
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
+      dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: recipient,
       // TODO: Test with/without fee tokens in route
@@ -681,7 +681,6 @@ export class Solidly extends UniswapV2 {
         ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
         : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
       transferSrcTokenBeforeSwap: data.pools[0].address,
-      skipApprove: true,
     };
   }
 }

@@ -448,7 +448,7 @@ describe('Solidly E2E', () => {
       network,
     );
 
-    describe('solidly:swapExactAmountInOnDystopiaUniswapV2Fork', () => {
+    describe('solidly:swapExactAmountIn', () => {
       const dexKey = 'SolidlyV2';
 
       it('EX1: USDC -> USDT', async () => {

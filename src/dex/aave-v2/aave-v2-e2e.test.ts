@@ -132,7 +132,7 @@ describe('AaveV2 E2E', () => {
         // ContractMethod.megaSwap,
       ],
       // [SwapSide.BUY]: [ContractMethod.simpleBuy],
-      [SwapSide.BUY]: [],
+      [SwapSide.BUY]: [ContractMethod.swapExactAmountOut],
     };
 
     [SwapSide.SELL, SwapSide.BUY].forEach((side: SwapSide) =>

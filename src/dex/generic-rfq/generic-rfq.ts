@@ -298,7 +298,6 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: specialDexExchangeData,
       specialDexFlag: SpecialDex.SWAP_ON_AUGUSTUS_RFQ,
       targetExchange: this.augustusRFQAddress,

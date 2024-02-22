@@ -858,14 +858,13 @@ export class Camelot
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
+      dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: recipient,
       specialDexFlag: data.isFeeTokenInRoute
         ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
         : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
       transferSrcTokenBeforeSwap: data.pools[0].address,
-      skipApprove: true,
     };
   }
 }

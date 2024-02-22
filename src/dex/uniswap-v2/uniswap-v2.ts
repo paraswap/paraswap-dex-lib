@@ -861,8 +861,8 @@ export class UniswapV2
     let exchangeData: string;
     let specialDexFlag: SpecialDex;
     let transferSrcTokenBeforeSwap: Address | undefined;
-    let skipApprove: boolean;
     let targetExchange: Address;
+    let dexFuncHasRecipient: boolean;
 
     if (side === SwapSide.SELL) {
       // 28 bytes are prepended in the Bytecode builder
@@ -880,8 +880,8 @@ export class UniswapV2
       exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
       specialDexFlag = SpecialDex.SWAP_ON_UNISWAP_V2_FORK;
       transferSrcTokenBeforeSwap = data.pools[0].address;
-      skipApprove = true;
       targetExchange = recipient;
+      dexFuncHasRecipient = true;
     } else {
       const weth = this.getWETHAddress(srcToken, destToken, data.weth);
 
@@ -890,18 +890,18 @@ export class UniswapV2
         [srcToken, srcAmount, destAmount, weth, pools],
       );
       specialDexFlag = SpecialDex.DEFAULT;
-      skipApprove = false;
       targetExchange = data.router;
+      dexFuncHasRecipient = false;
     }
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
+      specialDexSupportsInsertFromAmount: true,
+      dexFuncHasRecipient,
       exchangeData,
       targetExchange,
       specialDexFlag,
       transferSrcTokenBeforeSwap,
-      skipApprove,
     };
   }
 

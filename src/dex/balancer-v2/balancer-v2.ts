@@ -1460,16 +1460,18 @@ export class BalancerV2
     }, BigNumber.from(0));
 
     const specialDexExchangeData = solidityPack(
-      ['bytes', 'bytes32'],
-      [exchangeData, hexZeroPad(hexlify(totalAmount), 32)],
+      ['bytes32', 'bytes'],
+      [hexZeroPad(hexlify(totalAmount), 32), exchangeData],
     );
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false, // to force manual transfer
-      dexFuncHasDestToken: true,
       exchangeData: specialDexExchangeData,
-      specialDexFlag: SpecialDex.SWAP_ON_BALANCER_V2,
+      specialDexFlag:
+        side === SwapSide.SELL
+          ? SpecialDex.SWAP_ON_BALANCER_V2
+          : SpecialDex.DEFAULT,
       targetExchange: this.vaultAddress,
     };
   }

@@ -168,7 +168,6 @@ export class Weth
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
       exchangeData: swapData,
       targetExchange: this.address,
     };

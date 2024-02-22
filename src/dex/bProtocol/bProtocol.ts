@@ -1,44 +1,30 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
-import { SwapSide } from '../constants';
+import { SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
-import OnebitABI from '../abi/Onebit.json';
-import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import BProtocolABI from '../../abi/BProtocol.json';
+import { IDexHelper } from '../../dex-helper';
+import { BProtocolData, BProtocolFunctions, BProtocolParam } from './types';
 
-export type OnebitData = {
-  router: Address;
-};
-type OnebitParam = [
-  srcToken: string,
-  destToken: string,
-  srcAmount: string,
-  destAmountMin: string,
-  to: string,
-];
-enum OnebitFunctions {
-  swapTokensWithTrust = 'swapTokensWithTrust',
-}
-
-export class Onebit
+export class BProtocol
   extends SimpleExchange
-  implements IDexTxBuilder<OnebitData, OnebitParam>
+  implements IDexTxBuilder<BProtocolData, BProtocolParam>
 {
-  static dexKeys = ['omm1'];
+  static dexKeys = ['bprotocol'];
   exchangeRouterInterface: Interface;
-  needWrapNative = true;
 
   constructor(dexHelper: IDexHelper) {
-    super(dexHelper, 'omm1');
-    this.exchangeRouterInterface = new Interface(OnebitABI as JsonFragment[]);
+    super(dexHelper, 'bprotocol');
+    this.exchangeRouterInterface = new Interface(
+      BProtocolABI as JsonFragment[],
+    );
   }
 
   getAdapterParam(
@@ -46,11 +32,11 @@ export class Onebit
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: OnebitData,
+    data: BProtocolData,
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
-      targetExchange: data.router,
+      targetExchange: data.exchange,
       payload: '0x',
       networkFee: '0',
     };
@@ -61,13 +47,11 @@ export class Onebit
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: OnebitData,
+    data: BProtocolData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapFunction = OnebitFunctions.swapTokensWithTrust;
-    const swapFunctionParams: OnebitParam = [
-      srcToken,
-      destToken,
+    const swapFunction = BProtocolFunctions.swap;
+    const swapFunctionParams: BProtocolParam = [
       srcAmount,
       destAmount,
       this.augustusAddress,
@@ -83,23 +67,21 @@ export class Onebit
       destToken,
       destAmount,
       swapData,
-      data.router,
+      data.exchange,
     );
   }
 
   getDexParam(
-    srcToken: Address,
-    destToken: Address,
+    _srcToken: Address,
+    _destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     recipient: Address,
-    data: OnebitData,
-    side: SwapSide,
+    data: BProtocolData,
+    _side: SwapSide,
   ): DexExchangeParam {
-    const swapFunction = OnebitFunctions.swapTokensWithTrust;
-    const swapFunctionParams: OnebitParam = [
-      srcToken,
-      destToken,
+    const swapFunction = BProtocolFunctions.swap;
+    const swapFunctionParams: BProtocolParam = [
       srcAmount,
       destAmount,
       recipient,
@@ -108,13 +90,11 @@ export class Onebit
       swapFunction,
       swapFunctionParams,
     );
-
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
-      targetExchange: data.router,
+      targetExchange: data.exchange,
     };
   }
 }

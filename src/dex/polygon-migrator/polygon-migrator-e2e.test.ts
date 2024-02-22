@@ -32,6 +32,7 @@ function testForNetwork(
         // ContractMethod.megaSwap,
       ],
     ],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 

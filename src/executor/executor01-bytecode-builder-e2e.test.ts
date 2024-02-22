@@ -1074,4 +1074,48 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
       });
     });
   });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    describe('MultiSwap', () => {
+      describe('USDC.e -> MATIC -> CRV via Dystopia and QuickSwap', () => {
+        const dexKeys = ['Dystopia', 'QuickSwap'];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const slippage = undefined;
+
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'CRV';
+
+        const tokenAAmount: string = '4439351';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const contractMethod = ContractMethod.multiSwap;
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+          );
+        });
+      });
+    });
+  });
 });

@@ -241,7 +241,6 @@ export class Jarvis
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: data.pools[0],
     };

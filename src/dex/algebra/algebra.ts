@@ -822,7 +822,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     if (data.feeOnTransfer) {
       _require(
-        data.path.length !== 1,
+        data.path.length === 1,
         `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
           .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
           .join(' ')}`,
@@ -889,7 +889,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     if (data.feeOnTransfer) {
       _require(
-        data.path.length !== 1,
+        data.path.length === 1,
         `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
           .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
           .join(' ')}`,

@@ -162,23 +162,42 @@ class APIParaswapSDK implements IParaSwapSDK {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
 
-    const priceRoute = await this.paraSwap.swap.getRate({
-      srcToken: from.address,
-      destToken: to.address,
-      side,
-      amount: amount.toString(),
-      options: {
-        includeDEXS: this.dexKeys,
-        // TODO-v6: update types in SDK
-        // @ts-ignore
-        includeContractMethods: [contractMethod],
-        partner: 'any',
-      },
-      srcDecimals: from.decimals,
-      destDecimals: to.decimals,
-    });
-    // TODO: Remove
-    priceRoute.contractMethod = contractMethod;
+    let priceRoute;
+    if (forceRoute && forceRoute.length > 0) {
+      const options = {
+        route: forceRoute,
+        amount: amount.toString(),
+        side,
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+        ...transferFees,
+      };
+      priceRoute = await this.paraSwap.swap.getRateByRoute(options);
+    } else {
+      const options = {
+        srcToken: from.address,
+        destToken: to.address,
+        side,
+        amount: amount.toString(),
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+        ...transferFees,
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+      };
+      priceRoute = await this.paraSwap.swap.getRate(options);
+    }
+
     return priceRoute as OptimalRate;
   }
 
@@ -482,29 +501,29 @@ export async function testE2E(
     const executorsAddresses = Object.values(config.executorsAddresses!);
     const addresses = [...executorsAddresses, augustusV6Address];
 
-    for await (const a of addresses) {
-      const src =
-        srcToken.address.toLowerCase() === ETHER_ADDRESS
-          ? config.wrappedNativeTokenAddress
-          : srcToken.address.toLowerCase();
-      const dest =
-        destToken.address.toLowerCase() === ETHER_ADDRESS
-          ? config.wrappedNativeTokenAddress
-          : destToken.address.toLowerCase();
-
-      if (priceRoute.bestRoute[0].swaps.length > 0) {
-        const intermediateToken =
-          priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
-          ETHER_ADDRESS
-            ? config.wrappedNativeTokenAddress
-            : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
-
-        await ts.simulate(send1WeiTo(intermediateToken, a, network));
-      }
-
-      await ts.simulate(send1WeiTo(src, a, network));
-      await ts.simulate(send1WeiTo(dest, a, network));
-    }
+    // for await (const a of addresses) {
+    //   const src =
+    //     srcToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : srcToken.address.toLowerCase();
+    //   const dest =
+    //     destToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : destToken.address.toLowerCase();
+    //
+    //   if (priceRoute.bestRoute[0].swaps.length > 0) {
+    //     const intermediateToken =
+    //       priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
+    //       ETHER_ADDRESS
+    //         ? config.wrappedNativeTokenAddress
+    //         : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
+    //
+    //     await ts.simulate(send1WeiTo(intermediateToken, a, network));
+    //   }
+    //
+    //   await ts.simulate(send1WeiTo(src, a, network));
+    //   await ts.simulate(send1WeiTo(dest, a, network));
+    // }
     //
     // for await (const a of addresses) {
     //   const src =

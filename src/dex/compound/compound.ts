@@ -1,27 +1,18 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide, NULL_ADDRESS } from '../constants';
+import { SwapSide, NULL_ADDRESS } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
-import Ceth from '../abi/Compound_CETH.json'; // CETH abi
-import { isETHAddress } from '../utils';
-import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
-
-export type CompoundData = {
-  fromCToken: boolean;
-};
-type CompoundParam = [srcAmount: string];
-enum CompoundFunctions {
-  redeem = 'redeem',
-  mint = 'mint',
-}
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import Ceth from '../../abi/Compound_CETH.json'; // CETH abi
+import { isETHAddress } from '../../utils';
+import { IDexHelper } from '../../dex-helper';
+import { CompoundData, CompoundFunctions, CompoundParam } from './types';
 
 export class Compound
   extends SimpleExchange
@@ -92,10 +83,10 @@ export class Compound
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    recipient: Address,
+    _destAmount: NumberAsString,
+    _recipient: Address,
     data: CompoundData,
-    side: SwapSide,
+    _side: SwapSide,
   ): DexExchangeParam {
     const cToken = data.fromCToken ? srcToken : destToken;
     const swapData = isETHAddress(srcToken)
@@ -108,7 +99,6 @@ export class Compound
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
       exchangeData: swapData,
       targetExchange: cToken,
     };

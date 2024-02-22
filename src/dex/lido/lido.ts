@@ -5,22 +5,13 @@ import {
   Address,
   DexExchangeParam,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import stETHAbi from '../abi/stETH.json';
-import { NULL_ADDRESS } from '../constants';
-import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
-
-export const stETH: any = {
-  1: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
-};
-
-export enum stETHFunctions {
-  submit = 'submit',
-}
-
-export type LidoData = {};
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import stETHAbi from '../../abi/stETH.json';
+import { NULL_ADDRESS } from '../../constants';
+import { IDexHelper } from '../../dex-helper';
+import { LidoData, stETHFunctions } from './types';
+import { stETH } from './config';
 
 export class Lido implements IDexTxBuilder<LidoData, any> {
   static dexKeys = ['lido'];
@@ -73,13 +64,13 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
   }
 
   getDexParam(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    recipient: Address,
-    data: LidoData,
-    side: SwapSide,
+    _srcToken: Address,
+    _destToken: Address,
+    _srcAmount: NumberAsString,
+    _destAmount: NumberAsString,
+    _recipient: Address,
+    _data: LidoData,
+    _side: SwapSide,
   ): DexExchangeParam {
     const swapData = this.stETHInterface.encodeFunctionData(
       stETHFunctions.submit,
@@ -89,7 +80,6 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: false,
       exchangeData: swapData,
       targetExchange: stETH[this.network],
     };

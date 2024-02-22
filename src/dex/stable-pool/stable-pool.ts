@@ -1,68 +1,58 @@
 import { Interface } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
-import { SwapSide } from '../constants';
+import { SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
-import SmoothyABI from '../abi/Smoothy.json';
-import Web3 from 'web3';
-import { IDexHelper } from '../dex-helper';
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import StablePoolABI from '../../abi/StablePool.json';
+import { IDexHelper } from '../../dex-helper';
+import { StablePoolFunctions, StablePoolData, StablePoolParam } from './types';
 
-type SmoothyData = {
-  exchange: string;
-  i: string;
-  j: string;
-};
-
-type SmoothyParam = [
-  bTokenIdxIn: NumberAsString,
-  bTokenIdxOut: NumberAsString,
-  bTokenInAmount: NumberAsString,
-  bTokenOutMin: NumberAsString,
-];
-
-enum SmoothyFunctions {
-  swap = 'swap',
-}
-
-export class Smoothy
+export class StablePool
   extends SimpleExchange
-  implements IDexTxBuilder<SmoothyData, SmoothyParam>
+  implements IDexTxBuilder<StablePoolData, StablePoolParam>
 {
-  static dexKeys = ['smoothy'];
+  static dexKeys = [
+    'nerve',
+    'saddle',
+    'ironv2',
+    'snowball',
+    'axial',
+    'zyberswapstable',
+  ];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
   constructor(dexHelper: IDexHelper) {
-    super(dexHelper, 'smoothy');
-    this.exchangeRouterInterface = new Interface(SmoothyABI);
+    super(dexHelper, 'stablePool');
+    this.exchangeRouterInterface = new Interface(StablePoolABI);
   }
 
   getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: SmoothyData,
+    _srcToken: string,
+    _destToken: string,
+    _srcAmount: string,
+    _destAmount: string,
+    data: StablePoolData,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const { i, j } = data;
+    const { i, j, deadline } = data;
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           i: 'int128',
           j: 'int128',
+          deadline: 'uint256',
         },
       },
-      { i, j },
+      { i, j, deadline },
     );
     return {
       targetExchange: data.exchange,
@@ -76,15 +66,21 @@ export class Smoothy
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: SmoothyData,
+    data: StablePoolData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const { exchange, i, j } = data;
-    const swapFunctionParams: SmoothyParam = [i, j, srcAmount, destAmount];
+    const { exchange, i, j, deadline } = data;
+    const swapFunctionParams: StablePoolParam = [
+      i,
+      j,
+      srcAmount,
+      this.minConversionRate,
+      deadline,
+    ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      SmoothyFunctions.swap,
+      StablePoolFunctions.swap,
       swapFunctionParams,
     );
 
@@ -99,27 +95,32 @@ export class Smoothy
   }
 
   getDexParam(
-    srcToken: Address,
-    destToken: Address,
+    _srcToken: Address,
+    _destToken: Address,
     srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    recipient: Address,
-    data: SmoothyData,
+    _destAmount: NumberAsString,
+    _recipient: Address,
+    data: StablePoolData,
     side: SwapSide,
   ): DexExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    const { exchange, i, j } = data;
-    const swapFunctionParams: SmoothyParam = [i, j, srcAmount, destAmount];
+    const { exchange, i, j, deadline } = data;
+    const swapFunctionParams: StablePoolParam = [
+      i,
+      j,
+      srcAmount,
+      this.minConversionRate,
+      deadline,
+    ];
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
-      SmoothyFunctions.swap,
+      StablePoolFunctions.swap,
       swapFunctionParams,
     );
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
+      dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
     };

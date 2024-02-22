@@ -62,7 +62,16 @@ export class TenderlySimulation implements TransactionSimulator {
   forkId: string = '';
   maxGasLimit = 80000000;
 
-  constructor(private network: Number = 1) {}
+  constructor(
+    private network: Number = 1,
+    forkId?: string,
+    lastTransactionId?: string,
+  ) {
+    if (forkId && lastTransactionId) {
+      this.forkId = forkId;
+      this.lastTx = lastTransactionId;
+    }
+  }
 
   async setup() {
     // Fork the mainnet
@@ -70,6 +79,8 @@ export class TenderlySimulation implements TransactionSimulator {
       throw new Error(
         `TenderlySimulation_setup: TENDERLY_TOKEN not found in the env`,
       );
+
+    if (this.forkId && this.lastTx) return;
 
     if (TENDERLY_FORK_ID) {
       if (!TENDERLY_FORK_LAST_TX_ID) throw new Error('Always set last tx id');
@@ -156,6 +167,7 @@ export class TenderlySimulation implements TransactionSimulator {
           },
         },
       );
+
       const lastTx = data.simulation.id;
       if (data.transaction.status) {
         this.lastTx = lastTx;
@@ -173,7 +185,6 @@ export class TenderlySimulation implements TransactionSimulator {
         };
       }
     } catch (e) {
-      console.error(`TenderlySimulation_simulate:`, e);
       return {
         success: false,
       };

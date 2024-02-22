@@ -1,63 +1,27 @@
-import { Network, SwapSide } from '../constants';
+import { SwapSide } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   SimpleExchangeParam,
-} from '../types';
-import { IDexTxBuilder } from './idex';
-import { IDexHelper } from '../dex-helper';
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { IDexHelper } from '../../dex-helper';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
-} from './simple-exchange';
+} from '../simple-exchange';
 import { NumberAsString } from '@paraswap/core';
 import { AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import TraderJoeV21RouterABI from '../abi/TraderJoeV21Router.json';
+import TraderJoeV21RouterABI from '../../abi/TraderJoeV21Router.json';
+import {
+  TraderJoeV2Data,
+  TraderJoeV2RouterFunctions,
+  TraderJoeV2RouterParam,
+} from './types';
+import { TRADERJOE_V2_1_ROUTER_ADDRESS } from './config';
 
-const TRADERJOE_V2_1_ROUTER_ADDRESS: { [network: number]: Address } = {
-  [Network.AVALANCHE]: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
-  [Network.ARBITRUM]: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
-  [Network.BSC]: '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30',
-  [Network.MAINNET]: '0x9A93a421b74F1c5755b83dD2C211614dC419C44b',
-};
-
-type RouterPath = [
-  pairBinSteps: NumberAsString[],
-  versions: NumberAsString[],
-  tokenPath: Address[],
-];
-type TraderJoeV2RouterSellParams = [
-  _amountIn: NumberAsString,
-  _amountOutMin: NumberAsString,
-  _routerPath: RouterPath,
-  to: Address,
-  _deadline: string,
-];
-
-type TraderJoeV2RouterBuyParams = [
-  _amountOut: NumberAsString,
-  _amountInMax: NumberAsString,
-  _routerPath: RouterPath,
-  to: Address,
-  _deadline: string,
-];
-
-type TraderJoeV2RouterParam =
-  | TraderJoeV2RouterSellParams
-  | TraderJoeV2RouterBuyParams;
-
-export type TraderJoeV2Data = {
-  tokenIn: string; // redundant
-  tokenOut: string; // redundant
-  binStep: string;
-};
-
-enum TraderJoeV2RouterFunctions {
-  swapExactTokensForTokens = 'swapExactTokensForTokens',
-  swapTokensForExactTokens = 'swapTokensForExactTokens',
-}
 export class TraderJoeV21
   extends SimpleExchange
   implements IDexTxBuilder<TraderJoeV2Data, TraderJoeV2RouterParam>
@@ -173,6 +137,8 @@ export class TraderJoeV21
         ? TraderJoeV2RouterFunctions.swapExactTokensForTokens
         : TraderJoeV2RouterFunctions.swapTokensForExactTokens;
 
+    const placeholder = getLocalDeadlineAsFriendlyPlaceholder();
+
     const swapFunctionParams: TraderJoeV2RouterParam =
       side === SwapSide.SELL
         ? [
@@ -180,14 +146,14 @@ export class TraderJoeV21
             destAmount,
             [[data.binStep], ['2'], [srcToken, destToken]],
             recipient,
-            getLocalDeadlineAsFriendlyPlaceholder(),
+            placeholder,
           ]
         : [
             destAmount,
             srcAmount,
             [[data.binStep], ['2'], [srcToken, destToken]],
             recipient,
-            getLocalDeadlineAsFriendlyPlaceholder(),
+            placeholder,
           ];
 
     const swapData = this.exchangeRouterInterface.encodeFunctionData(
@@ -198,7 +164,6 @@ export class TraderJoeV21
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: swapData,
       targetExchange: this.routerAddress,
     };
