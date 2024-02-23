@@ -31,22 +31,12 @@ const testForNetwork = (
   const tokensToTest = [
     [
       {
-        symbol: 'USDC',
-        amount: (10 ** 8).toString(),
+        symbol: 'BNT',
+        amount: '1000000000000000000000',
       },
       {
         symbol: 'USDT',
-        amount: (10 ** 8).toString(),
-      },
-    ],
-    [
-      {
-        symbol: 'USDT',
-        amount: (10 ** 8).toString(),
-      },
-      {
-        symbol: 'DAI',
-        amount: (10 ** 8).toString(),
+        amount: '1000000000000000000000',
       },
     ],
   ];

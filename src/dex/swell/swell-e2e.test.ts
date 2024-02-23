@@ -18,9 +18,10 @@ describe('Swell', () => {
   const dexKey = 'Swell';
 
   [
-    ContractMethod.simpleSwap,
-    ContractMethod.multiSwap,
-    ContractMethod.megaSwap,
+    // ContractMethod.simpleSwap,
+    // ContractMethod.multiSwap,
+    // ContractMethod.megaSwap,
+    ContractMethod.swapExactAmountIn,
   ].forEach(contractMethod => {
     it(`${contractMethod} - ETH -> SWETH`, async () => {
       await testE2E(

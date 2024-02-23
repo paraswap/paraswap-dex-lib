@@ -40,7 +40,7 @@ function testForNetwork(
         // ContractMethod.simpleSwap,
         // ContractMethod.multiSwap,
         // ContractMethod.megaSwap,
-        DirectMethodsV6.directSell,
+        ContractMethod.swapExactAmountIn,
       ],
     ],
     [
@@ -48,7 +48,8 @@ function testForNetwork(
       [
         // ContractMethod.simpleBuy,
         // ContractMethod.buy,
-        DirectMethodsV6.directBuy,
+        // DirectMethodsV6.directBuy,
+        ContractMethod.swapExactAmountOut,
       ],
     ],
   ]);
@@ -653,7 +654,7 @@ describe('BalancerV2 E2E', () => {
       */
   });
 
-  describe('BalancerV2 Polygon', () => {
+  describe('BalancerV2 Polygon_V6', () => {
     const dexKey = 'BalancerV2';
     const network = Network.POLYGON;
     const tokens = Tokens[Network.POLYGON];
@@ -667,18 +668,20 @@ describe('BalancerV2 E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
-          ContractMethod.directBalancerV2GivenInSwap,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
+          // ContractMethod.directBalancerV2GivenInSwap,
+          ContractMethod.swapExactAmountIn,
         ],
       ],
       [
         SwapSide.BUY,
         [
-          ContractMethod.directBalancerV2GivenOutSwap,
-          ContractMethod.simpleBuy,
-          ContractMethod.buy,
+          // ContractMethod.directBalancerV2GivenOutSwap,
+          // ContractMethod.simpleBuy,
+          // ContractMethod.buy,
+          ContractMethod.swapExactAmountOut,
         ],
       ],
     ]);
@@ -1323,7 +1326,7 @@ describe('BalancerV2 E2E', () => {
     );
   });
 
-  describe('v6_BalancerV2_MAINNET', () => {
+  describe('BalancerV2_MAINNET', () => {
     const dexKey = 'BalancerV2';
     const network = Network.MAINNET;
 

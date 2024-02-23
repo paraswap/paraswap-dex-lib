@@ -163,8 +163,6 @@ export type DexExchangeParam = {
   exchangeData: string;
   targetExchange: string;
   dexFuncHasRecipient: boolean;
-  // Deprecated, for now use addTokenAddressToCallData
-  dexFuncHasDestToken?: boolean;
   specialDexFlag?: SpecialDex;
   transferSrcTokenBeforeSwap?: Address;
   spender?: Address;
@@ -319,6 +317,13 @@ export type TransferFeeParams = {
   destFee: number;
   srcDexFee: number;
   destDexFee: number;
+};
+
+export type TransferFeeParamsForRoute = {
+  srcTokenTransferFee: number;
+  destTokenTransferFee: number;
+  srcTokenDexTransferFee: number;
+  destTokenDexTransferFee: number;
 };
 
 export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';

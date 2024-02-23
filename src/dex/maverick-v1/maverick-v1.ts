@@ -400,7 +400,6 @@ export class MaverickV1
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData,
       targetExchange: this.config.routerAddress,
     };

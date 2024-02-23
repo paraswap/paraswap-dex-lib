@@ -300,6 +300,37 @@ describe('Weth E2E', () => {
         );
       });
     });
+    describe('SimpleSwap BUY', () => {
+      const contractMethod = ContractMethod.swapExactAmountOut;
+      const side = SwapSide.BUY;
+
+      it('native -> wrapped', async () => {
+        await testE2E(
+          nativeToken,
+          wrappedToken,
+          nativeHolder,
+          nativeAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+      it('wrapped -> native', async () => {
+        await testE2E(
+          wrappedToken,
+          nativeToken,
+          wrappedHolder,
+          wrappedAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
+    });
     // describe('MultiSwap SELL', () => {
     //   const contractMethod = ContractMethod.multiSwap;
     //   const side = SwapSide.SELL;

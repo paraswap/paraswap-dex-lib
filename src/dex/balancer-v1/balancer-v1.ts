@@ -413,7 +413,6 @@ export class BalancerV1
           ? SpecialDex.SWAP_ON_BALANCER_V1
           : SpecialDex.DEFAULT,
       dexFuncHasRecipient: false,
-      dexFuncHasDestToken: true,
       exchangeData: specialDexExchangeData,
       targetExchange: this.config.exchangeProxy,
     };

@@ -343,6 +343,7 @@ describe('PancakeswapV3 E2E', () => {
         ],
       ],
       // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [

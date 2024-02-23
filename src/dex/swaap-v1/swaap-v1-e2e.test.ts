@@ -36,6 +36,7 @@ describe('SwaapV1 E2E', () => {
         ],
       ],
       // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>

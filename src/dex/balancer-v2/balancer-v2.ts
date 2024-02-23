@@ -1469,7 +1469,6 @@ export class BalancerV2
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      dexFuncHasDestToken: true,
       exchangeData: specialDexExchangeData,
       specialDexFlag:
         side === SwapSide.SELL
