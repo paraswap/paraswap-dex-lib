@@ -1055,15 +1055,14 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
-    recipient?: string,
+    recipientV6?: string,
   ): BalancerParam {
-    // for now recipient passed only for v6
-    let isV6Swap = !!recipient;
-
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
     let limits: string[] = [];
+
+    const isV6Swap = !!recipientV6;
 
     for (const swapData of data.swaps) {
       const pool = this.poolIdMap[swapData.poolId];
@@ -1134,10 +1133,8 @@ export class BalancerV2
     }
 
     const funds = {
-      sender:
-        recipient || isV6Swap ? this.augustusV6Address! : this.augustusAddress,
-      recipient:
-        recipient || isV6Swap ? this.augustusV6Address! : this.augustusAddress,
+      sender: recipientV6 ? NULL_ADDRESS : this.augustusAddress,
+      recipient: recipientV6 ?? this.augustusAddress,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
@@ -1466,7 +1463,7 @@ export class BalancerV2
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false, // to force manual transfer
+      dexFuncHasRecipient: true,
       exchangeData: specialDexExchangeData,
       specialDexFlag:
         side === SwapSide.SELL

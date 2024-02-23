@@ -103,43 +103,48 @@ export class GenericSwapTransactionBuilder {
   ): Promise<string> {
     const side = priceRoute.side;
     const rawDexParams = await Promise.all(
-      priceRoute.bestRoute[0].swaps.flatMap((swap, swapIndex) =>
-        swap.swapExchanges.map(async se => {
-          const dex = this.dexAdapterService.getTxBuilderDexByKey(se.exchange);
-          const {
-            srcToken,
-            destToken,
-            srcAmount,
-            destAmount,
-            recipient,
-            wethDeposit,
-            wethWithdraw,
-          } = this.getDexCallsParams(
-            priceRoute,
-            swap,
-            swapIndex,
-            se,
-            minMaxAmount,
-            dex,
-            bytecodeBuilder.getAddress(),
-          );
+      priceRoute.bestRoute.flatMap((route, routeIndex) =>
+        route.swaps.flatMap((swap, swapIndex) =>
+          swap.swapExchanges.map(async se => {
+            const dex = this.dexAdapterService.getTxBuilderDexByKey(
+              se.exchange,
+            );
+            const {
+              srcToken,
+              destToken,
+              srcAmount,
+              destAmount,
+              recipient,
+              wethDeposit,
+              wethWithdraw,
+            } = this.getDexCallsParams(
+              priceRoute,
+              routeIndex,
+              swap,
+              swapIndex,
+              se,
+              minMaxAmount,
+              dex,
+              bytecodeBuilder.getAddress(),
+            );
 
-          const dexParams = await dex.getDexParam!(
-            srcToken,
-            destToken,
-            srcAmount,
-            destAmount,
-            recipient,
-            se.data,
-            side,
-          );
+            const dexParams = await dex.getDexParam!(
+              srcToken,
+              destToken,
+              srcAmount,
+              destAmount,
+              recipient,
+              se.data,
+              side,
+            );
 
-          return {
-            dexParams,
-            wethDeposit,
-            wethWithdraw,
-          };
-        }),
+            return {
+              dexParams,
+              wethDeposit,
+              wethWithdraw,
+            };
+          }),
+        ),
       ),
     );
 
@@ -500,8 +505,9 @@ export class GenericSwapTransactionBuilder {
   }
 
   public getExecutionContractAddress(priceRoute: OptimalRate): Address {
-    // TODO-v6
-    const isDirectMethod = false;
+    const isDirectMethod = this.dexAdapterService.isDirectFunctionNameV6(
+      priceRoute.contractMethod,
+    );
     if (isDirectMethod) return this.augustusV6Address;
 
     const executorName =
@@ -514,6 +520,7 @@ export class GenericSwapTransactionBuilder {
 
   public getDexCallsParams(
     priceRoute: OptimalRate,
+    routeIndex: number,
     swap: OptimalSwap,
     swapIndex: number,
     se: OptimalSwapExchange<any>,
@@ -533,8 +540,12 @@ export class GenericSwapTransactionBuilder {
       this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress;
 
     const side = priceRoute.side;
-    const isMultiSwap = priceRoute.bestRoute[0].swaps.length > 1;
-    const isLastSwap = swapIndex === priceRoute.bestRoute[0].swaps.length - 1;
+
+    const isMegaSwap = priceRoute.bestRoute.length > 1;
+    const isMultiSwap = !isMegaSwap && priceRoute.bestRoute[0].swaps.length > 1;
+
+    const isLastSwap =
+      swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
 
     let _src = swap.srcToken;
     let wethDeposit = 0n;
@@ -567,7 +578,7 @@ export class GenericSwapTransactionBuilder {
 
     const forceUnwrap =
       isETHAddress(swap.destToken) &&
-      isMultiSwap &&
+      (isMultiSwap || isMegaSwap) &&
       !dex.needWrapNative &&
       !isLastSwap;
 
@@ -576,13 +587,13 @@ export class GenericSwapTransactionBuilder {
       wethWithdraw = BigInt(se.destAmount);
     }
 
-    const destTokenIsWeth = _dest === wethAddress;
+    const needToWithdrawAfterSwap = _dest === wethAddress && wethWithdraw;
 
     return {
       srcToken: _src,
       destToken: _dest,
       recipient:
-        destTokenIsWeth || !isLastSwap || se.exchange === 'BalancerV2'
+        needToWithdrawAfterSwap || !isLastSwap
           ? executionContractAddress
           : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
       srcAmount: _srcAmount,

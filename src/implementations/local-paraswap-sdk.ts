@@ -233,7 +233,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     // Call preprocessTransaction for each exchange before we build transaction
     try {
       priceRoute.bestRoute = await Promise.all(
-        priceRoute.bestRoute.map(async route => {
+        priceRoute.bestRoute.map(async (route, routeIndex) => {
           route.swaps = await Promise.all(
             route.swaps.map(async (swap, swapIndex) => {
               swap.swapExchanges = await Promise.all(
@@ -257,6 +257,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                     const { recipient } =
                       this.transactionBuilder.getDexCallsParams(
                         priceRoute,
+                        routeIndex,
                         swap,
                         swapIndex,
                         se,
