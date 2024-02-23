@@ -1060,13 +1060,14 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
-    recipient?: string,
-    isV6Swap?: boolean,
+    recipientV6?: string,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
     let limits: string[] = [];
+
+    const isV6Swap = !!recipientV6;
 
     for (const swapData of data.swaps) {
       const pool = this.poolIdMap[swapData.poolId];
@@ -1137,12 +1138,8 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: isV6Swap
-        ? this.augustusV6Address!
-        : recipient || this.augustusAddress,
-      recipient: isV6Swap
-        ? this.augustusV6Address!
-        : recipient || this.augustusAddress,
+      sender: recipientV6 ? NULL_ADDRESS : this.augustusAddress,
+      recipient: recipientV6 ?? this.augustusAddress,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
@@ -1346,7 +1343,6 @@ export class BalancerV2
       data,
       side,
       beneficiary,
-      true, // v6 call
     );
 
     const isApproved = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
@@ -1472,7 +1468,7 @@ export class BalancerV2
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false, // to force manual transfer
+      dexFuncHasRecipient: true,
       exchangeData: specialDexExchangeData,
       specialDexFlag:
         side === SwapSide.SELL

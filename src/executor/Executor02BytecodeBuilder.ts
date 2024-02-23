@@ -239,7 +239,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
               : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
         } else if (isEthSrc && !needWrap) {
           dexFlag =
-            Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
+            !dexFuncHasRecipient ||
+            (isHorizontalSequence && !isLastSwap && !applyVerticalBranching)
+              ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
+              : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 9
         } else {
           dexFlag =
             (isHorizontalSequence && !isLastSwap && !applyVerticalBranching) ||
