@@ -104,32 +104,32 @@ describe(`GenericRFQ ${dexKey} E2E`, () => {
           srcToken = tokens[testCase.srcToken];
           destToken = tokens[testCase.destToken];
         } else {
-          // if (!smartTokens.hasOwnProperty(testCase.srcToken)) {
-          //   throw new Error(
-          //     `Please add "addBalance" and "addAllowance" functions for ${testCase.srcToken} on ${Network[network]} (in constants-e2e.ts).`,
-          //   );
-          // }
-          // if (!smartTokens.hasOwnProperty(testCase.destToken)) {
-          //   throw new Error(
-          //     `Please add "addBalance" and "addAllowance" functions for ${testCase.destToken} on ${Network[network]} (in constants-e2e.ts).`,
-          //   );
-          // }
+          if (!smartTokens.hasOwnProperty(testCase.srcToken)) {
+            throw new Error(
+              `Please add "addBalance" and "addAllowance" functions for ${testCase.srcToken} on ${Network[network]} (in constants-e2e.ts).`,
+            );
+          }
+          if (!smartTokens.hasOwnProperty(testCase.destToken)) {
+            throw new Error(
+              `Please add "addBalance" and "addAllowance" functions for ${testCase.destToken} on ${Network[network]} (in constants-e2e.ts).`,
+            );
+          }
           srcToken = smartTokens[testCase.srcToken];
           destToken = smartTokens[testCase.destToken];
 
-          // srcToken.addBalance(testAccount.address, MAX_UINT);
-          // srcToken.addAllowance(
-          //   testAccount.address,
-          //   config.augustusRFQAddress,
-          //   MAX_UINT,
-          // );
+          srcToken.addBalance(testAccount.address, MAX_UINT);
+          srcToken.addAllowance(
+            testAccount.address,
+            config.augustusRFQAddress,
+            MAX_UINT,
+          );
 
-          // destToken.addBalance(testAccount.address, MAX_UINT);
-          // destToken.addAllowance(
-          //   testAccount.address,
-          //   config.augustusRFQAddress,
-          //   MAX_UINT,
-          // );
+          destToken.addBalance(testAccount.address, MAX_UINT);
+          destToken.addAllowance(
+            testAccount.address,
+            config.augustusRFQAddress,
+            MAX_UINT,
+          );
         }
         const contractMethod =
           testCase.swapSide === SwapSide.BUY
