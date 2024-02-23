@@ -322,7 +322,6 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       side,
       options.executionContractAddress,
       options.txOrigin,
-      options.executionContractAddress,
       options.partner,
     );
 
