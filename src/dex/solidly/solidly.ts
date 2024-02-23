@@ -676,11 +676,12 @@ export class Solidly extends UniswapV2 {
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: recipient,
-      // TODO: Test with/without fee tokens in route
       specialDexFlag: data.isFeeTokenInRoute
         ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
         : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
-      transferSrcTokenBeforeSwap: data.pools[0].address,
+      transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
+        ? undefined
+        : data.pools[0].address,
     };
   }
 }

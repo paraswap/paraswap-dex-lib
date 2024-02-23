@@ -51,7 +51,12 @@ import { TransferFeeParams } from '../../types';
 
   (This comment should be removed from the final implementation)
 */
-
+export type TransferFeeParamsForRoute = {
+  srcTokenTransferFee: number;
+  destTokenTransferFee: number;
+  srcTokenDexTransferFee: number;
+  destTokenDexTransferFee: number;
+};
 function testForNetwork(
   network: Network,
   dexKey: string,
@@ -60,12 +65,18 @@ function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   nativeTokenAmount: string,
-  transferFees: TransferFeeParams = {
-    srcFee: 0,
-    destFee: 0,
-    srcDexFee: 0,
-    destDexFee: 0,
+  transferFees: TransferFeeParamsForRoute = {
+    srcTokenTransferFee: 0,
+    destTokenTransferFee: 0,
+    srcTokenDexTransferFee: 0,
+    destTokenDexTransferFee: 0,
   },
+  // transferFees: TransferFeeParams = {
+  //   srcFee: 0,
+  //   destFee: 0,
+  //   srcDexFee: 0,
+  //   destDexFee: 0,
+  // },
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -97,7 +108,8 @@ function testForNetwork(
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
             // if src token is tax token and BUY side, then should fail (skip)
-            if (!!transferFees?.srcDexFee && side === SwapSide.BUY) return;
+            if (!!transferFees?.srcTokenTransferFee && side === SwapSide.BUY)
+              return;
 
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
