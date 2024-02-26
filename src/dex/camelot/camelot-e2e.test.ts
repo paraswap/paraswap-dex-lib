@@ -35,11 +35,13 @@ describe('Camelot E2E', () => {
       name: string;
       sellAmount: string;
     };
+    // To be tested against E2E endpoint
     type TestingOptions = {
       srcTokenTransferFee: number;
       destTokenTransferFee: number;
       srcTokenDexTransferFee: number;
       destTokenDexTransferFee: number;
+      slippage: number;
     };
     type TestingParams =
       | [TestingPair, TestingPair, TestingOptions]
@@ -68,23 +70,36 @@ describe('Camelot E2E', () => {
       ],
       // Tax token without config
       [
-        { name: 'RDPX', sellAmount: '100000000000000000000' },
-        { name: 'ETH', sellAmount: '100000000000000000000' },
+        { name: 'RDPX', sellAmount: '100000000' },
+        { name: 'ETH', sellAmount: '1000000000' },
         {
           srcTokenTransferFee: 0,
           destTokenTransferFee: 0,
           srcTokenDexTransferFee: 1000,
           destTokenDexTransferFee: 0,
+          slippage: 1000,
         },
       ],
       [
-        { name: 'RDPX', sellAmount: '100000000000000000000' },
-        { name: 'WETH', sellAmount: '100000000000000000000' },
+        { name: 'RDPX', sellAmount: '100000000' },
+        { name: 'WETH', sellAmount: '100000000' },
         {
           srcTokenTransferFee: 0,
           destTokenTransferFee: 0,
           srcTokenDexTransferFee: 1000,
           destTokenDexTransferFee: 0,
+          slippage: 1000,
+        },
+      ],
+      [
+        { name: 'RDPX', sellAmount: '100000000' },
+        { name: 'DAI', sellAmount: '100000000' },
+        {
+          srcTokenTransferFee: 0,
+          destTokenTransferFee: 0,
+          srcTokenDexTransferFee: 1000,
+          destTokenDexTransferFee: 0,
+          slippage: 1000,
         },
       ],
       // Tax token with config
@@ -117,6 +132,7 @@ describe('Camelot E2E', () => {
                   undefined,
                   undefined,
                   (pair[2] ? pair[2] : undefined) as any,
+                  (pair[2] ? pair[2].slippage : undefined) as any,
                 );
               });
               it(`${pair[1].name} -> ${pair[0].name}`, async () => {
@@ -133,6 +149,7 @@ describe('Camelot E2E', () => {
                   undefined,
                   undefined,
                   (pair[2] ? pair[2] : undefined) as any,
+                  (pair[2] ? pair[2].slippage : undefined) as any,
                 );
               });
             });
