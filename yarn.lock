@@ -1559,9 +1559,9 @@
   resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.1.0.tgz#5ec7415be69dc657a9d82b0fde4e20f632cca1b6"
   integrity sha512-ecnX8ezlhYWFwolZxYEz+K+RfLr8xaxQqiJKlxJ8Yf00tXTGxDGn6/Acy00t4+9Kv0apewd7++J33eJt9yNfwg==
 
-"@paraswap/core@https://github.com/paraswap/paraswap-core#a02503a8bd5ff24bc8abd583207e333a978d793b":
+"@paraswap/core@https://github.com/paraswap/paraswap-core#123d1a651e38ed738cc59d8a73302cda117d4cb6":
   version "2.0.2-v6.0"
-  resolved "https://github.com/paraswap/paraswap-core#a02503a8bd5ff24bc8abd583207e333a978d793b"
+  resolved "https://github.com/paraswap/paraswap-core#123d1a651e38ed738cc59d8a73302cda117d4cb6"
 
 "@paraswap/sdk@6.2.1":
   version "6.2.1"

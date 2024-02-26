@@ -254,7 +254,7 @@ export type StateOverrideObject = {
 
 export type UnoptimizedRate = Omit<
   OptimalRate,
-  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee' | 'version'
+  'contractMethod' | 'srcUSD' | 'destUSD' | 'hmac' | 'partnerFee'
 >;
 
 export type MultiCallInput = {

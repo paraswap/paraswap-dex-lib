@@ -54,7 +54,7 @@
     "@ethersproject/abi": "^5.7.0",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.3.4",
-    "@paraswap/core": "https://github.com/paraswap/paraswap-core#a02503a8bd5ff24bc8abd583207e333a978d793b",
+    "@paraswap/core": "https://github.com/paraswap/paraswap-core#123d1a651e38ed738cc59d8a73302cda117d4cb6",
     "async": "^3.2.4",
     "axios": "0.26.0",
     "bignumber.js": "9.1.0",

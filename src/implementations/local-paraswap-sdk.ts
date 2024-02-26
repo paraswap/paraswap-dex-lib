@@ -197,13 +197,14 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       others: [],
       side,
       contractAddress: '',
+      tokenTransferProxy: '',
+      version: ParaSwapVersion.V6,
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);
 
     return {
       ...optimizedRate,
-      version: ParaSwapVersion.V6,
       hmac: '0',
       srcUSD: '0',
       destUSD: '0',
