@@ -35,6 +35,7 @@ describe('Camelot E2E', () => {
       name: string;
       sellAmount: string;
     };
+    // To be tested against E2E endpoint
     type TestingOptions = {
       srcTokenTransferFee: number;
       destTokenTransferFee: number;
