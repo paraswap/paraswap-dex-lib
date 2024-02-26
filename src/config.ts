@@ -47,15 +47,15 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     hasEIP1559: true,
     augustusAddress: '0xE4e284Eb7a312d95A7949fCA8C634164358f4492',
-    augustusV6Address: '0xcE7Ff6f3eE02B42d5AB79cb6E8BB18064b497eB7',
+    augustusV6Address: '0xB67A9dA929C8b60Be9c08076B866049Cda85D106',
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
     executorsAddresses: {
-      Executor01: '0x98FB9aa08ce3e1fffD7Fcd66b45A53Fbd3233ef2',
-      Executor02: '0x2AC043A9a0467C3772a13A24E976dB896A71D47E',
-      Executor03: '0x8ca52eFc2841CC8600e28732271ba31a33C57e42',
+      Executor01: '0x593C595cD6993D2E5ecfb6aDc208069Db78c74e5',
+      Executor02: '0x28Ec147DcCC42c52372cA8E4B7E722051241a1A6',
+      Executor03: '0xd0b5316043406Ef05F15d1804c78d9cC3c7982e4',
     },
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
@@ -304,7 +304,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     wrappedNativeTokenAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     hasEIP1559: false,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusV6Address: '0x6d9D0F49A229d5431ffAB4631631b81712ae4E88',
+    augustusV6Address: '0x5B121b0C676Acd169902B7D6fb255db44c2a6b6a',
     augustusRFQAddress: '0x0927FD43a7a87E3E8b81Df2c44B03C4756849F6D',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
@@ -315,9 +315,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     executorsAddresses: {
-      Executor01: '0x1B29ada231989c0BdEF578dcC2116D9F183AAF06',
-      Executor02: '0x3B0A0d61C3713Bc28D42734138C7C137F7Bf9747',
-      Executor03: '0x1a669517aE53dba7BF64D7Cc2D57Ba4f1fA531Ac',
+      Executor01: '0xc421DA75B1b9E492a6A386F65baedfaB53B7d064',
+      Executor02: '0xd144Ff73B94D1f5ae9aD2d9c69afe2A12C6c81e7',
+      Executor03: '0x46b190a8b755193472821abfA88f9599c05d8D63',
     },
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',

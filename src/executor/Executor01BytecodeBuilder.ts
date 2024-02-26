@@ -104,6 +104,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     } = exchangeParam;
 
     const isFirstSwap = swapIndex === 0;
+    const isLastSwap =
+      swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
@@ -124,6 +126,9 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const forcePreventInsertFromAmount =
       !doesExchangeDataContainsSrcAmount ||
       (isSpecialDex && !specialDexSupportsInsertFromAmount);
+
+    const forcePreventBalanceOfCheck =
+      isLastSwap && !needUnwrap && dexFuncHasRecipient;
 
     let dexFlag: Flag;
 
@@ -161,11 +166,19 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
           : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       } else if (dexFuncHasRecipient && !needUnwrap) {
         dexFlag = forcePreventInsertFromAmount
-          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
+          ? forcePreventBalanceOfCheck
+            ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
+            : Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+          : forcePreventBalanceOfCheck
+          ? Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 3
+          : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       } else {
         dexFlag = forcePreventInsertFromAmount
-          ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+          ? forcePreventBalanceOfCheck
+            ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
+            : Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+          : forcePreventBalanceOfCheck
+          ? Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 3
           : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       }
     }

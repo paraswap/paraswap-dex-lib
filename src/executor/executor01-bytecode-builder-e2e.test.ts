@@ -6,6 +6,7 @@ import { Holders, NativeTokenSymbols, Tokens } from '../../tests/constants-e2e';
 import { ContractMethod, Network, SwapSide } from '../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../config';
+import { OptimalRate } from '../types';
 
 function testForNetwork(
   network: Network,
@@ -97,7 +98,7 @@ function testForNetwork(
 
 jest.setTimeout(200000);
 describe('Executor01ByteCodeBuilder e2e tests', () => {
-  describe('MAINNET', () => {
+  describe('Mainnet', () => {
     const network = Network.MAINNET;
 
     describe('SimpleSwap', () => {
@@ -1118,4 +1119,172 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
       });
     });
   });
+
+  // describe('Arbitrum', () => {
+  //   const network = Network.ARBITRUM;
+  //   describe('MultiSwap', () => {
+  // const priceRoute = {
+  //   blockNumber: 184603981,
+  //   network: 42161,
+  //   srcToken: '0x8b0e6f19ee57089f7649a455d89d7bc6314d04e8',
+  //   srcDecimals: 18,
+  //   srcAmount: '10000000000000000000',
+  //   destToken: '0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8',
+  //   destDecimals: 18,
+  //   destAmount: '58376015865102035852',
+  //   bestRoute: [
+  //     {
+  //       percent: 100,
+  //       swaps: [
+  //         {
+  //           srcToken: '0x8b0e6f19ee57089f7649a455d89d7bc6314d04e8',
+  //           srcDecimals: 18,
+  //           destToken: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+  //           destDecimals: 6,
+  //           swapExchanges: [
+  //             {
+  //               exchange: 'Camelot',
+  //               srcAmount: '10000000000000000000',
+  //               destAmount: '160519565',
+  //               percent: 100,
+  //               poolAddresses: ['0x410c879c62f22794bD5eE98e2EE01490F6d47A6b'],
+  //               data: {
+  //                 router: '0x1Be46c7A40906c19d91d07B3AE69Ef5893268F25',
+  //                 path: [
+  //                   '0x8b0e6f19ee57089f7649a455d89d7bc6314d04e8',
+  //                   '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+  //                 ],
+  //                 factory: '0x6EcCab422D763aC031210895C81787E87B43A652',
+  //                 initCode:
+  //                   '0xa856464ae65f7619087bc369daaf7e387dae1e5af69cfa7935850ebf754b04c1',
+  //                 feeFactor: 100000,
+  //                 isFeeTokenInRoute: false,
+  //                 pools: [
+  //                   {
+  //                     address: '0x410c879c62f22794bD5eE98e2EE01490F6d47A6b',
+  //                     fee: 500,
+  //                     direction: true,
+  //                   },
+  //                 ],
+  //                 gasUSD: '0.323201',
+  //               },
+  //             },
+  //           ],
+  //         },
+  //         {
+  //           srcToken: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+  //           srcDecimals: 6,
+  //           destToken: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+  //           destDecimals: 18,
+  //           swapExchanges: [
+  //             {
+  //               exchange: 'Camelot',
+  //               srcAmount: '160519565',
+  //               destAmount: '51771474390335981',
+  //               percent: 100,
+  //               poolAddresses: ['0x84652bb2539513BAf36e225c930Fdd8eaa63CE27'],
+  //               data: {
+  //                 router: '0x1Be46c7A40906c19d91d07B3AE69Ef5893268F25',
+  //                 path: [
+  //                   '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+  //                   '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+  //                 ],
+  //                 factory: '0x6EcCab422D763aC031210895C81787E87B43A652',
+  //                 initCode:
+  //                   '0xa856464ae65f7619087bc369daaf7e387dae1e5af69cfa7935850ebf754b04c1',
+  //                 feeFactor: 100000,
+  //                 isFeeTokenInRoute: false,
+  //                 pools: [
+  //                   {
+  //                     address: '0x84652bb2539513BAf36e225c930Fdd8eaa63CE27',
+  //                     fee: 300,
+  //                     direction: false,
+  //                   },
+  //                 ],
+  //                 gasUSD: '0.323201',
+  //               },
+  //             },
+  //           ],
+  //         },
+  //         {
+  //           srcToken: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+  //           srcDecimals: 18,
+  //           destToken: '0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8',
+  //           destDecimals: 18,
+  //           swapExchanges: [
+  //             {
+  //               exchange: 'CamelotV3',
+  //               srcAmount: '51771474390335981',
+  //               destAmount: '58376015865102035852',
+  //               percent: 100,
+  //               poolAddresses: ['0xe461f84c3fe6bcdd1162eb0ef4284f3bb6e4cad3'],
+  //               data: {
+  //                 feeOnTransfer: false,
+  //                 path: [
+  //                   {
+  //                     tokenIn: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+  //                     tokenOut: '0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8',
+  //                   },
+  //                 ],
+  //                 gasUSD: '0.290559',
+  //               },
+  //             },
+  //           ],
+  //         },
+  //       ],
+  //     },
+  //   ],
+  //   gasCostUSD: '1.757908',
+  //   gasCost: '598300',
+  //   others: [],
+  //   side: 'SELL',
+  //   tokenTransferProxy: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
+  //   contractAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+  //   contractMethod: 'multiSwap',
+  //   partnerFee: 0,
+  //   srcUSD: '160.9000000000',
+  //   destUSD: '159.3665233117',
+  //   partner: 'Camelot',
+  //   maxImpactReached: false,
+  //   hmac: 'c53e8a540a60a7d05aa50865d306f8d5458243a1',
+  // } as unknown as OptimalRate;
+  //     describe('DMT-> USDC.e -> WETH -> PENDLE via Camelot and CamelotV3', () => {
+  //       const dexKeys = ['Camelot', 'CamelotV3'];
+  //       const provider = new StaticJsonRpcProvider(
+  //         generateConfig(network).privateHttpProvider,
+  //         network,
+  //       );
+  //       const slippage = undefined;
+  //
+  //       const tokenASymbol: string = 'DMT';
+  //       const tokenBSymbol: string = 'PENDLE';
+  //
+  //       const tokenAAmount: string = '10000000000000000000';
+  //
+  //       const tokens = Tokens[network];
+  //       const holders = Holders[network];
+  //       const contractMethod = ContractMethod.multiSwap;
+  //       const side = SwapSide.SELL;
+  //
+  //       it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+  //         await testE2E(
+  //           tokens[tokenASymbol],
+  //           tokens[tokenBSymbol],
+  //           holders[tokenASymbol],
+  //           tokenAAmount,
+  //           side,
+  //           dexKeys,
+  //           contractMethod,
+  //           network,
+  //           provider,
+  //           undefined,
+  //           undefined,
+  //           undefined,
+  //           slippage,
+  //           2000,
+  //         );
+  //       });
+  //     });
+  //   });
+  // });
 });

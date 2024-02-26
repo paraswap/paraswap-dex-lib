@@ -949,6 +949,14 @@ export const Tokens: {
       address: '0xf97f4df75117a78c1a5a0dbb814af92458539fb4',
       decimals: 18,
     },
+    DMT: {
+      address: '0x8b0e6f19ee57089f7649a455d89d7bc6314d04e8',
+      decimals: 18,
+    },
+    PENDLE: {
+      address: '0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1289,6 +1297,8 @@ export const Holders: {
     SDEX: '0xb0470cf15b22a6a32c49a7c20e3821b944a76058',
     wstETH: '0x916792f7734089470de27297903bed8a4630b26d',
     LINK: '0x7f1fa204bb700853d36994da19f830b6ad18455c',
+    DMT: '0x40414f138eb2ef938e6c3629897ef99d4464d4e8',
+    PENDLE: '0x5bdf85216ec1e38d6458c870992a69e38e03f7ef',
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
