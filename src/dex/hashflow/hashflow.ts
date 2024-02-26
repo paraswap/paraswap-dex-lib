@@ -576,6 +576,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     let rfq: RfqResponse;
     try {
       rfq = await this.api.requestQuote({
+        // sender is not passed, so for now ignore executionContractAddress
         baseChain: chain,
         baseToken: normalizedSrcToken.address,
         quoteToken: normalizedDestToken.address,
@@ -584,8 +585,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
               baseTokenAmount: optimalSwapExchange.srcAmount,
             }
           : { quoteTokenAmount: optimalSwapExchange.destAmount }),
-        // TODO-v6: use options.executionContractAddress here
-        wallet: this.augustusAddress.toLowerCase(),
+        // receiver address
+        wallet: options.recipient.toLowerCase(),
         effectiveTrader: options.txOrigin.toLowerCase(),
         marketMakers: [mm],
       });

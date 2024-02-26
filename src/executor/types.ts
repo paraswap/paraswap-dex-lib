@@ -11,6 +11,7 @@ export enum Flag {
 
 export enum SpecialDex {
   DEFAULT = 0,
+  SWAP_ON_SWAAP_V2_SINGLE = 1, // swapOnSwaapV2Single
   // SWAP_ON_SWAAP_V2 = 3, // swapOnSwaapV2
   SWAP_ON_BALANCER_V1 = 2, // swapOnBalancerV1
   SWAP_ON_MAKER_PSM = 3, // swapOnMakerPSM

@@ -75,14 +75,10 @@ import {
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
-import AugustusV6ABI from '../../abi/augustus-v6/ABI.json';
+import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { SpecialDex } from '../../executor/types';
-
-const {
-  utils: { hexlify, hexZeroPad, solidityPack, hexConcat },
-} = ethers;
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -615,7 +611,6 @@ export class BalancerV2
   readonly isFeeOnTransferSupported = false;
 
   readonly directSwapIface = new Interface(DirectSwapABI);
-  readonly augustusV6Interface = new Interface(AugustusV6ABI);
   readonly balancerVaultInterface = new Interface(BalancerVaultABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =

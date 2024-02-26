@@ -305,10 +305,12 @@ export type ExchangeTxInfo = {
 export type PreprocessTransactionOptions = {
   slippageFactor: BigNumber;
   txOrigin: Address;
+  executionContractAddress: Address;
   hmac?: string;
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
   partner?: string;
+  recipient: string;
   version: ParaSwapVersion;
 };
 

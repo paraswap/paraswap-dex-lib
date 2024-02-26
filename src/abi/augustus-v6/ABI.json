@@ -952,5 +952,124 @@
   { "type": "error", "name": "InvalidOrdersLength", "inputs": [] },
   { "type": "error", "name": "InvalidToAmount", "inputs": [] },
   { "type": "error", "name": "Permit2Failed", "inputs": [] },
-  { "type": "error", "name": "UnauthorizedUser", "inputs": [] }
+  { "type": "error", "name": "UnauthorizedUser", "inputs": [] },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "wrapApproveDirection",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadata",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address payable",
+            "name": "beneficiary",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct AugustusRFQData",
+        "name": "data",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "nonceAndMeta",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint128",
+                "name": "expiry",
+                "type": "uint128"
+              },
+              {
+                "internalType": "address",
+                "name": "makerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "takerAsset",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "maker",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "taker",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "makerAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "takerAmount",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Order",
+            "name": "order",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerTokenFillAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitTakerAsset",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "permitMakerAsset",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct OrderInfo[]",
+        "name": "orders",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapExactAmountInOutOnAugustusRFQTryBatchFill",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
 ]

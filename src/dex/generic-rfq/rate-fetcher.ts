@@ -25,7 +25,7 @@ import {
 import { checkOrder } from './utils';
 import {
   blacklistResponseValidator,
-  firmRateResponseValidator,
+  firmRateWithTakerValidator,
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
@@ -420,14 +420,13 @@ export class RateFetcher {
       );
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
-        firmRateResponseValidator,
+        firmRateWithTakerValidator(takerAddress),
       );
 
       await checkOrder(
         this.dexHelper.config.data.network,
         this.dexHelper.config.data.augustusRFQAddress,
         this.dexHelper.multiWrapper,
-        takerAddress,
         firmRateResp.order,
         this.verifierContract,
       );

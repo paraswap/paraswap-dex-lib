@@ -268,7 +268,8 @@ export class DexAdapterService {
       .filter(x => !!x)
       .map(v => v.toLowerCase());
 
-    this.directFunctionsNamesV6 = [...LegacyDexes, ...Dexes]
+    // include GenericRFQ, because it has direct method for v6
+    this.directFunctionsNamesV6 = [...LegacyDexes, ...Dexes, GenericRFQ]
       .flatMap(dexAdapter => {
         const _dexAdapter = dexAdapter as IGetDirectFunctionName;
         return _dexAdapter.getDirectFunctionNameV6

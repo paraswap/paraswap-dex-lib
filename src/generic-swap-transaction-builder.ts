@@ -1,4 +1,11 @@
-import { Address, DexExchangeParam, OptimalRate, TxObject } from './types';
+import {
+  Address,
+  DexExchangeParam,
+  OptimalRate,
+  OptimalSwap,
+  OptimalSwapExchange,
+  TxObject,
+} from './types';
 import { BigNumber } from 'ethers';
 import {
   ETHER_ADDRESS,
@@ -25,6 +32,7 @@ import { Weth } from './dex/weth/weth';
 import ERC20ABI from './abi/erc20.json';
 import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
+import { IDexTxBuilder } from './dex/idex';
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
 } = ethers;
@@ -40,6 +48,7 @@ interface FeeParams {
 
 export class GenericSwapTransactionBuilder {
   augustusV6Interface: Interface;
+  augustusV6Address: Address;
 
   erc20Interface: Interface;
 
@@ -61,7 +70,8 @@ export class GenericSwapTransactionBuilder {
     this.abiCoder = new AbiCoder();
     this.erc20Interface = new Interface(ERC20ABI);
     this.augustusV6Interface = new Interface(AugustusV6ABI);
-
+    this.augustusV6Address =
+      this.dexAdapterService.dexHelper.config.data.augustusV6Address!;
     this.executorDetector = new ExecutorDetector(
       this.dexAdapterService.dexHelper,
     );
@@ -92,12 +102,6 @@ export class GenericSwapTransactionBuilder {
     userAddress: string,
   ): Promise<string> {
     const side = priceRoute.side;
-    const wethAddress =
-      this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress;
-
-    const isMegaSwap = priceRoute.bestRoute.length > 1;
-    const isMultiSwap = !isMegaSwap && priceRoute.bestRoute[0].swaps.length > 1;
-
     const rawDexParams = await Promise.all(
       priceRoute.bestRoute.flatMap((route, routeIndex) =>
         route.swaps.flatMap((swap, swapIndex) =>
@@ -105,63 +109,31 @@ export class GenericSwapTransactionBuilder {
             const dex = this.dexAdapterService.getTxBuilderDexByKey(
               se.exchange,
             );
-            let _src = swap.srcToken;
-            let wethDeposit = 0n;
-            let _dest = swap.destToken;
-
-            let wethWithdraw = 0n;
-            const isLastSwap =
-              swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
-
-            // For case of buy apply slippage is applied to srcAmount in equal proportion as the complete swap
-            // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
-            // Also that it is a direct swap.
-            const _srcAmount =
-              swapIndex > 0 ||
-              side === SwapSide.SELL ||
-              this.dexAdapterService.getDexKeySpecial(se.exchange) === 'zerox'
-                ? se.srcAmount
-                : (
-                    (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /
-                    BigInt(priceRoute.srcAmount)
-                  ).toString();
-
-            // In case of sell the destAmount is set to minimum (1) as
-            // even if the individual dex is rekt by slippage the swap
-            // should work if the final slippage check passes.
-            const _destAmount = side === SwapSide.SELL ? '1' : se.destAmount;
-
-            if (isETHAddress(swap.srcToken) && dex.needWrapNative) {
-              _src = wethAddress;
-              wethDeposit = BigInt(_srcAmount);
-            }
-
-            const forceUnwrap =
-              isETHAddress(swap.destToken) &&
-              (isMultiSwap || isMegaSwap) &&
-              !dex.needWrapNative &&
-              !isLastSwap;
-
-            if (
-              (isETHAddress(swap.destToken) && dex.needWrapNative) ||
-              forceUnwrap
-            ) {
-              _dest = forceUnwrap && !dex.needWrapNative ? _dest : wethAddress;
-              wethWithdraw = BigInt(se.destAmount);
-            }
-
-            const needToWithdrawAfterSwap =
-              _dest === wethAddress && wethWithdraw;
+            const {
+              srcToken,
+              destToken,
+              srcAmount,
+              destAmount,
+              recipient,
+              wethDeposit,
+              wethWithdraw,
+            } = this.getDexCallsParams(
+              priceRoute,
+              routeIndex,
+              swap,
+              swapIndex,
+              se,
+              minMaxAmount,
+              dex,
+              bytecodeBuilder.getAddress(),
+            );
 
             const dexParams = await dex.getDexParam!(
-              _src,
-              _dest,
-              _srcAmount,
-              _destAmount,
-              needToWithdrawAfterSwap || !isLastSwap
-                ? bytecodeBuilder.getAddress()
-                : this.dexAdapterService.dexHelper.config.data
-                    .augustusV6Address!,
+              srcToken,
+              destToken,
+              srcAmount,
+              destAmount,
+              recipient,
               se.data,
               side,
             );
@@ -530,5 +502,104 @@ export class GenericSwapTransactionBuilder {
     );
 
     return feeCode.toString();
+  }
+
+  public getExecutionContractAddress(priceRoute: OptimalRate): Address {
+    const isDirectMethod = this.dexAdapterService.isDirectFunctionNameV6(
+      priceRoute.contractMethod,
+    );
+    if (isDirectMethod) return this.augustusV6Address;
+
+    const executorName =
+      this.executorDetector.getExecutorByPriceRoute(priceRoute);
+    const bytecodeBuilder =
+      this.executorDetector.getBytecodeBuilder(executorName);
+
+    return bytecodeBuilder.getAddress();
+  }
+
+  public getDexCallsParams(
+    priceRoute: OptimalRate,
+    routeIndex: number,
+    swap: OptimalSwap,
+    swapIndex: number,
+    se: OptimalSwapExchange<any>,
+    minMaxAmount: string,
+    dex: IDexTxBuilder<any, any>,
+    executionContractAddress: string,
+  ): {
+    srcToken: Address;
+    destToken: Address;
+    recipient: Address;
+    srcAmount: string;
+    destAmount: string;
+    wethDeposit: bigint;
+    wethWithdraw: bigint;
+  } {
+    const wethAddress =
+      this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress;
+
+    const side = priceRoute.side;
+
+    const isMegaSwap = priceRoute.bestRoute.length > 1;
+    const isMultiSwap = !isMegaSwap && priceRoute.bestRoute[0].swaps.length > 1;
+
+    const isLastSwap =
+      swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
+
+    let _src = swap.srcToken;
+    let wethDeposit = 0n;
+    let _dest = swap.destToken;
+
+    let wethWithdraw = 0n;
+
+    // For case of buy apply slippage is applied to srcAmount in equal proportion as the complete swap
+    // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
+    // Also that it is a direct swap.
+    const _srcAmount =
+      swapIndex > 0 ||
+      side === SwapSide.SELL ||
+      this.dexAdapterService.getDexKeySpecial(se.exchange) === 'zerox'
+        ? se.srcAmount
+        : (
+            (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /
+            BigInt(priceRoute.srcAmount)
+          ).toString();
+
+    // In case of sell the destAmount is set to minimum (1) as
+    // even if the individual dex is rekt by slippage the swap
+    // should work if the final slippage check passes.
+    const _destAmount = side === SwapSide.SELL ? '1' : se.destAmount;
+
+    if (isETHAddress(swap.srcToken) && dex.needWrapNative) {
+      _src = wethAddress;
+      wethDeposit = BigInt(_srcAmount);
+    }
+
+    const forceUnwrap =
+      isETHAddress(swap.destToken) &&
+      (isMultiSwap || isMegaSwap) &&
+      !dex.needWrapNative &&
+      !isLastSwap;
+
+    if ((isETHAddress(swap.destToken) && dex.needWrapNative) || forceUnwrap) {
+      _dest = forceUnwrap && !dex.needWrapNative ? _dest : wethAddress;
+      wethWithdraw = BigInt(se.destAmount);
+    }
+
+    const needToWithdrawAfterSwap = _dest === wethAddress && wethWithdraw;
+
+    return {
+      srcToken: _src,
+      destToken: _dest,
+      recipient:
+        needToWithdrawAfterSwap || !isLastSwap
+          ? executionContractAddress
+          : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
+      srcAmount: _srcAmount,
+      destAmount: _destAmount,
+      wethDeposit,
+      wethWithdraw,
+    };
   }
 }

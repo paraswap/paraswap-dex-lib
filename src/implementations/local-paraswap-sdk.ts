@@ -196,9 +196,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       gasCost: '0',
       others: [],
       side,
-      tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
-      contractAddress: this.dexHelper.config.data.augustusAddress,
-      version: ParaSwapVersion.V6,
+      contractAddress: '',
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);
@@ -229,18 +227,24 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     );
 
     const contractMethod = priceRoute.contractMethod;
+    const executionContractAddress =
+      this.transactionBuilder.getExecutionContractAddress(priceRoute);
 
     // Call preprocessTransaction for each exchange before we build transaction
     try {
       priceRoute.bestRoute = await Promise.all(
-        priceRoute.bestRoute.map(async route => {
+        priceRoute.bestRoute.map(async (route, routeIndex) => {
           route.swaps = await Promise.all(
-            route.swaps.map(async swap => {
+            route.swaps.map(async (swap, swapIndex) => {
               swap.swapExchanges = await Promise.all(
-                swap.swapExchanges.map(async exchange => {
+                swap.swapExchanges.map(async se => {
                   // Search in dexLib dexes
                   const dexLibExchange = this.pricingHelper.getDexByKey(
-                    exchange.exchange,
+                    se.exchange,
+                  );
+
+                  const dex = this.dexAdapterService.getTxBuilderDexByKey(
+                    se.exchange,
                   );
 
                   if (dexLibExchange && dexLibExchange.preProcessTransaction) {
@@ -250,19 +254,33 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                       );
                     }
 
+                    const { recipient } =
+                      this.transactionBuilder.getDexCallsParams(
+                        priceRoute,
+                        routeIndex,
+                        swap,
+                        swapIndex,
+                        se,
+                        minMaxAmount.toString(),
+                        dex,
+                        executionContractAddress,
+                      );
+
                     const [preprocessedRoute, txInfo] =
                       await dexLibExchange.preProcessTransaction(
-                        exchange,
+                        se,
                         dexLibExchange.getTokenFromAddress(swap.srcToken),
                         dexLibExchange.getTokenFromAddress(swap.destToken),
                         priceRoute.side,
                         {
                           slippageFactor,
                           txOrigin: userAddress,
+                          executionContractAddress,
                           isDirectMethod: DirectContractMethods.includes(
                             contractMethod as ContractMethod,
                           ),
                           version: priceRoute.version,
+                          recipient,
                         },
                       );
 
@@ -273,7 +291,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
 
                     return preprocessedRoute;
                   }
-                  return exchange;
+                  return se;
                 }),
               );
               return swap;

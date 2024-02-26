@@ -1,5 +1,5 @@
 import { IDexHelper } from '../dex-helper';
-import { OptimalRate, SwapSide } from '@paraswap/core';
+import { Address, OptimalRate, SwapSide } from '@paraswap/core';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { Executor01BytecodeBuilder } from './Executor01BytecodeBuilder';
 import { Executor02BytecodeBuilder } from './Executor02BytecodeBuilder';
@@ -92,6 +92,14 @@ export class ExecutorDetector {
     }
 
     throw new Error(`${executorName} is not implemented`);
+  }
+
+  getAddress(executorName: Executors): Address {
+    if (!Object.values(Executors).includes(executorName)) {
+      throw new Error(`${executorName} is not supported`);
+    }
+
+    return this.dexHelper.config.data.executorsAddresses![executorName];
   }
 
   getBytecodeBuilder(executorName: Executors): ExecutorBytecodeBuilder {

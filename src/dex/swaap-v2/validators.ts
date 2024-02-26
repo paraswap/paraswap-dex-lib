@@ -93,20 +93,6 @@ const stringPositiveBigIntValidator = (
   }
 };
 
-const mustBeAugustusSwapper = (
-  value: string,
-  helpers: CustomHelpers,
-): string | ErrorReport => {
-  const allowedTakers = [
-    '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57'.toLowerCase(),
-  ];
-  return allowedTakers.includes(value.toLowerCase())
-    ? value
-    : helpers.message({
-        custom: `"order.taker" must be any of ${JSON.stringify(allowedTakers)}`,
-      });
-};
-
 export const getTokensResponseValidator = joi.object({
   tokens: joi.object().required(),
   success: joi.boolean().required(),
@@ -115,7 +101,7 @@ export const getTokensResponseValidator = joi.object({
 export const getQuoteResponseValidator = joi
   .object({
     id: joi.string().required(),
-    recipient: addressSchema.required().custom(mustBeAugustusSwapper),
+    recipient: addressSchema.required(),
     expiration: joi.number().min(0),
     amount: joi
       .string()
@@ -132,3 +118,14 @@ export const notifyResponseValidator = joi
     success: joi.boolean().required(),
   })
   .unknown(true);
+
+export const getQuoteResponseWithRecipientValidator = (recipient: string) =>
+  getQuoteResponseValidator.fork(['recipient'], _ =>
+    _.required().custom((val, helpers) => {
+      const { value } = addressSchema.validate(val);
+      if (value !== recipient.toLowerCase())
+        return helpers.message({ custom: `recipient must be ${recipient}` });
+
+      return value;
+    }),
+  );
