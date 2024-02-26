@@ -99,6 +99,7 @@ export class TransactionBuilder {
 
   public getDexCallsParams(
     priceRoute: OptimalRate,
+    routeIndex: number,
     swap: OptimalSwap,
     swapIndex: number,
     se: OptimalSwapExchange<any>,
