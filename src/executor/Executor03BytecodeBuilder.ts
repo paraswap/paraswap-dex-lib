@@ -135,16 +135,18 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (
       maybeWethCallData?.deposit &&
       isETHAddress(swap.srcToken) &&
-      curExchangeParam.needWrapNative &&
-      curExchangeParam.approveData
+      curExchangeParam.needWrapNative
       // do deposit only for the first path with wrapping
       // exchangeParams.findIndex(p => p.needWrapNative) === index
     ) {
-      const approveWethCalldata = this.buildApproveCallData(
-        curExchangeParam.approveData.target,
-        curExchangeParam.approveData.token,
-        flags.approves[index],
-      );
+      let approveWethCalldata = '0x';
+      if (curExchangeParam.approveData) {
+        approveWethCalldata = this.buildApproveCallData(
+          curExchangeParam.approveData.target,
+          curExchangeParam.approveData.token,
+          flags.approves[index],
+        );
+      }
 
       const depositCallData = this.buildWrapEthCallData(
         maybeWethCallData.deposit.calldata,

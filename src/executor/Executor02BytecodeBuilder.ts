@@ -596,16 +596,15 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     }
 
     if (curExchangeParam.needWrapNative && maybeWethCallData) {
-      if (
-        maybeWethCallData.deposit &&
-        isETHAddress(swap!.srcToken) &&
-        curExchangeParam.approveData
-      ) {
-        const approveWethCalldata = this.buildApproveCallData(
-          curExchangeParam.approveData.target,
-          curExchangeParam.approveData.token,
-          flags.approves[exchangeParamIndex],
-        );
+      if (maybeWethCallData.deposit && isETHAddress(swap!.srcToken)) {
+        let approveWethCalldata = '0x';
+        if (curExchangeParam.approveData) {
+          approveWethCalldata = this.buildApproveCallData(
+            curExchangeParam.approveData.target,
+            curExchangeParam.approveData.token,
+            flags.approves[exchangeParamIndex],
+          );
+        }
 
         const isNotFirstSwap = swapIndex !== 0;
         let skipWrap = false;

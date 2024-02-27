@@ -248,15 +248,17 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         const prevExchangeParam = exchangeParams[index - 1];
 
         if (
-          curExchangeParam.approveData &&
-          (!prevExchangeParam ||
-            (prevExchangeParam && !prevExchangeParam.needWrapNative))
+          !prevExchangeParam ||
+          (prevExchangeParam && !prevExchangeParam.needWrapNative)
         ) {
-          const approveWethCalldata = this.buildApproveCallData(
-            curExchangeParam.approveData.target,
-            curExchangeParam.approveData.token,
-            flags.approves[index],
-          );
+          let approveWethCalldata = '0x';
+          if (curExchangeParam.approveData) {
+            approveWethCalldata = this.buildApproveCallData(
+              curExchangeParam.approveData.target,
+              curExchangeParam.approveData.token,
+              flags.approves[index],
+            );
+          }
 
           const depositCallData = this.buildWrapEthCallData(
             maybeWethCallData.deposit.calldata,
