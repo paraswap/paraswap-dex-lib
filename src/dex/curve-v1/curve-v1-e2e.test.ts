@@ -168,7 +168,7 @@ describe('CurveV1 E2E', () => {
     // });
   });
 
-  describe('CurveV1 POLYGON', () => {
+  describe('CurveV1 POLYGON_V6', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -194,10 +194,11 @@ describe('CurveV1 E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
-          ContractMethod.directCurveV1Swap,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
+          // ContractMethod.directCurveV1Swap,
+          ContractMethod.swapExactAmountIn,
         ],
       ],
     ]);

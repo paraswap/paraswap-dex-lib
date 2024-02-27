@@ -30,7 +30,7 @@ function testForNetwork(
         // ContractMethod.multiSwap,
         // ContractMethod.megaSwap,
         // ContractMethod.directCurveV1Swap,
-        'swapExactAmountIn' as any,
+        ContractMethod.swapExactAmountIn,
       ],
     ],
   ]);
