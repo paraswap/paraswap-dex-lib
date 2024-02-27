@@ -374,14 +374,13 @@ export class GenericRFQ extends ParaSwapLimitOrders {
 
     let isApproved = false;
 
-    // as direct method is available only for v6, no need to check approve for v5
+    // isApproved is only used in direct method and available only for v6, then no need to check approve for v5
     // because it's either done in getSimpleParam or approve call is done by default in adapters
     if (options.version === ParaSwapVersion.V6) {
-      isApproved = await this.hasAugustusAllowance(
+      isApproved = await this.augustusApprovals.hasAugustusApproval(
         // ETH always need to be wrapped for RFQ
         this.dexHelper.config.wrapETH(srcToken).address,
         this.augustusRFQAddress,
-        optimalSwapExchange.srcAmount,
         ParaSwapVersion.V6,
       );
     }

@@ -18,6 +18,7 @@ import { ICache, IDexHelper } from '../dex-helper';
 import { AbiItem } from 'web3-utils';
 import { ParaSwapVersion } from '@paraswap/core';
 import augustusV6ABI from '../abi/augustus-v6/ABI.json';
+import { AugustusApprovals } from './augustus-approvals';
 
 /*
  * Context: Augustus routers have all a deadline protection logic implemented globally.
@@ -45,14 +46,12 @@ export class SimpleExchange {
   protected augustusInterface: Interface;
   protected augustusV6Interface: Interface;
 
-  private provider: Web3;
-  private cache: ICache;
-
   protected network: number;
   protected dexmapKey: string;
 
+  protected augustusApprovals: AugustusApprovals;
+
   readonly cacheStateKey: string;
-  private readonly cacheApprovesKey: string;
 
   constructor(protected readonly dexHelper: IDexHelper, public dexKey: string) {
     this.simpleSwapHelper = new Interface(SimpleSwapHelperABI);
@@ -67,71 +66,14 @@ export class SimpleExchange {
     this.augustusV6Address = dexHelper.config.data.augustusV6Address;
     this.augustusInterface = new Interface(augustusABI);
     this.augustusV6Interface = new Interface(augustusV6ABI);
-    this.provider = dexHelper.web3Provider;
-    this.cache = dexHelper.cache;
+
+    this.augustusApprovals = new AugustusApprovals(dexHelper);
 
     this.dexmapKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_poolconfigs`.toLowerCase();
 
     this.cacheStateKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
-
-    // if there's anything else to cache, this name could be more abstract
-    this.cacheApprovesKey =
-      `${CACHE_PREFIX}_${this.network}_approves`.toLowerCase();
-  }
-
-  async hasAugustusAllowance(
-    token: Address,
-    target: Address,
-    amount: string,
-    version: ParaSwapVersion = ParaSwapVersion.V5,
-  ): Promise<boolean> {
-    if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) return true;
-    const augustus =
-      version === ParaSwapVersion.V6
-        ? this.augustusV6Address
-        : this.augustusAddress;
-
-    const cacheKey = `${augustus}_${token}_${target}`;
-
-    // as approve is given to an infinite amount, we can cache only the target and token address
-    const isCachedApproved = await this.cache.sismember(
-      this.cacheApprovesKey,
-      cacheKey,
-    );
-
-    if (isCachedApproved) return true;
-
-    const allowance = await this.getAllowance(augustus!, token, target);
-    const isApproved = BigInt(allowance) >= BigInt(amount);
-
-    if (isApproved) await this.cache.sadd(this.cacheApprovesKey, cacheKey);
-
-    return isApproved;
-  }
-
-  private async getAllowance(
-    spender: Address,
-    token: Address,
-    target: Address,
-  ): Promise<string> {
-    const allowanceData = this.erc20Interface.encodeFunctionData('allowance', [
-      spender,
-      target,
-    ]);
-
-    const allowanceRaw = await this.provider.eth.call({
-      to: token,
-      data: allowanceData,
-    });
-
-    const allowance = this.erc20Interface.decodeFunctionResult(
-      'allowance',
-      allowanceRaw,
-    );
-
-    return allowance.toString();
   }
 
   protected async getApproveSimpleParam(
@@ -139,7 +81,11 @@ export class SimpleExchange {
     target: Address,
     amount: string,
   ): Promise<SimpleExchangeParam> {
-    const hasAllowance = await this.hasAugustusAllowance(token, target, amount);
+    const hasAllowance = await this.augustusApprovals.hasAugustusApproval(
+      token,
+      target,
+      ParaSwapVersion.V5,
+    );
     if (hasAllowance) {
       return {
         callees: [],
