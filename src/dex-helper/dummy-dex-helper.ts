@@ -25,6 +25,7 @@ const logger = getLogger('DummyDexHelper');
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
   private storage: Record<string, string> = {};
+  private hashStorage: Record<string, Record<string, string>> = {};
 
   private setMap: Record<string, Set<string>> = {};
 
@@ -137,11 +138,26 @@ class DummyCache implements ICache {
   }
 
   async hset(mapKey: string, key: string, value: string): Promise<void> {
+    if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
+    this.hashStorage[mapKey][key] = value;
     return;
   }
 
   async hget(mapKey: string, key: string): Promise<string | null> {
-    return null;
+    return this.hashStorage[mapKey][key];
+  }
+
+  async hmget(mapKey: string, keys: string[]): Promise<(string | null)[]> {
+    return keys.map(key => this.hashStorage?.[mapKey]?.[key] ?? null);
+  }
+
+  async hmset(mapKey: string, keys: string[], values: string[]): Promise<void> {
+    keys.forEach((key, index) => {
+      if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
+      this.hashStorage[mapKey][key] = values[index];
+    });
+
+    return;
   }
 
   async hgetAll(mapKey: string): Promise<Record<string, string>> {
