@@ -2,13 +2,13 @@
   "metadata": {
     "network": 1,
     "blockNumber": 19225542,
-    "forkId": "600678ce-603d-4eff-8c62-a3e92eab2406",
-    "lastTx": "ec860b89-ef14-478b-834e-76bb303d3230",
+    "forkId": "2a04e7e6-f000-4211-8c7c-abade3dbf9cb",
+    "lastTx": "8a80d358-6be4-4078-8594-f12755b81945",
     "contracts": {
-      "AugustusV6": "0xE40f165AF004b396C69E61c26972010665EEff87",
-      "Executor01": "0xd1C71094f2Ca759871f5C26045710be06C643f2b",
-      "Executor02": "0xC179c9D97b5d9442A0D55a2CB3C6E37bEF778e10",
-      "Executor03": "0x2984450d8a2634A10b94A3A56D17cfc669741b7D"
+      "AugustusV6": "0x4fa208D3Be986f6587240cC70A15B48C45cD848e",
+      "Executor01": "0xE728AD94dc693a24731b4C9cEf95e2676b89E2bb",
+      "Executor02": "0xE3aAfAa13A56a55cFb62D3C487759bff37e98838",
+      "Executor03": "0xE0978E68d61a2bf08243b729Ecbf6d6cbdcCE964"
     }
   },
   "priceRoute": {
