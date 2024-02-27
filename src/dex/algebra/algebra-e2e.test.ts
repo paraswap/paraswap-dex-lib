@@ -158,7 +158,7 @@ describe('Algebra', () => {
       const tokenASymbol: string = 'USDT';
       const tokenBSymbol: string = 'USDC';
 
-      const tokenAAmount: string = '1000000000000000000000';
+      const tokenAAmount: string = '1000000000';
       const tokenBAmount: string = '1000000000';
       const nativeTokenAmount = '1000000000000000000';
 
@@ -218,7 +218,7 @@ describe('Algebra', () => {
     });
   });
 
-  describe('CamelotV3_V6', () => {
+  describe('CamelotV3', () => {
     const dexKey = 'CamelotV3';
     const network = Network.ARBITRUM;
 
