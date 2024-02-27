@@ -1,5 +1,6 @@
 import {
   Address,
+  DexExchangeBuildParam,
   DexExchangeParam,
   OptimalRate,
   OptimalSwap,
@@ -20,19 +21,19 @@ import {
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
 import AugustusV6ABI from './abi/augustus-v6/ABI.json';
-import {
-  encodeFeePercent,
-  encodeFeePercentForReferrer,
-  encodePartnerAddressForFeeLogic,
-} from './router/payload-encoder';
 import { isETHAddress, uuidToBytes16 } from './utils';
-import { IWethDepositorWithdrawer } from './dex/weth/types';
+import {
+  DepositWithdrawReturn,
+  IWethDepositorWithdrawer,
+} from './dex/weth/types';
 import { DexAdapterService } from './dex';
 import { Weth } from './dex/weth/weth';
 import ERC20ABI from './abi/erc20.json';
 import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 import { IDexTxBuilder } from './dex/idex';
+import { AugustusApprovals } from './dex/augustus-approvals';
+
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
 } = ethers;
@@ -55,6 +56,7 @@ export class GenericSwapTransactionBuilder {
   abiCoder: AbiCoder;
 
   executorDetector: ExecutorDetector;
+  augustusApprovals: AugustusApprovals;
 
   constructor(
     protected dexAdapterService: DexAdapterService,
@@ -67,6 +69,7 @@ export class GenericSwapTransactionBuilder {
       return prev;
     }, {}),
   ) {
+    this.augustusApprovals = new AugustusApprovals(dexAdapterService.dexHelper);
     this.abiCoder = new AbiCoder();
     this.erc20Interface = new Interface(ERC20ABI);
     this.augustusV6Interface = new Interface(AugustusV6ABI);
@@ -173,9 +176,16 @@ export class GenericSwapTransactionBuilder {
       side,
     );
 
-    return bytecodeBuilder.buildByteCode(
+    const buildExchangeParams = await this.addDexExchangeApproveParams(
+      bytecodeBuilder,
       priceRoute,
       exchangeParams,
+      maybeWethCallData,
+    );
+
+    return bytecodeBuilder.buildByteCode(
+      priceRoute,
+      buildExchangeParams,
       userAddress,
       maybeWethCallData,
     );
@@ -601,5 +611,65 @@ export class GenericSwapTransactionBuilder {
       wethDeposit,
       wethWithdraw,
     };
+  }
+
+  private async addDexExchangeApproveParams(
+    bytecodeBuilder: ExecutorBytecodeBuilder,
+    priceRoute: OptimalRate,
+    dexExchangeParams: DexExchangeParam[],
+    maybeWethCallData?: DepositWithdrawReturn,
+  ): Promise<DexExchangeBuildParam[]> {
+    const spender = bytecodeBuilder.getAddress();
+    const tokenTargetMapping: {
+      params: [token: Address, target: Address];
+      exchangeParamIndex: number;
+    }[] = [];
+
+    let currentExchangeParamIndex = 0;
+
+    priceRoute.bestRoute.flatMap(route =>
+      route.swaps.flatMap(swap =>
+        swap.swapExchanges.map(async se => {
+          const curExchangeParam = dexExchangeParams[currentExchangeParamIndex];
+          const approveParams = bytecodeBuilder.getApprovalTokenAndTarget(
+            swap,
+            curExchangeParam,
+            maybeWethCallData,
+          );
+
+          if (approveParams) {
+            tokenTargetMapping.push({
+              params: [approveParams.token, approveParams?.target],
+              exchangeParamIndex: currentExchangeParamIndex,
+            });
+          }
+
+          currentExchangeParamIndex++;
+        }),
+      ),
+    );
+
+    const approvals = await this.augustusApprovals.hasApprovals(
+      spender,
+      tokenTargetMapping.map(t => t.params),
+    );
+
+    const dexExchangeBuildParams: DexExchangeBuildParam[] = [
+      ...dexExchangeParams,
+    ];
+
+    approvals.forEach((alreadyApproved, index) => {
+      if (!alreadyApproved) {
+        const [token, target] = tokenTargetMapping[index].params;
+        const exchangeParamIndex = tokenTargetMapping[index].exchangeParamIndex;
+        const curExchangeParam = dexExchangeParams[exchangeParamIndex];
+        dexExchangeBuildParams[exchangeParamIndex] = {
+          ...curExchangeParam,
+          approveData: { token, target },
+        };
+      }
+    });
+
+    return dexExchangeBuildParams;
   }
 }

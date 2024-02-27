@@ -169,6 +169,13 @@ export type DexExchangeParam = {
   specialDexSupportsInsertFromAmount?: boolean;
 };
 
+export type DexExchangeBuildParam = DexExchangeParam & {
+  approveData?: {
+    target: Address;
+    token: Address;
+  };
+};
+
 export type AdapterMappings = {
   [side: string]: { name: string; index: number }[];
 };

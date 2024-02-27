@@ -1,12 +1,11 @@
 import { ethers } from 'ethers';
-import { DexExchangeParam } from '../types';
-import { OptimalRate, OptimalSwap } from '@paraswap/core';
+import { DexExchangeBuildParam } from '../types';
+import { OptimalRate } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
 import { BYTES_64_LENGTH } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
-import { MAX_UINT } from '../constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -32,7 +31,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
    */
   protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeParam,
+    exchangeParam: DexExchangeBuildParam,
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -85,7 +84,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
   // Executor01 doesn't support mega swap routes, flags are built for multi swap routes only here
   protected buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeParam,
+    exchangeParam: DexExchangeBuildParam,
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -191,7 +190,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
 
   protected buildSingleSwapCallData(
     priceRoute: OptimalRate,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeBuildParam[],
     index: number,
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
     sender: string,
@@ -232,13 +231,12 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       flags.dexes[index] % 4 !== 1 && // not sendEth
       (!isETHAddress(swap.srcToken) ||
         (isETHAddress(swap.srcToken) && index !== 0)) &&
-      !curExchangeParam.transferSrcTokenBeforeSwap
+      !curExchangeParam.transferSrcTokenBeforeSwap &&
+      curExchangeParam.approveData
     ) {
       const approveCallData = this.buildApproveCallData(
-        curExchangeParam.spender || curExchangeParam.targetExchange,
-        isETHAddress(swap.srcToken) && index !== 0
-          ? this.dexHelper.config.data.wrappedNativeTokenAddress
-          : swap.srcToken,
+        curExchangeParam.approveData.target,
+        curExchangeParam.approveData.token,
         flags.approves[index],
       );
 
@@ -250,12 +248,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         const prevExchangeParam = exchangeParams[index - 1];
 
         if (
-          !prevExchangeParam ||
-          (prevExchangeParam && !prevExchangeParam.needWrapNative)
+          curExchangeParam.approveData &&
+          (!prevExchangeParam ||
+            (prevExchangeParam && !prevExchangeParam.needWrapNative))
         ) {
           const approveWethCalldata = this.buildApproveCallData(
-            curExchangeParam.spender || curExchangeParam.targetExchange,
-            this.dexHelper.config.data.wrappedNativeTokenAddress,
+            curExchangeParam.approveData.target,
+            curExchangeParam.approveData.token,
             flags.approves[index],
           );
 
@@ -295,7 +294,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeBuildParam[],
     exchangeParamIndex: number,
     isLastSwap: boolean,
     flag: Flag,
@@ -352,7 +351,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
 
   public buildByteCode(
     priceRoute: OptimalRate,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeBuildParam[],
     sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
   ): string {
