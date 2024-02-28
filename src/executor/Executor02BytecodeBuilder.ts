@@ -656,10 +656,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       ) {
         let withdrawCallData = '0x';
 
+        const customWethAddress = curExchangeParam.wethAddress;
         const nextSwap = priceRoute.bestRoute[routeIndex].swaps[swapIndex + 1];
-        let eachDexOnNextSwapNeedsWrapNative = false;
+        let eachDexOnSwapNeedsWrapNative = false;
         if (nextSwap) {
-          eachDexOnNextSwapNeedsWrapNative = this.eachDexOnSwapNeedsWrapNative(
+          eachDexOnSwapNeedsWrapNative = this.eachDexOnSwapNeedsWrapNative(
             priceRoute,
             nextSwap,
             exchangeParams,
@@ -677,8 +678,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           ) === exchangeParamIndex;
 
         if (
-          exchangeParamIndex === 1 || // @TODO
-          (!isLast && !eachDexOnNextSwapNeedsWrapNative && nextSwap) || // unwrap if next swap has dexes which don't need wrap native
+          customWethAddress ||
+          (!isLast && !eachDexOnSwapNeedsWrapNative && nextSwap) || // unwrap if next swap has dexes which don't need wrap native
           isLastSimpleWithUnwrap // unwrap after last dex call with unwrap for simple swap case
         ) {
           withdrawCallData = this.buildUnwrapEthCallData(
@@ -692,7 +693,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           withdrawCallData,
         ]);
 
-        if (isLastSimpleWithUnwrap) {
+        if (isLastSimpleWithUnwrap || customWethAddress) {
           const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
           swapExchangeCallData = hexConcat([
             swapExchangeCallData,
