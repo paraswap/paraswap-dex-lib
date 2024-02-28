@@ -91,8 +91,11 @@ export class AugustusApprovals {
     const keys = this.filterKeys(approvalsMapping, true);
     if (keys.length === 0) return;
 
-    const values = Array(keys.length).fill(DEFAULT_APPROVE_CACHE_KEY_VALUE);
-    await this.cache.hmset(this.cacheApprovesKey, keys, values);
+    const mappings = Object.fromEntries(
+      keys.map(key => [key, DEFAULT_APPROVE_CACHE_KEY_VALUE]),
+    );
+
+    await this.cache.hmset(this.cacheApprovesKey, mappings);
   }
 
   private async getOnChainApprovals(
@@ -131,12 +134,16 @@ export class AugustusApprovals {
       keys.map(key => this.splitCacheKey(key)),
     );
 
-    if (onChainApprovals.some(v => v === true)) {
+    if (onChainApprovals.includes(true)) {
+      const setApprovalsInCache: Record<string, boolean> = {};
       onChainApprovals.forEach((approved, index) => {
-        if (approved) approvalsMapping[keys[index]] = true;
+        if (approved) {
+          approvalsMapping[keys[index]] = true;
+          setApprovalsInCache[keys[index]] = true;
+        }
       });
 
-      await this.setCachedApprovals(approvalsMapping);
+      await this.setCachedApprovals(setApprovalsInCache);
     }
 
     return approvalsMapping;

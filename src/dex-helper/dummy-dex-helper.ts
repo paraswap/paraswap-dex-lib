@@ -151,11 +151,14 @@ class DummyCache implements ICache {
     return keys.map(key => this.hashStorage?.[mapKey]?.[key] ?? null);
   }
 
-  async hmset(mapKey: string, keys: string[], values: string[]): Promise<void> {
-    keys.forEach((key, index) => {
-      if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
-      this.hashStorage[mapKey][key] = values[index];
-    });
+  // even though native hmset is deprecated in redis, use it to prevent changing implemented hset
+  async hmset(mapKey: string, mappings: Record<string, string>): Promise<void> {
+    if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
+
+    this.hashStorage[mapKey] = {
+      ...this.hashStorage[mapKey],
+      ...mappings,
+    };
 
     return;
   }
