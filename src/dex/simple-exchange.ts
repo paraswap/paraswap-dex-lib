@@ -49,8 +49,6 @@ export class SimpleExchange {
   protected network: number;
   protected dexmapKey: string;
 
-  protected augustusApprovals: AugustusApprovals;
-
   readonly cacheStateKey: string;
 
   constructor(protected readonly dexHelper: IDexHelper, public dexKey: string) {
@@ -67,8 +65,6 @@ export class SimpleExchange {
     this.augustusInterface = new Interface(augustusABI);
     this.augustusV6Interface = new Interface(augustusV6ABI);
 
-    this.augustusApprovals = new AugustusApprovals(dexHelper);
-
     this.dexmapKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_poolconfigs`.toLowerCase();
 
@@ -81,7 +77,7 @@ export class SimpleExchange {
     target: Address,
     amount: string,
   ): Promise<SimpleExchangeParam> {
-    const hasAllowance = await this.augustusApprovals.hasApproval(
+    const hasAllowance = await this.dexHelper.augustusApprovals.hasApproval(
       this.augustusAddress,
       token,
       target,

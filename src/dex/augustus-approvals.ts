@@ -4,7 +4,8 @@ import { ICache, IDexHelper } from '../dex-helper';
 import { Interface } from '@ethersproject/abi';
 import ERC20ABI from '../abi/erc20.json';
 import { uint256ToBigInt } from '../lib/decoders';
-import { MultiCallParams } from '../lib/multi-wrapper';
+import { MultiCallParams, MultiWrapper } from '../lib/multi-wrapper';
+import { ConfigHelper } from '../config';
 
 const DEFAULT_APPROVE_CACHE_KEY_VALUE = 'true';
 
@@ -22,13 +23,16 @@ export class AugustusApprovals {
 
   private readonly cacheApprovesKey: string;
 
-  constructor(protected readonly dexHelper: IDexHelper) {
-    this.network = dexHelper.config.data.network;
-
-    this.augustusAddress = dexHelper.config.data.augustusAddress;
-    this.augustusV6Address = dexHelper.config.data.augustusV6Address;
+  constructor(
+    config: ConfigHelper,
+    cache: ICache,
+    protected multiWrapper: MultiWrapper,
+  ) {
+    this.network = config.data.network;
+    this.augustusAddress = config.data.augustusAddress;
+    this.augustusV6Address = config.data.augustusV6Address;
     this.erc20Interface = new Interface(ERC20ABI);
-    this.cache = dexHelper.cache;
+    this.cache = cache;
 
     this.cacheApprovesKey = `${CACHE_PREFIX}_${this.network}_approves`;
   }
@@ -115,7 +119,7 @@ export class AugustusApprovals {
         decodeFunction: uint256ToBigInt,
       }));
 
-    const allowances = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+    const allowances = await this.multiWrapper.tryAggregate<bigint>(
       false,
       allowanceCalldata,
     );

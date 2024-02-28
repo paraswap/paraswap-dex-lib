@@ -897,7 +897,7 @@ export class CurveV1
     let isApproved: boolean | undefined;
 
     try {
-      isApproved = await this.augustusApprovals.hasApproval(
+      isApproved = await this.dexHelper.augustusApprovals.hasApproval(
         options.executionContractAddress,
         this.dexHelper.config.wrapETH(srcToken).address,
         optimalSwapExchange.data.exchange,

@@ -69,7 +69,6 @@ export class GenericSwapTransactionBuilder {
       return prev;
     }, {}),
   ) {
-    this.augustusApprovals = new AugustusApprovals(dexAdapterService.dexHelper);
     this.abiCoder = new AbiCoder();
     this.erc20Interface = new Interface(ERC20ABI);
     this.augustusV6Interface = new Interface(AugustusV6ABI);
@@ -77,6 +76,11 @@ export class GenericSwapTransactionBuilder {
       this.dexAdapterService.dexHelper.config.data.augustusV6Address!;
     this.executorDetector = new ExecutorDetector(
       this.dexAdapterService.dexHelper,
+    );
+    this.augustusApprovals = new AugustusApprovals(
+      dexAdapterService.dexHelper.config,
+      dexAdapterService.dexHelper.cache,
+      dexAdapterService.dexHelper.multiWrapper,
     );
   }
 

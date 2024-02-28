@@ -19,6 +19,7 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 import { Response, RequestConfig } from './irequest-wrapper';
 import { BlockHeader } from 'web3-eth';
 import { PromiseScheduler } from '../lib/promise-scheduler';
+import { AugustusApprovals } from '../dex/augustus-approvals';
 
 const logger = getLogger('DummyDexHelper');
 
@@ -264,6 +265,7 @@ export class DummyDexHelper implements IDexHelper {
   provider: Provider;
   multiContract: Contract;
   multiWrapper: MultiWrapper;
+  augustusApprovals: AugustusApprovals;
   promiseScheduler: PromiseScheduler;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
@@ -303,6 +305,12 @@ export class DummyDexHelper implements IDexHelper {
       100,
       5,
       this.getLogger(`PromiseScheduler-${network}`),
+    );
+
+    this.augustusApprovals = new AugustusApprovals(
+      this.config,
+      this.cache,
+      this.multiWrapper,
     );
   }
 
