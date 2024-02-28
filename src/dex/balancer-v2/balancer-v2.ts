@@ -78,7 +78,7 @@ import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import { BigNumber, utils } from 'ethers';
-import { SpecialDex } from '../../executor/types';
+import { Executors, SpecialDex } from '../../executor/types';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -1055,16 +1055,100 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
-    sender = this.augustusAddress,
-    recipient = this.augustusAddress,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
     let limits: string[] = [];
 
-    const isV6Swap =
-      sender.toLowerCase() !== this.augustusAddress.toLowerCase();
+    for (const swapData of data.swaps) {
+      const pool = this.poolIdMap[swapData.poolId];
+      const hasEth = [srcToken.toLowerCase(), destToken.toLowerCase()].includes(
+        ETHER_ADDRESS.toLowerCase(),
+      );
+      const _srcToken = this.dexHelper.config.wrapETH({
+        address: srcToken,
+        decimals: 18,
+      }).address;
+      const _destToken = this.dexHelper.config.wrapETH({
+        address: destToken,
+        decimals: 18,
+      }).address;
+
+      let path = poolGetPathForTokenInOut(
+        _srcToken,
+        _destToken,
+        pool,
+        this.poolAddressMap,
+        side,
+      );
+
+      if (side === SwapSide.BUY) {
+        path = path.reverse();
+      }
+
+      const _swaps = path.map((hop, index) => ({
+        poolId: hop.pool.id,
+        assetInIndex: swapOffset + index,
+        assetOutIndex: swapOffset + index + 1,
+        amount:
+          (side === SwapSide.SELL && index === 0) ||
+          (side === SwapSide.BUY && index === path.length - 1)
+            ? swapData.amount
+            : '0',
+        userData: '0x',
+      }));
+
+      swapOffset += path.length + 1;
+
+      // BalancerV2 Uses Address(0) as ETH
+      const _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
+        t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
+      );
+
+      const _limits = _assets.map(_ => MAX_INT);
+
+      swaps = swaps.concat(_swaps);
+      assets = assets.concat(_assets);
+      limits = limits.concat(_limits);
+    }
+
+    const funds = {
+      sender: this.augustusAddress,
+      recipient: this.augustusAddress,
+      fromInternalBalance: false,
+      toInternalBalance: false,
+    };
+
+    const params: BalancerParam = [
+      side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
+      side === SwapSide.SELL ? swaps : swaps.reverse(),
+      assets,
+      funds,
+      limits,
+      MAX_UINT,
+    ];
+
+    return params;
+  }
+
+  public getBalancerParamV6(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: string,
+    destAmount: string,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    recipient: Address,
+    sender: Address,
+    isDirect?: boolean,
+  ): BalancerParam {
+    let swapOffset = 0;
+    let swaps: BalancerSwap[] = [];
+    let assets: string[] = [];
+    let limits: string[] = [];
+
+    const isDirectSwap = !!isDirect;
 
     for (const swapData of data.swaps) {
       const pool = this.poolIdMap[swapData.poolId];
@@ -1111,7 +1195,7 @@ export class BalancerV2
         t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
       );
 
-      if (isV6Swap && side === SwapSide.BUY) {
+      if (isDirectSwap && side === SwapSide.BUY) {
         _assets = _assets.reverse();
         _swaps = _swaps.map(swap => ({
           ...swap,
@@ -1120,14 +1204,17 @@ export class BalancerV2
         }));
       }
 
-      const _limits = isV6Swap
-        ? this.createSwapArray(
-            _assets.length,
-            side === SwapSide.SELL ? 0 : 1,
-            srcAmount,
-            destAmount,
-          )
-        : _assets.map(_ => MAX_INT);
+      let _limits: string[];
+      if (isDirectSwap) {
+        _limits = this.createSwapArray(
+          _assets.length,
+          side === SwapSide.SELL ? 0 : 1,
+          srcAmount,
+          destAmount,
+        );
+      } else {
+        _limits = _assets.map(_ => MAX_INT);
+      }
 
       swaps = swaps.concat(_swaps);
       assets = assets.concat(_assets);
@@ -1135,6 +1222,8 @@ export class BalancerV2
     }
 
     const funds = {
+      // for Direct: Both sender and recipient is AugustusV6
+      // for Generic, `sender`: BUY -> pass Executor3, for SELL -> pass NULL_ADDRESS (it's gonna be determined in the contract)
       sender,
       recipient,
       fromInternalBalance: false,
@@ -1332,15 +1421,16 @@ export class BalancerV2
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
-    const balancerParams = this.getBalancerParam(
+    const balancerParams = this.getBalancerParamV6(
       srcToken,
       destToken,
       fromAmount,
       toAmount,
       data,
       side,
-      this.augustusV6Address,
-      beneficiary,
+      this.dexHelper.config.data.augustusV6Address!,
+      this.dexHelper.config.data.augustusV6Address!,
+      true,
     );
 
     const isApproved = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
@@ -1439,41 +1529,43 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): DexExchangeParam {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerParamV6(
       srcToken,
       destToken,
       srcAmount,
       destAmount,
       data,
       side,
-      // use zero address as sender, because it will replaced in Executor.swapOnBalancerV2
-      NULL_ADDRESS,
       recipient,
+      side === SwapSide.BUY
+        ? this.dexHelper.config.data.executorsAddresses![Executors.THREE]
+        : NULL_ADDRESS,
     );
 
-    const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+    let exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',
       params,
     );
+    let specialDexFlag = SpecialDex.DEFAULT;
 
-    const swaps = params[1];
-    const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
-      return acc.add(swap.amount);
-    }, BigNumber.from(0));
+    if (side === SwapSide.SELL) {
+      const swaps = params[1];
+      const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+        return acc.add(swap.amount);
+      }, BigNumber.from(0));
 
-    const specialDexExchangeData = solidityPack(
-      ['bytes32', 'bytes'],
-      [hexZeroPad(hexlify(totalAmount), 32), exchangeData],
-    );
+      exchangeData = solidityPack(
+        ['bytes32', 'bytes'],
+        [hexZeroPad(hexlify(totalAmount), 32), exchangeData],
+      );
+      specialDexFlag = SpecialDex.SWAP_ON_BALANCER_V2;
+    }
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
-      exchangeData: specialDexExchangeData,
-      specialDexFlag:
-        side === SwapSide.SELL
-          ? SpecialDex.SWAP_ON_BALANCER_V2
-          : SpecialDex.DEFAULT,
+      exchangeData,
+      specialDexFlag,
       targetExchange: this.vaultAddress,
     };
   }

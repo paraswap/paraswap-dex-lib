@@ -232,10 +232,10 @@ describe('UniswapV2 E2E Polygon', () => {
     });
   });
 
-  describe('Dfyn', () => {
+  describe('Dfyn_V6', () => {
     const dexKey = 'Dfyn';
 
-    describe('Simpleswap', () => {
+    describe('swapExactAmountIn', () => {
       it('Dfyn MATIC -> TOKEN', async () => {
         await testE2E(
           tokens.MATIC,
@@ -244,7 +244,7 @@ describe('UniswapV2 E2E Polygon', () => {
           '7000000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -257,7 +257,7 @@ describe('UniswapV2 E2E Polygon', () => {
           '7000000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -270,54 +270,54 @@ describe('UniswapV2 E2E Polygon', () => {
           '7000000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
       });
     });
 
-    describe('Multiswap', () => {
-      it('Dfyn MATIC -> TOKEN', async () => {
-        await testE2E(
-          tokens.MATIC,
-          tokens.WETH,
-          holders.MATIC,
-          '7000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-      it('Dfyn TOKEN -> MATIC', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.MATIC,
-          holders.DAI,
-          '70000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-      it('Dfyn TOKEN -> TOKEN', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.USDT,
-          holders.DAI,
-          '70000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
+    // describe('Multiswap', () => {
+    //   it('Dfyn MATIC -> TOKEN', async () => {
+    //     await testE2E(
+    //       tokens.MATIC,
+    //       tokens.WETH,
+    //       holders.MATIC,
+    //       '7000000000000000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       ContractMethod.multiSwap,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    //   it('Dfyn TOKEN -> MATIC', async () => {
+    //     await testE2E(
+    //       tokens.DAI,
+    //       tokens.MATIC,
+    //       holders.DAI,
+    //       '70000000000000000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       ContractMethod.multiSwap,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    //   it('Dfyn TOKEN -> TOKEN', async () => {
+    //     await testE2E(
+    //       tokens.DAI,
+    //       tokens.USDT,
+    //       holders.DAI,
+    //       '70000000000000000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       ContractMethod.multiSwap,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
   });
 
   describe('ComethSwap', () => {
