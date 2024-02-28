@@ -928,13 +928,11 @@ export class CurveV1Factory
     let isApproved: boolean | undefined;
 
     try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      isApproved = await this.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        this.dexHelper.config.wrapETH(srcToken).address,
+        optimalSwapExchange.data.exchange,
+      );
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,

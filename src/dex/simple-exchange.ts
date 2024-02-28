@@ -81,10 +81,10 @@ export class SimpleExchange {
     target: Address,
     amount: string,
   ): Promise<SimpleExchangeParam> {
-    const hasAllowance = await this.augustusApprovals.hasAugustusApproval(
+    const hasAllowance = await this.augustusApprovals.hasApproval(
+      this.augustusAddress,
       token,
       target,
-      ParaSwapVersion.V5,
     );
     if (hasAllowance) {
       return {

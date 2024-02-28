@@ -864,13 +864,11 @@ export class UniswapV3
     let isApproved: boolean | undefined;
 
     try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, this.config.router)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      isApproved = await this.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        this.dexHelper.config.wrapETH(srcToken).address,
+        this.config.router,
+      );
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,

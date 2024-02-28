@@ -33,6 +33,15 @@ export class AugustusApprovals {
     this.cacheApprovesKey = `${CACHE_PREFIX}_${this.network}_approves`;
   }
 
+  async hasApproval(
+    spender: Address,
+    token: Address,
+    target: Address,
+  ): Promise<boolean> {
+    const approvals = await this.hasApprovals(spender, [[token, target]]);
+    return approvals[0];
+  }
+
   async hasApprovals(
     spender: Address,
     tokenTargetMapping: [token: Address, target: Address][],
@@ -57,25 +66,6 @@ export class AugustusApprovals {
     return tokenTargetMapping
       .map(([token, target]) => this.createCacheKey(spender, token, target))
       .map(key => approvalsMapping[key]);
-  }
-
-  async hasAugustusApproval(
-    token: Address,
-    target: Address,
-    version: ParaSwapVersion = ParaSwapVersion.V5,
-  ): Promise<boolean> {
-    if (token.toLowerCase() === ETHER_ADDRESS.toLowerCase()) return true;
-
-    const tokenTargetMapping: [Address, Address][] = [[token, target]];
-
-    const spender =
-      version === ParaSwapVersion.V6
-        ? this.augustusV6Address
-        : this.augustusAddress;
-
-    const allowances = await this.hasApprovals(spender!, tokenTargetMapping);
-
-    return allowances[0];
   }
 
   private async addCachedApprovals(

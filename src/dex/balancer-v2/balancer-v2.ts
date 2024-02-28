@@ -1201,17 +1201,11 @@ export class BalancerV2
     let isApproved: boolean | undefined;
 
     try {
-      // TODO-v6: current implementation don't support v6
-      // check allowance with hasAugustusAllowance with version param
-      // check this https://github.com/paraswap/paraswap-dex-lib-private/commit/e5578a762596e88e98de3cef0092295c8ae81cee#diff-3ef1f1193622d120609edf4fe56696b3d340b8c6ce7fcf7b1acf1537f0a84dabR84
-      // and this https://github.com/paraswap/paraswap-dex-lib-private/commit/e5578a762596e88e98de3cef0092295c8ae81cee#diff-a4e6a5d9442d649b6ca51a08f5e58c8aa296d7b21b659cd69b5a5755b2c21533R381
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, this.vaultAddress)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      isApproved = await this.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        this.dexHelper.config.wrapETH(srcToken).address,
+        this.vaultAddress,
+      );
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,
@@ -1340,12 +1334,10 @@ export class BalancerV2
       beneficiary,
     );
 
-    const isApproved = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
-
     const swapParams: BalancerV2DirectParamV6 = [
       quotedAmount,
       metadata,
-      this.encodeBeneficiaryAndApproveFlag(beneficiary, !isApproved),
+      this.encodeBeneficiaryAndApproveFlag(beneficiary, !data.isApproved),
     ];
 
     const encodeParams: BalancerV2DirectParamV6Swap = [
@@ -1358,8 +1350,8 @@ export class BalancerV2
     const encoder = (...params: BalancerV2DirectParamV6Swap) => {
       return this.augustusV6Interface.encodeFunctionData(
         side === SwapSide.SELL
-          ? BalancerV2.getDirectFunctionNameV6()[0]
-          : BalancerV2.getDirectFunctionNameV6()[1],
+          ? DirectMethodsV6.directSell
+          : DirectMethodsV6.directBuy,
         [...params],
       );
     };
