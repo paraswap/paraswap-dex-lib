@@ -543,8 +543,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       }),
     );
 
-    console.log('SWAP EXCHANGE INDEX: ', swapExchangeIndex);
-
     const curExchangeParam = exchangeParams[exchangeParamIndex];
 
     const dexCallData = this.buildDexCallData(
@@ -645,7 +643,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         ]);
       }
 
-      console.log('applyVerticalBranching: ', applyVerticalBranching);
       if (
         maybeWethCallData.withdraw &&
         ((!applyVerticalBranching && isETHAddress(swap.destToken)) ||
@@ -679,14 +676,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             -1,
           ) === exchangeParamIndex;
 
-        console.log('exchangeParamIndex: ', exchangeParamIndex);
-
         if (
           exchangeParamIndex === 1 || // @TODO
           (!isLast && !eachDexOnNextSwapNeedsWrapNative && nextSwap) || // unwrap if next swap has dexes which don't need wrap native
           isLastSimpleWithUnwrap // unwrap after last dex call with unwrap for simple swap case
         ) {
-          console.log('BUILD UNWRAP IN SWAP EXCHANGE');
           withdrawCallData = this.buildUnwrapEthCallData(
             this.getWETHAddress(curExchangeParam),
             maybeWethCallData.withdraw.calldata,
@@ -699,7 +693,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         ]);
 
         if (isLastSimpleWithUnwrap) {
-          console.log('BUILD SEND NATIVE IN SWAP EXCHANGE');
           const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
           swapExchangeCallData = hexConcat([
             swapExchangeCallData,
@@ -734,7 +727,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       isETHAddress(swap.destToken) &&
       isLast
     ) {
-      console.log('BUILD SEND NATIVE IN SWAP EXCHANGE');
       const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
       swapExchangeCallData = hexConcat([
         swapExchangeCallData,
@@ -1167,8 +1159,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       maybeWethCallData,
     );
 
-    console.log('FLAGS: ', flags);
-
     let swapsCalldata = priceRoute.bestRoute.reduce<string>(
       (routeAcc, route, routeIndex) =>
         hexConcat([
@@ -1241,10 +1231,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       routeNeedsRootUnwrapEth &&
       (isMultiSwap || isMegaSwap)
     ) {
-      console.log('BUILD UNWRAP IN THE ROOT');
       const withdrawCallData = this.buildUnwrapEthCallData(
         this.dexHelper.config.data.wrappedNativeTokenAddress,
-        // '0x4c28f48448720e9000907bc2611f73022fdce1fa',
         maybeWethCallData.withdraw!.calldata,
       );
       swapsCalldata = hexConcat([swapsCalldata, withdrawCallData]);
@@ -1256,7 +1244,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       routeNeedsRootUnwrapEth &&
       (isMultiSwap || isMegaSwap)
     ) {
-      console.log('BUILD SEND NATIVE IN THE ROOT');
       const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
       swapsCalldata = hexConcat([swapsCalldata, finalSpecialFlagCalldata]);
     }

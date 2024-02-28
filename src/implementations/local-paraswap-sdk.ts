@@ -210,7 +210,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       destUSD: '0',
       contractMethod,
       partnerFee: 0,
-    } as OptimalRate;
+    };
   }
 
   async buildTransaction(
