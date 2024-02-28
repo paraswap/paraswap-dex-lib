@@ -32,7 +32,6 @@ import ERC20ABI from './abi/erc20.json';
 import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 import { IDexTxBuilder } from './dex/idex';
-import { AugustusApprovals } from './dex/augustus-approvals';
 
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
@@ -56,7 +55,6 @@ export class GenericSwapTransactionBuilder {
   abiCoder: AbiCoder;
 
   executorDetector: ExecutorDetector;
-  augustusApprovals: AugustusApprovals;
 
   constructor(
     protected dexAdapterService: DexAdapterService,
@@ -76,11 +74,6 @@ export class GenericSwapTransactionBuilder {
       this.dexAdapterService.dexHelper.config.data.augustusV6Address!;
     this.executorDetector = new ExecutorDetector(
       this.dexAdapterService.dexHelper,
-    );
-    this.augustusApprovals = new AugustusApprovals(
-      dexAdapterService.dexHelper.config,
-      dexAdapterService.dexHelper.cache,
-      dexAdapterService.dexHelper.multiWrapper,
     );
   }
 
@@ -653,10 +646,11 @@ export class GenericSwapTransactionBuilder {
       ),
     );
 
-    const approvals = await this.augustusApprovals.hasApprovals(
-      spender,
-      tokenTargetMapping.map(t => t.params),
-    );
+    const approvals =
+      await this.dexAdapterService.dexHelper.augustusApprovals.hasApprovals(
+        spender,
+        tokenTargetMapping.map(t => t.params),
+      );
 
     const dexExchangeBuildParams: DexExchangeBuildParam[] = [
       ...dexExchangeParams,
