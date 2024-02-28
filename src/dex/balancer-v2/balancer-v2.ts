@@ -1139,7 +1139,8 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
-    recipientV6: Address,
+    recipient: Address,
+    sender: Address,
     isDirect?: boolean,
   ): BalancerParam {
     let swapOffset = 0;
@@ -1147,7 +1148,6 @@ export class BalancerV2
     let assets: string[] = [];
     let limits: string[] = [];
 
-    // const isV6Swap = !!recipientV6;
     const isDirectSwap = !!isDirect;
 
     for (const swapData of data.swaps) {
@@ -1195,7 +1195,6 @@ export class BalancerV2
         t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
       );
 
-      let _limits: string[];
       if (isDirectSwap && side === SwapSide.BUY) {
         _assets = _assets.reverse();
         _swaps = _swaps.map(swap => ({
@@ -1205,6 +1204,7 @@ export class BalancerV2
         }));
       }
 
+      let _limits: string[];
       if (isDirectSwap) {
         _limits = this.createSwapArray(
           _assets.length,
@@ -1221,15 +1221,11 @@ export class BalancerV2
       limits = limits.concat(_limits);
     }
 
-    // for BUY -> pass Executor3, for SELL -> pass NULL_ADDRESS (it's gonna be determined in the contract)
-    const sender =
-      side === SwapSide.BUY
-        ? this.dexHelper.config.data.executorsAddresses![Executors.THREE]
-        : NULL_ADDRESS;
-
     const funds = {
+      // for Direct: Both sender and recipient is AugustusV6
+      // for Generic, `sender`: BUY -> pass Executor3, for SELL -> pass NULL_ADDRESS (it's gonna be determined in the contract)
       sender,
-      recipient: recipientV6,
+      recipient,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
@@ -1432,7 +1428,9 @@ export class BalancerV2
       toAmount,
       data,
       side,
-      beneficiary,
+      this.dexHelper.config.data.augustusV6Address!,
+      this.dexHelper.config.data.augustusV6Address!,
+      true,
     );
 
     const isApproved = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
@@ -1539,9 +1537,10 @@ export class BalancerV2
       data,
       side,
       recipient,
+      side === SwapSide.BUY
+        ? this.dexHelper.config.data.executorsAddresses![Executors.THREE]
+        : NULL_ADDRESS,
     );
-
-    // console.log('params_bal', params);
 
     let exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',
