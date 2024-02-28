@@ -673,6 +673,7 @@ describe('BalancerV2 E2E', () => {
           // ContractMethod.megaSwap,
           // ContractMethod.directBalancerV2GivenInSwap,
           ContractMethod.swapExactAmountIn,
+          ContractMethod.swapExactAmountInOnBalancerV2,
         ],
       ],
       [
@@ -682,6 +683,7 @@ describe('BalancerV2 E2E', () => {
           // ContractMethod.simpleBuy,
           // ContractMethod.buy,
           ContractMethod.swapExactAmountOut,
+          ContractMethod.swapExactAmountOutOnBalancerV2,
         ],
       ],
     ]);
