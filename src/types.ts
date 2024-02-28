@@ -159,6 +159,7 @@ export type AdapterExchangeParam = {
 
 export type DexExchangeParam = {
   needWrapNative: boolean;
+  wethAddress?: string;
   returnsWeth?: boolean;
   exchangeData: string;
   targetExchange: string;

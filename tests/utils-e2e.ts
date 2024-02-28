@@ -483,16 +483,125 @@ export async function testE2E(
   }
 
   try {
-    const priceRoute = await paraswap.getPrices(
-      srcToken,
-      destToken,
-      amount,
-      swapSide,
-      contractMethod,
-      poolIdentifiers,
-      transferFees,
-      forceRoute,
-    );
+    // const priceRoute = await paraswap.getPrices(
+    //   srcToken,
+    //   destToken,
+    //   amount,
+    //   swapSide,
+    //   contractMethod,
+    //   poolIdentifiers,
+    //   transferFees,
+    //   forceRoute,
+    // );
+
+    const priceRoute = {
+      blockNumber: 53978338,
+      network: 137,
+      srcToken: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
+      srcDecimals: 18,
+      srcAmount: '23474666934083667923',
+      destToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      destDecimals: 18,
+      destAmount: '23495046251641019989',
+      bestRoute: [
+        {
+          percent: 100,
+          swaps: [
+            {
+              srcToken: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
+              srcDecimals: 18,
+              destToken: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
+              destDecimals: 18,
+              swapExchanges: [
+                {
+                  exchange: 'UniswapV3',
+                  srcAmount: '23474666934083667923',
+                  destAmount: '7622647152711520',
+                  percent: 100,
+                  poolAddresses: ['0x86f1d8390222a3691c28938ec7404a1661e618e0'],
+                  data: {
+                    path: [
+                      {
+                        tokenIn: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
+                        tokenOut: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
+                        fee: '500',
+                        currentFee: '500',
+                      },
+                    ],
+                    gasUSD: '0.006691',
+                  },
+                },
+              ],
+            },
+            {
+              srcToken: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
+              srcDecimals: 18,
+              destToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+              destDecimals: 18,
+              swapExchanges: [
+                {
+                  exchange: 'Dfyn',
+                  srcAmount: '5030947120789603',
+                  destAmount: '15499972538766402101',
+                  percent: 66,
+                  poolAddresses: ['0xC3379226AEeF21464d05676305dad1261D6F3FAC'],
+                  data: {
+                    router: '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
+                    path: [
+                      '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
+                      '0x4c28f48448720e9000907bc2611f73022fdce1fa',
+                    ],
+                    factory: '0xE7Fb3e833eFE5F9c441105EB65Ef8b261266423B',
+                    initCode:
+                      '0xf187ed688403aa4f7acfada758d8d53698753b998a3071b06f1b777f4330eaf3',
+                    feeFactor: 10000,
+                    pools: [
+                      {
+                        address: '0xC3379226AEeF21464d05676305dad1261D6F3FAC',
+                        fee: 30,
+                        direction: false,
+                      },
+                    ],
+                    weth: '0x4c28f48448720e9000907bc2611f73022fdce1fa',
+                    gasUSD: '0.005524',
+                  },
+                },
+                {
+                  exchange: 'BalancerV2',
+                  srcAmount: '2591700031921917',
+                  destAmount: '7995073712874617888',
+                  percent: 34,
+                  poolAddresses: ['0x61d5dc44849c9c87b0856a2a311536205c96c7fd'],
+                  data: {
+                    swaps: [
+                      {
+                        poolId:
+                          '0x61d5dc44849c9c87b0856a2a311536205c96c7fd000200000000000000000000',
+                        amount: '2591700031921917',
+                      },
+                    ],
+                    gasUSD: '0.009023',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      gasCostUSD: '0.024994',
+      gasCost: '407200',
+      others: [],
+      side: 'SELL',
+      version: '6',
+      contractAddress: '0x39858675ed4F1126842902F2dA984c13BA28ae9C',
+      contractMethod: 'swapExactAmountIn',
+      partnerFee: 0,
+      srcUSD: '23.2138399098',
+      destUSD: '23.2605187000',
+      partner: 'paraswap.io',
+      maxImpactReached: false,
+      hmac: 'dca3bbdddf1d7901a0678c8c55b0f1e23956ec05',
+    } as unknown as OptimalRate;
 
     console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);

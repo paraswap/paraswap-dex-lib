@@ -958,6 +958,40 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
     const tokens = Tokens[network];
     const holders = Holders[network];
 
+    describe('MultiSwap', () => {
+      const contractMethod = ContractMethod.multiSwap;
+
+      describe('WMATIC -> MATIC', () => {
+        const dexKeys = ['UniswapV3', 'Dfyn', 'BalancerV2'];
+
+        const tokenASymbol: string = 'WMATIC';
+        const tokenBSymbol: string = 'MATIC';
+        const tokenAAmount: string = '23474666934083667923';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            2000,
+            false,
+          );
+        });
+      });
+    });
+
     describe('MegaSwap', () => {
       const contractMethod = ContractMethod.megaSwap;
 

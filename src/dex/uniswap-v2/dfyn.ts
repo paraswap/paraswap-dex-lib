@@ -1,10 +1,17 @@
 import { UniswapV2 } from './uniswap-v2';
 import { Network, ETHER_ADDRESS, SwapSide } from '../../constants';
-import { Address, DexConfigMap, Token, ExchangePrices } from '../../types';
+import {
+  Address,
+  DexConfigMap,
+  Token,
+  ExchangePrices,
+  DexExchangeParam,
+} from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
 import { Interface } from '@ethersproject/abi';
-import { DexParams, UniswapV2Data } from './types';
+import { DexParams, UniswapData, UniswapV2Data } from './types';
 import { getDexKeysWithNetwork } from '../../utils';
+import { NumberAsString } from '@paraswap/core';
 
 export const DfynConfig: DexConfigMap<DexParams> = {
   Dfyn: {
@@ -83,5 +90,27 @@ export class Dfyn extends UniswapV2 {
     return prices
       ? prices.map(p => ({ ...p, data: { ...p.data, weth: DfynWETH.address } }))
       : null;
+  }
+
+  public getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: UniswapData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const param = super.getDexParam(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      recipient,
+      data,
+      side,
+    );
+
+    return { ...param, wethAddress: DfynWETH.address };
   }
 }

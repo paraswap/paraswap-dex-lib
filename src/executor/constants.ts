@@ -19,6 +19,8 @@ export const SWAP_EXCHANGE_100_PERCENTAGE = 100;
 
 export const NOT_EXISTING_EXCHANGE_PARAM_INDEX = -1;
 
+export const ETH_SRC_TOKEN_POS_FOR_MULTISWAP_METADATA = '0xEEEEEEEEEEEEEEEE';
+
 export const EXECUTOR_01_02_FUNCTION_CALL_DATA_TYPES: string[] = [
   'bytes20', // address
   'bytes4', // calldata Size
