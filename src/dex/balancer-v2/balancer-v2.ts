@@ -1055,14 +1055,16 @@ export class BalancerV2
     destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
-    recipientV6?: string,
+    sender = this.augustusAddress,
+    recipient = this.augustusAddress,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
     let limits: string[] = [];
 
-    const isV6Swap = !!recipientV6;
+    const isV6Swap =
+      sender.toLowerCase() !== this.augustusAddress.toLowerCase();
 
     for (const swapData of data.swaps) {
       const pool = this.poolIdMap[swapData.poolId];
@@ -1133,8 +1135,8 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: recipientV6 ? NULL_ADDRESS : this.augustusAddress,
-      recipient: recipientV6 ?? this.augustusAddress,
+      sender,
+      recipient,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
@@ -1337,6 +1339,7 @@ export class BalancerV2
       toAmount,
       data,
       side,
+      this.augustusV6Address,
       beneficiary,
     );
 
@@ -1443,6 +1446,8 @@ export class BalancerV2
       destAmount,
       data,
       side,
+      // use zero address as sender, because it will replaced in Executor.swapOnBalancerV2
+      NULL_ADDRESS,
       recipient,
     );
 
