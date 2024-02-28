@@ -376,9 +376,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       isETHAddress(srcTokenAddress) &&
       !wrapWasAddedInSwapExchange
     ) {
-      srcTokenAddress = exchangeParamIndex
-        ? this.getWETHAddress(exchangeParams[exchangeParamIndex])
-        : this.dexHelper.config.data.wrappedNativeTokenAddress;
+      srcTokenAddress =
+        exchangeParamIndex > -1
+          ? this.getWETHAddress(exchangeParams[exchangeParamIndex])
+          : this.dexHelper.config.data.wrappedNativeTokenAddress;
     }
 
     let srcTokenAddressLowered = srcTokenAddress.toLowerCase();

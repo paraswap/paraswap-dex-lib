@@ -1030,72 +1030,42 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         });
       });
 
-      // describe('WBTC -> DAI', () => {
-      //   const dexKeys = [
-      //     'CurveV2',
-      //     'DODOV2',
-      //     'UniswapV3',
-      //     'QuickSwapV3',
-      //     'IronV2',
-      //     'Synapse',
-      //   ];
-      //
-      //   const tokenASymbol: string = 'WBTC';
-      //   const tokenBSymbol: string = 'DAI';
-      //   const tokenAAmount: string = '1000000000';
-      //
-      //   const side = SwapSide.SELL;
-      //
-      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-      //     await testE2E(
-      //       tokens[tokenASymbol],
-      //       tokens[tokenBSymbol],
-      //       holders[tokenASymbol],
-      //       tokenAAmount,
-      //       side,
-      //       dexKeys,
-      //       contractMethod,
-      //       network,
-      //       provider,
-      //       undefined,
-      //       undefined,
-      //       undefined,
-      //       300,
-      //       2000,
-      //       false,
-      //     );
-      //   });
-      // });
-      //
-      // describe('DAI -> MATIC via multiple dexes', () => {
-      //   const dexKeys: string[] = [];
-      //
-      //   const tokenASymbol: string = 'DAI';
-      //   const tokenBSymbol: string = 'MATIC';
-      //   const tokenAAmount: string = '1000000000000000000000000';
-      //
-      //   const side = SwapSide.SELL;
-      //
-      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-      //     await testE2E(
-      //       tokens[tokenASymbol],
-      //       tokens[tokenBSymbol],
-      //       holders[tokenASymbol],
-      //       tokenAAmount,
-      //       side,
-      //       dexKeys,
-      //       contractMethod,
-      //       network,
-      //       provider,
-      //       undefined,
-      //       undefined,
-      //       undefined,
-      //       300,
-      //       2000,
-      //       false,
-      //     );
-      //   });
-      // });
+      describe('WBTC -> DAI', () => {
+        const dexKeys = [
+          'CurveV2',
+          'DODOV2',
+          'UniswapV3',
+          'QuickSwapV3',
+          'IronV2',
+          'Synapse',
+        ];
+
+        const tokenASymbol: string = 'WBTC';
+        const tokenBSymbol: string = 'DAI';
+        const tokenAAmount: string = '1000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+            false,
+          );
+        });
+      });
     });
   });
 });
