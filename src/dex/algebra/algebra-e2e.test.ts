@@ -218,7 +218,7 @@ describe('Algebra', () => {
     });
   });
 
-  describe('CamelotV3', () => {
+  describe('CamelotV3_V6', () => {
     const dexKey = 'CamelotV3';
     const network = Network.ARBITRUM;
 

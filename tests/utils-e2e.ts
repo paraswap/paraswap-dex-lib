@@ -493,6 +493,7 @@ export async function testE2E(
       transferFees,
       forceRoute,
     );
+    // TODO: Remove?
     priceRoute.contractMethod = contractMethod;
 
     console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
