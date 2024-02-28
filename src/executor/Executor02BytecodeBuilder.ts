@@ -801,7 +801,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
       const curExchangeParam = exchangeParams[index];
 
-      return curExchangeParam.needWrapNative;
+      return curExchangeParam.needWrapNative && !curExchangeParam.wethAddress;
     });
   }
 
@@ -826,7 +826,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
       const curExchangeParam = exchangeParams[index];
 
-      return curExchangeParam.needWrapNative;
+      return curExchangeParam.needWrapNative && !curExchangeParam.wethAddress;
     });
 
     return res.includes(true);
@@ -1094,6 +1094,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     priceRoute: OptimalRate,
     exchangeParams: DexExchangeParam[],
   ): boolean {
+    if (!isETHAddress(priceRoute.srcToken)) {
+      return false;
+    }
+
     const res = priceRoute.bestRoute.every((route, routeIndex) => {
       const firstSwap = route.swaps[0];
       const eachDexOnSwapNeedsWrapNative = this.eachDexOnSwapNeedsWrapNative(
@@ -1113,13 +1117,16 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     priceRoute: OptimalRate,
     exchangeParams: DexExchangeParam[],
   ): boolean {
+    if (!isETHAddress(priceRoute.destToken)) {
+      return false;
+    }
+
     const res = priceRoute.bestRoute.every((route, routeIndex) => {
       const lastSwap = route.swaps[route.swaps.length - 1];
-      const eachDexOnSwapNeedsWrapNative = this.eachDexOnSwapNeedsWrapNative(
+      const eachDexOnSwapNeedsWrapNative = this.anyDexOnSwapNeedsWrapNative(
         priceRoute,
         lastSwap,
         exchangeParams,
-        routeIndex,
       );
 
       return eachDexOnSwapNeedsWrapNative;
