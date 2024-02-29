@@ -10,7 +10,7 @@ import {
 import { IDexHelper } from '../../dex-helper/index';
 import { Interface } from '@ethersproject/abi';
 import { DexParams, UniswapData, UniswapV2Data } from './types';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { NumberAsString } from '@paraswap/core';
 
 export const DfynConfig: DexConfigMap<DexParams> = {
@@ -101,9 +101,12 @@ export class Dfyn extends UniswapV2 {
     data: UniswapData,
     side: SwapSide,
   ): DexExchangeParam {
+    const _srcToken = isETHAddress(srcToken) ? DfynWETH.address : srcToken;
+    const _destToken = isETHAddress(destToken) ? DfynWETH.address : destToken;
+
     const param = super.getDexParam(
-      srcToken,
-      destToken,
+      _srcToken,
+      _destToken,
       srcAmount,
       destAmount,
       recipient,
@@ -111,6 +114,9 @@ export class Dfyn extends UniswapV2 {
       side,
     );
 
-    return { ...param, wethAddress: DfynWETH.address };
+    return {
+      ...param,
+      wethAddress: DfynWETH.address,
+    };
   }
 }

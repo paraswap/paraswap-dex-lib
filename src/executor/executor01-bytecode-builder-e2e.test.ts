@@ -1079,6 +1079,29 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
   describe('Polygon', () => {
     const network = Network.POLYGON;
 
+    describe('SimpleSwap', () => {
+      describe('Dfyn', () => {
+        const dexKey = 'Dfyn';
+
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'WBTC';
+
+        const tokenAAmount: string = '10000000';
+        const tokenBAmount: string = '100000000';
+        const nativeTokenAmount = '1000000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+          nativeTokenAmount,
+        );
+      });
+    });
+
     describe('MultiSwap', () => {
       describe('USDC.e -> MATIC -> CRV via Dystopia and QuickSwap', () => {
         const dexKeys = ['Dystopia', 'QuickSwap'];
