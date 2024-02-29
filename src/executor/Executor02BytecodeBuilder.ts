@@ -466,7 +466,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     swapCallData: string,
     flag: Flag,
   ) {
-    console.log('VERTICAL BRANCHING FLAG: ', flag);
     const data = this.packVerticalBranchingData(swapCallData);
 
     const destTokenAddrLowered = swap.destToken.toLowerCase();
@@ -1180,8 +1179,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       exchangeParams,
       maybeWethCallData,
     );
-
-    console.log('FLAGS: ', flags);
 
     let swapsCalldata = priceRoute.bestRoute.reduce<string>(
       (routeAcc, route, routeIndex) =>
