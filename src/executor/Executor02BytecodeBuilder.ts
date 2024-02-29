@@ -58,6 +58,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
 
+    const isLastSwapExchange =
+      swapExchangeIndex ===
+      priceRoute.bestRoute[routeIndex].swaps[swapIndex].swapExchanges.length -
+        1;
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
@@ -71,7 +75,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
       dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
-    } else if (!dexFuncHasRecipient || (isEthDest && needUnwrap)) {
+    } else if (
+      !dexFuncHasRecipient ||
+      (isEthDest && needUnwrap && isLastSwapExchange)
+    ) {
       dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
     }
 
