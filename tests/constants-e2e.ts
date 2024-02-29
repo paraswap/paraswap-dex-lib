@@ -513,6 +513,10 @@ export const Tokens: {
       address: '0x6899fAcE15c14348E1759371049ab64A3a06bFA6',
       decimals: 18,
     },
+    SUSHI: {
+      address: '0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a',
+      decimals: 18,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -1188,6 +1192,7 @@ export const Holders: {
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     CRV: '0x2151578e1fEc29361bB0481312Ea6b935014D636',
+    SUSHI: '0x1605CE87dD176b38a17d30e8926370ffD5268bf6',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',

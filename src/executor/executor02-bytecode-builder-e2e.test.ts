@@ -1066,6 +1066,36 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
           );
         });
       });
+
+      describe('MATIC -> SUSHI', () => {
+        const dexKeys = ['Dfyn', 'SushiSwapV3'];
+
+        const tokenASymbol: string = 'MATIC';
+        const tokenBSymbol: string = 'SUSHI';
+        const tokenAAmount: string = '1000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+            false,
+          );
+        });
+      });
     });
   });
 });

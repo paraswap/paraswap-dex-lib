@@ -665,7 +665,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             priceRoute,
             nextSwap,
             exchangeParams,
-            routeIndex,
           );
         }
 
@@ -785,19 +784,21 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     priceRoute: OptimalRate,
     swap: OptimalSwap,
     exchangeParams: DexExchangeParam[],
-    routeIndex: number,
+    // routeIndex: number,
   ): boolean {
     return swap.swapExchanges.every(curSe => {
       let index = 0;
       let swapExchangeIndex = 0;
-      priceRoute.bestRoute[routeIndex].swaps.map(curSwap =>
-        curSwap.swapExchanges.map(async se => {
-          if (Object.is(se, curSe)) {
-            index = swapExchangeIndex;
-          }
-          swapExchangeIndex++;
-        }),
-      );
+      priceRoute.bestRoute.map(route => {
+        route.swaps.map(curSwap =>
+          curSwap.swapExchanges.map(async se => {
+            if (Object.is(se, curSe)) {
+              index = swapExchangeIndex;
+            }
+            swapExchangeIndex++;
+          }),
+        );
+      });
 
       const curExchangeParam = exchangeParams[index];
 
@@ -1104,7 +1105,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         priceRoute,
         firstSwap,
         exchangeParams,
-        routeIndex,
       );
 
       return eachDexOnSwapNeedsWrapNative;

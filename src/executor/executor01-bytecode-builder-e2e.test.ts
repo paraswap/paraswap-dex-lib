@@ -1140,6 +1140,44 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
           );
         });
       });
+
+      // describe('MATIC -> ETH -> SUSHI via Dfyn and SushiV3', () => {
+      //   const dexKeys = ['Dfyn', 'SushiSwapV3'];
+      //   const provider = new StaticJsonRpcProvider(
+      //     generateConfig(network).privateHttpProvider,
+      //     network,
+      //   );
+      //   const slippage = undefined;
+      //
+      //   const tokenASymbol: string = 'MATIC';
+      //   const tokenBSymbol: string = 'SUSHI';
+      //
+      //   const tokenAAmount: string = '10000000000000000000';
+      //
+      //   const tokens = Tokens[network];
+      //   const holders = Holders[network];
+      //   const contractMethod = ContractMethod.multiSwap;
+      //   const side = SwapSide.SELL;
+      //
+      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+      //     await testE2E(
+      //       tokens[tokenASymbol],
+      //       tokens[tokenBSymbol],
+      //       holders[tokenASymbol],
+      //       tokenAAmount,
+      //       side,
+      //       dexKeys,
+      //       contractMethod,
+      //       network,
+      //       provider,
+      //       undefined,
+      //       undefined,
+      //       undefined,
+      //       slippage,
+      //       2000,
+      //     );
+      //   });
+      // });
     });
   });
 
