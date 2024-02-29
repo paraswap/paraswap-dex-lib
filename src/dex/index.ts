@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
@@ -294,7 +295,7 @@ export class DexAdapterService {
   }
 
   getAllDexKeys() {
-    return this.dexKeys;
+    return _.uniq(this.dexKeys);
   }
 
   getDexByKey(key: string): IDex<any, any, any> {
