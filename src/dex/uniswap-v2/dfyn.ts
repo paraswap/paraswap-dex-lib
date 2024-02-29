@@ -101,8 +101,14 @@ export class Dfyn extends UniswapV2 {
     data: UniswapData,
     side: SwapSide,
   ): DexExchangeParam {
-    const _srcToken = isETHAddress(srcToken) ? DfynWETH.address : srcToken;
-    const _destToken = isETHAddress(destToken) ? DfynWETH.address : destToken;
+    const _srcToken =
+      this.isWETH(srcToken) || isETHAddress(srcToken)
+        ? DfynWETH.address
+        : srcToken;
+    const _destToken =
+      this.isWETH(destToken) || isETHAddress(destToken)
+        ? DfynWETH.address
+        : destToken;
 
     const param = super.getDexParam(
       _srcToken,

@@ -1087,7 +1087,7 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
         const tokenBSymbol: string = 'WBTC';
 
         const tokenAAmount: string = '10000000';
-        const tokenBAmount: string = '100000000';
+        const tokenBAmount: string = '10000000';
         const nativeTokenAmount = '1000000000000000000';
 
         testForNetwork(

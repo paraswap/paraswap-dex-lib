@@ -313,6 +313,9 @@ export abstract class ExecutorBytecodeBuilder {
 
   protected getWETHAddress(exchangeParam: DexExchangeParam): string {
     const { wethAddress } = exchangeParam;
-    return wethAddress || this.dexHelper.config.data.wrappedNativeTokenAddress;
+    return (
+      wethAddress ||
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+    );
   }
 }
