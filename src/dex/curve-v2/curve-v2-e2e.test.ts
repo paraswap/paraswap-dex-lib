@@ -96,7 +96,7 @@ describe('CurveV2 E2E', () => {
 
   describe('CurveV2_POLYGON_v6', () => {
     const swapMap = new Map<SwapSide, ContractMethod[]>([
-      [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+      [SwapSide.SELL, [ContractMethod.swapExactAmountInOnCurveV2]],
     ]);
 
     testForNetwork(Network.POLYGON, swapMap);
