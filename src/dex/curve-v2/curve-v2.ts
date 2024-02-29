@@ -172,14 +172,11 @@ export class CurveV2
     let isApproved: boolean | undefined;
 
     try {
-      // TODO-v6: adapt for v6 (check balancerv2 comment)
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      isApproved = await this.dexHelper.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        this.dexHelper.config.wrapETH(srcToken).address,
+        optimalSwapExchange.data.exchange,
+      );
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,
@@ -282,8 +279,6 @@ export class CurveV2
 
     assert(side === SwapSide.SELL, 'Buy not supported');
 
-    let isApproved: boolean = false; // FIXME: depending on v5 or v6 we should read allowance on different context (if v5 then AugustusV5, if v6 either AgustusV6 (for direct swaps) or executor_N for others). This needs to be node in preProcessing
-
     const metadata = hexConcat([
       hexZeroPad(uuidToBytes16(uuid), 16),
       hexZeroPad(hexlify(blockNumber), 16),
@@ -292,7 +287,7 @@ export class CurveV2
     const swapParams: CurveV2DirectSwapParam = [
       packCurveData(
         data.exchange,
-        !isApproved, // approve flag, if not approved then set to true
+        !data.isApproved, // approve flag, if not approved then set to true
         isETHAddress(destToken) ? 2 : isETHAddress(srcToken) ? 1 : 0,
         data.swapType,
       ).toString(),

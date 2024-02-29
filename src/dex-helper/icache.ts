@@ -58,6 +58,10 @@ export interface ICache {
 
   hget(mapKey: string, key: string): Promise<string | null>;
 
+  hmget(mapKey: string, keys: string[]): Promise<(string | null)[]>;
+
+  hmset(mapKey: string, mappings: Record<string, string>): Promise<void>;
+
   hgetAll(mapKey: string): Promise<Record<string, string>>;
 
   publish(channel: string, msg: string): Promise<void>;
