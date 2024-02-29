@@ -149,6 +149,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       }
 
       const depositCallData = this.buildWrapEthCallData(
+        this.getWETHAddress(curExchangeParam),
         maybeWethCallData.deposit.calldata,
         Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
       );
@@ -182,6 +183,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       // withdraw WETH
       if (isETHAddress(swap.destToken) && maybeWethCallData?.withdraw) {
         const withdrawCallData = this.buildUnwrapEthCallData(
+          this.getWETHAddress(curExchangeParam),
           maybeWethCallData.withdraw.calldata,
         );
         swapCallData = hexConcat([swapCallData, withdrawCallData]);
@@ -247,14 +249,14 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     ) {
       exchangeData = this.addTokenAddressToCallData(
         exchangeData,
-        this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
+        this.getWETHAddress(exchangeParam),
       );
     }
 
     let tokenBalanceCheckPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
       const destTokenAddr = isETHAddress(swap.destToken)
-        ? this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+        ? this.getWETHAddress(exchangeParam)
         : swap.destToken.toLowerCase();
 
       const destTokenAddrIndex = exchangeData
