@@ -598,7 +598,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (curExchangeParam.needWrapNative && maybeWethCallData) {
       if (maybeWethCallData.deposit && isETHAddress(swap!.srcToken)) {
         let approveWethCalldata = '0x';
-        if (curExchangeParam.approveData) {
+        if (
+          curExchangeParam.approveData &&
+          !curExchangeParam.transferSrcTokenBeforeSwap
+        ) {
           approveWethCalldata = this.buildApproveCallData(
             curExchangeParam.approveData.target,
             curExchangeParam.approveData.token,

@@ -252,7 +252,10 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
           (prevExchangeParam && !prevExchangeParam.needWrapNative)
         ) {
           let approveWethCalldata = '0x';
-          if (curExchangeParam.approveData) {
+          if (
+            curExchangeParam.approveData &&
+            !curExchangeParam.transferSrcTokenBeforeSwap
+          ) {
             approveWethCalldata = this.buildApproveCallData(
               curExchangeParam.approveData.target,
               curExchangeParam.approveData.token,
