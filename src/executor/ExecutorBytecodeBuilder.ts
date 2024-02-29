@@ -124,12 +124,13 @@ export abstract class ExecutorBytecodeBuilder {
   }
 
   protected buildWrapEthCallData(
+    wethAddress: string,
     depositCallData: string,
     flag: Flag,
     destTokenPos = 0,
   ): string {
     return this.buildCallData(
-      this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
+      wethAddress,
       depositCallData,
       WRAP_UNWRAP_FROM_AMOUNT_POS,
       destTokenPos,
@@ -138,9 +139,12 @@ export abstract class ExecutorBytecodeBuilder {
     );
   }
 
-  protected buildUnwrapEthCallData(withdrawCallData: string): string {
+  protected buildUnwrapEthCallData(
+    wethAddress: string,
+    withdrawCallData: string,
+  ): string {
     return this.buildCallData(
-      this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
+      wethAddress, // weth address
       withdrawCallData,
       WRAP_UNWRAP_FROM_AMOUNT_POS,
       0,
@@ -305,5 +309,13 @@ export abstract class ExecutorBytecodeBuilder {
     }
 
     return callData;
+  }
+
+  protected getWETHAddress(exchangeParam: DexExchangeParam): string {
+    const { wethAddress } = exchangeParam;
+    return (
+      wethAddress ||
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+    );
   }
 }
