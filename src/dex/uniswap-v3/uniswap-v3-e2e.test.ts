@@ -37,8 +37,8 @@ function testForNetwork(
         // ContractMethod.simpleSwap,
         // ContractMethod.multiSwap,
         // ContractMethod.megaSwap,
-        // ContractMethod.swapExactAmountInOnUniswapV3,
-        ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountInOnUniswapV3,
+        // ContractMethod.swapExactAmountIn,
       ],
     ],
     [
@@ -47,8 +47,8 @@ function testForNetwork(
         // ContractMethod.simpleBuy,
         // ContractMethod.buy,
         // ContractMethod.directUniV3Buy,
-        // ContractMethod.swapExactAmountOutOnUniswapV3,
-        ContractMethod.swapExactAmountOut,
+        ContractMethod.swapExactAmountOutOnUniswapV3,
+        // ContractMethod.swapExactAmountOut,
       ],
     ],
   ]);
@@ -56,8 +56,7 @@ function testForNetwork(
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
-        // TODO: Improve typing
-        contractMethods.forEach((contractMethod: any) => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
             if (tokenASymbol !== 'WETH') {
               it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
@@ -97,7 +96,6 @@ function testForNetwork(
                 );
               });
             }
-            console.log('METHOD', contractMethod);
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],

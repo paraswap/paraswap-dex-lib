@@ -27,9 +27,9 @@ describe('MakerPsm E2E', () => {
     const tokenBSymbol: string = 'DAI';
     const nativeTokenSymbol = 'ETH';
 
-    const tokenAAmount: string = '1000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000000000000';
+    const nativeTokenAmount: string = '10000000000000000';
 
     const sideToContractMethods = new Map([
       [
