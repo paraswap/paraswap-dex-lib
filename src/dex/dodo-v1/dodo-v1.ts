@@ -117,6 +117,7 @@ export class DodoV1
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: DODOV2ProxyAddress[this.network],
+      spender: DODOAproveAddress[this.network],
     };
   }
 }
