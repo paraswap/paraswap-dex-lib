@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.44.1",
+  "version": "2.45.0",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
+    "@bgd-labs/aave-address-book": "2.21.1",
     "@ethersproject/abi": "^5.7.0",
     "@hashflow/sdk": "1.2.4",
     "@hashflow/taker-js": "0.3.4",
