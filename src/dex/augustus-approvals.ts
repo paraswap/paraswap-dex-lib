@@ -34,7 +34,7 @@ export class AugustusApprovals {
     this.erc20Interface = new Interface(ERC20ABI);
     this.cache = cache;
 
-    this.cacheApprovesKey = `${CACHE_PREFIX}_${this.network}_approves`;
+    this.cacheApprovesKey = `${CACHE_PREFIX}_${this.network}_generic_approves`;
   }
 
   async hasApproval(
