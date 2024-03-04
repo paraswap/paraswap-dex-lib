@@ -406,6 +406,10 @@ export const Tokens: {
       address: '0x172370d5cd63279efa6d502dab29171933a610af',
       decimals: 18,
     },
+    BAL: {
+      address: '0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3',
+      decimals: 18,
+    },
     WETH: {
       address: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
       decimals: 18,
@@ -1169,6 +1173,7 @@ export const Holders: {
     WMATIC: '0x20ADb16b3Be592012087A07dBe463Fe8fB0Eb6F7',
     AMWMATIC: '0x975779102B2A82384f872EE759801DB5204CE331',
     USDC: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
+    BAL: '0xF1CFf6380D9A15dB33Eed0309541E254fC7dE695',
     POPS: '0x2693b57ee51f4e2a26dfb339a911fa8731061f49',
     MUST: '0x9f2a409848fb9b7bd058b24a23e8dbf1e166a109',
     AMDAI: '0xFA0DCe8280FCDf369a4cbFc1830d3302789307a6',

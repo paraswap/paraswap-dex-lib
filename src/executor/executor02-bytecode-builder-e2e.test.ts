@@ -296,7 +296,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             undefined,
             undefined,
-            slippage,
+            100,
             2000,
             false,
             [
@@ -348,7 +348,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'BAL';
         const tokenBSymbol: string = 'SUSHI';
-        const tokenAAmount: string = '100000000000000000000000';
+        const tokenAAmount: string = '10000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -366,7 +366,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             undefined,
             undefined,
-            slippage,
+            100,
             2000,
             false,
             [
@@ -1091,6 +1091,36 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             undefined,
             300,
+            2000,
+            false,
+          );
+        });
+      });
+
+      describe('MATIC -> BAL', () => {
+        const dexKeys = ['Dfyn', 'BalancerV2'];
+
+        const tokenASymbol: string = 'MATIC';
+        const tokenBSymbol: string = 'BAL';
+        const tokenAAmount: string = '1000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            100,
             2000,
             false,
           );
