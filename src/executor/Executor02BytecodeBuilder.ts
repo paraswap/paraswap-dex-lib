@@ -168,7 +168,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (isFirstSwap) {
       if (
         (applyVerticalBranching && !isSpecialDex && !isEthSrc) ||
-        (isSpecialDex && needWrap)
+        (isSpecialDex && needWrap && !isHorizontalSequence)
       ) {
         // keep default flags
       } else if (isEthSrc && !needWrap) {
