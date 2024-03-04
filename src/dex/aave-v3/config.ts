@@ -124,4 +124,28 @@ export const Adapters: {
       },
     ],
   },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter01',
+        index: 9,
+      },
+    ],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BscAdapter02',
+        index: 9,
+      },
+    ],
+  },
+  [Network.ZKEVM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'PolygonZkEvmAdapter02',
+        index: 1,
+      },
+    ],
+  },
 };
