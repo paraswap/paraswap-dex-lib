@@ -410,6 +410,14 @@ export const Tokens: {
       address: '0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3',
       decimals: 18,
     },
+    AAVE: {
+      address: '0xd6df932a45c0f255f85145f286ea0b292b21c90b',
+      decimals: 18,
+    },
+    PSP: {
+      address: '0x42d61d766b85431666b39b89c43011f24451bff6',
+      decimals: 18,
+    },
     WETH: {
       address: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
       decimals: 18,
@@ -1107,7 +1115,7 @@ export const Holders: {
     CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
     AnkETH: '0xF7260D4ADc48fEefd5a19a9Eb23f9747CeE15C92',
-    DAI: '0x60FaAe176336dAb62e284Fe19B885B095d29fB7F',
+    DAI: '0x2fEb1512183545f48f6b9C5b4EbfCaF49CfCa6F3',
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     FEI: '0x19c549357034d10db8d75ed812b45be1dd8a7218',
@@ -1174,6 +1182,8 @@ export const Holders: {
     AMWMATIC: '0x975779102B2A82384f872EE759801DB5204CE331',
     USDC: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     BAL: '0xF1CFf6380D9A15dB33Eed0309541E254fC7dE695',
+    AAVE: '0x256e063f7fb60a3004D13e1D09e7A9D200A5C5bA',
+    PSP: '0xa902c6a26bcaC4c62Eb8667E3Ef9368f78421dB5',
     POPS: '0x2693b57ee51f4e2a26dfb339a911fa8731061f49',
     MUST: '0x9f2a409848fb9b7bd058b24a23e8dbf1e166a109',
     AMDAI: '0xFA0DCe8280FCDf369a4cbFc1830d3302789307a6',

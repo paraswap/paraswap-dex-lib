@@ -453,7 +453,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'DAI';
         const tokenBSymbol: string = 'ETH';
-        const tokenAAmount: string = '100000000000000000000000000';
+        const tokenAAmount: string = '30000000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -987,6 +987,41 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             2000,
             false,
+          );
+        });
+      });
+
+      describe('AAVE -> MATIC -> PSP', () => {
+        const dexKeys = ['QuickSwapV3', 'QuickSwap', 'UniSwapV3'];
+
+        const tokenASymbol: string = 'AAVE';
+        const tokenBSymbol: string = 'PSP';
+        const tokenAAmount: string = '295771600818247417';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            100,
+            2000,
+            false,
+            [
+              '0xd6df932a45c0f255f85145f286ea0b292b21c90b', // AAVE
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // MATIC
+              '0x42d61d766b85431666b39b89c43011f24451bff6', // PSP
+            ],
           );
         });
       });
