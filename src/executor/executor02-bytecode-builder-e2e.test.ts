@@ -296,7 +296,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             undefined,
             undefined,
-            slippage,
+            100,
             2000,
             false,
             [
@@ -348,7 +348,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'BAL';
         const tokenBSymbol: string = 'SUSHI';
-        const tokenAAmount: string = '100000000000000000000000';
+        const tokenAAmount: string = '10000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -366,7 +366,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             undefined,
             undefined,
-            slippage,
+            100,
             2000,
             false,
             [
@@ -453,7 +453,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'DAI';
         const tokenBSymbol: string = 'ETH';
-        const tokenAAmount: string = '100000000000000000000000000';
+        const tokenAAmount: string = '30000000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -958,6 +958,75 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
     const tokens = Tokens[network];
     const holders = Holders[network];
 
+    describe('MultiSwap', () => {
+      const contractMethod = ContractMethod.multiSwap;
+
+      describe('WMATIC -> MATIC', () => {
+        const dexKeys = ['UniswapV3', 'Dfyn', 'BalancerV2'];
+
+        const tokenASymbol: string = 'WMATIC';
+        const tokenBSymbol: string = 'MATIC';
+        const tokenAAmount: string = '23474666934083667923';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            2000,
+            false,
+          );
+        });
+      });
+
+      describe('AAVE -> MATIC -> PSP', () => {
+        const dexKeys = ['QuickSwapV3', 'QuickSwap', 'UniSwapV3'];
+
+        const tokenASymbol: string = 'AAVE';
+        const tokenBSymbol: string = 'PSP';
+        const tokenAAmount: string = '295771600818247417';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            100,
+            2000,
+            false,
+            [
+              '0xd6df932a45c0f255f85145f286ea0b292b21c90b', // AAVE
+              '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // MATIC
+              '0x42d61d766b85431666b39b89c43011f24451bff6', // PSP
+            ],
+          );
+        });
+      });
+    });
+
     describe('MegaSwap', () => {
       const contractMethod = ContractMethod.megaSwap;
 
@@ -996,72 +1065,102 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         });
       });
 
-      // describe('WBTC -> DAI', () => {
-      //   const dexKeys = [
-      //     'CurveV2',
-      //     'DODOV2',
-      //     'UniswapV3',
-      //     'QuickSwapV3',
-      //     'IronV2',
-      //     'Synapse',
-      //   ];
-      //
-      //   const tokenASymbol: string = 'WBTC';
-      //   const tokenBSymbol: string = 'DAI';
-      //   const tokenAAmount: string = '1000000000';
-      //
-      //   const side = SwapSide.SELL;
-      //
-      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-      //     await testE2E(
-      //       tokens[tokenASymbol],
-      //       tokens[tokenBSymbol],
-      //       holders[tokenASymbol],
-      //       tokenAAmount,
-      //       side,
-      //       dexKeys,
-      //       contractMethod,
-      //       network,
-      //       provider,
-      //       undefined,
-      //       undefined,
-      //       undefined,
-      //       300,
-      //       2000,
-      //       false,
-      //     );
-      //   });
-      // });
-      //
-      // describe('DAI -> MATIC via multiple dexes', () => {
-      //   const dexKeys: string[] = [];
-      //
-      //   const tokenASymbol: string = 'DAI';
-      //   const tokenBSymbol: string = 'MATIC';
-      //   const tokenAAmount: string = '1000000000000000000000000';
-      //
-      //   const side = SwapSide.SELL;
-      //
-      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-      //     await testE2E(
-      //       tokens[tokenASymbol],
-      //       tokens[tokenBSymbol],
-      //       holders[tokenASymbol],
-      //       tokenAAmount,
-      //       side,
-      //       dexKeys,
-      //       contractMethod,
-      //       network,
-      //       provider,
-      //       undefined,
-      //       undefined,
-      //       undefined,
-      //       300,
-      //       2000,
-      //       false,
-      //     );
-      //   });
-      // });
+      describe('WBTC -> DAI', () => {
+        const dexKeys = [
+          'CurveV2',
+          'DODOV2',
+          'UniswapV3',
+          'QuickSwapV3',
+          'IronV2',
+          'Synapse',
+        ];
+
+        const tokenASymbol: string = 'WBTC';
+        const tokenBSymbol: string = 'DAI';
+        const tokenAAmount: string = '1000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+            false,
+          );
+        });
+      });
+
+      describe('MATIC -> SUSHI', () => {
+        const dexKeys = ['Dfyn', 'SushiSwapV3'];
+
+        const tokenASymbol: string = 'MATIC';
+        const tokenBSymbol: string = 'SUSHI';
+        const tokenAAmount: string = '1000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+            false,
+          );
+        });
+      });
+
+      describe('MATIC -> BAL', () => {
+        const dexKeys = ['Dfyn', 'BalancerV2'];
+
+        const tokenASymbol: string = 'MATIC';
+        const tokenBSymbol: string = 'BAL';
+        const tokenAAmount: string = '1000000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            100,
+            2000,
+            false,
+          );
+        });
+      });
     });
   });
 });

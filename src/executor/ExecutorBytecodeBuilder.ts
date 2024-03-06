@@ -8,7 +8,6 @@ import {
   OptimalSwap,
   OptimalSwapExchange,
 } from '@paraswap/core';
-import { DexExchangeParam } from '../types';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { isETHAddress } from '../utils';
 import {
@@ -25,6 +24,7 @@ import {
 } from './constants';
 import { Executors, Flag, SpecialDex } from './types';
 import { MAX_UINT, Network } from '../constants';
+import { DexExchangeBuildParam, DexExchangeParam } from '../types';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -40,7 +40,7 @@ export abstract class ExecutorBytecodeBuilder {
 
   protected abstract buildSimpleSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeParam,
+    exchangeParam: DexExchangeBuildParam,
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -50,7 +50,7 @@ export abstract class ExecutorBytecodeBuilder {
 
   protected abstract buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeParam,
+    exchangeParam: DexExchangeBuildParam,
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -60,7 +60,7 @@ export abstract class ExecutorBytecodeBuilder {
 
   public abstract buildByteCode(
     priceRoute: OptimalRate,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeBuildParam[],
     sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
   ): string;
@@ -72,7 +72,7 @@ export abstract class ExecutorBytecodeBuilder {
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeBuildParam[],
     exchangeParamIndex: number,
     isLastSwap: boolean,
     flag: Flag,
@@ -124,12 +124,13 @@ export abstract class ExecutorBytecodeBuilder {
   }
 
   protected buildWrapEthCallData(
+    wethAddress: string,
     depositCallData: string,
     flag: Flag,
     destTokenPos = 0,
   ): string {
     return this.buildCallData(
-      this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
+      wethAddress,
       depositCallData,
       WRAP_UNWRAP_FROM_AMOUNT_POS,
       destTokenPos,
@@ -138,9 +139,12 @@ export abstract class ExecutorBytecodeBuilder {
     );
   }
 
-  protected buildUnwrapEthCallData(withdrawCallData: string): string {
+  protected buildUnwrapEthCallData(
+    wethAddress: string,
+    withdrawCallData: string,
+  ): string {
     return this.buildCallData(
-      this.dexHelper.config.data.wrappedNativeTokenAddress, // weth address
+      wethAddress, // weth address
       withdrawCallData,
       WRAP_UNWRAP_FROM_AMOUNT_POS,
       0,
@@ -246,7 +250,7 @@ export abstract class ExecutorBytecodeBuilder {
 
   protected buildFlags(
     priceRoute: OptimalRate,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeBuildParam[],
     maybeWethCallData?: DepositWithdrawReturn,
   ): { approves: Flag[]; dexes: Flag[]; wrap: Flag } {
     const isMegaSwap = priceRoute.bestRoute.length > 1;
@@ -305,5 +309,44 @@ export abstract class ExecutorBytecodeBuilder {
     }
 
     return callData;
+  }
+
+  getApprovalTokenAndTarget(
+    swap: OptimalSwap,
+    exchangeParam: DexExchangeParam,
+    maybeWethCallData?: DepositWithdrawReturn,
+  ): { target: string; token: Address } | null {
+    const target = exchangeParam.spender || exchangeParam.targetExchange;
+
+    if (
+      !isETHAddress(swap.srcToken) &&
+      !exchangeParam.transferSrcTokenBeforeSwap
+    ) {
+      return {
+        token: swap.srcToken,
+        target,
+      };
+    }
+
+    if (
+      exchangeParam.needWrapNative &&
+      maybeWethCallData?.deposit &&
+      isETHAddress(swap.srcToken)
+    ) {
+      return {
+        token: this.getWETHAddress(exchangeParam),
+        target,
+      };
+    }
+
+    return null;
+  }
+
+  protected getWETHAddress(exchangeParam: DexExchangeParam): string {
+    const { wethAddress } = exchangeParam;
+    return (
+      wethAddress ||
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
+    );
   }
 }

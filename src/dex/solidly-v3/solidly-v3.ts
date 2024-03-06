@@ -656,58 +656,6 @@ export class SolidlyV3
     return { address, decimals: 0 };
   }
 
-  async preProcessTransaction(
-    optimalSwapExchange: OptimalSwapExchange<SolidlyV3Data>,
-    srcToken: Token,
-    _0: Token,
-    _1: SwapSide,
-    options: PreprocessTransactionOptions,
-  ): Promise<[OptimalSwapExchange<SolidlyV3Data>, ExchangeTxInfo]> {
-    if (!options.isDirectMethod) {
-      return [
-        optimalSwapExchange,
-        {
-          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
-        },
-      ];
-    }
-
-    assert(
-      optimalSwapExchange.data !== undefined,
-      `preProcessTransaction: data field is missing`,
-    );
-
-    let isApproved: boolean | undefined;
-
-    try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, optimalSwapExchange.exchange)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
-    } catch (e) {
-      this.logger.error(
-        `preProcessTransaction failed to retrieve allowance info: `,
-        e,
-      );
-    }
-
-    return [
-      {
-        ...optimalSwapExchange,
-        data: {
-          ...optimalSwapExchange.data,
-          isApproved,
-        },
-      },
-      {
-        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
-      },
-    ];
-  }
-
   async getSimpleParam(
     srcToken: string,
     destToken: string,

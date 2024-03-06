@@ -159,7 +159,7 @@ export type AdapterExchangeParam = {
 
 export type DexExchangeParam = {
   needWrapNative: boolean;
-  returnsWeth?: boolean;
+  wethAddress?: string;
   exchangeData: string;
   targetExchange: string;
   dexFuncHasRecipient: boolean;
@@ -167,6 +167,13 @@ export type DexExchangeParam = {
   transferSrcTokenBeforeSwap?: Address;
   spender?: Address;
   specialDexSupportsInsertFromAmount?: boolean;
+};
+
+export type DexExchangeBuildParam = DexExchangeParam & {
+  approveData?: {
+    target: Address;
+    token: Address;
+  };
 };
 
 export type AdapterMappings = {

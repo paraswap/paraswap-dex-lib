@@ -382,6 +382,11 @@
     "@chainsafe/persistent-merkle-tree" "^0.4.2"
     case "^1.6.3"
 
+"@bgd-labs/aave-address-book@2.21.1":
+  version "2.21.1"
+  resolved "https://registry.yarnpkg.com/@bgd-labs/aave-address-book/-/aave-address-book-2.21.1.tgz#004aa244d715d785079029f6b61d5ece6bcff563"
+  integrity sha512-q22AThlSRgEgRkwWiK1ts13oO3epZkARmdJzhezv6Fv3PNa5M95uoqABjNldWmpUyadhy2UtujGzXdOQ6MSS9Q==
+
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
