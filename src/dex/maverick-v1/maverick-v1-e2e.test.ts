@@ -229,7 +229,7 @@ describe('MaverickV1 E2E', () => {
         tokens['USDT'],
         tokens['USDC'],
         holders['USDT'],
-        '1000000',
+        '1000',
         SwapSide.BUY,
         dexKey,
         ContractMethod.swapExactAmountOut,
@@ -252,12 +252,26 @@ describe('MaverickV1 E2E', () => {
       );
     });
 
+    it('swapExactAmountOut WETH -> USDC', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['USDC'],
+        holders['WETH'],
+        '100000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.swapExactAmountOut,
+        network,
+        provider,
+      );
+    });
+
     it('swapExactAmountIn USDC -> USDT', async () => {
       await testE2E(
         tokens['USDC'],
         tokens['USDT'],
         holders['USDC'],
-        '1000000',
+        '1000',
         SwapSide.SELL,
         dexKey,
         ContractMethod.swapExactAmountIn,
@@ -303,20 +317,6 @@ describe('MaverickV1 E2E', () => {
         SwapSide.SELL,
         dexKey,
         ContractMethod.swapExactAmountIn,
-        network,
-        provider,
-      );
-    });
-
-    it('swapExactAmountOut WETH -> USDC', async () => {
-      await testE2E(
-        tokens['WETH'],
-        tokens['USDC'],
-        holders['WETH'],
-        '100000000',
-        SwapSide.BUY,
-        dexKey,
-        ContractMethod.swapExactAmountOut,
         network,
         provider,
       );

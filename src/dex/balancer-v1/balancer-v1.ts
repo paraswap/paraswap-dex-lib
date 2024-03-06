@@ -385,35 +385,36 @@ export class BalancerV1
       }
     })();
 
-    const exchangeData = BalancerV1.proxyIface.encodeFunctionData(
+    let exchangeData = BalancerV1.proxyIface.encodeFunctionData(
       swapFunction,
       swapFunctionParam,
     );
+    let specialDexFlag = SpecialDex.DEFAULT;
 
-    const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
-      return acc.add(swap.tokenInParam);
-    }, BigNumber.from(0));
+    if (side === SwapSide.SELL) {
+      const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+        return acc.add(swap.tokenInParam);
+      }, BigNumber.from(0));
 
-    const specialDexExchangeData = solidityPack(
-      ['bytes32', 'bytes32', 'bytes'],
-      [
-        hexZeroPad(hexlify(swaps.length), 32),
-        hexZeroPad(hexlify(totalAmount), 32),
-        exchangeData,
-      ],
-    );
+      exchangeData = solidityPack(
+        ['bytes32', 'bytes32', 'bytes'],
+        [
+          hexZeroPad(hexlify(swaps.length), 32),
+          hexZeroPad(hexlify(totalAmount), 32),
+          exchangeData,
+        ],
+      );
+      specialDexFlag = SpecialDex.SWAP_ON_BALANCER_V1;
+    }
 
     return {
       needWrapNative:
         swapFunction === BalancerFunctions.batchSwapExactIn
           ? true
           : this.needWrapNative,
-      specialDexFlag:
-        side === SwapSide.SELL
-          ? SpecialDex.SWAP_ON_BALANCER_V1
-          : SpecialDex.DEFAULT,
+      specialDexFlag,
       dexFuncHasRecipient: false,
-      exchangeData: specialDexExchangeData,
+      exchangeData: exchangeData,
       targetExchange: this.config.exchangeProxy,
     };
   }
