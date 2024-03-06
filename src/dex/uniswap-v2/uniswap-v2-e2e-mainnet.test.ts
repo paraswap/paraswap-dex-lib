@@ -171,10 +171,10 @@ describe('UniswapV2 E2E Mainnet', () => {
             provider,
           );
         });
-        it('EX3: ETH -> USDT', async () => {
+        it('EX3: ETH -> DAI', async () => {
           await testE2E(
             tokens.ETH,
-            tokens.USDT,
+            tokens.DAI,
             holders.ETH,
             '7000000000000000',
             SwapSide.BUY,

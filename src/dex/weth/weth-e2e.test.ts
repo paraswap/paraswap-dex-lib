@@ -269,7 +269,7 @@ describe('Weth E2E', () => {
     const nativeHolder = holders[nativeTokenSymbol];
     const wrappedHolder = holders[wrappedTokenSymbol];
 
-    describe('SimpleSwap SELL', () => {
+    describe('SELL', () => {
       const contractMethod = ContractMethod.swapExactAmountIn;
       const side = SwapSide.SELL;
 
@@ -300,7 +300,7 @@ describe('Weth E2E', () => {
         );
       });
     });
-    describe('SimpleSwap BUY', () => {
+    describe('BUY', () => {
       const contractMethod = ContractMethod.swapExactAmountOut;
       const side = SwapSide.BUY;
 

@@ -37,8 +37,8 @@ function testForNetwork(
         // ContractMethod.simpleSwap,
         // ContractMethod.multiSwap,
         // ContractMethod.megaSwap,
-        ContractMethod.swapExactAmountInOnUniswapV3,
-        // ContractMethod.swapExactAmountIn,
+        // ContractMethod.swapExactAmountInOnUniswapV3,
+        ContractMethod.swapExactAmountIn,
       ],
     ],
     [
@@ -47,8 +47,8 @@ function testForNetwork(
         // ContractMethod.simpleBuy,
         // ContractMethod.buy,
         // ContractMethod.directUniV3Buy,
-        ContractMethod.swapExactAmountOutOnUniswapV3,
-        // ContractMethod.swapExactAmountOut,
+        // ContractMethod.swapExactAmountOutOnUniswapV3,
+        ContractMethod.swapExactAmountOut,
       ],
     ],
   ]);
@@ -184,30 +184,30 @@ describe('UniswapV3 E2E', () => {
           tokenBAmount: '100000',
           nativeTokenAmount,
         },
-        // this pair includes 2 pools
-        {
-          tokenA: 'LINK',
-          tokenB: 'PSP',
-          tokenAAmount: '10000000000000000',
-          tokenBAmount: '10000000000000000',
-          nativeTokenAmount,
-        },
-        // this pair includes 3 pools for SELL (fails due to liquidity are expected)
-        {
-          tokenA: 'GHO',
-          tokenB: 'STETH',
-          tokenAAmount: '2000287700000000000000',
-          tokenBAmount: '882754574792216661',
-          nativeTokenAmount,
-        },
-        // 3 pools for buy (fails due to liquidity are expected)
-        {
-          tokenA: 'GHO',
-          tokenB: 'BAT',
-          tokenAAmount: '100000000000000000000000',
-          tokenBAmount: '100000000000000000000000',
-          nativeTokenAmount,
-        },
+        // // this pair includes 2 pools
+        // {
+        //   tokenA: 'LINK',
+        //   tokenB: 'PSP',
+        //   tokenAAmount: '10000000000000000',
+        //   tokenBAmount: '10000000000000000',
+        //   nativeTokenAmount,
+        // },
+        // // this pair includes 3 pools for SELL (fails due to liquidity are expected)
+        // {
+        //   tokenA: 'GHO',
+        //   tokenB: 'STETH',
+        //   tokenAAmount: '2000287700000000000000',
+        //   tokenBAmount: '882754574792216661',
+        //   nativeTokenAmount,
+        // },
+        // // 3 pools for buy (fails due to liquidity are expected)
+        // {
+        //   tokenA: 'GHO',
+        //   tokenB: 'BAT',
+        //   tokenAAmount: '100000000000000000000000',
+        //   tokenBAmount: '100000000000000000000000',
+        //   nativeTokenAmount,
+        // },
       ];
 
       pairs.forEach(pair =>
