@@ -388,14 +388,6 @@ export const Tokens: {
     },
   },
   [Network.POLYGON]: {
-    AAVE: {
-      address: '0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
-      decimals: 18,
-    },
-    PSP: {
-      address: '0x42d61D766B85431666B39B89C43011f24451bFf6',
-      decimals: 18,
-    },
     DAI: {
       address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
       decimals: 18,

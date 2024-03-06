@@ -32,9 +32,10 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
+        // ContractMethod.simpleSwap,
         // ContractMethod.multiSwap,
         // ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
       ],
     ],
     // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
