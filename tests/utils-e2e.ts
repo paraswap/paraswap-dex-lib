@@ -400,8 +400,8 @@ export async function testE2E(
     );
     if (!allowanceTx.success) console.log(allowanceTx.url);
     if (!augustusV6Allowance.success) console.log(augustusV6Allowance.url);
-    // expect(allowanceTx!.success).toEqual(true);
-    // expect(augustusV6Allowance!.success).toEqual(true);
+    expect(allowanceTx!.success).toEqual(true);
+    expect(augustusV6Allowance!.success).toEqual(true);
   }
 
   if (deployedTestContractAddress) {
