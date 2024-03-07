@@ -552,6 +552,10 @@ export const Tokens: {
       address: '0x049d68029688eabf473097a2fc38ef61633a3c7a',
       decimals: 6,
     },
+    LQDR: {
+      address: '0x10b620b2dbac4faa7d7ffd71da486f5d44cd86f9',
+      decimals: 18,
+    },
     EQUAL: {
       address: '0x3fd3a0c85b70754efc07ac9ac0cbbdce664865a6',
       decimals: 18,
@@ -1187,7 +1191,7 @@ export const Holders: {
     MATIC: '0xfCbB9e5BB354B6F9fd40362Cee043F510dd3028D',
     DAI: '0x98F911D496Cf46bf9FF9CdD7039Cf579B26F01B9',
     WETH: '0x62ac55b745f9b08f1a81dcbbe630277095cf4be1',
-    WMATIC: '0xACb4A8b1A53490de57d7d2e0F2375B112f791Edd',
+    WMATIC: '0x0AFF6665bB45bF349489B20E225A6c5D78E2280F',
     AMWMATIC: '0x975779102B2A82384f872EE759801DB5204CE331',
     USDC: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     BAL: '0xF1CFf6380D9A15dB33Eed0309541E254fC7dE695',
@@ -1240,7 +1244,7 @@ export const Holders: {
     GDAI: '0x0e2ed73f9c1409e2b36fe6c46e60d4557b7c2ac0',
     EQUAL: '0x8b187ea19c93091a4d6b426b71871648182b5fac',
     FVM: '0x07BB65fAaC502d4996532F834A1B7ba5dC32Ff96',
-    lzUSDC: '0x1e38e2e0e7df3be6592867d0ac2713a4dbda8350',
+    lzUSDC: '0xd30442bEEE8269bFb3829c401C62B38d2EA5BdB4',
     axlUSDC: '0xccf932cd565c21d2e516c8ff3a4f244eea27e09a',
   },
   [Network.BSC]: {

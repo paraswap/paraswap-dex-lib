@@ -312,6 +312,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     swap: OptimalSwap,
     exchangeParamIndex: number,
     wrapWasAddedInSwapExchange: boolean,
+    addedUnwrapForDexWithNoNeedWrapNative = false,
   ) {
     let srcTokenAddress = swap.srcToken;
 
@@ -319,7 +320,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (exchangeParamIndex > -1) {
       doesAnyDexOnSwapNeedsWrapNative =
         isETHAddress(srcTokenAddress) &&
-        exchangeParams[exchangeParamIndex].needWrapNative;
+        (exchangeParams[exchangeParamIndex].needWrapNative ||
+          (!exchangeParams[exchangeParamIndex].needWrapNative &&
+            addedUnwrapForDexWithNoNeedWrapNative));
     } else {
       doesAnyDexOnSwapNeedsWrapNative =
         isETHAddress(srcTokenAddress) &&
@@ -663,6 +666,59 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       }
     }
 
+    let addedUnwrapForDexWithNoNeedWrapNative = false;
+    if (
+      isETHAddress(swap.srcToken) &&
+      maybeWethCallData &&
+      maybeWethCallData.withdraw &&
+      !curExchangeParam.needWrapNative
+    ) {
+      const prevSwap = priceRoute.bestRoute[routeIndex].swaps[swapIndex - 1];
+      const swapExchangesWhichNeedWrapNative = prevSwap
+        ? this.getSwapExchangesWhichNeedWrapNative(
+            priceRoute,
+            prevSwap,
+            exchangeParams,
+          )
+        : [];
+      const swapExchangesWhichDontNeedWrapNative = prevSwap
+        ? this.getSwapExchangesWhichDontNeedWrapNative(
+            priceRoute,
+            prevSwap,
+            exchangeParams,
+          )
+        : [];
+
+      const totalDestAmountForSwapExchangesWhichDontNeedWrapNative =
+        swapExchangesWhichDontNeedWrapNative.reduce<bigint>(
+          (acc, se) => acc + BigInt(se.destAmount),
+          0n,
+        );
+      const totalDestAmountForSwapExchangesWhichNeedWrapNative =
+        swapExchangesWhichNeedWrapNative.reduce<bigint>(
+          (acc, se) => acc + BigInt(se.destAmount),
+          0n,
+        );
+
+      if (
+        BigInt(swapExchange.srcAmount) >
+          totalDestAmountForSwapExchangesWhichDontNeedWrapNative &&
+        BigInt(swapExchange.srcAmount) <=
+          totalDestAmountForSwapExchangesWhichNeedWrapNative
+      ) {
+        const withdrawCallData = this.buildUnwrapEthCallData(
+          this.getWETHAddress(curExchangeParam),
+          maybeWethCallData.withdraw.calldata,
+        );
+
+        swapExchangeCallData = hexConcat([
+          withdrawCallData,
+          swapExchangeCallData,
+        ]);
+        addedUnwrapForDexWithNoNeedWrapNative = true;
+      }
+    }
+
     if (
       isLastSwap &&
       !exchangeParams[exchangeParamIndex].dexFuncHasRecipient &&
@@ -706,6 +762,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         addedWrapToSwapExchangeMap[
           `${routeIndex}_${swapIndex}_${swapExchangeIndex}`
         ],
+        addedUnwrapForDexWithNoNeedWrapNative,
       );
     }
 
@@ -791,6 +848,56 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     });
 
     return res.includes(true);
+  }
+
+  private getSwapExchangesWhichNeedWrapNative(
+    priceRoute: OptimalRate,
+    swap: OptimalSwap,
+    exchangeParams: DexExchangeBuildParam[],
+  ) {
+    return swap.swapExchanges.filter(curSe => {
+      let index = 0;
+      let swapExchangeIndex = 0;
+      priceRoute.bestRoute.map(route => {
+        route.swaps.map(curSwap => {
+          return curSwap.swapExchanges.map(async se => {
+            if (Object.is(se, curSe)) {
+              index = swapExchangeIndex;
+            }
+            swapExchangeIndex++;
+          });
+        });
+      });
+
+      const curExchangeParam = exchangeParams[index];
+
+      return curExchangeParam.needWrapNative && !curExchangeParam.wethAddress;
+    });
+  }
+
+  private getSwapExchangesWhichDontNeedWrapNative(
+    priceRoute: OptimalRate,
+    swap: OptimalSwap,
+    exchangeParams: DexExchangeBuildParam[],
+  ) {
+    return swap.swapExchanges.filter(curSe => {
+      let index = 0;
+      let swapExchangeIndex = 0;
+      priceRoute.bestRoute.map(route => {
+        route.swaps.map(curSwap => {
+          return curSwap.swapExchanges.map(async se => {
+            if (Object.is(se, curSe)) {
+              index = swapExchangeIndex;
+            }
+            swapExchangeIndex++;
+          });
+        });
+      });
+
+      const curExchangeParam = exchangeParams[index];
+
+      return !curExchangeParam.needWrapNative || curExchangeParam.wethAddress;
+    });
   }
 
   private anyDexOnSwapDoesntNeedWrapNative(
