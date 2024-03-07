@@ -43,13 +43,24 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
-    const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
+    const {
+      dexFuncHasRecipient,
+      needWrapNative,
+      specialDexFlag,
+      specialDexSupportsInsertFromAmount,
+    } = exchangeParam;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
+    const isSpecialDex =
+      specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
+    const forcePreventInsertFromAmount =
+      isSpecialDex && !specialDexSupportsInsertFromAmount;
 
-    let dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
+    let dexFlag = forcePreventInsertFromAmount
+      ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP
+      : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0 or 3
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
@@ -57,9 +68,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       dexFlag =
         Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
-      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
+      dexFlag = forcePreventInsertFromAmount
+        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP
+        : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4 or 7
     } else if (!dexFuncHasRecipient || (isEthDest && needUnwrap)) {
-      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
+      dexFlag = forcePreventInsertFromAmount
+        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP
+        : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8 or 11
     }
 
     return {
