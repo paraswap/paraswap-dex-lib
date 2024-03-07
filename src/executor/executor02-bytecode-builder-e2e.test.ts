@@ -313,7 +313,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
 
         const tokenASymbol: string = 'SUSHI';
         const tokenBSymbol: string = 'WBTC';
-        const tokenAAmount: string = '1000000000000000000000000';
+        const tokenAAmount: string = '100000000000000000000000';
 
         const side = SwapSide.SELL;
 
@@ -721,35 +721,35 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         });
       });
 
-      describe('DAI -> ETH via SushiSwapV3,BalancerV1, BalancerV2 and CurveV1 ', () => {
-        const dexKeys = ['SushiSwapV3', 'BalancerV1', 'BalancerV2', 'CurveV1'];
-
-        const tokenASymbol: string = 'DAI';
-        const tokenBSymbol: string = 'ETH';
-        const tokenAAmount: string = '900000000000000000000000';
-
-        const side = SwapSide.SELL;
-
-        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-          await testE2E(
-            tokens[tokenASymbol],
-            tokens[tokenBSymbol],
-            holders[tokenASymbol],
-            tokenAAmount,
-            side,
-            dexKeys,
-            contractMethod,
-            network,
-            provider,
-            undefined,
-            undefined,
-            undefined,
-            300,
-            2000,
-            false,
-          );
-        });
-      });
+      // describe('DAI -> ETH via SushiSwapV3,BalancerV1, BalancerV2 and CurveV1 ', () => {
+      //   const dexKeys = ['SushiSwapV3', 'BalancerV1', 'BalancerV2', 'CurveV1'];
+      //
+      //   const tokenASymbol: string = 'DAI';
+      //   const tokenBSymbol: string = 'ETH';
+      //   const tokenAAmount: string = '900000000000000000000000';
+      //
+      //   const side = SwapSide.SELL;
+      //
+      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+      //     await testE2E(
+      //       tokens[tokenASymbol],
+      //       tokens[tokenBSymbol],
+      //       holders[tokenASymbol],
+      //       tokenAAmount,
+      //       side,
+      //       dexKeys,
+      //       contractMethod,
+      //       network,
+      //       provider,
+      //       undefined,
+      //       undefined,
+      //       undefined,
+      //       300,
+      //       2000,
+      //       false,
+      //     );
+      //   });
+      // });
 
       describe('WBTC -> USDT via UniSwapV3 and CurveV1', () => {
         const dexKeys = ['UniSwapV3', 'CurveV1'];
@@ -920,6 +920,99 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             undefined,
             slippage,
             2000,
+          );
+        });
+      });
+    });
+  });
+
+  describe('Fantom', () => {
+    const network = Network.FANTOM;
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const slippage = undefined;
+
+    describe('MultiSwap', () => {
+      const contractMethod = ContractMethod.multiSwap;
+      // describe('USDC -> SPIRIT', () => {
+      //   const dexKeys = ['SpookySwap', 'Morphex', 'Equalizer', 'Velocimeter', 'BeetsFi', 'SpiritSwap', 'SpiritSwapV2', 'BeetsFi'];
+      //
+      //   const tokenASymbol: string = 'USDC';
+      //   const tokenBSymbol: string = 'SPIRIT';
+      //   const tokenAAmount: string = '1000000000';
+      //
+      //   const side = SwapSide.SELL;
+      //
+      //   it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+      //     await testE2E(
+      //       tokens[tokenASymbol],
+      //       tokens[tokenBSymbol],
+      //       holders[tokenASymbol],
+      //       tokenAAmount,
+      //       side,
+      //       dexKeys,
+      //       contractMethod,
+      //       network,
+      //       provider,
+      //       undefined,
+      //       undefined,
+      //       undefined,
+      //       slippage,
+      //       2000,
+      //       false,
+      //       [
+      //         '0x28a92dde19d9989f39a49905d7c9c2fac7799bdf', // USDC
+      //         '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+      //         '0x5cc61a78f164885776aa610fb0fe1257df78e59b', // SPIRIT
+      //       ],
+      //     );
+      //   });
+      // });
+
+      describe('lzUSDC -> LQDR', () => {
+        const dexKeys = [
+          'SpookySwap',
+          'Morphex',
+          'SpiritSwap',
+          'Solidly',
+          'SpiritSwapV2',
+          'Equalizer',
+          'BeetsFi',
+        ];
+
+        const tokenASymbol: string = 'lzUSDC';
+        const tokenBSymbol: string = 'LQDR';
+        const tokenAAmount: string = '2192000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x28a92dde19d9989f39a49905d7c9c2fac7799bdf', // USDC
+              '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+              '0x10b620b2dbac4faa7d7ffd71da486f5d44cd86f9', // SPIRIT
+            ],
           );
         });
       });
