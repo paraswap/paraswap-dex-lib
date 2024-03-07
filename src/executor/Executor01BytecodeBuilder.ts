@@ -48,6 +48,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative,
       specialDexFlag,
       specialDexSupportsInsertFromAmount,
+      exchangeData,
     } = exchangeParam;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
@@ -55,8 +56,20 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
     const isSpecialDex =
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
+
+    const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
+    const swapExchange = swap.swapExchanges[swapExchangeIndex];
+
+    const doesExchangeDataContainsSrcAmount =
+      exchangeData.indexOf(
+        ethers.utils.defaultAbiCoder
+          .encode(['uint256'], [swapExchange.srcAmount])
+          .replace('0x', ''),
+      ) > -1;
+
     const forcePreventInsertFromAmount =
-      isSpecialDex && !specialDexSupportsInsertFromAmount;
+      !doesExchangeDataContainsSrcAmount ||
+      (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
     let dexFlag = forcePreventInsertFromAmount
       ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP
