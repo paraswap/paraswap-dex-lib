@@ -61,7 +61,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative,
       specialDexFlag,
       specialDexSupportsInsertFromAmount,
-      exchangeData,
+      swappedAmountNotPresentInExchangeData,
     } = exchangeParam;
 
     const isLastSwapExchange =
@@ -75,17 +75,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
 
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
-    const swapExchange = swap.swapExchanges[swapExchangeIndex];
-
-    const doesExchangeDataContainsSrcAmount =
-      exchangeData.indexOf(
-        ethers.utils.defaultAbiCoder
-          .encode(['uint256'], [swapExchange.srcAmount])
-          .replace('0x', ''),
-      ) > -1;
 
     const forcePreventInsertFromAmount =
-      !doesExchangeDataContainsSrcAmount ||
+      swappedAmountNotPresentInExchangeData ||
       (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
     let dexFlag = forcePreventInsertFromAmount
@@ -140,7 +132,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
   ): { dexFlag: Flag; approveFlag: Flag } {
     const route = priceRoute.bestRoute[routeIndex];
     const swap = route.swaps[swapIndex];
-    const swapExchange = swap.swapExchanges[swapExchangeIndex];
 
     const { srcToken, destToken } = swap;
     const applyVerticalBranching = this.doesSwapNeedToApplyVerticalBranching(
@@ -157,8 +148,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       dexFuncHasRecipient,
       needWrapNative,
       specialDexFlag,
-      exchangeData,
       specialDexSupportsInsertFromAmount,
+      swappedAmountNotPresentInExchangeData,
       wethAddress,
     } = exchangeParam;
 
@@ -168,18 +159,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       (wethAddress && destToken.toLowerCase() === wethAddress.toLowerCase()) ||
       this.dexHelper.config.isWETH(destToken);
 
-    const doesExchangeDataContainsSrcAmount =
-      exchangeData.indexOf(
-        ethers.utils.defaultAbiCoder
-          .encode(['uint256'], [swapExchange.srcAmount])
-          .replace('0x', ''),
-      ) > -1;
-
     const isSpecialDex =
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
 
     const forcePreventInsertFromAmount =
-      !doesExchangeDataContainsSrcAmount ||
+      swappedAmountNotPresentInExchangeData ||
       (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
     const forceBalanceOfCheck =

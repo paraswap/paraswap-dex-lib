@@ -229,6 +229,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       transferSrcTokenBeforeSwap: this.params.vault,
+      swappedAmountNotPresentInExchangeData: true,
       exchangeData,
       targetExchange: this.params.vault,
     };
