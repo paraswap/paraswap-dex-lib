@@ -54,7 +54,7 @@ describe('CurveV1 E2E', () => {
           // ContractMethod.simpleSwap,
           // ContractMethod.multiSwap,
           // ContractMethod.megaSwap,
-          DIRECT_METHOD_NAME_V6,
+          ContractMethod.swapExactAmountInOnCurveV1,
         ],
       ],
     ]);
@@ -188,6 +188,16 @@ describe('CurveV1 E2E', () => {
           amount: (10 ** 8).toString(),
         },
       ],
+      [
+        {
+          symbol: 'ETH',
+          amount: (10 ** 16).toString(),
+        },
+        {
+          symbol: 'DAI',
+          amount: (10 ** 8).toString(),
+        },
+      ],
     ];
 
     const sideToContractMethods = new Map([
@@ -199,6 +209,7 @@ describe('CurveV1 E2E', () => {
           // ContractMethod.megaSwap,
           // ContractMethod.directCurveV1Swap,
           ContractMethod.swapExactAmountIn,
+          ContractMethod.swapExactAmountInOnCurveV1,
         ],
       ],
     ]);
@@ -213,6 +224,19 @@ describe('CurveV1 E2E', () => {
                 tokens[pair[1].symbol],
                 holders[pair[0].symbol],
                 side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${pair[1].symbol} -> ${pair[0].symbol}`, async () => {
+              await testE2E(
+                tokens[pair[1].symbol],
+                tokens[pair[0].symbol],
+                holders[pair[1].symbol],
+                side === SwapSide.SELL ? pair[1].amount : pair[0].amount,
                 side,
                 dexKey,
                 contractMethod,

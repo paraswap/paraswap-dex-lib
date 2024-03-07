@@ -171,10 +171,10 @@ describe('UniswapV2 E2E Mainnet', () => {
             provider,
           );
         });
-        it('EX3: ETH -> USDT', async () => {
+        it('EX3: ETH -> DAI', async () => {
           await testE2E(
             tokens.ETH,
-            tokens.USDT,
+            tokens.DAI,
             holders.ETH,
             '7000000000000000',
             SwapSide.BUY,
@@ -750,7 +750,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '7000000000000000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -763,7 +763,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '1000000000000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -776,7 +776,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '100000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -789,7 +789,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '7000000000000000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -802,7 +802,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '100000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -815,7 +815,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '200000000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -828,7 +828,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '100000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -841,7 +841,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '100000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -854,7 +854,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '100000',
           SwapSide.SELL,
           dexKey,
-          UniswapV2FunctionsV6.swap as any,
+          ContractMethod.swapExactAmountInOnUniswapV2,
           network,
           provider,
         );
@@ -870,7 +870,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '1000000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );
@@ -883,7 +883,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '7000000000000000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );
@@ -896,7 +896,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '7000000000000000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );
@@ -909,7 +909,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '1000000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );
@@ -922,7 +922,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '7000000000000000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );
@@ -935,7 +935,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '20000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );
@@ -948,7 +948,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '1000000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );
@@ -961,7 +961,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '1000000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );
@@ -974,7 +974,7 @@ describe('UniswapV2 E2E Mainnet', () => {
           '1000000',
           SwapSide.BUY,
           dexKey,
-          UniswapV2FunctionsV6.buy as any,
+          ContractMethod.swapExactAmountOutOnUniswapV2,
           network,
           provider,
         );

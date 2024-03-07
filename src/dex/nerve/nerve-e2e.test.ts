@@ -231,7 +231,7 @@ describe('Axial', () => {
 describe('IronV2', () => {
   const dexKey = 'IronV2';
 
-  describe('Polygon', () => {
+  describe('Polygon_V6', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -245,6 +245,32 @@ describe('IronV2', () => {
           tokens.DAI,
           tokens.USDC,
           holders.DAI,
+          '1100000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapExactAmountIn,
+          network,
+          provider,
+        );
+      });
+      it('SELL MATIC -> USDC', async () => {
+        await testE2E(
+          tokens.MATIC,
+          tokens.USDC,
+          holders.MATIC,
+          '1100000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapExactAmountIn,
+          network,
+          provider,
+        );
+      });
+      it('SELL USDC -> MATIC', async () => {
+        await testE2E(
+          tokens.USDC,
+          tokens.MATIC,
+          holders.USDC,
           '1100000000000000',
           SwapSide.SELL,
           dexKey,
