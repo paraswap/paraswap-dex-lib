@@ -75,8 +75,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isSpecialDex =
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
 
-    const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
-
     const forcePreventInsertFromAmount =
       swappedAmountNotPresentInExchangeData ||
       (isSpecialDex && !specialDexSupportsInsertFromAmount);
