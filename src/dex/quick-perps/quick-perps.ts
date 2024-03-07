@@ -239,6 +239,7 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: this.params.vault,
+      swappedAmountNotPresentInExchangeData: true,
       transferSrcTokenBeforeSwap: this.params.vault,
     };
   }
