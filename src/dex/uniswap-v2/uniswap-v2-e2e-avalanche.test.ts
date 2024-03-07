@@ -198,12 +198,10 @@ describe('UniswapV2 E2E Avalanche', () => {
 
   describe('TraderJoe', () => {
     const dexKey = 'TraderJoe';
-
-    describe('Fail: Joe: K', () => {
-      const dexKeys = ['LydiaFinance', 'PangolinSwap', 'TraderJoe'];
-
+    describe('TraderJoe: Fail: (Joe: K)', () => {
       // To run might need to hardcode the price route in e2e utils
       it('AVAX -> LINK.e', async () => {
+        const dexKeys = ['LydiaFinance', 'PangolinSwap', 'TraderJoe'];
         await testE2E(
           tokens.WAVAX,
           tokens.LINKe,
@@ -216,7 +214,9 @@ describe('UniswapV2 E2E Avalanche', () => {
           provider,
         );
       });
+    });
 
+    describe('simpleSwap', () => {
       it('AMPL -> MIM', async () => {
         await testE2E(
           tokens.AMPL,
