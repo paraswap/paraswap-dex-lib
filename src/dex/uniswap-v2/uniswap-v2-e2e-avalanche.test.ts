@@ -17,7 +17,7 @@ describe('UniswapV2 E2E Avalanche', () => {
   );
 
   describe('PangolinSwap', () => {
-    const dexKey = ['LydiaFinance', 'PangolinSwap', 'TraderJoe'];
+    const dexKey = 'PangolinSwap';
 
     describe('simpleSwap', () => {
       it('AVAX -> USDT.e', async () => {
@@ -25,10 +25,10 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.AVAX,
           tokens.USDTe,
           holders.AVAX,
-          '37000000000000000000',
+          '7000000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.swapExactAmountIn,
+          ContractMethod.simpleSwap,
           network,
           provider,
         );
