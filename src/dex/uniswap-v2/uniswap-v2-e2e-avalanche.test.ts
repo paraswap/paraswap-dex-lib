@@ -17,7 +17,7 @@ describe('UniswapV2 E2E Avalanche', () => {
   );
 
   describe('PangolinSwap', () => {
-    const dexKey = 'PangolinSwap';
+    const dexKey = ['LydiaFinance', 'PangolinSwap', 'TraderJoe'];
 
     describe('simpleSwap', () => {
       it('AVAX -> USDT.e', async () => {
@@ -25,10 +25,10 @@ describe('UniswapV2 E2E Avalanche', () => {
           tokens.AVAX,
           tokens.USDTe,
           holders.AVAX,
-          '7000000000000000000',
+          '37000000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
@@ -199,26 +199,29 @@ describe('UniswapV2 E2E Avalanche', () => {
   describe('TraderJoe', () => {
     const dexKey = 'TraderJoe';
 
-    describe('simpleSwap', () => {
-      it('AVAX -> USDTe', async () => {
+    describe('Fail: Joe: K', () => {
+      const dexKeys = ['LydiaFinance', 'PangolinSwap', 'TraderJoe'];
+
+      // To run might need to hardcode the price route in e2e utils
+      it('AVAX -> LINK.e', async () => {
         await testE2E(
-          tokens.AVAX,
-          tokens.USDTe,
-          holders.AVAX,
-          '7000000000000000000',
+          tokens.WAVAX,
+          tokens.LINKe,
+          holders.WAVAX,
+          '37000000000000000000',
           SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
+          dexKeys,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
       });
 
-      it('USDTe -> AVAX', async () => {
+      it('AMPL -> MIM', async () => {
         await testE2E(
-          tokens.USDTe,
-          tokens.AVAX,
-          holders.USDTe,
+          tokens.AMPL,
+          tokens.MIM,
+          holders.AMPL,
           '1000000000',
           SwapSide.SELL,
           dexKey,

@@ -388,6 +388,10 @@ export const Tokens: {
     },
   },
   [Network.POLYGON]: {
+    jGBP: {
+      address: '0x767058f11800fba6a682e73a6e79ec5eb74fac8c',
+      decimals: 18,
+    },
     DAI: {
       address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
       decimals: 18,
@@ -697,6 +701,10 @@ export const Tokens: {
     },
   },
   [Network.AVALANCHE]: {
+    LINKe: {
+      address: '0x5947bb275c521040051d82396192181b413227a3',
+      decimals: 18,
+    },
     USDCe: {
       address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664',
       decimals: 6,
@@ -1175,6 +1183,7 @@ export const Holders: {
     USDC: '0xb2dafb6fc7f66526e72027ade0f044beda0ba11e',
   },
   [Network.POLYGON]: {
+    jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
     MATIC: '0xfCbB9e5BB354B6F9fd40362Cee043F510dd3028D',
     DAI: '0x98F911D496Cf46bf9FF9CdD7039Cf579B26F01B9',
     WETH: '0x62ac55b745f9b08f1a81dcbbe630277095cf4be1',
@@ -1255,6 +1264,7 @@ export const Holders: {
     BNBx: '0xFF4606bd3884554CDbDabd9B6e25E2faD4f6fc54',
   },
   [Network.AVALANCHE]: {
+    LINKe: '0x9efa0A617C0552F1558c95993aA8b8A68b3e709C',
     AVAX: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
     avWAVAX: '0xc5ed2333f8a2C351fCA35E5EBAdb2A82F5d254C3',
     WAVAX: '0x913C1F46b48b3eD35E7dc3Cf754d4ae8499F31CF',
