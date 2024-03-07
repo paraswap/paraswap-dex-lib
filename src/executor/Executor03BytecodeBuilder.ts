@@ -11,6 +11,7 @@ import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
 import { BYTES_96_LENGTH, ZEROS_28_BYTES } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
+import { assert } from 'ts-essentials';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -283,6 +284,15 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       const toAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(toAmount.replace('0x', ''));
+
+      assert(
+        fromAmountIndex !== -1,
+        'Encoding error: could not resolve position of fromAmount in exchangeData',
+      );
+      assert(
+        toAmountIndex !== -1,
+        'Encoding error: could not resolve position of toAmount in exchangeData',
+      );
 
       fromAmountPos = fromAmountIndex / 2;
       toAmountPos = toAmountIndex / 2;

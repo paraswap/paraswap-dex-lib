@@ -19,6 +19,7 @@ import {
   ZEROS_28_BYTES,
   ZEROS_4_BYTES,
 } from './constants';
+import { assert } from 'ts-essentials';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -286,6 +287,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       const fromAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(fromAmount.replace('0x', ''));
+
+      assert(
+        fromAmountIndex !== -1,
+        'Encoding error: could not resolve position of fromAmount in exchangeData',
+      );
 
       fromAmountPos = fromAmountIndex / 2;
     }
