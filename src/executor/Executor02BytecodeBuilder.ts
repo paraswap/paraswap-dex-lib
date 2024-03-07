@@ -115,9 +115,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const swapExchange = swap.swapExchanges[swapExchangeIndex];
 
     const { srcToken, destToken } = swap;
-    const isEthSrc = isETHAddress(srcToken);
-    const isEthDest = isETHAddress(destToken);
-
     const applyVerticalBranching = this.doesSwapNeedToApplyVerticalBranching(
       priceRoute,
       routeIndex,
@@ -134,7 +131,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       specialDexFlag,
       exchangeData,
       specialDexSupportsInsertFromAmount,
+      wethAddress,
     } = exchangeParam;
+
+    const isEthSrc = isETHAddress(srcToken);
+    const isEthDest = isETHAddress(destToken);
+    const isWethDest =
+      (wethAddress && destToken.toLowerCase() === wethAddress.toLowerCase()) ||
+      this.dexHelper.config.isWETH(destToken);
 
     const doesExchangeDataContainsSrcAmount =
       exchangeData.indexOf(
@@ -146,127 +150,55 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isSpecialDex =
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
 
-    const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
-    const needUnwrap =
-      needWrapNative && isEthDest && maybeWethCallData?.withdraw;
-
     const forcePreventInsertFromAmount =
       !doesExchangeDataContainsSrcAmount ||
       (isSpecialDex && !specialDexSupportsInsertFromAmount);
-    const forceBalanceOfCheck =
-      isSpecialDex &&
-      isHorizontalSequence &&
-      !applyVerticalBranching &&
-      !isLastSwap;
 
-    let dexFlag = forcePreventInsertFromAmount
-      ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-      : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
+    const forceBalanceOfCheck =
+      (isSpecialDex &&
+        isHorizontalSequence &&
+        !applyVerticalBranching &&
+        !isLastSwap) ||
+      (!dexFuncHasRecipient && !isWethDest);
+
+    const needUnwrap =
+      needWrapNative && isEthDest && maybeWethCallData?.withdraw;
+
+    const needSendEth = isEthSrc && !needWrapNative;
+    const needCheckEthBalance = isEthDest && !needWrapNative;
+
+    const needCheckSrcTokenBalanceOf =
+      (needUnwrap && !applyVerticalBranching && !isLastSwap) ||
+      (isHorizontalSequence && !applyVerticalBranching && !isLastSwap);
+
+    let dexFlag: Flag;
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
-    if (isFirstSwap) {
-      if (
-        (applyVerticalBranching && !isSpecialDex && !isEthSrc) ||
-        (isSpecialDex && needWrap && !isHorizontalSequence)
-      ) {
-        // keep default flags
-      } else if (isEthSrc && !needWrap) {
-        dexFlag =
-          (isHorizontalSequence && !applyVerticalBranching) ||
-          forceBalanceOfCheck
-            ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
-            : dexFuncHasRecipient
-            ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
-            : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
-      } else if (
-        (isEthSrc && needWrap) ||
-        (!isEthSrc && !isEthDest) ||
-        (isEthDest && needUnwrap)
-      ) {
-        dexFlag =
-          (isHorizontalSequence && !applyVerticalBranching) ||
-          forceBalanceOfCheck
-            ? forcePreventInsertFromAmount
-              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
-              : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
-            : forcePreventInsertFromAmount
-            ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-            : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
-      } else if (isEthDest && !needUnwrap) {
-        dexFlag =
-          (isHorizontalSequence && !applyVerticalBranching) ||
-          forceBalanceOfCheck
-            ? forcePreventInsertFromAmount
-              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
-              : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
-            : forcePreventInsertFromAmount
-            ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-            : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
-      } else if (isEthDest && needUnwrap) {
-        dexFlag = forcePreventInsertFromAmount
+    if (needSendEth) {
+      dexFlag = forceBalanceOfCheck
+        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
+        : dexFuncHasRecipient
+        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
+        : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
+    } else if (needCheckEthBalance) {
+      dexFlag =
+        needCheckSrcTokenBalanceOf || forceBalanceOfCheck
+          ? forcePreventInsertFromAmount && dexFuncHasRecipient
+            ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
+            : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
+          : forcePreventInsertFromAmount && dexFuncHasRecipient
           ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-          : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
-      } else if (!dexFuncHasRecipient) {
-        dexFlag = forcePreventInsertFromAmount
-          ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 0
-          : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
-      }
+          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
     } else {
-      if (isSpecialDex && !isLastSwap) {
-        // keep default flags
-      } else if (isEthSrc && !needWrap && !isSpecialDex) {
-        dexFlag =
-          (isHorizontalSequence && !isLastSwap) || forceBalanceOfCheck
-            ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
-            : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 9
-      } else if (isEthSrc && needWrap && !isSpecialDex) {
-        dexFlag = forcePreventInsertFromAmount
+      dexFlag =
+        needCheckSrcTokenBalanceOf || forceBalanceOfCheck
+          ? forcePreventInsertFromAmount
+            ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+            : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
+          : forcePreventInsertFromAmount
           ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
           : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
-      } else if (needUnwrap && !isSpecialDex) {
-        dexFlag =
-          (isHorizontalSequence && !isLastSwap) || forceBalanceOfCheck
-            ? forcePreventInsertFromAmount
-              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
-              : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
-            : forcePreventInsertFromAmount
-            ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP //0
-            : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
-      } else if (isSpecialDex) {
-        if (isEthDest && !needUnwrap) {
-          dexFlag =
-            (isHorizontalSequence && !isLastSwap && !applyVerticalBranching) ||
-            forceBalanceOfCheck
-              ? forcePreventInsertFromAmount
-                ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
-                : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
-              : forcePreventInsertFromAmount
-              ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
-              : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 3
-        } else if (isEthSrc && !needWrap) {
-          dexFlag =
-            Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
-        } else {
-          dexFlag =
-            (isHorizontalSequence && !applyVerticalBranching) ||
-            forceBalanceOfCheck
-              ? forcePreventInsertFromAmount
-                ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
-                : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 3
-              : forcePreventInsertFromAmount
-              ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-              : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
-        }
-      } else if (!dexFuncHasRecipient) {
-        dexFlag = forcePreventInsertFromAmount
-          ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
-          : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
-      } else {
-        dexFlag = forcePreventInsertFromAmount
-          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
-      }
     }
 
     return {

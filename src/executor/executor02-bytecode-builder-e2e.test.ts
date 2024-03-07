@@ -811,6 +811,36 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         });
       });
 
+      describe('USDC -> WBTC via BalancerV1', () => {
+        const dexKeys = ['BalancerV1'];
+
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'WBTC';
+        const tokenAAmount: string = '3333000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            300,
+            2000,
+            false,
+          );
+        });
+      });
+
       // describe('USDC -> USDT via CurveV1, CurveV2, UniSwapV3 and PancakeSwapV3', () => {
       //   const dexKeys = ['CurveV1', 'CurveV2', 'UniSwapV3', 'PancakeSwapV3'];
       //
