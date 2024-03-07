@@ -6,6 +6,7 @@ import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
 import { BYTES_64_LENGTH } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
+import { assert } from 'ts-essentials';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -48,6 +49,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative,
       specialDexFlag,
       specialDexSupportsInsertFromAmount,
+      swappedAmountNotPresentInExchangeData,
     } = exchangeParam;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
@@ -55,8 +57,10 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
     const isSpecialDex =
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
+
     const forcePreventInsertFromAmount =
-      isSpecialDex && !specialDexSupportsInsertFromAmount;
+      swappedAmountNotPresentInExchangeData ||
+      (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
     let dexFlag = forcePreventInsertFromAmount
       ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP
@@ -107,14 +111,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
-    const swapExchange = swap.swapExchanges[swapExchangeIndex];
     const { srcToken, destToken } = swap;
     const {
       dexFuncHasRecipient,
       needWrapNative,
-      exchangeData,
       specialDexFlag,
       specialDexSupportsInsertFromAmount,
+      swappedAmountNotPresentInExchangeData,
     } = exchangeParam;
 
     const isFirstSwap = swapIndex === 0;
@@ -122,13 +125,6 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
-
-    const doesExchangeDataContainsSrcAmount =
-      exchangeData.indexOf(
-        ethers.utils.defaultAbiCoder
-          .encode(['uint256'], [swapExchange.srcAmount])
-          .replace('0x', ''),
-      ) > -1;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
     const needUnwrap =
@@ -138,7 +134,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
 
     const forcePreventInsertFromAmount =
-      !doesExchangeDataContainsSrcAmount ||
+      swappedAmountNotPresentInExchangeData ||
       (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
     const forcePreventBalanceOfCheck =
@@ -354,6 +350,12 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       const fromAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(fromAmount.replace('0x', ''));
+
+      assert(
+        fromAmountIndex !== -1,
+        'Encoding error: could not resolve position of fromAmount in exchangeData',
+      );
+
       fromAmountPos = fromAmountIndex / 2;
     }
 

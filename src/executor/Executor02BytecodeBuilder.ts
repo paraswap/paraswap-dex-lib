@@ -19,6 +19,7 @@ import {
   ZEROS_28_BYTES,
   ZEROS_4_BYTES,
 } from './constants';
+import { assert } from 'ts-essentials';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -61,6 +62,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative,
       specialDexFlag,
       specialDexSupportsInsertFromAmount,
+      swappedAmountNotPresentInExchangeData,
     } = exchangeParam;
 
     const isLastSwapExchange =
@@ -72,8 +74,10 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
     const isSpecialDex =
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
+
     const forcePreventInsertFromAmount =
-      isSpecialDex && !specialDexSupportsInsertFromAmount;
+      swappedAmountNotPresentInExchangeData ||
+      (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
     let dexFlag = forcePreventInsertFromAmount
       ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP
@@ -127,7 +131,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
   ): { dexFlag: Flag; approveFlag: Flag } {
     const route = priceRoute.bestRoute[routeIndex];
     const swap = route.swaps[swapIndex];
-    const swapExchange = swap.swapExchanges[swapExchangeIndex];
 
     const { srcToken, destToken } = swap;
     const applyVerticalBranching = this.doesSwapNeedToApplyVerticalBranching(
@@ -144,8 +147,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       dexFuncHasRecipient,
       needWrapNative,
       specialDexFlag,
-      exchangeData,
       specialDexSupportsInsertFromAmount,
+      swappedAmountNotPresentInExchangeData,
       wethAddress,
     } = exchangeParam;
 
@@ -155,18 +158,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       (wethAddress && destToken.toLowerCase() === wethAddress.toLowerCase()) ||
       this.dexHelper.config.isWETH(destToken);
 
-    const doesExchangeDataContainsSrcAmount =
-      exchangeData.indexOf(
-        ethers.utils.defaultAbiCoder
-          .encode(['uint256'], [swapExchange.srcAmount])
-          .replace('0x', ''),
-      ) > -1;
-
     const isSpecialDex =
       specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
 
     const forcePreventInsertFromAmount =
-      !doesExchangeDataContainsSrcAmount ||
+      swappedAmountNotPresentInExchangeData ||
       (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
     const forceBalanceOfCheck =
@@ -289,6 +285,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       const fromAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(fromAmount.replace('0x', ''));
+
+      assert(
+        fromAmountIndex !== -1,
+        'Encoding error: could not resolve position of fromAmount in exchangeData',
+      );
 
       fromAmountPos = fromAmountIndex / 2;
     }
