@@ -1072,6 +1072,50 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
             );
           });
         });
+
+        describe('PSP -> ETH -> stETH', () => {
+          const dexKeys = ['SushiSwap', 'Lido'];
+          const provider = new StaticJsonRpcProvider(
+            generateConfig(network).privateHttpProvider,
+            network,
+          );
+          const slippage = undefined;
+
+          const tokenASymbol: string = 'PSP';
+          const tokenBSymbol: string = 'STETH';
+
+          const tokenAAmount: string = '3396186773559304606863';
+
+          const tokens = Tokens[network];
+          const holders = Holders[network];
+          const contractMethod = ContractMethod.multiSwap;
+          const side = SwapSide.SELL;
+
+          it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              tokenAAmount,
+              side,
+              dexKeys,
+              contractMethod,
+              network,
+              provider,
+              undefined,
+              undefined,
+              undefined,
+              slippage,
+              2000,
+              undefined,
+              [
+                '0xcafe001067cdef266afb7eb5a286dcfd277f3de5', // PSP
+                '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+                '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84', // stETH
+              ],
+            );
+          });
+        });
       });
     });
   });

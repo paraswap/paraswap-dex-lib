@@ -288,7 +288,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         }
       }
 
-      if (maybeWethCallData.withdraw && isETHAddress(priceRoute.destToken)) {
+      if (maybeWethCallData.withdraw && isETHAddress(swap.destToken)) {
         const nextExchangeParam = exchangeParams[index + 1];
 
         if (
