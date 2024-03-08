@@ -37,7 +37,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
    */
   protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeBuildParam,
+    exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -48,6 +48,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
+    const exchangeParam = exchangeParams[exchangeParamIndex];
     const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
@@ -76,7 +77,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
 
   protected buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeBuildParam,
+    exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,

@@ -40,7 +40,7 @@ export abstract class ExecutorBytecodeBuilder {
 
   protected abstract buildSimpleSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeBuildParam,
+    exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -50,7 +50,7 @@ export abstract class ExecutorBytecodeBuilder {
 
   protected abstract buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeBuildParam,
+    exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -270,11 +270,9 @@ export abstract class ExecutorBytecodeBuilder {
     priceRoute.bestRoute.map((route, routeIndex) => {
       route.swaps.map((swap, swapIndex) => {
         swap.swapExchanges.map((swapExchange, swapExchangeIndex) => {
-          const curExchangeParam = exchangeParams[exchangeParamIndex];
-
           const { dexFlag, approveFlag } = buildFlagsMethod(
             priceRoute,
-            curExchangeParam,
+            exchangeParams,
             routeIndex,
             swapIndex,
             swapExchangeIndex,

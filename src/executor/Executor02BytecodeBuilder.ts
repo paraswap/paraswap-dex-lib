@@ -45,7 +45,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
    */
   protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeBuildParam,
+    exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -57,6 +57,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
+    const exchangeParam = exchangeParams[exchangeParamIndex];
     const {
       dexFuncHasRecipient,
       needWrapNative,
@@ -122,7 +123,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
    */
   protected buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeBuildParam,
+    exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -131,6 +132,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
   ): { dexFlag: Flag; approveFlag: Flag } {
     const route = priceRoute.bestRoute[routeIndex];
     const swap = route.swaps[swapIndex];
+
+    const exchangeParam = exchangeParams[exchangeParamIndex];
 
     const { srcToken, destToken } = swap;
     const applyVerticalBranching = this.doesSwapNeedToApplyVerticalBranching(

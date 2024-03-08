@@ -32,7 +32,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
    */
   protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeBuildParam,
+    exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -44,6 +44,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
+    const exchangeParam = exchangeParams[exchangeParamIndex];
     const {
       dexFuncHasRecipient,
       needWrapNative,
@@ -103,7 +104,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
   // Executor01 doesn't support mega swap routes, flags are built for multi swap routes only here
   protected buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
-    exchangeParam: DexExchangeBuildParam,
+    exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
     swapIndex: number,
     swapExchangeIndex: number,
@@ -112,6 +113,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
   ): { dexFlag: Flag; approveFlag: Flag } {
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     const { srcToken, destToken } = swap;
+    const exchangeParam = exchangeParams[exchangeParamIndex];
     const {
       dexFuncHasRecipient,
       needWrapNative,
