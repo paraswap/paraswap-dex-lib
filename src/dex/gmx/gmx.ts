@@ -22,7 +22,6 @@ import { SimpleExchange } from '../simple-exchange';
 import { GMXConfig, Adapters } from './config';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
-import { solidityPack } from 'ethers/lib/utils';
 
 const GMXGasCost = 300 * 1000;
 
