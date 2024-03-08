@@ -115,7 +115,12 @@ export abstract class ExecutorBytecodeBuilder {
       ]?.includes(tokenAddr)
     ) {
       approvalCalldata = hexConcat([
-        this.buildApproveCallData(spender, tokenAddr, flag, '0'),
+        this.buildApproveCallData(
+          spender,
+          tokenAddr,
+          Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP,
+          '0',
+        ),
         approvalCalldata,
       ]);
     }
