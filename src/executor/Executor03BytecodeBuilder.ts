@@ -49,6 +49,11 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     const isEthDest = isETHAddress(destToken);
 
     const exchangeParam = exchangeParams[exchangeParamIndex];
+    const swap = priceRoute.bestRoute[0].swaps[0];
+    const isLastSwap =
+      priceRoute.bestRoute[0].swaps[0].swapExchanges.length - 1 ===
+      swapExchangeIndex;
+
     const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
@@ -64,9 +69,15 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
         Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
       dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
-    } else if (!dexFuncHasRecipient || (isEthDest && needUnwrap)) {
+    } else if (isEthDest && needUnwrap) {
       dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       // dexFlag = Flag.ZERO;
+    } else if (
+      isLastSwap &&
+      !isETHAddress(swap.destToken) &&
+      exchangeParams.some(param => !param.dexFuncHasRecipient)
+    ) {
+      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
     }
 
     return {
@@ -320,11 +331,6 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
   ): string {
-    const flags = this.buildFlags(
-      priceRoute,
-      exchangeParams,
-      maybeWethCallData,
-    );
     const swap = priceRoute.bestRoute[0].swaps[0];
 
     // as path are executed in parallel, we can sort them in correct order
@@ -341,6 +347,12 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       ...swap,
       swapExchanges: orderedExchangeParams.map(e => e.swapExchange),
     };
+
+    const flags = this.buildFlags(
+      priceRoute,
+      orderedExchangeParams.map(e => e.exchangeParam),
+      maybeWethCallData,
+    );
 
     let swapsCalldata = orderedExchangeParams.reduce<string>(
       (acc, ep, index) =>
