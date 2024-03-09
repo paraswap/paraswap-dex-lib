@@ -1521,9 +1521,12 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): DexExchangeParam {
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
+
     const params = this.getBalancerParamV6(
-      srcToken,
-      destToken,
+      _srcToken,
+      _destToken,
       srcAmount,
       destAmount,
       data,
@@ -1554,7 +1557,7 @@ export class BalancerV2
     }
 
     return {
-      needWrapNative: this.needWrapNative,
+      needWrapNative: true,
       dexFuncHasRecipient: true,
       exchangeData,
       specialDexFlag,

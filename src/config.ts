@@ -498,7 +498,12 @@ export class ConfigHelper {
       `${masterCachePrefix}_${data.network}_bn`.toLowerCase();
   }
 
-  wrapETH(token: Token): Token {
+  wrapETH(token: string): string;
+  wrapETH(token: Token): Token;
+  wrapETH(token: Token | string): Token | string {
+    if (typeof token === 'string')
+      return isETHAddress(token) ? this.data.wrappedNativeTokenAddress : token;
+
     return isETHAddress(token.address)
       ? { address: this.data.wrappedNativeTokenAddress, decimals: 18 }
       : token;
