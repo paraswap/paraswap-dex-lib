@@ -1564,7 +1564,7 @@ export class BalancerV2
     }
 
     return {
-      needWrapNative: !context.isGlobalSrcToken && !context.isGlobalDestToken,
+      needWrapNative: !(context.isGlobalSrcToken && context.isGlobalDestToken),
       dexFuncHasRecipient: true,
       exchangeData,
       specialDexFlag,
