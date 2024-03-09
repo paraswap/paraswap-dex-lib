@@ -136,6 +136,13 @@ export class GenericSwapTransactionBuilder {
               recipient,
               se.data,
               side,
+              {
+                isGlobalSrcToken:
+                  priceRoute.srcToken.toLowerCase() === srcToken.toLowerCase(),
+                isGlobalDestToken:
+                  priceRoute.destToken.toLowerCase() ===
+                  destToken.toLowerCase(),
+              },
             );
 
             return {

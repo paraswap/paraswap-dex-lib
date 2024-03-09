@@ -19,6 +19,11 @@ import {
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
 
+export type Context = {
+  isGlobalSrcToken: boolean;
+  isGlobalDestToken: boolean;
+};
+
 export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   needWrapNative: boolean;
   needsSequentialPreprocessing?: boolean;
@@ -77,6 +82,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     recipient: Address,
     data: ExchangeData,
     side: SwapSide,
+    context: Context,
   ): AsyncOrSync<DexExchangeParam>;
 
   // Returns params required by direct swap method.
