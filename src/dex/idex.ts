@@ -19,6 +19,15 @@ import {
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
 
+export enum SwapPosition {
+  FIRST_LAYER = 'FIRST_LAYER',
+  MIDDLE_LAYERS = 'MIDDLE_LAYERS',
+  LAST_LAYER = 'LAST_LAYER',
+}
+export type Context = {
+  swapPosition: SwapPosition;
+};
+
 export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   needWrapNative: boolean;
   needsSequentialPreprocessing?: boolean;
@@ -77,6 +86,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     recipient: Address,
     data: ExchangeData,
     side: SwapSide,
+    context: Context,
   ): AsyncOrSync<DexExchangeParam>;
 
   // Returns params required by direct swap method.

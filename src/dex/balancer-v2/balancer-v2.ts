@@ -38,7 +38,7 @@ import {
   getDexKeysWithNetwork,
   uuidToBytes16,
 } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { Context, IDex, SwapPosition } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
   BalancerParam,
@@ -1520,9 +1520,18 @@ export class BalancerV2
     recipient: Address,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
+    context: Context,
   ): DexExchangeParam {
-    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
-    const _destToken = this.dexHelper.config.wrapETH(destToken);
+    // If native tokens involved, use wrapped versions on intermediary swaps and stick to native only at edges
+    const _srcToken =
+      context.swapPosition === SwapPosition.FIRST_LAYER
+        ? srcToken
+        : this.dexHelper.config.wrapETH(srcToken);
+
+    const _destToken =
+      context.swapPosition === SwapPosition.LAST_LAYER
+        ? destToken
+        : this.dexHelper.config.wrapETH(destToken);
 
     const params = this.getBalancerParamV6(
       _srcToken,
@@ -1557,7 +1566,10 @@ export class BalancerV2
     }
 
     return {
-      needWrapNative: true,
+      needWrapNative: ![
+        SwapPosition.FIRST_LAYER,
+        SwapPosition.LAST_LAYER,
+      ].includes(context.swapPosition),
       dexFuncHasRecipient: true,
       exchangeData,
       specialDexFlag,
