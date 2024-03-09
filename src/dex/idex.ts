@@ -19,13 +19,9 @@ import {
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
 
-export enum SwapPosition {
-  FIRST_LAYER = 'FIRST_LAYER',
-  MIDDLE_LAYERS = 'MIDDLE_LAYERS',
-  LAST_LAYER = 'LAST_LAYER',
-}
 export type Context = {
-  swapPosition: SwapPosition;
+  isGlobalSrcToken: boolean;
+  isGlobalDestToken: boolean;
 };
 
 export interface IDexTxBuilder<ExchangeData, DirectParam = null> {

@@ -31,7 +31,7 @@ import { Weth } from './dex/weth/weth';
 import ERC20ABI from './abi/erc20.json';
 import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
-import { IDexTxBuilder, SwapPosition } from './dex/idex';
+import { IDexTxBuilder } from './dex/idex';
 
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
@@ -128,13 +128,6 @@ export class GenericSwapTransactionBuilder {
               bytecodeBuilder.getAddress(),
             );
 
-            const swapPosition =
-              priceRoute.srcToken.toLowerCase() === srcToken.toLowerCase()
-                ? SwapPosition.FIRST_LAYER
-                : priceRoute.destToken.toLowerCase() === destToken.toLowerCase()
-                ? SwapPosition.LAST_LAYER
-                : SwapPosition.MIDDLE_LAYERS;
-
             const dexParams = await dex.getDexParam!(
               srcToken,
               destToken,
@@ -143,7 +136,13 @@ export class GenericSwapTransactionBuilder {
               recipient,
               se.data,
               side,
-              { swapPosition },
+              {
+                isGlobalSrcToken:
+                  priceRoute.srcToken.toLowerCase() === srcToken.toLowerCase(),
+                isGlobalDestToken:
+                  priceRoute.destToken.toLowerCase() ===
+                  destToken.toLowerCase(),
+              },
             );
 
             return {
