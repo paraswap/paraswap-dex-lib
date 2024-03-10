@@ -50,9 +50,6 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     const exchangeParam = exchangeParams[exchangeParamIndex];
     const swap = priceRoute.bestRoute[0].swaps[0];
-    const isLastSwap =
-      priceRoute.bestRoute[0].swaps[0].swapExchanges.length - 1 ===
-      swapExchangeIndex;
 
     const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
 
@@ -73,7 +70,6 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       // dexFlag = Flag.ZERO;
     } else if (
-      isLastSwap &&
       !isETHAddress(swap.destToken) &&
       exchangeParams.some(param => !param.dexFuncHasRecipient)
     ) {
