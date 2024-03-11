@@ -1225,6 +1225,50 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
     });
   });
 
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    describe('MultiSwap', () => {
+      describe('USDC -> ETH -> sETH', () => {
+        const dexKeys = ['UniswapV3', 'CurveV1Factory'];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const slippage = undefined;
+
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'sETH';
+
+        const tokenAAmount: string = '1617000000';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const contractMethod = ContractMethod.multiSwap;
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+          );
+        });
+      });
+    });
+  });
+
   // describe('Arbitrum', () => {
   //   const network = Network.ARBITRUM;
   //   describe('MultiSwap', () => {
