@@ -82,6 +82,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: stETH[this.network],
+      swappedAmountNotPresentInExchangeData: true,
     };
   }
 }

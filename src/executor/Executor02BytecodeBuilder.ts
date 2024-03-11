@@ -555,8 +555,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       swapExchangeCallData = hexConcat([approveCallData, swapExchangeCallData]);
     }
 
-    if (curExchangeParam.needWrapNative && maybeWethCallData) {
-      if (maybeWethCallData.deposit && isETHAddress(swap!.srcToken)) {
+    if (curExchangeParam.needWrapNative) {
+      if (isETHAddress(swap!.srcToken)) {
         let approveWethCalldata = '0x';
         if (
           curExchangeParam.approveData &&
@@ -585,6 +585,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
         let depositCallData = '0x';
         if (
+          maybeWethCallData &&
+          maybeWethCallData.deposit &&
           !this.doesRouteNeedsRootWrapEth(priceRoute, exchangeParams) &&
           allowToAddWrap &&
           !addedWrapToSwapExchangeMap[
@@ -610,6 +612,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       }
 
       if (
+        maybeWethCallData &&
         maybeWethCallData.withdraw &&
         ((!applyVerticalBranching && isETHAddress(swap.destToken)) ||
           (applyVerticalBranching &&

@@ -638,7 +638,6 @@ export class GenericSwapTransactionBuilder {
           const approveParams = bytecodeBuilder.getApprovalTokenAndTarget(
             swap,
             curExchangeParam,
-            maybeWethCallData,
           );
 
           if (approveParams) {

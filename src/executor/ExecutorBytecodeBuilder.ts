@@ -317,7 +317,6 @@ export abstract class ExecutorBytecodeBuilder {
   getApprovalTokenAndTarget(
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
-    maybeWethCallData?: DepositWithdrawReturn,
   ): { target: string; token: Address } | null {
     const target = exchangeParam.spender || exchangeParam.targetExchange;
 
@@ -331,11 +330,7 @@ export abstract class ExecutorBytecodeBuilder {
       };
     }
 
-    if (
-      exchangeParam.needWrapNative &&
-      maybeWethCallData?.deposit &&
-      isETHAddress(swap.srcToken)
-    ) {
+    if (exchangeParam.needWrapNative && isETHAddress(swap.srcToken)) {
       return {
         token: this.getWETHAddress(exchangeParam),
         target,

@@ -36,6 +36,7 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   getBigIntPow,
   getDexKeysWithNetwork,
+  isETHAddress,
   uuidToBytes16,
 } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
@@ -1563,8 +1564,20 @@ export class BalancerV2
       specialDexFlag = SpecialDex.SWAP_ON_BALANCER_V2;
     }
 
+    // console.log('_srcToken: ', _srcToken);
+    // console.log('_destToken: ', _destToken);
+    // console.log('context.isGlobalSrcToken: ', context.isGlobalSrcToken);
+    // console.log('context.isGlobalDestToken: ', context.isGlobalDestToken);
+    // console.log(
+    //   'needWrapNative: ',
+    //   !(context.isGlobalSrcToken || context.isGlobalDestToken),
+    // );
+
     return {
-      needWrapNative: !(context.isGlobalSrcToken && context.isGlobalDestToken),
+      needWrapNative: !(
+        (isETHAddress(srcToken) && context.isGlobalSrcToken) ||
+        (isETHAddress(destToken) && context.isGlobalDestToken)
+      ),
       dexFuncHasRecipient: true,
       exchangeData,
       specialDexFlag,
