@@ -56,17 +56,11 @@ const getAllExchanges = (data: OptimalRate): string[] => {
 export async function runE2ETest(
   priceRoute: OptimalRate,
   senderAddress: string,
-  forkId: string,
-  lastTransactionId: string,
   contracts: ContractsAugustusV6,
 ) {
   const { network, srcToken, destToken, side, contractMethod } = priceRoute;
 
-  const ts: TransactionSimulator = new TenderlySimulation(
-    network,
-    forkId,
-    lastTransactionId,
-  );
+  const ts: TransactionSimulator = new TenderlySimulation(network);
 
   await ts.setup();
 
