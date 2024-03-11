@@ -228,16 +228,6 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       swapCallData = hexConcat([transferCallData, swapCallData]);
     }
 
-    // console.log('INDEX: ', index);
-    // console.log('curExchangeParam: ', curExchangeParam);
-    // console.log('flags.dexes[index] % 4 !== 1: ', flags.dexes[index] % 4 !== 1);
-    // console.log('(!isETHAddress(swap.srcToken) ||\n' +
-    //   '        (isETHAddress(swap.srcToken) && index !== 0)): ', (!isETHAddress(swap.srcToken) ||
-    //   (isETHAddress(swap.srcToken) && index !== 0)));
-    // console.log('!curExchangeParam.transferSrcTokenBeforeSwap: ', !curExchangeParam.transferSrcTokenBeforeSwap);
-    // console.log('curExchangeParam.approveData: ', curExchangeParam.approveData);
-    // console.log('full cond: ', )
-
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
       (!isETHAddress(swap.srcToken) ||
@@ -384,8 +374,6 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       exchangeParams,
       maybeWethCallData,
     );
-
-    console.log('FLAGS: ', flags);
 
     let swapsCalldata = exchangeParams.reduce<string>(
       (acc, ep, index) =>
