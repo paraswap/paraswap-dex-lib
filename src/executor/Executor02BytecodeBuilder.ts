@@ -184,10 +184,16 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     if (needSendEth) {
       dexFlag = forceBalanceOfCheck
-        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
+        ? forcePreventInsertFromAmount
+          ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
+          : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 14
         : dexFuncHasRecipient
-        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
-        : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
+        ? forcePreventInsertFromAmount
+          ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
+          : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 18
+        : forcePreventInsertFromAmount
+        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
+        : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 18
     } else if (needCheckEthBalance) {
       dexFlag =
         needCheckSrcTokenBalanceOf || forceBalanceOfCheck
@@ -237,7 +243,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     );
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
-    const insertFromAmount = flag % 4 === 3;
+    const insertFromAmount = flag % 4 === 3 || flag % 3 === 2;
 
     const srcTokenAddress =
       isETHAddress(swap.srcToken) && needWrapNative
