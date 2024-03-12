@@ -243,7 +243,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     );
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
-    const insertFromAmount = flag % 4 === 3 || flag % 3 === 2;
+    const insertFromAmount = flag % 4 === 3 || flag % 4 === 2;
 
     const srcTokenAddress =
       isETHAddress(swap.srcToken) && needWrapNative
