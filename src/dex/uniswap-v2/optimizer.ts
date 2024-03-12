@@ -1,10 +1,17 @@
+import { ParaSwapVersion } from '@paraswap/core';
 import { UnoptimizedRate, OptimalSwap, Address } from '../../types';
 import { isETHAddress } from '../../utils';
-import { AllUniswapForks } from './constants';
+import { AllUniswapForks, UniswapV2Alias } from './constants';
 import _ from 'lodash';
 
 // TODO: use something similar for DODO as well
+// TODO-v6: refactor this
 export function uniswapMerge(or: UnoptimizedRate): UnoptimizedRate {
+  const availableForksForMerge =
+    or.version === ParaSwapVersion.V6
+      ? // for v6 merge only uniswap v2 without forks
+        [UniswapV2Alias[or.network]]
+      : AllUniswapForks;
   const fixRoute = (rawRate: OptimalSwap[]): OptimalSwap[] => {
     let lastExchange: false | OptimalSwap = false;
     let optimizedRate = new Array<OptimalSwap>();
@@ -14,7 +21,7 @@ export function uniswapMerge(or: UnoptimizedRate): UnoptimizedRate {
       // swap with equal volume.
       if (
         s.swapExchanges.length !== 1 ||
-        AllUniswapForks.every(
+        availableForksForMerge.every(
           e => e.toLowerCase() !== s.swapExchanges[0].exchange.toLowerCase(),
         )
       ) {
