@@ -73,11 +73,17 @@ export class GyroEPool extends BasePool {
 
     const tokenInIsToken0 = indexIn === 0;
 
+    const tokenRates = poolState.tokenRates
+      ? [poolState.tokenRates![0], poolState.tokenRates![1]]
+      : [];
+
+    const rateProviders = poolState.rateProviders ?? [];
+
     const poolPairData: GyroEPoolPairData = {
       gyroParams: poolState.gyroParams!,
       gyroDerivedParams: poolState.gyroDerivedParams!,
-      tokenRates: [poolState.tokenRates![0], poolState.tokenRates![1]],
-      rateProviders: poolState.rateProviders!,
+      tokenRates,
+      rateProviders,
       balances,
       indexIn,
       indexOut,
@@ -128,20 +134,28 @@ export class GyroEPool extends BasePool {
         target: pool.address,
         callData: this.poolInterface.encodeFunctionData('getECLPParams'),
       },
-      {
-        target: pool.address,
-        callData: this.poolInterface.encodeFunctionData('getTokenRates'),
-      },
-      {
-        target: pool.address,
-        callData: this.poolInterface.encodeFunctionData('rateProvider0'),
-      },
-      {
-        target: pool.address,
-        callData: this.poolInterface.encodeFunctionData('rateProvider1'),
-      },
     ];
-    return poolCallData;
+
+    // Only version 2 of GyroE uses token rates
+    const v2Calls =
+      pool.poolTypeVersion === 2
+        ? [
+            {
+              target: pool.address,
+              callData: this.poolInterface.encodeFunctionData('getTokenRates'),
+            },
+            {
+              target: pool.address,
+              callData: this.poolInterface.encodeFunctionData('rateProvider0'),
+            },
+            {
+              target: pool.address,
+              callData: this.poolInterface.encodeFunctionData('rateProvider1'),
+            },
+          ]
+        : [];
+
+    return [...poolCallData, ...v2Calls];
   }
 
   /*
@@ -176,33 +190,39 @@ export class GyroEPool extends BasePool {
       pool.address,
     );
 
-    const tokenRates = decodeThrowError(
-      this.poolInterface,
-      'getTokenRates',
-      data[startIndex++],
-      pool.address,
-    );
+    let tokenRates;
+    let rateProviders: string[] = [];
+    if (pool.poolTypeVersion === 2) {
+      tokenRates = decodeThrowError(
+        this.poolInterface,
+        'getTokenRates',
+        data[startIndex++],
+        pool.address,
+      );
+      tokenRates = tokenRates.map(t => BigInt(t.toString()));
 
-    const rateProvider0 = decodeThrowError(
-      this.poolInterface,
-      'rateProvider0',
-      data[startIndex++],
-      pool.address,
-    )[0];
+      const rateProvider0 = decodeThrowError(
+        this.poolInterface,
+        'rateProvider0',
+        data[startIndex++],
+        pool.address,
+      )[0];
 
-    const rateProvider1 = decodeThrowError(
-      this.poolInterface,
-      'rateProvider1',
-      data[startIndex++],
-      pool.address,
-    )[0];
+      const rateProvider1 = decodeThrowError(
+        this.poolInterface,
+        'rateProvider1',
+        data[startIndex++],
+        pool.address,
+      )[0];
+      rateProviders = [rateProvider0, rateProvider1];
+    }
 
     const poolState: PoolState = {
       gyroParams: eclParams.params,
       gyroDerivedParams: eclParams.d,
       swapFee: BigInt(swapFee.toString()),
-      tokenRates: tokenRates.map(t => BigInt(t.toString())),
-      rateProviders: [rateProvider0, rateProvider1],
+      tokenRates,
+      rateProviders,
       orderedTokens: poolTokens.tokens,
       tokens: poolTokens.tokens.reduce(
         (ptAcc: { [address: string]: TokenState }, pt: string, j: number) => {
@@ -230,19 +250,24 @@ export class GyroEPool extends BasePool {
         poolPairData,
       );
 
+      // const orderedNormalizedBalances = balancesFromTokenInOut(
+      //   BigNumber.from(
+      //     this._upscale(
+      //       poolPairData.balances[poolPairData.indexIn].toBigInt(),
+      //       scalingFactorTokenIn,
+      //     ),
+      //   ),
+      //   BigNumber.from(
+      //     this._upscale(
+      //       poolPairData.balances[poolPairData.indexOut].toBigInt(),
+      //       scalingFactorTokenOut,
+      //     ),
+      //   ),
+      //   poolPairData.tokenInIsToken0,
+      // );
       const orderedNormalizedBalances = balancesFromTokenInOut(
-        BigNumber.from(
-          this._upscale(
-            poolPairData.balances[poolPairData.indexIn].toBigInt(),
-            scalingFactorTokenIn,
-          ),
-        ),
-        BigNumber.from(
-          this._upscale(
-            poolPairData.balances[poolPairData.indexOut].toBigInt(),
-            scalingFactorTokenOut,
-          ),
-        ),
+        poolPairData.balances[poolPairData.indexIn],
+        poolPairData.balances[poolPairData.indexOut],
         poolPairData.tokenInIsToken0,
       );
 
@@ -299,19 +324,24 @@ export class GyroEPool extends BasePool {
         poolPairData,
       );
 
+      // const orderedNormalizedBalances = balancesFromTokenInOut(
+      //   BigNumber.from(
+      //     this._upscale(
+      //       poolPairData.balances[poolPairData.indexIn].toBigInt(),
+      //       scalingFactorTokenIn,
+      //     ),
+      //   ),
+      //   BigNumber.from(
+      //     this._upscale(
+      //       poolPairData.balances[poolPairData.indexOut].toBigInt(),
+      //       scalingFactorTokenOut,
+      //     ),
+      //   ),
+      //   poolPairData.tokenInIsToken0,
+      // );
       const orderedNormalizedBalances = balancesFromTokenInOut(
-        BigNumber.from(
-          this._upscale(
-            poolPairData.balances[poolPairData.indexIn].toBigInt(),
-            scalingFactorTokenIn,
-          ),
-        ),
-        BigNumber.from(
-          this._upscale(
-            poolPairData.balances[poolPairData.indexOut].toBigInt(),
-            scalingFactorTokenOut,
-          ),
-        ),
+        poolPairData.balances[poolPairData.indexIn],
+        poolPairData.balances[poolPairData.indexOut],
         poolPairData.tokenInIsToken0,
       );
 
@@ -362,9 +392,10 @@ export class GyroEPool extends BasePool {
   ): bigint {
     const tokenIndex = token0 ? 0 : 1;
     const scalingFactor = poolPairData.scalingFactors[tokenIndex];
-    const rateProvider = poolPairData.rateProviders[tokenIndex];
-
-    if (rateProvider.toLowerCase() === NULL_ADDRESS) {
+    if (
+      poolPairData.rateProviders.length === 0 ||
+      poolPairData.rateProviders[tokenIndex].toLowerCase() === NULL_ADDRESS
+    ) {
       return scalingFactor;
     } else {
       return MathSol.mulDownFixed(

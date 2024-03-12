@@ -189,6 +189,7 @@ const fetchAllPools = `query ($count: Int) {
     id
     address
     poolType
+    poolTypeVersion
     tokens (orderBy: index) {
       address
       decimals

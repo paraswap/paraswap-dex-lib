@@ -78,6 +78,7 @@ export interface SubgraphPoolBase {
   id: string;
   address: string;
   poolType: BalancerPoolTypes;
+  poolTypeVersion: number;
   tokens: SubgraphToken[];
   tokensMap: { [tokenAddress: string]: SubgraphToken };
   mainIndex: number;
