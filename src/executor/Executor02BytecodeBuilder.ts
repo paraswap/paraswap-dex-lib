@@ -146,6 +146,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       specialDexSupportsInsertFromAmount,
       swappedAmountNotPresentInExchangeData,
       wethAddress,
+      sendEthButSupportsInsertFromAmount,
     } = exchangeParam;
 
     const isEthSrc = isETHAddress(srcToken);
@@ -183,15 +184,17 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
     if (needSendEth) {
+      const preventInsertForSendEth =
+        forcePreventInsertFromAmount || !sendEthButSupportsInsertFromAmount;
       dexFlag = forceBalanceOfCheck
-        ? forcePreventInsertFromAmount
+        ? preventInsertForSendEth
           ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
           : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 14
         : dexFuncHasRecipient
-        ? forcePreventInsertFromAmount
+        ? preventInsertForSendEth
           ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
           : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 18
-        : forcePreventInsertFromAmount
+        : preventInsertForSendEth
         ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
         : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 18
     } else if (needCheckEthBalance) {

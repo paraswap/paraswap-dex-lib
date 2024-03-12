@@ -166,6 +166,7 @@ export type DexExchangeParam = {
   specialDexFlag?: SpecialDex;
   transferSrcTokenBeforeSwap?: Address;
   spender?: Address;
+  sendEthButSupportsInsertFromAmount?: boolean;
   specialDexSupportsInsertFromAmount?: boolean;
   swappedAmountNotPresentInExchangeData?: boolean;
 };
