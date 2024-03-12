@@ -1075,6 +1075,7 @@ export class CurveV1Factory
     return {
       exchangeData,
       needWrapNative: this.needWrapNative,
+      sendEthButSupportsInsertFromAmount: true,
       dexFuncHasRecipient: false,
       targetExchange: exchange,
     };
