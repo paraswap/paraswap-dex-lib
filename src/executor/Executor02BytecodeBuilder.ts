@@ -52,6 +52,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
+    debugger;
     const { srcToken, destToken } =
       priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     const isEthSrc = isETHAddress(srcToken);
@@ -123,6 +124,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
+    debugger;
     const route = priceRoute.bestRoute[routeIndex];
     const swap = route.swaps[swapIndex];
 
