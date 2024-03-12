@@ -246,6 +246,7 @@ export class DodoV2
 
     return {
       needWrapNative: this.needWrapNative,
+      swappedAmountNotPresentInExchangeData: true,
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: data.dodoProxy,

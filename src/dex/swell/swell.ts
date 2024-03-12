@@ -238,6 +238,7 @@ export class Swell
 
     return {
       needWrapNative: this.needWrapNative,
+      swappedAmountNotPresentInExchangeData: true,
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.swETHAddress,

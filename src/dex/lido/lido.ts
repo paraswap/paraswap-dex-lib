@@ -79,6 +79,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
 
     return {
       needWrapNative: this.needWrapNative,
+      swappedAmountNotPresentInExchangeData: true,
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: stETH[this.network],

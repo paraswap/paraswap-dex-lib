@@ -1148,6 +1148,41 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
           );
         });
       });
+
+      describe('USDC.e -> stMatic', () => {
+        const dexKeys = ['DODOV2', 'UniswapV3', 'BalancerV2'];
+
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'stMATIC';
+        const tokenAAmount: string = '4134000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            100,
+            2000,
+            false,
+            [
+              '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // USDC.e
+              '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // MATIC
+              '0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4' // stMATIC
+            ]
+          );
+        });
+      });
     });
 
     describe('MegaSwap', () => {
