@@ -36,7 +36,6 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   getBigIntPow,
   getDexKeysWithNetwork,
-  isETHAddress,
   uuidToBytes16,
 } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
@@ -1565,10 +1564,7 @@ export class BalancerV2
     }
 
     return {
-      needWrapNative: !(
-        (isETHAddress(srcToken) && context.isGlobalSrcToken) ||
-        (isETHAddress(destToken) && context.isGlobalDestToken)
-      ),
+      needWrapNative: !(context.isGlobalSrcToken && context.isGlobalDestToken),
       dexFuncHasRecipient: true,
       exchangeData,
       specialDexFlag,
