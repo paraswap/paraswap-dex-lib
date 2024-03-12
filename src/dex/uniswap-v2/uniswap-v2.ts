@@ -864,6 +864,18 @@ export class UniswapV2
     let targetExchange: Address;
     let dexFuncHasRecipient: boolean;
 
+    // if (this.dexKey === 'BakerySwap') {
+    //   const weth = this.getWETHAddress(srcToken, destToken, data.weth);
+
+    //   exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+    //     UniswapV2Functions.swap,
+    //     [srcToken, srcAmount, destAmount, weth, pools],
+    //   );
+    //   specialDexFlag = SpecialDex.DEFAULT;
+    //   targetExchange = data.router;
+    //   dexFuncHasRecipient = false;
+    // } else if (side === SwapSide.SELL) {
+
     if (side === SwapSide.SELL) {
       // 28 bytes are prepended in the Bytecode builder
       const exchangeDataTypes = ['bytes4', 'bytes32', 'bytes32'];

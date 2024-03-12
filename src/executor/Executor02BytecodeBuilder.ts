@@ -166,7 +166,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         isHorizontalSequence &&
         !applyVerticalBranching &&
         !isLastSwap) ||
-      (!dexFuncHasRecipient && !isWethDest);
+      !dexFuncHasRecipient;
 
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
