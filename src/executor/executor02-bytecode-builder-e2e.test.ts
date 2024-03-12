@@ -1178,8 +1178,8 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             [
               '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // USDC.e
               '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // MATIC
-              '0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4' // stMATIC
-            ]
+              '0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4', // stMATIC
+            ],
           );
         });
       });

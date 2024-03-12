@@ -281,18 +281,12 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       destTokenPos = (destTokenAddrIndex - 24) / 2;
     }
 
-    console.log('EXCHANGE PARAM INDEX: ', exchangeParamIndex);
-    console.log('flag: ', flag);
-    console.log('swapExchange.srcAmount: ', swapExchange.srcAmount);
-
     let fromAmountPos = 0;
     if (insertFromAmount) {
       const fromAmount = ethers.utils.defaultAbiCoder.encode(
         ['uint256'],
         [swapExchange.srcAmount],
       );
-      console.log('exchangeData: ', exchangeData);
-      console.log('fromAmount: ', fromAmount);
       const fromAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(fromAmount.replace('0x', ''));
@@ -488,6 +482,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
     addedWrapToSwapExchangeMap: { [key: string]: boolean },
     allowToAddWrap = true,
+    prevBranchWasWrapped = false,
     maybeWethCallData?: DepositWithdrawReturn,
     addMultiSwapMetadata?: boolean,
     applyVerticalBranching?: boolean,
@@ -528,8 +523,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     );
 
     swapExchangeCallData = hexConcat([dexCallData]);
-
-    console.log('exchangeParamIndex: ', exchangeParamIndex);
 
     const isLastSwap =
       swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
@@ -605,7 +598,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           ] &&
           !skipWrap
         ) {
-          console.log('BUILD WRAP CALLDATA IN SWAP EXCHANGE');
           depositCallData = this.buildWrapEthCallData(
             this.getWETHAddress(curExchangeParam),
             maybeWethCallData.deposit.calldata,
@@ -662,7 +654,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           (!isLast && !eachDexOnSwapNeedsWrapNative && nextSwap) || // unwrap if next swap has dexes which don't need wrap native
           isLastSimpleWithUnwrap // unwrap after last dex call with unwrap for simple swap case
         ) {
-          console.log('BUILD UNWRAP IN SWAP EXCHANGE');
           withdrawCallData = this.buildUnwrapEthCallData(
             this.getWETHAddress(curExchangeParam),
             maybeWethCallData.withdraw.calldata,
@@ -685,58 +676,23 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     }
 
     let addedUnwrapForDexWithNoNeedWrapNative = false;
-
     if (
       isETHAddress(swap.srcToken) &&
       maybeWethCallData &&
       maybeWethCallData.withdraw &&
-      !curExchangeParam.needWrapNative
+      !curExchangeParam.needWrapNative &&
+      prevBranchWasWrapped
     ) {
-      // const prevSwap = priceRoute.bestRoute[routeIndex].swaps[swapIndex - 1];
-      // const swapExchangesWhichNeedWrapNative = prevSwap
-      //   ? this.getSwapExchangesWhichNeedWrapNative(
-      //       priceRoute,
-      //       prevSwap,
-      //       exchangeParams,
-      //     )
-      //   : [];
-      // const swapExchangesWhichDontNeedWrapNative = prevSwap
-      //   ? this.getSwapExchangesWhichDontNeedWrapNative(
-      //       priceRoute,
-      //       prevSwap,
-      //       exchangeParams,
-      //     )
-      //   : [];
-      //
-      // const totalDestAmountForSwapExchangesWhichDontNeedWrapNative =
-      //   swapExchangesWhichDontNeedWrapNative.reduce<bigint>(
-      //     (acc, se) => acc + BigInt(se.destAmount),
-      //     0n,
-      //   );
-      // const totalDestAmountForSwapExchangesWhichNeedWrapNative =
-      //   swapExchangesWhichNeedWrapNative.reduce<bigint>(
-      //     (acc, se) => acc + BigInt(se.destAmount),
-      //     0n,
-      //   );
+      const withdrawCallData = this.buildUnwrapEthCallData(
+        this.getWETHAddress(curExchangeParam),
+        maybeWethCallData.withdraw.calldata,
+      );
 
-      // if (
-      //   BigInt(swapExchange.srcAmount) >
-      //     totalDestAmountForSwapExchangesWhichDontNeedWrapNative &&
-      //   BigInt(swapExchange.srcAmount) <=
-      //     totalDestAmountForSwapExchangesWhichNeedWrapNative
-      // ) {
-        console.log('BUILD UNWRAP IN SWAP EXCHANGE 2');
-        const withdrawCallData = this.buildUnwrapEthCallData(
-          this.getWETHAddress(curExchangeParam),
-          maybeWethCallData.withdraw.calldata,
-        );
-
-        swapExchangeCallData = hexConcat([
-          withdrawCallData,
-          swapExchangeCallData,
-        ]);
-        addedUnwrapForDexWithNoNeedWrapNative = true;
-      // }
+      swapExchangeCallData = hexConcat([
+        withdrawCallData,
+        swapExchangeCallData,
+      ]);
+      addedUnwrapForDexWithNoNeedWrapNative = true;
     }
 
     if (
@@ -802,7 +758,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
           )
         : maybeWethCallData.deposit.calldata;
 
-      console.log('APPEND WRAP CALLDATA');
       const depositCallData = this.buildWrapEthCallData(
         this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
         callData,
@@ -822,7 +777,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     priceRoute: OptimalRate,
     swap: OptimalSwap,
     exchangeParams: DexExchangeBuildParam[],
-    // routeIndex: number,
   ): boolean {
     return swap.swapExchanges.every(curSe => {
       let index = 0;
@@ -1053,16 +1007,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const anyDexOnSwapDoesntNeedWrapNative =
       this.anyDexOnSwapDoesntNeedWrapNative(priceRoute, swap!, exchangeParams);
 
-    // console.log('anyDexOnSwapDoesntNeedWrapNative: ', anyDexOnSwapDoesntNeedWrapNative);
-    // console.log('isETHAddress(swap!.destToken): ', isETHAddress(swap!.destToken));
-    // console.log('!isLastSwap: ', !isLastSwap);
-
     const needToAppendWrapCallData =
       isETHAddress(swap!.destToken) &&
       anyDexOnSwapDoesntNeedWrapNative &&
-      !isLastSwap;
-
-    // console.log('needToAppendWrapCallData: ', needToAppendWrapCallData);
+      !isLastSwap &&
+      maybeWethCallData?.deposit;
 
     let swapCallData = swapExchanges.reduce(
       (acc, swapExchange, swapExchangeIndex) => {
@@ -1077,6 +1026,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
             flags,
             addedWrapToSwapExchangeMap,
             !appendedWrapToSwapMap[swapIndex - 1],
+            appendedWrapToSwapMap[swapIndex - 1],
             maybeWethCallData,
             swap!.swapExchanges.length > 1,
             applyVerticalBranching,
@@ -1296,7 +1246,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
     // ETH wrap
     if (needWrapEth && routeNeedsRootWrapEth) {
-      console.log('BUILD WRAP CALLDATA IN THE ROOT');
       let depositCallData = this.buildWrapEthCallData(
         this.dexHelper.config.data.wrappedNativeTokenAddress,
         maybeWethCallData.deposit!.calldata,
