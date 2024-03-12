@@ -22,44 +22,6 @@ const provider = new JsonRpcProvider(process.env.HTTP_PROVIDER_137);
 const vaultAddress = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
 const vaultContract = new Contract(vaultAddress, VaultABI, provider);
 
-// Compare retrieve an onchain query result for a single swap
-async function queryOnChain(
-  blockNumber: number,
-  poolId: string,
-  kind: 0 | 1,
-  assetIn: string,
-  assetOut: string,
-  amount: BigInt,
-): Promise<bigint[]> {
-  const funds = {
-    sender: '0x0000000000000000000000000000000000000000',
-    recipient: '0x0000000000000000000000000000000000000000',
-    fromInternalBalance: false,
-    toInternalBalance: false,
-  };
-  const swaps = [
-    {
-      poolId,
-      assetInIndex: 0,
-      assetOutIndex: 1,
-      amount,
-      userData: '0x',
-    },
-  ];
-  const assets = [assetIn, assetOut];
-  const deltas = await vaultContract.callStatic.queryBatchSwap(
-    kind,
-    swaps,
-    assets,
-    funds,
-    {
-      blockTag: blockNumber,
-    },
-  );
-  console.log(deltas.toString());
-  return [deltas[0].toBigInt(), deltas[1].toBigInt()];
-}
-
 describe('BalancerV2', () => {
   const dexKey = 'BalancerV2';
   const network = Network.POLYGON;
@@ -335,4 +297,171 @@ describe('BalancerV2', () => {
       });
     });
   });
+
+  describe('GyroE Pool V2', () => {
+    describe('Pool Fetching', () => {
+      it('should fetch GyroE Pool with correct fields from Subgraph', async function () {
+        const pools = await balancerPools.fetchAllSubgraphPools();
+        // wmatic/xmatic
+        const GyroEPoolId =
+          '0xee278d943584dd8640eaf4cc6c7a5c80c0073e85000200000000000000000bc7';
+        const GyroE = pools.filter(p => p.id === GyroEPoolId);
+        expect(GyroE.length).toBe(1);
+        GyroEPoolSg = GyroE[0];
+        expect(GyroEPoolSg.tokens.length).toBe(2);
+        expect(GyroEPoolSg.alpha).not.toBeNull();
+        expect(GyroEPoolSg.beta).not.toBeNull();
+        expect(GyroEPoolSg.c).not.toBeNull();
+        expect(GyroEPoolSg.s).not.toBeNull();
+        expect(GyroEPoolSg.lambda).not.toBeNull();
+        expect(GyroEPoolSg.tauAlphaX).not.toBeNull();
+        expect(GyroEPoolSg.tauAlphaY).not.toBeNull();
+        expect(GyroEPoolSg.tauBetaX).not.toBeNull();
+        expect(GyroEPoolSg.tauBetaY).not.toBeNull();
+        expect(GyroEPoolSg.u).not.toBeNull();
+        expect(GyroEPoolSg.v).not.toBeNull();
+        expect(GyroEPoolSg.w).not.toBeNull();
+        expect(GyroEPoolSg.z).not.toBeNull();
+        expect(GyroEPoolSg.dSq).not.toBeNull();
+        expect(GyroEPoolSg.poolTypeVersion).toEqual(2);
+      });
+
+      it('getOnChainState', async function () {
+        const blocknumber = 54571344;
+        const state = await balancerPools.getOnChainState(
+          [GyroEPoolSg],
+          blocknumber,
+        );
+        GyroEPoolState = state[GyroEPoolSg.address];
+        expect(GyroEPoolState.swapFee).toBe(BigInt('100000000000000'));
+        expect(
+          GyroEPoolState.tokens[tokens.WMATIC.address.toLowerCase()].balance,
+        ).toBe(231918780712184629424641n);
+        expect(
+          GyroEPoolState.tokens[tokens.MATICX.address.toLowerCase()].balance,
+        ).toBe(1614748628144003818699851n);
+        expect(GyroEPoolState.rateProviders![0]).toBe(
+          '0x0000000000000000000000000000000000000000',
+        );
+        expect(GyroEPoolState.rateProviders![1].toLowerCase()).toBe(
+          '0xee652bbf72689aa59f0b8f981c9c90e2a8af8d8f',
+        );
+        // Token has no rate provider so rate should be 1
+        expect(GyroEPoolState.tokenRates![0]).toBe(1000000000000000000n);
+        // Token has a rate provider so should use that rate
+        expect(GyroEPoolState.tokenRates![1]).toBe(1103299689517375348n);
+      });
+    });
+
+    describe('Onchain Compare', () => {
+      it('exactIn', async function () {
+        const blocknumber = 54571344;
+        // wmatic/xmatic
+        const poolId =
+          '0xee278d943584dd8640eaf4cc6c7a5c80c0073e85000200000000000000000bc7';
+        const tokenIn = tokens.MATICX.address;
+        const tokenOut = tokens.WMATIC.address;
+        const amountIn = BigInt('110000000000000000');
+
+        const pools = await balancerPools.fetchAllSubgraphPools();
+        const poolSg = pools.filter(p => p.id === poolId)[0];
+        const state = await balancerPools.getOnChainState(
+          [poolSg],
+          blocknumber,
+        );
+        const poolState = state[poolSg.address];
+
+        const pairData = gyroEPool.parsePoolPairData(
+          poolSg,
+          poolState,
+          tokenIn,
+          tokenOut,
+        );
+        const amountOut = gyroEPool.onSell([amountIn], pairData);
+        const deltas = await queryOnChain(
+          blocknumber,
+          poolId,
+          0,
+          tokenIn,
+          tokenOut,
+          amountIn,
+        );
+        expect(amountIn).toEqual(deltas[0]);
+        expect(amountOut[0] + deltas[1]).toEqual(0n);
+      });
+      it('exactOut', async function () {
+        const blocknumber = 54571344;
+        // wmatic/xmatic
+        const poolId =
+          '0xee278d943584dd8640eaf4cc6c7a5c80c0073e85000200000000000000000bc7';
+        const tokenIn = tokens.MATICX.address;
+        const tokenOut = tokens.WMATIC.address;
+        const amountOut = BigInt('2000000000000000000');
+
+        const pools = await balancerPools.fetchAllSubgraphPools();
+        const poolSg = pools.filter(p => p.id === poolId)[0];
+        const state = await balancerPools.getOnChainState(
+          [poolSg],
+          blocknumber,
+        );
+        const poolState = state[poolSg.address];
+
+        const pairData = gyroEPool.parsePoolPairData(
+          poolSg,
+          poolState,
+          tokenIn,
+          tokenOut,
+        );
+        const amountIn = gyroEPool.onBuy([amountOut], pairData);
+        const deltas = await queryOnChain(
+          blocknumber,
+          poolId,
+          1,
+          tokenIn,
+          tokenOut,
+          amountOut,
+        );
+        expect(amountIn[0]).toEqual(deltas[0]);
+        expect(amountOut + deltas[1]).toEqual(0n);
+      });
+    });
+  });
 });
+
+// Compare retrieve an onchain query result for a single swap
+async function queryOnChain(
+  blockNumber: number,
+  poolId: string,
+  kind: 0 | 1,
+  assetIn: string,
+  assetOut: string,
+  amount: BigInt,
+): Promise<bigint[]> {
+  const funds = {
+    sender: '0x0000000000000000000000000000000000000000',
+    recipient: '0x0000000000000000000000000000000000000000',
+    fromInternalBalance: false,
+    toInternalBalance: false,
+  };
+  const swaps = [
+    {
+      poolId,
+      assetInIndex: 0,
+      assetOutIndex: 1,
+      amount,
+      userData: '0x',
+    },
+  ];
+  const assets = [assetIn, assetOut];
+  const deltas = await vaultContract.callStatic.queryBatchSwap(
+    kind,
+    swaps,
+    assets,
+    funds,
+    {
+      blockTag: blockNumber,
+    },
+  );
+  // console.log(deltas.toString());
+  return [deltas[0].toBigInt(), deltas[1].toBigInt()];
+}

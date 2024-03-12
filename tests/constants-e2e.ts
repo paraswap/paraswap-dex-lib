@@ -479,10 +479,14 @@ export const Tokens: {
     },
     TUSD: {
       address: '0x2e1ad108ff1d8c782fcbbb89aad783ac49586756',
-       decimals: 18,
+      decimals: 18,
     },
     SDEX: {
       address: '0x6899fAcE15c14348E1759371049ab64A3a06bFA6',
+      decimals: 18,
+    },
+    MATICX: {
+      address: '0xfa68fb4628dff1028cfec22b4162fccd0d45efb6',
       decimals: 18,
     },
   },

@@ -249,25 +249,14 @@ export class GyroEPool extends BasePool {
         !poolPairData.tokenInIsToken0,
         poolPairData,
       );
+      const normalizedBalances = this._normalizeBalances(
+        poolPairData.balances,
+        poolPairData.tokenRates,
+      );
 
-      // const orderedNormalizedBalances = balancesFromTokenInOut(
-      //   BigNumber.from(
-      //     this._upscale(
-      //       poolPairData.balances[poolPairData.indexIn].toBigInt(),
-      //       scalingFactorTokenIn,
-      //     ),
-      //   ),
-      //   BigNumber.from(
-      //     this._upscale(
-      //       poolPairData.balances[poolPairData.indexOut].toBigInt(),
-      //       scalingFactorTokenOut,
-      //     ),
-      //   ),
-      //   poolPairData.tokenInIsToken0,
-      // );
       const orderedNormalizedBalances = balancesFromTokenInOut(
-        poolPairData.balances[poolPairData.indexIn],
-        poolPairData.balances[poolPairData.indexOut],
+        normalizedBalances[poolPairData.indexIn],
+        normalizedBalances[poolPairData.indexOut],
         poolPairData.tokenInIsToken0,
       );
 
@@ -324,24 +313,14 @@ export class GyroEPool extends BasePool {
         poolPairData,
       );
 
-      // const orderedNormalizedBalances = balancesFromTokenInOut(
-      //   BigNumber.from(
-      //     this._upscale(
-      //       poolPairData.balances[poolPairData.indexIn].toBigInt(),
-      //       scalingFactorTokenIn,
-      //     ),
-      //   ),
-      //   BigNumber.from(
-      //     this._upscale(
-      //       poolPairData.balances[poolPairData.indexOut].toBigInt(),
-      //       scalingFactorTokenOut,
-      //     ),
-      //   ),
-      //   poolPairData.tokenInIsToken0,
-      // );
+      const normalizedBalances = this._normalizeBalances(
+        poolPairData.balances,
+        poolPairData.tokenRates,
+      );
+
       const orderedNormalizedBalances = balancesFromTokenInOut(
-        poolPairData.balances[poolPairData.indexIn],
-        poolPairData.balances[poolPairData.indexOut],
+        normalizedBalances[poolPairData.indexIn],
+        normalizedBalances[poolPairData.indexOut],
         poolPairData.tokenInIsToken0,
       );
 
@@ -403,5 +382,22 @@ export class GyroEPool extends BasePool {
         poolPairData.tokenRates[tokenIndex],
       );
     }
+  }
+
+  private _normalizeBalances(
+    balances: BigNumber[],
+    tokenRates: bigint[],
+  ): BigNumber[] {
+    // If pool is V1, e.g. has no tokenRates return balances
+    if (tokenRates.length === 0) return balances;
+    /*
+    Apply tokenRates
+    SOR upscales here first using scalingFactors but this is already being done in parse pair data so no need to repeat.
+    */
+    return balances.map((bal, i) => {
+      return BigNumber.from(
+        MathSol.mulDownFixed(bal.toBigInt(), tokenRates[i]),
+      );
+    });
   }
 }
