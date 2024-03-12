@@ -10,7 +10,9 @@ export function uniswapMerge(or: UnoptimizedRate): UnoptimizedRate {
   const availableForksForMerge =
     or.version === ParaSwapVersion.V6
       ? // for v6 merge only uniswap v2 without forks
-        [UniswapV2Alias[or.network]]
+        UniswapV2Alias[or.network]
+        ? [UniswapV2Alias[or.network]]
+        : []
       : AllUniswapForks;
   const fixRoute = (rawRate: OptimalSwap[]): OptimalSwap[] => {
     let lastExchange: false | OptimalSwap = false;

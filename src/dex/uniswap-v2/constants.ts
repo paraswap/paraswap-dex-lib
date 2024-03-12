@@ -44,14 +44,12 @@ export const UniswapForksWithNetwork = transformToNetworkMap({
   ...ExcaliburConfig,
 });
 
-// These are exchanges used for swapOnUniswap method
 export const UniswapV2Alias: { [network: number]: string } = {
   [Network.MAINNET]: 'uniswapv2',
   [Network.ROPSTEN]: 'uniswapv2',
   [Network.BSC]: 'uniswapv2',
   [Network.POLYGON]: 'uniswapv2',
   [Network.AVALANCHE]: 'uniswapv2',
-  [Network.FANTOM]: 'spookyswap',
   [Network.ARBITRUM]: 'uniswapv2',
   [Network.OPTIMISM]: 'uniswapv2',
   [Network.BASE]: 'uniswapv2',
