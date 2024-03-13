@@ -346,6 +346,11 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
+"@bgd-labs/aave-address-book@2.21.1":
+  version "2.21.1"
+  resolved "https://registry.yarnpkg.com/@bgd-labs/aave-address-book/-/aave-address-book-2.21.1.tgz#004aa244d715d785079029f6b61d5ece6bcff563"
+  integrity sha512-q22AThlSRgEgRkwWiK1ts13oO3epZkARmdJzhezv6Fv3PNa5M95uoqABjNldWmpUyadhy2UtujGzXdOQ6MSS9Q==
+
 "@chainsafe/as-sha256@^0.3.1":
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/@chainsafe/as-sha256/-/as-sha256-0.3.1.tgz#3639df0e1435cab03f4d9870cc3ac079e57a6fc9"
@@ -381,11 +386,6 @@
     "@chainsafe/as-sha256" "^0.3.1"
     "@chainsafe/persistent-merkle-tree" "^0.4.2"
     case "^1.6.3"
-
-"@bgd-labs/aave-address-book@2.21.1":
-  version "2.21.1"
-  resolved "https://registry.yarnpkg.com/@bgd-labs/aave-address-book/-/aave-address-book-2.21.1.tgz#004aa244d715d785079029f6b61d5ece6bcff563"
-  integrity sha512-q22AThlSRgEgRkwWiK1ts13oO3epZkARmdJzhezv6Fv3PNa5M95uoqABjNldWmpUyadhy2UtujGzXdOQ6MSS9Q==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -1564,9 +1564,10 @@
   resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.1.0.tgz#5ec7415be69dc657a9d82b0fde4e20f632cca1b6"
   integrity sha512-ecnX8ezlhYWFwolZxYEz+K+RfLr8xaxQqiJKlxJ8Yf00tXTGxDGn6/Acy00t4+9Kv0apewd7++J33eJt9yNfwg==
 
-"@paraswap/core@https://github.com/paraswap/paraswap-core#123d1a651e38ed738cc59d8a73302cda117d4cb6":
-  version "2.0.2-v6.0"
-  resolved "https://github.com/paraswap/paraswap-core#123d1a651e38ed738cc59d8a73302cda117d4cb6"
+"@paraswap/core@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-2.0.0.tgz#be62161abec67db3cef22498a1631b12aa2d81e1"
+  integrity sha512-zhXSjX2dbYaRxYZt9LhzOCW/qeP0CLyvaFU7e8MkWahu/IAhyvKc/45/STDgNgTjPw1MHjNHbmi5a5pVqXyXBg==
 
 "@paraswap/sdk@6.2.1":
   version "6.2.1"
