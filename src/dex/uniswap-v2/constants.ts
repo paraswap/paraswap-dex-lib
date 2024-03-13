@@ -53,4 +53,7 @@ export const UniswapV2Alias: { [network: number]: string } = {
   [Network.ARBITRUM]: 'uniswapv2',
   [Network.OPTIMISM]: 'uniswapv2',
   [Network.BASE]: 'uniswapv2',
+
+  // use only to handle UniswapForkOptimized build with this dex
+  [Network.FANTOM]: 'spookyswap',
 };
