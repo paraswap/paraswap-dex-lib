@@ -402,6 +402,10 @@ export const Tokens: {
       addBalance: _balancesFn,
       addAllowance: _allowancesFn,
     },
+    TEL: {
+      address: '0xdf7837de1f2fa4631d716cf2502f8b230f1dcc32',
+      decimals: 2,
+    },
     POPS: {
       address: '0xa92A1576D11dB45c53be71d59245ac97ce0d8147',
       decimals: 18,
@@ -1008,6 +1012,10 @@ export const Tokens: {
       address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
       decimals: 6,
     },
+    GRAIN: {
+      address: '0xfd389dc9533717239856190f42475d3f263a270d',
+      decimals: 18,
+    },
     POPS: {
       address: '0x3D51a9fB5dCc87F7B237B04975559b920a9a56Ff',
       decimals: 18,
@@ -1343,7 +1351,7 @@ export const Holders: {
     DAI: '0x1337bedc9d22ecbe766df105c9623922a27963ec',
     WETH: '0x68F5C0A2DE713a54991E01858Fd27a3832401849',
     POPS: '0x3cbd9044aaabef08ce93a68448e093cff405ad76',
-    USDC: '0xdecc0c09c3b5f6e92ef4184125d5648a66e35298',
+    USDC: '0xb0a6f90f11c5ae94e30476a7534191194492a91b',
     USDT: '0xf977814e90da44bfa03b6295a0616a897441acec',
     OP: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     aOptWETH: '0x7B7D80C40415F744864f051B806b466e2fbB8E68',
