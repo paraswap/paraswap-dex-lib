@@ -203,7 +203,7 @@ export class Gyro3Pool extends BasePool {
     }
   }
 
-  onBuy(amounts: bigint[], poolPairData: StablePoolPairData): bigint[] {
+  onBuy(amounts: bigint[], poolPairData: Gyro3PoolPairData): bigint[] {
     return [];
   }
 }

@@ -196,6 +196,8 @@ const fetchAllPools = `query ($count: Int) {
     }
     mainIndex
     wrappedIndex
+
+    root3Alpha
   }
 }`;
 // skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Experimental.

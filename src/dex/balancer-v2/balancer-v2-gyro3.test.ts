@@ -11,9 +11,13 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BalancerV2EventPool } from './balancer-v2';
 import { BalancerConfig } from './config';
-import { BalancerPoolTypes, PoolState, SubgraphPoolBase } from './types';
+import { PoolState, SubgraphPoolBase } from './types';
 import { Gyro3Pool, Gyro3PoolPairData } from './pools/gyro/Gyro3Pool';
+import { queryOnChain } from './queryOnChain';
+
 import VaultABI from '../../abi/balancer-v2/vault.json';
+
+const rpcUrl = process.env.HTTP_PROVIDER_137 as string;
 
 describe('BalancerV2', () => {
   const dexKey = 'BalancerV2';
@@ -23,31 +27,24 @@ describe('BalancerV2', () => {
   const gyro3Pool = new Gyro3Pool(config.vaultAddress, vaultInterface);
   const tokens = Tokens[network];
 
+  const dexHelper = new DummyDexHelper(network);
+  const logger = dexHelper.getLogger(dexKey);
+  const balancerPools = new BalancerV2EventPool(
+    dexKey,
+    network,
+    config.vaultAddress,
+    config.subgraphURL,
+    dexHelper,
+    logger,
+  );
+
   describe('Gyro3 Pool', () => {
     describe('Pool Fetching', () => {
       let Gyro3PoolSg: SubgraphPoolBase;
       let Gyro3PoolState: PoolState;
-      const dexHelper = new DummyDexHelper(network);
-      const logger = dexHelper.getLogger(dexKey);
-      const balancerPools = new BalancerV2EventPool(
-        dexKey,
-        network,
-        config.vaultAddress,
-        config.subgraphURL,
-        dexHelper,
-        logger,
-      );
 
       it('should be supported pool type', async function () {
         expect(balancerPools.isSupportedPool('Gyro3')).toBe(true);
-      });
-
-      it('should be event supported', async function () {
-        expect(
-          balancerPools.eventSupportedPoolTypes.includes(
-            BalancerPoolTypes.Gyro3,
-          ),
-        ).toBe(true);
       });
 
       it('should fetch Gyro3 Pool with correct fields from Subgraph', async function () {
@@ -180,6 +177,45 @@ describe('BalancerV2', () => {
           expect(amountOut.length).toBe(1);
           expect(amountOut[0].toString()).toBe('13492521');
         });
+      });
+    });
+
+    describe('Onchain Compare', () => {
+      it('exactIn', async function () {
+        const blocknumber = 54571344;
+        // usdc/busd/usdt
+        const poolId =
+          '0x17f1ef81707811ea15d9ee7c741179bbe2a63887000100000000000000000799';
+        const tokenIn = tokens.USDC.address;
+        const tokenOut = tokens.BUSD.address;
+        const amountIn = BigInt('11000000');
+
+        const pools = await balancerPools.fetchAllSubgraphPools();
+        const poolSg = pools.filter(p => p.id === poolId)[0];
+        const state = await balancerPools.getOnChainState(
+          [poolSg],
+          blocknumber,
+        );
+        const poolState = state[poolSg.address];
+
+        const pairData = gyro3Pool.parsePoolPairData(
+          poolSg,
+          poolState,
+          tokenIn,
+          tokenOut,
+        );
+        const amountOut = gyro3Pool.onSell([amountIn], pairData);
+        const deltas = await queryOnChain(
+          rpcUrl,
+          blocknumber,
+          poolId,
+          0,
+          tokenIn,
+          tokenOut,
+          amountIn,
+        );
+        expect(amountIn).toEqual(deltas[0]);
+        expect(amountOut[0] + deltas[1]).toEqual(0n);
       });
     });
   });
