@@ -456,7 +456,7 @@ describe('BalancerV2', function () {
   //   // });
   // });
 
-  describe('PhantomStable', () => {
+  describe.only('PhantomStable', () => {
     /*
     As advised by @shresth this test has been commented out.
     checkPoolPrices expects price to decrease as higher amounts are used. Linear/PhantomStable can sometimes return same or better.
@@ -468,9 +468,7 @@ describe('BalancerV2', function () {
     //   const dexHelper = new DummyDexHelper(Network.MAINNET);
     //   const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
     //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
-
     //   await balancerV2.initializePricing(blocknumber);
-
     //   const pools = await balancerV2.getPoolIdentifiers(
     //     BBAUSD,
     //     BBADAI,
@@ -478,9 +476,7 @@ describe('BalancerV2', function () {
     //     blocknumber,
     //   );
     //   console.log('BBAUSD <> BBADAI Pool Identifiers: ', pools);
-
     //   expect(pools.length).toBeGreaterThan(0);
-
     //   const poolPrices = await balancerV2.getPricesVolume(
     //     BBAUSD,
     //     BBADAI,
@@ -490,27 +486,22 @@ describe('BalancerV2', function () {
     //     pools,
     //   );
     //   console.log('BBAUSD <> BBADAI Pool Prices: ', poolPrices);
-
     //   expect(poolPrices).not.toBeNull();
     //   checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
-
     //   await balancerV2.releaseResources();
     // });
-
-    it('getTopPoolsForToken', async function () {
-      const BBAUSD = Tokens[Network.MAINNET]['BBAUSD'];
-      const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
-
-      const poolLiquidity = await balancerV2.getTopPoolsForToken(
-        BBAUSD.address,
-        10,
-      );
-      console.log('BBAUSD Top Pools:', poolLiquidity);
-
-      checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
-    });
-
+    // bbausd pool disable after vulnerability
+    // it('getTopPoolsForToken', async function () {
+    //   const BBAUSD = Tokens[Network.MAINNET]['BBAUSD'];
+    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
+    //   const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+    //   const poolLiquidity = await balancerV2.getTopPoolsForToken(
+    //     BBAUSD.address,
+    //     10,
+    //   );
+    //   console.log('BBAUSD Top Pools:', poolLiquidity);
+    //   checkPoolsLiquidity(poolLiquidity, BBAUSD.address, dexKey);
+    // });
     // it('applies getRate to phantom bpt scaling factor', async function () {
     //   const config = BalancerConfig[dexKey][Network.MAINNET];
     //   const dexHelper = new DummyDexHelper(Network.MAINNET);
