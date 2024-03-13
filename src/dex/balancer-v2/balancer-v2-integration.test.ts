@@ -117,7 +117,7 @@ describe('BalancerV2', function () {
     });
 
     it('getPoolIdentifiers and getPricesVolume', async () => {
-      const MIMATIC = Tokens[Network.POLYGON]['MIMATIC'];
+      const MIMATIC = Tokens[Network.POLYGON]['MAI'];
       const USDC = Tokens[Network.POLYGON]['USDC'];
       const dexHelper = new DummyDexHelper(Network.POLYGON);
       const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
@@ -366,94 +366,95 @@ describe('BalancerV2', function () {
     });
   });
 
-  describe('Linear', () => {
-    it('getPoolIdentifiers and getPricesVolume', async function () {
-      const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+  // Removed as Linear no-longer supported after vulnerability
+  // describe('Linear', () => {
+  //   it('getPoolIdentifiers and getPricesVolume', async function () {
+  //     const dexHelper = new DummyDexHelper(Network.MAINNET);
+  //     const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+  //     const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
-      await balancerV2.initializePricing(blocknumber);
+  //     await balancerV2.initializePricing(blocknumber);
 
-      //daniel: pricing for BPT swaps has been removed for the time being
-      //focus on main tokens swaps
-      /*const pools = await balancerV2.getPoolIdentifiers(
-        DAI,
-        BBADAI,
-        SwapSide.SELL,
-        blocknumber,
-      );
-      console.log('DAI <> BBADAI Pool Identifiers: ', pools);
+  //     //daniel: pricing for BPT swaps has been removed for the time being
+  //     //focus on main tokens swaps
+  //     /*const pools = await balancerV2.getPoolIdentifiers(
+  //       DAI,
+  //       BBADAI,
+  //       SwapSide.SELL,
+  //       blocknumber,
+  //     );
+  //     console.log('DAI <> BBADAI Pool Identifiers: ', pools);
 
-      expect(pools.length).toBeGreaterThan(0);
+  //     expect(pools.length).toBeGreaterThan(0);
 
-      const poolPrices = await balancerV2.getPricesVolume(
-        DAI,
-        BBADAI,
-        amounts,
-        SwapSide.SELL,
-        blocknumber,
-        pools,
-      );
-      console.log('DAI <> BBADAI Pool Prices: ', poolPrices);
+  //     const poolPrices = await balancerV2.getPricesVolume(
+  //       DAI,
+  //       BBADAI,
+  //       amounts,
+  //       SwapSide.SELL,
+  //       blocknumber,
+  //       pools,
+  //     );
+  //     console.log('DAI <> BBADAI Pool Prices: ', poolPrices);
 
-      expect(poolPrices).not.toBeNull();
-      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);*/
+  //     expect(poolPrices).not.toBeNull();
+  //     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);*/
 
-      await balancerV2.releaseResources();
-    });
+  //     await balancerV2.releaseResources();
+  //   });
 
-    it('getTopPoolsForToken', async function () {
-      const BBADAI = Tokens[Network.MAINNET]['BBADAI'];
-      const dexHelper = new DummyDexHelper(Network.MAINNET);
-      const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
+  //   it('getTopPoolsForToken', async function () {
+  //     const BBADAI = Tokens[Network.MAINNET]['BBADAI'];
+  //     const dexHelper = new DummyDexHelper(Network.MAINNET);
+  //     const balancerV2 = new BalancerV2(Network.MAINNET, dexKey, dexHelper);
 
-      const poolLiquidity = await balancerV2.getTopPoolsForToken(
-        BBADAI.address,
-        10,
-      );
-      console.log('BBADAI Top Pools:', poolLiquidity);
+  //     const poolLiquidity = await balancerV2.getTopPoolsForToken(
+  //       BBADAI.address,
+  //       10,
+  //     );
+  //     console.log('BBADAI Top Pools:', poolLiquidity);
 
-      checkPoolsLiquidity(poolLiquidity, BBADAI.address, dexKey);
-    });
+  //     checkPoolsLiquidity(poolLiquidity, BBADAI.address, dexKey);
+  //   });
 
-    // it('applies getRate to phantom bpt scaling factor', async function () {
-    //   const config = BalancerConfig[dexKey][Network.MAINNET];
-    //   const dexHelper = new DummyDexHelper(Network.MAINNET);
-    //   const tokens = Tokens[Network.MAINNET];
-    //   const logger = dexHelper.getLogger(dexKey);
-    //   const blocknumber = 15731000;
-    //
-    //   const balancerPools = new BalancerV2EventPool(
-    //     dexKey,
-    //     Network.MAINNET,
-    //     config.vaultAddress,
-    //     config.subgraphURL,
-    //     dexHelper,
-    //     logger,
-    //   );
-    //
-    //   const state = await balancerPools.getOnChainState(
-    //     [
-    //       {
-    //         id: BBAUSDT_PoolId,
-    //         address: tokens.BBAUSDT.address,
-    //         poolType: BalancerPoolTypes.AaveLinear,
-    //         mainIndex: 1,
-    //         wrappedIndex: 0,
-    //         tokens: [tokens.BBAUSDT, tokens.aUSDT, tokens.USDT],
-    //         mainTokens: [],
-    //       },
-    //     ],
-    //     blocknumber,
-    //   );
-    //
-    //   expect(
-    //     state[tokens.BBAUSDT.address].tokens[
-    //       tokens.BBAUSDT.address
-    //     ].scalingFactor!.toString(),
-    //   ).toBe('1015472217207213567');
-    // });
-  });
+  //   // it('applies getRate to phantom bpt scaling factor', async function () {
+  //   //   const config = BalancerConfig[dexKey][Network.MAINNET];
+  //   //   const dexHelper = new DummyDexHelper(Network.MAINNET);
+  //   //   const tokens = Tokens[Network.MAINNET];
+  //   //   const logger = dexHelper.getLogger(dexKey);
+  //   //   const blocknumber = 15731000;
+  //   //
+  //   //   const balancerPools = new BalancerV2EventPool(
+  //   //     dexKey,
+  //   //     Network.MAINNET,
+  //   //     config.vaultAddress,
+  //   //     config.subgraphURL,
+  //   //     dexHelper,
+  //   //     logger,
+  //   //   );
+  //   //
+  //   //   const state = await balancerPools.getOnChainState(
+  //   //     [
+  //   //       {
+  //   //         id: BBAUSDT_PoolId,
+  //   //         address: tokens.BBAUSDT.address,
+  //   //         poolType: BalancerPoolTypes.AaveLinear,
+  //   //         mainIndex: 1,
+  //   //         wrappedIndex: 0,
+  //   //         tokens: [tokens.BBAUSDT, tokens.aUSDT, tokens.USDT],
+  //   //         mainTokens: [],
+  //   //       },
+  //   //     ],
+  //   //     blocknumber,
+  //   //   );
+  //   //
+  //   //   expect(
+  //   //     state[tokens.BBAUSDT.address].tokens[
+  //   //       tokens.BBAUSDT.address
+  //   //     ].scalingFactor!.toString(),
+  //   //   ).toBe('1015472217207213567');
+  //   // });
+  // });
 
   describe('PhantomStable', () => {
     /*
