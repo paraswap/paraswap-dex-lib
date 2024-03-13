@@ -560,6 +560,10 @@ export const Tokens: {
       address: '0x3fd3a0c85b70754efc07ac9ac0cbbdce664865a6',
       decimals: 18,
     },
+    beFTM: {
+      address: '0x7381ed41f6de418dde5e84b55590422a57917886',
+      decimals: 18,
+    },
     POPS: {
       address: '0x9dE4b40bDcE50Ec6a1A668bF85997BbBD324069a',
       decimals: 18,

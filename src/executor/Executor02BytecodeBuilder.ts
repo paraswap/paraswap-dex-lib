@@ -630,16 +630,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
         let withdrawCallData = '0x';
 
         const customWethAddress = curExchangeParam.wethAddress;
-        const nextSwap = priceRoute.bestRoute[routeIndex].swaps[swapIndex + 1];
-        let eachDexOnSwapNeedsWrapNative = false;
-        if (nextSwap) {
-          eachDexOnSwapNeedsWrapNative = this.eachDexOnSwapNeedsWrapNative(
-            priceRoute,
-            nextSwap,
-            exchangeParams,
-          );
-        }
-
         const isLastSimpleWithUnwrap =
           isSimpleSwap &&
           // check if current exchange is the last with needWrapNative
@@ -651,7 +641,6 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
         if (
           customWethAddress ||
-          (!isLast && !eachDexOnSwapNeedsWrapNative && nextSwap) || // unwrap if next swap has dexes which don't need wrap native
           isLastSimpleWithUnwrap // unwrap after last dex call with unwrap for simple swap case
         ) {
           withdrawCallData = this.buildUnwrapEthCallData(
@@ -680,19 +669,31 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       isETHAddress(swap.srcToken) &&
       maybeWethCallData &&
       maybeWethCallData.withdraw &&
-      !curExchangeParam.needWrapNative &&
-      prevBranchWasWrapped
+      !curExchangeParam.needWrapNative
     ) {
-      const withdrawCallData = this.buildUnwrapEthCallData(
-        this.getWETHAddress(curExchangeParam),
-        maybeWethCallData.withdraw.calldata,
-      );
+      const prevSwap = priceRoute.bestRoute[routeIndex].swaps[swapIndex - 1];
+      let eachDexOnPrevSwapReturnsWeth: boolean = false;
 
-      swapExchangeCallData = hexConcat([
-        withdrawCallData,
-        swapExchangeCallData,
-      ]);
-      addedUnwrapForDexWithNoNeedWrapNative = true;
+      if (prevSwap && !prevBranchWasWrapped) {
+        eachDexOnPrevSwapReturnsWeth = this.eachDexOnSwapNeedsWrapNative(
+          priceRoute,
+          prevSwap,
+          exchangeParams,
+        );
+      }
+
+      if (prevBranchWasWrapped || eachDexOnPrevSwapReturnsWeth) {
+        const withdrawCallData = this.buildUnwrapEthCallData(
+          this.getWETHAddress(curExchangeParam),
+          maybeWethCallData.withdraw.calldata,
+        );
+
+        swapExchangeCallData = hexConcat([
+          withdrawCallData,
+          swapExchangeCallData,
+        ]);
+        addedUnwrapForDexWithNoNeedWrapNative = true;
+      }
     }
 
     if (

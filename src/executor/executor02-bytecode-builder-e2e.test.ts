@@ -1016,6 +1016,89 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
           );
         });
       });
+
+      describe('lzUSDC -> FTM -> WETH', () => {
+        const dexKeys = [
+          'Morphex',
+          'KnightSwap',
+          'SushiSwap',
+          'SpookySwap',
+          'SpiritSwap',
+          'BeetsFi',
+        ];
+
+        const tokenASymbol: string = 'lzUSDC';
+        const tokenBSymbol: string = 'WETH';
+        const tokenAAmount: string = '876000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x28a92dde19d9989f39a49905d7c9c2fac7799bdf', // lzUSDC
+              '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+              '0x74b23882a30290451a17c44f4f05243b6b58c76d', // WETH
+            ],
+          );
+        });
+      });
+
+      describe('lzUSDC -> FTM -> beFTM', () => {
+        const dexKeys = [
+          'Morphex',
+          'SpookySwap',
+          'SpiritSwap',
+          'Solidly',
+          'BeetsFi',
+        ];
+
+        const tokenASymbol: string = 'lzUSDC';
+        const tokenBSymbol: string = 'beFTM';
+        const tokenAAmount: string = '7473000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x28a92dde19d9989f39a49905d7c9c2fac7799bdf', // lzUSDC
+              '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+              '0x74b23882a30290451a17c44f4f05243b6b58c76d', // WETH
+            ],
+          );
+        });
+      });
     });
   });
 
