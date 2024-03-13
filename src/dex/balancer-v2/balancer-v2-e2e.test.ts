@@ -490,7 +490,7 @@ describe('BalancerV2 E2E', () => {
 
       const pairs: { name: string; amount: string }[][] = [
         [
-          { name: 'R', amount: '10000000000000000000' },
+          { name: 'GYD', amount: '10000000000000000000' },
           { name: 'sDAI', amount: '10000000000000000000' },
         ],
       ];
