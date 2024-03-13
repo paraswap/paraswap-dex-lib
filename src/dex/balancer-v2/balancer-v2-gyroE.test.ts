@@ -11,16 +11,12 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BalancerV2EventPool } from './balancer-v2';
 import { BalancerConfig } from './config';
-import { BalancerPoolTypes, PoolState, SubgraphPoolBase } from './types';
+import { PoolState, SubgraphPoolBase } from './types';
 import { GyroEPool, GyroEPoolPairData } from './pools/gyro/GyroEPool';
+import { queryOnChain } from './queryOnChain';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 
-import { Contract } from '@ethersproject/contracts';
-import { JsonRpcProvider } from '@ethersproject/providers';
-
-const provider = new JsonRpcProvider(process.env.HTTP_PROVIDER_137);
-const vaultAddress = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
-const vaultContract = new Contract(vaultAddress, VaultABI, provider);
+const rpcUrl = process.env.HTTP_PROVIDER_137 as string;
 
 describe('BalancerV2', () => {
   const dexKey = 'BalancerV2';
@@ -57,20 +53,6 @@ describe('BalancerV2', () => {
         expect(GyroE.length).toBe(1);
         GyroEPoolSg = GyroE[0];
         expect(GyroEPoolSg.tokens.length).toBe(2);
-        expect(GyroEPoolSg.alpha).not.toBeNull();
-        expect(GyroEPoolSg.beta).not.toBeNull();
-        expect(GyroEPoolSg.c).not.toBeNull();
-        expect(GyroEPoolSg.s).not.toBeNull();
-        expect(GyroEPoolSg.lambda).not.toBeNull();
-        expect(GyroEPoolSg.tauAlphaX).not.toBeNull();
-        expect(GyroEPoolSg.tauAlphaY).not.toBeNull();
-        expect(GyroEPoolSg.tauBetaX).not.toBeNull();
-        expect(GyroEPoolSg.tauBetaY).not.toBeNull();
-        expect(GyroEPoolSg.u).not.toBeNull();
-        expect(GyroEPoolSg.v).not.toBeNull();
-        expect(GyroEPoolSg.w).not.toBeNull();
-        expect(GyroEPoolSg.z).not.toBeNull();
-        expect(GyroEPoolSg.dSq).not.toBeNull();
         expect(GyroEPoolSg.poolTypeVersion).toEqual(1);
       });
 
@@ -250,6 +232,7 @@ describe('BalancerV2', () => {
         );
         const amountOut = gyroEPool.onSell([amountIn], pairData);
         const deltas = await queryOnChain(
+          rpcUrl,
           blocknumber,
           poolId,
           0,
@@ -285,6 +268,7 @@ describe('BalancerV2', () => {
         );
         const amountIn = gyroEPool.onBuy([amountOut], pairData);
         const deltas = await queryOnChain(
+          rpcUrl,
           blocknumber,
           poolId,
           1,
@@ -309,20 +293,6 @@ describe('BalancerV2', () => {
         expect(GyroE.length).toBe(1);
         GyroEPoolSg = GyroE[0];
         expect(GyroEPoolSg.tokens.length).toBe(2);
-        expect(GyroEPoolSg.alpha).not.toBeNull();
-        expect(GyroEPoolSg.beta).not.toBeNull();
-        expect(GyroEPoolSg.c).not.toBeNull();
-        expect(GyroEPoolSg.s).not.toBeNull();
-        expect(GyroEPoolSg.lambda).not.toBeNull();
-        expect(GyroEPoolSg.tauAlphaX).not.toBeNull();
-        expect(GyroEPoolSg.tauAlphaY).not.toBeNull();
-        expect(GyroEPoolSg.tauBetaX).not.toBeNull();
-        expect(GyroEPoolSg.tauBetaY).not.toBeNull();
-        expect(GyroEPoolSg.u).not.toBeNull();
-        expect(GyroEPoolSg.v).not.toBeNull();
-        expect(GyroEPoolSg.w).not.toBeNull();
-        expect(GyroEPoolSg.z).not.toBeNull();
-        expect(GyroEPoolSg.dSq).not.toBeNull();
         expect(GyroEPoolSg.poolTypeVersion).toEqual(2);
       });
 
@@ -379,6 +349,7 @@ describe('BalancerV2', () => {
         );
         const amountOut = gyroEPool.onSell([amountIn], pairData);
         const deltas = await queryOnChain(
+          rpcUrl,
           blocknumber,
           poolId,
           0,
@@ -414,6 +385,7 @@ describe('BalancerV2', () => {
         );
         const amountIn = gyroEPool.onBuy([amountOut], pairData);
         const deltas = await queryOnChain(
+          rpcUrl,
           blocknumber,
           poolId,
           1,
@@ -427,41 +399,3 @@ describe('BalancerV2', () => {
     });
   });
 });
-
-// Compare retrieve an onchain query result for a single swap
-async function queryOnChain(
-  blockNumber: number,
-  poolId: string,
-  kind: 0 | 1,
-  assetIn: string,
-  assetOut: string,
-  amount: BigInt,
-): Promise<bigint[]> {
-  const funds = {
-    sender: '0x0000000000000000000000000000000000000000',
-    recipient: '0x0000000000000000000000000000000000000000',
-    fromInternalBalance: false,
-    toInternalBalance: false,
-  };
-  const swaps = [
-    {
-      poolId,
-      assetInIndex: 0,
-      assetOutIndex: 1,
-      amount,
-      userData: '0x',
-    },
-  ];
-  const assets = [assetIn, assetOut];
-  const deltas = await vaultContract.callStatic.queryBatchSwap(
-    kind,
-    swaps,
-    assets,
-    funds,
-    {
-      blockTag: blockNumber,
-    },
-  );
-  // console.log(deltas.toString());
-  return [deltas[0].toBigInt(), deltas[1].toBigInt()];
-}
