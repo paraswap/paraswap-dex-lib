@@ -497,10 +497,11 @@ export async function testE2E(
     console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
-    const config = generateConfig(network);
-    const augustusV6Address = config.augustusV6Address!;
-    const executorsAddresses = Object.values(config.executorsAddresses!);
-    const addresses = [...executorsAddresses, augustusV6Address];
+    // send 1 wei of src token to AugustusV6 and Executors
+    // const config = generateConfig(network);
+    // const augustusV6Address = config.augustusV6Address!;
+    // const executorsAddresses = Object.values(config.executorsAddresses!);
+    // const addresses = [...executorsAddresses, augustusV6Address];
 
     // for await (const a of addresses) {
     //   const src =
