@@ -1522,18 +1522,9 @@ export class BalancerV2
     side: SwapSide,
     context: Context,
   ): DexExchangeParam {
-    // If native tokens involved, use wrapped versions on intermediary swaps and stick to native only at edges
-    const _srcToken = context.isGlobalSrcToken
-      ? srcToken
-      : this.dexHelper.config.wrapETH(srcToken);
-
-    const _destToken = context.isGlobalDestToken
-      ? destToken
-      : this.dexHelper.config.wrapETH(destToken);
-
     const params = this.getBalancerParamV6(
-      _srcToken,
-      _destToken,
+      srcToken,
+      destToken,
       srcAmount,
       destAmount,
       data,
@@ -1564,7 +1555,7 @@ export class BalancerV2
     }
 
     return {
-      needWrapNative: !(context.isGlobalSrcToken && context.isGlobalDestToken),
+      needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData,
       specialDexFlag,
