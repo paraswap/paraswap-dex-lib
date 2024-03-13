@@ -343,6 +343,10 @@ export const Tokens: {
       address: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6',
       decimals: 19,
     },
+    GYD: {
+      address: '0xe07f9d810a48ab5c3c914ba3ca53af14e4491e8a',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
