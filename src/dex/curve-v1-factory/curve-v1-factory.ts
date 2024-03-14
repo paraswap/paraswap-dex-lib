@@ -28,6 +28,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   getBigIntPow,
   getDexKeysWithNetwork,
+  isETHAddress,
   isSrcTokenTransferFeeToBeExchanged,
   uuidToBytes16,
 } from '../../utils';
@@ -42,6 +43,8 @@ import {
   ImplementationNames,
   PoolConstants,
   DirectCurveV1Param,
+  CurveV1FactoryDirectSwap,
+  DirectCurveV1FactoryParamV6,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -75,6 +78,11 @@ import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-poll
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { PriceHandler } from './price-handlers/price-handler';
+import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
+import { packCurveData } from '../../lib/curve/encoder';
+import { encodeCurveAssets } from '../curve-v1/packer';
+
+import { DIRECT_METHOD_NAME_V6 } from './constants';
 
 const DefaultCoinsABI: AbiItem = {
   type: 'function',
@@ -95,7 +103,8 @@ const DefaultCoinsABI: AbiItem = {
 
 export class CurveV1Factory
   extends SimpleExchange
-  implements IDex<CurveV1FactoryData, DirectCurveV1Param>
+  implements
+    IDex<CurveV1FactoryData, DirectCurveV1Param | CurveV1FactoryDirectSwap>
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
@@ -954,7 +963,6 @@ export class CurveV1Factory
     ];
   }
 
-  // FIXME: need v6 function
   getDirectParam(
     srcToken: Address,
     destToken: Address,
@@ -1016,6 +1024,70 @@ export class CurveV1Factory
     };
   }
 
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: CurveV1FactoryData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod?: string,
+  ) {
+    if (contractMethod !== DIRECT_METHOD_NAME_V6) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const swapParams: DirectCurveV1FactoryParamV6 = [
+      packCurveData(
+        data.exchange,
+        !data.isApproved, // approve flag, if not approved then set to true
+        isETHAddress(destToken) ? 0 : isETHAddress(srcToken) ? 3 : 0,
+        data.underlyingSwap
+          ? CurveV1SwapType.EXCHANGE_UNDERLYING
+          : CurveV1SwapType.EXCHANGE,
+      ).toString(),
+      encodeCurveAssets(data.i, data.j).toString(),
+      srcToken,
+      destToken,
+      fromAmount,
+      toAmount,
+      quotedAmount,
+      metadata,
+      beneficiary,
+    ];
+
+    const encodeParams: CurveV1FactoryDirectSwap = [
+      swapParams,
+      partnerAndFee,
+      permit,
+    ];
+
+    const encoder = (...params: CurveV1FactoryDirectSwap) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        DIRECT_METHOD_NAME_V6,
+        [...params],
+      );
+    };
+
+    return {
+      encoder,
+      params: encodeParams,
+      networkFee: '0',
+    };
+  }
+
   static getDirectFunctionName(): string[] {
     return [DIRECT_METHOD_NAME];
   }
@@ -1049,6 +1121,10 @@ export class CurveV1Factory
       swapData,
       exchange,
     );
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DIRECT_METHOD_NAME_V6];
   }
 
   getDexParam(
