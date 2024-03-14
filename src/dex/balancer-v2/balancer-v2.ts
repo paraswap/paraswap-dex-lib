@@ -609,6 +609,7 @@ export class BalancerV2
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported = false;
+  readonly needWrapNative = true; // temporary
 
   readonly directSwapIface = new Interface(DirectSwapABI);
   readonly balancerVaultInterface = new Interface(BalancerVaultABI);

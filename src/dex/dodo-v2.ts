@@ -71,6 +71,8 @@ export class DodoV2
   static dexKeys = ['dodov2'];
   exchangeRouterInterface: Interface;
 
+  needWrapNative = true; // temporary
+
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'dodov2');
     this.exchangeRouterInterface = new Interface(
