@@ -1015,12 +1015,23 @@ export class UniswapV2
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
-    // univ2 has 1 pool per pair
-    const path = this._encodePathV6(
-      { srcToken, destToken, direction: data.pools[0].direction },
-      side,
-      data.wethAddress,
-    );
+    const { path, pools } = data;
+    const length = path.length;
+    const encodedPath = path.reduce((acc, _, i) => {
+      if (i >= length - 1) return acc;
+
+      const p = this._encodePathV6(
+        {
+          srcToken: path[i],
+          destToken: path[i + 1],
+          direction: pools[i].direction,
+        },
+        side,
+        data.wethAddress,
+      ).replace('0x', '');
+
+      return acc + p;
+    }, '0x');
 
     const metadata = hexConcat([
       hexZeroPad(uuidToBytes16(uuid), 16),
@@ -1035,7 +1046,7 @@ export class UniswapV2
       toAmount,
       metadata,
       beneficiary,
-      path,
+      encodedPath,
     ];
 
     const swapParams: UniswapV2ParamsDirect = [uniData, partnerAndFee, permit];
