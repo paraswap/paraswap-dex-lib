@@ -1166,7 +1166,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
       return false;
     }
 
-    const res = priceRoute.bestRoute.every((route, routeIndex) => {
+    const res = priceRoute.bestRoute.some((route, routeIndex) => {
       const lastSwap = route.swaps[route.swaps.length - 1];
       const eachDexOnSwapNeedsWrapNative = this.anyDexOnSwapNeedsWrapNative(
         priceRoute,
