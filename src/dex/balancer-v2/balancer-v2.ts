@@ -1006,10 +1006,10 @@ export class BalancerV2
     const params = this.getBalancerParam(
       srcToken,
       destToken,
-      srcAmount,
-      destAmount,
       data,
       side,
+      this.dexHelper.config.data.augustusAddress!,
+      this.dexHelper.config.data.augustusAddress!,
     );
 
     const payload = this.abiCoder.encodeParameter(
@@ -1049,13 +1049,31 @@ export class BalancerV2
     };
   }
 
+  /*
+      Algorithm to determine balancer (sender, recipient) params:
+
+      if version = 5
+          sender = recipient = augustusV5
+      else (so V6)
+        if direct swap
+            sender = recipient = augustusV6
+        else (so generic swaps)
+          if sell
+            if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future) 
+                  sender = executor and recipient = augustusV6 (skip 1 extra transfer)
+              else 
+                  sender = recipient = executor
+              # note: we pass sender=null then the address of the executor is inferred contract side
+          else (so buy)
+              sender = recipient = executor
+*/
   public getBalancerParam(
     srcToken: string,
     destToken: string,
-    srcAmount: string,
-    destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
+    recipient: string,
+    sender: string,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
@@ -1115,116 +1133,6 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: this.augustusAddress,
-      recipient: this.augustusAddress,
-      fromInternalBalance: false,
-      toInternalBalance: false,
-    };
-
-    const params: BalancerParam = [
-      side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
-      side === SwapSide.SELL ? swaps : swaps.reverse(),
-      assets,
-      funds,
-      limits,
-      MAX_UINT,
-    ];
-
-    return params;
-  }
-
-  public getBalancerParamV6(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: string,
-    destAmount: string,
-    data: OptimizedBalancerV2Data,
-    side: SwapSide,
-    recipient: Address,
-    sender: Address,
-    isDirect?: boolean,
-  ): BalancerParam {
-    let swapOffset = 0;
-    let swaps: BalancerSwap[] = [];
-    let assets: string[] = [];
-    let limits: string[] = [];
-
-    const isDirectSwap = !!isDirect;
-
-    for (const swapData of data.swaps) {
-      const pool = this.poolIdMap[swapData.poolId];
-      const hasEth = [srcToken.toLowerCase(), destToken.toLowerCase()].includes(
-        ETHER_ADDRESS.toLowerCase(),
-      );
-      const _srcToken = this.dexHelper.config.wrapETH({
-        address: srcToken,
-        decimals: 18,
-      }).address;
-      const _destToken = this.dexHelper.config.wrapETH({
-        address: destToken,
-        decimals: 18,
-      }).address;
-
-      let path = poolGetPathForTokenInOut(
-        _srcToken,
-        _destToken,
-        pool,
-        this.poolAddressMap,
-        side,
-      );
-
-      if (side === SwapSide.BUY) {
-        path = path.reverse();
-      }
-
-      let _swaps = path.map((hop, index) => ({
-        poolId: hop.pool.id,
-        assetInIndex: swapOffset + index,
-        assetOutIndex: swapOffset + index + 1,
-        amount:
-          (side === SwapSide.SELL && index === 0) ||
-          (side === SwapSide.BUY && index === path.length - 1)
-            ? swapData.amount
-            : '0',
-        userData: '0x',
-      }));
-
-      swapOffset += path.length + 1;
-
-      // BalancerV2 Uses Address(0) as ETH
-      let _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
-        t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
-      );
-
-      if (isDirectSwap && side === SwapSide.BUY) {
-        _assets = _assets.reverse();
-        _swaps = _swaps.map(swap => ({
-          ...swap,
-          assetInIndex: _assets.length - swap.assetInIndex - 1,
-          assetOutIndex: _assets.length - swap.assetOutIndex - 1,
-        }));
-      }
-
-      let _limits: string[];
-      if (isDirectSwap) {
-        _limits = this.createSwapArray(
-          _assets.length,
-          side === SwapSide.SELL ? 0 : 1,
-          srcAmount,
-          destAmount,
-        );
-      } else {
-        _limits = _assets.map(_ => MAX_INT);
-      }
-
-      swaps = swaps.concat(_swaps);
-      assets = assets.concat(_assets);
-      limits = limits.concat(_limits);
-    }
-
-    const funds = {
-      // for Direct: Both sender and recipient is AugustusV6
-      // for Generic, `sender`: BUY -> pass Executor3, for SELL -> pass NULL_ADDRESS (it's gonna be determined in the contract)
       sender,
       recipient,
       fromInternalBalance: false,
@@ -1241,23 +1149,6 @@ export class BalancerV2
     ];
 
     return params;
-  }
-
-  private createSwapArray(
-    lengthOfAssets: number,
-    swapKind: 0 | 1,
-    fromAmount: string,
-    toAmount: string,
-  ): string[] {
-    let swapArray = new Array(lengthOfAssets).fill('0');
-
-    // Assign values based on swapKind
-    swapArray[0] =
-      swapKind === 0 ? fromAmount : BigNumber.from(toAmount).mul(-1).toString();
-    swapArray[lengthOfAssets - 1] =
-      swapKind === 0 ? BigNumber.from(toAmount).mul(-1).toString() : fromAmount;
-
-    return swapArray;
   }
 
   static getDirectFunctionName(): string[] {
@@ -1350,10 +1241,10 @@ export class BalancerV2
     const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
       srcToken,
       destToken,
-      srcAmount,
-      destAmount,
       data,
       side,
+      this.dexHelper.config.data.augustusAddress!,
+      this.dexHelper.config.data.augustusAddress!,
     );
 
     const swapParams: BalancerV2DirectParam = [
@@ -1416,16 +1307,13 @@ export class BalancerV2
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
-    const balancerParams = this.getBalancerParamV6(
+    const balancerParams = this.getBalancerParam(
       srcToken,
       destToken,
-      fromAmount,
-      toAmount,
       data,
       side,
       this.dexHelper.config.data.augustusV6Address!,
       this.dexHelper.config.data.augustusV6Address!,
-      true,
     );
 
     const swapParams: BalancerV2DirectParamV6 = [
@@ -1492,10 +1380,10 @@ export class BalancerV2
     const params = this.getBalancerParam(
       srcToken,
       destToken,
-      srcAmount,
-      destAmount,
       data,
       side,
+      this.dexHelper.config.data.augustusAddress!,
+      this.dexHelper.config.data.augustusAddress!,
     );
 
     const swapData = this.eventPools.vaultInterface.encodeFunctionData(
@@ -1523,11 +1411,9 @@ export class BalancerV2
     side: SwapSide,
     context: Context,
   ): DexExchangeParam {
-    const params = this.getBalancerParamV6(
+    const params = this.getBalancerParam(
       srcToken,
       destToken,
-      srcAmount,
-      destAmount,
       data,
       side,
       recipient,
