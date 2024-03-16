@@ -1006,6 +1006,8 @@ export class BalancerV2
     const params = this.getBalancerParam(
       srcToken,
       destToken,
+      srcAmount,
+      destAmount,
       data,
       side,
       this.dexHelper.config.data.augustusAddress!,
@@ -1070,6 +1072,8 @@ export class BalancerV2
   public getBalancerParam(
     srcToken: string,
     destToken: string,
+    srcAmount: string,
+    destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
     recipient: string,
@@ -1241,6 +1245,8 @@ export class BalancerV2
     const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
       srcToken,
       destToken,
+      srcAmount,
+      destAmount,
       data,
       side,
       this.dexHelper.config.data.augustusAddress!,
@@ -1310,6 +1316,8 @@ export class BalancerV2
     const balancerParams = this.getBalancerParam(
       srcToken,
       destToken,
+      fromAmount,
+      toAmount,
       data,
       side,
       this.dexHelper.config.data.augustusV6Address!,
@@ -1380,6 +1388,8 @@ export class BalancerV2
     const params = this.getBalancerParam(
       srcToken,
       destToken,
+      srcAmount,
+      destAmount,
       data,
       side,
       this.dexHelper.config.data.augustusAddress!,
@@ -1414,6 +1424,8 @@ export class BalancerV2
     const params = this.getBalancerParam(
       srcToken,
       destToken,
+      srcAmount,
+      destAmount,
       data,
       side,
       recipient,
