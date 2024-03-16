@@ -1057,8 +1057,8 @@ export class BalancerV2
       else (so V6)
         if direct swap
             sender = recipient = augustusV6
-        else (so generic swaps, can pass null, will be replaced in upper layer)
-          if sell            
+        else (so generic swaps)
+          if sell -> we pass null then recipient is resolved in upper level while sender is resolved contract side
             if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future) 
                   sender = executor and recipient = augustusV6 (skip 1 extra transfer)
               else 
