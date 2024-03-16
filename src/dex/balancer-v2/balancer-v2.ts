@@ -1078,6 +1078,7 @@ export class BalancerV2
     side: SwapSide,
     recipient: string,
     sender: string,
+    shouldApplyHardLimits?: boolean,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
@@ -1136,6 +1137,18 @@ export class BalancerV2
       limits = limits.concat(_limits);
     }
 
+    if (shouldApplyHardLimits) {
+      // re-accumulate amount to prevent leaving dust in payer contract
+      const accumulatedAmount = swaps
+        .reduce((acc, s) => acc + BigInt(s.amount), 0n)
+        .toString();
+
+      [limits[0], limits[limits.length - 1]] =
+        side == SwapSide.SELL
+          ? [accumulatedAmount, (-BigInt(destAmount)).toString()]
+          : [(-BigInt(srcAmount)).toString(), accumulatedAmount];
+    }
+
     const funds = {
       sender,
       recipient,
@@ -1149,7 +1162,7 @@ export class BalancerV2
       assets,
       funds,
       limits,
-      MAX_UINT,
+      getLocalDeadlineAsFriendlyPlaceholder(),
     ];
 
     return params;
@@ -1322,6 +1335,7 @@ export class BalancerV2
       side,
       this.dexHelper.config.data.augustusV6Address!,
       this.dexHelper.config.data.augustusV6Address!,
+      true,
     );
 
     const swapParams: BalancerV2DirectParamV6 = [
