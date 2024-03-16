@@ -176,7 +176,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
     const needCheckEthBalance = isEthDest && !needWrapNative;
 
     const needCheckSrcTokenBalanceOf =
-      (needUnwrap && !applyVerticalBranching && !isLastSwap) ||
+      (needUnwrap && !applyVerticalBranching) ||
       (isHorizontalSequence && !applyVerticalBranching && !isLastSwap);
 
     let dexFlag: Flag;
