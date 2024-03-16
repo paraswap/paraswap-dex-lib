@@ -1006,6 +1006,8 @@ export class BalancerV2
     const params = this.getBalancerParam(
       srcToken,
       destToken,
+      srcAmount,
+      destAmount,
       data,
       side,
       this.dexHelper.config.data.augustusAddress!,
@@ -1070,10 +1072,13 @@ export class BalancerV2
   public getBalancerParam(
     srcToken: string,
     destToken: string,
+    srcAmount: string,
+    destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
     recipient: string,
     sender: string,
+    shouldApplyHardLimits?: boolean,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
@@ -1132,6 +1137,18 @@ export class BalancerV2
       limits = limits.concat(_limits);
     }
 
+    if (shouldApplyHardLimits) {
+      // re-accumulate amount to prevent leaving dust in payer contract
+      const accumulatedAmount = swaps
+        .reduce((acc, s) => acc + BigInt(s.amount), 0n)
+        .toString();
+
+      [limits[0], limits[limits.length - 1]] =
+        side == SwapSide.SELL
+          ? [accumulatedAmount, (-BigInt(destAmount)).toString()]
+          : [(-BigInt(srcAmount)).toString(), accumulatedAmount];
+    }
+
     const funds = {
       sender,
       recipient,
@@ -1145,7 +1162,7 @@ export class BalancerV2
       assets,
       funds,
       limits,
-      MAX_UINT,
+      getLocalDeadlineAsFriendlyPlaceholder(),
     ];
 
     return params;
@@ -1241,6 +1258,8 @@ export class BalancerV2
     const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
       srcToken,
       destToken,
+      srcAmount,
+      destAmount,
       data,
       side,
       this.dexHelper.config.data.augustusAddress!,
@@ -1310,10 +1329,13 @@ export class BalancerV2
     const balancerParams = this.getBalancerParam(
       srcToken,
       destToken,
+      fromAmount,
+      toAmount,
       data,
       side,
       this.dexHelper.config.data.augustusV6Address!,
       this.dexHelper.config.data.augustusV6Address!,
+      true,
     );
 
     const swapParams: BalancerV2DirectParamV6 = [
@@ -1380,6 +1402,8 @@ export class BalancerV2
     const params = this.getBalancerParam(
       srcToken,
       destToken,
+      srcAmount,
+      destAmount,
       data,
       side,
       this.dexHelper.config.data.augustusAddress!,
@@ -1414,6 +1438,8 @@ export class BalancerV2
     const params = this.getBalancerParam(
       srcToken,
       destToken,
+      srcAmount,
+      destAmount,
       data,
       side,
       recipient,
