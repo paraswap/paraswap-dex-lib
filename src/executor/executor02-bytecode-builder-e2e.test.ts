@@ -1067,12 +1067,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
       });
 
       describe('lzUSDC -> FTM -> SPIRIT', () => {
-        const dexKeys = [
-          'Morphex',
-          'SpiritSwap',
-          'SpiritSwapV2',
-          'BeetsFi',
-        ];
+        const dexKeys = ['Morphex', 'SpiritSwap', 'SpiritSwapV2', 'BeetsFi'];
 
         const tokenASymbol: string = 'lzUSDC';
         const tokenBSymbol: string = 'SPIRIT';
@@ -1437,7 +1432,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             false,
           );
         });
-      })
+      });
     });
   });
 
