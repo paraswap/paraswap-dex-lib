@@ -1146,7 +1146,7 @@ export class BalancerV2
       [limits[0], limits[limits.length - 1]] =
         side == SwapSide.SELL
           ? [accumulatedAmount, (-BigInt(destAmount)).toString()]
-          : [(-BigInt(srcAmount)).toString(), accumulatedAmount];
+          : [(-BigInt(destAmount)).toString(), srcAmount];
     }
 
     const funds = {
