@@ -1068,6 +1068,27 @@ export class BalancerV2
               # note: we pass sender=null then the address of the executor is inferred contract side
           else (so buy)
               sender = recipient = executor
+
+      ------------------------------------------------------------------------------------
+
+      Algorithm to determine balancer (limits) params:
+
+      if version = 5
+          limits = [MAX_INT * assetsCount]
+      else (so V6)
+        if direct swap and horizontal sequences
+          # note: v6 direct swap functions (swapExactAmountInOnBalancerV2 / swapExactAmountOutOnBalancerV2) do not allow parallel sequences of swap, read last note for details
+          if sell
+            limits = [srcAmount, ...[MAX_INT * assetsCount - 2]?, -destAmount]
+          else (so buy)
+            limits = [-destAmount, ...[MAX_INT * assetsCount - 2]?, srcAmount]
+          # note: in this particular case we need to walk the assets backward since direct contract functions expect assets and limits to reversed (note this is not natively enforced in balancer). It's not safe to do in a parallel buy sequence.
+        else (so generic swaps)
+          limits = [MAX_INT * assetsCount]
+      # note: 
+      # for cases where we pass an array [MAX_INT * assetsCount] this assumes that we relax local slippage checks in balancer in favor of global check in augustus
+      # otherwise, in direct v6 function, as we decode params off balancer and srcAmount and destAmount from limits array, this cannot work for parallel sequences where limits[-1] (sell) is a local slippage to 1 parallel branch only
+
 */
   public getBalancerParam(
     srcToken: string,
@@ -1085,10 +1106,6 @@ export class BalancerV2
     let assets: string[] = [];
     let limits: string[] = [];
 
-    // read comment up
-    const shouldWalkAssetsBackward =
-      side === SwapSide.BUY && shouldApplyHardLimits;
-
     if (shouldApplyHardLimits) {
       if (data.swaps.length > 1) {
         const error = new Error(
@@ -1098,6 +1115,10 @@ export class BalancerV2
         throw error;
       }
     }
+
+    // read function comment up
+    const shouldWalkAssetsBackward =
+      side === SwapSide.BUY && shouldApplyHardLimits;
 
     for (const swapData of data.swaps) {
       const pool = this.poolIdMap[swapData.poolId];
