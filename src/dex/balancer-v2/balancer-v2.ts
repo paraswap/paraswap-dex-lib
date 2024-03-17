@@ -1078,11 +1078,26 @@ export class BalancerV2
     side: SwapSide,
     recipient: string,
     sender: string,
+    shouldApplyHardLimits?: boolean,
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
     let limits: string[] = [];
+
+    // read comment up
+    const shouldWalkAssetsBackward =
+      side === SwapSide.BUY && shouldApplyHardLimits;
+
+    if (shouldApplyHardLimits) {
+      if (data.swaps.length > 1) {
+        const error = new Error(
+          `Not safe to apply hard limits for parallel sequences in balancerV2 in swapExactAmountInOnBalancerV2 / swapExactAmountOutOnBalancerV2`,
+        );
+        this.logger.error(error.message, error);
+        throw error;
+      }
+    }
 
     for (const swapData of data.swaps) {
       const pool = this.poolIdMap[swapData.poolId];
@@ -1110,17 +1125,35 @@ export class BalancerV2
         path = path.reverse();
       }
 
-      const _swaps = path.map((hop, index) => ({
-        poolId: hop.pool.id,
-        assetInIndex: swapOffset + index,
-        assetOutIndex: swapOffset + index + 1,
-        amount:
+      const _swaps = path.map((hop, index) => {
+        const assetInIndex = shouldWalkAssetsBackward
+          ? swapOffset + path.length - index
+          : swapOffset + index;
+
+        const assetOutIndex = shouldWalkAssetsBackward
+          ? swapOffset + path.length - index - 1
+          : swapOffset + index + 1;
+
+        const amount =
           (side === SwapSide.SELL && index === 0) ||
           (side === SwapSide.BUY && index === path.length - 1)
             ? swapData.amount
-            : '0',
-        userData: '0x',
-      }));
+            : '0';
+
+        if (assetInIndex < 0 || assetOutIndex < 0) {
+          const error = new Error(`Invalid indices in balancer`);
+          this.logger.error(error.message, error);
+          throw error;
+        }
+
+        return {
+          poolId: hop.pool.id,
+          assetInIndex,
+          assetOutIndex,
+          amount,
+          userData: '0x',
+        };
+      });
 
       swapOffset += path.length + 1;
 
@@ -1136,6 +1169,18 @@ export class BalancerV2
       limits = limits.concat(_limits);
     }
 
+    if (shouldApplyHardLimits) {
+      // re-accumulate amount to prevent leaving dust in payer contract
+      const accumulatedAmount = swaps
+        .reduce((acc, s) => acc + BigInt(s.amount), 0n)
+        .toString();
+
+      [limits[0], limits[limits.length - 1]] =
+        side == SwapSide.SELL
+          ? [accumulatedAmount, (-BigInt(destAmount)).toString()]
+          : [(-BigInt(destAmount)).toString(), srcAmount];
+    }
+
     const funds = {
       sender,
       recipient,
@@ -1146,7 +1191,7 @@ export class BalancerV2
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
-      assets,
+      shouldWalkAssetsBackward ? assets.reverse() : assets,
       funds,
       limits,
       MAX_UINT,
@@ -1322,6 +1367,7 @@ export class BalancerV2
       side,
       this.dexHelper.config.data.augustusV6Address!,
       this.dexHelper.config.data.augustusV6Address!,
+      true,
     );
 
     const swapParams: BalancerV2DirectParamV6 = [
