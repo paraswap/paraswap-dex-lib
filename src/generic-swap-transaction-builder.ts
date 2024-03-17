@@ -32,6 +32,7 @@ import ERC20ABI from './abi/erc20.json';
 import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 import { IDexTxBuilder } from './dex/idex';
+import { ParaSwapVersion } from '@paraswap/core';
 
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
@@ -92,6 +93,7 @@ export class GenericSwapTransactionBuilder {
       srcAmountWeth.toString(),
       destAmountWeth.toString(),
       side,
+      ParaSwapVersion.V6,
     );
   }
 
