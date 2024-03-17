@@ -25,7 +25,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, WethConfig } from './config';
 import { BI_POWS } from '../../bigint-constants';
-import { NumberAsString } from '@paraswap/core';
+import { NumberAsString, ParaSwapVersion } from '@paraswap/core';
 
 export class Weth
   extends SimpleExchange
@@ -184,6 +184,7 @@ export class Weth
     srcAmount: string,
     destAmount: string,
     side: SwapSide,
+    version: ParaSwapVersion,
   ): DepositWithdrawReturn {
     const wethToken = this.address;
 
@@ -206,13 +207,18 @@ export class Weth
     }
 
     if (needWithdraw || destAmount !== '0') {
-      const opType = WethFunctions.withdraw;
-      const withdrawWethData = this.erc20Interface.encodeFunctionData(opType, [
-        destAmount,
-      ]);
+      const withdrawWethData =
+        version === ParaSwapVersion.V5
+          ? this.simpleSwapHelper.encodeFunctionData(
+              WethFunctions.withdrawAllWETH,
+              [wethToken],
+            )
+          : this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+              destAmount,
+            ]);
 
       withdraw = {
-        callee: this.augustusAddress,
+        callee: this.augustusAddress, // FXME CALLEE NOT USED IN V6
         calldata: withdrawWethData,
         value: '0',
       };
