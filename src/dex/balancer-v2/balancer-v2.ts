@@ -1082,7 +1082,7 @@ export class BalancerV2
             limits = [srcAmount, ...[MAX_INT * assetsCount - 2]?, -destAmount]
           else (so buy)
             limits = [-destAmount, ...[MAX_INT * assetsCount - 2]?, srcAmount]
-          # note: in this particular case we need to walk the assets backward since direct contract functions expect assets and limits to reversed (note this is not natively enforced in balancer). It's not safe to do in a parallel buy sequence.
+          # note: in this particular case we need to walk the assets backward since direct contract functions expect assets and limits to be reversed (note this is not natively enforced in balancer, only in our contract). It's not safe to do in a parallel buy sequence.
         else (so generic swaps)
           limits = [MAX_INT * assetsCount]
       # note: 
