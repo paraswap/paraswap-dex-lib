@@ -694,20 +694,6 @@ export class UniswapV3
 
       const zeroForOne = token0 === _srcAddress ? true : false;
 
-      this.logger.log(
-        'UNI_POOLS',
-        JSON.stringify(
-          poolsToUse.poolWithState.map(el => ({
-            address: el.poolAddress,
-            token0: el.token0,
-            token1: el.token1,
-            fee: el.feeCode,
-          })),
-          null,
-          2,
-        ),
-      );
-
       const result = await Promise.all(
         poolsToUse.poolWithState.map(async (pool, i) => {
           const state = states[i];
