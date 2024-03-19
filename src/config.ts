@@ -46,7 +46,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     nativeTokenSymbol: 'ETH',
     wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     hasEIP1559: true,
-    augustusAddress: '0xE4e284Eb7a312d95A7949fCA8C634164358f4492',
+    augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     augustusV6Address: '0x00000000FdAC7708D0D360BDDc1bc7d097F47439',
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
     tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',

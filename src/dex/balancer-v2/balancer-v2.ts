@@ -1068,6 +1068,27 @@ export class BalancerV2
               # note: we pass sender=null then the address of the executor is inferred contract side
           else (so buy)
               sender = recipient = executor
+
+      ------------------------------------------------------------------------------------
+
+      Algorithm to determine balancer (limits) params:
+
+      if version = 5
+          limits = [MAX_INT * assetsCount]
+      else (so V6)
+        if direct swap and horizontal sequences
+          # note: v6 direct swap functions (swapExactAmountInOnBalancerV2 / swapExactAmountOutOnBalancerV2) do not allow parallel sequences of swap, read last note for details
+          if sell
+            limits = [srcAmount, ...[MAX_INT * assetsCount - 2]?, -destAmount]
+          else (so buy)
+            limits = [-destAmount, ...[MAX_INT * assetsCount - 2]?, srcAmount]
+          # note: in this particular case we need to walk the assets backward since direct contract functions expect assets and limits to be reversed (note this is not natively enforced in balancer, only in our contract). It's not safe to do in a parallel buy sequence.
+        else (so generic swaps)
+          limits = [MAX_INT * assetsCount]
+      # note: 
+      # for cases where we pass an array [MAX_INT * assetsCount] this assumes that we relax local slippage checks in balancer in favor of global check in augustus
+      # otherwise, in direct v6 function, as we decode params off balancer and srcAmount and destAmount from limits array, this cannot work for parallel sequences where limits[-1] (sell) is a local slippage to 1 parallel branch only
+
 */
   public getBalancerParam(
     srcToken: string,
@@ -1084,6 +1105,20 @@ export class BalancerV2
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
     let limits: string[] = [];
+
+    if (shouldApplyHardLimits) {
+      if (data.swaps.length > 1) {
+        const error = new Error(
+          `Not safe to apply hard limits for parallel sequences in balancerV2 in swapExactAmountInOnBalancerV2 / swapExactAmountOutOnBalancerV2`,
+        );
+        this.logger.error(error.message, error);
+        throw error;
+      }
+    }
+
+    // read function comment up
+    const shouldWalkAssetsBackward =
+      side === SwapSide.BUY && shouldApplyHardLimits;
 
     for (const swapData of data.swaps) {
       const pool = this.poolIdMap[swapData.poolId];
@@ -1111,17 +1146,35 @@ export class BalancerV2
         path = path.reverse();
       }
 
-      const _swaps = path.map((hop, index) => ({
-        poolId: hop.pool.id,
-        assetInIndex: swapOffset + index,
-        assetOutIndex: swapOffset + index + 1,
-        amount:
+      const _swaps = path.map((hop, index) => {
+        const assetInIndex = shouldWalkAssetsBackward
+          ? swapOffset + path.length - index
+          : swapOffset + index;
+
+        const assetOutIndex = shouldWalkAssetsBackward
+          ? swapOffset + path.length - index - 1
+          : swapOffset + index + 1;
+
+        const amount =
           (side === SwapSide.SELL && index === 0) ||
           (side === SwapSide.BUY && index === path.length - 1)
             ? swapData.amount
-            : '0',
-        userData: '0x',
-      }));
+            : '0';
+
+        if (assetInIndex < 0 || assetOutIndex < 0) {
+          const error = new Error(`Invalid indices in balancer`);
+          this.logger.error(error.message, error);
+          throw error;
+        }
+
+        return {
+          poolId: hop.pool.id,
+          assetInIndex,
+          assetOutIndex,
+          amount,
+          userData: '0x',
+        };
+      });
 
       swapOffset += path.length + 1;
 
@@ -1159,7 +1212,7 @@ export class BalancerV2
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
-      assets,
+      shouldWalkAssetsBackward ? assets.reverse() : assets,
       funds,
       limits,
       getLocalDeadlineAsFriendlyPlaceholder(),
