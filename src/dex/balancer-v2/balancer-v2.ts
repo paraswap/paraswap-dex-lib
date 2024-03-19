@@ -1158,7 +1158,7 @@ export class BalancerV2
       assets,
       funds,
       limits,
-      MAX_UINT,
+      getLocalDeadlineAsFriendlyPlaceholder(),
     ];
 
     return params;
