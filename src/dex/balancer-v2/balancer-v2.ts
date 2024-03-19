@@ -1074,6 +1074,7 @@ export class BalancerV2
     side: SwapSide,
     recipient: string,
     sender: string,
+    shouldWalkAssetsBackward?: boolean, // should do for all buy but prefer keep it under control
   ): BalancerParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
@@ -1107,8 +1108,13 @@ export class BalancerV2
       }
 
       const _swaps = path.map((hop, index) => {
-        const assetInIndex = swapOffset + index;
-        const assetOutIndex = swapOffset + index + 1;
+        const assetInIndex = shouldWalkAssetsBackward
+          ? swapOffset + path.length - index
+          : swapOffset + index;
+
+        const assetOutIndex = shouldWalkAssetsBackward
+          ? swapOffset + path.length - index - 1
+          : swapOffset + index + 1;
 
         const amount =
           (side === SwapSide.SELL && index === 0) ||
@@ -1155,7 +1161,7 @@ export class BalancerV2
     const params: BalancerParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
-      assets,
+      shouldWalkAssetsBackward ? assets.reverse() : assets,
       funds,
       limits,
       getLocalDeadlineAsFriendlyPlaceholder(),
@@ -1327,6 +1333,7 @@ export class BalancerV2
       side,
       this.dexHelper.config.data.augustusV6Address!,
       this.dexHelper.config.data.augustusV6Address!,
+      side === SwapSide.BUY,
     );
 
     const swapParams: BalancerV2DirectParamV6 = [
