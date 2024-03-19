@@ -8,9 +8,9 @@ import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
-import {SolidlyV3Config} from "./config";
-import {AbiItem} from "web3-utils";
-import {Interface} from "@ethersproject/abi";
+import { SolidlyV3Config } from './config';
+import { AbiItem } from 'web3-utils';
+import { Interface } from '@ethersproject/abi';
 import StateMulticallABI from '../../abi/solidly-v3/SolidlyV3StateMulticall.abi.json';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 import ERC20ABI from '../../abi/erc20.json';
@@ -81,17 +81,19 @@ describe('SolidlyV3 Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     // topic0 - 0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
     ['Swap']: [
-      18600853, 18616106, 18616441, 18619851, 18622968, 18625121, 18626415, 18627297, 18630574,
-      18718946, 18726197, 18730166, 18758602
+      18600853, 18616106, 18616441, 18619851, 18622968, 18625121, 18626415,
+      18627297, 18630574, 18718946, 18726197, 18730166, 18758602,
     ],
     ['Burn']: [18737937],
     ['Mint']: [18708230, 18709265, 18737969],
     ['Collect']: [18751597],
     //topic0 0x0eb63f4a36d6bdeee05aa00020a97d80c3e84f1b5b3ebf345fb67262e62b0f33
-    ['SetFee']: [18427614, 18423073, 18423143, 18425324, 18430069, 18442932, 18442934],
+    ['SetFee']: [
+      18427614, 18423073, 18423143, 18425324, 18430069, 18442932, 18442934,
+    ],
     ['Flash']: [18758872],
     ['CollectProtocol']: [18530529, 18577493],
-  }
+  };
 
   describe('SolidlyV3EventPool', function () {
     Object.keys(blockNumbers).forEach((event: string) => {
