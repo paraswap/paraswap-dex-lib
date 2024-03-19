@@ -389,7 +389,7 @@ export class GenericSwapTransactionBuilder {
     permit,
     deadline,
     uuid,
-    beneficiary,
+    beneficiary = NULL_ADDRESS,
     onlyParams = false,
   }: {
     priceRoute: OptimalRate;
@@ -409,8 +409,12 @@ export class GenericSwapTransactionBuilder {
     beneficiary?: Address;
     onlyParams?: boolean;
   }): Promise<TxObject> {
+    // if beneficiary is not defined, then in smart contract it will be replaced to msg.sender
     const _beneficiary =
-      beneficiary && beneficiary !== NULL_ADDRESS ? beneficiary : userAddress;
+      beneficiary !== NULL_ADDRESS &&
+      beneficiary.toLowerCase() !== userAddress.toLowerCase()
+        ? beneficiary
+        : NULL_ADDRESS;
 
     let encoder: (...params: any[]) => string;
     let params: (string | string[])[];
