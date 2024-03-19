@@ -138,6 +138,8 @@ export type BalancerV2DirectParam = [
 ];
 
 export type BalancerV2DirectParamV6 = [
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
   quotedAmount: NumberAsString,
   metadata: string,
   beneficiaryAndApproveFlag: NumberAsString,
