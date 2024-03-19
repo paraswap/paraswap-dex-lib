@@ -16,9 +16,15 @@ export const checkOrder = async (
   network: Network,
   augustusRFQAddress: Address,
   multiWrapper: MultiWrapper,
+  takerAddress: Address,
   order: AugustusOrderWithStringAndSignature,
   verifierContract?: ERC1271Contract,
 ) => {
+  if (order.taker.toLowerCase() !== takerAddress.toLowerCase()) {
+    throw new Error(
+      `Taker mismatch, expected ${takerAddress} but signed order got ${order.taker}`,
+    );
+  }
   const hash = calculateOrderHash(network, order, augustusRFQAddress);
 
   if (verifierContract) {
