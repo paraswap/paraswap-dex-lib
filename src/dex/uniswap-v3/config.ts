@@ -303,6 +303,20 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/baseswapfi/v3-base',
     },
   },
+  VelodromeSlipstream: {
+    [Network.OPTIMISM]: {
+      factory: '0x548118C7E0B865C2CfA94D15EC86B666468ac758',
+      quoter: '0xA2DEcF05c16537C702779083Fe067e308463CE45',
+      router: '0xF132bdb9573867cD72f2585C338B923F973EB817',
+      supportedFees: [10000n, 3000n, 500n, 100n],
+      stateMulticall: '0x4FF0dEC5f9a763Aa1E5C2a962aa6f4eDFeE4f9eA',
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL: '', // Does not have subgraph
+    },
+  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {

@@ -1159,4 +1159,28 @@ describe('UniswapV3 E2E', () => {
       );
     });
   });
+
+  describe('VelodromeSlipstream', () => {
+    const dexKey = 'VelodromeSlipstream';
+    describe('Optimism', () => {
+      const network = Network.OPTIMISM;
+
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'WETH';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
 });

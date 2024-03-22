@@ -1570,3 +1570,145 @@ describe('BaseswapV3', function () {
     });
   });
 });
+
+describe('VelodromeSlipstream', () => {
+  const dexKey = 'VelodromeSlipstream';
+
+  describe('Optimism', () => {
+    let blockNumber: number;
+    let slipstream: UniswapV3;
+
+    const network = Network.OPTIMISM;
+    const dexHelper = new DummyDexHelper(network);
+    const TokenASymbol = 'USDC';
+    const TokenA = Tokens[network][TokenASymbol];
+
+    const TokenBSymbol = 'USDT';
+    const TokenB = Tokens[network][TokenBSymbol];
+
+    beforeEach(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      slipstream = new UniswapV3(network, dexKey, dexHelper);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await slipstream.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await slipstream.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.SELL,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = slipstream.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            slipstream,
+            'quoteExactInputSingle',
+            blockNumber,
+            '0xA2DEcF05c16537C702779083Fe067e308463CE45',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const amounts = [0n, BI_POWS[6], 2000000n];
+
+      const pools = await slipstream.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blockNumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
+
+      expect(pools.length).toBeGreaterThan(0);
+
+      const poolPrices = await slipstream.getPricesVolume(
+        TokenA,
+        TokenB,
+        amounts,
+        SwapSide.BUY,
+        blockNumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
+
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+      let falseChecksCounter = 0;
+      await Promise.all(
+        poolPrices!.map(async price => {
+          const fee = slipstream.eventPools[price.poolIdentifier!]!.feeCode;
+          const res = await checkOnChainPricing(
+            dexHelper,
+            slipstream,
+            'quoteExactOutputSingle',
+            blockNumber,
+            '0xA2DEcF05c16537C702779083Fe067e308463CE45',
+            price.prices,
+            TokenA.address,
+            TokenB.address,
+            fee,
+            amounts,
+          );
+          if (res === false) falseChecksCounter++;
+        }),
+      );
+
+      expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+    });
+
+    it('getTopPoolsForToken', async function () {
+      const poolLiquidity = await slipstream.getTopPoolsForToken(
+        TokenB.address,
+        10,
+      );
+      console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+      checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+    });
+  });
+});
