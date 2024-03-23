@@ -97,6 +97,7 @@ export class UniswapV3
         'UniswapV3',
         'SushiSwapV3',
         'QuickSwapV3.1',
+        'SpookySwapV3',
         'RamsesV2',
         'ChronosV3',
         'Retro',
