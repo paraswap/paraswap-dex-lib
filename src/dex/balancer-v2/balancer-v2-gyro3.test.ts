@@ -141,6 +141,12 @@ describe('BalancerV2', () => {
           expect(amountOut.length).toBe(1);
           expect(amountOut[0].toString()).toBe('13499339792532290017');
         });
+
+        // it("buy", async function () {
+        //   const amountOut = BigInt('13500000');
+        //   const amountIn = gyro3Pool.onBuy([amountOut], pairData);
+        //   expect(amountIn.length).toBe(1);
+        // })
       });
 
       describe('Swap Functions  - 18decimals>6decimals', () => {

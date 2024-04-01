@@ -11,7 +11,6 @@ import {
 import { callData, SubgraphPoolBase, PoolState, TokenState } from '../../types';
 import { MathSol } from '../../balancer-v2-math';
 import { Gyro3Maths } from '@balancer-labs/sor';
-import { StablePoolPairData } from '../stable/StablePool';
 
 // Swap Limit factor
 const SWAP_LIMIT_FACTOR = BigInt('999999000000000000');
@@ -180,7 +179,7 @@ export class Gyro3Pool extends BasePool {
         this._subtractSwapFeeAmount(a, poolPairData.swapFee),
       );
 
-      const amountsOut: bigint[] = tokenAmountsInWithFee.map(amount => {
+      return tokenAmountsInWithFee.map(amount => {
         try {
           const amountOut = Gyro3Maths._calcOutGivenIn(
             poolPairData.balances[poolPairData.indexIn],
@@ -188,6 +187,7 @@ export class Gyro3Pool extends BasePool {
             BigNumber.from(amount),
             BigNumber.from(virtualOffsetInOut),
           ).toBigInt();
+
           return this._downscaleDown(
             amountOut,
             poolPairData.scalingFactors[poolPairData.indexOut],
@@ -196,14 +196,54 @@ export class Gyro3Pool extends BasePool {
           return BigInt(0);
         }
       });
-
-      return amountsOut;
     } catch (error) {
       return [];
     }
   }
 
   onBuy(amounts: bigint[], poolPairData: Gyro3PoolPairData): bigint[] {
+    // try {
+    //   const invariant = Gyro3Maths._calculateInvariant(
+    //     poolPairData.balances,
+    //     poolPairData.root3Alpha,
+    //   );
+
+    //   const virtualOffsetInOut = MathSol.mulDownFixed(
+    //     invariant.toBigInt(),
+    //     poolPairData.root3Alpha.toBigInt(),
+    //   );
+
+    //   return amounts.map(amount => {
+    //     try {
+    //       const outAmountScaled = this._upscale(
+    //         amount,
+    //         poolPairData.scalingFactors[poolPairData.indexOut],
+    //       );
+
+    //       const inAmountLessFee = Gyro3Maths._calcInGivenOut(
+    //         poolPairData.balances[poolPairData.indexIn],
+    //         poolPairData.balances[poolPairData.indexOut],
+    //         BigNumber.from(outAmountScaled),
+    //         BigNumber.from(virtualOffsetInOut),
+    //       ).toBigInt();
+
+    //       const inAmount = this._addFeeAmount(
+    //         inAmountLessFee,
+    //         poolPairData.swapFee,
+    //       );
+
+    //       return this._downscaleDown(
+    //         inAmount,
+    //         poolPairData.scalingFactors[poolPairData.indexIn],
+    //       );
+    //     } catch (error) {
+    //       return BigInt(0);
+    //     }
+    //   });
+    // } catch (error) {
+    //   return [];
+    // }
+
     return [];
   }
 }
