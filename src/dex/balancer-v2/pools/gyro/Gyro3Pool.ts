@@ -202,48 +202,46 @@ export class Gyro3Pool extends BasePool {
   }
 
   onBuy(amounts: bigint[], poolPairData: Gyro3PoolPairData): bigint[] {
-    // try {
-    //   const invariant = Gyro3Maths._calculateInvariant(
-    //     poolPairData.balances,
-    //     poolPairData.root3Alpha,
-    //   );
+    try {
+      const invariant = Gyro3Maths._calculateInvariant(
+        poolPairData.balances,
+        poolPairData.root3Alpha,
+      );
 
-    //   const virtualOffsetInOut = MathSol.mulDownFixed(
-    //     invariant.toBigInt(),
-    //     poolPairData.root3Alpha.toBigInt(),
-    //   );
+      const virtualOffsetInOut = MathSol.mulDownFixed(
+        invariant.toBigInt(),
+        poolPairData.root3Alpha.toBigInt(),
+      );
 
-    //   return amounts.map(amount => {
-    //     try {
-    //       const outAmountScaled = this._upscale(
-    //         amount,
-    //         poolPairData.scalingFactors[poolPairData.indexOut],
-    //       );
+      return amounts.map(amount => {
+        try {
+          const outAmountScaled = this._upscale(
+            amount,
+            poolPairData.scalingFactors[poolPairData.indexOut],
+          );
 
-    //       const inAmountLessFee = Gyro3Maths._calcInGivenOut(
-    //         poolPairData.balances[poolPairData.indexIn],
-    //         poolPairData.balances[poolPairData.indexOut],
-    //         BigNumber.from(outAmountScaled),
-    //         BigNumber.from(virtualOffsetInOut),
-    //       ).toBigInt();
+          const inAmountLessFee = Gyro3Maths._calcInGivenOut(
+            poolPairData.balances[poolPairData.indexIn],
+            poolPairData.balances[poolPairData.indexOut],
+            BigNumber.from(outAmountScaled),
+            BigNumber.from(virtualOffsetInOut),
+          ).toBigInt();
 
-    //       const inAmount = this._addFeeAmount(
-    //         inAmountLessFee,
-    //         poolPairData.swapFee,
-    //       );
+          const inAmount = this._addFeeAmount(
+            inAmountLessFee,
+            poolPairData.swapFee,
+          );
 
-    //       return this._downscaleDown(
-    //         inAmount,
-    //         poolPairData.scalingFactors[poolPairData.indexIn],
-    //       );
-    //     } catch (error) {
-    //       return BigInt(0);
-    //     }
-    //   });
-    // } catch (error) {
-    //   return [];
-    // }
-
-    return [];
+          return this._downscaleDown(
+            inAmount,
+            poolPairData.scalingFactors[poolPairData.indexIn],
+          );
+        } catch (error) {
+          return BigInt(0);
+        }
+      });
+    } catch (error) {
+      return [];
+    }
   }
 }
