@@ -127,7 +127,7 @@ describe('BalancerV2', () => {
           root3Alpha: BigNumber.from('999500000000000000'),
         };
 
-        it('getSwapMaxAmount', async () => {
+        it('getSwapMaxAmount (SELL)', async () => {
           const swapMaxAmount = gyro3Pool.getSwapMaxAmount(
             pairData,
             SwapSide.SELL,
@@ -187,7 +187,7 @@ describe('BalancerV2', () => {
     });
 
     describe('Onchain Compare', () => {
-      it('exactIn', async function () {
+      it('_exactTokenInForTokenOut', async function () {
         const blocknumber = 54571344;
         // usdc/busd/usdt
         const poolId =
@@ -222,6 +222,47 @@ describe('BalancerV2', () => {
         );
         expect(amountIn).toEqual(deltas[0]);
         expect(amountOut[0] + deltas[1]).toEqual(0n);
+      });
+
+      it('_exactTokenOutForTokenIn', async function () {
+        const blocknumber = 54571344;
+        const poolId =
+          '0x17f1ef81707811ea15d9ee7c741179bbe2a63887000100000000000000000799';
+
+        const tokenIn = tokens.USDT.address;
+        const tokenOut = tokens.USDC.address;
+
+        const amountOut = BigInt('11000000');
+
+        const pools = await balancerPools.fetchAllSubgraphPools();
+        const poolSg = pools.filter(p => p.id === poolId)[0];
+        const state = await balancerPools.getOnChainState(
+          [poolSg],
+          blocknumber,
+        );
+        const poolState = state[poolSg.address];
+
+        const pairData = gyro3Pool.parsePoolPairData(
+          poolSg,
+          poolState,
+          tokenIn,
+          tokenOut,
+        );
+
+        const amountIn = gyro3Pool.onBuy([amountOut], pairData);
+        console.log('amountIn', amountIn);
+
+        const deltas = await queryOnChain(
+          rpcUrl,
+          blocknumber,
+          poolId,
+          1,
+          tokenIn,
+          tokenOut,
+          amountOut,
+        );
+
+        expect(amountIn[0]).toEqual(deltas[0]);
       });
     });
   });

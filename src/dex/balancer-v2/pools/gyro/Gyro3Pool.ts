@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 
@@ -52,11 +53,17 @@ export class Gyro3Pool extends BasePool {
       indexTertiary = 0;
     const scalingFactors: bigint[] = [];
     const balances = pool.tokens.map((t, i) => {
-      if (t.address.toLowerCase() === tokenIn.toLowerCase()) indexIn = i;
-      else if (t.address.toLowerCase() === tokenOut.toLowerCase()) indexOut = i;
-      else indexTertiary = i;
+      if (t.address.toLowerCase() === tokenIn.toLowerCase()) {
+        indexIn = i;
+      } else if (t.address.toLowerCase() === tokenOut.toLowerCase()) {
+        indexOut = i;
+      } else {
+        indexTertiary = i;
+      }
+
       const scalingFactor = getTokenScalingFactor(t.decimals);
       scalingFactors.push(scalingFactor);
+
       return BigNumber.from(
         this._upscale(
           BigInt(poolState.tokens[t.address.toLowerCase()].balance),
@@ -78,6 +85,7 @@ export class Gyro3Pool extends BasePool {
       decimalsTertiary,
       root3Alpha: safeParseFixed(pool.root3Alpha, 18),
     };
+
     return poolPairData;
   }
 
@@ -92,8 +100,13 @@ export class Gyro3Pool extends BasePool {
         poolPairData.scalingFactors[poolPairData.indexIn],
       );
     } else {
-      // Not currently supported
-      return BigInt(0);
+      return this._downscaleDown(
+        MathSol.mulDownFixed(
+          poolPairData.balances[poolPairData.indexIn].toBigInt(),
+          SWAP_LIMIT_FACTOR,
+        ),
+        poolPairData.scalingFactors[poolPairData.indexOut],
+      );
     }
   }
 
@@ -203,6 +216,7 @@ export class Gyro3Pool extends BasePool {
 
   onBuy(amounts: bigint[], poolPairData: Gyro3PoolPairData): bigint[] {
     try {
+      console.log('poolPairData', poolPairData);
       const invariant = Gyro3Maths._calculateInvariant(
         poolPairData.balances,
         poolPairData.root3Alpha,
@@ -213,27 +227,31 @@ export class Gyro3Pool extends BasePool {
         poolPairData.root3Alpha.toBigInt(),
       );
 
-      return amounts.map(amount => {
-        try {
-          const outAmountScaled = this._upscale(
-            amount,
-            poolPairData.scalingFactors[poolPairData.indexOut],
-          );
+      const scalingFactor = poolPairData.scalingFactors[poolPairData.indexOut];
+      console.log('scalingFactor', scalingFactor);
 
-          const inAmountLessFee = Gyro3Maths._calcInGivenOut(
+      const tokenAmountsWithFee = amounts.map(a =>
+        this._upscale(a, poolPairData.scalingFactors[poolPairData.indexOut]),
+      );
+      const tokenAmountsInWithFee = tokenAmountsWithFee.map(a =>
+        this._addFeeAmount(a, poolPairData.swapFee),
+      );
+
+      console.log('tokenAmountsOutWithFee', tokenAmountsInWithFee);
+
+      return tokenAmountsInWithFee.map(amount => {
+        try {
+          const amountIn = Gyro3Maths._calcInGivenOut(
             poolPairData.balances[poolPairData.indexIn],
             poolPairData.balances[poolPairData.indexOut],
-            BigNumber.from(outAmountScaled),
+            BigNumber.from(amount),
             BigNumber.from(virtualOffsetInOut),
           ).toBigInt();
 
-          const inAmount = this._addFeeAmount(
-            inAmountLessFee,
-            poolPairData.swapFee,
-          );
+          console.log('amountInBeforeScaling', amountIn);
 
           return this._downscaleDown(
-            inAmount,
+            amountIn,
             poolPairData.scalingFactors[poolPairData.indexIn],
           );
         } catch (error) {
