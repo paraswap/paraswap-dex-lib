@@ -216,7 +216,6 @@ export class Gyro3Pool extends BasePool {
 
   onBuy(amounts: bigint[], poolPairData: Gyro3PoolPairData): bigint[] {
     try {
-      console.log('poolPairData', poolPairData);
       const invariant = Gyro3Maths._calculateInvariant(
         poolPairData.balances,
         poolPairData.root3Alpha,

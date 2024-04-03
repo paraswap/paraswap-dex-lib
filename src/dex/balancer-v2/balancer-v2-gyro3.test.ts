@@ -262,7 +262,9 @@ describe('BalancerV2', () => {
           amountOut,
         );
 
-        expect(amountIn[0]).toEqual(deltas[0]);
+        console.log(deltas);
+        expect(amountIn[0]).toEqual(deltas[0]); // amountIn should equal deltas[0]
+        expect(deltas[1] + amountOut).toEqual(0n); // deltas[1] (consumed) + amountOut should equal 0
       });
     });
   });
