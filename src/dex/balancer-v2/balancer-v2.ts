@@ -889,72 +889,85 @@ export class BalancerV2
 
       const poolPrices = allowedPools
         .map((pool: SubgraphPoolBase) => {
-          const poolAddress = pool.address.toLowerCase();
+          try {
+            const poolAddress = pool.address.toLowerCase();
 
-          const path = poolGetPathForTokenInOut(
-            _from.address,
-            _to.address,
-            pool,
-            this.poolAddressMap,
-            side,
-          );
-
-          let pathAmounts = amounts;
-          let resOut: { unit: bigint; prices: bigint[] } | null = null;
-
-          for (let i = 0; i < path.length; i++) {
-            const poolAddress = path[i].pool.address.toLowerCase();
-            const poolState = (eventPoolStates[poolAddress] ||
-              nonEventPoolStates[poolAddress]) as PoolState | undefined;
-            if (!poolState) {
-              this.logger.error(`Unable to find the poolState ${poolAddress}`);
-              return null;
-            }
-
-            const unitVolume = getBigIntPow(
-              (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
-                .decimals,
-            );
-
-            const res = this.eventPools.getPricesPool(
-              path[i].tokenIn,
-              path[i].tokenOut,
-              path[i].pool,
-              poolState,
-              pathAmounts,
-              unitVolume,
+            const path = poolGetPathForTokenInOut(
+              _from.address,
+              _to.address,
+              pool,
+              this.poolAddressMap,
               side,
             );
 
-            if (!res) {
+            let pathAmounts = amounts;
+            let resOut: { unit: bigint; prices: bigint[] } | null = null;
+
+            for (let i = 0; i < path.length; i++) {
+              const poolAddress = path[i].pool.address.toLowerCase();
+              const poolState = (eventPoolStates[poolAddress] ||
+                nonEventPoolStates[poolAddress]) as PoolState | undefined;
+              if (!poolState) {
+                this.logger.error(
+                  `Unable to find the poolState ${poolAddress}`,
+                );
+                return null;
+              }
+
+              const unitVolume = getBigIntPow(
+                (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
+                  .decimals,
+              );
+
+              const res = this.eventPools.getPricesPool(
+                path[i].tokenIn,
+                path[i].tokenOut,
+                path[i].pool,
+                poolState,
+                pathAmounts,
+                unitVolume,
+                side,
+              );
+
+              if (!res) {
+                return null;
+              }
+
+              pathAmounts = res.prices;
+
+              if (i === path.length - 1) {
+                resOut = res;
+              }
+            }
+
+            if (!resOut) {
               return null;
             }
 
-            pathAmounts = res.prices;
+            return {
+              unit: resOut.unit,
+              prices: resOut.prices,
+              data: {
+                poolId: pool.id,
+              },
+              poolAddresses: [poolAddress],
+              exchange: this.dexKey,
+              gasCost:
+                STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
+              poolIdentifier: `${this.dexKey}_${poolAddress}`,
+            };
 
-            if (i === path.length - 1) {
-              resOut = res;
-            }
+            // TODO: re-check what should be the current block time stamp
+          } catch (e) {
+            this.logger.warn(
+              `Error_getPrices ${from.symbol || from.address}, ${
+                to.symbol || to.address
+              }, ${side}, ${pool.address}:`,
+              e,
+            );
+
+            return;
           }
-
-          if (!resOut) {
-            return null;
-          }
-
-          return {
-            unit: resOut.unit,
-            prices: resOut.prices,
-            data: {
-              poolId: pool.id,
-            },
-            poolAddresses: [poolAddress],
-            exchange: this.dexKey,
-            gasCost:
-              STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
-            poolIdentifier: `${this.dexKey}_${poolAddress}`,
-          };
-
-          // TODO: re-check what should be the current block time stamp
         })
         .filter(p => !!p);
       return poolPrices as ExchangePrices<BalancerV2Data>;
