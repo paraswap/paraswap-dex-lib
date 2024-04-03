@@ -774,6 +774,9 @@ export class BalancerV2
 
     const pools = this.getPoolsWithTokenPair(_from, _to);
 
+    // eslint-disable-next-line no-console
+    console.log('balancerv2 pools', pools);
+
     return pools.map(
       ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
     );
