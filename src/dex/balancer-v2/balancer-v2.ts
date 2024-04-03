@@ -373,18 +373,18 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
     const cacheKey = 'BalancerV2SubgraphPools2';
-    const cachedPools = await this.dexHelper.cache.get(
-      this.parentName,
-      this.network,
-      cacheKey,
-    );
-    if (cachedPools) {
-      const allPools = JSON.parse(cachedPools);
-      this.logger.info(
-        `Got ${allPools.length} ${this.parentName}_${this.network} pools from cache`,
-      );
-      return allPools;
-    }
+    // const cachedPools = await this.dexHelper.cache.get(
+    //   this.parentName,
+    //   this.network,
+    //   cacheKey,
+    // );
+    // if (cachedPools) {
+    //   const allPools = JSON.parse(cachedPools);
+    //   this.logger.info(
+    //     `Got ${allPools.length} ${this.parentName}_${this.network} pools from cache`,
+    //   );
+    //   return allPools;
+    // }
 
     this.logger.info(
       `Fetching ${this.parentName}_${this.network} Pools from subgraph`,
@@ -424,6 +424,15 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.logger.info(
       `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
     );
+
+    const gyroPools = allPools.filter(
+      p =>
+        p.poolType === BalancerPoolTypes.Gyro3 ||
+        p.poolType === BalancerPoolTypes.GyroE,
+    );
+    this.logger.info(`Found ${gyroPools.length} Gyro Pools from Subgraph`);
+    this.logger.info(`Gyro Pools ${gyroPools}`);
+
     return allPools;
   }
 
