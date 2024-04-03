@@ -791,8 +791,23 @@ describe('BalancerV2 E2E', () => {
         tokens['USDC'],
         tokens['USDT'],
         holders['USDC'],
-        '1000000000000000000', //1e18
+        '10000000', // 10 * 1e6
         SwapSide.SELL,
+        dexKey,
+        ContractMethod.multiSwap,
+        network,
+        provider,
+        [`${dexKey}_0x17f1ef81707811ea15d9ee7c741179bbe2a63887`],
+      );
+    });
+
+    it('USDC -> USDT through Gyro3 (BUY)', async () => {
+      await testE2E(
+        tokens['USDC'],
+        tokens['USDT'],
+        holders['USDC'],
+        '1000000000000000000', // 10 * 1e6
+        SwapSide.BUY,
         dexKey,
         ContractMethod.multiSwap,
         network,

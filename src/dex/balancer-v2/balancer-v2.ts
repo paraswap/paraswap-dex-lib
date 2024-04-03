@@ -373,22 +373,19 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   async fetchAllSubgraphPools(): Promise<SubgraphPoolBase[]> {
     const cacheKey = 'BalancerV2SubgraphPools2';
-    // const cachedPools = await this.dexHelper.cache.get(
-    //   this.parentName,
-    //   this.network,
-    //   cacheKey,
-    // );
-    // if (cachedPools) {
-    //   const allPools = JSON.parse(cachedPools);
-    //   this.logger.info(
-    //     `Got ${allPools.length} ${this.parentName}_${this.network} pools from cache`,
-    //   );
-    //   return allPools;
-    // }
-
-    this.logger.info(
-      `Fetching ${this.parentName}_${this.network} Pools from subgraph`,
+    const cachedPools = await this.dexHelper.cache.get(
+      this.parentName,
+      this.network,
+      cacheKey,
     );
+    if (cachedPools) {
+      const allPools = JSON.parse(cachedPools);
+      this.logger.info(
+        `Got ${allPools.length} ${this.parentName}_${this.network} pools from cache`,
+      );
+      return allPools;
+    }
+
     const variables = {
       count: MAX_POOL_CNT,
     };
@@ -757,11 +754,6 @@ export class BalancerV2
       );
     });
 
-    this.logger.info(
-      `Filtering pools for ${from.symbol} -> ${to.symbol}`,
-      pools,
-    );
-
     return pools.slice(0, 10);
   }
 
@@ -779,8 +771,6 @@ export class BalancerV2
     const _to = this.dexHelper.config.wrapETH(to);
 
     const pools = this.getPoolsWithTokenPair(_from, _to);
-
-    this.logger.info(`Pools for ${_from.symbol} -> ${_to.symbol}`, pools);
 
     return pools.map(
       ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
@@ -834,15 +824,11 @@ export class BalancerV2
 
       const allPools = this.getPoolsWithTokenPair(_from, _to);
 
-      this.logger.info('all pools', allPools);
-
       const allowedPools = limitPools
         ? allPools.filter(({ address }) =>
             limitPools.includes(`${this.dexKey}_${address.toLowerCase()}`),
           )
         : allPools;
-
-      this.logger.info('allowed pools', allowedPools);
 
       if (!allowedPools.length) return null;
 
