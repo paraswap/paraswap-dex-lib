@@ -425,14 +425,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
     );
 
-    const gyroPools = allPools.filter(
-      p =>
-        p.poolType === BalancerPoolTypes.Gyro3 ||
-        p.poolType === BalancerPoolTypes.GyroE,
-    );
-    this.logger.info(`Found ${gyroPools.length} Gyro Pools from Subgraph`);
-    this.logger.info(`Gyro Pools ${gyroPools}`);
-
     return allPools;
   }
 
@@ -765,6 +757,11 @@ export class BalancerV2
       );
     });
 
+    this.logger.info(
+      `Filtering pools for ${from.symbol} -> ${to.symbol}`,
+      pools,
+    );
+
     return pools.slice(0, 10);
   }
 
@@ -783,8 +780,7 @@ export class BalancerV2
 
     const pools = this.getPoolsWithTokenPair(_from, _to);
 
-    // eslint-disable-next-line no-console
-    console.log('balancerv2 pools', pools);
+    this.logger.info(`Pools for ${_from.symbol} -> ${_to.symbol}`, pools);
 
     return pools.map(
       ({ address }) => `${this.dexKey}_${address.toLowerCase()}`,
@@ -837,11 +833,16 @@ export class BalancerV2
       }
 
       const allPools = this.getPoolsWithTokenPair(_from, _to);
+
+      this.logger.info('all pools', allPools);
+
       const allowedPools = limitPools
         ? allPools.filter(({ address }) =>
             limitPools.includes(`${this.dexKey}_${address.toLowerCase()}`),
           )
         : allPools;
+
+      this.logger.info('allowed pools', allowedPools);
 
       if (!allowedPools.length) return null;
 

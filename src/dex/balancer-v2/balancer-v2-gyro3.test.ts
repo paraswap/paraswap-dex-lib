@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // npx jest src/dex/balancer-v2/balancer-v2-gyro3.test.ts
 import dotenv from 'dotenv';
 dotenv.config();
@@ -250,7 +249,6 @@ describe('BalancerV2', () => {
         );
 
         const amountIn = gyro3Pool.onBuy([amountOut], pairData);
-        console.log('amountIn', amountIn);
 
         const deltas = await queryOnChain(
           rpcUrl,
@@ -262,7 +260,6 @@ describe('BalancerV2', () => {
           amountOut,
         );
 
-        console.log(deltas);
         expect(amountIn[0]).toEqual(deltas[0]); // amountIn should equal deltas[0]
         expect(deltas[1] + amountOut).toEqual(0n); // deltas[1] (consumed) + amountOut should equal 0
       });

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from '@ethersproject/bignumber';
 
@@ -227,7 +226,6 @@ export class Gyro3Pool extends BasePool {
       );
 
       const scalingFactor = poolPairData.scalingFactors[poolPairData.indexOut];
-      console.log('scalingFactor', scalingFactor);
 
       const tokenAmountsWithFee = amounts.map(a =>
         this._upscale(a, poolPairData.scalingFactors[poolPairData.indexOut]),
@@ -235,8 +233,6 @@ export class Gyro3Pool extends BasePool {
       const tokenAmountsInWithFee = tokenAmountsWithFee.map(a =>
         this._addFeeAmount(a, poolPairData.swapFee),
       );
-
-      console.log('tokenAmountsOutWithFee', tokenAmountsInWithFee);
 
       return tokenAmountsInWithFee.map(amount => {
         try {
@@ -246,8 +242,6 @@ export class Gyro3Pool extends BasePool {
             BigNumber.from(amount),
             BigNumber.from(virtualOffsetInOut),
           ).toBigInt();
-
-          console.log('amountInBeforeScaling', amountIn);
 
           return this._downscaleDown(
             amountIn,
