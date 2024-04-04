@@ -187,13 +187,13 @@ describe('BalancerV2', () => {
 
     describe('Onchain Compare', () => {
       it('_exactTokenInForTokenOut', async function () {
-        const blocknumber = 54571344;
+        const blocknumber = 55433090;
         // usdc/busd/usdt
         const poolId =
           '0x17f1ef81707811ea15d9ee7c741179bbe2a63887000100000000000000000799';
         const tokenIn = tokens.USDC.address;
         const tokenOut = tokens.BUSD.address;
-        const amountIn = BigInt('11000000');
+        const amountIn = BigInt('1000400');
 
         const pools = await balancerPools.fetchAllSubgraphPools();
         const poolSg = pools.filter(p => p.id === poolId)[0];

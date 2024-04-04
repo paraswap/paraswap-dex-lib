@@ -225,8 +225,6 @@ export class Gyro3Pool extends BasePool {
         poolPairData.root3Alpha.toBigInt(),
       );
 
-      const scalingFactor = poolPairData.scalingFactors[poolPairData.indexOut];
-
       const tokenAmountsWithFee = amounts.map(a =>
         this._upscale(a, poolPairData.scalingFactors[poolPairData.indexOut]),
       );
