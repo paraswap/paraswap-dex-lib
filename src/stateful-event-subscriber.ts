@@ -145,6 +145,7 @@ export abstract class StatefulEventSubscriber<State>
           this.setState(state, blockNumber);
 
           // we should publish only if generateState succeeded
+          console.log('PUBLISH IN NEW POOLS: ', this.cacheName);
           this.dexHelper.cache.publish('new_pools', this.cacheName);
         }
       } else {
