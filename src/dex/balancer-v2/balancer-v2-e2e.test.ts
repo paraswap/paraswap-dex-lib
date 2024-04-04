@@ -806,7 +806,7 @@ describe('BalancerV2 E2E', () => {
         tokens['USDC'],
         tokens['USDT'],
         holders['USDC'],
-        '1000000000000000000', // 10 * 1e6
+        '10000000', // 10 * 1e6
         SwapSide.BUY,
         dexKey,
         ContractMethod.multiSwap,

@@ -11,6 +11,7 @@ import {
 import { callData, SubgraphPoolBase, PoolState, TokenState } from '../../types';
 import { MathSol } from '../../balancer-v2-math';
 import { Gyro3Maths } from '@balancer-labs/sor';
+import { _addFee, _reduceFee } from './gyro-helpers';
 
 // Swap Limit factor
 const SWAP_LIMIT_FACTOR = BigInt('999999000000000000');
@@ -188,7 +189,7 @@ export class Gyro3Pool extends BasePool {
       );
 
       const tokenAmountsInWithFee = tokenAmountsInScaled.map(a =>
-        this._subtractSwapFeeAmount(a, poolPairData.swapFee),
+        _reduceFee(BigNumber.from(a), BigNumber.from(poolPairData.swapFee)),
       );
 
       return tokenAmountsInWithFee.map(amount => {
@@ -196,7 +197,7 @@ export class Gyro3Pool extends BasePool {
           const amountOut = Gyro3Maths._calcOutGivenIn(
             poolPairData.balances[poolPairData.indexIn],
             poolPairData.balances[poolPairData.indexOut],
-            BigNumber.from(amount),
+            amount,
             BigNumber.from(virtualOffsetInOut),
           ).toBigInt();
 
@@ -228,8 +229,9 @@ export class Gyro3Pool extends BasePool {
       const tokenAmountsWithFee = amounts.map(a =>
         this._upscale(a, poolPairData.scalingFactors[poolPairData.indexOut]),
       );
+
       const tokenAmountsInWithFee = tokenAmountsWithFee.map(a =>
-        this._addFeeAmount(a, poolPairData.swapFee),
+        _addFee(BigNumber.from(a), BigNumber.from(poolPairData.swapFee)),
       );
 
       return tokenAmountsInWithFee.map(amount => {
@@ -237,7 +239,7 @@ export class Gyro3Pool extends BasePool {
           const amountIn = Gyro3Maths._calcInGivenOut(
             poolPairData.balances[poolPairData.indexIn],
             poolPairData.balances[poolPairData.indexOut],
-            BigNumber.from(amount),
+            amount,
             BigNumber.from(virtualOffsetInOut),
           ).toBigInt();
 
