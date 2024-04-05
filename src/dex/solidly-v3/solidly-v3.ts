@@ -14,7 +14,12 @@ import {
   PreprocessTransactionOptions,
   ExchangeTxInfo,
 } from '../../types';
-import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
+import {
+  SwapSide,
+  Network,
+  CACHE_PREFIX,
+  INIT_SERVICE_CACHE_PREFIX,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -56,6 +61,8 @@ type PoolPairsInfo = {
   token1: Address;
   fee: string;
 };
+
+const MessagesHashKey = `${INIT_SERVICE_CACHE_PREFIX}_messages`;
 
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
@@ -258,16 +265,6 @@ export class SolidlyV3
         ] = null;
         return null;
       }
-
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-          fee: tickSpacing.toString(),
-        }),
-      );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -344,10 +341,13 @@ export class SolidlyV3
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(
+      MessagesHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${MessagesHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }

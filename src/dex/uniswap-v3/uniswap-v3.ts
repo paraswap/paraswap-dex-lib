@@ -15,7 +15,12 @@ import {
   Token,
   TxInfo,
 } from '../../types';
-import { CACHE_PREFIX, INIT_SERVICE_CACHE_PREFIX, Network, SwapSide } from '../../constants';
+import {
+  CACHE_PREFIX,
+  INIT_SERVICE_CACHE_PREFIX,
+  Network,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   getBigIntPow,
@@ -283,16 +288,6 @@ export class UniswapV3
           null;
         return null;
       }
-
-      // await this.dexHelper.cache.hset(
-      //   this.dexmapKey,
-      //   key,
-      //   JSON.stringify({
-      //     token0,
-      //     token1,
-      //     fee: fee.toString(),
-      //   }),
-      // );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -376,11 +371,13 @@ export class UniswapV3
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(MessagesHashKey, `${this.cacheStateKey}_${poolKey}`);
-    // console.log('PAIRS: ', _pairs);
+    const _pairs = await this.dexHelper.cache.hget(
+      MessagesHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${MessagesHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }
@@ -394,13 +391,9 @@ export class UniswapV3
       blockNumber,
     );
 
-    // console.log('POOL: ', pool);
-
     if (!pool) {
       return false;
     }
-
-    // console.log('RETURN TRUE');
 
     return true;
   }
