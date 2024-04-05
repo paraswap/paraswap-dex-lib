@@ -118,64 +118,53 @@ describe('UniswapV3 E2E', () => {
 
     describe('UniswapV3 MAINNET', () => {
       const network = Network.MAINNET;
-
-      const tokenASymbol: string = 'USDC';
-      const tokenBSymbol: string = 'USDT';
-
-      const tokenAAmount: string = '1111100000';
-      const tokenBAmount: string = '11000000000';
-      const nativeTokenAmount = '110000000000000000';
-
-      testForNetwork(
+      const tokens = Tokens[network];
+      const holders = Holders[network];
+      const provider = new StaticJsonRpcProvider(
+        generateConfig(network).privateHttpProvider,
         network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-        nativeTokenAmount,
       );
 
-      // it('BUY DAI -> USDC', async () => {
-      //   await testE2E(
-      //     tokens['DAI'],
-      //     tokens['USDC'],
-      //     holders['DAI'],
-      //     '100000000000',
-      //     SwapSide.BUY,
-      //     dexKey,
-      //     ContractMethod.simpleBuy,
-      //     network,
-      //     provider,
-      //   );
-      // });
-      // it('SELL WETH -> SHIBA', async () => {
-      //   await testE2E(
-      //     tokens['WETH'],
-      //     tokens['SHIBA'],
-      //     holders['WETH'],
-      //     '1000000000000000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.simpleSwap,
-      //     network,
-      //     provider,
-      //   );
-      // });
+      it('BUY DAI -> USDC', async () => {
+        await testE2E(
+          tokens['DAI'],
+          tokens['USDC'],
+          holders['DAI'],
+          '100000000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.simpleBuy,
+          network,
+          provider,
+        );
+      });
+      it('SELL WETH -> SHIBA', async () => {
+        await testE2E(
+          tokens['WETH'],
+          tokens['SHIBA'],
+          holders['WETH'],
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
 
-      // it('directSwap SELL WETH -> USDC', async () => {
-      //   await testE2E(
-      //     tokens['WETH'],
-      //     tokens['USDC'],
-      //     holders['WETH'],
-      //     '1000000000000000000',
-      //     SwapSide.SELL,
-      //     dexKey,
-      //     ContractMethod.directUniV3Swap,
-      //     network,
-      //     provider,
-      //   );
-      // });
+      it('directSwap SELL WETH -> USDC', async () => {
+        await testE2E(
+          tokens['WETH'],
+          tokens['USDC'],
+          holders['WETH'],
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.directUniV3Swap,
+          network,
+          provider,
+        );
+      });
     });
 
     describe('UniswapV3 POLYGON', () => {
