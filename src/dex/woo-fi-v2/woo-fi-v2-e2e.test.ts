@@ -213,4 +213,68 @@ describe('WooFiV2 E2E', () => {
       tokenQuoteAmount,
     );
   });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const baseATokenSymbol = 'USDbC';
+    const baseBTokenSymbol = 'ETH';
+
+    const tokenBaseAAmount = '100000000';
+    const tokenBaseBAmount = '1000000000000000000';
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+    ]);
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(`${baseATokenSymbol} -> ${baseBTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[baseATokenSymbol],
+                tokens[baseBTokenSymbol],
+                holders[baseATokenSymbol],
+                tokenBaseAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${baseBTokenSymbol} -> ${baseATokenSymbol}`, async () => {
+              await testE2E(
+                tokens[baseBTokenSymbol],
+                tokens[baseATokenSymbol],
+                holders[baseBTokenSymbol],
+                tokenBaseBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        });
+      }),
+    );
+  });
 });

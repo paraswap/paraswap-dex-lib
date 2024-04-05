@@ -15,10 +15,28 @@ export const GMXConfig: DexConfigMap<DexParams> = {
     [Network.ARBITRUM]: {
       vault: '0x489ee077994B6658eAfA855C308275EAd8097C4A',
       reader: '0x22199a49A999c351eF7927602CFB187ec3cae489',
-      priceFeed: '0xfe661cbf27da0656b7a1151a761ff194849c387a',
+      priceFeed: '0x2d68011bca022ed0e474264145f46cc4de96a002',
       fastPriceFeed: '0x8960d1b45a2d15d063b84b34dfb2fb2ca7535527',
       fastPriceEvents: '0x4530b7de1958270a2376be192a24175d795e1b07',
       usdg: '0x45096e7aA921f27590f8F19e457794EB09678141',
+    },
+  },
+  Morphex: {
+    [Network.FANTOM]: {
+      vault: '0x245cD6d33578de9aF75a3C0c636c726b1A8cbdAa',
+      reader: '0xcA47b9b612a152ece991F31d8D3547D73BaF2Ecc',
+      priceFeed: '0x7a451DE877CbB6551AACa671d0458B6f9dF1e29A',
+      fastPriceFeed: '0x7f54C35A38D89fcf5Fe516206E6628745ed38CC7',
+      fastPriceEvents: '0xDc7C389be5da32e326A261dC0126feCa7AE04d79',
+      usdg: '0xe135c7BFfda932b5B862Da442cF4CbC4d43DC3Ad',
+    },
+    [Network.BSC]: {
+      vault: '0x46940Dc651bFe3F2CC3E04cf9dC5579B50Cf0765',
+      reader: '0x49A97680938B4F1f73816d1B70C3Ab801FAd124B',
+      priceFeed: '0x0144b19D1B9338fC7C286d6767bd9b29F0347f27',
+      fastPriceFeed: '0x55e6e6A968e485abEC1e1d957f408586e45a4f99',
+      fastPriceEvents: '0x491Df61db853761d42C4F38BeD220E9D807143dE',
+      usdg: '0x548f93779fBC992010C07467cBaf329DD5F059B7',
     },
   },
 };
@@ -41,6 +59,22 @@ export const Adapters: {
       {
         name: 'ArbitrumAdapter01',
         index: 9,
+      },
+    ],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BscAdapter02',
+        index: 6,
+      },
+    ],
+  },
+  [Network.FANTOM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'FantomAdapter01',
+        index: 12,
       },
     ],
   },

@@ -1,6 +1,17 @@
 import { DexConfigMap } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { DexParam } from './types';
+import {
+  AaveV3Arbitrum,
+  AaveV3Avalanche,
+  AaveV3BNB,
+  AaveV3Base,
+  AaveV3Ethereum,
+  AaveV3Fantom,
+  AaveV3Optimism,
+  AaveV3Polygon,
+  AaveV3PolygonZkEvm,
+} from '@bgd-labs/aave-address-book';
 
 // TODO: find vals for V3
 export const Config: DexConfigMap<DexParam> = {
@@ -8,38 +19,56 @@ export const Config: DexConfigMap<DexParam> = {
     [Network.FANTOM]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
-      poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
-      wethGatewayAddress: '0x17d013C19FE25cf4D911CE85eD5f40FE8880F46f',
+      poolAddress: AaveV3Fantom.POOL,
+      wethGatewayAddress: AaveV3Fantom.WETH_GATEWAY,
     },
     [Network.POLYGON]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
-      poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
-      wethGatewayAddress: '0x9bdb5fcc80a49640c7872ac089cc0e00a98451b6',
+      poolAddress: AaveV3Polygon.POOL,
+      wethGatewayAddress: AaveV3Polygon.WETH_GATEWAY,
     },
     [Network.AVALANCHE]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
-      poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
-      wethGatewayAddress: '0xa938d8536aEed1Bd48f548380394Ab30Aa11B00E',
+      poolAddress: AaveV3Avalanche.POOL,
+      wethGatewayAddress: AaveV3Avalanche.WETH_GATEWAY,
     },
     [Network.ARBITRUM]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
-      poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
-      wethGatewayAddress: '0xC09e69E79106861dF5d289dA88349f10e2dc6b5C',
+      poolAddress: AaveV3Arbitrum.POOL,
+      wethGatewayAddress: AaveV3Arbitrum.WETH_GATEWAY,
     },
     [Network.OPTIMISM]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
-      poolAddress: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
-      wethGatewayAddress: '0x86b4D2636EC473AC4A5dD83Fc2BEDa98845249A7',
+      poolAddress: AaveV3Optimism.POOL,
+      wethGatewayAddress: AaveV3Optimism.WETH_GATEWAY,
     },
     [Network.MAINNET]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,
-      poolAddress: '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2',
-      wethGatewayAddress: '0xD322A49006FC828F9B5B37Ab215F99B4E5caB19C',
+      poolAddress: AaveV3Ethereum.POOL,
+      wethGatewayAddress: AaveV3Ethereum.WETH_GATEWAY,
+    },
+    [Network.BASE]: {
+      ethGasCost: 246 * 100,
+      lendingGasCost: 328 * 1000,
+      poolAddress: AaveV3Base.POOL,
+      wethGatewayAddress: AaveV3Base.WETH_GATEWAY,
+    },
+    [Network.BSC]: {
+      ethGasCost: 246 * 100,
+      lendingGasCost: 328 * 1000,
+      poolAddress: AaveV3BNB.POOL,
+      wethGatewayAddress: AaveV3BNB.WETH_GATEWAY,
+    },
+    [Network.ZKEVM]: {
+      ethGasCost: 246 * 100,
+      lendingGasCost: 328 * 1000,
+      poolAddress: AaveV3PolygonZkEvm.POOL,
+      wethGatewayAddress: AaveV3PolygonZkEvm.WETH_GATEWAY,
     },
   },
 };
@@ -92,6 +121,30 @@ export const Adapters: {
       {
         name: 'Adapter03',
         index: 13,
+      },
+    ],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter01',
+        index: 9,
+      },
+    ],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BscAdapter02',
+        index: 9,
+      },
+    ],
+  },
+  [Network.ZKEVM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'PolygonZkEvmAdapter02',
+        index: 1,
       },
     ],
   },

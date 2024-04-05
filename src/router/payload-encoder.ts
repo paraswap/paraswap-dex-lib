@@ -29,14 +29,14 @@ const HALF_SPLIT = '5000';
 export function encodePartnerAddressForFeeLogic({
   partnerAddress,
   partnerFeePercent,
-  positiveSlippageToUser,
+  takeSurplus,
 }: {
   partnerAddress: string;
   partnerFeePercent: string;
-  positiveSlippageToUser: boolean;
+  takeSurplus: boolean;
 }): string {
   const isPartnerTakeNoFeeNoPos =
-    +partnerFeePercent === 0 && positiveSlippageToUser == true;
+    +partnerFeePercent === 0 && takeSurplus == false;
 
   // nullify partner address to fallback default circuit contract without partner/referrer (no harm as no fee taken at all)
   const partner = isPartnerTakeNoFeeNoPos ? NULL_ADDRESS : partnerAddress;
@@ -51,11 +51,11 @@ export function encodePartnerAddressForFeeLogic({
 
 export function encodeFeePercent(
   partnerFeePercent: string,
-  positiveSlippageToUser: boolean,
+  takeSurplus: boolean,
   side: SwapSide,
 ) {
   const isNoFeeAndPositiveSlippageToPartner =
-    positiveSlippageToUser === false && BigInt(partnerFeePercent) === 0n;
+    takeSurplus === true && BigInt(partnerFeePercent) === 0n;
 
   let fee = isNoFeeAndPositiveSlippageToPartner
     ? BigInt(HALF_SPLIT)
@@ -70,9 +70,9 @@ export function encodeFeePercent(
     fee |= OneShift17;
   }
 
-  // Set 14th bit if positiveSlippageToUser is true
+  // Set 14th bit if takeSurplus is false
   // Upd: not used onchain anymore but better to keep to prevent collisions and ensure continuity of analytics
-  if (positiveSlippageToUser) fee |= OneShift14;
+  if (!takeSurplus) fee |= OneShift14;
 
   // Set 15th bit to take fee from srcToken
   if (side === SwapSide.BUY && !isNoFeeAndPositiveSlippageToPartner)
