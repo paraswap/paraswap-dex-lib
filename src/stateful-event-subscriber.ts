@@ -146,9 +146,6 @@ export abstract class StatefulEventSubscriber<State>
 
           // we should publish only if generateState succeeded
           const value = this.getValueToPushIntoNewPoolsChannel();
-          // console.log('PUBLISH IN NEW POOLS');
-          // console.log('KEY: ', this.cacheName);
-          // console.log('VALUE: ', value);
 
           this.dexHelper.cache.publish(
             'new_pools',
