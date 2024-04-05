@@ -184,20 +184,20 @@ export class Gyro3Pool extends BasePool {
         poolPairData.root3Alpha.toBigInt(),
       );
 
-      const tokenAmountsInScaled = amounts.map(a =>
-        this._upscale(a, poolPairData.scalingFactors[poolPairData.indexIn]),
-      );
-
-      const tokenAmountsInWithFee = tokenAmountsInScaled.map(a =>
-        _reduceFee(BigNumber.from(a), BigNumber.from(poolPairData.swapFee)),
-      );
+      const tokenAmountsInWithFee = amounts.map(a => {
+        const withFee = _reduceFee(a, poolPairData.swapFee);
+        return this._upscale(
+          withFee,
+          poolPairData.scalingFactors[poolPairData.indexIn],
+        );
+      });
 
       return tokenAmountsInWithFee.map(amount => {
         try {
           const amountOut = Gyro3Maths._calcOutGivenIn(
             poolPairData.balances[poolPairData.indexIn],
             poolPairData.balances[poolPairData.indexOut],
-            amount,
+            BigNumber.from(amount),
             BigNumber.from(virtualOffsetInOut),
           ).toBigInt();
 
@@ -226,27 +226,24 @@ export class Gyro3Pool extends BasePool {
         poolPairData.root3Alpha.toBigInt(),
       );
 
-      const tokenAmountsWithFee = amounts.map(a =>
+      const tokenAmountsUpscaled = amounts.map(a =>
         this._upscale(a, poolPairData.scalingFactors[poolPairData.indexOut]),
       );
 
-      const tokenAmountsInWithFee = tokenAmountsWithFee.map(a =>
-        _addFee(BigNumber.from(a), BigNumber.from(poolPairData.swapFee)),
-      );
-
-      return tokenAmountsInWithFee.map(amount => {
+      return tokenAmountsUpscaled.map(amount => {
         try {
           const amountIn = Gyro3Maths._calcInGivenOut(
             poolPairData.balances[poolPairData.indexIn],
             poolPairData.balances[poolPairData.indexOut],
-            amount,
+            BigNumber.from(amount),
             BigNumber.from(virtualOffsetInOut),
           ).toBigInt();
 
-          return this._downscaleDown(
+          const downScaledAmount = this._downscaleUp(
             amountIn,
             poolPairData.scalingFactors[poolPairData.indexIn],
           );
+          return _addFee(downScaledAmount, poolPairData.swapFee);
         } catch (error) {
           return BigInt(0);
         }
