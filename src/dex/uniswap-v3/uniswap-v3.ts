@@ -15,7 +15,7 @@ import {
   Token,
   TxInfo,
 } from '../../types';
-import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
+import { CACHE_PREFIX, INIT_SERVICE_CACHE_PREFIX, Network, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   getBigIntPow,
@@ -71,6 +71,8 @@ type PoolPairsInfo = {
   token1: Address;
   fee: string;
 };
+
+const MessagesHashKey = `${INIT_SERVICE_CACHE_PREFIX}_messages`;
 
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
@@ -282,15 +284,15 @@ export class UniswapV3
         return null;
       }
 
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-          fee: fee.toString(),
-        }),
-      );
+      // await this.dexHelper.cache.hset(
+      //   this.dexmapKey,
+      //   key,
+      //   JSON.stringify({
+      //     token0,
+      //     token1,
+      //     fee: fee.toString(),
+      //   }),
+      // );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -374,7 +376,8 @@ export class UniswapV3
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(MessagesHashKey, `${this.cacheStateKey}_${poolKey}`);
+    // console.log('PAIRS: ', _pairs);
     if (!_pairs) {
       this.logger.warn(
         `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
@@ -391,9 +394,13 @@ export class UniswapV3
       blockNumber,
     );
 
+    // console.log('POOL: ', pool);
+
     if (!pool) {
       return false;
     }
+
+    // console.log('RETURN TRUE');
 
     return true;
   }
