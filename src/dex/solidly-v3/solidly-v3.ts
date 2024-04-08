@@ -33,7 +33,6 @@ import {
 } from '../simple-exchange';
 import { SolidlyV3Config, Adapters, PoolsToPreload } from './config';
 import { SolidlyV3EventPool } from './solidly-v3-pool';
-import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import SolidlyV3StateMulticallABI from '../../abi/solidly-v3/SolidlyV3StateMulticall.abi.json';
 import SolidlyV3PoolABI from '../../abi/solidly-v3/SolidlyV3Pool.abi.json';
@@ -91,7 +90,6 @@ export class SolidlyV3
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly poolIface = new Interface(SolidlyV3PoolABI),
-    readonly quoterIface = new Interface(UniswapV3QuoterV2ABI),
     protected config = SolidlyV3Config[dexKey][network],
     protected poolsToPreload = PoolsToPreload[dexKey]?.[network] || [],
   ) {
@@ -851,7 +849,6 @@ export class SolidlyV3
   private _toLowerForAllConfigAddresses() {
     // If new config property will be added, the TS will throw compile error
     const newConfig: DexParams = {
-      quoter: this.config.quoter.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
       supportedTickSpacings: this.config.supportedTickSpacings,
       stateMulticall: this.config.stateMulticall.toLowerCase(),
