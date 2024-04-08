@@ -26,6 +26,7 @@ import { Compound } from './compound';
 import { AaveV1 } from './aave-v1/aave-v1';
 import { AaveV2 } from './aave-v2/aave-v2';
 import { AaveV3 } from './aave-v3/aave-v3';
+import { IdleDao } from './idle-dao/idle-dao';
 import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1';
 import { DodoV2 } from './dodo-v2';

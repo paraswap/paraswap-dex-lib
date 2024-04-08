@@ -1,4 +1,5 @@
 import { AsyncOrSync } from 'ts-essentials';
+import { Interface } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -9,18 +10,27 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { IdleDaoData } from './types';
+import { IdleDaoData, Param, PoolFunctions } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { IdleDaoConfig, Adapters } from './config';
-import { IdleDaoEventPool } from './idle-dao-pool';
+import { Config, Adapters } from './config';
+// import { IdleDaoEventPool } from './idle-dao-pool';
+import { fetchTokenList } from './utils';
+import { getIdleTokenIfIdleDaoPair, setTokensOnNetwork } from './tokens';
+import FACTORY_ABI from '../../abi/idle-dao/idle-cdo-factory.json';
+import CDO_ABI from '../../abi/idle-dao/idle-cdo.json';
+
+const REF_CODE = '0x0000000000000000000000000000000000000000';
+export const TOKEN_LIST_CACHE_KEY = 'token-list';
+const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60;
+const TOKEN_LIST_LOCAL_TTL_SECONDS = 3 * 60 * 60;
 
 export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
-  protected eventPools: IdleDaoEventPool;
+  // protected eventPools: IdleDaoEventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
@@ -29,24 +39,32 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(IdleDaoConfig);
+    getDexKeysWithNetwork(Config);
 
   logger: Logger;
+
+  private cdo: Interface;
+  private factory: Interface;
 
   constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
+    protected config = Config[dexKey][network],
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
+    /*
     this.eventPools = new IdleDaoEventPool(
       dexKey,
       network,
       dexHelper,
       this.logger,
     );
+    */
+    this.cdo = new Interface(CDO_ABI);
+    this.factory = new Interface(FACTORY_ABI);
   }
 
   // Initialize pricing is called once in the start of
@@ -54,13 +72,53 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
+      this.dexKey,
+      this.network,
+      TOKEN_LIST_CACHE_KEY,
+      TOKEN_LIST_LOCAL_TTL_SECONDS,
+    );
+    if (cachedTokenList !== null) {
+      setTokensOnNetwork(this.network, JSON.parse(cachedTokenList));
+      return;
+    }
+
+    let tokenList = await fetchTokenList(
+      this.dexHelper.web3Provider,
+      blockNumber,
+      this.config.fromBlock,
+      this.config.factoryAddress,
+      this.cdo,
+      this.erc20Interface,
+      this.dexHelper.multiWrapper,
+    );
+
+    // console.log('tokenList', tokenList);
+
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      TOKEN_LIST_CACHE_KEY,
+      TOKEN_LIST_TTL_SECONDS,
+      JSON.stringify(tokenList),
+    );
+
+    setTokensOnNetwork(this.network, tokenList);
   }
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
+  }
+
+  private _getPoolIdentifier(srcToken: Token, destToken: Token): string {
+    return (
+      this.dexKey +
+      [srcToken.address.toLowerCase(), destToken.address.toLowerCase()]
+        .sort((a, b) => (a > b ? 1 : -1))
+        .join('_')
+    );
   }
 
   // Returns list of pool identifiers that can be used
@@ -73,8 +131,15 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const idleToken = getIdleTokenIfIdleDaoPair(
+      this.network,
+      this.dexHelper.config.wrapETH(srcToken),
+      this.dexHelper.config.wrapETH(destToken),
+    );
+
+    if (idleToken === null) return [];
+
+    return [this._getPoolIdentifier(srcToken, destToken)];
   }
 
   // Returns pool prices for amounts.
@@ -89,8 +154,32 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<IdleDaoData>> {
-    // TODO: complete me!
-    return null;
+    const _src = this.dexHelper.config.wrapETH(srcToken);
+    const _dst = this.dexHelper.config.wrapETH(destToken);
+
+    // Look for idleToken
+    const idleToken = getIdleTokenIfIdleDaoPair(this.network, _src, _dst);
+
+    if (!idleToken) return null;
+
+    const fromIdleToken =
+      idleToken.idleAddress.toLowerCase() == _src.address.toLowerCase();
+
+    return [
+      {
+        prices: amounts,
+        unit: getBigIntPow(
+          (side === SwapSide.SELL ? destToken : srcToken).decimals,
+        ),
+        gasCost: this.config.lendingGasCost,
+        exchange: this.dexKey,
+        data: {
+          idleToken,
+          fromIdleToken,
+        },
+        poolAddresses: [fromIdleToken ? srcToken.address : destToken.address],
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -110,14 +199,19 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     data: IdleDaoData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
-
-    // Encode here the payload for adapter
-    const payload = '';
+    const idleToken = data.fromIdleToken ? srcToken : destToken; // Warning
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          idleToken: 'address',
+        },
+      },
+      { idleToken },
+    );
 
     return {
-      targetExchange: exchange,
+      // target exchange is not used by the contract
+      targetExchange: NULL_ADDRESS,
       payload,
       networkFee: '0',
     };
@@ -135,19 +229,41 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     data: IdleDaoData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { exchange } = data;
+    const amount = side === SwapSide.SELL ? srcAmount : destAmount;
+    const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
+      Interface,
+      Address,
+      PoolFunctions,
+      Param,
+    ] => {
+      if (data.fromIdleToken)
+        return [
+          this.cdo,
+          data.idleToken.cdoAddress,
+          PoolFunctions[`withdraw${data.idleToken.tokenType}`],
+          [amount],
+        ];
 
-    // Encode here the transaction arguments
-    const swapData = '';
+      return [
+        this.cdo,
+        data.idleToken.cdoAddress,
+        PoolFunctions[`deposit${data.idleToken.tokenType}`],
+        [amount, REF_CODE],
+      ];
+    })();
+
+    const swapData = Interface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
-      srcAmount,
+      amount,
       destToken,
       destAmount,
       swapData,
-      exchange,
+      swapCallee,
     );
   }
 

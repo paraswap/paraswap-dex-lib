@@ -1,98 +1,110 @@
-/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { Interface } from '@ethersproject/abi';
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { getTokenFromIdleSymbol, setTokensOnNetwork } from './tokens';
 import { generateConfig } from '../../config';
+import { fetchTokenList } from './utils';
+import { DummyDexHelper } from '../../dex-helper';
+import POOL_ABI from '../../abi/idle-dao/idle-cdo.json';
+import ERC20ABI from '../../abi/erc20.json';
+import { Config } from './config';
 
-/*
-  README
-  ======
+jest.setTimeout(1000 * 60 * 3);
 
-  This test script should add e2e tests for IdleDao. The tests
-  should cover as many cases as possible. Most of the DEXes follow
-  the following test structure:
-    - DexName
-      - ForkName + Network
-        - ContractMethod
-          - ETH -> Token swap
-          - Token -> ETH swap
-          - Token -> Token swap
+describe('IdleDao E2E', () => {
+  const dexKey = 'IdleDao';
 
-  The template already enumerates the basic structure which involves
-  testing simpleSwap, multiSwap, megaSwap contract methods for
-  ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace tokenA and
-  tokenB with any two highly liquid tokens on IdleDao for the tests
-  to work. If the tokens that you would like to use are not defined in
-  Tokens or Holders map, you can update the './tests/constants-e2e'
+  beforeAll(async () => {
+    let results: Promise<void>[] = [];
+    for (const networkEntry in Network) {
+      if (isNaN(Number(networkEntry))) {
+        break;
+      }
+      if (!Config[dexKey].hasOwnProperty(networkEntry)) {
+        continue;
+      }
 
-  Other than the standard cases that are already added by the template
-  it is highly recommended to add test cases which could be specific
-  to testing IdleDao (Eg. Tests based on poolType, special tokens,
-  etc).
+      const network = Number(networkEntry);
+      const config = Config[dexKey][network];
+      const dexHelper = new DummyDexHelper(network);
+      const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
 
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-e2e.test.ts`
+      results.push(
+        fetchTokenList(
+          dexHelper.web3Provider,
+          blockNumber,
+          config.fromBlock,
+          config.factoryAddress,
+          new Interface(POOL_ABI),
+          new Interface(ERC20ABI),
+          dexHelper.multiWrapper,
+        )
+          .then(tokenList => {
+            setTokensOnNetwork(network, tokenList);
+          })
+          .catch(e => {
+            console.log(`ERROR on ${Network[network]}`, e);
+          }),
+      );
+    }
+    await Promise.all(results);
+  });
 
-  e2e tests use the Tenderly fork api. Please add the following to your
-  .env file:
-  TENDERLY_TOKEN=Find this under Account>Settings>Authorization.
-  TENDERLY_ACCOUNT_ID=Your Tenderly account name.
-  TENDERLY_PROJECT=Name of a Tenderly project you have created in your
-  dashboard.
+  /*
+  describe('IdleDao ZKEVM', () => {
+    const network = Network.ZKEVM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
 
-  (This comment should be removed from the final implementation)
-*/
+    const pairs = [
+      {
+        tokenSymbol: 'USDT',
+        aTokenSymbol: 'aPolUSDT',
+        amount: '1000000',
+      },
+      {
+        tokenSymbol: 'MATIC',
+        aTokenSymbol: 'aPolWMATIC',
+        amount: '1000000000000000000',
+      },
+      {
+        tokenSymbol: 'WMATIC',
+        aTokenSymbol: 'aPolWMATIC',
+        amount: '1000000000000000000',
+      },
+    ];
 
-function testForNetwork(
-  network: Network,
-  dexKey: string,
-  tokenASymbol: string,
-  tokenBSymbol: string,
-  tokenAAmount: string,
-  tokenBAmount: string,
-  nativeTokenAmount: string,
-) {
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
-  const tokens = Tokens[network];
-  const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
-
-  // TODO: Add any direct swap contractMethod name if it exists
-  const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
+    const sideToContractMethods = new Map([
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
       ],
-    ],
-    // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-  ]);
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    ]);
 
-  describe(`${network}`, () => {
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
+    pairs.forEach(pair => {
+      sideToContractMethods.forEach((contractMethods, side) =>
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            it(pair.aTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
               await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                getTokenFromIdleSymbol(network, pair.aTokenSymbol)!,
+                tokens[pair.tokenSymbol],
+                holders[pair.aTokenSymbol],
+                pair.amount,
                 side,
                 dexKey,
                 contractMethod,
@@ -100,25 +112,13 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+
+            it(pair.tokenSymbol + ' -> ' + pair.aTokenSymbol, async () => {
               await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                tokens[pair.tokenSymbol],
+                getTokenFromIdleSymbol(network, pair.aTokenSymbol)!,
+                holders[pair.tokenSymbol],
+                pair.amount,
                 side,
                 dexKey,
                 contractMethod,
@@ -127,36 +127,161 @@ function testForNetwork(
               );
             });
           });
-        });
-      }),
-    );
+        }),
+      );
+    });
   });
-}
 
-describe('IdleDao E2E', () => {
-  const dexKey = 'IdleDao';
-
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
-
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
-    const nativeTokenAmount = '1000000000000000000';
-
-    testForNetwork(
+  describe('IdleDao OPTIMISM', () => {
+    const network = Network.OPTIMISM;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
       network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
     );
 
-    // TODO: Add any additional test cases required to test IdleDao
+    const pairs = [
+      {
+        tokenSymbol: 'USDC',
+        aTokenSymbol: 'aOptUSDC',
+        amount: '1000000',
+      },
+      {
+        tokenSymbol: 'ETH',
+        aTokenSymbol: 'aOptWETH',
+        amount: '1000000000000000000',
+      },
+      {
+        tokenSymbol: 'WETH',
+        aTokenSymbol: 'aOptWETH',
+        amount: '1000000000000000000',
+      },
+    ];
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    ]);
+
+    pairs.forEach(pair => {
+      sideToContractMethods.forEach((contractMethods, side) =>
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(pair.aTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
+              await testE2E(
+                getTokenFromIdleSymbol(network, pair.aTokenSymbol)!,
+                tokens[pair.tokenSymbol],
+                holders[pair.aTokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it(pair.tokenSymbol + ' -> ' + pair.aTokenSymbol, async () => {
+              await testE2E(
+                tokens[pair.tokenSymbol],
+                getTokenFromIdleSymbol(network, pair.aTokenSymbol)!,
+                holders[pair.tokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        }),
+      );
+    });
+  });
+  */
+
+  describe('IdleDao MAINNET', () => {
+    const network = Network.MAINNET;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const pairs = [
+      {
+        tokenSymbol: 'wstETH',
+        idleTokenSymbol: 'AA_wstETH',
+        amount: '1000000000000000000',
+      },
+      {
+        tokenSymbol: 'USDC',
+        idleTokenSymbol: 'AA_idle_cpPOR-USDC',
+        amount: '1000000',
+      },
+      {
+        tokenSymbol: 'DAI',
+        idleTokenSymbol: 'BB_idle_cpPOR-USDC',
+        amount: '1000000000000000000',
+      },
+    ];
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    ]);
+
+    pairs.forEach(pair => {
+      sideToContractMethods.forEach((contractMethods, side) =>
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(pair.idleTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
+              await testE2E(
+                getTokenFromIdleSymbol(network, pair.idleTokenSymbol)!,
+                tokens[pair.tokenSymbol],
+                holders[pair.idleTokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it(pair.tokenSymbol + ' -> ' + pair.idleTokenSymbol, async () => {
+              await testE2E(
+                tokens[pair.tokenSymbol],
+                getTokenFromIdleSymbol(network, pair.idleTokenSymbol)!,
+                holders[pair.tokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        }),
+      );
+    });
   });
 });
