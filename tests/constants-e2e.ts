@@ -472,6 +472,10 @@ export const Tokens: {
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
+    SOLID: {
+      address: '0x777cf5ba9c291a1a8f57ff14836f6f9dc5c0f9dd',
+      decimals: 18,
+    },
     WFTM: {
       address: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
       decimals: 18,
@@ -1121,7 +1125,7 @@ export const Holders: {
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
     FTM: '0x431e81E5dfB5A24541b5Ff8762bDEF3f32F96354',
-    WFTM: '0x3e923747ca2675e096d812c3b24846ac39aed645',
+    WFTM: '0xB7D0fB518a5b7bf8dc7ea19A715E8FD8BD983e27',
     USDC: '0xf53feaeb035361c046e5669745695e450ebb4028',
     FUSDT: '0x9ade1c17d25246c405604344f89E8F23F8c1c632',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
@@ -1141,7 +1145,8 @@ export const Holders: {
     EQUAL: '0x8b187ea19c93091a4d6b426b71871648182b5fac',
     FVM: '0x07BB65fAaC502d4996532F834A1B7ba5dC32Ff96',
     lzUSDC: '0x1e38e2e0e7df3be6592867d0ac2713a4dbda8350',
-    axlUSDC: '0xccf932cd565c21d2e516c8ff3a4f244eea27e09a',
+    axlUSDC: '0x1c664Bafc646510684Ba1588798c67fe22a8c7cf',
+    SOLID: '0xdF6A50d16320D9eAf0D91e0039fcE89c700F95F1',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
