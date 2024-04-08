@@ -2,7 +2,7 @@ import { BigNumber } from 'ethers';
 import { Address, NumberAsString } from '../../types';
 import { TickInfo } from '../uniswap-v3/types';
 
-type GlobalStateV1_1 = {
+export type GlobalStateV1_1 = {
   price: bigint; // The square root of the current price in Q64.96 format
   tick: bigint; // The current tick
   fee: bigint; // The current fee in hundredths of a bip, i.e. 1e-6
@@ -38,10 +38,10 @@ type GlobalState_v1_9 = {
 export type PoolState_v1_9 = {
   pool: string;
   blockTimestamp: bigint;
-  tickSpacing: bigint; // is actually constant
+  tickSpacing: bigint;
   globalState: GlobalState_v1_9; // eq slot0
   liquidity: bigint;
-  maxLiquidityPerTick: bigint; // is actually constant
+  maxLiquidityPerTick: bigint;
   tickBitmap: Record<NumberAsString, bigint>; // actually called tickTable in contract-
   ticks: Record<NumberAsString, TickInfo>; // although variable names are different in contracts but matches UniswapV3 TickInfo struct 1:1
   isValid: boolean;
@@ -51,13 +51,27 @@ export type PoolState_v1_9 = {
   areTicksCompressed: boolean;
 };
 
+export type FactoryState = Record<string, never>;
+
 export type AlgebraData = {
   path: {
     tokenIn: Address;
     tokenOut: Address;
   }[];
+  feeOnTransfer: boolean;
   isApproved?: boolean;
 };
+
+export type AlgebraDataWithFee = {
+  tokenIn: Address;
+  tokenOut: Address;
+};
+
+export enum AlgebraFunctions {
+  exactInput = 'exactInput',
+  exactOutput = 'exactOutput',
+  exactInputWithFeeToken = 'exactInputSingleSupportingFeeOnTransferTokens',
+}
 
 export type DexParams = {
   router: Address;
@@ -72,6 +86,7 @@ export type DexParams = {
   initHash: string;
   version: 'v1.1' | 'v1.9';
   forceRPC?: boolean;
+  forceManualStateGenerate?: boolean;
 };
 
 export type IAlgebraPoolState = PoolStateV1_1 | PoolState_v1_9;
@@ -95,7 +110,7 @@ export type TickInfoMappingsWithBigNumber = {
   value: TickInfoWithBigNumber;
 };
 
-type DecodedGlobalStateV1_1 = {
+export type DecodedGlobalStateV1_1 = {
   price: BigNumber;
   tick: number;
   fee: number;

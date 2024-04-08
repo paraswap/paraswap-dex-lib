@@ -1,18 +1,33 @@
 import { aToken, Token } from '../../types';
 import { Network } from '../../constants';
+import { tokenlist } from '@bgd-labs/aave-address-book';
+import { aaveLendingPool } from './config';
 
-import tokensMainnet from './tokens-mainnet.json';
-import tokensPolygon from './tokens-polygon.json';
-import tokensAvalanche from './tokens-avalanche.json';
+function getTokensForPool(pool: string): aToken[] {
+  return tokenlist.tokens
+    .filter(
+      token =>
+        token.extensions?.pool &&
+        token.extensions?.pool.toLowerCase() === pool.toLowerCase() &&
+        token.tags.includes('aTokenV2'),
+    )
+    .map(token => ({
+      aSymbol: token.symbol,
+      aAddress: token.address.toLowerCase(),
+      // the type is a bit imprecise, when tag is aTokenV2, underlying will exist
+      address: token.extensions!.underlying.toLowerCase(),
+      decimals: token.decimals,
+    }));
+}
 
 export const Tokens: { [network: number]: { [symbol: string]: aToken } } = {};
 const TokensByAddress: { [network: number]: { [address: string]: aToken } } =
   {};
 
 const tokensByNetwork: { [network: number]: any } = {
-  [Network.MAINNET]: tokensMainnet,
-  [Network.POLYGON]: tokensPolygon,
-  [Network.AVALANCHE]: tokensAvalanche,
+  [Network.MAINNET]: getTokensForPool(aaveLendingPool[Network.MAINNET]),
+  [Network.POLYGON]: getTokensForPool(aaveLendingPool[Network.POLYGON]),
+  [Network.AVALANCHE]: getTokensForPool(aaveLendingPool[Network.AVALANCHE]),
 };
 
 for (const [key, tokens] of Object.entries(tokensByNetwork)) {

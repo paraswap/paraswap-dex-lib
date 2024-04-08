@@ -285,6 +285,7 @@ const implementations: Record<ImplementationNames, get_dy_underlying> = {
   [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: notExist,
 };
 
 export default implementations;

@@ -35,6 +35,35 @@ const customPlain3CoinThree: calc_token_amount = (
   return (diff * token_amount) / D0;
 };
 
+const customAvalanche3CoinLending: calc_token_amount = (
+  self: IPoolContext,
+  state: PoolState,
+  amounts: bigint[],
+  is_deposit: boolean,
+) => {
+  const { N_COINS } = self.constants;
+
+  const coin_balances = [...state.balances];
+  const amp = state.A;
+  const D0 = self.get_D_precision(self, coin_balances, amp);
+  for (const i of _.range(N_COINS)) {
+    if (is_deposit) coin_balances[i] += amounts[i];
+    else coin_balances[i] -= amounts[i];
+  }
+  const D1 = self.get_D_precision(self, coin_balances, amp);
+  let diff = 0n;
+  if (is_deposit) diff = D1 - D0;
+  else diff = D0 - D1;
+
+  if (state.totalSupply === undefined) {
+    throw new Error(
+      `${self.IMPLEMENTATION_NAME} customAvalanche3CoinLending: totalSupply is not provided`,
+    );
+  }
+
+  return (diff * state.totalSupply) / D0;
+};
+
 const factoryPlain2Basic: calc_token_amount = (
   self: IPoolContext,
   state: PoolState,
@@ -67,33 +96,61 @@ const factoryPlain2Basic: calc_token_amount = (
   return (diff * token_amount) / D0;
 };
 
-const customAvalanche3CoinLending: calc_token_amount = (
+const customPlain2CoinCrv: calc_token_amount = (
   self: IPoolContext,
   state: PoolState,
   amounts: bigint[],
   is_deposit: boolean,
 ) => {
-  const { N_COINS } = self.constants;
-
-  const coin_balances = [...state.balances];
+  const { N_COINS, BI_N_COINS, FEE_DENOMINATOR } = self.constants;
   const amp = state.A;
-  const D0 = self.get_D_precision(self, coin_balances, amp);
+  const balances = [...state.balances];
+  const D0 = self.get_D_mem(self, state, balances, amp);
   for (const i of _.range(N_COINS)) {
-    if (is_deposit) coin_balances[i] += amounts[i];
-    else coin_balances[i] -= amounts[i];
+    if (is_deposit) balances[i] += amounts[i];
+    else balances[i] -= amounts[i];
   }
-  const D1 = self.get_D_precision(self, coin_balances, amp);
-  let diff = 0n;
-  if (is_deposit) diff = D1 - D0;
-  else diff = D0 - D1;
+  const D1 = self.get_D_mem(self, state, balances, amp);
 
   if (state.totalSupply === undefined) {
     throw new Error(
-      `${self.IMPLEMENTATION_NAME} customAvalanche3CoinLending: totalSupply is not provided`,
+      `${self.IMPLEMENTATION_NAME} customPlain3CoinThree: totalSupply is not provided`,
     );
   }
 
-  return (diff * state.totalSupply) / D0;
+  const total_supply = state.totalSupply;
+  let D2 = D1;
+
+  if (total_supply > 0n) {
+    const base_fee = (state.fee * BI_N_COINS) / (4n * (BI_N_COINS - 1n));
+    for (const i of _.range(N_COINS)) {
+      const ideal_balance = (D1 * state.balances[i]) / D0;
+      let difference = 0n;
+      const new_balance = balances[i];
+      if (ideal_balance > new_balance) {
+        difference = ideal_balance - new_balance;
+      } else {
+        difference = new_balance - ideal_balance;
+      }
+      balances[i] -= (base_fee * difference) / FEE_DENOMINATOR;
+    }
+    const xp = self._xp_mem(
+      self,
+      [...state.constants.rate_multipliers],
+      balances,
+    );
+    D2 = self.get_D_mem(self, state, xp, amp);
+  } else {
+    return D1;
+  }
+
+  let diff = 0n;
+  if (is_deposit) {
+    diff = D2 - D0;
+  } else {
+    diff = D0 - D2;
+  }
+  return (diff * total_supply) / D0;
 };
 
 const notImplemented: calc_token_amount = (
@@ -165,6 +222,7 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customPlain3CoinThree,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain3CoinThree,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain3CoinThree,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customPlain2CoinCrv,
 };
 
 export default implementations;

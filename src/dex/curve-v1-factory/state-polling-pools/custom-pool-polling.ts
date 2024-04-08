@@ -13,6 +13,7 @@ import { _require } from '../../../utils';
 import { Address } from '@paraswap/core';
 import { AbiItem } from 'web3-utils';
 import { NULL_ADDRESS } from '../../../constants';
+import { assert } from 'ts-essentials';
 
 type FunctionToCall =
   | 'A'
@@ -227,16 +228,17 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
 
     let exchangeRateCurrent: (bigint | undefined)[] | undefined;
 
-    let lastEndIndex = lastIndex + 1;
+    let lastEndIndex = lastIndex + this.poolConstants.COINS.length;
     if (this.useLending) {
       exchangeRateCurrent = new Array(this.useLending.length).fill(undefined);
+      let trueUseLendingCount = this.useLending.filter(el => el).length;
       const exchangeRateResults = multiOutputs.slice(
         lastEndIndex,
         // Filter false elements before checking length
-        lastEndIndex + this.useLending.filter(el => el).length,
+        lastEndIndex + trueUseLendingCount,
       ) as bigint[];
 
-      lastEndIndex += this.useLending.length;
+      lastEndIndex += trueUseLendingCount;
       // We had array with booleans and I filtered of `false` and sent request.
       // So, now I must map that results to original indices. That is the reason of this complication
       const indicesToFill = this.useLending.reduce<number[]>((acc, curr, i) => {
@@ -255,9 +257,15 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
         },
         'indicesToFill.length === exchangeRateResults.length',
       );
-
       indicesToFill.forEach((indexToFill, currentIndex) => {
-        exchangeRateResults[indexToFill] = exchangeRateResults[currentIndex];
+        if (exchangeRateCurrent === undefined) {
+          throw new Error(
+            `${this.poolIdentifier}: exchangeRateCurrent is undefined`,
+          );
+        }
+        const resultRate = exchangeRateResults[currentIndex];
+        assert(resultRate, "resultRate can't be undefined");
+        exchangeRateCurrent[indexToFill] = resultRate;
       });
     }
 

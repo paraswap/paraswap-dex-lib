@@ -321,6 +321,8 @@ const implementations: Record<ImplementationNames, get_D> = {
     makeFuncCacheable(factoryPlain2Basic),
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]:
     makeFuncCacheable(factoryPlain2Basic),
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]:
+    makeFuncCacheable(factoryPlain2Basic),
 };
 
 export default implementations;

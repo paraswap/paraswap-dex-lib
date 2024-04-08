@@ -31,6 +31,10 @@ import { validateAndCast } from '../../lib/validators';
 
 const network = 1;
 
+const AugustusAddress = {
+  1: '0xdef171fe48cf0115b1d80b88dc8eab59176fee57',
+};
+
 const getEnv = (envName: string): string => {
   if (!process.env[envName]) {
     throw new Error(`Missing ${envName}`);
@@ -269,6 +273,7 @@ const mainFirm = async () => {
       network,
       config.multicallV2Address,
       multiWrapper,
+      AugustusAddress[network],
       firmRateResp.order,
     );
 
