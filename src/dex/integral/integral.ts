@@ -59,7 +59,7 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     this.subgraphURL = IntegralConfig[dexKey][network].subgraphURL;
   }
 
-  async initializePricing(blockNumber: number) { }
+  async initializePricing(blockNumber: number) {}
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
@@ -234,7 +234,7 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     );
   }
 
-  async updatePoolState(): Promise<void> { }
+  async updatePoolState(): Promise<void> {}
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
@@ -469,14 +469,13 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       inverted,
     );
     const amountOut = (amountInMinusFee * price) / decimalsConverter;
-    if (
-      checkLimit &&
-      !this.checkLimits(
-        amountOut,
-        this.isFirst(tokenOut.address, pair) ? state.limits0 : state.limits1,
-      )
-    ) {
-      throw new Error('Out of Limits');
+    const limits = this.isFirst(tokenOut.address, pair)
+      ? state.limits0
+      : state.limits1;
+    if (checkLimit && !this.checkLimits(amountOut, limits)) {
+      throw new Error(
+        `Out of Limits - amountOut ${amountOut} not in between limits ${limits}`,
+      );
     }
     return amountOut;
   }
@@ -496,14 +495,13 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       return 0n;
     }
     const inverted = !this.isFirst(tokenIn.address, pair);
-    if (
-      checkLimit &&
-      !this.checkLimits(
-        amountOut,
-        this.isFirst(tokenOut.address, pair) ? state.limits0 : state.limits1,
-      )
-    ) {
-      throw new Error('Out of Limits');
+    const limits = this.isFirst(tokenOut.address, pair)
+      ? state.limits0
+      : state.limits1;
+    if (checkLimit && !this.checkLimits(amountOut, limits)) {
+      throw new Error(
+        `Out of Limits - amountOut ${amountOut} not in between limits ${limits}`,
+      );
     }
 
     const price = inverted ? state.invertedPrice : state.price;

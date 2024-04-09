@@ -29,9 +29,7 @@ describe('Integral E2E', () => {
 
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
-    const testData = [
-      ['USDC', 'WETH', 180, 0.1, 0.1],
-    ];
+    const testData = [['USDC', 'USDT', 51000, 51000, 14]];
 
     const sideToContractMethods = new Map([
       [SwapSide.SELL, [ContractMethod.simpleSwap]],

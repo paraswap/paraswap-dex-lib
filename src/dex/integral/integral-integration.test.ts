@@ -17,10 +17,10 @@ import IntegralRelayerABI from '../../abi/integral/relayer.json';
 import { Interface } from '@ethersproject/abi';
 
 const network = Network.MAINNET;
-const pairs = [
-  ['USDC', 'WETH'],
+const pairs = [['USDC', 'USDT']];
+const testData = [
+  0, 5100, 10200, 15300, 20400, 25500, 30600, 35700, 40800, 45900, 51000,
 ];
-const testData = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'Integral';
@@ -38,7 +38,7 @@ function initializeTokens() {
 }
 
 function initializeAmounts(token: Token, units: number[]) {
-  return units.map(unit => BigInt(unit) * BI_POWS[token.decimals - 2]);
+  return units.map(unit => BigInt(unit) * BI_POWS[token.decimals]);
 }
 
 async function checkOnChainPricing(
@@ -50,10 +50,14 @@ async function checkOnChainPricing(
   TokenB: Token,
   expectedAmounts: bigint[],
 ) {
-  const relayerInterface = new Interface(IntegralRelayerABI)
+  const relayerInterface = new Interface(IntegralRelayerABI);
   const callData = expectedAmounts.slice(1).map(amount => ({
     target: relayerAddress,
-    callData: relayerInterface.encodeFunctionData(funcName, [TokenA.address, TokenB.address, amount]),
+    callData: relayerInterface.encodeFunctionData(funcName, [
+      TokenA.address,
+      TokenB.address,
+      amount,
+    ]),
   }));
   const results = (
     await dexHelper.multiContract.methods
@@ -61,7 +65,9 @@ async function checkOnChainPricing(
       .call({}, blockNumber)
   ).returnData;
 
-  const expectedPrices = [0n].concat(results.map((result: string) => BigInt(result)))
+  const expectedPrices = [0n].concat(
+    results.map((result: string) => BigInt(result)),
+  );
   expect(prices).toEqual(expectedPrices);
 }
 
