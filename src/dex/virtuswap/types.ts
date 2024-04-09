@@ -1,6 +1,9 @@
 import { Address } from '../../types';
+import { AsyncOrSync } from 'ts-essentials';
 
 export type PoolState = {
+  token0: Address;
+  token1: Address;
   pairBalance0: bigint;
   pairBalance1: bigint;
   fee: number;
@@ -11,6 +14,15 @@ export type PoolState = {
   maxReserveRatio: bigint;
   reserves: Record<Address, { balance: bigint; baseValue: bigint }>;
 };
+
+export type FactoryState = {
+  pools: Address[];
+};
+
+export type OnPoolCreatedCallback = (
+  pool: Address,
+  blockNumber: number,
+) => AsyncOrSync<void>;
 
 export type VirtuSwapData = {
   // TODO: VirtuSwapData is the dex data that is

@@ -21,6 +21,8 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
   static readonly RESERVE_RATIO_FACTOR = VirtuSwapEventPool.BASE_FACTOR * 100n;
   static readonly vPairInterface = new Interface(vPairABI);
   static readonly contractStateFunctionsParsers = [
+    abiCoderParsers.Address.create('token0', 'address'),
+    abiCoderParsers.Address.create('token1', 'address'),
     abiCoderParsers.BigInt.create('pairBalance0', 'uint112'),
     abiCoderParsers.BigInt.create('pairBalance1', 'uint112'),
     abiCoderParsers.Int.create('fee', 'uint16'),
@@ -39,8 +41,6 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
     'reserves',
     'uint256',
   );
-  protected token0Address: Address;
-  protected token1Address: Address;
 
   handlers: {
     [event: string]: (
@@ -61,8 +61,6 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     logger: Logger,
     protected isTimestampBased: boolean,
-    _token0Address: Address,
-    _token1Address: Address,
     protected poolAddress: Address,
     protected vPairIface: Interface = VirtuSwapEventPool.vPairInterface,
   ) {
@@ -72,9 +70,6 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
       dexHelper,
       logger,
     );
-
-    this.token0Address = normalizeAddress(_token0Address);
-    this.token1Address = normalizeAddress(_token1Address);
 
     this.logDecoder = (log: Log) => this.vPairIface.parseLog(log);
     this.addressesSubscribed = [poolAddress];
@@ -218,7 +213,7 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
       )
     ).filter(
       (address: Address) =>
-        address !== this.token0Address && address !== this.token1Address,
+        address !== initialState.token0 && address !== initialState.token1,
     );
 
     // Get reserves info for each token in allow list
@@ -352,7 +347,7 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
       .map((token: any) => normalizeAddress(stringify(token)))
       .filter(
         (address: Address) =>
-          address !== this.token0Address && address !== this.token1Address,
+          address !== state.token0 && address !== state.token1,
       );
 
     // we need to fetch reserves for new tokens and recalculate reservesBaseValueSum
