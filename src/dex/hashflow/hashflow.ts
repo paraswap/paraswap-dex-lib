@@ -711,7 +711,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         },
         { deadline: minDeadline },
       ];
-    } catch (e: any) {
+    } catch (e) {
       if (
         e instanceof Error &&
         e.message.includes('User is restricted from using Hashflow')
