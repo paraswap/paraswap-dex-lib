@@ -2,8 +2,9 @@
 import { Provider } from '@ethersproject/providers';
 import { Address } from '@paraswap/core';
 import axios from 'axios';
-import { TxObject } from '../src/types';
+import { Erc20BalanceCallData, TxObject } from '../src/types';
 import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
+import { fixHexStringForTenderly } from './utils';
 
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
 const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID;
@@ -18,6 +19,11 @@ export type SimulationResult = {
   transaction?: any;
 };
 
+type FundingResult = {
+  success: boolean;
+  url?: string;
+};
+
 export interface TransactionSimulator {
   forkId: string;
   setup(): Promise<void>;
@@ -26,6 +32,10 @@ export interface TransactionSimulator {
     params: TxObject,
     stateOverrides?: StateOverrides,
   ): Promise<SimulationResult>;
+
+  fund(params: Erc20BalanceCallData): Promise<FundingResult>;
+
+  addBalance(address: Address, amount: string): Promise<FundingResult>;
 }
 
 export class EstimateGasSimulation implements TransactionSimulator {
@@ -34,6 +44,14 @@ export class EstimateGasSimulation implements TransactionSimulator {
   constructor(private provider: Provider) {}
 
   async setup() {}
+
+  async fund(): Promise<FundingResult> {
+    return { success: true };
+  }
+
+  async addBalance(): Promise<FundingResult> {
+    return { success: true };
+  }
 
   async simulate(
     params: TxObject,
@@ -166,6 +184,106 @@ export class TenderlySimulation implements TransactionSimulator {
       console.error(`TenderlySimulation_simulate:`, e);
       return {
         success: false,
+      };
+    }
+  }
+
+  async fund(params: Erc20BalanceCallData) {
+    try {
+      const { data } = await axios.post(
+        `https://rpc.tenderly.co/fork/${this.forkId}`,
+        {
+          method: 'tenderly_setErc20Balance',
+          params: [
+            params.contractAddress,
+            params.accountAddress,
+            fixHexStringForTenderly(params.balance),
+          ],
+          id: this.network.toString(),
+          jsonrpc: '2.0',
+        },
+        { headers: { 'Content-Type': 'application/json' } },
+      );
+
+      let res = await axios.get(
+        `https://api.tenderly.co/api/v1/account/paraswap/project/paraswap/fork/${this.forkId}/transactions`,
+        {
+          headers: { 'x-access-key': TENDERLY_TOKEN! },
+          params: {
+            page: 1,
+            perPage: 1,
+            exclude_internal: false,
+          },
+        },
+      );
+      this.lastTx = res.data.fork_transactions[0].id;
+
+      if ('error' in data) {
+        console.log(
+          'fund error',
+          data.error,
+          params,
+          `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${this.lastTx}`,
+        );
+        return {
+          success: false,
+        };
+      }
+      // console.log(
+      //   'Fund Success',
+      //   `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${this.lastTx}`,
+      // );
+      return { success: true };
+    } catch (err) {
+      console.error(`TenderlySimulation_fund:`, err);
+      return { success: false };
+    }
+  }
+
+  async addBalance(address: string, amount: string): Promise<any> {
+    try {
+      const { data } = await axios.post(
+        `https://rpc.tenderly.co/fork/${this.forkId}`,
+        {
+          method: 'tenderly_addBalance',
+          params: [[address], fixHexStringForTenderly(amount)],
+          id: this.network.toString(),
+          jsonrpc: '2.0',
+        },
+        { headers: { 'Content-Type': 'application/json' } },
+      );
+
+      if ('error' in data) {
+        console.error('addBalance error', data.error);
+        return {
+          success: false,
+        };
+      }
+
+      let res = await axios.get(
+        `https://api.tenderly.co/api/v1/account/paraswap/project/paraswap/fork/${this.forkId}/transactions`,
+        {
+          headers: { 'x-access-key': TENDERLY_TOKEN! },
+          params: {
+            page: 1,
+            perPage: 1,
+            exclude_internal: false,
+          },
+        },
+      );
+      this.lastTx = res.data.fork_transactions[0].id;
+      console.log(
+        'Add Balance Success',
+        `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${this.lastTx}`,
+      );
+      return {
+        success: true,
+      };
+    } catch (err) {
+      console.error(`TenderlySimulation_addBalance:`, err);
+      return {
+        success: false,
+        url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${this.lastTx}`,
       };
     }
   }

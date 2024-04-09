@@ -125,3 +125,11 @@ export const generateDeployBytecode = (
 
   return deployedBytecode.toString();
 };
+
+export const fixHexStringForTenderly = (hexString: string): string => {
+  if (hexString[2] === '0') {
+    hexString = '0x' + hexString.substring(3);
+  }
+
+  return hexString;
+};
