@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 export const HASHFLOW_BLACKLIST_TTL_S = 60 * 60 * 24 * 7; // 7 days
 
-export const HASHFLOW_MM_RESTRICT_TTL_S = 60 * 60;
+export const HASHFLOW_MM_RESTRICT_TTL_S = 60 * 5; // 5 minutes
 
 export const HASHFLOW_PRICES_CACHES_TTL_S = 3;
 
