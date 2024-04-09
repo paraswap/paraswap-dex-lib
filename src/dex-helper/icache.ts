@@ -46,6 +46,8 @@ export interface ICache {
 
   zremrangebyscore(key: string, min: number, max: number): Promise<number>;
 
+  zrem(key: string, membersKeys: string[]): Promise<number>;
+
   zscore(setKey: string, key: string): Promise<string | null>;
 
   sismember(setKey: string, key: string): Promise<boolean>;

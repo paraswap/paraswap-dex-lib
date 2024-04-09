@@ -33,6 +33,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
       deployer: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
       version: 'v1.1',
+      forceManualStateGenerate: true,
     },
   },
   ZyberSwapV3: {
@@ -82,6 +83,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x6dd3fb9653b10e806650f107c3b5a0a6ff974f65',
       version: 'v1.9',
+      forceRPC: true,
     },
   },
 };
@@ -96,7 +98,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.BUY]: [{ name: 'PolygonZkEvmBuyAdapter', index: 1 }],
   },
   [Network.ARBITRUM]: {
-    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 3 }],
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 7 }],
     [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 2 }],
   },
   [Network.OPTIMISM]: {

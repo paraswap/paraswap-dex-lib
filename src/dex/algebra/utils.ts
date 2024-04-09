@@ -1,11 +1,12 @@
-import { BytesLike, ethers } from 'ethers';
+import { BigNumber, BytesLike, ethers } from 'ethers';
 import { assert } from 'ts-essentials';
 import { extractSuccessAndValue } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
 import {
-  DecodedGlobalStateV1_9,
+  DecodedGlobalStateV1_1,
   DecodedStateMultiCallResultWithRelativeBitmapsV1_1,
   DecodedStateMultiCallResultWithRelativeBitmapsV1_9,
+  TickInfoWithBigNumber,
 } from './types';
 
 export function decodeStateMultiCallResultWithRelativeBitmapsV1_1(
@@ -133,4 +134,84 @@ export function decodeStateMultiCallResultWithRelativeBitmapsV1_9(
   // This conversion is not precise, because when we decode, we have more values
   // But I typed only the ones that are used later
   return decoded as DecodedStateMultiCallResultWithRelativeBitmapsV1_9;
+}
+
+export function decodeGlobalStateV1_1(
+  result: MultiResult<BytesLike> | BytesLike,
+): DecodedGlobalStateV1_1 {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  assert(
+    isSuccess && toDecode !== '0x',
+    `decodeGlobalStateV1_1 failed to get decodable result: ${result}`,
+  );
+
+  const results: DecodedGlobalStateV1_1 = {
+    price: BigNumber.from(0),
+    tick: 0,
+    fee: 0,
+    communityFeeToken0: 0,
+    communityFeeToken1: 0,
+  };
+
+  [
+    results.price,
+    results.tick,
+    results.fee,
+    ,
+    results.communityFeeToken0,
+    results.communityFeeToken1,
+  ] = ethers.utils.defaultAbiCoder.decode(
+    [`uint160`, `int24`, `uint16`, `uint16`, `uint8`, `uint8`, `bool`],
+    toDecode,
+  );
+  // This conversion is not precise, because when we decode, we have more values
+  // But used later
+  return results;
+}
+
+export function decodeTicksV1_1(
+  result: MultiResult<BytesLike> | BytesLike,
+): TickInfoWithBigNumber {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  assert(
+    isSuccess && toDecode !== '0x',
+    `decodeGlobalStateV1_1 failed to get decodable result: ${result}`,
+  );
+
+  const results: TickInfoWithBigNumber = {
+    liquidityNet: BigNumber.from(0),
+    liquidityGross: BigNumber.from(0),
+    secondsOutside: 0,
+    secondsPerLiquidityOutsideX128: BigNumber.from(0),
+    tickCumulativeOutside: BigNumber.from(0),
+    initialized: false,
+  };
+
+  [
+    results.liquidityGross,
+    results.liquidityNet,
+    ,
+    ,
+    results.tickCumulativeOutside,
+    results.secondsPerLiquidityOutsideX128,
+    results.secondsOutside,
+    results.initialized,
+  ] = ethers.utils.defaultAbiCoder.decode(
+    [
+      `uint128`,
+      `int128`,
+      `uint256`,
+      `uint256`,
+      `int256`,
+      `uint160`,
+      `uint32`,
+      `bool`,
+    ],
+    toDecode,
+  );
+  // This conversion is not precise, because when we decode, we have more values
+  // But used later
+  return results;
 }

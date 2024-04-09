@@ -189,6 +189,7 @@ const implementations: Record<ImplementationNames, get_y> = {
   [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: customPlain2CoinFrax,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain2CoinFrax,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain2CoinFrax,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customPlain2CoinFrax,
 };
 
 export default implementations;
