@@ -714,7 +714,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     } catch (e: any) {
       if (
         e instanceof Error &&
-        e.message.endsWith('User is restricted from using Hashflow')
+        e.message.includes('User is restricted from using Hashflow')
       ) {
         this.logger.warn(
           `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
