@@ -714,7 +714,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     } catch (e) {
       if (
         e instanceof Error &&
-        e.message.includes('User is restricted from using Hashflow')
+        e.message?.toLowerCase().includes('user is restricted')
       ) {
         this.logger.warn(
           `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
@@ -726,7 +726,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
           );
         } else {
-          this.logger.error(
+          this.logger.warn(
             `${this.dexKey}-${this.network} MM unknown preprocess transaction error: ${e}`,
           );
           await this.restrictMM(mm);
