@@ -243,10 +243,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   public allPools: SubgraphPoolBase[] = [];
   vaultDecoder: (log: Log) => any;
 
-  buySupportedPoolTypes: BalancerPoolTypes[] = [
+  buySupportedPoolTypes: Set<BalancerPoolTypes> = new Set([
     BalancerPoolTypes.Weighted,
     BalancerPoolTypes.GyroE,
-  ];
+  ]);
 
   eventSupportedPoolTypes: BalancerPoolTypes[] = [
     BalancerPoolTypes.Stable,
@@ -387,6 +387,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       return allPools;
     }
 
+    this.logger.info(
+      `Fetching ${this.parentName}_${this.network} Pools from subgraph`,
+    );
+
     const variables = {
       count: MAX_POOL_CNT,
     };
@@ -486,8 +490,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
 
     if (
-      !this.buySupportedPoolTypes.includes(subgraphPool.poolType) &&
-      side === SwapSide.BUY
+      side === SwapSide.BUY &&
+      !this.buySupportedPoolTypes.has(subgraphPool.poolType)
     ) {
       return null;
     }
