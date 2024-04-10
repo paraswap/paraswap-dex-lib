@@ -407,7 +407,7 @@ export class SynthetixState {
       Address,
       bigint,
       bigint,
-      ...Address[]
+      ...Address[],
     ];
 
     const [
@@ -437,7 +437,7 @@ export class SynthetixState {
       Address,
       Address,
       bigint,
-      ...string[]
+      ...string[],
     ];
 
     _require(
