@@ -39,7 +39,6 @@ export class SimpleExchange {
   private cache: ICache;
 
   protected network: number;
-  protected dexmapKey: string;
 
   readonly cacheStateKey: string;
   private readonly cacheApprovesKey: string;
@@ -57,9 +56,6 @@ export class SimpleExchange {
     this.augustusInterface = new Interface(augustusABI);
     this.provider = dexHelper.web3Provider;
     this.cache = dexHelper.cache;
-
-    this.dexmapKey =
-      `${CACHE_PREFIX}_${this.network}_${this.dexKey}_poolconfigs`.toLowerCase();
 
     this.cacheStateKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();
