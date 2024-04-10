@@ -124,7 +124,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     await super.initialize(blockNumber, options);
   }
 
-  protected getValueToPushIntoNewPoolsChannel() {
+  protected getPoolIdentifierData() {
     return {
       token0: this.token0,
       token1: this.token1,

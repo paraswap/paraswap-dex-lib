@@ -67,7 +67,7 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const MessagesHashKey = `${CACHE_PREFIX}_messages`;
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
 
 const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
@@ -332,12 +332,12 @@ export class PancakeswapV3
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
     const _pairs = await this.dexHelper.cache.hget(
-      MessagesHashKey,
+      PoolsRegistryHashKey,
       `${this.cacheStateKey}_${poolKey}`,
     );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${MessagesHashKey} ${this.cacheStateKey}_${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }

@@ -45,6 +45,10 @@ export class AlgebraFactory extends StatefulEventSubscriber<FactoryState> {
     this.handlers['Pool'] = this.handleNewPool.bind(this);
   }
 
+  protected getPoolIdentifierData() {
+    return {};
+  }
+
   generateState(): FactoryState {
     return {};
   }

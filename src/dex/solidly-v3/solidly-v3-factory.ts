@@ -47,6 +47,10 @@ export class SolidlyV3Factory extends StatefulEventSubscriber<FactoryState> {
     this.handlers['PoolCreated'] = this.handleNewPool.bind(this);
   }
 
+  protected getPoolIdentifierData() {
+    return {};
+  }
+
   generateState(): FactoryState {
     return {};
   }

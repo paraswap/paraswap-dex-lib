@@ -51,6 +51,10 @@ export class PancakeswapV3Factory extends StatefulEventSubscriber<FactoryState> 
     return {};
   }
 
+  protected getPoolIdentifierData() {
+    return {};
+  }
+
   protected async processLog(
     _: DeepReadonly<FactoryState>,
     log: Readonly<Log>,

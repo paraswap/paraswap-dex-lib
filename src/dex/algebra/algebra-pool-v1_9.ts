@@ -106,7 +106,7 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
     await super.initialize(blockNumber, options);
   }
 
-  protected getValueToPushIntoNewPoolsChannel() {
+  protected getPoolIdentifierData() {
     return {
       token0: this.token0,
       token1: this.token1,

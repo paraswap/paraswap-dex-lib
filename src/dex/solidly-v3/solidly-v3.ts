@@ -56,7 +56,7 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const MessagesHashKey = `${CACHE_PREFIX}_messages`;
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
 
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
@@ -335,12 +335,12 @@ export class SolidlyV3
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
     const _pairs = await this.dexHelper.cache.hget(
-      MessagesHashKey,
+      PoolsRegistryHashKey,
       `${this.cacheStateKey}_${poolKey}`,
     );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${MessagesHashKey} ${this.cacheStateKey}_${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }
