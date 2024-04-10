@@ -14,12 +14,7 @@ import {
   PreprocessTransactionOptions,
   ExchangeTxInfo,
 } from '../../types';
-import {
-  SwapSide,
-  Network,
-  CACHE_PREFIX,
-  INIT_SERVICE_CACHE_PREFIX,
-} from '../../constants';
+import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -61,7 +56,7 @@ type PoolPairsInfo = {
   fee: string;
 };
 
-const MessagesHashKey = `${INIT_SERVICE_CACHE_PREFIX}_messages`;
+const MessagesHashKey = `${CACHE_PREFIX}_messages`;
 
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
