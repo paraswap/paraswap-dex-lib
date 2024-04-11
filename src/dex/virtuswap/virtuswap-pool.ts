@@ -14,11 +14,10 @@ import { IDexHelper } from '../../dex-helper';
 import { PoolState } from './types';
 import vPairABI from '../../abi/virtuswap/vPair.json';
 import { abiCoderParsers } from './utils';
+import { RESERVE_RATIO_FACTOR } from './constants';
 import { BlockHeader } from 'web3-eth';
 
 export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
-  static readonly BASE_FACTOR = 1000n;
-  static readonly RESERVE_RATIO_FACTOR = VirtuSwapEventPool.BASE_FACTOR * 100n;
   static readonly vPairInterface = new Interface(vPairABI);
   static readonly contractStateFunctionsParsers = [
     abiCoderParsers.Address.create('token0', 'address'),
@@ -292,7 +291,7 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
 
       // calculate rRatio from local state
       const rRatioRestored =
-        (reservesBaseValueSum * VirtuSwapEventPool.RESERVE_RATIO_FACTOR) /
+        (reservesBaseValueSum * RESERVE_RATIO_FACTOR) /
         (state.pairBalance0 << 1n);
 
       // rRatios must be the same if the pool state is correct

@@ -15,6 +15,24 @@ export type PoolState = {
   reserves: Record<Address, { balance: bigint; baseValue: bigint }>;
 };
 
+export type VirtualPoolTokens = {
+  jk0: Address;
+  jk1: Address;
+  ik0: Address;
+  ik1: Address;
+};
+
+export type VirtualPoolState = {
+  fee: number;
+  token0: Address;
+  token1: Address;
+  balance0: bigint;
+  balance1: bigint;
+  commonToken: Address;
+  jkPair: PoolState;
+  ikPair: PoolState;
+};
+
 export type FactoryState = {
   pools: Address[];
 };
