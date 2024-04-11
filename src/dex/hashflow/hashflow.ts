@@ -33,11 +33,13 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { TooStrictSlippageCheckError } from '../generic-rfq/types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, HashflowConfig } from './config';
 import {
+  CONSECUTIVE_ERROR_THRESHOLD,
+  ERROR_CODE_TO_RESTRICT_THRESHOLD,
   HASHFLOW_API_CLIENT_NAME,
   HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
   HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
@@ -48,9 +50,12 @@ import {
   HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
   HASHFLOW_MM_RESTRICT_TTL_S,
   HASHFLOW_PRICES_CACHES_TTL_S,
+  UNKNOWN_ERROR_CODE,
 } from './constants';
 import { RateFetcher } from './rate-fetcher';
 import {
+  CacheErrorCodesData,
+  ErrorCode,
   HashflowData,
   PriceLevel,
   RfqError,
@@ -69,6 +74,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   private hashFlowAuthToken: string;
   private disabledMMs: Set<string>;
   private runtimeMMsRestrictHashMapKey: string;
+  private runtimeMMsRestrictHashMapErrorCodesKey: string;
 
   private pricesCacheKey: string;
   private marketMakersCacheKey: string;
@@ -108,6 +114,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
     this.runtimeMMsRestrictHashMapKey =
       `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
+    this.runtimeMMsRestrictHashMapErrorCodesKey =
+      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms_error_codes`.toLowerCase();
 
     this.rateFetcher = new RateFetcher(
       this.dexHelper,
@@ -595,7 +603,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           normalizedDestToken.address,
         )}: ${JSON.stringify(rfq)}`;
         this.logger.warn(message);
-        throw new RfqError(message);
+        // TODO: Fix types
+        throw new RfqError(message, `${rfq?.error?.code}` as ErrorCode);
       } else if (!rfq.quotes[0].quoteData) {
         const message = `${this.dexKey}-${
           this.network
@@ -729,7 +738,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           this.logger.warn(
             `${this.dexKey}-${this.network} MM unknown preprocess transaction error: ${e}`,
           );
-          await this.restrictMM(mm);
+          const code = e instanceof RfqError ? e.code : UNKNOWN_ERROR_CODE;
+          await this.restrictMM(mm, code);
         }
       }
 
@@ -737,24 +747,63 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     }
   }
 
-  async restrictMM(mm: string): Promise<void> {
-    this.logger.warn(
-      `${this.dexKey}-${this.network}: ${mm} was restricted for ${HASHFLOW_MM_RESTRICT_TTL_S} sec. due to fails`,
-    );
-
-    // We use timestamp for creation date to later discern if it already expired or not
-    await this.dexHelper.cache.hset(
-      this.runtimeMMsRestrictHashMapKey,
+  async restrictMM(mm: string, errorCode: ErrorCode): Promise<void> {
+    const errorCodesRaw = await this.dexHelper.cache.hget(
+      this.runtimeMMsRestrictHashMapErrorCodesKey,
       mm,
-      Date.now().toString(),
     );
 
-    // Expiry cache because it has levels for blacklisted MM
-    this.dexHelper.cache.del(this.dexKey, this.network, 'levels').catch(e => {
-      this.logger.error(
-        `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
+    const errorCodes: CacheErrorCodesData = Utils.Parse(errorCodesRaw);
+
+    const error = errorCodes[errorCode];
+
+    if (!error) {
+      this.logger.warn(
+        `First encounter of ${errorCode} for ${mm}, setting up counter`,
       );
-    });
+      const data: CacheErrorCodesData = {
+        ...errorCodes,
+        [errorCode]: {
+          count: 1,
+          addedDatetimeMS: Date.now(),
+        },
+      };
+      this.dexHelper.cache.hset(
+        this.runtimeMMsRestrictHashMapErrorCodesKey,
+        mm,
+        Utils.Serialize(data),
+      );
+      return;
+    } else {
+      // const restrictTTLMs = ERROR_CODE_TO_RESTRICT_THRESHOLD[errorCode];
+      // if (error.addedDatetimeMS) {
+      // }
+
+      if (error.count + 1 > CONSECUTIVE_ERROR_THRESHOLD) {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: ${mm} was restricted for ${HASHFLOW_MM_RESTRICT_TTL_S} sec. due to fails`,
+        );
+
+        // We use timestamp for creation date to later discern if it already expired or not
+        await this.dexHelper.cache.hset(
+          this.runtimeMMsRestrictHashMapKey,
+          mm,
+          Date.now().toString(),
+        );
+
+        // Expiry cache because it has levels for blacklisted MM
+        this.dexHelper.cache
+          .del(this.dexKey, this.network, 'levels')
+          .catch(e => {
+            this.logger.error(
+              `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
+            );
+          });
+      }
+      // if (lastError)
+      // error.lastError = Date.now();
+      // errorCodes[errorCode] = error;
+    }
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<HashflowData>): number | number[] {

@@ -1,5 +1,9 @@
 import { Chain, QuoteData } from '@hashflow/taker-js/dist/types/common';
 import { RequestHeaders } from '../../dex-helper';
+import {
+  ERROR_CODE_TO_RESTRICT_THRESHOLD,
+  UNKNOWN_ERROR_CODE,
+} from './constants';
 
 export type HashflowData = {
   mm: string;
@@ -16,7 +20,13 @@ export interface PriceLevel {
   p: string;
 }
 
-export class RfqError extends Error {}
+export class RfqError extends Error {
+  code: ErrorCode;
+  constructor(message: string, code: ErrorCode = UNKNOWN_ERROR_CODE) {
+    super(message);
+    this.code = code;
+  }
+}
 
 export enum RFQType {
   RFQT = 0,
@@ -61,5 +71,14 @@ export type HashflowRateFetcherConfig = {
     marketMakersCacheKey: string;
     pricesCacheTTLSecs: number;
     marketMakersCacheTTLSecs: number;
+  };
+};
+
+export type ErrorCode = keyof typeof ERROR_CODE_TO_RESTRICT_THRESHOLD;
+
+export type CacheErrorCodesData = {
+  [code in ErrorCode]: {
+    addedDatetimeMS: number;
+    count: number;
   };
 };
