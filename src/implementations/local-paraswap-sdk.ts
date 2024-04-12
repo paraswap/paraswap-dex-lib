@@ -19,6 +19,7 @@ import { SwapSide, NULL_ADDRESS, ContractMethod } from '../constants';
 import { LimitOrderExchange } from '../dex/limit-order-exchange';
 import { v4 as uuid } from 'uuid';
 import { DirectContractMethods } from '@paraswap/core/build/constants';
+import { ParaSwapVersion } from '@paraswap/core';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -177,6 +178,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       gasCost: '0',
       others: [],
       side,
+      version: ParaSwapVersion.V5,
       tokenTransferProxy: this.dexHelper.config.data.tokenTransferProxyAddress,
       contractAddress: this.dexHelper.config.data.augustusAddress,
     };
