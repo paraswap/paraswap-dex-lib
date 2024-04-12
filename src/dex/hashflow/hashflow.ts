@@ -39,6 +39,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { Adapters, HashflowConfig } from './config';
 import {
   CONSECUTIVE_ERROR_THRESHOLD,
+  CONSECUTIVE_ERROR_TIMESPAN_MS,
   ERROR_CODE_TO_RESTRICT_THRESHOLD,
   HASHFLOW_API_CLIENT_NAME,
   HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
@@ -779,8 +780,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         ERROR_CODE_TO_RESTRICT_THRESHOLD[errorCode] ||
         ERROR_CODE_TO_RESTRICT_THRESHOLD[UNKNOWN_ERROR_CODE];
 
-      if (error.addedDatetimeMS + restrictTTLMs > Date.now()) {
-        // Clear counter
+      if (error.addedDatetimeMS + CONSECUTIVE_ERROR_TIMESPAN_MS < Date.now()) {
+        // Clear counter, this error code appeared after CONSECUTIVE_ERROR_TIMESPAN_MS
         const data: CacheErrorCodesData = {
           ...errorCodes,
           [errorCode]: {
@@ -788,11 +789,21 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             addedDatetimeMS: Date.now(),
           },
         };
+        this.dexHelper.cache.hset(
+          this.runtimeMMsRestrictHashMapErrorCodesKey,
+          mm,
+          Utils.Serialize(data),
+        );
+        return;
       }
 
       if (error.count + 1 > CONSECUTIVE_ERROR_THRESHOLD) {
         this.logger.warn(
-          `${this.dexKey}-${this.network}: ${mm} was restricted for ${HASHFLOW_MM_RESTRICT_TTL_S} sec. due to fails`,
+          `${this.dexKey}-${this.network}: ${mm} was restricted for ${
+            restrictTTLMs / 1000
+          } sec. due to ${errorCode} happening ${error.count + 1} within last ${
+            CONSECUTIVE_ERROR_TIMESPAN_MS / 1000 / 60
+          } minutes`,
         );
 
         // We use timestamp for creation date to later discern if it already expired or not
@@ -800,6 +811,20 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           this.runtimeMMsRestrictHashMapKey,
           mm,
           Date.now().toString(),
+        );
+
+        // resetting error count
+        const data: CacheErrorCodesData = {
+          ...errorCodes,
+          [errorCode]: {
+            count: 1,
+            addedDatetimeMS: Date.now(),
+          },
+        };
+        this.dexHelper.cache.hset(
+          this.runtimeMMsRestrictHashMapErrorCodesKey,
+          mm,
+          Utils.Serialize(data),
         );
 
         // Expiry cache because it has levels for blacklisted MM
@@ -810,6 +835,24 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
               `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
             );
           });
+        return;
+      } else {
+        const newCount = +error.count + 1;
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: ${mm} Error with code: ${errorCode} happenned ${newCount} (below limit: ${CONSECUTIVE_ERROR_THRESHOLD}), updating counter`,
+        );
+        const data: CacheErrorCodesData = {
+          ...errorCodes,
+          [errorCode]: {
+            count: newCount,
+            addedDatetimeMS: error.addedDatetimeMS, // initial date stays
+          },
+        };
+        this.dexHelper.cache.hset(
+          this.runtimeMMsRestrictHashMapErrorCodesKey,
+          mm,
+          Utils.Serialize(data),
+        );
       }
     }
   }

@@ -47,5 +47,6 @@ export const ERROR_CODE_TO_RESTRICT_THRESHOLD = {
   [UNKNOWN_ERROR_CODE]: RESTRICT_UNKNOWN_TTL_MS, // unknown error
 };
 
+// not actually consecutive, meaning is if the error appeared > CONSECUTIVE_ERROR_THRESHOLD times within CONSECUTIVE_ERROR_TIMESPAN_MS ms -> restrict mm for ERROR_CODE_TO_RESTRICT_THRESHOLD[errorCode] ms
 export const CONSECUTIVE_ERROR_TIMESPAN_MS = 60 * 60 * 1000; // 1 hour
 export const CONSECUTIVE_ERROR_THRESHOLD = 5;
