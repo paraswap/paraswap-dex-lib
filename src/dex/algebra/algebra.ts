@@ -57,6 +57,8 @@ type PoolPairsInfo = {
   token1: Address;
 };
 
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
+
 // const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 // const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const ALGEBRA_EFFICIENCY_FACTOR = 3;
@@ -271,15 +273,6 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
         return null;
       }
-
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-        }),
-      );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -374,10 +367,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(
+      PoolsRegistryHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }

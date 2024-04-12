@@ -106,6 +106,13 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
     await super.initialize(blockNumber, options);
   }
 
+  protected getPoolIdentifierData() {
+    return {
+      token0: this.token0,
+      token1: this.token1,
+    };
+  }
+
   protected async processBlockLogs(
     state: DeepReadonly<PoolState_v1_9>,
     logs: Readonly<Log>[],

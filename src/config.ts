@@ -291,7 +291,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     adapterAddresses: {
       FantomAdapter01: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
-      FantomBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
+      FantomAdapter02: '0x248009f6F78b5AcD5EA2fc86d56b77A7AeEe2eFc',
+      FantomBuyAdapter: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
     },
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',

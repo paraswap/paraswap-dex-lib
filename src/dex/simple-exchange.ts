@@ -47,7 +47,6 @@ export class SimpleExchange {
   protected augustusV6Interface: Interface;
 
   protected network: number;
-  protected dexmapKey: string;
 
   readonly cacheStateKey: string;
 
@@ -64,9 +63,6 @@ export class SimpleExchange {
     this.augustusV6Address = dexHelper.config.data.augustusV6Address;
     this.augustusInterface = new Interface(augustusABI);
     this.augustusV6Interface = new Interface(augustusV6ABI);
-
-    this.dexmapKey =
-      `${CACHE_PREFIX}_${this.network}_${this.dexKey}_poolconfigs`.toLowerCase();
 
     this.cacheStateKey =
       `${CACHE_PREFIX}_${this.network}_${this.dexKey}_states`.toLowerCase();

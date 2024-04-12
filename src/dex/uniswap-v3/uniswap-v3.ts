@@ -78,6 +78,8 @@ type PoolPairsInfo = {
   fee: string;
 };
 
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
+
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
@@ -287,16 +289,6 @@ export class UniswapV3
           null;
         return null;
       }
-
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-          fee: fee.toString(),
-        }),
-      );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -380,10 +372,13 @@ export class UniswapV3
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(
+      PoolsRegistryHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }
@@ -693,20 +688,6 @@ export class UniswapV3
       const [token0] = this._sortTokens(_srcAddress, _destAddress);
 
       const zeroForOne = token0 === _srcAddress ? true : false;
-
-      this.logger.log(
-        'UNI_POOLS',
-        JSON.stringify(
-          poolsToUse.poolWithState.map(el => ({
-            address: el.poolAddress,
-            token0: el.token0,
-            token1: el.token1,
-            fee: el.feeCode,
-          })),
-          null,
-          2,
-        ),
-      );
 
       const result = await Promise.all(
         poolsToUse.poolWithState.map(async (pool, i) => {
