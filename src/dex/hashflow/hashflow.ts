@@ -775,9 +775,20 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       );
       return;
     } else {
-      // const restrictTTLMs = ERROR_CODE_TO_RESTRICT_THRESHOLD[errorCode];
-      // if (error.addedDatetimeMS) {
-      // }
+      const restrictTTLMs =
+        ERROR_CODE_TO_RESTRICT_THRESHOLD[errorCode] ||
+        ERROR_CODE_TO_RESTRICT_THRESHOLD[UNKNOWN_ERROR_CODE];
+
+      if (error.addedDatetimeMS + restrictTTLMs > Date.now()) {
+        // Clear counter
+        const data: CacheErrorCodesData = {
+          ...errorCodes,
+          [errorCode]: {
+            count: 1,
+            addedDatetimeMS: Date.now(),
+          },
+        };
+      }
 
       if (error.count + 1 > CONSECUTIVE_ERROR_THRESHOLD) {
         this.logger.warn(
@@ -800,9 +811,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             );
           });
       }
-      // if (lastError)
-      // error.lastError = Date.now();
-      // errorCodes[errorCode] = error;
     }
   }
 
