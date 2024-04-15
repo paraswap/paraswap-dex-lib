@@ -815,15 +815,15 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           )} minutes`,
         );
 
-        // date added is checked against HASHFLOW_MM_RESTRICT_TTL_S, as a hack we set a date so that it's checked against specific ttls based on error type to not change & increase time for parsing restricted mms during pricing request
+        // date added is checked against HASHFLOW_MM_RESTRICT_TTL_S, as a hack we set a date so that it's checked against specific ttls based on error type to not change parsing logic for mms
         // Example: ttl for a particular error is 20 minutes (< default 60 minutes)
         //
-        // Meaning we need to set dateAdded for restrict hash as Date.now() + 40 minutes (diff between default restrict ttl=1h and particular error restrict ttl = 20 minutes). So the dateAdded is in the future, and after 20 minutes in pricing we'll clear that restriction
+        // Meaning we need to set `addedDatetimeMS` for restrict hash as Date.now() + 40 minutes (diff between default restrict ttl=1h and particular error restrict ttl = 20 minutes). So the `addedDatetimeMS` is in the future, and after 20 minutes mm will not be considered as restricted
         //
         //
         // Example 2: ttl for a particular error is 80 minutes (> default 60 minutes)
         //
-        // Meaning we need to set dateAdded for restrict hash as Date.now() - 20 minutes, then after an hour (default) it'll still be 20 minutes left for restriction to be cleared
+        // Meaning we need to set `addedDatetimeMS` for restrict hash as Date.now() - 20 minutes, then after an hour (default) it'll still be 20 minutes left for restriction to be cleared
 
         const defaultRestrictTTLMS = Math.floor(
           HASHFLOW_MM_RESTRICT_TTL_S / 1000,
