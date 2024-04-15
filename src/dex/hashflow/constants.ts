@@ -21,7 +21,7 @@ export const HASHFLOW_GAS_COST = 100_000;
 export const HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION =
   new BigNumber('0.001');
 
-export const RESTRICT_79_TTL_MS = 60 * 5 * 1000; // 10 mins
+export const RESTRICT_79_TTL_MS = 60 * 10 * 1000; // 10 mins
 export const RESTRICT_SLIPPAGE_TTL_MS = 60 * 5 * 1000; // 5 mins
 export const RESTRICT_84_TTL_MS = 60 * 10 * 1000; // 10 mins
 export const RESTRICT_76_TTL_MS = 60 * 5 * 1000; // 5 mins
@@ -30,7 +30,7 @@ export const RESTRICT_42_TTL_MS = 60 * 5 * 1000; // 5 mins
 export const RESTRICT_85_TTL_MS = 60 * 5 * 1000; // 5 mins
 export const RESTRICT_SOCKET_HANG_UP_TTL_MS = 60 * 5 * 1000; // 5 mins
 export const RESTRICT_74_TTL_MS = 60 * 5 * 1000; // 5 mins
-export const RESTRICT_UNKNOWN_TTL_MS = 60 * 5 * 1000; // 30 mins
+export const RESTRICT_UNKNOWN_TTL_MS = 60 * 30 * 1000; // 30 mins
 export const RESTRICT_MISSING_QUOTE_DATA_TTL_MS = 60 * 5 * 1000; // 5 mins
 export const RESTRICT_MISSING_SIGNATURE_TTL_MS = 60 * 5 * 1000; // 5 mins
 
