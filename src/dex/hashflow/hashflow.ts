@@ -604,7 +604,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           normalizedDestToken.address,
         )}: ${JSON.stringify(rfq)}`;
         this.logger.warn(message);
-        // TODO: Fix types
         throw new RfqError(message, `${rfq?.error?.code}` as ErrorCode);
       } else if (!rfq.quotes[0].quoteData) {
         const message = `${this.dexKey}-${
@@ -765,7 +764,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     if (!error) {
       this.logger.warn(
-        `First encounter of ${errorCode} for ${mm}, setting up counter`,
+        `${this.dexKey}-${this.network}: First encounter of ${errorCode} for ${mm}, setting up counter`,
       );
       const data: CacheErrorCodesData = {
         ...errorCodes,
@@ -787,7 +786,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
       if (error.addedDatetimeMS + CONSECUTIVE_ERROR_TIMESPAN_MS < Date.now()) {
         this.logger.warn(
-          `Error: ${errorCode} for ${mm} occured not within threshold timespan for restriction. Resetting counter`,
+          `${this.dexKey}-${this.network}: Error: ${errorCode} for ${mm} occured not within threshold timespan for restriction. Resetting counter`,
         );
         // Clear counter, this error code appeared after CONSECUTIVE_ERROR_TIMESPAN_MS
         const data: CacheErrorCodesData = {
