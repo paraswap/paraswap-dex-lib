@@ -150,6 +150,48 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       poolGasCost: 80 * 1000,
       feeCode: 30,
     },
+    [Network.ARBITRUM]: {
+      factoryAddress: '0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9',
+      initCode:
+        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
+    [Network.AVALANCHE]: {
+      factoryAddress: '0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C',
+      initCode:
+        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
+    [Network.BSC]: {
+      factoryAddress: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
+      initCode:
+        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
+    [Network.BASE]: {
+      factoryAddress: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
+      initCode:
+        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
+    [Network.OPTIMISM]: {
+      factoryAddress: '0x0c3c1c532F1e39EdF36BE9Fe0bE1410313E074Bf',
+      initCode:
+        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
+    [Network.POLYGON]: {
+      factoryAddress: '0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C',
+      initCode:
+        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
   },
   ApeSwap: {
     [Network.BSC]: {

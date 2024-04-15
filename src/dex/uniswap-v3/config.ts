@@ -295,6 +295,22 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         'https://api.studio.thegraph.com/query/44554/uniswap-v3/version/latest',
     },
   },
+  SpookySwapV3: {
+    [Network.FANTOM]: {
+      factory: '0x7928a2c48754501f3a8064765ECaE541daE5c3E6',
+      quoter: '0xB9507f2ED171D52c5c2EFaeAbdE440d264504A92',
+      router: '0x765132A0630Cd4401b971706Bb21c0FB5Ab547ad',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x2cc482a66dd677ad33900018f774052717c533fb',
+      uniswapMulticall: '0x96a7F0E4905F39508b17Faef5aC456C72a4E1319',
+      chunksCount: 5,
+      initRetryFrequency: 30,
+      initHash:
+        '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/0xalucard/ftm-spooky-v3',
+    },
+  },
   Retro: {
     [Network.POLYGON]: {
       factory: '0x91e1B99072f238352f59e58de875691e20Dc19c1',
