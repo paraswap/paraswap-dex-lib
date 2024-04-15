@@ -33,8 +33,6 @@ export interface TransactionSimulator {
     stateOverrides?: StateOverrides,
   ): Promise<SimulationResult>;
 
-  fund(params: Erc20BalanceCallData): Promise<FundingResult>;
-
   addBalance(address: Address, amount: string): Promise<FundingResult>;
 }
 
@@ -44,10 +42,6 @@ export class EstimateGasSimulation implements TransactionSimulator {
   constructor(private provider: Provider) {}
 
   async setup() {}
-
-  async fund(): Promise<FundingResult> {
-    return { success: true };
-  }
 
   async addBalance(): Promise<FundingResult> {
     return { success: true };
@@ -188,58 +182,8 @@ export class TenderlySimulation implements TransactionSimulator {
     }
   }
 
-  async fund(params: Erc20BalanceCallData) {
-    try {
-      const { data } = await axios.post(
-        `https://rpc.tenderly.co/fork/${this.forkId}`,
-        {
-          method: 'tenderly_setErc20Balance',
-          params: [
-            params.contractAddress,
-            params.accountAddress,
-            fixHexStringForTenderly(params.balance),
-          ],
-          id: this.network.toString(),
-          jsonrpc: '2.0',
-        },
-        { headers: { 'Content-Type': 'application/json' } },
-      );
-
-      let res = await axios.get(
-        `https://api.tenderly.co/api/v1/account/paraswap/project/paraswap/fork/${this.forkId}/transactions`,
-        {
-          headers: { 'x-access-key': TENDERLY_TOKEN! },
-          params: {
-            page: 1,
-            perPage: 1,
-            exclude_internal: false,
-          },
-        },
-      );
-      this.lastTx = res.data.fork_transactions[0].id;
-
-      if ('error' in data) {
-        console.log(
-          'fund error',
-          data.error,
-          params,
-          `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${this.lastTx}`,
-        );
-        return {
-          success: false,
-        };
-      }
-      // console.log(
-      //   'Fund Success',
-      //   `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${this.lastTx}`,
-      // );
-      return { success: true };
-    } catch (err) {
-      console.error(`TenderlySimulation_fund:`, err);
-      return { success: false };
-    }
-  }
-
+  // Override the balance of an address (native token).
+  // NOTE: you probably can't find these transactions on the dashboard as Tenderly does not include them in the list of transactions.
   async addBalance(address: string, amount: string): Promise<any> {
     try {
       const { data } = await axios.post(
@@ -272,10 +216,10 @@ export class TenderlySimulation implements TransactionSimulator {
         },
       );
       this.lastTx = res.data.fork_transactions[0].id;
-      console.log(
-        'Add Balance Success',
-        `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${this.lastTx}`,
-      );
+      // console.log(
+      //   'Add Balance Success',
+      //   `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${this.lastTx}`,
+      // );
       return {
         success: true,
       };

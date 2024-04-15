@@ -7,6 +7,7 @@ import {
 } from '../src/implementations/local-paraswap-sdk';
 import {
   EstimateGasSimulation,
+  SimulationResult,
   TenderlySimulation,
   TransactionSimulator,
 } from './tenderly-simulation';
@@ -292,13 +293,6 @@ export async function testE2E(
     );
     if (!allowanceTx.success) console.log(allowanceTx.url);
     expect(allowanceTx!.success).toEqual(true);
-
-    const fundErc20Tx = await ts.fund({
-      contractAddress: srcToken.address,
-      accountAddress: sender,
-      balance: BigNumber.from(_amount).toHexString(),
-    });
-    expect(fundErc20Tx.success).toEqual(true);
   } else {
     const addBalanceTx = await ts.addBalance(
       sender,
@@ -409,7 +403,32 @@ export async function testE2E(
       sender,
     );
 
-    const swapTx = await ts.simulate(swapParams);
+    const tokenTransferProxy =
+      generateConfig(network).tokenTransferProxyAddress;
+
+    let swapTx: SimulationResult;
+    // When the source token is not ETH, we brute force the storage slots for all known balances and allowances
+    if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
+      const multipliedAmount = BigNumber.from(amount).mul(2).toString();
+      swapTx = await ts.simulate(swapParams, {
+        networkID: network.toString(),
+        stateOverrides: {
+          [`${srcToken.address.toLowerCase()}`]: {
+            value: {
+              [`balances[${sender}]`]: multipliedAmount,
+              [`_balances[${sender}]`]: multipliedAmount,
+              [`balanceOf[${sender}]`]: multipliedAmount,
+              [`allowance[${sender}][${tokenTransferProxy.toLowerCase()}]`]:
+                multipliedAmount,
+              [`_allowances[${sender}][${tokenTransferProxy.toLowerCase()}]`]:
+                multipliedAmount,
+            },
+          },
+        },
+      });
+    } else {
+      swapTx = await ts.simulate(swapParams);
+    }
     // Only log gas estimate if testing against API
     if (useAPI) {
       const gasUsed = swapTx.gasUsed || '0';
