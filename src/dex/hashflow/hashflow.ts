@@ -855,7 +855,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         );
 
         // Expiry cache because it has levels for blacklisted MM
-        this.dexHelper.cache
+        await this.dexHelper.cache
           .del(this.dexKey, this.network, 'levels')
           .catch(e => {
             this.logger.error(
@@ -875,7 +875,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             addedDatetimeMS: error.addedDatetimeMS, // initial date stays
           },
         };
-        this.dexHelper.cache.hset(
+        await this.dexHelper.cache.hset(
           this.runtimeMMsRestrictHashMapErrorCodesKey,
           mm,
           Utils.Serialize(data),
