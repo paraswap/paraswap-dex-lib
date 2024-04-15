@@ -1,9 +1,6 @@
 import { Chain, QuoteData } from '@hashflow/taker-js/dist/types/common';
 import { RequestHeaders } from '../../dex-helper';
-import {
-  ERROR_CODE_TO_RESTRICT_THRESHOLD,
-  UNKNOWN_ERROR_CODE,
-} from './constants';
+import { ERROR_CODE_TO_RESTRICT_TTL, UNKNOWN_ERROR_CODE } from './constants';
 
 export type HashflowData = {
   mm: string;
@@ -33,7 +30,9 @@ export enum RFQType {
   RFQM = 1,
 }
 
-export class SlippageCheckError extends Error {}
+export class SlippageCheckError extends Error {
+  code: ErrorCode = 'SLIPPAGE';
+}
 
 export type HashflowRatesLevel = {
   pair: Record<string, string>;
@@ -74,11 +73,11 @@ export type HashflowRateFetcherConfig = {
   };
 };
 
-export type ErrorCode = keyof typeof ERROR_CODE_TO_RESTRICT_THRESHOLD;
+export type ErrorCode = keyof typeof ERROR_CODE_TO_RESTRICT_TTL;
 
 export type CacheErrorCodesData = {
   [code in ErrorCode]: {
     addedDatetimeMS: number;
     count: number;
-  };
+  } | null;
 };

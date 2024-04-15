@@ -40,7 +40,7 @@ import { Adapters, HashflowConfig } from './config';
 import {
   CONSECUTIVE_ERROR_THRESHOLD,
   CONSECUTIVE_ERROR_TIMESPAN_MS,
-  ERROR_CODE_TO_RESTRICT_THRESHOLD,
+  ERROR_CODE_TO_RESTRICT_TTL,
   HASHFLOW_API_CLIENT_NAME,
   HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
   HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
@@ -614,7 +614,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           normalizedDestToken.address,
         )}. Missing quote data`;
         this.logger.warn(message);
-        throw new RfqError(message);
+        throw new RfqError(message, 'MISSING_QUOTE_DATA');
       } else if (!rfq.quotes[0].signature) {
         const message = `${this.dexKey}-${
           this.network
@@ -623,7 +623,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           normalizedDestToken.address,
         )}. Missing signature`;
         this.logger.warn(message);
-        throw new RfqError(message);
+        throw new RfqError(message, 'MISSING_SIGNATURE_DATA');
       }
 
       assert(
@@ -739,8 +739,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           this.logger.warn(
             `${this.dexKey}-${this.network} MM unknown preprocess transaction error: ${e}`,
           );
-          const code = e instanceof RfqError ? e.code : UNKNOWN_ERROR_CODE;
-          await this.restrictMM(mm, code);
+          const code =
+            e instanceof RfqError || e instanceof SlippageCheckError
+              ? e.code
+              : UNKNOWN_ERROR_CODE;
+          await this.restrictMM(mm, code).catch(err =>
+            this.logger.warn(`Failed to restrict MM ${mm}: ${err}`),
+          );
         }
       }
 
@@ -769,7 +774,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           addedDatetimeMS: Date.now(),
         },
       };
-      this.dexHelper.cache.hset(
+      await this.dexHelper.cache.hset(
         this.runtimeMMsRestrictHashMapErrorCodesKey,
         mm,
         Utils.Serialize(data),
@@ -777,10 +782,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       return;
     } else {
       const restrictTTLMs =
-        ERROR_CODE_TO_RESTRICT_THRESHOLD[errorCode] ||
-        ERROR_CODE_TO_RESTRICT_THRESHOLD[UNKNOWN_ERROR_CODE];
+        ERROR_CODE_TO_RESTRICT_TTL[errorCode] ||
+        ERROR_CODE_TO_RESTRICT_TTL[UNKNOWN_ERROR_CODE];
 
       if (error.addedDatetimeMS + CONSECUTIVE_ERROR_TIMESPAN_MS < Date.now()) {
+        this.logger.warn(
+          `Error: ${errorCode} for ${mm} occured not within threshold timespan for restriction. Resetting counter`,
+        );
         // Clear counter, this error code appeared after CONSECUTIVE_ERROR_TIMESPAN_MS
         const data: CacheErrorCodesData = {
           ...errorCodes,
@@ -789,7 +797,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             addedDatetimeMS: Date.now(),
           },
         };
-        this.dexHelper.cache.hset(
+        await this.dexHelper.cache.hset(
           this.runtimeMMsRestrictHashMapErrorCodesKey,
           mm,
           Utils.Serialize(data),
@@ -801,27 +809,46 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         this.logger.warn(
           `${this.dexKey}-${this.network}: ${mm} was restricted for ${
             restrictTTLMs / 1000
-          } sec. due to ${errorCode} happening ${error.count + 1} within last ${
-            CONSECUTIVE_ERROR_TIMESPAN_MS / 1000 / 60
-          } minutes`,
+          } sec. due to ${errorCode} happening ${
+            error.count + 1
+          } within last ${Math.floor(
+            CONSECUTIVE_ERROR_TIMESPAN_MS / 1000 / 60,
+          )} minutes`,
         );
+
+        // date added is checked against HASHFLOW_MM_RESTRICT_TTL_S, as a hack we set a date so that it's checked against specific ttls based on error type to not change & increase time for parsing restricted mms during pricing request
+        // Example: ttl for a particular error is 20 minutes (< default 60 minutes)
+        //
+        // Meaning we need to set dateAdded for restrict hash as Date.now() + 40 minutes (diff between default restrict ttl=1h and particular error restrict ttl = 20 minutes). So the dateAdded is in the future, and after 20 minutes in pricing we'll clear that restriction
+        //
+        //
+        // Example 2: ttl for a particular error is 80 minutes (> default 60 minutes)
+        //
+        // Meaning we need to set dateAdded for restrict hash as Date.now() - 20 minutes, then after an hour (default) it'll still be 20 minutes left for restriction to be cleared
+
+        const defaultRestrictTTLMS = Math.floor(
+          HASHFLOW_MM_RESTRICT_TTL_S / 1000,
+        );
+        const dateModifierMS =
+          defaultRestrictTTLMS > restrictTTLMs
+            ? defaultRestrictTTLMS - restrictTTLMs
+            : -(restrictTTLMs - defaultRestrictTTLMS);
+
+        const date = (Date.now() + dateModifierMS).toString();
 
         // We use timestamp for creation date to later discern if it already expired or not
         await this.dexHelper.cache.hset(
           this.runtimeMMsRestrictHashMapKey,
           mm,
-          Date.now().toString(),
+          date,
         );
 
         // resetting error count
         const data: CacheErrorCodesData = {
           ...errorCodes,
-          [errorCode]: {
-            count: 1,
-            addedDatetimeMS: Date.now(),
-          },
+          [errorCode]: null,
         };
-        this.dexHelper.cache.hset(
+        await this.dexHelper.cache.hset(
           this.runtimeMMsRestrictHashMapErrorCodesKey,
           mm,
           Utils.Serialize(data),
