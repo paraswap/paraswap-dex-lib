@@ -104,6 +104,7 @@ export class UniswapV3
         'ChronosV3',
         'Retro',
         'BaseswapV3',
+        'Pharaoh',
       ]),
     );
 
