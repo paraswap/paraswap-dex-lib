@@ -165,6 +165,37 @@ export function getVirtualPool(
   };
 }
 
+export function getVirtualPools(
+  allPairs: PoolState[],
+  blockNumber: number,
+  token0: Address,
+  token1: Address,
+): VirtualPoolState[] {
+  const vPools: VirtualPoolState[] = [];
+  for (const jkPair of allPairs) {
+    const jk0 = jkPair.token0;
+    const jk1 = jkPair.token1;
+    if (
+      (jk0 === token1 || jk1 === token1) &&
+      jk0 !== token0 &&
+      jk1 !== token0 &&
+      jkPair.reserves[token0] !== undefined
+    ) {
+      const ikPair = allPairs.find(
+        pair =>
+          (pair.token0 === token0 &&
+            pair.token1 === (jk0 === token1 ? jk1 : jk0)) ||
+          (pair.token1 === token0 &&
+            pair.token0 === (jk0 === token1 ? jk1 : jk0)),
+      );
+      if (ikPair && blockNumber >= ikPair.lastSwapBlock + ikPair.blocksDelay) {
+        vPools.push(getVirtualPool(jkPair, ikPair, blockNumber));
+      }
+    }
+  }
+  return vPools;
+}
+
 export function getMaxVirtualTradeAmountRtoN(vPool: VirtualPoolState): bigint {
   const fee = BigInt(vPool.fee);
   const balance0 = vPool.jkPair.pairBalance0;

@@ -1,0 +1,186 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_pairFactory",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "jkPair",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ikPair",
+        "type": "address"
+      }
+    ],
+    "name": "getVirtualPool",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint24",
+            "name": "fee",
+            "type": "uint24"
+          },
+          {
+            "internalType": "address",
+            "name": "token0",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token1",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balance0",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balance1",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "commonToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "jkPair",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "ikPair",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct VirtualPoolModel",
+        "name": "vPool",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token0",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token1",
+        "type": "address"
+      }
+    ],
+    "name": "getVirtualPools",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint24",
+            "name": "fee",
+            "type": "uint24"
+          },
+          {
+            "internalType": "address",
+            "name": "token0",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token1",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balance0",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balance1",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "commonToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "jkPair",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "ikPair",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct VirtualPoolModel[]",
+        "name": "vPools",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pairFactory",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "jkPair",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ikPair",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "balance0",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "balance1",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateVirtualPoolBalances",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

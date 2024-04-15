@@ -22,16 +22,20 @@ export type VirtualPoolTokens = {
   ik1: Address;
 };
 
-export type VirtualPoolState = {
+type GenericVirtualPoolState<TPair extends Address | PoolState> = {
   fee: number;
   token0: Address;
   token1: Address;
   balance0: bigint;
   balance1: bigint;
   commonToken: Address;
-  jkPair: PoolState;
-  ikPair: PoolState;
+  jkPair: TPair;
+  ikPair: TPair;
 };
+
+export type VirtualPoolState = GenericVirtualPoolState<PoolState>;
+
+export type PlainVirtualPoolState = GenericVirtualPoolState<Address>;
 
 export type FactoryState = {
   pools: Address[];
@@ -54,6 +58,7 @@ export type DexParams = {
   // TODO: DexParams is set of parameters the can
   // be used to initiate a DEX fork.
   factoryAddress: Address;
+  vPoolManagerAddress: Address;
   initCode: string;
   router: Address;
   isTimestampBased: boolean;
