@@ -580,6 +580,10 @@ export const Tokens: {
       address: '0x07BB65fAaC502d4996532F834A1B7ba5dC32Ff96',
       decimals: 18,
     },
+    USDCe: {
+      address: '0x2f733095b80a04b38b0d10cc884524a3d09b836a',
+      decimals: 6,
+    },
   },
   [Network.BSC]: {
     POPS: {
@@ -1153,6 +1157,7 @@ export const Holders: {
     FTM: '0x431e81E5dfB5A24541b5Ff8762bDEF3f32F96354',
     WFTM: '0xB7D0fB518a5b7bf8dc7ea19A715E8FD8BD983e27',
     USDC: '0xf53feaeb035361c046e5669745695e450ebb4028',
+    USDCe: '0x305fa2FB5AF034D490A9C9be8bcd9b01902480BF',
     FUSDT: '0x9ade1c17d25246c405604344f89E8F23F8c1c632',
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     aFanUSDT: '0x8EBc96fF91A30059E447bFC7C0a7394f8A5793E6',

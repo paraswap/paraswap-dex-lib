@@ -608,7 +608,7 @@ describe('UniswapV3 E2E', () => {
     });
   });
 
-  describe('RamsesV2', () => {
+  describe('RamsesV2 E2E', () => {
     const dexKey = 'RamsesV2';
 
     describe('Arbitrum', () => {
@@ -696,7 +696,7 @@ describe('UniswapV3 E2E', () => {
     });
   });
 
-  describe('ChronosV3', () => {
+  describe('ChronosV3 E2E', () => {
     const dexKey = 'ChronosV3';
     describe('Arbitrum', () => {
       const network = Network.ARBITRUM;
@@ -1111,7 +1111,7 @@ describe('UniswapV3 E2E', () => {
     });
   });
 
-  describe('Retro', () => {
+  describe('Retro E2E', () => {
     const dexKey = 'Retro';
 
     describe('POLYGON', () => {
@@ -1146,6 +1146,30 @@ describe('UniswapV3 E2E', () => {
 
       const tokenAAmount: string = '1000000';
       const tokenBAmount: string = '1000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
+
+  describe('SpookySwapV3 E2E', () => {
+    const dexKey = 'SpookySwapV3';
+    describe('Fantom', () => {
+      const network = Network.FANTOM;
+
+      const tokenASymbol: string = 'axlUSDC';
+      const tokenBSymbol: string = 'MIM';
+
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '2023063319850617015';
       const nativeTokenAmount = '1000000000000000000';
 
       testForNetwork(
