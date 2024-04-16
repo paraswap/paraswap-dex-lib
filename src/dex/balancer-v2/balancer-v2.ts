@@ -1107,8 +1107,10 @@ export class BalancerV2
       poolId: data.swaps[0].poolId,
       kind:
         side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
-      assetIn: srcToken,
-      assetOut: destToken,
+      assetIn:
+        srcToken.toLowerCase() === ETHER_ADDRESS ? NULL_ADDRESS : srcToken,
+      assetOut:
+        destToken.toLowerCase() === ETHER_ADDRESS ? NULL_ADDRESS : destToken,
       amount: data.swaps[0].amount,
       userData: '0x',
     };
