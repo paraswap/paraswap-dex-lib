@@ -1125,7 +1125,7 @@ export class BalancerV2
     const params: BalancerV2SwapParam = [
       singleSwap,
       funds,
-      MAX_INT,
+      side === SwapSide.SELL ? '1' : MAX_INT,
       getLocalDeadlineAsFriendlyPlaceholder(),
     ];
 
