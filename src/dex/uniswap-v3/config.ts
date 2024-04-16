@@ -313,7 +313,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
-      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      initHash: `0x7ab14e1c9a50601853aa424ba830356bbd4af40db6933a7d00d0825d493746ca`,
       subgraphURL: '', // Does not have subgraph
     },
   },
