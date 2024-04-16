@@ -43,7 +43,7 @@ import {
 import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
-  BalancerParam,
+  BalancerV2BatchSwapParam,
   BalancerPoolTypes,
   BalancerSwap,
   BalancerV2Data,
@@ -1044,7 +1044,7 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
@@ -1108,7 +1108,7 @@ export class BalancerV2
           else (so buy)
               sender = recipient = executor
 */
-  public getBalancerParam(
+  public getBalancerV2BatchSwapParam(
     srcToken: string,
     destToken: string,
     data: OptimizedBalancerV2Data,
@@ -1116,7 +1116,7 @@ export class BalancerV2
     recipient: string,
     sender: string,
     shouldWalkAssetsBackward?: boolean, // should do for all buy but prefer keep it under control
-  ): BalancerParam {
+  ): BalancerV2BatchSwapParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
@@ -1199,7 +1199,7 @@ export class BalancerV2
       toInternalBalance: false,
     };
 
-    const params: BalancerParam = [
+    const params: BalancerV2BatchSwapParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
       shouldWalkAssetsBackward ? assets.reverse() : assets,
@@ -1298,14 +1298,15 @@ export class BalancerV2
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
-    const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
-      srcToken,
-      destToken,
-      data,
-      side,
-      this.dexHelper.config.data.augustusAddress!,
-      this.dexHelper.config.data.augustusAddress!,
-    );
+    const [, swaps, assets, funds, limits, _deadline] =
+      this.getBalancerV2BatchSwapParam(
+        srcToken,
+        destToken,
+        data,
+        side,
+        this.dexHelper.config.data.augustusAddress!,
+        this.dexHelper.config.data.augustusAddress!,
+      );
 
     const swapParams: BalancerV2DirectParam = [
       swaps,
@@ -1367,7 +1368,7 @@ export class BalancerV2
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
-    const balancerParams = this.getBalancerParam(
+    const balancerParams = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
@@ -1389,7 +1390,7 @@ export class BalancerV2
       swapParams,
       partnerAndFee,
       permit,
-      this.encodeBalancerParam(balancerParams),
+      this.encodeBalancerV2BatchSwapParam(balancerParams),
     ];
 
     const encoder = (...params: BalancerV2DirectParamV6Swap) => {
@@ -1418,7 +1419,9 @@ export class BalancerV2
     return addressBN.or(flagBN).toString();
   }
 
-  private encodeBalancerParam(param: BalancerParam): string {
+  private encodeBalancerV2BatchSwapParam(
+    param: BalancerV2BatchSwapParam,
+  ): string {
     const [kind, swaps, assets, funds, limits, deadline] = param;
 
     const encoded = this.balancerVaultInterface.encodeFunctionData(
@@ -1440,7 +1443,7 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
@@ -1474,7 +1477,7 @@ export class BalancerV2
     side: SwapSide,
     context: Context,
   ): DexExchangeParam {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,

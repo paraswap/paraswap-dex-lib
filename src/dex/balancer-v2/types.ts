@@ -136,7 +136,7 @@ export enum SwapTypes {
   SwapExactOut,
 }
 
-export type BalancerParam = [
+export type BalancerV2BatchSwapParam = [
   kind: SwapTypes,
   swaps: BalancerSwap[],
   assets: string[],
