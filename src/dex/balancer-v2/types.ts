@@ -136,7 +136,23 @@ export enum SwapTypes {
   SwapExactOut,
 }
 
-export type BalancerParam = [
+export type BalancerV2SingleSwap = {
+  poolId: string;
+  kind: SwapTypes;
+  assetIn: string;
+  assetOut: string;
+  amount: string;
+  userData: string;
+};
+
+export type BalancerV2SwapParam = [
+  singleSwap: BalancerV2SingleSwap,
+  funds: BalancerFunds,
+  limit: string,
+  deadline: string,
+];
+
+export type BalancerV2BatchSwapParam = [
   kind: SwapTypes,
   swaps: BalancerSwap[],
   assets: string[],

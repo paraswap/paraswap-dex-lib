@@ -43,7 +43,7 @@ import {
 import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
-  BalancerParam,
+  BalancerV2BatchSwapParam,
   BalancerPoolTypes,
   BalancerSwap,
   BalancerV2Data,
@@ -57,6 +57,8 @@ import {
   SwapTypes,
   BalancerV2DirectParamV6,
   BalancerV2DirectParamV6Swap,
+  BalancerV2SwapParam,
+  BalancerV2SingleSwap,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -81,6 +83,7 @@ import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import { BigNumber, utils } from 'ethers';
 import { Executors, SpecialDex } from '../../executor/types';
+import { S } from '@bgd-labs/aave-address-book/dist/AaveV2Ethereum-timF4kft';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -1044,7 +1047,7 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
@@ -1090,6 +1093,45 @@ export class BalancerV2
     };
   }
 
+  public getBalancerV2SwapParam(
+    srcToken: string,
+    destToken: string,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    recipient: string,
+    sender: string,
+  ): BalancerV2SwapParam {
+    assert(data.swaps.length === 1, 'should have exactly one pool');
+
+    const singleSwap: BalancerV2SingleSwap = {
+      poolId: data.swaps[0].poolId,
+      kind:
+        side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
+      assetIn:
+        srcToken.toLowerCase() === ETHER_ADDRESS ? NULL_ADDRESS : srcToken,
+      assetOut:
+        destToken.toLowerCase() === ETHER_ADDRESS ? NULL_ADDRESS : destToken,
+      amount: data.swaps[0].amount,
+      userData: '0x',
+    };
+
+    const funds = {
+      sender,
+      recipient,
+      fromInternalBalance: false,
+      toInternalBalance: false,
+    };
+
+    const params: BalancerV2SwapParam = [
+      singleSwap,
+      funds,
+      side === SwapSide.SELL ? '1' : MAX_INT,
+      getLocalDeadlineAsFriendlyPlaceholder(),
+    ];
+
+    return params;
+  }
+
   /*
       Algorithm to determine balancer (sender, recipient) params:
 
@@ -1108,7 +1150,7 @@ export class BalancerV2
           else (so buy)
               sender = recipient = executor
 */
-  public getBalancerParam(
+  public getBalancerV2BatchSwapParam(
     srcToken: string,
     destToken: string,
     data: OptimizedBalancerV2Data,
@@ -1116,7 +1158,7 @@ export class BalancerV2
     recipient: string,
     sender: string,
     shouldWalkAssetsBackward?: boolean, // should do for all buy but prefer keep it under control
-  ): BalancerParam {
+  ): BalancerV2BatchSwapParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
@@ -1199,7 +1241,7 @@ export class BalancerV2
       toInternalBalance: false,
     };
 
-    const params: BalancerParam = [
+    const params: BalancerV2BatchSwapParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
       shouldWalkAssetsBackward ? assets.reverse() : assets,
@@ -1298,14 +1340,15 @@ export class BalancerV2
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
-    const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
-      srcToken,
-      destToken,
-      data,
-      side,
-      this.dexHelper.config.data.augustusAddress!,
-      this.dexHelper.config.data.augustusAddress!,
-    );
+    const [, swaps, assets, funds, limits, _deadline] =
+      this.getBalancerV2BatchSwapParam(
+        srcToken,
+        destToken,
+        data,
+        side,
+        this.dexHelper.config.data.augustusAddress!,
+        this.dexHelper.config.data.augustusAddress!,
+      );
 
     const swapParams: BalancerV2DirectParam = [
       swaps,
@@ -1367,15 +1410,26 @@ export class BalancerV2
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
-    const balancerParams = this.getBalancerParam(
-      srcToken,
-      destToken,
-      data,
-      side,
-      this.dexHelper.config.data.augustusV6Address!,
-      this.dexHelper.config.data.augustusV6Address!,
-      side === SwapSide.BUY,
-    );
+    const isSingleSwap = data.swaps.length === 1;
+
+    const balancerParams = isSingleSwap
+      ? this.getBalancerV2SwapParam(
+          srcToken,
+          destToken,
+          data,
+          side,
+          this.dexHelper.config.data.augustusV6Address!,
+          this.dexHelper.config.data.augustusV6Address!,
+        )
+      : this.getBalancerV2BatchSwapParam(
+          srcToken,
+          destToken,
+          data,
+          side,
+          this.dexHelper.config.data.augustusV6Address!,
+          this.dexHelper.config.data.augustusV6Address!,
+          side === SwapSide.BUY,
+        );
 
     const swapParams: BalancerV2DirectParamV6 = [
       fromAmount,
@@ -1389,7 +1443,9 @@ export class BalancerV2
       swapParams,
       partnerAndFee,
       permit,
-      this.encodeBalancerParam(balancerParams),
+      balancerParams.length === 4 // TODO: upgrade ts to use isSingleSwap
+        ? this.encodeBalancerV2SwapParam(balancerParams)
+        : this.encodeBalancerV2BatchSwapParam(balancerParams),
     ];
 
     const encoder = (...params: BalancerV2DirectParamV6Swap) => {
@@ -1418,7 +1474,22 @@ export class BalancerV2
     return addressBN.or(flagBN).toString();
   }
 
-  private encodeBalancerParam(param: BalancerParam): string {
+  private encodeBalancerV2SwapParam(param: BalancerV2SwapParam): string {
+    const [singleSwap, funds, limit, deadline] = param;
+
+    const encoded = this.balancerVaultInterface.encodeFunctionData('swap', [
+      singleSwap,
+      funds,
+      limit,
+      deadline,
+    ]);
+
+    return encoded;
+  }
+
+  private encodeBalancerV2BatchSwapParam(
+    param: BalancerV2BatchSwapParam,
+  ): string {
     const [kind, swaps, assets, funds, limits, deadline] = param;
 
     const encoded = this.balancerVaultInterface.encodeFunctionData(
@@ -1440,7 +1511,7 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
@@ -1474,7 +1545,7 @@ export class BalancerV2
     side: SwapSide,
     context: Context,
   ): DexExchangeParam {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
