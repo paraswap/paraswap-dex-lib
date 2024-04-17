@@ -304,9 +304,3 @@ export type TransferFeeParams = {
 };
 
 export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';
-
-export type Erc20BalanceCallData = {
-  contractAddress: Address;
-  accountAddress: Address;
-  balance: string;
-};
