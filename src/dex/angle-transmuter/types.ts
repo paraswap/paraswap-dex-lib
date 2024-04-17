@@ -66,33 +66,35 @@ export type AngleTransmuterData = {
 };
 
 export type DexParams = {
-  agEUR: Token;
+  EURA: Token;
   transmuter: Address;
   pyth: Address;
 };
 
 export enum QuoteType {
-  MintExactInput,
-  MintExactOutput,
-  BurnExactInput,
-  BurnExactOutput,
+  MintExactInput = 0,
+  MintExactOutput = 1,
+  BurnExactInput = 2,
+  BurnExactOutput = 3,
 }
 
 export enum OracleReadType {
-  CHAINLINK_FEEDS,
-  EXTERNAL,
-  NO_ORACLE,
-  STABLE,
-  WSTETH,
-  CBETH,
-  RETH,
-  SFRXETH,
-  PYTH,
+  CHAINLINK_FEEDS = 0,
+  EXTERNAL = 1,
+  NO_ORACLE = 2,
+  STABLE = 3,
+  WSTETH = 4,
+  CBETH = 5,
+  RETH = 6,
+  SFRXETH = 7,
+  PYTH = 8,
+  MAX = 9,
+  MORPHO_ORACLE = 10,
 }
 
 export enum OracleQuoteType {
-  UNIT,
-  TARGET,
+  UNIT = 0,
+  TARGET = 1,
 }
 
 export type Fees = {
@@ -132,6 +134,7 @@ export type Oracle = {
   externalOracle?: Address;
   oracleFeed: OracleFeed;
   targetFeed: OracleFeed;
+  hyperparameters: string;
 };
 
 export type DecodedOracleConfig = {
@@ -139,6 +142,12 @@ export type DecodedOracleConfig = {
   targetType: OracleReadType;
   oracleData: string;
   targetData: string;
+  hyperparameters: string;
+};
+
+export type OracleHyperparameter = {
+  userDeviation: BigNumber;
+  burnRatioDeviation: BigNumber;
 };
 
 export type DecodedStateMultiCallResultPythOracle = {

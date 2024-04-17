@@ -21,7 +21,6 @@ import { AngleTransmuterEventPool } from './angle-transmuter-pool';
 import { Interface, formatUnits, parseUnits } from 'ethers/lib/utils';
 import { TransmuterSubscriber } from './transmuter';
 import ERC20ABI from '../../abi/erc20.json';
-import _ from 'lodash';
 
 const TransmuterGasCost = 0;
 
@@ -33,7 +32,7 @@ export class AngleTransmuter
   protected supportedTokensMap: { [address: string]: boolean } = {};
   // supportedTokens is only used by the pooltracker
   protected supportedTokens: Token[] = [];
-  transmuterUSDLiquidity: number = 0;
+  transmuterUSDLiquidity = 0;
 
   public static erc20Interface = new Interface(ERC20ABI);
 
@@ -56,7 +55,7 @@ export class AngleTransmuter
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.supportedTokensMap[params.agEUR.address.toLowerCase()] = true;
+    this.supportedTokensMap[params.EURA.address.toLowerCase()] = true;
   }
 
   // Initialize pricing is called once in the start of
@@ -99,8 +98,8 @@ export class AngleTransmuter
     blockNumber: number,
   ): Promise<string[]> {
     if (this._knownAddress(srcToken, destToken))
-      return [`${this.dexKey}_${this.params.agEUR.address.toLowerCase()}`];
-    else return [];
+      return [`${this.dexKey}_${this.params.EURA.address.toLowerCase()}`];
+    return [];
   }
 
   // Returns pool prices for amounts.
@@ -117,7 +116,7 @@ export class AngleTransmuter
   ): Promise<null | ExchangePrices<AngleTransmuterData>> {
     const uniquePool = `${
       this.dexKey
-    }_${this.params.agEUR.address.toLowerCase()}`;
+    }_${this.params.EURA.address.toLowerCase()}`;
     if (
       !this._knownAddress(srcToken, destToken) ||
       (limitPools && limitPools.length > 0 && !limitPools.includes(uniquePool))
@@ -125,12 +124,12 @@ export class AngleTransmuter
       return null;
 
     const preProcessDecimals =
-      side == SwapSide.SELL ? srcToken.decimals : destToken.decimals;
+      side === SwapSide.SELL ? srcToken.decimals : destToken.decimals;
     const postProcessDecimals =
-      side == SwapSide.SELL ? destToken.decimals : srcToken.decimals;
+      side === SwapSide.SELL ? destToken.decimals : srcToken.decimals;
     const unitVolume = 1;
     const amountsFloat = amounts.map(amount =>
-      parseFloat(formatUnits(amount.toString(), preProcessDecimals)),
+      Number.parseFloat(formatUnits(amount.toString(), preProcessDecimals)),
     );
 
     const prices = await this.eventPools!.getAmountOut(
@@ -210,10 +209,10 @@ export class AngleTransmuter
 
     // Encode here the transaction arguments
     const swapData = TransmuterSubscriber.interface.encodeFunctionData(
-      side == SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
+      side === SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
       [
-        side == SwapSide.SELL ? srcAmount : destAmount,
-        side == SwapSide.SELL ? destAmount : srcAmount,
+        side === SwapSide.SELL ? srcAmount : destAmount,
+        side === SwapSide.SELL ? destAmount : srcAmount,
         srcToken,
         destToken,
         this.augustusAddress,
@@ -243,7 +242,7 @@ export class AngleTransmuter
         'latest',
         this.dexHelper.multiContract,
       );
-      tokenAddresses = tokenAddresses.concat([this.params.agEUR.address]);
+      tokenAddresses = tokenAddresses.concat([this.params.EURA.address]);
 
       const decimalsCallData =
         AngleTransmuter.erc20Interface.encodeFunctionData('decimals');
@@ -258,7 +257,7 @@ export class AngleTransmuter
       ).returnData;
 
       const tokenDecimals = res.map((r: any) =>
-        parseInt(
+        Number.parseInt(
           AngleTransmuter.erc20Interface
             .decodeFunctionResult('decimals', r)[0]
             .toString(),
@@ -313,11 +312,11 @@ export class AngleTransmuter
     if (!this.supportedTokens.some(t => t.address === tokenAddress)) return [];
 
     const connectorTokens =
-      tokenAddress === this.params.agEUR.address
+      tokenAddress === this.params.EURA.address
         ? this.supportedTokens.filter(
-            token => token.address !== this.params.agEUR.address,
+            token => token.address !== this.params.EURA.address,
           )
-        : [this.params.agEUR];
+        : [this.params.EURA];
     return [
       {
         exchange: this.dexKey,
@@ -325,7 +324,7 @@ export class AngleTransmuter
         connectorTokens: connectorTokens.slice(0, limit),
         // liquidity is potentially infinite if swapping for agXXX, otherwise at most reserves value
         liquidityUSD:
-          tokenAddress == this.params.agEUR.address
+          tokenAddress === this.params.EURA.address
             ? this.transmuterUSDLiquidity
             : 1e9,
       },
@@ -348,8 +347,8 @@ export class AngleTransmuter
       this.supportedTokensMap[srcAddress] &&
       this.supportedTokensMap[destAddress] &&
       // check that at least one of the tokens is agEUR
-      (srcAddress == this.params.agEUR.address.toLowerCase() ||
-        destAddress == this.params.agEUR.address.toLowerCase())
+      (srcAddress === this.params.EURA.address.toLowerCase() ||
+        destAddress === this.params.EURA.address.toLowerCase())
     ) {
       return true;
     }

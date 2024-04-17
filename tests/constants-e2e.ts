@@ -315,7 +315,7 @@ export const Tokens: {
       address: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
       decimals: 6,
     },
-    agEUR: {
+    EURA: {
       address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',
       decimals: 18,
     },
@@ -323,8 +323,24 @@ export const Tokens: {
       address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c',
       decimals: 6,
     },
+    bERNX: {
+      address: '0x3f95AA88dDbB7D9D484aa3D482bf0a80009c52c9',
+      decimals: 18,
+    },
     bC3M: {
       address: '0x2F123cF3F37CE3328CC9B5b8415f9EC5109b45e7',
+      decimals: 18,
+    },
+    USDA: {
+      address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
+      decimals: 18,
+    },
+    bIB01: {
+      address: '0xCA30c93B02514f86d5C86a6e375E3A330B435Fb5',
+      decimals: 18,
+    },
+    steakUSDC: {
+      address: '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
       decimals: 18,
     },
     GHO: {
@@ -1088,6 +1104,9 @@ export const Holders: {
     PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
     EUROC: '0x64AE5802620398143FC7113037769175F74825Ea',
     bC3M: '0x5f9F41497f9e11fd7D4c4B067413199682eE2CFF',
+    bERNX: '0x5F7A4c11bde4f218f0025Ef444c369d838ffa2aD',
+    bIB01: '0x5F7A4c11bde4f218f0025Ef444c369d838ffa2aD',
+    steakUSDC: '0xC977d218Fde6A39c7aCE71C8243545c276B48931',
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
     GHO: '0x844Dc85EdD8492A56228D293cfEbb823EF3E10EC',
     wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
@@ -1095,7 +1114,8 @@ export const Holders: {
     POL: '0x57B6Ad484ccdd902C4419424bA648ba6Ed45dc68',
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     frxETH: '0x9df2322bdAEC46627100C999E6dDdD27837fec6e',
-    agEUR: '0xa116f421ff82A9704428259fd8CC63347127B777',
+    EURA: '0xa116f421ff82A9704428259fd8CC63347127B777',
+    USDA: '0xd9Da13DE745bfa50FFAAFD0a531B92f0511B72Cf',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',

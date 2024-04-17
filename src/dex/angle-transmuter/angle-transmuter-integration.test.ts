@@ -159,7 +159,7 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('AngleTransmuter', function () {
+describe('AngleTransmuter', () => {
   const dexKey = 'AngleTransmuter';
   let blockNumber: number;
   let angleTransmuter: AngleTransmuter;
@@ -209,7 +209,7 @@ describe('AngleTransmuter', function () {
       }
     });
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    it('getPoolIdentifiers and getPricesVolume SELL', async () => {
       await testPricingOnNetwork(
         angleTransmuter,
         network,
@@ -223,7 +223,7 @@ describe('AngleTransmuter', function () {
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    it('getPoolIdentifiers and getPricesVolume BUY', async () => {
       await testPricingOnNetwork(
         angleTransmuter,
         network,
@@ -237,7 +237,7 @@ describe('AngleTransmuter', function () {
       );
     });
 
-    it('getTopPoolsForToken', async function () {
+    it('getTopPoolsForToken', async () => {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAngleTransmuter = new AngleTransmuter(

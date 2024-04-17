@@ -5,7 +5,7 @@ import { Network, SwapSide } from '../../constants';
 export const AngleTransmuterConfig: DexConfigMap<DexParams> = {
   AngleTransmuter: {
     [Network.MAINNET]: {
-      agEUR: {
+      EURA: {
         address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',
         decimals: 18,
       },

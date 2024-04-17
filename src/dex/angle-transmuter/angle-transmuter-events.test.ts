@@ -23,7 +23,7 @@ async function fetchPoolState(
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('AngleTransmuter EventPool Mainnet', function () {
+describe('AngleTransmuter EventPool Mainnet', () => {
   const dexKey = 'AngleTransmuter';
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
@@ -77,7 +77,7 @@ describe('AngleTransmuter EventPool Mainnet', function () {
       dexHelper,
       logger,
       {
-        agEUR: {
+        EURA: {
           address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',
           decimals: 18,
         },
@@ -121,7 +121,7 @@ describe('AngleTransmuter EventPool Mainnet', function () {
           ([eventName, blockNumbers]: [string, number[]]) => {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
-                it(`State after ${blockNumber}`, async function () {
+                it(`State after ${blockNumber}`, async () => {
                   await testEventSubscriber(
                     angleTransmuterPool,
                     angleTransmuterPool.addressesSubscribed,

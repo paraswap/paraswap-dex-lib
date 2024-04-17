@@ -10,6 +10,7 @@ import {
   DecodedOracleConfig,
   DexParams,
   OracleFeed,
+  OracleHyperparameter,
   OracleQuoteType,
   OracleReadType,
   PoolConfig,
@@ -26,11 +27,13 @@ import {
   _quoteBurnExactOutput,
   _quoteMintExactInput,
   _quoteMintExactOutput,
+  filterDictionaryOnly,
 } from './utils';
 import { RedstoneSubscriber } from './redstone';
-import { formatUnits } from 'ethers/lib/utils';
+import { formatEther, formatUnits } from 'ethers/lib/utils';
 import { BackedSubscriber } from './backedOracle';
 import { SwapSide } from '../../constants';
+import { ethers } from 'ethers';
 
 export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
   public transmuter: Contract;
@@ -151,9 +154,9 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     blockNumber: number,
   ): Promise<number[] | null> {
     const state = await this.getStateOrGenerate(blockNumber);
-    const isMint = _tokenOut == state.stablecoin.address;
+    const isMint = _tokenOut === state.stablecoin.address;
     let oracleValue: number;
-    let minRatio: number = 0;
+    let minRatio = 0;
     let collateral = _tokenIn;
     if (isMint)
       oracleValue = await this._readMint(this.config, state, _tokenIn);
@@ -173,7 +176,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     const fees = state.transmuter.collaterals[collateral].fees;
 
     return _amounts.map(_amount => {
-      if (isMint && side == SwapSide.SELL)
+      if (isMint && side === SwapSide.SELL)
         return _quoteMintExactInput(
           oracleValue,
           _amount,
@@ -181,7 +184,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           collatStablecoinIssued,
           otherStablecoinIssued,
         );
-      else if (isMint && side == SwapSide.BUY)
+      if (isMint && side === SwapSide.BUY)
         return _quoteMintExactOutput(
           oracleValue,
           _amount,
@@ -189,7 +192,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           collatStablecoinIssued,
           otherStablecoinIssued,
         );
-      else if (!isMint && side == SwapSide.SELL)
+      if (!isMint && side === SwapSide.SELL)
         return _quoteBurnExactInput(
           oracleValue,
           minRatio,
@@ -198,15 +201,14 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           collatStablecoinIssued,
           otherStablecoinIssued,
         );
-      else
-        return _quoteBurnExactOutput(
-          oracleValue,
-          minRatio,
-          _amount,
-          fees,
-          collatStablecoinIssued,
-          otherStablecoinIssued,
-        );
+      return _quoteBurnExactOutput(
+        oracleValue,
+        minRatio,
+        _amount,
+        fees,
+        collatStablecoinIssued,
+        otherStablecoinIssued,
+      );
     });
   }
 
@@ -360,15 +362,15 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         if (oracleConfigDecoded.oracleType !== OracleReadType.EXTERNAL) {
           // add all the feed oracles used to their respective channels
           if (
-            oracleConfigDecoded.oracleType == OracleReadType.CHAINLINK_FEEDS ||
-            oracleConfigDecoded.oracleType == OracleReadType.PYTH
+            oracleConfigDecoded.oracleType === OracleReadType.CHAINLINK_FEEDS ||
+            oracleConfigDecoded.oracleType === OracleReadType.PYTH
           ) {
             const oracleFeed = TransmuterSubscriber._decodeOracleFeed(
               oracleConfigDecoded.oracleType,
               oracleConfigDecoded.oracleData,
             );
             ({ chainlinkMap, backedMap, redstoneMap, pythIds } =
-              await this._fillMap(
+              await AngleTransmuterEventPool._fillMap(
                 chainlinkMap,
                 backedMap,
                 redstoneMap,
@@ -379,15 +381,15 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
               ));
           }
           if (
-            oracleConfigDecoded.targetType == OracleReadType.CHAINLINK_FEEDS ||
-            oracleConfigDecoded.targetType == OracleReadType.PYTH
+            oracleConfigDecoded.targetType === OracleReadType.CHAINLINK_FEEDS ||
+            oracleConfigDecoded.targetType === OracleReadType.PYTH
           ) {
             const oracleFeed = TransmuterSubscriber._decodeOracleFeed(
               oracleConfigDecoded.targetType,
               oracleConfigDecoded.targetData,
             );
             ({ chainlinkMap, backedMap, redstoneMap, pythIds } =
-              await this._fillMap(
+              await AngleTransmuterEventPool._fillMap(
                 chainlinkMap,
                 backedMap,
                 redstoneMap,
@@ -413,14 +415,14 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     blockNumber: number | 'latest',
     multiContract: Contract,
   ): Promise<PoolConfig> {
-    const collaterals = await this.getCollateralsList(
+    const collaterals = await AngleTransmuterEventPool.getCollateralsList(
       dexParams.transmuter,
       blockNumber,
       multiContract,
     );
 
     // get all oracles feed
-    const oracles = await this.getOraclesConfig(
+    const oracles = await AngleTransmuterEventPool.getOraclesConfig(
       dexParams.transmuter,
       dexParams.pyth,
       collaterals,
@@ -429,7 +431,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     );
 
     return {
-      agEUR: dexParams.agEUR,
+      agEUR: dexParams.EURA,
       transmuter: dexParams.transmuter,
       collaterals: collaterals,
       oracles: oracles,
@@ -442,26 +444,14 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
 
   _readMint(config: PoolConfig, state: PoolState, collateral: Address): number {
     const configOracle = state.transmuter.collaterals[collateral].config;
-    if (configOracle.oracleType == OracleReadType.EXTERNAL) {
+    if (configOracle.oracleType === OracleReadType.EXTERNAL) {
       return 1;
-    } else {
-      const targetPrice = this._read(
-        config,
-        state,
-        configOracle.targetType,
-        configOracle.targetFeed,
-        1,
-      );
-      let oracleValue = this._read(
-        config,
-        state,
-        configOracle.oracleType,
-        configOracle.oracleFeed,
-        targetPrice,
-      );
-      if (targetPrice < oracleValue) oracleValue = targetPrice;
-      return oracleValue;
     }
+    let target: number;
+    let spot: number;
+    ({ spot, target } = this._readSpotAndTarget(config, state, collateral));
+    if (target < spot) spot = target;
+    return spot;
   }
 
   _getBurnOracle(
@@ -498,32 +488,77 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     collateral: Address,
   ): { oracleValue: number; ratio: number } {
     const configOracle = state.transmuter.collaterals[collateral].config;
-    if (configOracle.oracleType == OracleReadType.EXTERNAL) {
+    if (configOracle.oracleType === OracleReadType.EXTERNAL) {
       return { oracleValue: 1, ratio: 1 };
-    } else {
-      const targetPrice = this._read(
-        config,
-        state,
-        configOracle.targetType,
-        configOracle.targetFeed,
-        1,
-      );
-      const oracleValue = this._read(
-        config,
-        state,
-        configOracle.oracleType,
-        configOracle.oracleFeed,
-        targetPrice,
-      );
-      let ratio = 1;
-      if (oracleValue < targetPrice) ratio = oracleValue / targetPrice;
-      return { oracleValue, ratio };
     }
+    let spot: number;
+    let target: number;
+    let burnRatioDeviation: number;
+    ({ spot, target, burnRatioDeviation } = this._readSpotAndTarget(
+      config,
+      state,
+      collateral,
+    ));
+
+    let ratio = 1;
+    if (spot < target * (1 - burnRatioDeviation)) ratio = spot / target;
+    else if (spot < target) spot = target;
+    return { oracleValue: spot, ratio };
+  }
+
+  _readSpotAndTarget(
+    config: PoolConfig,
+    state: PoolState,
+    collateral: Address,
+  ): {
+    spot: number;
+    target: number;
+    userDeviation: number;
+    burnRatioDeviation: number;
+  } {
+    const configOracle = state.transmuter.collaterals[collateral].config;
+    const hyperparameters = filterDictionaryOnly(
+      ethers.utils.defaultAbiCoder.decode(
+        ['uint128 userDeviation', 'uint128 burnRatioDeviation'],
+        configOracle.hyperparameters,
+      ),
+    ) as unknown as OracleHyperparameter;
+    const targetPrice = this._read(
+      config,
+      state,
+      configOracle.targetType,
+      configOracle.targetFeed,
+      1,
+    );
+    let oracleValue = this._read(
+      config,
+      state,
+      configOracle.oracleType,
+      configOracle.oracleFeed,
+      targetPrice,
+    );
+    const userDeviation = Number.parseFloat(
+      formatEther(hyperparameters.userDeviation.toString()),
+    );
+    const burnRatioDeviation = Number.parseFloat(
+      formatEther(hyperparameters.burnRatioDeviation.toString()),
+    );
+    if (
+      targetPrice * (1 - userDeviation) < oracleValue ||
+      oracleValue < targetPrice * (1 + userDeviation)
+    )
+      oracleValue = targetPrice;
+    return {
+      spot: oracleValue,
+      target: targetPrice,
+      userDeviation,
+      burnRatioDeviation,
+    };
   }
 
   _quoteAmount(quoteType: OracleQuoteType, baseValue: number): number {
     if (quoteType === OracleQuoteType.UNIT) return 1;
-    else return baseValue;
+    return baseValue;
   }
 
   _read(
@@ -534,33 +569,33 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     baseValue: number,
   ): number {
     let price = 1;
-    if (oracleType == OracleReadType.CHAINLINK_FEEDS) {
+    if (oracleType === OracleReadType.CHAINLINK_FEEDS) {
       price = this._quoteAmount(feed.chainlink!.quoteType, baseValue);
       for (let i = 0; i < feed.chainlink!.circuitChainlink.length; i++) {
         const id = feed.chainlink!.circuitChainlink[i];
-        let decimals;
+        let decimals: number;
         if (Object.keys(config.oracles.chainlink).includes(id))
           decimals = config.oracles.chainlink[id].decimals;
         else if (Object.keys(config.oracles.redstone).includes(id))
           decimals = config.oracles.redstone[id].decimals;
         else decimals = config.oracles.backed[id].decimals;
-        const rate = parseFloat(
+        const rate = Number.parseFloat(
           formatUnits(state.oracles.chainlink[id].answer.toString(), decimals),
         );
-        if (feed.chainlink!.circuitChainIsMultiplied[i] == 1) price *= rate;
+        if (feed.chainlink!.circuitChainIsMultiplied[i] === 1) price *= rate;
         else price /= rate;
       }
-    } else if (oracleType == OracleReadType.PYTH) {
+    } else if (oracleType === OracleReadType.PYTH) {
       price = this._quoteAmount(feed.pyth!.quoteType, baseValue);
       for (let i = 0; i < feed.pyth!.feedIds.length; i++) {
         const id = feed.pyth!.feedIds[i];
         const rate = state.oracles.pyth[id].answer;
-        if (feed.pyth!.isMultiplied[i] == 1) price *= rate;
+        if (feed.pyth!.isMultiplied[i] === 1) price *= rate;
         else price /= rate;
       }
-    } else if (oracleType == OracleReadType.STABLE) {
+    } else if (oracleType === OracleReadType.STABLE) {
       price = 1;
-    } else if (oracleType == OracleReadType.NO_ORACLE) {
+    } else if (oracleType === OracleReadType.NO_ORACLE) {
       price = baseValue;
     }
     return price;

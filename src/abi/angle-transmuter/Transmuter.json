@@ -4,7 +4,7 @@
     "name": "accessControlManager",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IAccessControlManager",
         "name": "",
         "type": "address"
       }
@@ -53,7 +53,7 @@
     "name": "agToken",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IAgToken",
         "name": "",
         "type": "address"
       }
@@ -64,7 +64,7 @@
   {
     "inputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IERC20",
         "name": "token",
         "type": "address"
       },
@@ -94,7 +94,7 @@
             "type": "address"
           },
           {
-            "internalType": "uint8",
+            "internalType": "enum FacetCutAction",
             "name": "action",
             "type": "uint8"
           },
@@ -104,7 +104,7 @@
             "type": "bytes4[]"
           }
         ],
-        "internalType": "struct DummyDiamondImplementation.Tuple6871229[]",
+        "internalType": "struct FacetCut[]",
         "name": "_diamondCut",
         "type": "tuple[]"
       },
@@ -168,7 +168,7 @@
     "outputs": [
       {
         "internalType": "bytes4[]",
-        "name": "_facetFunctionSelectors",
+        "name": "facetFunctionSelectors_",
         "type": "bytes4[]"
       }
     ],
@@ -192,7 +192,7 @@
             "type": "bytes4[]"
           }
         ],
-        "internalType": "struct DummyDiamondImplementation.Tuple1236461[]",
+        "internalType": "struct Facet[]",
         "name": "facets_",
         "type": "tuple[]"
       }
@@ -318,7 +318,7 @@
           {
             "components": [
               {
-                "internalType": "address[]",
+                "internalType": "contract IERC20[]",
                 "name": "subCollaterals",
                 "type": "address[]"
               },
@@ -328,12 +328,12 @@
                 "type": "bytes"
               }
             ],
-            "internalType": "struct DummyDiamondImplementation.Tuple5479340",
+            "internalType": "struct ManagerStorage",
             "name": "managerData",
             "type": "tuple"
           }
         ],
-        "internalType": "struct DummyDiamondImplementation.Tuple3550792",
+        "internalType": "struct Collateral",
         "name": "",
         "type": "tuple"
       }
@@ -451,17 +451,17 @@
     "outputs": [
       {
         "internalType": "bool",
-        "name": "",
+        "name": "isManaged",
         "type": "bool"
       },
       {
-        "internalType": "address[]",
-        "name": "",
+        "internalType": "contract IERC20[]",
+        "name": "subCollaterals",
         "type": "address[]"
       },
       {
         "internalType": "bytes",
-        "name": "",
+        "name": "config",
         "type": "bytes"
       }
     ],
@@ -479,12 +479,12 @@
     "name": "getOracle",
     "outputs": [
       {
-        "internalType": "uint8",
+        "internalType": "enum OracleReadType",
         "name": "oracleType",
         "type": "uint8"
       },
       {
-        "internalType": "uint8",
+        "internalType": "enum OracleTargetType",
         "name": "targetType",
         "type": "uint8"
       },
@@ -496,6 +496,11 @@
       {
         "internalType": "bytes",
         "name": "targetData",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "hyperparameters",
         "type": "bytes"
       }
     ],
@@ -565,21 +570,8 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "stablecoinsIssued",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "implementation",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -593,7 +585,7 @@
         "type": "address"
       },
       {
-        "internalType": "uint8",
+        "internalType": "enum ActionType",
         "name": "action",
         "type": "uint8"
       }
@@ -712,7 +704,7 @@
   {
     "inputs": [
       {
-        "internalType": "uint8",
+        "internalType": "enum WhitelistType",
         "name": "whitelistType",
         "type": "uint8"
       },
@@ -823,7 +815,7 @@
         "type": "address"
       },
       {
-        "internalType": "address",
+        "internalType": "contract IERC20",
         "name": "token",
         "type": "address"
       },
@@ -986,7 +978,7 @@
       {
         "components": [
           {
-            "internalType": "address[]",
+            "internalType": "contract IERC20[]",
             "name": "subCollaterals",
             "type": "address[]"
           },
@@ -996,25 +988,12 @@
             "type": "bytes"
           }
         ],
-        "internalType": "struct DummyDiamondImplementation.Tuple5479340",
+        "internalType": "struct ManagerStorage",
         "name": "managerData",
         "type": "tuple"
       }
     ],
     "name": "setCollateralManager",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_implementation",
-        "type": "address"
-      }
-    ],
-    "name": "setDummyImplementation",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1308,7 +1287,7 @@
         "type": "address"
       },
       {
-        "internalType": "uint8",
+        "internalType": "enum TrustedType",
         "name": "t",
         "type": "uint8"
       }
@@ -1319,9 +1298,22 @@
     "type": "function"
   },
   {
+    "type": "function",
+    "name": "updateOracle",
     "inputs": [
       {
-        "internalType": "uint8",
+        "name": "collateral",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum WhitelistType",
         "name": "whitelistType",
         "type": "uint8"
       },
@@ -1359,361 +1351,5 @@
     ],
     "stateMutability": "nonpayable",
     "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "tokenIn",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "internalType": "address",
-        "name": "tokenOut",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountIn",
-        "type": "uint256",
-        "indexed": false
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountOut",
-        "type": "uint256",
-        "indexed": false
-      },
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address",
-        "indexed": false
-      }
-    ],
-    "type": "event",
-    "name": "Swap",
-    "anonymous": false
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false
-      },
-      {
-        "internalType": "address[]",
-        "name": "tokens",
-        "type": "address[]",
-        "indexed": false
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "amounts",
-        "type": "uint256[]",
-        "indexed": false
-      },
-      {
-        "internalType": "address[]",
-        "name": "forfeitTokens",
-        "type": "address[]",
-        "indexed": false
-      },
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address",
-        "indexed": true
-      }
-    ],
-    "type": "event",
-    "name": "Redeemed",
-    "anonymous": false
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collateral",
-        "type": "address"
-      }
-    ],
-    "name": "CollateralAdded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collateral",
-        "type": "address"
-      },
-      {
-        "components": [
-          {
-            "internalType": "contract IERC20[]",
-            "name": "subCollaterals",
-            "type": "address[]"
-          },
-          {
-            "internalType": "bytes",
-            "name": "config",
-            "type": "bytes"
-          }
-        ],
-        "indexed": false,
-        "internalType": "struct ManagerStorage",
-        "name": "managerData",
-        "type": "tuple"
-      }
-    ],
-    "name": "CollateralManagerSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collateral",
-        "type": "address"
-      }
-    ],
-    "name": "CollateralRevoked",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collateral",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "whitelistData",
-        "type": "bytes"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint8",
-        "name": "whitelistStatus",
-        "type": "uint8"
-      }
-    ],
-    "name": "CollateralWhitelistStatusUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collateral",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint64[]",
-        "name": "xFee",
-        "type": "uint64[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "int64[]",
-        "name": "yFee",
-        "type": "int64[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "mint",
-        "type": "bool"
-      }
-    ],
-    "name": "FeesSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collateral",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "oracleConfig",
-        "type": "bytes"
-      }
-    ],
-    "name": "OracleSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "previousOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collateral",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "pausedType",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "isPaused",
-        "type": "bool"
-      }
-    ],
-    "name": "PauseToggled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint64[]",
-        "name": "xFee",
-        "type": "uint64[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "int64[]",
-        "name": "yFee",
-        "type": "int64[]"
-      }
-    ],
-    "name": "RedemptionCurveParamsSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collateral",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "increase",
-        "type": "bool"
-      }
-    ],
-    "name": "ReservesAdjusted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "sender",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "isTrusted",
-        "type": "bool"
-      },
-      {
-        "indexed": false,
-        "internalType": "enum TrustedType",
-        "name": "trustedType",
-        "type": "uint8"
-      }
-    ],
-    "name": "TrustedToggled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "enum WhitelistType",
-        "name": "whitelistType",
-        "type": "uint8"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "who",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "whitelistStatus",
-        "type": "uint256"
-      }
-    ],
-    "name": "WhitelistStatusToggled",
-    "type": "event"
   }
 ]

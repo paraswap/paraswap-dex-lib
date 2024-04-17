@@ -145,7 +145,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     multicallOutputs: MultiCallOutput[],
     blockNumber?: number | 'latest',
   ): DeepReadonly<TransmuterState> {
-    let transmuterState = {
+    const transmuterState = {
       collaterals: {} as {
         [token: string]: CollateralState;
       },
@@ -167,6 +167,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
 
     this.collaterals.forEach(
       (collat: Address, i: number) =>
+        // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
         (transmuterState.collaterals[collat] = {
           fees: {
             xFeeMint: (
@@ -174,27 +175,27 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
                 'getCollateralMintFees',
                 multicallOutputs[indexMintFees * nbrCollaterals + i],
               )[0] as BigNumber[]
-            ).map(f => parseFloat(formatUnits(f, 9))),
+            ).map(f => Number.parseFloat(formatUnits(f, 9))),
             yFeeMint: (
               TransmuterSubscriber.interface.decodeFunctionResult(
                 'getCollateralMintFees',
                 multicallOutputs[indexMintFees * nbrCollaterals + i],
               )[1] as BigNumber[]
-            ).map(f => parseFloat(formatUnits(f, 9))),
+            ).map(f => Number.parseFloat(formatUnits(f, 9))),
             xFeeBurn: (
               TransmuterSubscriber.interface.decodeFunctionResult(
                 'getCollateralBurnFees',
                 multicallOutputs[indexBurnFees * nbrCollaterals + i],
               )[0] as BigNumber[]
-            ).map(f => parseFloat(formatUnits(f, 9))),
+            ).map(f => Number.parseFloat(formatUnits(f, 9))),
             yFeeBurn: (
               TransmuterSubscriber.interface.decodeFunctionResult(
                 'getCollateralBurnFees',
                 multicallOutputs[indexBurnFees * nbrCollaterals + i],
               )[1] as BigNumber[]
-            ).map(f => parseFloat(formatUnits(f, 9))),
+            ).map(f => Number.parseFloat(formatUnits(f, 9))),
           } as Fees,
-          stablecoinsIssued: parseFloat(
+          stablecoinsIssued: Number.parseFloat(
             formatUnits(
               TransmuterSubscriber.interface.decodeFunctionResult(
                 'getIssuedByCollateral',
@@ -223,14 +224,14 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
         'getRedemptionFees',
         multicallOutputs[multicallOutputs.length - 2],
       )[0] as BigNumber[]
-    ).map(f => parseFloat(formatUnits(f, 9)));
+    ).map(f => Number.parseFloat(formatUnits(f, 9)));
     transmuterState.yRedemptionCurve = (
       TransmuterSubscriber.interface.decodeFunctionResult(
         'getRedemptionFees',
         multicallOutputs[multicallOutputs.length - 2],
       )[1] as BigNumber[]
-    ).map(f => parseFloat(formatUnits(f, 9)));
-    transmuterState.totalStablecoinIssued = parseFloat(
+    ).map(f => Number.parseFloat(formatUnits(f, 9)));
+    transmuterState.totalStablecoinIssued = Number.parseFloat(
       formatUnits(
         TransmuterSubscriber.interface.decodeFunctionResult(
           'getTotalIssued',
@@ -255,17 +256,17 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const yFee: BigNumber[] = event.args.yFee;
     if (isMint) {
       state.collaterals[collateral].fees.xFeeMint = xFee.map(f =>
-        parseFloat(formatUnits(f, 9)),
+        Number.parseFloat(formatUnits(f, 9)),
       );
       state.collaterals[collateral].fees.yFeeMint = yFee.map(f =>
-        parseFloat(formatUnits(f, 9)),
+        Number.parseFloat(formatUnits(f, 9)),
       );
     } else {
       state.collaterals[collateral].fees.xFeeBurn = xFee.map(f =>
-        parseFloat(formatUnits(f, 9)),
+        Number.parseFloat(formatUnits(f, 9)),
       );
       state.collaterals[collateral].fees.yFeeBurn = yFee.map(f =>
-        parseFloat(formatUnits(f, 9)),
+        Number.parseFloat(formatUnits(f, 9)),
       );
     }
     return state;
@@ -280,8 +281,12 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
   ): Readonly<TransmuterState> | null {
     const xFee: BigNumber[] = event.args.xFee;
     const yFee: BigNumber[] = event.args.yFee;
-    state.xRedemptionCurve = xFee.map(f => parseFloat(formatUnits(f, 9)));
-    state.yRedemptionCurve = yFee.map(f => parseFloat(formatUnits(f, 9)));
+    state.xRedemptionCurve = xFee.map(f =>
+      Number.parseFloat(formatUnits(f, 9)),
+    );
+    state.yRedemptionCurve = yFee.map(f =>
+      Number.parseFloat(formatUnits(f, 9)),
+    );
     return state;
   }
 
@@ -295,12 +300,16 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const tokenIn: string = event.args.tokenIn;
     const tokenOut: string = event.args.tokenOut;
     // in case of a burn
-    if (tokenIn.toLowerCase() == this.agEUR.toLowerCase()) {
-      const amount: number = parseFloat(formatUnits(event.args.amountIn, 18));
+    if (tokenIn.toLowerCase() === this.agEUR.toLowerCase()) {
+      const amount: number = Number.parseFloat(
+        formatUnits(event.args.amountIn, 18),
+      );
       state.collaterals[tokenOut].stablecoinsIssued -= amount;
       state.totalStablecoinIssued -= amount;
     } else {
-      const amount: number = parseFloat(formatUnits(event.args.amountOut, 18));
+      const amount: number = Number.parseFloat(
+        formatUnits(event.args.amountOut, 18),
+      );
       state.collaterals[tokenIn].stablecoinsIssued += amount;
       state.totalStablecoinIssued += amount;
     }
@@ -314,7 +323,9 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     event: ethers.utils.LogDescription,
     state: TransmuterState,
   ): Readonly<TransmuterState> | null {
-    const amount: number = parseFloat(formatUnits(event.args.amount, 18));
+    const amount: number = Number.parseFloat(
+      formatUnits(event.args.amount, 18),
+    );
     const currentStablecoinEmission = state.totalStablecoinIssued;
     for (const collat of Object.keys(state.collaterals)) {
       state.collaterals[collat].stablecoinsIssued -=
@@ -353,7 +364,8 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const collateral = event.args.collateral;
     const isIncrease: boolean = event.args.increase;
     const amount: number =
-      parseFloat(formatUnits(event.args.amount, 18)) * Number(isIncrease);
+      Number.parseFloat(formatUnits(event.args.amount, 18)) *
+      Number(isIncrease);
     state.totalStablecoinIssued += amount;
     state.collaterals[collateral].stablecoinsIssued += amount;
     return state;
@@ -368,8 +380,8 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const data: string = event.args.whitelistData;
     if (!state.collaterals[collateral])
       state.collaterals[collateral] = {} as CollateralState;
-    if (status == 1) state.collaterals[collateral].whitelist.data = data;
-    state.collaterals[collateral].whitelist.status = status > 0 ? true : false;
+    if (status === 1) state.collaterals[collateral].whitelist.data = data;
+    state.collaterals[collateral].whitelist.status = status > 0;
     return state;
   }
 
@@ -382,7 +394,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const whitelistType: number = event.args.whitelistType;
     if (!state.isWhitelisted[whitelistType])
       state.isWhitelisted[whitelistType] = new Set();
-    if (status == 0 && state.isWhitelisted[whitelistType].has(who))
+    if (status === 0 && state.isWhitelisted[whitelistType].has(who))
       state.isWhitelisted[whitelistType].delete(who);
     else if (status !== 0 && !state.isWhitelisted[whitelistType].has(who))
       state.isWhitelisted[whitelistType].add(who);
@@ -407,29 +419,30 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
    * Keep track of used oracles for each collaterals
    */
   _setOracleConfig(oracleConfig: string): Oracle {
-    const conifgOracle = {} as Oracle;
+    const configOracle = {} as Oracle;
     const oracleConfigDecoded =
       TransmuterSubscriber._decodeOracleConfig(oracleConfig);
 
-    conifgOracle.oracleType = oracleConfigDecoded.oracleType;
-    conifgOracle.targetType = oracleConfigDecoded.targetType;
-    if (oracleConfigDecoded.oracleType == OracleReadType.EXTERNAL) {
+    configOracle.oracleType = oracleConfigDecoded.oracleType;
+    configOracle.targetType = oracleConfigDecoded.targetType;
+    configOracle.hyperparameters = oracleConfigDecoded.hyperparameters;
+    if (oracleConfigDecoded.oracleType === OracleReadType.EXTERNAL) {
       const externalOracle: Address = ethers.utils.defaultAbiCoder.decode(
         [`address externalOracle`],
         oracleConfigDecoded.oracleData,
       )[0];
-      conifgOracle.externalOracle = externalOracle;
+      configOracle.externalOracle = externalOracle;
     } else {
-      conifgOracle.oracleFeed = TransmuterSubscriber._decodeOracleFeed(
+      configOracle.oracleFeed = TransmuterSubscriber._decodeOracleFeed(
         oracleConfigDecoded.oracleType,
         oracleConfigDecoded.oracleData,
       );
-      conifgOracle.targetFeed = TransmuterSubscriber._decodeOracleFeed(
+      configOracle.targetFeed = TransmuterSubscriber._decodeOracleFeed(
         oracleConfigDecoded.targetType,
         oracleConfigDecoded.targetData,
       );
     }
-    return conifgOracle;
+    return configOracle;
   }
 
   static _decodeOracleConfig(oracleConfig: string): DecodedOracleConfig {
@@ -440,6 +453,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
           'uint8 targetType',
           'bytes oracleData',
           'bytes targetData',
+          'bytes hyperparameters',
         ],
         oracleConfig,
       ),
@@ -452,27 +466,27 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     readType: OracleReadType,
     oracleData: string,
   ): OracleFeed {
-    if (readType == OracleReadType.CHAINLINK_FEEDS)
+    if (readType === OracleReadType.CHAINLINK_FEEDS)
       return {
         isChainlink: true,
         isPyth: false,
         chainlink: TransmuterSubscriber._decodeChainlinkOracle(oracleData),
       };
-    else if (readType == OracleReadType.PYTH)
+    if (readType === OracleReadType.PYTH)
       return {
         isChainlink: false,
         isPyth: true,
         pyth: TransmuterSubscriber._decodePythOracle(oracleData),
       };
-    else if (readType == OracleReadType.WSTETH)
+    if (readType === OracleReadType.WSTETH)
       return { isChainlink: false, isPyth: false, otherContract: STETH };
-    else if (readType == OracleReadType.CBETH)
+    if (readType === OracleReadType.CBETH)
       return { isChainlink: false, isPyth: false, otherContract: CBETH };
-    else if (readType == OracleReadType.RETH)
+    if (readType === OracleReadType.RETH)
       return { isChainlink: false, isPyth: false, otherContract: RETH };
-    else if (readType == OracleReadType.SFRXETH)
+    if (readType === OracleReadType.SFRXETH)
       return { isChainlink: false, isPyth: false, otherContract: SFRXETH };
-    else return { isChainlink: false, isPyth: false };
+    return { isChainlink: false, isPyth: false };
   }
 
   static _decodeChainlinkOracle(oracleData: string): Chainlink {

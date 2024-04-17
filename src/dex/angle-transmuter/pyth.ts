@@ -44,7 +44,7 @@ export class PythSubscriber<State> extends PartialEventSubscriber<
       log.data,
       log.topics,
     );
-    if (this.oracleIds.indexOf(decoded.id) == -1) return null;
+    if (this.oracleIds.indexOf(decoded.id) === -1) return null;
     const _state = _.cloneDeep(state) as PythState;
     const expo = _state[decoded.id].expo;
     _state[decoded.id] = {
@@ -100,6 +100,6 @@ export class PythSubscriber<State> extends PartialEventSubscriber<
   public _processPrice(price: BigNumber, expo: number): number {
     const isNormalizerExpoNeg = expo < 0;
     if (isNormalizerExpoNeg) return Number(formatUnits(price, -expo));
-    else return Number(parseUnits(price.toString(), expo));
+    return Number(parseUnits(price.toString(), expo));
   }
 }

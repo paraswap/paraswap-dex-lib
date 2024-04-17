@@ -89,7 +89,7 @@ export function _quoteFees(
   let currentExposure =
     (stablecoinsIssued * BASE_9) / (otherStablecoinSupply + stablecoinsIssued);
 
-  let amount: number = 0;
+  let amount = 0;
 
   // Finding in which segment the current exposure to the collateral is
   let i = findLowerBound(
@@ -149,7 +149,7 @@ export function _quoteFees(
           (amountToNextBreakPoint + amountFromPrevBreakPoint);
     }
     {
-      let amountToNextBreakPointNormalizer: number = isExact
+      const amountToNextBreakPointNormalizer: number = isExact
         ? amountToNextBreakPoint
         : isMint
         ? _invertFeeMint(amountToNextBreakPoint, (upperFees + currentFees) / 2)
@@ -204,26 +204,19 @@ export function _quoteFees(
           }
         }
         return amount + _computeFee(quoteType, amountStable, midFee);
-      } else {
-        amountStable -= amountToNextBreakPointNormalizer;
-        amount += !isExact
-          ? amountToNextBreakPoint
-          : isMint
-          ? _invertFeeMint(
-              amountToNextBreakPoint,
-              (upperFees + currentFees) / 2,
-            )
-          : _applyFeeBurn(
-              amountToNextBreakPoint,
-              (upperFees + currentFees) / 2,
-            );
-        currentExposure = upperExposure * BASE_9;
-        ++i;
-        // Update for the rest of the swaps the stablecoins issued from the asset
-        stablecoinsIssued = isMint
-          ? stablecoinsIssued + amountToNextBreakPoint
-          : stablecoinsIssued - amountToNextBreakPoint;
       }
+      amountStable -= amountToNextBreakPointNormalizer;
+      amount += !isExact
+        ? amountToNextBreakPoint
+        : isMint
+        ? _invertFeeMint(amountToNextBreakPoint, (upperFees + currentFees) / 2)
+        : _applyFeeBurn(amountToNextBreakPoint, (upperFees + currentFees) / 2);
+      currentExposure = upperExposure * BASE_9;
+      ++i;
+      // Update for the rest of the swaps the stablecoins issued from the asset
+      stablecoinsIssued = isMint
+        ? stablecoinsIssued + amountToNextBreakPoint
+        : stablecoinsIssued - amountToNextBreakPoint;
     }
   }
 
@@ -293,9 +286,8 @@ function _applyFeeMint(amountIn: number, fees: number): number {
     // Consider that if fees are above `BASE_12` this is equivalent to infinite fees
     if (castedFees >= BASE_12) throw new Error('InvalidSwap');
     return (amountIn * BASE_9) / (BASE_9 + castedFees);
-  } else {
-    return (amountIn * BASE_9) / (BASE_9 - Math.abs(-fees));
   }
+  return (amountIn * BASE_9) / (BASE_9 - Math.abs(-fees));
 }
 
 function _invertFeeMint(amountOut: number, fees: number): number {
@@ -304,9 +296,8 @@ function _invertFeeMint(amountOut: number, fees: number): number {
     // Consider that if fees are above `BASE_12` this is equivalent to infinite fees
     if (castedFees >= BASE_12) throw new Error('InvalidSwap');
     return (amountOut * (BASE_9 + castedFees)) / BASE_9;
-  } else {
-    return (amountOut * (BASE_9 - Math.abs(-fees))) / BASE_9;
   }
+  return (amountOut * (BASE_9 - Math.abs(-fees))) / BASE_9;
 }
 
 function _applyFeeBurn(amountIn: number, fees: number): number {
@@ -314,9 +305,8 @@ function _applyFeeBurn(amountIn: number, fees: number): number {
     const castedFees = fees;
     if (castedFees >= MAX_BURN_FEE) throw new Error('InvalidSwap');
     return ((BASE_9 - castedFees) * amountIn) / BASE_9;
-  } else {
-    return ((BASE_9 + Math.abs(-fees)) * amountIn) / BASE_9;
   }
+  return ((BASE_9 + Math.abs(-fees)) * amountIn) / BASE_9;
 }
 
 function _invertFeeBurn(amountOut: number, fees: number): number {
@@ -324,9 +314,8 @@ function _invertFeeBurn(amountOut: number, fees: number): number {
     const castedFees = fees;
     if (castedFees >= MAX_BURN_FEE) throw new Error('InvalidSwap');
     return (amountOut * BASE_9) / (BASE_9 - castedFees);
-  } else {
-    return (amountOut * BASE_9) / (BASE_9 + Math.abs(-fees));
   }
+  return (amountOut * BASE_9) / (BASE_9 + Math.abs(-fees));
 }
 
 function _computeFee(
@@ -336,13 +325,14 @@ function _computeFee(
 ): number {
   if (quoteType === QuoteType.MintExactInput) {
     return _applyFeeMint(amount, fees);
-  } else if (quoteType === QuoteType.MintExactOutput) {
-    return _invertFeeMint(amount, fees);
-  } else if (quoteType === QuoteType.BurnExactInput) {
-    return _applyFeeBurn(amount, fees);
-  } else {
-    return _invertFeeBurn(amount, fees);
   }
+  if (quoteType === QuoteType.MintExactOutput) {
+    return _invertFeeMint(amount, fees);
+  }
+  if (quoteType === QuoteType.BurnExactInput) {
+    return _applyFeeBurn(amount, fees);
+  }
+  return _invertFeeBurn(amount, fees);
 }
 
 export function filterDictionaryOnly<T extends { [key: string]: any }>(
@@ -352,7 +342,7 @@ export function filterDictionaryOnly<T extends { [key: string]: any }>(
   Object.keys(obj).map(key => {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       // Skip numeric keys to exclude array-like properties
-      if (isNaN(Number(key))) {
+      if (Number.isNaN(Number(key))) {
         result[key as keyof T] = obj[key];
       }
     }
