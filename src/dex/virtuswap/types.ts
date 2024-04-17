@@ -12,6 +12,7 @@ export type PoolState = {
   blocksDelay: number;
   reservesBaseValueSum: bigint;
   maxReserveRatio: bigint;
+  rRatio: bigint;
   reserves: Record<Address, { balance: bigint; baseValue: bigint }>;
 };
 
