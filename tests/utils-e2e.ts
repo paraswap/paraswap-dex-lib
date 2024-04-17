@@ -403,8 +403,7 @@ export async function testE2E(
       sender,
     );
 
-    const tokenTransferProxy =
-      generateConfig(network).tokenTransferProxyAddress;
+    const address = generateConfig(network).tokenTransferProxyAddress;
 
     let swapTx: SimulationResult;
     // When the source token is not ETH, we brute force the storage slots for all known balances and allowances
@@ -418,9 +417,9 @@ export async function testE2E(
               [`balances[${sender}]`]: multipliedAmount,
               [`_balances[${sender}]`]: multipliedAmount,
               [`balanceOf[${sender}]`]: multipliedAmount,
-              [`allowance[${sender}][${tokenTransferProxy.toLowerCase()}]`]:
+              [`allowance[${sender}][${address.toLowerCase()}]`]:
                 multipliedAmount,
-              [`_allowances[${sender}][${tokenTransferProxy.toLowerCase()}]`]:
+              [`_allowances[${sender}][${address.toLowerCase()}]`]:
                 multipliedAmount,
             },
           },
