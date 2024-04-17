@@ -109,7 +109,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
         this.token1,
         this.feeCode,
       );
-      console.log(`PoolAddressU3Compute`, this._poolAddress);
+      // console.log(`PoolAddressU3Compute`, this._poolAddress);
     }
     return this._poolAddress;
   }
@@ -512,8 +512,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/PoolAddress.sol
     if (token0 > token1) [token0, token1] = [token1, token0];
 
-    console.log(`COMP:token0="${token0}"`);
-    console.log(`COMP:token1="${token1}"`);
+    // console.log(`COMP:token0="${token0}"`);
+    // console.log(`COMP:token1="${token1}"`);
     const encodedKey = ethers.utils.keccak256(
       ethers.utils.defaultAbiCoder.encode(
         ['address', 'address', 'uint24'],

@@ -418,7 +418,7 @@ export class UniswapV3
         ),
       )
     ).filter(pool => pool);
-    console.log('XX:POOLS_', pools);
+    // console.log('XX:POOLS_', pools);
 
     if (pools.length === 0) return [];
 
