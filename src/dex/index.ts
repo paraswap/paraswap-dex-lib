@@ -85,6 +85,7 @@ import { Dexalot } from './dexalot/dexalot';
 import { Smardex } from './smardex/smardex';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
+import { Integral } from './integral/integral';
 
 const LegacyDexes = [
   CurveV2,
@@ -166,6 +167,7 @@ const Dexes = [
   Smardex,
   Wombat,
   Swell,
+  Integral,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
