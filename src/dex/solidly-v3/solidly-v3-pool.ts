@@ -128,6 +128,14 @@ export class SolidlyV3EventPool extends StatefulEventSubscriber<PoolState> {
     await super.initialize(blockNumber, options);
   }
 
+  protected getPoolIdentifierData() {
+    return {
+      token0: this.token0,
+      token1: this.token1,
+      fee: this.tickSpacing.toString(),
+    };
+  }
+
   protected async processBlockLogs(
     state: DeepReadonly<PoolState>,
     logs: Readonly<Log>[],

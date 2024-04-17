@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "2.47.3",
+  "version": "2.48.2",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -11,7 +11,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@paraswap/sdk": "6.2.1",
+    "@paraswap/sdk": "6.6.0",
     "@types/async": "^3.2.15",
     "@types/axios": "0.14.0",
     "@types/express": "^4.17.14",
@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@0x/utils": "^4.5.2",
+    "@balancer-labs/sor": "4.1.1-beta.4",
     "@bgd-labs/aave-address-book": "2.21.1",
     "@ethersproject/abi": "^5.7.0",
     "@hashflow/sdk": "1.2.4",
