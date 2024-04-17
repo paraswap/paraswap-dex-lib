@@ -265,7 +265,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       factory: '0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42',
       deployer: '0x95120704f4E2D545Aea8b6B3c16d9Da1fa32E30F',
       quoter: '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
-      router: '0xAAA9f93572B99919750FA59c33c0946bc5fC0e90',
+      // router: '0xAAA9f93572B99919750FA59c33c0946bc5fC0e90',
+      router: '0xAAAE99091Fbb28D400029052821653C1C752483B',
       supportedFees: [...SUPPORTED_FEES, 50n],
       // stateMulticall: '0x50EE4112Cab9c79812F23bE079aB3911395ACc8e',
       stateMulticall: '0xd32C191e0febaa6Cc93A29Cb676474c72486E00b',
@@ -277,8 +278,10 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       decodeStateMultiCallResultWithRelativeBitmaps,
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
+      // subgraphURL:
+      //   'https://thegraph.com/hosted-service/subgraph/ramsesexchange/pharaoh-cl-subgraph',
       subgraphURL:
-        'https://thegraph.com/hosted-service/subgraph/ramsesexchange/pharaoh-cl-subgraph',
+        'https://api.studio.thegraph.com/query/66247/pharaoh-cl/version/latest',
     },
   },
   'QuickSwapV3.1': {

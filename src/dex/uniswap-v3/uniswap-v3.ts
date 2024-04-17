@@ -319,7 +319,7 @@ export class UniswapV3
           pool!.initRetryAttemptCount = 0;
         },
       });
-    } catch (e) {
+    } catch (e: any) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
         // no need to await we want the set to have the pool key but it's not blocking
         this.dexHelper.cache.zadd(
@@ -418,6 +418,7 @@ export class UniswapV3
         ),
       )
     ).filter(pool => pool);
+    console.log('XX:POOLS_', pools);
 
     if (pools.length === 0) return [];
 
