@@ -1002,6 +1002,10 @@ export const Tokens: {
       address: '0xa8ce8aee21bc2a48a5ef670afcc9274c7bbbc035',
       decimals: 6,
     },
+    USDT: {
+      address: '0x1E4a5963aBFD975d8c9021ce480b42188849D41d',
+      decimals: 6,
+    },
   },
   [Network.BASE]: {
     PRIME: {
@@ -1285,6 +1289,7 @@ export const Holders: {
     MATIC: '0x8f2a1450c040b3c19efe9676165d8f30d8280019',
     WBTC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
+    USDT: '0x4943b0c9959dcf58871a799dfb71bece0d97c9f4',
   },
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
@@ -1323,4 +1328,5 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
   [Network.BASE]: 'ETH',
+  [Network.ZKEVM]: 'MATIC',
 };
