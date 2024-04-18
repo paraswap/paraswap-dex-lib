@@ -134,6 +134,14 @@ export class TenderlySimulation implements TransactionSimulator {
           },
         );
 
+        // if encode states fail, the simulation will most likely faily due to allowance/balance checks.
+        if (result.status !== 200) {
+          console.error(`TenderlySimulation_encodeStates`, result.data);
+          return {
+            success: false,
+          };
+        }
+
         _params.state_objects = Object.keys(result.data.stateOverrides).reduce(
           (acc, contract) => {
             const _storage = result.data.stateOverrides[contract].value;
