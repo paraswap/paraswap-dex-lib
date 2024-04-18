@@ -302,7 +302,6 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
   ): Readonly<TransmuterState> | null {
     const tokenIn: string = event.args.tokenIn;
     const tokenOut: string = event.args.tokenOut;
-    console.log(state);
     // in case of a burn
     if (tokenIn.toLowerCase() === this.EURA.toLowerCase()) {
       const amount: number = Number.parseFloat(
