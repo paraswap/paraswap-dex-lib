@@ -2,7 +2,7 @@
 import { Provider } from '@ethersproject/providers';
 import { Address } from '@paraswap/core';
 import axios from 'axios';
-import { Erc20BalanceCallData, TxObject } from '../src/types';
+import { TxObject } from '../src/types';
 import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
 import { fixHexStringForTenderly } from './utils';
 
