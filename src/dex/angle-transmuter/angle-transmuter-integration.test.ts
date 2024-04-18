@@ -170,35 +170,37 @@ describe('AngleTransmuter', () => {
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'EUROC';
-    const destTokenSymbol = 'agEUR';
+    const eurocSymbol = 'EUROC';
+    const bC3MSymbol = 'bC3M';
+    const bERNXSymbol = 'bERNX';
+    const euraSymbol = 'EURA';
 
-    const amountsForSell = [
+    const amountsEUROC = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      1n * BI_POWS[tokens[eurocSymbol].decimals],
+      2n * BI_POWS[tokens[eurocSymbol].decimals],
+      3n * BI_POWS[tokens[eurocSymbol].decimals],
+      4n * BI_POWS[tokens[eurocSymbol].decimals],
+      5n * BI_POWS[tokens[eurocSymbol].decimals],
+      6n * BI_POWS[tokens[eurocSymbol].decimals],
+      7n * BI_POWS[tokens[eurocSymbol].decimals],
+      8n * BI_POWS[tokens[eurocSymbol].decimals],
+      9n * BI_POWS[tokens[eurocSymbol].decimals],
+      10n * BI_POWS[tokens[eurocSymbol].decimals],
     ];
 
-    const amountsForBuy = [
+    const amountsEURA = [
       0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      1n * BI_POWS[tokens[euraSymbol].decimals],
+      2n * BI_POWS[tokens[euraSymbol].decimals],
+      3n * BI_POWS[tokens[euraSymbol].decimals],
+      4n * BI_POWS[tokens[euraSymbol].decimals],
+      5n * BI_POWS[tokens[euraSymbol].decimals],
+      6n * BI_POWS[tokens[euraSymbol].decimals],
+      7n * BI_POWS[tokens[euraSymbol].decimals],
+      8n * BI_POWS[tokens[euraSymbol].decimals],
+      9n * BI_POWS[tokens[euraSymbol].decimals],
+      10n * BI_POWS[tokens[euraSymbol].decimals],
     ];
 
     beforeAll(async () => {
@@ -209,35 +211,63 @@ describe('AngleTransmuter', () => {
       }
     });
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async () => {
+    it('getPoolIdentifiers and getPricesVolume SELL - EUROC', async () => {
       await testPricingOnNetwork(
         angleTransmuter,
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
+        eurocSymbol,
+        euraSymbol,
         SwapSide.SELL,
-        amountsForSell,
+        amountsEUROC,
         'quoteIn',
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async () => {
+    it('getPoolIdentifiers and getPricesVolume SELL - EURA', async () => {
       await testPricingOnNetwork(
         angleTransmuter,
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
+        euraSymbol,
+        eurocSymbol,
+        SwapSide.SELL,
+        amountsEURA,
+        'quoteIn',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY - EUROC', async () => {
+      await testPricingOnNetwork(
+        angleTransmuter,
+        network,
+        dexKey,
+        blockNumber,
+        eurocSymbol,
+        euraSymbol,
         SwapSide.BUY,
-        amountsForBuy,
+        amountsEURA,
         'quoteOut',
       );
     });
 
-    it('getTopPoolsForToken', async () => {
+    it('getPoolIdentifiers and getPricesVolume BUY - EURA', async () => {
+      await testPricingOnNetwork(
+        angleTransmuter,
+        network,
+        dexKey,
+        blockNumber,
+        euraSymbol,
+        eurocSymbol,
+        SwapSide.BUY,
+        amountsEUROC,
+        'quoteOut',
+      );
+    });
+
+    it('getTopPoolsForToken - EUROC', async () => {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAngleTransmuter = new AngleTransmuter(
@@ -249,15 +279,41 @@ describe('AngleTransmuter', () => {
         await newAngleTransmuter.updatePoolState();
       }
       const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
+        tokens[eurocSymbol].address,
         10,
       );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+      console.log(`${eurocSymbol} Top Pools:`, poolLiquidity);
 
       if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
+          Tokens[network][eurocSymbol].address,
+          dexKey,
+        );
+      }
+    });
+
+    it('getTopPoolsForToken - EURA', async () => {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAngleTransmuter = new AngleTransmuter(
+        network,
+        dexKey,
+        dexHelper,
+      );
+      if (newAngleTransmuter.updatePoolState) {
+        await newAngleTransmuter.updatePoolState();
+      }
+      const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
+        tokens[euraSymbol].address,
+        10,
+      );
+      console.log(`${euraSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][euraSymbol].address,
           dexKey,
         );
       }

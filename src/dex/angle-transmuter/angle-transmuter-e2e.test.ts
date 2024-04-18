@@ -80,7 +80,7 @@ describe('AngleTransmuter E2E', () => {
 
     describe('EUROC', () => {
       const tokenASymbol: string = 'EUROC';
-      const tokenBSymbol: string = 'agEUR';
+      const tokenBSymbol: string = 'EURA';
 
       const tokenAAmount: string = '1000000';
       const tokenBAmount: string = '1000000000000000000';
@@ -98,9 +98,27 @@ describe('AngleTransmuter E2E', () => {
     });
     describe('BC3M', () => {
       const tokenASymbol: string = 'bC3M';
-      const tokenBSymbol: string = 'agEUR';
+      const tokenBSymbol: string = 'EURA';
 
       const tokenAAmount: string = '100000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+    describe('BERNX', () => {
+      const tokenASymbol: string = 'bERNX';
+      const tokenBSymbol: string = 'EURA';
+
+      const tokenAAmount: string = '500000000000000000';
       const tokenBAmount: string = '1000000000000000000';
       const nativeTokenAmount = '1000000000000000000';
 

@@ -34,6 +34,8 @@ import { formatEther, formatUnits } from 'ethers/lib/utils';
 import { BackedSubscriber } from './backedOracle';
 import { SwapSide } from '../../constants';
 import { ethers } from 'ethers';
+import { BLOCK_UPGRADE_ORACLE } from './constants';
+import { log } from 'console';
 
 export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
   public transmuter: Contract;
@@ -102,7 +104,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     );
 
     const transmuterListener = new TransmuterSubscriber(
-      config.agEUR.address,
+      config.EURA.address,
       config.transmuter,
       config.collaterals,
       lens<DeepReadonly<PoolState>>().transmuter,
@@ -122,7 +124,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         pythListener,
       ],
       {
-        stablecoin: config.agEUR,
+        stablecoin: config.EURA,
         transmuter: {} as TransmuterState,
         oracles: { chainlink: {}, pyth: {} },
       },
@@ -159,13 +161,19 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     let minRatio = 0;
     let collateral = _tokenIn;
     if (isMint)
-      oracleValue = await this._readMint(this.config, state, _tokenIn);
+      oracleValue = await this._readMint(
+        this.config,
+        state,
+        _tokenIn,
+        blockNumber,
+      );
     else {
       collateral = _tokenOut;
       ({ oracleValue, minRatio } = await this._getBurnOracle(
         this.config,
         state,
         _tokenOut,
+        blockNumber,
       ));
     }
 
@@ -431,7 +439,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     );
 
     return {
-      agEUR: dexParams.EURA,
+      EURA: dexParams.EURA,
       transmuter: dexParams.transmuter,
       collaterals: collaterals,
       oracles: oracles,
@@ -442,14 +450,25 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
                                                        UTILS                                                      
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-  _readMint(config: PoolConfig, state: PoolState, collateral: Address): number {
+  _readMint(
+    config: PoolConfig,
+    state: PoolState,
+    collateral: Address,
+    blockNumber: number,
+  ): number {
     const configOracle = state.transmuter.collaterals[collateral].config;
     if (configOracle.oracleType === OracleReadType.EXTERNAL) {
       return 1;
     }
     let target: number;
     let spot: number;
-    ({ spot, target } = this._readSpotAndTarget(config, state, collateral));
+    ({ spot, target } = this._readSpotAndTarget(
+      config,
+      state,
+      collateral,
+      blockNumber,
+    ));
+
     if (target < spot) spot = target;
     return spot;
   }
@@ -458,6 +477,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     config: PoolConfig,
     state: PoolState,
     collateral: Address,
+    blockNumber: number,
   ): { oracleValue: number; minRatio: number } {
     return config.collaterals.reduce(
       (
@@ -472,9 +492,16 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
             config,
             state,
             comparedCollat,
+            blockNumber,
           ));
           acc.oracleValue = oracleValue;
-        } else ({ ratio } = this._readBurn(config, state, comparedCollat));
+        } else
+          ({ ratio } = this._readBurn(
+            config,
+            state,
+            comparedCollat,
+            blockNumber,
+          ));
         if (ratio < acc.minRatio) acc.minRatio = ratio;
         return acc;
       },
@@ -486,6 +513,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     config: PoolConfig,
     state: PoolState,
     collateral: Address,
+    blockNumber: number,
   ): { oracleValue: number; ratio: number } {
     const configOracle = state.transmuter.collaterals[collateral].config;
     if (configOracle.oracleType === OracleReadType.EXTERNAL) {
@@ -498,6 +526,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       config,
       state,
       collateral,
+      blockNumber,
     ));
 
     let ratio = 1;
@@ -510,6 +539,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     config: PoolConfig,
     state: PoolState,
     collateral: Address,
+    blockNumber: number,
   ): {
     spot: number;
     target: number;
@@ -517,12 +547,22 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     burnRatioDeviation: number;
   } {
     const configOracle = state.transmuter.collaterals[collateral].config;
-    const hyperparameters = filterDictionaryOnly(
-      ethers.utils.defaultAbiCoder.decode(
-        ['uint128 userDeviation', 'uint128 burnRatioDeviation'],
-        configOracle.hyperparameters,
-      ),
-    ) as unknown as OracleHyperparameter;
+    let userDeviation = 0;
+    let burnRatioDeviation = 0;
+    if (BLOCK_UPGRADE_ORACLE <= blockNumber) {
+      const hyperparameters = filterDictionaryOnly(
+        ethers.utils.defaultAbiCoder.decode(
+          ['uint128 userDeviation', 'uint128 burnRatioDeviation'],
+          configOracle.hyperparameters,
+        ),
+      ) as unknown as OracleHyperparameter;
+      userDeviation = Number.parseFloat(
+        formatEther(hyperparameters.userDeviation.toString()),
+      );
+      burnRatioDeviation = Number.parseFloat(
+        formatEther(hyperparameters.burnRatioDeviation.toString()),
+      );
+    }
     const targetPrice = this._read(
       config,
       state,
@@ -537,14 +577,9 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       configOracle.oracleFeed,
       targetPrice,
     );
-    const userDeviation = Number.parseFloat(
-      formatEther(hyperparameters.userDeviation.toString()),
-    );
-    const burnRatioDeviation = Number.parseFloat(
-      formatEther(hyperparameters.burnRatioDeviation.toString()),
-    );
+
     if (
-      targetPrice * (1 - userDeviation) < oracleValue ||
+      targetPrice * (1 - userDeviation) < oracleValue &&
       oracleValue < targetPrice * (1 + userDeviation)
     )
       oracleValue = targetPrice;

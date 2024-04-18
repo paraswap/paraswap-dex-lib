@@ -37,7 +37,7 @@ export type ChainlinkConfig = {
 export type PythConfig = { proxy: Address; ids: string[] };
 
 export type PoolConfig = {
-  agEUR: Token;
+  EURA: Token;
   transmuter: Address;
   collaterals: Address[];
   oracles: {

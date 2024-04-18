@@ -346,7 +346,7 @@ export class AngleTransmuter
       srcAddress !== destAddress &&
       this.supportedTokensMap[srcAddress] &&
       this.supportedTokensMap[destAddress] &&
-      // check that at least one of the tokens is agEUR
+      // check that at least one of the tokens is EURA
       (srcAddress === this.params.EURA.address.toLowerCase() ||
         destAddress === this.params.EURA.address.toLowerCase())
     ) {
