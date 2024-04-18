@@ -56,7 +56,7 @@ async function fetchPoolState(
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('AngleStakedStable EventPool Mainnet', function () {
+describe('AngleStakedStable EventPool Mainnet', () => {
   const dexKey = 'AngleStakedStable';
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
@@ -66,11 +66,22 @@ describe('AngleStakedStable EventPool Mainnet', function () {
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     '0x004626a008b1acdc4c74ab51644093b155e59a23': {
-      Accrued: [],
-      Deposit: [18134921, 18135441],
-      Withdraw: [18135030],
+      Accrued: [
+        19368181, 19387091, 19387136, 19390671, 19395050, 19395068, 19404404,
+        19404492, 19407830, 19410813, 19482839, 19575712, 19622932, 19622960,
+        19632489, 19650535, 19668024, 19668335, 19669259, 19672358, 19675559,
+        19679409,
+      ],
+      Deposit: [
+        19387091, 19387136, 19395050, 19404404, 19410813, 19622932, 19622960,
+        19632489, 19668335, 19669259, 19672358, 19675559,
+      ],
+      Withdraw: [
+        19368181, 19390671, 19395068, 19404492, 19407830, 19482839, 19575712,
+        19650535, 19679409,
+      ],
       ToggledPause: [],
-      RateUpdated: [18176668],
+      RateUpdated: [19668024],
     },
   };
 
@@ -84,14 +95,17 @@ describe('AngleStakedStable EventPool Mainnet', function () {
     );
   });
 
+  // biome-ignore lint/complexity/noForEach: <explanation>
   Object.entries(eventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {
       describe(`Events for ${poolAddress}`, () => {
+        // biome-ignore lint/complexity/noForEach: <explanation>
         Object.entries(events).forEach(
           ([eventName, blockNumbers]: [string, number[]]) => {
             describe(`${eventName}`, () => {
+              // biome-ignore lint/complexity/noForEach: <explanation>
               blockNumbers.forEach((blockNumber: number) => {
-                it(`State after ${blockNumber}`, async function () {
+                it(`State after ${blockNumber}`, async () => {
                   await testEventSubscriber(
                     angleStakedStablePool,
                     angleStakedStablePool.addressesSubscribed,

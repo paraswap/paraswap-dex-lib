@@ -1,6 +1,6 @@
 import { Interface } from '@ethersproject/abi';
-import { AsyncOrSync } from 'ts-essentials';
-import {
+import type { AsyncOrSync } from 'ts-essentials';
+import type {
   Token,
   Address,
   ExchangePrices,
@@ -10,12 +10,12 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, type Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
-import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AngleStakedStableData, DexParams, PoolState } from './types';
+import type { IDex } from '../../dex/idex';
+import type { IDexHelper } from '../../dex-helper/idex-helper';
+import type { AngleStakedStableData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AngleStakedStableConfig, Adapters } from './config';
 import { AngleStakedStableEventPool } from './angle-staked-stable-pool';
@@ -41,7 +41,7 @@ export class AngleStakedStable
   logger: Logger;
 
   protected eventPools: AngleStakedStableEventPool | null = null;
-  protected isPaused: boolean = false;
+  protected isPaused = false;
 
   constructor(
     readonly network: Network,
@@ -53,8 +53,8 @@ export class AngleStakedStable
     const config = AngleStakedStableConfig[dexKey][network];
     this.logger = dexHelper.getLogger(dexKey);
     this.config = {
-      stEUR: config.stEUR.toLowerCase(),
-      agEUR: config.agEUR.toLowerCase(),
+      stEUR: config.stEUR!.toLowerCase(),
+      EURA: config.EURA.toLowerCase(),
     };
   }
 
@@ -90,7 +90,7 @@ export class AngleStakedStable
     blockNumber: number,
   ): Promise<string[]> {
     if (!this._knownAddress(srcToken, destToken)) return [];
-    else return [this.dexKey];
+    return [this.dexKey];
   }
 
   // Returns pool prices for amounts.
@@ -112,7 +112,7 @@ export class AngleStakedStable
     const state = this.eventPools?.getState(blockNumber);
     if (this.eventPools === null || state === undefined || state === null)
       return null;
-    if (srcTokenAddress === this.config.agEUR && side === SwapSide.SELL)
+    if (srcTokenAddress === this.config.EURA && side === SwapSide.SELL)
       return [
         {
           prices: amounts.map(amount =>
@@ -122,10 +122,10 @@ export class AngleStakedStable
           gasCost: AngleStakedGasCost,
           exchange: this.dexKey,
           data: { exchange: `${this.config.stEUR}` },
-          poolAddresses: [`${this.config.stEUR}_${this.config.agEUR}`],
+          poolAddresses: [`${this.config.stEUR}_${this.config.EURA}`],
         },
       ];
-    else if (destTokenAddress === this.config.agEUR && side === SwapSide.SELL)
+    if (destTokenAddress === this.config.EURA && side === SwapSide.SELL)
       return [
         {
           prices: amounts.map(share =>
@@ -135,10 +135,10 @@ export class AngleStakedStable
           gasCost: AngleStakedGasCost,
           exchange: this.dexKey,
           data: { exchange: `${this.config.stEUR}` },
-          poolAddresses: [`${this.config.stEUR}_${this.config.agEUR}`],
+          poolAddresses: [`${this.config.stEUR}_${this.config.EURA}`],
         },
       ];
-    else if (srcTokenAddress === this.config.agEUR && side === SwapSide.BUY)
+    if (srcTokenAddress === this.config.EURA && side === SwapSide.BUY)
       return [
         {
           prices: amounts.map(share =>
@@ -148,22 +148,21 @@ export class AngleStakedStable
           gasCost: AngleStakedGasCost,
           exchange: this.dexKey,
           data: { exchange: `${this.config.stEUR}` },
-          poolAddresses: [`${this.config.stEUR}_${this.config.agEUR}`],
+          poolAddresses: [`${this.config.stEUR}_${this.config.EURA}`],
         },
       ];
-    else
-      return [
-        {
-          prices: amounts.map(amount =>
-            this.eventPools!.getRateWithdraw(amount, state),
-          ),
-          unit: this.eventPools.getRateWithdraw(1n * BigInt(10 ** 18), state),
-          gasCost: AngleStakedGasCost,
-          exchange: this.dexKey,
-          data: { exchange: `${this.config.stEUR}` },
-          poolAddresses: [`${this.config.stEUR}_${this.config.agEUR}`],
-        },
-      ];
+    return [
+      {
+        prices: amounts.map(amount =>
+          this.eventPools!.getRateWithdraw(amount, state),
+        ),
+        unit: this.eventPools.getRateWithdraw(1n * BigInt(10 ** 18), state),
+        gasCost: AngleStakedGasCost,
+        exchange: this.dexKey,
+        data: { exchange: `${this.config.stEUR}` },
+        poolAddresses: [`${this.config.stEUR}_${this.config.EURA}`],
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -212,7 +211,7 @@ export class AngleStakedStable
 
     // Encode here the transaction arguments
     const swapData =
-      srcToken.toLowerCase() === this.config.agEUR
+      srcToken.toLowerCase() === this.config.EURA
         ? AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
             side === SwapSide.SELL ? 'deposit' : 'mint',
             [
@@ -275,24 +274,23 @@ export class AngleStakedStable
   ): Promise<PoolLiquidity[]> {
     if (
       this.isPaused ||
-      (tokenAddress.toLowerCase() != this.config.agEUR &&
-        tokenAddress.toLowerCase() != this.config.stEUR)
+      (tokenAddress.toLowerCase() !== this.config.EURA &&
+        tokenAddress.toLowerCase() !== this.config.stEUR)
     )
       return [];
-    else
-      return [
-        {
-          exchange: this.dexKey,
-          address: this.config.stEUR,
-          connectorTokens: [
-            tokenAddress.toLowerCase() == this.config.agEUR
-              ? ({ address: this.config.stEUR, decimals: 18 } as Token)
-              : ({ address: this.config.agEUR, decimals: 18 } as Token),
-          ],
-          // liquidity is infinite as to have been able to mint stEUR, you must have deposited agEUR
-          liquidityUSD: 1e12,
-        },
-      ];
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.config.stEUR,
+        connectorTokens: [
+          tokenAddress.toLowerCase() === this.config.EURA
+            ? ({ address: this.config.stEUR, decimals: 18 } as Token)
+            : ({ address: this.config.EURA, decimals: 18 } as Token),
+        ],
+        // liquidity is infinite as to have been able to mint stEUR, you must have deposited EURA
+        liquidityUSD: 1e12,
+      },
+    ];
   }
 
   // This is optional function in case if your implementation has acquired any resources
@@ -304,10 +302,16 @@ export class AngleStakedStable
     const destTokenAddress = destToken.address.toLowerCase();
     if (
       !(
-        (srcTokenAddress === this.config.agEUR &&
-          destTokenAddress === this.config.stEUR) ||
-        (srcTokenAddress === this.config.stEUR &&
-          destTokenAddress === this.config.agEUR)
+        (
+          (srcTokenAddress === this.config.EURA &&
+            destTokenAddress === this.config.stEUR) ||
+          (srcTokenAddress === this.config.stEUR &&
+            destTokenAddress === this.config.EURA)
+        )
+        // (srcTokenAddress === this.config.USDA &&
+        // 	destTokenAddress === this.config.stUSD) ||
+        // (srcTokenAddress === this.config.stUSD &&
+        // 	destTokenAddress === this.config.USDA)
       )
     ) {
       return false;

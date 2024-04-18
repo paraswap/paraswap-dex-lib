@@ -54,4 +54,4 @@ const provider = new StaticJsonRpcProvider(
   network,
 );
 
-getBlockNumbersForEvents(address, ABI, eventNames, 0, 200000000, provider);
+getBlockNumbersForEvents(address, ABI, eventNames, 0, 20000000, provider);

@@ -37,6 +37,7 @@ function testForNetwork(
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
+        // biome-ignore lint/complexity/noForEach: <explanation>
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
@@ -50,6 +51,10 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                undefined,
+                1,
               );
             });
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
@@ -63,6 +68,10 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                undefined,
+                1,
               );
             });
           });
@@ -78,7 +87,70 @@ describe('AngleStakedStable E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'agEUR';
+    const tokenASymbol: string = 'EURA';
+    const tokenBSymbol: string = 'stEUR';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'EURA';
+    const tokenBSymbol: string = 'stEUR';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    const tokenASymbol: string = 'EURA';
+    const tokenBSymbol: string = 'stEUR';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    const tokenASymbol: string = 'EURA';
     const tokenBSymbol: string = 'stEUR';
 
     const tokenAAmount: string = '1000000000000000000';

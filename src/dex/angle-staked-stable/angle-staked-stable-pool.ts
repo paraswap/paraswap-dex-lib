@@ -1,14 +1,14 @@
 import { Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
-import { Address, BlockHeader, DexConfigMap, Log, Logger } from '../../types';
+import type { DeepReadonly } from 'ts-essentials';
+import type { BlockHeader, Log, Logger } from '../../types';
 import {
   bigIntify,
   catchParseLogError,
   currentBigIntTimestampInS,
 } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { IDexHelper } from '../../dex-helper/idex-helper';
-import { DexParams, PoolState } from './types';
+import type { IDexHelper } from '../../dex-helper/idex-helper';
+import type { DexParams, PoolState } from './types';
 import StakedStableABI from '../../abi/angle/stagToken.json';
 
 export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolState> {
@@ -45,11 +45,11 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
     this.addressesSubscribed = [config.stEUR];
 
     // Add handlers
-    this.handlers['Accrued'] = this.handleAccrued.bind(this);
-    this.handlers['Deposit'] = this.handleDeposit.bind(this);
-    this.handlers['Withdraw'] = this.handleWithdraw.bind(this);
-    this.handlers['ToggledPause'] = this.handleToggledPause.bind(this);
-    this.handlers['RateUpdated'] = this.handleRateUpdated.bind(this);
+    this.handlers.Accrued = this.handleAccrued.bind(this);
+    this.handlers.Deposit = this.handleDeposit.bind(this);
+    this.handlers.Withdraw = this.handleWithdraw.bind(this);
+    this.handlers.ToggledPause = this.handleToggledPause.bind(this);
+    this.handlers.RateUpdated = this.handleRateUpdated.bind(this);
   }
 
   /**
@@ -88,7 +88,7 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    let poolState = {
+    const poolState = {
       totalAssets: 0n,
       totalSupply: 0n,
       lastUpdate: 0n,
@@ -164,7 +164,7 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
 
   getRateDeposit(amount: bigint, state: PoolState): bigint {
     const newTotalAssets = this._accrue(state);
-    return amount == 0n || state.totalSupply == 0n
+    return amount === 0n || state.totalSupply === 0n
       ? amount
       : (amount * state.totalSupply) / newTotalAssets;
   }
@@ -173,14 +173,14 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
     const newTotalAssets = this._accrue(state);
     const roundUp =
       (shares * newTotalAssets) % state.totalSupply > 0n ? 1n : 0n;
-    return state.totalSupply == 0n
+    return state.totalSupply === 0n
       ? shares
       : (shares * newTotalAssets) / state.totalSupply + roundUp;
   }
 
   getRateRedeem(shares: bigint, state: PoolState): bigint {
     const newTotalAssets = this._accrue(state);
-    return state.totalSupply == 0n
+    return state.totalSupply === 0n
       ? shares
       : (shares * newTotalAssets) / state.totalSupply;
   }
@@ -189,7 +189,7 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
     const newTotalAssets = this._accrue(state);
     const roundUp =
       (amount * state.totalSupply) % newTotalAssets > 0n ? 1n : 0n;
-    return amount == 0n || state.totalSupply == 0n
+    return amount === 0n || state.totalSupply === 0n
       ? amount
       : (amount * state.totalSupply) / newTotalAssets + roundUp;
   }
@@ -204,7 +204,7 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
   }
 
   _computeUpdatedAssets(amount: bigint, rate: bigint, exp: bigint): bigint {
-    if (exp == 0n || rate > 0) return amount;
+    if (exp === 0n || rate > 0) return amount;
     const expMinusOne = exp - 1n;
     const expMinusTwo = exp > 2n ? exp - 2n : 0n;
     const basePowerTwo = (rate * rate + this.HALF_BASE_27) / this.BASE_27;
