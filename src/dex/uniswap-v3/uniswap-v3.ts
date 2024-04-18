@@ -319,7 +319,7 @@ export class UniswapV3
           pool!.initRetryAttemptCount = 0;
         },
       });
-    } catch (e: any) {
+    } catch (e) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
         // no need to await we want the set to have the pool key but it's not blocking
         this.dexHelper.cache.zadd(
