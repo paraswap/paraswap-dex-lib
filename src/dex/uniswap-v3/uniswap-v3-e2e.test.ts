@@ -34,19 +34,19 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-        // ContractMethod.directUniV3Swap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+        ContractMethod.directUniV3Swap,
       ],
     ],
-    // [
-    //   SwapSide.BUY,
-    //   [
-    //     ContractMethod.simpleBuy,
-    //     ContractMethod.buy,
-    //     ContractMethod.directUniV3Buy,
-    //   ],
-    // ],
+    [
+      SwapSide.BUY,
+      [
+        ContractMethod.simpleBuy,
+        ContractMethod.buy,
+        ContractMethod.directUniV3Buy,
+      ],
+    ],
   ]);
 
   describe(`${network}`, () => {
@@ -71,23 +71,23 @@ function testForNetwork(
                 slippage,
               );
             });
-            // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenASymbol],
-            //     tokens[nativeTokenSymbol],
-            //     holders[tokenASymbol],
-            //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //     undefined,
-            //     undefined,
-            //     undefined,
-            //     slippage,
-            //   );
-            // });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+              );
+            });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -703,9 +703,9 @@ describe('UniswapV3 E2E', () => {
       const network = Network.AVALANCHE;
 
       const tokenASymbol: string = 'USDC';
-      const tokenBSymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDCe';
 
-      const tokenAAmount: string = '111110';
+      const tokenAAmount: string = '100000';
       const tokenBAmount: string = '100000';
       const nativeTokenAmount = '11000000000000000';
 

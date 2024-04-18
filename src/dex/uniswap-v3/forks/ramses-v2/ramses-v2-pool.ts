@@ -63,8 +63,6 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
-    // console.log(`XX:pool_address:`, this.poolAddress);
-
     const calldataWithFee = [
       ...callData,
       {

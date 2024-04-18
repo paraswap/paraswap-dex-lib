@@ -748,6 +748,16 @@ describe('Pharaoh', () => {
 
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
   });
+
+  it('getTopPoolsForToken', async function () {
+    const poolLiquidity = await uniswapV3.getTopPoolsForToken(
+      TokenB.address,
+      10,
+    );
+    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+  });
 });
 
 describe('ChronosV3', () => {
