@@ -115,6 +115,8 @@ export enum FactoryImplementationNames {
   FACTORY_PLAIN_4_BASIC = 'factory_plain_4_basic',
   FACTORY_PLAIN_4_ETH = 'factory_plain_4_eth',
   FACTORY_PLAIN_4_OPTIMIZED = 'factory_plain_4_optimized',
+
+  FACTORY_STABLE_NG = 'factory_stable_ng',
 }
 
 export enum CustomImplementationNames {

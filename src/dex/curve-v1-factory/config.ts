@@ -16,6 +16,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       factoryAddresses: [
         '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
         '0x4f8846ae9380b90d2e71d5e3d042dff3e7ebb40d',
+        '0x6A8cbed756804B16E05E741eDaBd5cB544AE21bf', // factory stable ng
       ],
       stateUpdatePeriodMs: 5 * 1000,
       disabledPools: new Set([
@@ -157,6 +158,18 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           name: ImplementationNames.FACTORY_PLAIN_2_CRV_EMA,
           address: '0x67fe41A94e779CcFa22cff02cc2957DC9C0e4286',
           liquidityApiSlug: '/factory-crvusd',
+        },
+        '0x670a72e6d22b0956c0d2573288f82dcc5d6e3a61': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0x670a72e6d22b0956c0d2573288f82dcc5d6e3a61',
+        },
+        '0x635ef0056a597d13863b73825cca297236578595': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0x635ef0056a597d13863b73825cca297236578595',
+        },
+        '0x74345504Eaea3D9408fC69Ae7EB2d14095643c5b': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0x74345504Eaea3D9408fC69Ae7EB2d14095643c5b',
         },
       },
       customPools: {
