@@ -36,7 +36,14 @@ export class AlgebraFactory extends StatefulEventSubscriber<FactoryState> {
     protected readonly onPoolCreated: OnPoolCreatedCallback,
     mapKey: string = '',
   ) {
-    super(parentName, `${parentName} Factory`, dexHelper, logger, true, mapKey);
+    super(
+      parentName,
+      `${parentName} Factory`,
+      dexHelper,
+      logger,
+      false,
+      mapKey,
+    );
 
     this.addressesSubscribed = [factoryAddress];
 
