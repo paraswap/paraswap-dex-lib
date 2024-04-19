@@ -82,89 +82,63 @@ function testForNetwork(
 }
 
 describe('AngleStakedStable E2E', () => {
+  // same addresses accross all chains
+  const tokens = Tokens[Network.MAINNET];
   const dexKey = 'AngleStakedStable';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  const networksEUR = [
+    Network.MAINNET,
+    Network.ARBITRUM,
+    Network.POLYGON,
+    Network.OPTIMISM,
+  ];
 
-    const tokenASymbol: string = 'EURA';
-    const tokenBSymbol: string = 'stEUR';
+  const networksUSD = [
+    Network.MAINNET,
+    Network.ARBITRUM,
+    Network.POLYGON,
+    Network.OPTIMISM,
+    Network.BASE,
+    Network.BSC,
+  ];
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
+  // biome-ignore lint/complexity/noForEach: <explanation>
+  networksEUR.forEach(network =>
+    describe(`${network} - EUR`, () => {
+      const tokenASymbol: string = 'EURA';
+      const tokenBSymbol: string = 'stEUR';
+      const tokenAAmount: string = '990000000000000000';
+      const tokenBAmount: string = '990000000000000000';
+      const nativeTokenAmount = '990000000000000000';
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    }),
+  );
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-  });
-
-  describe('Arbitrum', () => {
-    const network = Network.ARBITRUM;
-
-    const tokenASymbol: string = 'EURA';
-    const tokenBSymbol: string = 'stEUR';
-
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-  });
-
-  describe('Polygon', () => {
-    const network = Network.POLYGON;
-
-    const tokenASymbol: string = 'EURA';
-    const tokenBSymbol: string = 'stEUR';
-
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-  });
-
-  describe('Optimism', () => {
-    const network = Network.OPTIMISM;
-
-    const tokenASymbol: string = 'EURA';
-    const tokenBSymbol: string = 'stEUR';
-
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-  });
+  // biome-ignore lint/complexity/noForEach: <explanation>
+  networksUSD.forEach(network =>
+    describe(`${network} - USD`, () => {
+      const tokenASymbol: string = 'USDA';
+      const tokenBSymbol: string = 'stUSD';
+      const tokenAAmount: string = '990000000000000000';
+      const tokenBAmount: string = '990000000000000000';
+      const nativeTokenAmount = '990000000000000000';
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    }),
+  );
 });

@@ -35,14 +35,14 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
+    public stakeToken: string,
     logger: Logger,
-    protected config: DexParams,
   ) {
     super(parentName, 'Staked_Stable', dexHelper, logger);
 
     this.logDecoder = (log: Log) =>
       AngleStakedStableEventPool.angleStakedStableIface.parseLog(log);
-    this.addressesSubscribed = [config.stEUR];
+    this.addressesSubscribed = [stakeToken];
 
     // Add handlers
     this.handlers.Accrued = this.handleAccrued.bind(this);
@@ -98,28 +98,28 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
 
     const multicall = [
       {
-        target: this.config.stEUR,
+        target: this.stakeToken,
         callData:
           AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
             'totalAssets',
           ),
       },
       {
-        target: this.config.stEUR,
+        target: this.stakeToken,
         callData:
           AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
             'totalSupply',
           ),
       },
       {
-        target: this.config.stEUR,
+        target: this.stakeToken,
         callData:
           AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
             'lastUpdate',
           ),
       },
       {
-        target: this.config.stEUR,
+        target: this.stakeToken,
         callData:
           AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
             'paused',

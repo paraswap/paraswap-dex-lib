@@ -13,4 +13,6 @@ export type AngleStakedStableData = { exchange: Address };
 export type DexParams = {
   EURA: Address;
   stEUR: Address;
+  USDA: Address;
+  stUSD: Address;
 };

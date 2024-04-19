@@ -57,11 +57,10 @@ async function checkOnChainPricing(
   angleStakedStable: AngleStakedStable,
   funcName: string,
   blockNumber: number,
+  exchangeAddress: string,
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = '0x004626a008b1acdc4c74ab51644093b155e59a23';
-
   // Normally you can get it from angleStakedStable.Iface or from eventPool.
   // It depends on your implementation
   const readerIface = AngleStakedStableEventPool.angleStakedStableIface;
@@ -137,11 +136,17 @@ async function testPricingOnNetwork(
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
 
+  const exchange =
+    srcTokenSymbol === 'stEUR' || srcTokenSymbol === 'stUSD'
+      ? networkTokens[srcTokenSymbol].address
+      : networkTokens[destTokenSymbol].address;
+
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     angleStakedStable,
     funcNameToCheck,
     blockNumber,
+    exchange,
     poolPrices![0].prices,
     amounts,
   );
@@ -159,42 +164,49 @@ describe('AngleStakedStable', () => {
     const tokens = Tokens[network];
 
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbolEnter = 'EURA';
-    const destTokenSymbolEnter = 'stEUR';
+    const srcTokenSymbolEUREnter = 'EURA';
+    const destTokenSymbolEUREnter = 'stEUR';
+    const srcTokenSymbolUSDEnter = 'USDA';
+    const destTokenSymbolUSDEnter = 'stUSD';
     const funcNameSellEnter = 'previewDeposit';
     const funcNameBuyEnter = 'previewMint';
 
-    const srcTokenSymbolExit = 'stEUR';
-    const destTokenSymbolExit = 'EURA';
+    const srcTokenSymbolEURExit = 'stEUR';
+    const destTokenSymbolEURExit = 'EURA';
+    const destTokenSymbolUSDExit = 'USDA';
+    const srcTokenSymbolUSDExit = 'stUSD';
     const funcNameSellExit = 'previewRedeem';
     const funcNameBuyExit = 'previewWithdraw';
 
+    const exchangeSTEUR = `${dexKey}_${tokens.stEUR.address.toLowerCase()}`;
+    const exchangeSTUSD = `${dexKey}_${tokens.stUSD.address.toLowerCase()}`;
+
     const amountsForSell = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbolEnter].decimals],
+      1n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbolEUREnter].decimals],
     ];
 
     const amountsForBuy = [
       0n,
-      1n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      2n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      3n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      4n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      5n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      6n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      7n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      8n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      9n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
-      10n * BI_POWS[tokens[destTokenSymbolEnter].decimals],
+      1n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      2n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      3n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      4n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      5n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      6n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      7n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      8n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      9n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
+      10n * BI_POWS[tokens[destTokenSymbolEUREnter].decimals],
     ];
 
     beforeAll(async () => {
@@ -211,8 +223,8 @@ describe('AngleStakedStable', () => {
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbolEnter,
-        destTokenSymbolEnter,
+        srcTokenSymbolEUREnter,
+        destTokenSymbolEUREnter,
         SwapSide.SELL,
         amountsForSell,
         funcNameSellEnter,
@@ -225,8 +237,8 @@ describe('AngleStakedStable', () => {
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbolEnter,
-        destTokenSymbolEnter,
+        srcTokenSymbolEUREnter,
+        destTokenSymbolEUREnter,
         SwapSide.BUY,
         amountsForBuy,
         funcNameBuyEnter,
@@ -239,8 +251,8 @@ describe('AngleStakedStable', () => {
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbolExit,
-        destTokenSymbolExit,
+        srcTokenSymbolEURExit,
+        destTokenSymbolEURExit,
         SwapSide.SELL,
         amountsForSell,
         funcNameSellExit,
@@ -253,8 +265,64 @@ describe('AngleStakedStable', () => {
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbolExit,
-        destTokenSymbolExit,
+        srcTokenSymbolEURExit,
+        destTokenSymbolEURExit,
+        SwapSide.BUY,
+        amountsForBuy,
+        funcNameBuyExit,
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL - USDA', async () => {
+      await testPricingOnNetwork(
+        angleStakedStable,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbolUSDEnter,
+        destTokenSymbolUSDEnter,
+        SwapSide.SELL,
+        amountsForSell,
+        funcNameSellEnter,
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY - stUSD', async () => {
+      await testPricingOnNetwork(
+        angleStakedStable,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbolUSDEnter,
+        destTokenSymbolUSDEnter,
+        SwapSide.BUY,
+        amountsForBuy,
+        funcNameBuyEnter,
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL - stUSD', async () => {
+      await testPricingOnNetwork(
+        angleStakedStable,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbolUSDExit,
+        destTokenSymbolUSDExit,
+        SwapSide.SELL,
+        amountsForSell,
+        funcNameSellExit,
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY - USDA', async () => {
+      await testPricingOnNetwork(
+        angleStakedStable,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbolUSDExit,
+        destTokenSymbolUSDExit,
         SwapSide.BUY,
         amountsForBuy,
         funcNameBuyExit,
@@ -273,16 +341,16 @@ describe('AngleStakedStable', () => {
         await newAngleStakedStable.updatePoolState();
       }
       const poolLiquidity = await newAngleStakedStable.getTopPoolsForToken(
-        tokens[srcTokenSymbolEnter].address,
+        tokens[srcTokenSymbolEUREnter].address,
         10,
       );
-      console.log(`${srcTokenSymbolEnter} Top Pools:`, poolLiquidity);
+      console.log(`${srcTokenSymbolEUREnter} Top Pools:`, poolLiquidity);
 
       if (!newAngleStakedStable.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
-          Tokens[network][srcTokenSymbolEnter].address,
-          dexKey,
+          Tokens[network][srcTokenSymbolEUREnter].address,
+          exchangeSTEUR,
         );
       }
     });
@@ -299,16 +367,68 @@ describe('AngleStakedStable', () => {
         await newAngleStakedStable.updatePoolState();
       }
       const poolLiquidity = await newAngleStakedStable.getTopPoolsForToken(
-        tokens[srcTokenSymbolExit].address,
+        tokens[srcTokenSymbolEURExit].address,
         10,
       );
-      console.log(`${srcTokenSymbolExit} Top Pools:`, poolLiquidity);
+      console.log(`${srcTokenSymbolEURExit} Top Pools:`, poolLiquidity);
 
       if (!newAngleStakedStable.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
-          Tokens[network][srcTokenSymbolExit].address,
-          dexKey,
+          Tokens[network][srcTokenSymbolEURExit].address,
+          exchangeSTEUR,
+        );
+      }
+    });
+
+    it('getTopPoolsForToken - USDA', async () => {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAngleStakedStable = new AngleStakedStable(
+        network,
+        dexKey,
+        dexHelper,
+      );
+      if (newAngleStakedStable.updatePoolState) {
+        await newAngleStakedStable.updatePoolState();
+      }
+      const poolLiquidity = await newAngleStakedStable.getTopPoolsForToken(
+        tokens[srcTokenSymbolUSDEnter].address,
+        10,
+      );
+      console.log(`${srcTokenSymbolUSDEnter} Top Pools:`, poolLiquidity);
+
+      if (!newAngleStakedStable.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbolUSDEnter].address,
+          exchangeSTUSD,
+        );
+      }
+    });
+
+    it('getTopPoolsForToken - stUSD', async () => {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAngleStakedStable = new AngleStakedStable(
+        network,
+        dexKey,
+        dexHelper,
+      );
+      if (newAngleStakedStable.updatePoolState) {
+        await newAngleStakedStable.updatePoolState();
+      }
+      const poolLiquidity = await newAngleStakedStable.getTopPoolsForToken(
+        tokens[srcTokenSymbolUSDExit].address,
+        10,
+      );
+      console.log(`${srcTokenSymbolUSDExit} Top Pools:`, poolLiquidity);
+
+      if (!newAngleStakedStable.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbolUSDExit].address,
+          exchangeSTUSD,
         );
       }
     });

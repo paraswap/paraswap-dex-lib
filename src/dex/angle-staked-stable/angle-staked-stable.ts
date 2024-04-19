@@ -40,8 +40,8 @@ export class AngleStakedStable
 
   logger: Logger;
 
-  protected eventPools: AngleStakedStableEventPool | null = null;
-  protected isPaused = false;
+  protected eventPools: { [key: string]: AngleStakedStableEventPool } = {};
+  protected isPaused: { [key: string]: boolean } = {};
 
   constructor(
     readonly network: Network,
@@ -53,8 +53,10 @@ export class AngleStakedStable
     const config = AngleStakedStableConfig[dexKey][network];
     this.logger = dexHelper.getLogger(dexKey);
     this.config = {
-      stEUR: config.stEUR!.toLowerCase(),
+      stEUR: config.stEUR.toLowerCase(),
       EURA: config.EURA.toLowerCase(),
+      stUSD: config.stUSD.toLowerCase(),
+      USDA: config.USDA.toLowerCase(),
     };
   }
 
@@ -63,14 +65,23 @@ export class AngleStakedStable
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    this.eventPools = new AngleStakedStableEventPool(
-      this.dexKey,
+    this.eventPools[this.config.stEUR] = new AngleStakedStableEventPool(
+      `${this.dexKey}_${this.config.stEUR!.toLowerCase()}`,
       this.network,
       this.dexHelper,
+      this.config.stEUR,
       this.logger,
-      this.config,
     );
-    await this.eventPools.initialize(blockNumber);
+    await this.eventPools[this.config.stEUR].initialize(blockNumber);
+
+    this.eventPools[this.config.stUSD] = new AngleStakedStableEventPool(
+      `${this.dexKey}_${this.config.stUSD!.toLowerCase()}`,
+      this.network,
+      this.dexHelper,
+      this.config.stUSD,
+      this.logger,
+    );
+    await this.eventPools[this.config.stUSD].initialize(blockNumber);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -89,8 +100,9 @@ export class AngleStakedStable
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (!this._knownAddress(srcToken, destToken)) return [];
-    return [this.dexKey];
+    const knownInfo = this._knownAddress(srcToken, destToken);
+    if (!knownInfo.known) return [];
+    return [`${this.dexKey}_${knownInfo.stakeToken!.toLowerCase()}`];
   }
 
   // Returns pool prices for amounts.
@@ -107,60 +119,60 @@ export class AngleStakedStable
   ): Promise<null | ExchangePrices<AngleStakedStableData>> {
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
-    if (!this._knownAddress(srcToken, destToken)) return null;
+    const knownInfo = this._knownAddress(srcToken, destToken);
+    if (!knownInfo.known) return null;
 
-    const state = this.eventPools?.getState(blockNumber);
+    const agToken = knownInfo.agToken!;
+    const stakeToken = knownInfo.stakeToken!;
+    const eventPool = this.eventPools[stakeToken];
+    const exchange = `${this.dexKey}`;
+    // const exchange = `${this.dexKey}_${stakeToken.toLowerCase()}`;
+    const state = eventPool?.getState(blockNumber);
     if (this.eventPools === null || state === undefined || state === null)
       return null;
-    if (srcTokenAddress === this.config.EURA && side === SwapSide.SELL)
+    if (srcTokenAddress === agToken && side === SwapSide.SELL)
       return [
         {
           prices: amounts.map(amount =>
-            this.eventPools!.getRateDeposit(amount, state),
+            eventPool.getRateDeposit(amount, state),
           ),
-          unit: this.eventPools.getRateDeposit(1n * BigInt(10 ** 18), state),
+          unit: eventPool.getRateDeposit(1n * BigInt(10 ** 18), state),
           gasCost: AngleStakedGasCost,
-          exchange: this.dexKey,
-          data: { exchange: `${this.config.stEUR}` },
-          poolAddresses: [`${this.config.stEUR}_${this.config.EURA}`],
+          exchange: exchange,
+          data: { exchange: `${stakeToken}` },
+          poolAddresses: [`${stakeToken}`],
         },
       ];
-    if (destTokenAddress === this.config.EURA && side === SwapSide.SELL)
+    if (destTokenAddress === agToken && side === SwapSide.SELL)
       return [
         {
-          prices: amounts.map(share =>
-            this.eventPools!.getRateRedeem(share, state),
-          ),
-          unit: this.eventPools.getRateRedeem(1n * BigInt(10 ** 18), state),
+          prices: amounts.map(share => eventPool.getRateRedeem(share, state)),
+          unit: eventPool.getRateRedeem(1n * BigInt(10 ** 18), state),
           gasCost: AngleStakedGasCost,
-          exchange: this.dexKey,
-          data: { exchange: `${this.config.stEUR}` },
-          poolAddresses: [`${this.config.stEUR}_${this.config.EURA}`],
+          exchange: exchange,
+          data: { exchange: `${stakeToken}` },
+          poolAddresses: [`${stakeToken}_${agToken}`],
         },
       ];
-    if (srcTokenAddress === this.config.EURA && side === SwapSide.BUY)
+    if (srcTokenAddress === agToken && side === SwapSide.BUY)
       return [
         {
-          prices: amounts.map(share =>
-            this.eventPools!.getRateMint(share, state),
-          ),
-          unit: this.eventPools.getRateMint(1n * BigInt(10 ** 18), state),
+          prices: amounts.map(share => eventPool.getRateMint(share, state)),
+          unit: eventPool.getRateMint(1n * BigInt(10 ** 18), state),
           gasCost: AngleStakedGasCost,
-          exchange: this.dexKey,
-          data: { exchange: `${this.config.stEUR}` },
-          poolAddresses: [`${this.config.stEUR}_${this.config.EURA}`],
+          exchange: exchange,
+          data: { exchange: `${stakeToken}` },
+          poolAddresses: [`${stakeToken}_${agToken}`],
         },
       ];
     return [
       {
-        prices: amounts.map(amount =>
-          this.eventPools!.getRateWithdraw(amount, state),
-        ),
-        unit: this.eventPools.getRateWithdraw(1n * BigInt(10 ** 18), state),
+        prices: amounts.map(amount => eventPool.getRateWithdraw(amount, state)),
+        unit: eventPool.getRateWithdraw(1n * BigInt(10 ** 18), state),
         gasCost: AngleStakedGasCost,
-        exchange: this.dexKey,
-        data: { exchange: `${this.config.stEUR}` },
-        poolAddresses: [`${this.config.stEUR}_${this.config.EURA}`],
+        exchange: exchange,
+        data: { exchange: `${stakeToken}` },
+        poolAddresses: [`${stakeToken}_${agToken}`],
       },
     ];
   }
@@ -211,7 +223,8 @@ export class AngleStakedStable
 
     // Encode here the transaction arguments
     const swapData =
-      srcToken.toLowerCase() === this.config.EURA
+      srcToken.toLowerCase() === this.config.EURA ||
+      srcToken.toLowerCase() === this.config.USDA
         ? AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
             side === SwapSide.SELL ? 'deposit' : 'mint',
             [
@@ -252,6 +265,13 @@ export class AngleStakedStable
             'paused',
           ),
       },
+      {
+        target: this.config.stUSD,
+        callData:
+          AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
+            'paused',
+          ),
+      },
     ];
     const returnData = (
       await this.dexHelper.multiContract.methods
@@ -259,10 +279,15 @@ export class AngleStakedStable
         .call()
     ).returnData;
 
-    this.isPaused =
+    this.isPaused[this.config.stEUR] =
       AngleStakedStableEventPool.angleStakedStableIface.decodeFunctionResult(
         'paused',
         returnData[0],
+      )[0] as boolean;
+    this.isPaused[this.config.stUSD] =
+      AngleStakedStableEventPool.angleStakedStableIface.decodeFunctionResult(
+        'paused',
+        returnData[1],
       )[0] as boolean;
   }
 
@@ -273,21 +298,45 @@ export class AngleStakedStable
     limit: number,
   ): Promise<PoolLiquidity[]> {
     if (
-      this.isPaused ||
-      (tokenAddress.toLowerCase() !== this.config.EURA &&
-        tokenAddress.toLowerCase() !== this.config.stEUR)
+      (this.isPaused[this.config.stEUR] ||
+        (tokenAddress.toLowerCase() !== this.config.EURA &&
+          tokenAddress.toLowerCase() !== this.config.stEUR)) &&
+      (this.isPaused[this.config.stUSD] ||
+        (tokenAddress.toLowerCase() !== this.config.USDA &&
+          tokenAddress.toLowerCase() !== this.config.stUSD))
     )
       return [];
+
+    if (
+      !(
+        this.isPaused[this.config.stEUR] ||
+        (tokenAddress.toLowerCase() !== this.config.EURA &&
+          tokenAddress.toLowerCase() !== this.config.stEUR)
+      )
+    )
+      return [
+        {
+          exchange: `${this.dexKey}_${this.config.stEUR!.toLowerCase()}`,
+          address: this.config.stEUR,
+          connectorTokens: [
+            tokenAddress.toLowerCase() === this.config.EURA
+              ? ({ address: this.config.stEUR, decimals: 18 } as Token)
+              : ({ address: this.config.EURA, decimals: 18 } as Token),
+          ],
+          // liquidity is infinite as to have been able to mint stEUR, you must have deposited EURA
+          liquidityUSD: 1e12,
+        },
+      ];
     return [
       {
-        exchange: this.dexKey,
-        address: this.config.stEUR,
+        exchange: `${this.dexKey}_${this.config.stUSD!.toLowerCase()}`,
+        address: this.config.stUSD,
         connectorTokens: [
-          tokenAddress.toLowerCase() === this.config.EURA
-            ? ({ address: this.config.stEUR, decimals: 18 } as Token)
-            : ({ address: this.config.EURA, decimals: 18 } as Token),
+          tokenAddress.toLowerCase() === this.config.USDA
+            ? ({ address: this.config.stUSD, decimals: 18 } as Token)
+            : ({ address: this.config.USDA, decimals: 18 } as Token),
         ],
-        // liquidity is infinite as to have been able to mint stEUR, you must have deposited EURA
+        // liquidity is infinite as to have been able to mint stUSD, you must have deposited USDA
         liquidityUSD: 1e12,
       },
     ];
@@ -297,25 +346,36 @@ export class AngleStakedStable
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {}
 
-  _knownAddress(srcToken: Token, destToken: Token): boolean {
+  _knownAddress(
+    srcToken: Token,
+    destToken: Token,
+  ): { known: boolean; agToken: string | null; stakeToken: string | null } {
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
     if (
-      !(
-        (
-          (srcTokenAddress === this.config.EURA &&
-            destTokenAddress === this.config.stEUR) ||
-          (srcTokenAddress === this.config.stEUR &&
-            destTokenAddress === this.config.EURA)
-        )
-        // (srcTokenAddress === this.config.USDA &&
-        // 	destTokenAddress === this.config.stUSD) ||
-        // (srcTokenAddress === this.config.stUSD &&
-        // 	destTokenAddress === this.config.USDA)
-      )
+      (srcTokenAddress === this.config.EURA &&
+        destTokenAddress === this.config.stEUR) ||
+      (srcTokenAddress === this.config.stEUR &&
+        destTokenAddress === this.config.EURA)
     ) {
-      return false;
+      return {
+        known: true,
+        agToken: this.config.EURA,
+        stakeToken: this.config.stEUR,
+      };
     }
-    return true;
+    if (
+      (srcTokenAddress === this.config.USDA &&
+        destTokenAddress === this.config.stUSD) ||
+      (srcTokenAddress === this.config.stUSD &&
+        destTokenAddress === this.config.USDA)
+    ) {
+      return {
+        known: true,
+        agToken: this.config.USDA,
+        stakeToken: this.config.stUSD,
+      };
+    }
+    return { known: false, agToken: null, stakeToken: null };
   }
 }
