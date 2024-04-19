@@ -624,7 +624,7 @@ describe('Pharaoh', () => {
   const TokenASymbol = 'USDC';
   const TokenA = Tokens[network][TokenASymbol];
 
-  const TokenBSymbol = 'USDT';
+  const TokenBSymbol = 'USDCe';
   const TokenB = Tokens[network][TokenBSymbol];
 
   beforeEach(async () => {
