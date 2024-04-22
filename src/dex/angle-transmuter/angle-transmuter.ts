@@ -28,11 +28,13 @@ export class AngleTransmuter
   extends SimpleExchange
   implements IDex<AngleTransmuterData>
 {
-  protected eventPools: AngleTransmuterEventPool | null = null;
-  protected supportedTokensMap: { [address: string]: boolean } = {};
-  // supportedTokens is only used by the pooltracker
-  protected supportedTokens: Token[] = [];
-  transmuterUSDLiquidity = 0;
+  protected eventPools: { [key: string]: AngleTransmuterEventPool } = {};
+  protected supportedTokensMap: {
+    [key: string]: { [address: string]: boolean };
+  } = {};
+  protected supportedTokens: { [key: string]: Token[] } = {};
+  protected transmuterUSDLiquidity: { [key: string]: number } = {};
+  stablecoinList: string[];
 
   public static erc20Interface = new Interface(ERC20ABI);
 
@@ -55,7 +57,17 @@ export class AngleTransmuter
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.supportedTokensMap[params.EURA.address.toLowerCase()] = true;
+    this.stablecoinList = Object.keys(params);
+    this.stablecoinList.forEach(stablecoin => {
+      this.supportedTokensMap[stablecoin] = {};
+      this.supportedTokens[stablecoin] = [];
+      this.transmuterUSDLiquidity[stablecoin] = 0;
+    });
+    this.stablecoinList.forEach(stablecoin => {
+      this.supportedTokensMap[stablecoin][
+        params[stablecoin as keyof DexParams].stablecoin.address.toLowerCase()
+      ] = true;
+    });
   }
 
   // Initialize pricing is called once in the start of
@@ -63,22 +75,25 @@ export class AngleTransmuter
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    const config = await AngleTransmuterEventPool.getConfig(
-      this.params,
-      blockNumber,
-      this.dexHelper.multiContract,
-    );
-    config.collaterals.forEach(
-      (token: Address) => (this.supportedTokensMap[token.toLowerCase()] = true),
-    );
-    this.eventPools = new AngleTransmuterEventPool(
-      this.dexKey,
-      this.network,
-      this.dexHelper,
-      this.logger,
-      config,
-    );
-    await this.eventPools.initialize(blockNumber);
+    for (const stablecoin of this.stablecoinList) {
+      const config = await AngleTransmuterEventPool.getConfig(
+        this.params[stablecoin as keyof DexParams],
+        blockNumber,
+        this.dexHelper.multiContract,
+      );
+      config.collaterals.forEach(
+        (token: Address) =>
+          (this.supportedTokensMap[stablecoin][token.toLowerCase()] = true),
+      );
+      this.eventPools[stablecoin] = new AngleTransmuterEventPool(
+        this.dexKey,
+        this.network,
+        this.dexHelper,
+        this.logger,
+        config,
+      );
+      await this.eventPools[stablecoin].initialize(blockNumber);
+    }
   }
 
   // Returns the list of contract adapters (name and index)
@@ -97,9 +112,9 @@ export class AngleTransmuter
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (this._knownAddress(srcToken, destToken))
-      return [`${this.dexKey}_${this.params.EURA.address.toLowerCase()}`];
-    return [];
+    const knownInfo = this._knownAddress(srcToken, destToken);
+    if (!knownInfo.known) return [];
+    return [`${this.dexKey}_${knownInfo.agToken!.toLowerCase()}`];
   }
 
   // Returns pool prices for amounts.
@@ -114,15 +129,15 @@ export class AngleTransmuter
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AngleTransmuterData>> {
-    const uniquePool = `${
-      this.dexKey
-    }_${this.params.EURA.address.toLowerCase()}`;
+    const knownInfo = this._knownAddress(srcToken, destToken);
+    const pool = `${this.dexKey}_${knownInfo.agToken!.toLowerCase()}`;
     if (
-      !this._knownAddress(srcToken, destToken) ||
-      (limitPools && limitPools.length > 0 && !limitPools.includes(uniquePool))
+      !knownInfo.known ||
+      (limitPools && limitPools.length > 0 && !limitPools.includes(pool))
     )
       return null;
 
+    const fiat = knownInfo.fiatName! as keyof DexParams;
     const preProcessDecimals =
       side === SwapSide.SELL ? srcToken.decimals : destToken.decimals;
     const postProcessDecimals =
@@ -132,7 +147,7 @@ export class AngleTransmuter
       Number.parseFloat(formatUnits(amount.toString(), preProcessDecimals)),
     );
 
-    const prices = await this.eventPools!.getAmountOut(
+    const prices = await this.eventPools[fiat]!.getAmountOut(
       srcToken.address,
       destToken.address,
       side,
@@ -157,8 +172,8 @@ export class AngleTransmuter
         unit: pricesBigInt[0],
         gasCost: TransmuterGasCost,
         exchange: this.dexKey,
-        data: { exchange: this.params.transmuter },
-        poolAddresses: [this.params.transmuter],
+        data: { exchange: this.params[fiat].transmuter },
+        poolAddresses: [this.params[fiat].transmuter],
       },
     ];
   }
@@ -236,71 +251,76 @@ export class AngleTransmuter
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    if (!this.supportedTokens.length) {
-      let tokenAddresses = await AngleTransmuterEventPool.getCollateralsList(
-        this.params.transmuter,
-        'latest',
-        this.dexHelper.multiContract,
-      );
-      tokenAddresses = tokenAddresses.concat([this.params.EURA.address]);
+    for (const stablecoin of this.stablecoinList) {
+      const fiat = stablecoin as keyof DexParams;
+      const paramFiat = this.params[fiat];
 
-      const decimalsCallData =
-        AngleTransmuter.erc20Interface.encodeFunctionData('decimals');
-      const tokenBalanceMultiCall = tokenAddresses.map(t => ({
-        target: t,
-        callData: decimalsCallData,
+      if (!this.supportedTokens.length) {
+        let tokenAddresses = await AngleTransmuterEventPool.getCollateralsList(
+          paramFiat.transmuter,
+          'latest',
+          this.dexHelper.multiContract,
+        );
+        tokenAddresses = tokenAddresses.concat([paramFiat.stablecoin.address]);
+
+        const decimalsCallData =
+          AngleTransmuter.erc20Interface.encodeFunctionData('decimals');
+        const tokenBalanceMultiCall = tokenAddresses.map(t => ({
+          target: t,
+          callData: decimalsCallData,
+        }));
+        const res = (
+          await this.dexHelper.multiContract.methods
+            .aggregate(tokenBalanceMultiCall)
+            .call()
+        ).returnData;
+
+        const tokenDecimals = res.map((r: any) =>
+          Number.parseInt(
+            AngleTransmuter.erc20Interface
+              .decodeFunctionResult('decimals', r)[0]
+              .toString(),
+          ),
+        );
+
+        this.supportedTokens[fiat] = tokenAddresses.map((t, i) => ({
+          address: t,
+          decimals: tokenDecimals[i],
+        }));
+      }
+
+      // Only work if there are no managers
+      const erc20BalanceCalldata =
+        AngleTransmuter.erc20Interface.encodeFunctionData('balanceOf', [
+          paramFiat.transmuter,
+        ]);
+      const tokenBalanceMultiCall = this.supportedTokens[fiat].map(t => ({
+        target: t.address,
+        callData: erc20BalanceCalldata,
       }));
       const res = (
         await this.dexHelper.multiContract.methods
           .aggregate(tokenBalanceMultiCall)
           .call()
       ).returnData;
-
-      const tokenDecimals = res.map((r: any) =>
-        Number.parseInt(
+      const tokenBalances = res.map((r: any) =>
+        BigInt(
           AngleTransmuter.erc20Interface
-            .decodeFunctionResult('decimals', r)[0]
+            .decodeFunctionResult('balanceOf', r)[0]
             .toString(),
         ),
       );
 
-      this.supportedTokens = tokenAddresses.map((t, i) => ({
-        address: t,
-        decimals: tokenDecimals[i],
-      }));
+      // TODO bC3M price not detected
+      const tokenBalancesUSD = await Promise.all(
+        this.supportedTokens[fiat].map((t, i) =>
+          this.dexHelper.getTokenUSDPrice(t, tokenBalances[i]),
+        ),
+      );
+      this.transmuterUSDLiquidity[fiat] = tokenBalancesUSD.reduce(
+        (sum: number, curr: number) => sum + curr,
+      );
     }
-
-    // Only work if there are no managers
-    const erc20BalanceCalldata =
-      AngleTransmuter.erc20Interface.encodeFunctionData('balanceOf', [
-        this.params.transmuter,
-      ]);
-    const tokenBalanceMultiCall = this.supportedTokens.map(t => ({
-      target: t.address,
-      callData: erc20BalanceCalldata,
-    }));
-    const res = (
-      await this.dexHelper.multiContract.methods
-        .aggregate(tokenBalanceMultiCall)
-        .call()
-    ).returnData;
-    const tokenBalances = res.map((r: any) =>
-      BigInt(
-        AngleTransmuter.erc20Interface
-          .decodeFunctionResult('balanceOf', r)[0]
-          .toString(),
-      ),
-    );
-
-    // TODO bC3M price not detected
-    const tokenBalancesUSD = await Promise.all(
-      this.supportedTokens.map((t, i) =>
-        this.dexHelper.getTokenUSDPrice(t, tokenBalances[i]),
-      ),
-    );
-    this.transmuterUSDLiquidity = tokenBalancesUSD.reduce(
-      (sum: number, curr: number) => sum + curr,
-    );
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -309,49 +329,75 @@ export class AngleTransmuter
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (!this.supportedTokens.some(t => t.address === tokenAddress)) return [];
+    for (const stablecoin of this.stablecoinList) {
+      const fiat = stablecoin as keyof DexParams;
+      const paramFiat = this.params[fiat];
 
-    const connectorTokens =
-      tokenAddress === this.params.EURA.address
-        ? this.supportedTokens.filter(
-            token => token.address !== this.params.EURA.address,
-          )
-        : [this.params.EURA];
-    return [
-      {
-        exchange: this.dexKey,
-        address: this.params.transmuter,
-        connectorTokens: connectorTokens.slice(0, limit),
-        // liquidity is potentially infinite if swapping for agXXX, otherwise at most reserves value
-        liquidityUSD:
-          tokenAddress === this.params.EURA.address
-            ? this.transmuterUSDLiquidity
-            : 1e9,
-      },
-    ];
+      // If not this stable let's check another one
+      if (
+        !this.supportedTokens[fiat].some(
+          t => t.address.toLowerCase() === tokenAddress.toLowerCase(),
+        )
+      )
+        continue;
+
+      const connectorTokens =
+        tokenAddress === paramFiat.stablecoin.address
+          ? this.supportedTokens[fiat].filter(
+              token =>
+                token.address.toLowerCase() !==
+                paramFiat.stablecoin.address.toLowerCase(),
+            )
+          : [paramFiat.stablecoin];
+
+      return [
+        {
+          exchange: this.dexKey,
+          address: paramFiat.transmuter,
+          connectorTokens: connectorTokens.slice(0, limit),
+          // liquidity is potentially infinite if swapping for agXXX, otherwise at most reserves value
+          liquidityUSD:
+            tokenAddress === paramFiat.stablecoin.address
+              ? this.transmuterUSDLiquidity[fiat]
+              : 1e9,
+        },
+      ];
+    }
+    return [];
   }
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {}
 
-  _knownAddress(srcToken: Token, destToken: Token): boolean {
+  _knownAddress(
+    srcToken: Token,
+    destToken: Token,
+  ): { known: boolean; agToken: string | null; fiatName: string | null } {
     const srcAddress = this.dexHelper.config
       .wrapETH(srcToken)
       .address.toLowerCase();
     const destAddress = this.dexHelper.config
       .wrapETH(destToken)
       .address.toLowerCase();
-    if (
-      srcAddress !== destAddress &&
-      this.supportedTokensMap[srcAddress] &&
-      this.supportedTokensMap[destAddress] &&
-      // check that at least one of the tokens is EURA
-      (srcAddress === this.params.EURA.address.toLowerCase() ||
-        destAddress === this.params.EURA.address.toLowerCase())
-    ) {
-      return true;
+
+    for (const stablecoin of this.stablecoinList) {
+      const fiat = stablecoin as keyof DexParams;
+      if (
+        srcAddress !== destAddress &&
+        this.supportedTokensMap[stablecoin][srcAddress] &&
+        this.supportedTokensMap[stablecoin][destAddress] &&
+        // check that at least one of the tokens is EURA
+        (srcAddress === this.params[fiat].stablecoin.address.toLowerCase() ||
+          destAddress === this.params[fiat].stablecoin.address.toLowerCase())
+      ) {
+        return {
+          known: true,
+          agToken: this.params[fiat].stablecoin.address.toLowerCase(),
+          fiatName: stablecoin,
+        };
+      }
     }
-    return false;
+    return { known: false, agToken: null, fiatName: null };
   }
 }

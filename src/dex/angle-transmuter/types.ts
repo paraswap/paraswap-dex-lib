@@ -37,7 +37,7 @@ export type ChainlinkConfig = {
 export type PythConfig = { proxy: Address; ids: string[] };
 
 export type PoolConfig = {
-  EURA: Token;
+  stablecoin: Token;
   transmuter: Address;
   collaterals: Address[];
   oracles: {
@@ -65,10 +65,14 @@ export type AngleTransmuterData = {
   exchange: Address;
 };
 
-export type DexParams = {
-  EURA: Token;
+export type TransmuterParams = {
+  stablecoin: Token;
   transmuter: Address;
   pyth: Address;
+};
+export type DexParams = {
+  EUR: TransmuterParams;
+  USD: TransmuterParams;
 };
 
 export enum QuoteType {
@@ -120,12 +124,24 @@ export type Chainlink = {
   quoteType: OracleQuoteType;
 };
 
+export type MorphoOracle = {
+  oracle: Address[];
+  normalizationFactor: BigNumber[];
+};
+
+export type MaxOracle = {
+  maxValue: number;
+};
+
 export type OracleFeed = {
   isChainlink: boolean;
   isPyth: boolean;
+  isMorpho: boolean;
   chainlink?: Chainlink;
   pyth?: Pyth;
+  morpho?: MorphoOracle;
   otherContract?: Address;
+  maxValue?: number;
 };
 
 export type Oracle = {

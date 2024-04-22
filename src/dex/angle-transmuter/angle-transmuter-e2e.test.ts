@@ -11,6 +11,8 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { Collateral } from './angle-transmuter-integration.test';
+import { BI_POWS } from '../../bigint-constants';
 
 function testForNetwork(
   network: Network,
@@ -20,6 +22,7 @@ function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   nativeTokenAmount: string,
+  isKYC: boolean,
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -52,19 +55,21 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            if (!isKYC) {
+              it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenBSymbol],
+                  tokens[tokenASymbol],
+                  holders[tokenBSymbol],
+                  side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            }
           });
         });
       }),
@@ -78,59 +83,42 @@ describe('AngleTransmuter E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    describe('EUROC', () => {
-      const tokenASymbol: string = 'EUROC';
-      const tokenBSymbol: string = 'EURA';
+    const tokens = Tokens[network];
+    const stables = [tokens.EURA, tokens.USDA];
 
-      const tokenAAmount: string = '1000000';
-      const tokenBAmount: string = '1000000000000000000';
-      const nativeTokenAmount = '1000000000000000000';
+    const collaterals: Collateral = {
+      USDA: [tokens.USDC, tokens.steakUSDC, tokens.bIB01],
+      EURA: [tokens.EUROC, tokens.bC3M, tokens.bERNX],
+    };
 
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-        nativeTokenAmount,
-      );
-    });
-    describe('BC3M', () => {
-      const tokenASymbol: string = 'bC3M';
-      const tokenBSymbol: string = 'EURA';
+    const isKYC: { [token: string]: boolean } = {};
+    isKYC[tokens.bIB01.symbol!] = true;
+    isKYC[tokens.bC3M.symbol!] = true;
+    isKYC[tokens.bERNX.symbol!] = true;
 
-      const tokenAAmount: string = '100000000000000000';
-      const tokenBAmount: string = '1000000000000000000';
-      const nativeTokenAmount = '1000000000000000000';
+    stables.forEach(stable =>
+      collaterals[stable.symbol! as keyof Collateral].forEach(collateral =>
+        describe(`${stable.symbol}/${collateral.symbol}`, () => {
+          const stableAmount: string = (
+            1n * BI_POWS[stable.decimals]
+          ).toString();
+          const collateralAmount: string = (
+            1n * BI_POWS[collateral.decimals]
+          ).toString();
+          const nativeTokenAmount = '1000000000000000000';
 
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-        nativeTokenAmount,
-      );
-    });
-    describe('BERNX', () => {
-      const tokenASymbol: string = 'bERNX';
-      const tokenBSymbol: string = 'EURA';
-
-      const tokenAAmount: string = '500000000000000000';
-      const tokenBAmount: string = '1000000000000000000';
-      const nativeTokenAmount = '1000000000000000000';
-
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-        nativeTokenAmount,
-      );
-    });
+          testForNetwork(
+            network,
+            dexKey,
+            collateral.symbol!,
+            stable.symbol!,
+            collateralAmount,
+            stableAmount,
+            nativeTokenAmount,
+            isKYC[collateral.symbol!],
+          );
+        }),
+      ),
+    );
   });
 });

@@ -22,10 +22,12 @@ import {
   Fees,
   Oracle,
   CollateralState,
+  MaxOracle,
+  MorphoOracle,
 } from './types';
 import _ from 'lodash';
 import { BigNumber, ethers } from 'ethers';
-import { formatUnits } from 'ethers/lib/utils';
+import { formatEther, formatUnits } from 'ethers/lib/utils';
 import { filterDictionaryOnly } from './utils';
 
 export class TransmuterSubscriber<State> extends PartialEventSubscriber<
@@ -497,23 +499,59 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
       return {
         isChainlink: true,
         isPyth: false,
+        isMorpho: false,
         chainlink: TransmuterSubscriber._decodeChainlinkOracle(oracleData),
       };
     if (readType === OracleReadType.PYTH)
       return {
         isChainlink: false,
         isPyth: true,
+        isMorpho: false,
         pyth: TransmuterSubscriber._decodePythOracle(oracleData),
       };
+    if (readType === OracleReadType.MAX)
+      return {
+        isChainlink: false,
+        isPyth: false,
+        isMorpho: false,
+        maxValue: TransmuterSubscriber._decodeMaxOracle(oracleData),
+      };
+    if (readType === OracleReadType.MORPHO_ORACLE)
+      return {
+        isChainlink: false,
+        isPyth: false,
+        isMorpho: true,
+        morpho: TransmuterSubscriber._decodeMorphoOracle(oracleData),
+      };
     if (readType === OracleReadType.WSTETH)
-      return { isChainlink: false, isPyth: false, otherContract: STETH };
+      return {
+        isChainlink: false,
+        isPyth: false,
+        isMorpho: false,
+        otherContract: STETH,
+      };
     if (readType === OracleReadType.CBETH)
-      return { isChainlink: false, isPyth: false, otherContract: CBETH };
+      return {
+        isChainlink: false,
+        isPyth: false,
+        isMorpho: false,
+        otherContract: CBETH,
+      };
     if (readType === OracleReadType.RETH)
-      return { isChainlink: false, isPyth: false, otherContract: RETH };
+      return {
+        isChainlink: false,
+        isPyth: false,
+        isMorpho: false,
+        otherContract: RETH,
+      };
     if (readType === OracleReadType.SFRXETH)
-      return { isChainlink: false, isPyth: false, otherContract: SFRXETH };
-    return { isChainlink: false, isPyth: false };
+      return {
+        isChainlink: false,
+        isPyth: false,
+        isMorpho: false,
+        otherContract: SFRXETH,
+      };
+    return { isChainlink: false, isPyth: false, isMorpho: false };
   }
 
   static _decodeChainlinkOracle(oracleData: string): Chainlink {
@@ -548,5 +586,24 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     ) as unknown as Pyth;
 
     return pythOracleDecoded;
+  }
+
+  static _decodeMaxOracle(oracleData: string): number {
+    const maxOracleDecoded = filterDictionaryOnly(
+      ethers.utils.defaultAbiCoder.decode(['uint256 maxValue'], oracleData),
+    ) as unknown as MaxOracle;
+
+    return Number.parseFloat(formatEther(maxOracleDecoded.maxValue));
+  }
+
+  static _decodeMorphoOracle(oracleData: string): MorphoOracle {
+    const morphoOracleDecoded = filterDictionaryOnly(
+      ethers.utils.defaultAbiCoder.decode(
+        ['address oracle', 'uint256 normalizationFactor'],
+        oracleData,
+      ),
+    ) as unknown as MorphoOracle;
+
+    return morphoOracleDecoded;
   }
 }

@@ -16,6 +16,7 @@ import {
   PoolConfig,
   PoolState,
   PythConfig,
+  TransmuterParams,
   TransmuterState,
 } from './types';
 import TransmuterABI from '../../abi/angle-transmuter/Transmuter.json';
@@ -35,7 +36,6 @@ import { BackedSubscriber } from './backedOracle';
 import { SwapSide } from '../../constants';
 import { ethers } from 'ethers';
 import { BLOCK_UPGRADE_ORACLE } from './constants';
-import { log } from 'console';
 
 export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
   public transmuter: Contract;
@@ -104,7 +104,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     );
 
     const transmuterListener = new TransmuterSubscriber(
-      config.EURA.address,
+      config.stablecoin.address,
       config.transmuter,
       config.collaterals,
       lens<DeepReadonly<PoolState>>().transmuter,
@@ -124,7 +124,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         pythListener,
       ],
       {
-        stablecoin: config.EURA,
+        stablecoin: config.stablecoin,
         transmuter: {} as TransmuterState,
         oracles: { chainlink: {}, pyth: {} },
       },
@@ -419,7 +419,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
   }
 
   static async getConfig(
-    dexParams: DexParams,
+    dexParams: TransmuterParams,
     blockNumber: number | 'latest',
     multiContract: Contract,
   ): Promise<PoolConfig> {
@@ -432,14 +432,14 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     // get all oracles feed
     const oracles = await AngleTransmuterEventPool.getOraclesConfig(
       dexParams.transmuter,
-      dexParams.pyth,
+      dexParams.pyth!,
       collaterals,
       blockNumber,
       multiContract,
     );
 
     return {
-      EURA: dexParams.EURA,
+      stablecoin: dexParams.stablecoin,
       transmuter: dexParams.transmuter,
       collaterals: collaterals,
       oracles: oracles,
@@ -632,6 +632,23 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       price = 1;
     } else if (oracleType === OracleReadType.NO_ORACLE) {
       price = baseValue;
+    } else if (oracleType == OracleReadType.MAX) {
+      price = feed.maxValue!;
+    } else if (oracleType == OracleReadType.MORPHO_ORACLE) {
+      // const oracle = filterDictionaryOnly(
+      //   ethers.utils.defaultAbiCoder.decode(
+      //     ['address contractAddress', 'uint256 normalizationFactor'],
+      //     configOracle.hyperparameters,
+      //   ),
+      // ) as unknown as { contractAddress: string, normalizationFactor: BigNumber };
+      // userDeviation = Number.parseFloat(
+      //   formatEther(hyperparameters.userDeviation.toString()),
+      // );
+      // burnRatioDeviation = Number.parseFloat(
+      //   formatEther(hyperparameters.burnRatioDeviation.toString()),
+      // );
+      // (address contractAddress, uint256 normalizationFactor) = abi.decode(data, (address, uint256));
+      // return IMorphoOracle(contractAddress).price() / normalizationFactor;
     }
     return price;
   }

@@ -36,8 +36,9 @@ export const Tokens: {
       decimals: 9,
     },
     USDC: {
-      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
       decimals: 6,
+      symbol: 'USDC',
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
@@ -318,30 +319,37 @@ export const Tokens: {
     EURA: {
       address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',
       decimals: 18,
+      symbol: 'EURA',
     },
     EUROC: {
       address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c',
       decimals: 6,
+      symbol: 'EUROC',
     },
     bERNX: {
       address: '0x3f95AA88dDbB7D9D484aa3D482bf0a80009c52c9',
       decimals: 18,
+      symbol: 'bERNX',
     },
     bC3M: {
       address: '0x2F123cF3F37CE3328CC9B5b8415f9EC5109b45e7',
       decimals: 18,
+      symbol: 'bC3M',
     },
     USDA: {
       address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
       decimals: 18,
+      symbol: 'USDA',
     },
     bIB01: {
       address: '0xCA30c93B02514f86d5C86a6e375E3A330B435Fb5',
       decimals: 18,
+      symbol: 'bIB01',
     },
     steakUSDC: {
       address: '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
       decimals: 18,
+      symbol: 'steakUSDC',
     },
     GHO: {
       address: '0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f',
@@ -1115,7 +1123,7 @@ export const Holders: {
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     frxETH: '0x9df2322bdAEC46627100C999E6dDdD27837fec6e',
     EURA: '0xa116f421ff82A9704428259fd8CC63347127B777',
-    USDA: '0xd9Da13DE745bfa50FFAAFD0a531B92f0511B72Cf',
+    USDA: '0x5a54aD9860B08AAee07174887f9ee5107b0A2e72',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
