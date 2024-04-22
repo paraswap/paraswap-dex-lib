@@ -351,6 +351,10 @@ export const Tokens: {
       address: '0xe07f9d810a48ab5c3c914ba3ca53af14e4491e8a',
       decimals: 18,
     },
+    VRSW: {
+      address: '0x99A01A4d6a4D621094983050D9A2F10B2912e53D',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -503,6 +507,10 @@ export const Tokens: {
     },
     MATICX: {
       address: '0xfa68fb4628dff1028cfec22b4162fccd0d45efb6',
+      decimals: 18,
+    },
+    VRSW: {
+      address: '0x57999936fC9A9EC0751a8D146CcE11901Be8beD0',
       decimals: 18,
     },
   },
@@ -953,6 +961,10 @@ export const Tokens: {
       address: '0xabD587f2607542723b17f14d00d99b987C29b074',
       decimals: 18,
     },
+    VRSW: {
+      address: '0xd1E094CabC5aCB9D3b0599C3F76f2D01fF8d3563',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1152,6 +1164,7 @@ export const Holders: {
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     frxETH: '0x9df2322bdAEC46627100C999E6dDdD27837fec6e',
     USDe: '0x74e6c48e667d698a4cf90665b6960a5bae39e603',
+    VRSW: '0x6af9225d8F5bAA4d1442f49f705226f9abd66143',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
@@ -1190,6 +1203,7 @@ export const Holders: {
     MAI: '0x9a8cf02f3e56c664ce75e395d0e4f3dc3dafe138',
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     crvUSD: '0x9D3a22A71C2bddFEF006f1c207C06B0A5f42f95F',
+    VRSW: '0xD0f7bcF2863E8a76BAe4294Fa3febF9826166AE9',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
@@ -1303,6 +1317,7 @@ export const Holders: {
     SDEX: '0xb0470cf15b22a6a32c49a7c20e3821b944a76058',
     wstETH: '0x916792f7734089470de27297903bed8a4630b26d',
     crvUSD: '0x171c53d55b1bcb725f660677d9e8bad7fd084282',
+    VRSW: '0x88362801574A9a61c93e8376C5e33e12d5D86597',
   },
   [Network.OPTIMISM]: {
     ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',

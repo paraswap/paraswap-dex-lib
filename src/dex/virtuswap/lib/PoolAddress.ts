@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { Address } from '../../../types';
+import { normalizeAddress } from '../../../utils';
 
 export function orderAddresses(
   tokenA: Address,
@@ -25,5 +26,7 @@ export function computeAddress(
   initCodeHash: string,
 ): Address {
   const salt = getSalt(token0, token1);
-  return ethers.utils.getCreate2Address(factory, salt, initCodeHash);
+  return normalizeAddress(
+    ethers.utils.getCreate2Address(factory, salt, initCodeHash),
+  );
 }

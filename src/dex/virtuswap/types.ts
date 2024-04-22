@@ -47,13 +47,21 @@ export type OnPoolCreatedCallback = (
   blockNumber: number,
 ) => AsyncOrSync<void>;
 
-export type VirtuSwapData = {
-  // TODO: VirtuSwapData is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
-  exchange: Address;
+type RealPoolDataPart = {
+  isVirtual: false;
+  path: Address[];
 };
+
+type VirtualPoolDataPart = {
+  isVirtual: true;
+  tokenOut: Address;
+  commonToken: Address;
+  ikPair: Address;
+};
+
+export type VirtuSwapData = {
+  router: Address;
+} & (RealPoolDataPart | VirtualPoolDataPart);
 
 export type DexParams = {
   // TODO: DexParams is set of parameters the can
@@ -63,4 +71,6 @@ export type DexParams = {
   initCode: string;
   router: Address;
   isTimestampBased: boolean;
+  realPoolGasCost: number;
+  virtualPoolGasCost: number;
 };

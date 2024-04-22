@@ -299,21 +299,17 @@ describe('VirtuSwap Virtual Pools by Tokens', function () {
                 data =>
                   ({
                     ...data,
-                    jkPair: normalizeAddress(
-                      computeAddress(
-                        params.factoryAddress,
-                        data.jkPair.token0,
-                        data.jkPair.token1,
-                        params.initCode,
-                      ),
+                    jkPair: computeAddress(
+                      params.factoryAddress,
+                      data.jkPair.token0,
+                      data.jkPair.token1,
+                      params.initCode,
                     ),
-                    ikPair: normalizeAddress(
-                      computeAddress(
-                        params.factoryAddress,
-                        data.ikPair.token0,
-                        data.ikPair.token1,
-                        params.initCode,
-                      ),
+                    ikPair: computeAddress(
+                      params.factoryAddress,
+                      data.ikPair.token0,
+                      data.ikPair.token1,
+                      params.initCode,
                     ),
                   } as PlainVirtualPoolState),
               );

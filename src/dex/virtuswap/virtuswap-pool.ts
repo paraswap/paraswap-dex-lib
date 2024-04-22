@@ -551,10 +551,3 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
     };
   }
 }
-
-export type VirtuSwapPair = {
-  token0: Token;
-  token1: Token;
-  exchange?: Address;
-  pool?: VirtuSwapEventPool;
-};

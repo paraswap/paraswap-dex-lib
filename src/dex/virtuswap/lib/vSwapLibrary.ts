@@ -3,6 +3,7 @@ import { _require } from '../../../utils';
 import { Address } from '../../../types';
 import { VirtualPoolTokens, VirtualPoolState, PoolState } from '../types';
 import { RESERVE_RATIO_FACTOR, PRICE_FEE_FACTOR } from '../constants';
+import { BI_MAX_UINT256 } from '../../../bigint-constants';
 import { BigIntMath } from './BigIntMath';
 
 export function findCommonToken(
@@ -44,8 +45,10 @@ export function getAmountIn(
   pairBalanceOut: bigint,
   fee: number,
 ): bigint {
+  if (amountOut <= 0n) return 0n;
   const numerator = pairBalanceIn * amountOut * PRICE_FEE_FACTOR;
   const denominator = (pairBalanceOut - amountOut) * BigInt(fee);
+  if (denominator <= 0n) return BI_MAX_UINT256;
   return numerator / denominator + 1n;
 }
 
@@ -55,6 +58,7 @@ export function getAmountOut(
   pairBalanceOut: bigint,
   fee: number,
 ): bigint {
+  if (amountIn <= 0n) return 0n;
   const amountInWithFee = amountIn * BigInt(fee);
   const numerator = amountInWithFee * pairBalanceOut;
   const denominator = pairBalanceIn * PRICE_FEE_FACTOR + amountInWithFee;
