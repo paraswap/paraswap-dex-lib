@@ -90,8 +90,9 @@ describe('AngleStakedStable EventPool Mainnet', () => {
       dexKey,
       network,
       dexHelper,
+      AngleStakedStableConfig[dexKey][network].stEUR,
+      AngleStakedStableConfig[dexKey][network].EURA,
       logger,
-      AngleStakedStableConfig[dexKey][network],
     );
   });
 

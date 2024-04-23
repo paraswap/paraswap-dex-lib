@@ -10,6 +10,7 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import type { IDexHelper } from '../../dex-helper/idex-helper';
 import type { DexParams, PoolState } from './types';
 import StakedStableABI from '../../abi/angle/stagToken.json';
+import ERC20ABI from '../../abi/erc20.json';
 
 export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -22,6 +23,7 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
   } = {};
 
   static angleStakedStableIface = new Interface(StakedStableABI);
+  static erc20Iface = new Interface(ERC20ABI);
 
   logDecoder: (log: Log) => any;
 
@@ -36,6 +38,7 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
     protected network: number,
     protected dexHelper: IDexHelper,
     public stakeToken: string,
+    public agToken: string,
     logger: Logger,
   ) {
     super(parentName, 'Staked_Stable', dexHelper, logger);
@@ -98,11 +101,11 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
 
     const multicall = [
       {
-        target: this.stakeToken,
-        callData:
-          AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
-            'totalAssets',
-          ),
+        target: this.agToken,
+        callData: AngleStakedStableEventPool.erc20Iface.encodeFunctionData(
+          'balanceOf',
+          [this.stakeToken],
+        ),
       },
       {
         target: this.stakeToken,
@@ -125,6 +128,13 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
             'paused',
           ),
       },
+      {
+        target: this.stakeToken,
+        callData:
+          AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
+            'rate',
+          ),
+      },
     ];
 
     // on chain call
@@ -136,8 +146,8 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
 
     // Decode
     poolState.totalAssets = bigIntify(
-      AngleStakedStableEventPool.angleStakedStableIface.decodeFunctionResult(
-        'totalAssets',
+      AngleStakedStableEventPool.erc20Iface.decodeFunctionResult(
+        'balanceOf',
         returnData[0],
       )[0],
     );
@@ -158,6 +168,13 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
         'paused',
         returnData[3],
       )[0] as boolean;
+
+    poolState.rate = bigIntify(
+      AngleStakedStableEventPool.angleStakedStableIface.decodeFunctionResult(
+        'rate',
+        returnData[4],
+      )[0],
+    );
 
     return poolState;
   }
@@ -204,7 +221,7 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
   }
 
   _computeUpdatedAssets(amount: bigint, rate: bigint, exp: bigint): bigint {
-    if (exp === 0n || rate > 0) return amount;
+    if (exp === 0n || rate === 0n) return amount;
     const expMinusOne = exp - 1n;
     const expMinusTwo = exp > 2n ? exp - 2n : 0n;
     const basePowerTwo = (rate * rate + this.HALF_BASE_27) / this.BASE_27;
@@ -236,7 +253,7 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
     log: Readonly<Log>,
     blockHeader: BlockHeader,
   ): DeepReadonly<PoolState> | null {
-    state.lastUpdate = bigIntify(blockHeader.timestamp);
+    state.rate = bigIntify(event.args.newRate);
     return state;
   }
 

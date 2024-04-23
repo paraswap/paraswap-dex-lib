@@ -70,6 +70,7 @@ export class AngleStakedStable
       this.network,
       this.dexHelper,
       this.config.stEUR,
+      this.config.EURA,
       this.logger,
     );
     await this.eventPools[this.config.stEUR].initialize(blockNumber);
@@ -79,6 +80,7 @@ export class AngleStakedStable
       this.network,
       this.dexHelper,
       this.config.stUSD,
+      this.config.USDA,
       this.logger,
     );
     await this.eventPools[this.config.stUSD].initialize(blockNumber);

@@ -82,12 +82,14 @@ async function checkOnChainPricing(
   );
 
   // No exact computation because of the bigInt approx
-  // for (let i = 0; i < expectedPrices.length; ++i) {
-  //   expect(prices[i]).toBeGreaterThanOrEqual(expectedPrices[i] - 1n);
-  //   expect(prices[i]).toBeLessThanOrEqual(expectedPrices[i] + 1n);
-  // }
-
-  expect(prices).toEqual(expectedPrices);
+  for (let i = 0; i < expectedPrices.length; ++i) {
+    expect(prices[i]).toBeGreaterThanOrEqual(
+      (expectedPrices[i] * 99999n) / 100000n,
+    );
+    expect(prices[i]).toBeLessThanOrEqual(
+      (expectedPrices[i] * 100001n) / 100000n,
+    );
+  }
 }
 
 async function testPricingOnNetwork(
