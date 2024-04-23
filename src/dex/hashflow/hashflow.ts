@@ -740,7 +740,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           );
           const code =
             e instanceof RfqError || e instanceof SlippageCheckError
-              ? e.code
+              ? e?.code || UNKNOWN_ERROR_CODE
               : UNKNOWN_ERROR_CODE;
           await this.restrictMM(mm, code).catch(err =>
             this.logger.warn(`Failed to restrict MM ${mm}: ${err}`),
@@ -758,13 +758,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       mm,
     );
 
-    const errorCodes: CacheErrorCodesData = Utils.Parse(errorCodesRaw);
+    const errorCodes: CacheErrorCodesData = Utils.Parse(errorCodesRaw) || {};
 
-    const error = errorCodes[errorCode];
+    const error = errorCodes?.[errorCode];
 
     if (!error) {
       this.logger.warn(
-        `${this.dexKey}-${this.network}: First encounter of ${errorCode} for ${mm}, setting up counter`,
+        `${this.dexKey}-${this.network}: First encounter of error code=${errorCode} for ${mm}, setting up counter`,
       );
       const data: CacheErrorCodesData = {
         ...errorCodes,
@@ -786,9 +786,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
       if (error.addedDatetimeMS + CONSECUTIVE_ERROR_TIMESPAN_MS < Date.now()) {
         this.logger.warn(
-          `${this.dexKey}-${this.network}: Error: ${errorCode} for ${mm} occured not within threshold timespan for restriction. Resetting counter`,
+          `${this.dexKey}-${this.network}: Error: ${errorCode} for ${mm} occurred not within threshold timespan for restriction. Resetting counter`,
         );
-        // Clear counter, this error code appeared after CONSECUTIVE_ERROR_TIMESPAN_MS
+        // Reset the counter, this error code appeared after CONSECUTIVE_ERROR_TIMESPAN_MS
         const data: CacheErrorCodesData = {
           ...errorCodes,
           [errorCode]: {
@@ -810,7 +810,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             restrictTTLMs / 1000
           } sec. due to ${errorCode} happening ${
             error.count + 1
-          } within last ${Math.floor(
+          } times within last ${Math.floor(
             CONSECUTIVE_ERROR_TIMESPAN_MS / 1000 / 60,
           )} minutes`,
         );
@@ -826,7 +826,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         // Meaning we need to set `addedDatetimeMS` for restrict hash as Date.now() - 20 minutes, then after an hour (default) it'll still be 20 minutes left for restriction to be cleared
 
         const defaultRestrictTTLMS = Math.floor(
-          HASHFLOW_MM_RESTRICT_TTL_S / 1000,
+          HASHFLOW_MM_RESTRICT_TTL_S * 1000,
         );
         const dateModifierMS =
           defaultRestrictTTLMS > restrictTTLMs
@@ -845,7 +845,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         // resetting error count
         const data: CacheErrorCodesData = {
           ...errorCodes,
-          [errorCode]: null,
+          [errorCode]: {
+            count: 1,
+            addedDatetimeMS: Date.now(),
+          },
         };
         await this.dexHelper.cache.hset(
           this.runtimeMMsRestrictHashMapErrorCodesKey,
@@ -865,7 +868,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       } else {
         const newCount = +error.count + 1;
         this.logger.warn(
-          `${this.dexKey}-${this.network}: ${mm} Error with code: ${errorCode} happenned ${newCount} (below limit: ${CONSECUTIVE_ERROR_THRESHOLD}), updating counter`,
+          `${this.dexKey}-${this.network}: ${mm} Error with code: ${errorCode} happened ${newCount} times (below or equal to the limit: ${CONSECUTIVE_ERROR_THRESHOLD}), updating counter`,
         );
         const data: CacheErrorCodesData = {
           ...errorCodes,
