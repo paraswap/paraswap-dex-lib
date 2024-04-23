@@ -12,11 +12,14 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import { PoolState, VirtuSwapData } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  getLocalDeadlineAsFriendlyPlaceholder,
+  SimpleExchange,
+} from '../simple-exchange';
 import { VirtuSwapConfig, Adapters } from './config';
 import { VirtuSwapFactory } from './virtuswap-factory';
 import { VirtuSwapEventPool } from './virtuswap-pool';
@@ -143,8 +146,18 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
 
     const poolAddress = this.computePoolAddress({ token0, token1 });
 
-    const block = await this.dexHelper.provider.getBlock(blockNumber);
-    const blockTimestamp = block.timestamp;
+    const latestBlockNumber = await this.dexHelper.provider.getBlockNumber();
+
+    let blockTimestamp: number;
+    if (blockNumber <= latestBlockNumber) {
+      const block = await this.dexHelper.provider.getBlock(blockNumber);
+      blockTimestamp = block.timestamp;
+    } else {
+      this.logger.warn(
+        `getPoolIdentifiers: trying to get block which is in the future: blockNumber=${blockNumber}, latestBlockNumber=${latestBlockNumber}`,
+      );
+      blockTimestamp = Math.floor(new Date().getTime() / 1000); // fallback to current timestamp
+    }
 
     const allPoolsStates = Object.values(this.pools)
       .map(pool => pool.getState(blockNumber))
@@ -287,8 +300,8 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
   // Used for multiSwap, buy & megaSwap
   // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
-    srcToken: string,
-    destToken: string,
+    srcToken: Address,
+    destToken: Address,
     srcAmount: string,
     destAmount: string,
     data: VirtuSwapData,
@@ -309,21 +322,64 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
 
   // Encode call data used by simpleSwap like routers
   // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
-    srcToken: string,
-    destToken: string,
+    srcToken: Address,
+    destToken: Address,
     srcAmount: string,
     destAmount: string,
     data: VirtuSwapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
     const { router } = data;
+    const isSell = side === SwapSide.SELL;
+    const isSwapFromNative = isETHAddress(srcToken);
+    const isSwapToNative = isETHAddress(destToken);
+    const recipient = this.augustusAddress;
+    const deadline = getLocalDeadlineAsFriendlyPlaceholder();
 
-    // Encode here the transaction arguments
-    const swapData = '';
+    const functionName = `swap${data.isVirtual ? 'Reserve' : ''}${
+      isSell ? 'Exact' : ''
+    }${isSwapFromNative ? 'ETH' : 'Tokens'}For${isSell ? '' : 'Exact'}${
+      isSwapToNative ? 'ETH' : 'Tokens'
+    }`;
+
+    let values: any[];
+    if (data.isVirtual) {
+      const { tokenOut, commonToken, ikPair } = data;
+      if (isSell) {
+        values = [
+          tokenOut,
+          commonToken,
+          ikPair,
+          srcAmount,
+          destAmount,
+          recipient,
+          deadline,
+        ];
+      } else {
+        values = [
+          tokenOut,
+          commonToken,
+          ikPair,
+          destAmount,
+          srcAmount,
+          recipient,
+          deadline,
+        ];
+      }
+    } else {
+      const { path } = data;
+      if (isSell) {
+        values = [path, srcAmount, destAmount, recipient, deadline];
+      } else {
+        values = [path, destAmount, srcAmount, recipient, deadline];
+      }
+    }
+
+    const swapData: string = this.vRouterIface.encodeFunctionData(
+      functionName,
+      values,
+    );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
