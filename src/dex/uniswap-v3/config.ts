@@ -8,6 +8,7 @@ import { decodeStateMultiCallResultWithRelativeBitmaps } from './forks/ramses-v2
 import { RamsesV2EventPool } from './forks/ramses-v2/ramses-v2-pool';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
+const RAMSES_FORKS_FEES = [...SUPPORTED_FEES, 50n, 250n];
 
 // Pools that will be initialized on app startup
 // They are added for testing
@@ -246,7 +247,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       deployer: '0xb3e423ab9cE6C03D98326A3A2a0D7D96b0829f22',
       quoter: '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
       router: '0xAA23611badAFB62D37E7295A682D21960ac85A90',
-      supportedFees: [...SUPPORTED_FEES, 50n],
+      supportedFees: RAMSES_FORKS_FEES,
       stateMulticall: '0x50EE4112Cab9c79812F23bE079aB3911395ACc8e',
       stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
@@ -258,6 +259,26 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ramsesexchange/concentrated-liquidity-graph',
+    },
+  },
+  Pharaoh: {
+    [Network.AVALANCHE]: {
+      factory: '0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42',
+      deployer: '0x95120704f4E2D545Aea8b6B3c16d9Da1fa32E30F',
+      quoter: '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
+      router: '0xAAAE99091Fbb28D400029052821653C1C752483B',
+      supportedFees: RAMSES_FORKS_FEES,
+      stateMulticall: '0xd32C191e0febaa6Cc93A29Cb676474c72486E00b',
+      stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
+      uniswapMulticall: '0x0139141Cd4Ee88dF3Cdb65881D411bAE271Ef0C2',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      eventPoolImplementation: RamsesV2EventPool,
+      decodeStateMultiCallResultWithRelativeBitmaps,
+      initHash:
+        '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/66247/pharaoh-cl/version/latest',
     },
   },
   'QuickSwapV3.1': {
