@@ -85,6 +85,7 @@ import { Dexalot } from './dexalot/dexalot';
 import { Smardex } from './smardex/smardex';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
+import { EtherFi } from './etherfi';
 
 const LegacyDexes = [
   CurveV2,
@@ -108,6 +109,7 @@ const LegacyDexes = [
   Jarvis,
   Lido,
   AugustusRFQOrder,
+  EtherFi,
 ];
 
 const Dexes = [
