@@ -76,19 +76,6 @@ export class EtherFi
       EtherFiFunctions,
       EtherFiParam,
     ] => {
-      if (this.is_eETH(destToken)) {
-        assert(
-          this.isWETH(srcToken) || isETHAddress(srcToken),
-          'srcToken should be eth',
-        );
-        return [
-          this.eETHPoolInterface,
-          this.eETHPool,
-          EtherFiFunctions.deposit,
-          [],
-        ];
-      }
-
       if (this.is_weETH(destToken)) {
         assert(this.is_eETH(srcToken), 'srcToken should be eETH');
         return [
@@ -106,6 +93,19 @@ export class EtherFi
           this.weETH,
           EtherFiFunctions.unwrap,
           [srcAmount],
+        ];
+      }
+
+      if (this.is_eETH(destToken)) {
+        assert(
+          this.isWETH(srcToken) || isETHAddress(srcToken),
+          'srcToken should be (w)eth',
+        );
+        return [
+          this.eETHPoolInterface,
+          this.eETHPool,
+          EtherFiFunctions.deposit,
+          [],
         ];
       }
 
