@@ -696,6 +696,31 @@ describe('UniswapV3 E2E', () => {
     });
   });
 
+  describe('Pharaoh', () => {
+    const dexKey = 'Pharaoh';
+
+    describe('Avalanche', () => {
+      const network = Network.AVALANCHE;
+
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDCe';
+
+      const tokenAAmount: string = '100000';
+      const tokenBAmount: string = '100000';
+      const nativeTokenAmount = '11000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
+
   describe('ChronosV3 E2E', () => {
     const dexKey = 'ChronosV3';
     describe('Arbitrum', () => {
