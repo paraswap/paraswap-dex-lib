@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { SwapSide } from '../constants';
+import { NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
@@ -136,7 +136,7 @@ export class EtherFi
     side: SwapSide,
   ): AdapterExchangeParam {
     return {
-      targetExchange: '0x',
+      targetExchange: NULL_ADDRESS,
       payload: '0x',
       networkFee: '0',
     };
