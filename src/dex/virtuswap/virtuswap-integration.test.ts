@@ -139,14 +139,18 @@ async function testPricingOnNetwork(
   expect(poolPrices).not.toBeNull();
 
   const pricesToCheck = poolPrices!.filter(
-    ({ prices }) => prices[prices.length - 1] !== BI_MAX_UINT256,
+    ({ prices }) =>
+      prices[prices.length - 1] !== BI_MAX_UINT256 &&
+      prices[prices.length - 1] !== 0n,
   );
 
   expect(pricesToCheck.length).toBeGreaterThan(0);
 
   // some virtual pools can have very low liquidity and should be skipped from the check
   const skippedPrices = poolPrices!.filter(
-    ({ prices }) => prices[prices.length - 1] === BI_MAX_UINT256,
+    ({ prices }) =>
+      prices[prices.length - 1] === BI_MAX_UINT256 ||
+      prices[prices.length - 1] === 0n,
   );
   if (skippedPrices.length > 0)
     console.warn(

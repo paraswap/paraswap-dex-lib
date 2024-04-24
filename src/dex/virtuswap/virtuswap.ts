@@ -11,6 +11,7 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -28,6 +29,7 @@ import { computeAddress } from './lib/PoolAddress';
 import {
   getAmountIn,
   getAmountOut,
+  getMaxVirtualTradeAmountRtoN,
   getVirtualPool,
   getVirtualPools,
   sortBalances,
@@ -127,6 +129,21 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
     );
   }
 
+  async getVirtualPoolNumber(blockNumber: number): Promise<number> {
+    if (!this.config.isTimestampBased) return blockNumber;
+
+    const latestBlockNumber = await this.dexHelper.provider.getBlockNumber();
+    if (blockNumber <= latestBlockNumber) {
+      const block = await this.dexHelper.provider.getBlock(blockNumber);
+      return block.timestamp;
+    } else {
+      this.logger.warn(
+        `tryGetBlockTimestamp: trying to get block which is in the future: blockNumber=${blockNumber}, latestBlockNumber=${latestBlockNumber}`,
+      );
+      return Math.floor(new Date().getTime() / 1000); // fallback to current timestamp
+    }
+  }
+
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. `${dexKey}_${poolAddress}` for real,
@@ -146,19 +163,6 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
 
     const poolAddress = this.computePoolAddress({ token0, token1 });
 
-    const latestBlockNumber = await this.dexHelper.provider.getBlockNumber();
-
-    let blockTimestamp: number;
-    if (blockNumber <= latestBlockNumber) {
-      const block = await this.dexHelper.provider.getBlock(blockNumber);
-      blockTimestamp = block.timestamp;
-    } else {
-      this.logger.warn(
-        `getPoolIdentifiers: trying to get block which is in the future: blockNumber=${blockNumber}, latestBlockNumber=${latestBlockNumber}`,
-      );
-      blockTimestamp = Math.floor(new Date().getTime() / 1000); // fallback to current timestamp
-    }
-
     const allPoolsStates = Object.values(this.pools)
       .map(pool => pool.getState(blockNumber))
       .filter(state => !!state) as PoolState[];
@@ -166,7 +170,7 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
     try {
       const virtualPools = getVirtualPools(
         allPoolsStates,
-        this.config.isTimestampBased ? blockTimestamp : blockNumber,
+        await this.getVirtualPoolNumber(blockNumber),
         token0,
         token1,
       ).map(
@@ -210,53 +214,24 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
       limitPools?.filter(id => id.startsWith(this.dexKey)) ??
       (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
-    return identifiers
-      .map(id => {
-        const splittedId = id.split('_');
-        switch (splittedId.length) {
-          // poolAddress from `${dexKey}_${poolAddress}` for real pools
-          case 2: {
-            const poolAddress = splittedId[1];
-            const poolState = this.getPoolState(poolAddress, blockNumber);
-            if (!poolState) return null;
+    const pricesVolume = (
+      await Promise.all(
+        identifiers.map(async id => {
+          const splittedId = id.split('_');
+          switch (splittedId.length) {
+            // poolAddress from `${dexKey}_${poolAddress}` for real pools
+            case 2: {
+              const poolAddress = splittedId[1];
+              const poolState = this.getPoolState(poolAddress, blockNumber);
+              if (!poolState) return null;
 
-            const fee = poolState.fee;
-            const [balance0, balance1] = sortBalances(
-              from.address.toLowerCase(),
-              poolState.token0.toLowerCase(),
-              poolState.pairBalance0,
-              poolState.pairBalance1,
-            );
-
-            return {
-              prices: amounts.map(amount =>
-                getAmount(amount, balance0, balance1, fee),
-              ),
-              unit: getAmount(unitAmount, balance0, balance1, fee),
-              data: {
-                router: this.config.router,
-                isVirtual: false,
-                path: [from.address, to.address],
-              },
-              poolIdentifier: id,
-              poolAddresses: [poolAddress],
-              exchange: this.dexKey,
-              gasCost: this.config.realPoolGasCost,
-            };
-          }
-          // jkPair, ikPair from `${dexKey}_${jkPair}_${ikPair}` for virtual pools
-          case 3: {
-            const jkPair = splittedId[1];
-            const ikPair = splittedId[2];
-            const jkState = this.getPoolState(jkPair, blockNumber);
-            if (!jkState) return null;
-
-            const ikState = this.getPoolState(ikPair, blockNumber);
-            if (!ikState) return null;
-
-            try {
-              const vPool = getVirtualPool(jkState, ikState, blockNumber);
-              const { balance0, balance1, fee } = vPool;
+              const fee = poolState.fee;
+              const [balance0, balance1] = sortBalances(
+                from.address.toLowerCase(),
+                poolState.token0.toLowerCase(),
+                poolState.pairBalance0,
+                poolState.pairBalance1,
+              );
 
               return {
                 prices: amounts.map(amount =>
@@ -265,29 +240,80 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
                 unit: getAmount(unitAmount, balance0, balance1, fee),
                 data: {
                   router: this.config.router,
-                  isVirtual: true,
-                  tokenOut: to.address,
-                  commonToken: vPool.commonToken,
-                  ikPair: ikPair,
+                  isVirtual: false,
+                  path: [from.address, to.address],
                 },
                 poolIdentifier: id,
-                poolAddresses: [jkPair, ikPair],
+                poolAddresses: [poolAddress],
                 exchange: this.dexKey,
-                gasCost: this.config.virtualPoolGasCost,
+                gasCost: this.config.realPoolGasCost,
               };
-            } catch (e) {
-              this.logger.debug(
-                `getPricesVolume: error on getVirtualPool, jkPair=${jkPair}, ikPair=${ikPair}`,
-                e,
-              );
-              return null;
             }
+            // jkPair, ikPair from `${dexKey}_${jkPair}_${ikPair}` for virtual pools
+            case 3: {
+              const jkPair = splittedId[1];
+              const ikPair = splittedId[2];
+              const jkState = this.getPoolState(jkPair, blockNumber);
+              if (!jkState) return null;
+
+              const ikState = this.getPoolState(ikPair, blockNumber);
+              if (!ikState) return null;
+
+              try {
+                const vPool = getVirtualPool(
+                  jkState,
+                  ikState,
+                  await this.getVirtualPoolNumber(blockNumber),
+                );
+                const { balance0, balance1, fee } = vPool;
+
+                // maxAmount is used to prevent reserve amount from going beyond pool threshold
+                const maxAmount = getMaxVirtualTradeAmountRtoN(vPool);
+
+                return {
+                  prices: amounts.map(amount => {
+                    if (isSell && amount > maxAmount) return 0n;
+                    const price = getAmount(amount, balance0, balance1, fee);
+                    if (!isSell && price > maxAmount) return BI_MAX_UINT256;
+                    return price;
+                  }),
+                  unit: getAmount(unitAmount, balance0, balance1, fee),
+                  data: {
+                    router: this.config.router,
+                    isVirtual: true,
+                    tokenOut: to.address,
+                    commonToken: vPool.commonToken,
+                    ikPair: ikPair,
+                  },
+                  poolIdentifier: id,
+                  poolAddresses: [jkPair, ikPair],
+                  exchange: this.dexKey,
+                  gasCost: this.config.virtualPoolGasCost,
+                };
+              } catch (e) {
+                this.logger.debug(
+                  `getPricesVolume: error on getVirtualPool, jkPair=${jkPair}, ikPair=${ikPair}`,
+                  e,
+                );
+                return null;
+              }
+            }
+            default:
+              return null;
           }
-          default:
-            return null;
-        }
-      })
-      .filter(prices => !!prices) as PoolPrices<VirtuSwapData>[];
+        }),
+      )
+    ).filter(prices => !!prices) as PoolPrices<VirtuSwapData>[];
+
+    const lastIndex = amounts.length - 1;
+
+    const sortFn = isSell
+      ? (a: PoolPrices<VirtuSwapData>, b: PoolPrices<VirtuSwapData>) =>
+          Number(b.prices[lastIndex] - a.prices[lastIndex])
+      : (a: PoolPrices<VirtuSwapData>, b: PoolPrices<VirtuSwapData>) =>
+          Number(a.prices[lastIndex] - b.prices[lastIndex]);
+
+    return pricesVolume.sort(sortFn);
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
