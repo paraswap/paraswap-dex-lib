@@ -8,6 +8,7 @@ import weETHABI from '../abi/etherfi/weETH.json';
 import { IDexHelper } from '../dex-helper';
 import { isETHAddress } from '../utils';
 import { assert } from 'ts-essentials';
+import { WethFunctions } from './weth/types';
 
 type EtherFiData = void;
 
@@ -70,6 +71,21 @@ export class EtherFi
     data: EtherFiData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
+    const callees = [];
+    const calldata = [];
+    const values = [];
+
+    // if token is wETH need to withdraw first
+    if (this.isWETH(srcToken)) {
+      const wethUnwrapData = this.erc20Interface.encodeFunctionData(
+        WethFunctions.withdraw,
+        [srcAmount],
+      );
+      callees.push(this.dexHelper.config.data.wrappedNativeTokenAddress);
+      calldata.push(wethUnwrapData);
+      values.push('0');
+    }
+
     const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,
@@ -117,14 +133,16 @@ export class EtherFi
       swapFunctionParams,
     );
 
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      swapCallee,
-    );
+    callees.push(swapCallee);
+    calldata.push(swapData);
+    values.push(srcAmount);
+
+    return {
+      callees,
+      calldata,
+      values,
+      networkFee: '0',
+    };
   }
 
   getAdapterParam(
