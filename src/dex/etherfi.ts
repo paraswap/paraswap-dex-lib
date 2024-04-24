@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { NULL_ADDRESS, SwapSide } from '../constants';
+import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from '../constants';
 import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
@@ -71,21 +71,6 @@ export class EtherFi
     data: EtherFiData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const callees = [];
-    const calldata = [];
-    const values = [];
-
-    // if token is wETH need to withdraw first
-    if (this.isWETH(srcToken)) {
-      const wethUnwrapData = this.erc20Interface.encodeFunctionData(
-        WethFunctions.withdraw,
-        [srcAmount],
-      );
-      callees.push(this.dexHelper.config.data.wrappedNativeTokenAddress);
-      calldata.push(wethUnwrapData);
-      values.push('0');
-    }
-
     const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,
@@ -133,16 +118,30 @@ export class EtherFi
       swapFunctionParams,
     );
 
-    callees.push(swapCallee);
-    calldata.push(swapData);
-    values.push(srcAmount);
+    // if src token is WETH, we need to withdraw from weth and pass eth value on call. For other cases, we need to approve and perform call
+    const isSrcTokenWeth = this.isWETH(srcToken);
 
-    return {
-      callees,
-      calldata,
-      values,
-      networkFee: '0',
-    };
+    return this.buildSimpleParamWithoutWETHConversion(
+      isSrcTokenWeth ? ETHER_ADDRESS : srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      swapCallee,
+      swapCallee,
+      '0',
+      isSrcTokenWeth
+        ? {
+            callees: [this.dexHelper.config.data.wrappedNativeTokenAddress],
+            calldata: [
+              this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+                srcAmount,
+              ]),
+            ],
+            values: ['0'],
+          }
+        : undefined,
+    );
   }
 
   getAdapterParam(
