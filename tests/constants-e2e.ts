@@ -669,6 +669,10 @@ export const Tokens: {
     },
   },
   [Network.AVALANCHE]: {
+    PHAR: {
+      address: '0xAAAB9D12A30504559b0C5a9A5977fEE4A6081c6b',
+      decimals: 18,
+    },
     USDCe: {
       address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664',
       decimals: 6,
@@ -1232,6 +1236,7 @@ export const Holders: {
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
     BTCb: '0x84c06d3c27821d0136f66306f5028d43ceac268d',
     AMPL: '0xfcaA5ea7F8eb0631BcA72C345025C0A5a6D93f0E',
+    PHAR: '0x654296D56532f62B7d91d335791d3c364a9385b5',
   },
   [Network.ARBITRUM]: {
     SEN: '0xcb19b6b4971bd4206bab176c75b1efe3e28ee5a8',

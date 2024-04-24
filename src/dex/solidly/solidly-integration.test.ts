@@ -1492,7 +1492,7 @@ describe('Solidly integration tests', () => {
           );
 
           expect(poolPrices).not.toBeNull();
-          // checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
 
           // Check if onchain pricing equals to calculated ones
 

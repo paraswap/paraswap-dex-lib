@@ -1249,90 +1249,22 @@ describe('Solidly E2E', () => {
     describe('PharaohV1', () => {
       const dexKey = 'PharaohV1';
 
-      describe('simpleSwap', () => {
-        it('NATIVE -> TOKEN', async () => {
-          await testE2E(
-            tokens.AVAX,
-            tokens.USDC,
-            holders.AVAX,
-            '3000000000000000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-        it('TOKEN -> NATIVE', async () => {
-          await testE2E(
-            tokens.USDC,
-            tokens.AVAX,
-            holders.USDC,
-            '9900000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.simpleSwap,
-            network,
-            provider,
-          );
-        });
-        it('TOKEN -> TOKEN', async () => {
-          await testE2E(
-            tokens.WAVAX,
-            tokens.USDC,
-            holders.WAVAX,
-            '3000000000000000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.simpleSwap,
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'WAVAX';
 
-            network,
-            provider,
-          );
-        });
-      });
-      describe('multiSwap', () => {
-        it('NATIVE -> TOKEN', async () => {
-          await testE2E(
-            tokens.AVAX,
-            tokens.USDC,
-            holders.AVAX,
-            '3000000000000000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.multiSwap,
+      const tokenAAmount: string = '100000';
+      const tokenBAmount: string = '100000000000000000';
+      const nativeTokenAmount = '100000000000000000';
 
-            network,
-            provider,
-          );
-        });
-        it('TOKEN -> NATIVE', async () => {
-          await testE2E(
-            tokens.USDC,
-            tokens.AVAX,
-            holders.USDC,
-            '9900000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.multiSwap,
-            network,
-            provider,
-          );
-        });
-        it('TOKEN -> TOKEN', async () => {
-          await testE2E(
-            tokens.WAVAX,
-            tokens.USDC,
-            holders.WAVAX,
-            '3000000000000000000',
-            SwapSide.SELL,
-            dexKey,
-            ContractMethod.multiSwap,
-            network,
-            provider,
-          );
-        });
-      });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
     });
   });
 
