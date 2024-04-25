@@ -188,17 +188,10 @@ describe('AngleTransmuter', () => {
 
     const tokens = Tokens[network];
 
-    const stables = [
-      // tokens.EURA,
-      tokens.USDA,
-    ];
+    const stables = [tokens.EURA, tokens.USDA];
 
     const collaterals: Collateral = {
-      USDA: [
-        // tokens.bIB01,
-        // tokens.USDC,
-        tokens.steakUSDC,
-      ],
+      USDA: [tokens.bIB01, tokens.USDC, tokens.steakUSDC],
       EURA: [tokens.EUROC, tokens.bC3M, tokens.bERNX],
     };
 
@@ -210,15 +203,15 @@ describe('AngleTransmuter', () => {
     const amounts = [
       0n,
       1n * BI_POWS[tokens.USDA.decimals],
-      // 2n * BI_POWS[tokens.USDA.decimals],
-      // 3n * BI_POWS[tokens.USDA.decimals],
-      // 4n * BI_POWS[tokens.USDA.decimals],
-      // 5n * BI_POWS[tokens.USDA.decimals],
-      // 6n * BI_POWS[tokens.USDA.decimals],
-      // 7n * BI_POWS[tokens.USDA.decimals],
-      // 8n * BI_POWS[tokens.USDA.decimals],
-      // 9n * BI_POWS[tokens.USDA.decimals],
-      // 10n * BI_POWS[tokens.USDA.decimals],
+      2n * BI_POWS[tokens.USDA.decimals],
+      3n * BI_POWS[tokens.USDA.decimals],
+      4n * BI_POWS[tokens.USDA.decimals],
+      5n * BI_POWS[tokens.USDA.decimals],
+      6n * BI_POWS[tokens.USDA.decimals],
+      7n * BI_POWS[tokens.USDA.decimals],
+      8n * BI_POWS[tokens.USDA.decimals],
+      9n * BI_POWS[tokens.USDA.decimals],
+      10n * BI_POWS[tokens.USDA.decimals],
     ];
 
     beforeAll(async () => {
@@ -235,60 +228,60 @@ describe('AngleTransmuter', () => {
           const amountsCollateral = [
             0n,
             1n * BI_POWS[collateral.decimals],
-            // 2n * BI_POWS[collateral.decimals],
-            // 3n * BI_POWS[collateral.decimals],
-            // 4n * BI_POWS[collateral.decimals],
-            // 5n * BI_POWS[collateral.decimals],
-            // 6n * BI_POWS[collateral.decimals],
-            // 7n * BI_POWS[collateral.decimals],
-            // 8n * BI_POWS[collateral.decimals],
-            // 9n * BI_POWS[collateral.decimals],
-            // 10n * BI_POWS[collateral.decimals],
+            2n * BI_POWS[collateral.decimals],
+            3n * BI_POWS[collateral.decimals],
+            4n * BI_POWS[collateral.decimals],
+            5n * BI_POWS[collateral.decimals],
+            6n * BI_POWS[collateral.decimals],
+            7n * BI_POWS[collateral.decimals],
+            8n * BI_POWS[collateral.decimals],
+            9n * BI_POWS[collateral.decimals],
+            10n * BI_POWS[collateral.decimals],
           ];
 
-          // it('getTopPoolsForToken - collateral', async () => {
-          //   // We have to check without calling initializePricing, because
-          //   // pool-tracker is not calling that function
-          //   const newAngleTransmuter = new AngleTransmuter(
-          //     network,
-          //     dexKey,
-          //     dexHelper,
-          //   );
-          //   if (newAngleTransmuter.updatePoolState) {
-          //     await newAngleTransmuter.updatePoolState();
-          //   }
-          //   const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
-          //     collateral.address,
-          //     10,
-          //   );
-          //   console.log(`${collateral.symbol} Top Pools:`, poolLiquidity);
+          it('getTopPoolsForToken - collateral', async () => {
+            // We have to check without calling initializePricing, because
+            // pool-tracker is not calling that function
+            const newAngleTransmuter = new AngleTransmuter(
+              network,
+              dexKey,
+              dexHelper,
+            );
+            if (newAngleTransmuter.updatePoolState) {
+              await newAngleTransmuter.updatePoolState();
+            }
+            const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
+              collateral.address,
+              10,
+            );
+            console.log(`${collateral.symbol} Top Pools:`, poolLiquidity);
 
-          //   if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
-          //     checkPoolsLiquidity(poolLiquidity, collateral.address, dexKey);
-          //   }
-          // });
+            if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
+              checkPoolsLiquidity(poolLiquidity, collateral.address, dexKey);
+            }
+          });
 
-          // it('getTopPoolsForToken - stablecoin', async () => {
-          //   // We have to check without calling initializePricing, because
-          //   // pool-tracker is not calling that function
-          //   const newAngleTransmuter = new AngleTransmuter(
-          //     network,
-          //     dexKey,
-          //     dexHelper,
-          //   );
-          //   if (newAngleTransmuter.updatePoolState) {
-          //     await newAngleTransmuter.updatePoolState();
-          //   }
-          //   const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
-          //     stable.address,
-          //     10,
-          //   );
-          //   console.log(`${stable.symbol} Top Pools:`, poolLiquidity);
+          it('getTopPoolsForToken - stablecoin', async () => {
+            // We have to check without calling initializePricing, because
+            // pool-tracker is not calling that function
+            const newAngleTransmuter = new AngleTransmuter(
+              network,
+              dexKey,
+              dexHelper,
+            );
+            if (newAngleTransmuter.updatePoolState) {
+              await newAngleTransmuter.updatePoolState();
+            }
+            const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
+              stable.address,
+              10,
+            );
+            console.log(`${stable.symbol} Top Pools:`, poolLiquidity);
 
-          //   if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
-          //     checkPoolsLiquidity(poolLiquidity, stable.address, dexKey);
-          //   }
-          // });
+            if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
+              checkPoolsLiquidity(poolLiquidity, stable.address, dexKey);
+            }
+          });
 
           it('getPoolIdentifiers and getPricesVolume SELL - collateral', async () => {
             await testPricingOnNetwork(
@@ -304,49 +297,49 @@ describe('AngleTransmuter', () => {
             );
           });
 
-          // it('getPoolIdentifiers and getPricesVolume BUY - stablecoin', async () => {
-          //   await testPricingOnNetwork(
-          //     angleTransmuter,
-          //     network,
-          //     dexKey,
-          //     blockNumber,
-          //     stable.symbol!,
-          //     collateral.symbol!,
-          //     SwapSide.BUY,
-          //     amountsCollateral,
-          //     'quoteOut',
-          //   );
-          // });
+          it('getPoolIdentifiers and getPricesVolume BUY - stablecoin', async () => {
+            await testPricingOnNetwork(
+              angleTransmuter,
+              network,
+              dexKey,
+              blockNumber,
+              stable.symbol!,
+              collateral.symbol!,
+              SwapSide.BUY,
+              amountsCollateral,
+              'quoteOut',
+            );
+          });
 
-          // if (!isKYC[collateral.symbol!]) {
-          //   it('getPoolIdentifiers and getPricesVolume SELL - stablecoin', async () => {
-          //     await testPricingOnNetwork(
-          //       angleTransmuter,
-          //       network,
-          //       dexKey,
-          //       blockNumber,
-          //       stable.symbol!,
-          //       collateral.symbol!,
-          //       SwapSide.SELL,
-          //       amounts,
-          //       'quoteIn',
-          //     );
-          //   });
+          if (!isKYC[collateral.symbol!]) {
+            it('getPoolIdentifiers and getPricesVolume SELL - stablecoin', async () => {
+              await testPricingOnNetwork(
+                angleTransmuter,
+                network,
+                dexKey,
+                blockNumber,
+                stable.symbol!,
+                collateral.symbol!,
+                SwapSide.SELL,
+                amounts,
+                'quoteIn',
+              );
+            });
 
-          //   it('getPoolIdentifiers and getPricesVolume BUY - collateral', async () => {
-          //     await testPricingOnNetwork(
-          //       angleTransmuter,
-          //       network,
-          //       dexKey,
-          //       blockNumber,
-          //       collateral.symbol!,
-          //       stable.symbol!,
-          //       SwapSide.BUY,
-          //       amounts,
-          //       'quoteOut',
-          //     );
-          //   });
-          // }
+            it('getPoolIdentifiers and getPricesVolume BUY - collateral', async () => {
+              await testPricingOnNetwork(
+                angleTransmuter,
+                network,
+                dexKey,
+                blockNumber,
+                collateral.symbol!,
+                stable.symbol!,
+                SwapSide.BUY,
+                amounts,
+                'quoteOut',
+              );
+            });
+          }
         }),
       ),
     );

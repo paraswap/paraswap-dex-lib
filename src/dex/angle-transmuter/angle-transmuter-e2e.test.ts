@@ -87,7 +87,7 @@ describe('AngleTransmuter E2E', () => {
     const stables = [tokens.EURA, tokens.USDA];
 
     const collaterals: Collateral = {
-      USDA: [tokens.USDC, tokens.steakUSDC, tokens.bIB01],
+      USDA: [tokens.bIB01, tokens.USDC, tokens.steakUSDC],
       EURA: [tokens.EUROC, tokens.bC3M, tokens.bERNX],
     };
 

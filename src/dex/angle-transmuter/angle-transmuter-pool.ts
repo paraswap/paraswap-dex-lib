@@ -32,7 +32,12 @@ import {
   filterDictionaryOnly,
 } from './utils';
 import { RedstoneSubscriber } from './redstone';
-import { formatEther, formatUnits, parseEther } from 'ethers/lib/utils';
+import {
+  formatEther,
+  formatUnits,
+  parseEther,
+  parseUnits,
+} from 'ethers/lib/utils';
 import { BackedSubscriber } from './backedOracle';
 import { SwapSide } from '../../constants';
 import { ethers } from 'ethers';
@@ -105,20 +110,29 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         acc: { [address: string]: MorphoVaultSubscriber<PoolState> },
         [key, value],
       ) => {
-        acc[value.baseVault] = new MorphoVaultSubscriber<PoolState>(
-          value.baseVault,
-          lens<DeepReadonly<PoolState>>().oracles.morphoVault[key],
-          dexHelper.getLogger(
-            `${key}:${value.baseVault} Morpho Vault for ${parentName}-${network}`,
-          ),
-        );
-        acc[value.quoteVault] = new MorphoVaultSubscriber<PoolState>(
-          value.quoteVault,
-          lens<DeepReadonly<PoolState>>().oracles.morphoVault[key],
-          dexHelper.getLogger(
-            `${key}:${value.quoteVault} Morpho Vault for ${parentName}-${network}`,
-          ),
-        );
+        if (value.baseVault && value.baseVault !== ethers.constants.AddressZero)
+          acc[value.baseVault] = new MorphoVaultSubscriber<PoolState>(
+            value.baseVault,
+            lens<DeepReadonly<PoolState>>().oracles.morphoVault[
+              value.baseVault
+            ],
+            dexHelper.getLogger(
+              `${key}:${value.baseVault} Morpho Vault for ${parentName}-${network}`,
+            ),
+          );
+        if (
+          value.quoteVault &&
+          value.quoteVault !== ethers.constants.AddressZero
+        )
+          acc[value.quoteVault] = new MorphoVaultSubscriber<PoolState>(
+            value.quoteVault,
+            lens<DeepReadonly<PoolState>>().oracles.morphoVault[
+              value.quoteVault
+            ],
+            dexHelper.getLogger(
+              `${key}:${value.quoteVault} Morpho Vault for ${parentName}-${network}`,
+            ),
+          );
         return acc;
       },
       {},
@@ -308,14 +322,14 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       );
     } else if (oracleFeed.isPyth) {
       pythIds.ids = pythIds.ids.concat(oracleFeed.pyth!.feedIds);
-    } else if (oracleFeed.morpho) {
+    } else if (oracleFeed.isMorpho) {
       const morphoOracleResult = (
         await multiContract.methods
-          .aggregate([
+          .aggregate(
             MorphoOracleEventPool.getGenerateInfoMultiCallInput(
-              oracleFeed.morpho.oracle,
+              oracleFeed.morpho!.oracle,
             ),
-          ])
+          )
           .call({}, blockNumber)
       ).returnData;
       const morphoOracleInfo =
@@ -360,7 +374,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
             blockNumber,
             multiContract,
           ));
-      morphoMap[oracleFeed.morpho.oracle] = morphoOracleInfo;
+      morphoMap[oracleFeed.morpho!.oracle] = morphoOracleInfo;
     } else {
       throw new Error('Unknown oracle feed');
     }
@@ -476,7 +490,8 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           // add all the feed oracles used to their respective channels
           if (
             oracleConfigDecoded.oracleType === OracleReadType.CHAINLINK_FEEDS ||
-            oracleConfigDecoded.oracleType === OracleReadType.PYTH
+            oracleConfigDecoded.oracleType === OracleReadType.PYTH ||
+            oracleConfigDecoded.oracleType === OracleReadType.MORPHO_ORACLE
           ) {
             const oracleFeed = TransmuterSubscriber._decodeOracleFeed(
               oracleConfigDecoded.oracleType,
@@ -496,7 +511,8 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           }
           if (
             oracleConfigDecoded.targetType === OracleReadType.CHAINLINK_FEEDS ||
-            oracleConfigDecoded.targetType === OracleReadType.PYTH
+            oracleConfigDecoded.targetType === OracleReadType.PYTH ||
+            oracleConfigDecoded.targetType === OracleReadType.MORPHO_ORACLE
           ) {
             const oracleFeed = TransmuterSubscriber._decodeOracleFeed(
               oracleConfigDecoded.targetType,
@@ -715,13 +731,13 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     if (oracleType === OracleReadType.CHAINLINK_FEEDS) {
       price = this._quoteAmount(feed.chainlink!.quoteType, baseValue);
       for (let i = 0; i < feed.chainlink!.circuitChainlink.length; i++) {
-        price = this._readChainlink(
+        ({ price } = this._readChainlink(
           config,
           state,
           feed.chainlink!.circuitChainlink[i],
           feed.chainlink!.circuitChainIsMultiplied[i],
           price,
-        );
+        ));
       }
     } else if (oracleType === OracleReadType.PYTH) {
       price = this._quoteAmount(feed.pyth!.quoteType, baseValue);
@@ -755,62 +771,38 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           : 1n;
       const baseFeed1Price =
         morphoOracleConfig.baseFeed1 !== ethers.constants.AddressZero
-          ? bigIntify(
-              parseEther(
-                this._readChainlink(
-                  config,
-                  state,
-                  morphoOracleConfig.baseFeed1,
-                  1,
-                  1,
-                ).toString(),
-              ),
+          ? this._readMorphoFeedChainlink(
+              config,
+              state,
+              morphoOracleConfig.baseFeed1,
             )
           : 1n;
       const baseFeed2Price =
         morphoOracleConfig.baseFeed2 !== ethers.constants.AddressZero
-          ? bigIntify(
-              parseEther(
-                this._readChainlink(
-                  config,
-                  state,
-                  morphoOracleConfig.baseFeed2,
-                  1,
-                  1,
-                ).toString(),
-              ),
+          ? this._readMorphoFeedChainlink(
+              config,
+              state,
+              morphoOracleConfig.baseFeed2,
             )
           : 1n;
       const quoteFeed1Price =
         morphoOracleConfig.quoteFeed1 !== ethers.constants.AddressZero
-          ? bigIntify(
-              parseEther(
-                this._readChainlink(
-                  config,
-                  state,
-                  morphoOracleConfig.quoteFeed1,
-                  1,
-                  1,
-                ).toString(),
-              ),
+          ? this._readMorphoFeedChainlink(
+              config,
+              state,
+              morphoOracleConfig.quoteFeed1,
             )
           : 1n;
       const quoteFeed2Price =
         morphoOracleConfig.quoteFeed2 !== ethers.constants.AddressZero
-          ? bigIntify(
-              parseEther(
-                this._readChainlink(
-                  config,
-                  state,
-                  morphoOracleConfig.quoteFeed2,
-                  1,
-                  1,
-                ).toString(),
-              ),
+          ? this._readMorphoFeedChainlink(
+              config,
+              state,
+              morphoOracleConfig.quoteFeed2,
             )
           : 1n;
       price = Number.parseFloat(
-        formatEther(
+        formatUnits(
           (morphoOracleConfig.scaleFactor *
             baseVaultPrice *
             baseFeed1Price *
@@ -818,6 +810,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
             quoteVaultPrice /
             quoteFeed1Price /
             quoteFeed2Price,
+          36,
         ),
       );
     }
@@ -830,7 +823,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     id: string,
     isMultiplied: number,
     price: number,
-  ): number {
+  ): { price: number; decimals: number } {
     let decimals: number;
     if (Object.keys(config.oracles.chainlink).includes(id))
       decimals = config.oracles.chainlink[id].decimals;
@@ -842,6 +835,15 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     );
     if (isMultiplied === 1) price *= rate;
     else price /= rate;
-    return price;
+    return { price, decimals };
+  }
+
+  _readMorphoFeedChainlink(
+    config: PoolConfig,
+    state: PoolState,
+    id: string,
+  ): bigint {
+    const { price, decimals } = this._readChainlink(config, state, id, 1, 1);
+    return bigIntify(parseUnits(price.toString(), decimals));
   }
 }

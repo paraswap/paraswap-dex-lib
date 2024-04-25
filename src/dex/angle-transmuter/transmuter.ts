@@ -245,6 +245,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
         18,
       ),
     );
+
     return transmuterState;
   }
 

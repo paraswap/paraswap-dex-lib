@@ -173,7 +173,7 @@ export class MorphoOracleEventPool extends StatefulEventSubscriber<MorphoOracleS
         'QUOTE_VAULT',
         returnData[2],
       )[0] as string;
-    poolState.baseVaultConversion = bigIntify(
+    poolState.quoteVaultConversion = bigIntify(
       MorphoOracleEventPool.morphoOracleIface.decodeFunctionResult(
         'QUOTE_VAULT_CONVERSION_SAMPLE',
         returnData[3],
@@ -297,7 +297,7 @@ export class MorphoOracleEventPool extends StatefulEventSubscriber<MorphoOracleS
         'QUOTE_VAULT',
         multicallOutputs[2],
       )[0] as string;
-    poolState.baseVaultConversion = bigIntify(
+    poolState.quoteVaultConversion = bigIntify(
       MorphoOracleEventPool.morphoOracleIface.decodeFunctionResult(
         'QUOTE_VAULT_CONVERSION_SAMPLE',
         multicallOutputs[3],
