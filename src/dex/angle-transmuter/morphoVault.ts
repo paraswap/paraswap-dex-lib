@@ -1,113 +1,124 @@
-// import { DeepReadonly } from 'ts-essentials';
-// import { PartialEventSubscriber } from '../../composed-event-subscriber';
-// import {
-//   Address,
-//   BlockHeader,
-//   Log,
-//   Logger,
-//   MultiCallInput,
-//   MultiCallOutput,
-// } from '../../types';
-// import { Lens } from '../../lens';
-// import { Interface } from '@ethersproject/abi';
-// import MorphoVaultABI from '../../abi/angle-transmuter/MorphoVault.json';
+import { Interface } from '@ethersproject/abi';
+import type { DeepReadonly } from 'ts-essentials';
+import type {
+  BlockHeader,
+  Log,
+  Logger,
+  MultiCallInput,
+  MultiCallOutput,
+} from '../../types';
+import { bigIntify } from '../../utils';
+import type { MorphoVaultState } from './types';
+import MorphoVaultABI from '../../abi/angle-transmuter/MorphoVault.json';
+import { PartialEventSubscriber } from '../../composed-event-subscriber';
+import { Lens } from '../../lens';
+import _ from 'lodash';
+import { ethers } from 'ethers';
 
-// export type MorphoVaultState = {
-//   answer: bigint;
-//   timestamp: bigint;
-// };
+export class MorphoVaultSubscriber<State> extends PartialEventSubscriber<
+  State,
+  MorphoVaultState
+> {
+  static interface = new Interface(MorphoVaultABI);
 
-// export class MorphoVaultSubscriber<State> extends PartialEventSubscriber<
-//   State,
-//   MorphoVaultState
-// > {
-//   static readonly vaultInterface = new Interface(MorphoVaultABI);
-//   static readonly ANSWER_UPDATED_TOPIC =
-//     MorphoVaultSubscriber.vaultInterface.getEventTopic('AnswerUpdated');
+  constructor(
+    public morphoVault: string,
+    lens: Lens<DeepReadonly<State>, DeepReadonly<MorphoVaultState>>,
+    logger: Logger,
+  ) {
+    super([morphoVault], lens, logger);
+  }
 
-//   constructor(
-//     private proxy: Address,
-//     private aggregator: Address,
-//     lens: Lens<DeepReadonly<State>, DeepReadonly<ChainLinkState>>,
-//     logger: Logger,
-//   ) {
-//     super([aggregator], lens, logger);
-//   }
+  public processLog(
+    state: DeepReadonly<MorphoVaultState>,
+    log: Readonly<Log>,
+    blockHeader: Readonly<BlockHeader>,
+  ): DeepReadonly<MorphoVaultState> | null {
+    try {
+      const parsed = MorphoVaultSubscriber.interface.parseLog(log);
+      const _state: MorphoVaultState = _.cloneDeep(state) as MorphoVaultState;
+      switch (parsed.name) {
+        case 'UpdateLastTotalAssets':
+          return this.handleUpdateLastTotalAssets(parsed, _state);
+        case 'Deposit':
+          return this.handleDeposit(parsed, _state);
+        case 'Withdraw':
+          return this.handleWithdraw(parsed, _state);
+        default:
+          return null;
+      }
+    } catch (e) {
+      this.logger.error('Failed to parse log', e);
+      return null;
+    }
+  }
 
-//   static getReadAggregatorMultiCallInput(proxy: Address): MultiCallInput {
-//     return {
-//       target: proxy,
-//       callData:
-//         ChainLinkSubscriber.proxyInterface.encodeFunctionData('aggregator'),
-//     };
-//   }
+  public getGenerateStateMultiCallInputs(): MultiCallInput[] {
+    return [
+      {
+        target: this.morphoVault,
+        callData:
+          MorphoVaultSubscriber.interface.encodeFunctionData('totalAssets'),
+      },
+      {
+        target: this.morphoVault,
+        callData:
+          MorphoVaultSubscriber.interface.encodeFunctionData('totalSupply'),
+      },
+    ];
+  }
 
-//   static readAggregator(multicallOutput: MultiCallOutput): Address {
-//     return ChainLinkSubscriber.proxyInterface.decodeFunctionResult(
-//       'aggregator',
-//       multicallOutput,
-//     )[0];
-//   }
+  public generateState(
+    multicallOutputs: MultiCallOutput[],
+    blockNumber?: number | 'latest',
+  ): DeepReadonly<MorphoVaultState> {
+    const morphoVaultState = {} as MorphoVaultState;
 
-//   static getReadDecimal(proxy: Address): MultiCallInput {
-//     return {
-//       target: proxy,
-//       callData:
-//         ChainLinkSubscriber.proxyInterface.encodeFunctionData('decimals'),
-//     };
-//   }
+    // Decode
+    morphoVaultState.totalAssets = bigIntify(
+      MorphoVaultSubscriber.interface.decodeFunctionResult(
+        'totalAssets',
+        multicallOutputs[0],
+      )[0],
+    );
+    morphoVaultState.totalSupply = bigIntify(
+      MorphoVaultSubscriber.interface.decodeFunctionResult(
+        'totalSupply',
+        multicallOutputs[1],
+      )[0],
+    );
+    return morphoVaultState;
+  }
 
-//   static readDecimals(multicallOutput: MultiCallOutput): Address {
-//     return ChainLinkSubscriber.proxyInterface.decodeFunctionResult(
-//       'decimals',
-//       multicallOutput,
-//     )[0];
-//   }
+  getRate(amount: bigint, state: MorphoVaultState): bigint {
+    return amount === 0n || state.totalSupply === 0n
+      ? amount
+      : (amount * state.totalSupply) / state.totalAssets;
+  }
 
-//   public processLog(
-//     state: DeepReadonly<ChainLinkState>,
-//     log: Readonly<Log>,
-//     blockHeader: Readonly<BlockHeader>,
-//   ): DeepReadonly<ChainLinkState> | null {
-//     if (log.topics[0] !== ChainLinkSubscriber.ANSWER_UPDATED_TOPIC) return null; // Ignore other events
-//     const decoded = ChainLinkSubscriber.proxyInterface.decodeEventLog(
-//       'AnswerUpdated',
-//       log.data,
-//       log.topics,
-//     );
-//     return {
-//       answer: BigInt(decoded.current.toString()),
-//       timestamp: BigInt(decoded.updatedAt.toString()),
-//     };
-//   }
+  handleUpdateLastTotalAssets(
+    event: ethers.utils.LogDescription,
+    state: MorphoVaultState,
+  ): DeepReadonly<MorphoVaultState> | null {
+    state.totalAssets = bigIntify(event.args.updatedTotalAssets);
+    return state;
+  }
 
-//   public getGenerateStateMultiCallInputs(): MultiCallInput[] {
-//     return [
-//       {
-//         target: this.proxy,
-//         callData:
-//           ChainLinkSubscriber.proxyInterface.encodeFunctionData(
-//             'latestRoundData',
-//           ),
-//       },
-//     ];
-//   }
+  handleDeposit(
+    event: ethers.utils.LogDescription,
+    state: MorphoVaultState,
+  ): DeepReadonly<MorphoVaultState> | null {
+    const shares = bigIntify(event.args.shares);
+    state.totalSupply += shares;
+    return state;
+  }
 
-//   public generateState(
-//     multicallOutputs: MultiCallOutput[],
-//     blockNumber?: number | 'latest',
-//   ): DeepReadonly<ChainLinkState> {
-//     const decoded = ChainLinkSubscriber.proxyInterface.decodeFunctionResult(
-//       'latestRoundData',
-//       multicallOutputs[0],
-//     );
-//     return {
-//       answer: BigInt(decoded.answer.toString()),
-//       timestamp: BigInt(decoded.updatedAt.toString()),
-//     };
-//   }
-
-//   public getLatestRoundData(state: DeepReadonly<State>): bigint {
-//     return this.lens.get()(state).answer;
-//   }
-// }
+  handleWithdraw(
+    event: ethers.utils.LogDescription,
+    state: MorphoVaultState,
+  ): DeepReadonly<MorphoVaultState> | null {
+    const shares = bigIntify(event.args.shares);
+    state.totalSupply -= shares;
+    return state;
+  }
+}

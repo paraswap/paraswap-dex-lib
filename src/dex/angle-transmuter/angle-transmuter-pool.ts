@@ -9,6 +9,7 @@ import {
   ChainlinkConfig,
   DecodedOracleConfig,
   DexParams,
+  MorphoConfig,
   OracleFeed,
   OracleHyperparameter,
   OracleQuoteType,
@@ -31,11 +32,14 @@ import {
   filterDictionaryOnly,
 } from './utils';
 import { RedstoneSubscriber } from './redstone';
-import { formatEther, formatUnits } from 'ethers/lib/utils';
+import { formatEther, formatUnits, parseEther } from 'ethers/lib/utils';
 import { BackedSubscriber } from './backedOracle';
 import { SwapSide } from '../../constants';
 import { ethers } from 'ethers';
 import { BLOCK_UPGRADE_ORACLE } from './constants';
+import { MorphoOracleEventPool } from './morphoOracle';
+import { bigIntify } from '../../utils';
+import { MorphoVaultSubscriber } from './morphoVault';
 
 export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
   public transmuter: Contract;
@@ -96,6 +100,30 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       {},
     );
 
+    const morphoMap = Object.entries(config.oracles.morpho).reduce(
+      (
+        acc: { [address: string]: MorphoVaultSubscriber<PoolState> },
+        [key, value],
+      ) => {
+        acc[value.baseVault] = new MorphoVaultSubscriber<PoolState>(
+          value.baseVault,
+          lens<DeepReadonly<PoolState>>().oracles.morphoVault[key],
+          dexHelper.getLogger(
+            `${key}:${value.baseVault} Morpho Vault for ${parentName}-${network}`,
+          ),
+        );
+        acc[value.quoteVault] = new MorphoVaultSubscriber<PoolState>(
+          value.quoteVault,
+          lens<DeepReadonly<PoolState>>().oracles.morphoVault[key],
+          dexHelper.getLogger(
+            `${key}:${value.quoteVault} Morpho Vault for ${parentName}-${network}`,
+          ),
+        );
+        return acc;
+      },
+      {},
+    );
+
     const pythListener = new PythSubscriber<PoolState>(
       config.oracles.pyth.proxy,
       config.oracles.pyth.ids,
@@ -120,13 +148,14 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         ...Object.values(chainlinkMap),
         ...Object.values(backedMap),
         ...Object.values(redstoneMap),
+        ...Object.values(morphoMap),
         transmuterListener,
         pythListener,
       ],
       {
         stablecoin: config.stablecoin,
         transmuter: {} as TransmuterState,
-        oracles: { chainlink: {}, pyth: {} },
+        oracles: { chainlink: {}, pyth: {}, morphoVault: {} },
       },
     );
 
@@ -252,6 +281,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     backedMap: ChainlinkConfig,
     redstoneMap: ChainlinkConfig,
     pythIds: PythConfig,
+    morphoMap: MorphoConfig,
     oracleFeed: OracleFeed,
     blockNumber: number | 'latest',
     multiContract: Contract,
@@ -260,77 +290,151 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     backedMap: ChainlinkConfig;
     redstoneMap: ChainlinkConfig;
     pythIds: PythConfig;
+    morphoMap: MorphoConfig;
   }> {
     if (oracleFeed.isChainlink) {
       await Promise.all(
         oracleFeed.chainlink!.circuitChainlink.map(async feed => {
-          let aggreagator: Address;
-          let decimals: number;
-          // it can be Chainlink or Redstone feed
-          // if the call getReadAggregatorMultiCallInput fail with a Chainlink instance
-          // then it is a Redstone one
-          try {
-            // Chainlink
-            const proxyResult = (
-              await multiContract.methods
-                .aggregate([
-                  ChainLinkSubscriber.getReadAggregatorMultiCallInput(feed),
-                  ChainLinkSubscriber.getReadDecimal(feed),
-                ])
-                .call({}, blockNumber)
-            ).returnData;
-            aggreagator = ChainLinkSubscriber.readAggregator(proxyResult[0]);
-            decimals = Number(ChainLinkSubscriber.readDecimals(proxyResult[1]));
-            chainlinkMap[feed] = {
-              proxy: feed,
-              aggregator: aggreagator,
-              decimals: decimals,
-            };
-          } catch {
-            try {
-              // Redstone
-              const proxyResult = (
-                await multiContract.methods
-                  .aggregate([
-                    RedstoneSubscriber.getReadAggregatorMultiCallInput(feed),
-                    RedstoneSubscriber.getReadDecimal(feed),
-                  ])
-                  .call({}, blockNumber)
-              ).returnData;
-              aggreagator = RedstoneSubscriber.readAggregator(proxyResult[0]);
-              decimals = Number(
-                RedstoneSubscriber.readDecimals(proxyResult[1]),
-              );
-              redstoneMap[feed] = {
-                proxy: feed,
-                aggregator: aggreagator,
-                decimals: decimals,
-              };
-            } catch {
-              // Backed
-              const proxyResult = (
-                await multiContract.methods
-                  .aggregate([ChainLinkSubscriber.getReadDecimal(feed)])
-                  .call({}, blockNumber)
-              ).returnData;
-              decimals = Number(
-                ChainLinkSubscriber.readDecimals(proxyResult[0]),
-              );
-              backedMap[feed] = {
-                proxy: feed,
-                aggregator: feed,
-                decimals: decimals,
-              };
-            }
-          }
+          ({ chainlinkMap, backedMap, redstoneMap } =
+            await AngleTransmuterEventPool.generateStateChainlinkLike(
+              feed,
+              chainlinkMap,
+              backedMap,
+              redstoneMap,
+              blockNumber,
+              multiContract,
+            ));
         }),
       );
     } else if (oracleFeed.isPyth) {
       pythIds.ids = pythIds.ids.concat(oracleFeed.pyth!.feedIds);
+    } else if (oracleFeed.morpho) {
+      const morphoOracleResult = (
+        await multiContract.methods
+          .aggregate([
+            MorphoOracleEventPool.getGenerateInfoMultiCallInput(
+              oracleFeed.morpho.oracle,
+            ),
+          ])
+          .call({}, blockNumber)
+      ).returnData;
+      const morphoOracleInfo =
+        MorphoOracleEventPool.generateInfo(morphoOracleResult);
+      if (morphoOracleInfo.baseFeed1 !== ethers.constants.AddressZero)
+        ({ chainlinkMap, backedMap, redstoneMap } =
+          await AngleTransmuterEventPool.generateStateChainlinkLike(
+            morphoOracleInfo.baseFeed1,
+            chainlinkMap,
+            backedMap,
+            redstoneMap,
+            blockNumber,
+            multiContract,
+          ));
+      if (morphoOracleInfo.baseFeed2 !== ethers.constants.AddressZero)
+        ({ chainlinkMap, backedMap, redstoneMap } =
+          await AngleTransmuterEventPool.generateStateChainlinkLike(
+            morphoOracleInfo.baseFeed2,
+            chainlinkMap,
+            backedMap,
+            redstoneMap,
+            blockNumber,
+            multiContract,
+          ));
+      if (morphoOracleInfo.quoteFeed1 !== ethers.constants.AddressZero)
+        ({ chainlinkMap, backedMap, redstoneMap } =
+          await AngleTransmuterEventPool.generateStateChainlinkLike(
+            morphoOracleInfo.quoteFeed1,
+            chainlinkMap,
+            backedMap,
+            redstoneMap,
+            blockNumber,
+            multiContract,
+          ));
+      if (morphoOracleInfo.quoteFeed2 !== ethers.constants.AddressZero)
+        ({ chainlinkMap, backedMap, redstoneMap } =
+          await AngleTransmuterEventPool.generateStateChainlinkLike(
+            morphoOracleInfo.quoteFeed2,
+            chainlinkMap,
+            backedMap,
+            redstoneMap,
+            blockNumber,
+            multiContract,
+          ));
+      morphoMap[oracleFeed.morpho.oracle] = morphoOracleInfo;
     } else {
       throw new Error('Unknown oracle feed');
     }
-    return { chainlinkMap, backedMap, redstoneMap, pythIds };
+    return { chainlinkMap, backedMap, redstoneMap, pythIds, morphoMap };
+  }
+
+  static async generateStateChainlinkLike(
+    feed: string,
+    chainlinkMap: ChainlinkConfig,
+    backedMap: ChainlinkConfig,
+    redstoneMap: ChainlinkConfig,
+    blockNumber: number | 'latest',
+    multiContract: Contract,
+  ): Promise<{
+    chainlinkMap: ChainlinkConfig;
+    backedMap: ChainlinkConfig;
+    redstoneMap: ChainlinkConfig;
+  }> {
+    let aggreagator: Address;
+    let decimals: number;
+    // it can be Chainlink or Redstone feed
+    // if the call getReadAggregatorMultiCallInput fail with a Chainlink instance
+    // then it is a Redstone one
+    try {
+      // Chainlink
+      const proxyResult = (
+        await multiContract.methods
+          .aggregate([
+            ChainLinkSubscriber.getReadAggregatorMultiCallInput(feed),
+            ChainLinkSubscriber.getReadDecimal(feed),
+          ])
+          .call({}, blockNumber)
+      ).returnData;
+      aggreagator = ChainLinkSubscriber.readAggregator(proxyResult[0]);
+      decimals = Number(ChainLinkSubscriber.readDecimals(proxyResult[1]));
+      chainlinkMap[feed] = {
+        proxy: feed,
+        aggregator: aggreagator,
+        decimals: decimals,
+      };
+    } catch {
+      try {
+        // Redstone
+        const proxyResult = (
+          await multiContract.methods
+            .aggregate([
+              RedstoneSubscriber.getReadAggregatorMultiCallInput(feed),
+              RedstoneSubscriber.getReadDecimal(feed),
+            ])
+            .call({}, blockNumber)
+        ).returnData;
+        aggreagator = RedstoneSubscriber.readAggregator(proxyResult[0]);
+        decimals = Number(RedstoneSubscriber.readDecimals(proxyResult[1]));
+        redstoneMap[feed] = {
+          proxy: feed,
+          aggregator: aggreagator,
+          decimals: decimals,
+        };
+      } catch {
+        // Backed
+        const proxyResult = (
+          await multiContract.methods
+            .aggregate([ChainLinkSubscriber.getReadDecimal(feed)])
+            .call({}, blockNumber)
+        ).returnData;
+        decimals = Number(ChainLinkSubscriber.readDecimals(proxyResult[0]));
+        backedMap[feed] = {
+          proxy: feed,
+          aggregator: feed,
+          decimals: decimals,
+        };
+      }
+    }
+    return { chainlinkMap, backedMap, redstoneMap };
   }
 
   static async getOraclesConfig(
@@ -364,6 +468,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     let backedMap: ChainlinkConfig = {} as ChainlinkConfig;
     let redstoneMap: ChainlinkConfig = {} as ChainlinkConfig;
     let pythIds: PythConfig = { proxy: pythAddress, ids: [] } as PythConfig;
+    let morphoMap: MorphoConfig = {} as MorphoConfig;
 
     await Promise.all(
       oracleConfigs.map(async oracleConfigDecoded => {
@@ -377,12 +482,13 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
               oracleConfigDecoded.oracleType,
               oracleConfigDecoded.oracleData,
             );
-            ({ chainlinkMap, backedMap, redstoneMap, pythIds } =
+            ({ chainlinkMap, backedMap, redstoneMap, pythIds, morphoMap } =
               await AngleTransmuterEventPool._fillMap(
                 chainlinkMap,
                 backedMap,
                 redstoneMap,
                 pythIds,
+                morphoMap,
                 oracleFeed,
                 blockNumber,
                 multiContract,
@@ -396,12 +502,13 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
               oracleConfigDecoded.targetType,
               oracleConfigDecoded.targetData,
             );
-            ({ chainlinkMap, backedMap, redstoneMap, pythIds } =
+            ({ chainlinkMap, backedMap, redstoneMap, pythIds, morphoMap } =
               await AngleTransmuterEventPool._fillMap(
                 chainlinkMap,
                 backedMap,
                 redstoneMap,
                 pythIds,
+                morphoMap,
                 oracleFeed,
                 blockNumber,
                 multiContract,
@@ -415,6 +522,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       backed: backedMap,
       redstone: redstoneMap,
       pyth: pythIds,
+      morpho: morphoMap,
     };
   }
 
@@ -607,18 +715,13 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     if (oracleType === OracleReadType.CHAINLINK_FEEDS) {
       price = this._quoteAmount(feed.chainlink!.quoteType, baseValue);
       for (let i = 0; i < feed.chainlink!.circuitChainlink.length; i++) {
-        const id = feed.chainlink!.circuitChainlink[i];
-        let decimals: number;
-        if (Object.keys(config.oracles.chainlink).includes(id))
-          decimals = config.oracles.chainlink[id].decimals;
-        else if (Object.keys(config.oracles.redstone).includes(id))
-          decimals = config.oracles.redstone[id].decimals;
-        else decimals = config.oracles.backed[id].decimals;
-        const rate = Number.parseFloat(
-          formatUnits(state.oracles.chainlink[id].answer.toString(), decimals),
+        price = this._readChainlink(
+          config,
+          state,
+          feed.chainlink!.circuitChainlink[i],
+          feed.chainlink!.circuitChainIsMultiplied[i],
+          price,
         );
-        if (feed.chainlink!.circuitChainIsMultiplied[i] === 1) price *= rate;
-        else price /= rate;
       }
     } else if (oracleType === OracleReadType.PYTH) {
       price = this._quoteAmount(feed.pyth!.quoteType, baseValue);
@@ -635,21 +738,112 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     } else if (oracleType == OracleReadType.MAX) {
       price = feed.maxValue!;
     } else if (oracleType == OracleReadType.MORPHO_ORACLE) {
-      // const oracle = filterDictionaryOnly(
-      //   ethers.utils.defaultAbiCoder.decode(
-      //     ['address contractAddress', 'uint256 normalizationFactor'],
-      //     configOracle.hyperparameters,
-      //   ),
-      // ) as unknown as { contractAddress: string, normalizationFactor: BigNumber };
-      // userDeviation = Number.parseFloat(
-      //   formatEther(hyperparameters.userDeviation.toString()),
-      // );
-      // burnRatioDeviation = Number.parseFloat(
-      //   formatEther(hyperparameters.burnRatioDeviation.toString()),
-      // );
-      // (address contractAddress, uint256 normalizationFactor) = abi.decode(data, (address, uint256));
-      // return IMorphoOracle(contractAddress).price() / normalizationFactor;
+      console.log('config.oracles.morpho ', config.oracles.morpho);
+      const morphoOracleConfig = config.oracles.morpho[feed.morpho!.oracle];
+      const baseVaultPrice =
+        morphoOracleConfig.baseVault !== ethers.constants.AddressZero
+          ? (morphoOracleConfig.baseVaultConversion *
+              state.oracles.morphoVault[morphoOracleConfig.baseVault]
+                .totalAssets) /
+            state.oracles.morphoVault[morphoOracleConfig.baseVault].totalSupply
+          : 1n;
+      const quoteVaultPrice =
+        morphoOracleConfig.quoteVault !== ethers.constants.AddressZero
+          ? (morphoOracleConfig.quoteVaultConversion *
+              state.oracles.morphoVault[morphoOracleConfig.quoteVault]
+                .totalAssets) /
+            state.oracles.morphoVault[morphoOracleConfig.quoteVault].totalSupply
+          : 1n;
+      const baseFeed1Price =
+        morphoOracleConfig.baseFeed1 !== ethers.constants.AddressZero
+          ? bigIntify(
+              parseEther(
+                this._readChainlink(
+                  config,
+                  state,
+                  morphoOracleConfig.baseFeed1,
+                  1,
+                  1,
+                ).toString(),
+              ),
+            )
+          : 1n;
+      const baseFeed2Price =
+        morphoOracleConfig.baseFeed2 !== ethers.constants.AddressZero
+          ? bigIntify(
+              parseEther(
+                this._readChainlink(
+                  config,
+                  state,
+                  morphoOracleConfig.baseFeed2,
+                  1,
+                  1,
+                ).toString(),
+              ),
+            )
+          : 1n;
+      const quoteFeed1Price =
+        morphoOracleConfig.quoteFeed1 !== ethers.constants.AddressZero
+          ? bigIntify(
+              parseEther(
+                this._readChainlink(
+                  config,
+                  state,
+                  morphoOracleConfig.quoteFeed1,
+                  1,
+                  1,
+                ).toString(),
+              ),
+            )
+          : 1n;
+      const quoteFeed2Price =
+        morphoOracleConfig.quoteFeed2 !== ethers.constants.AddressZero
+          ? bigIntify(
+              parseEther(
+                this._readChainlink(
+                  config,
+                  state,
+                  morphoOracleConfig.quoteFeed2,
+                  1,
+                  1,
+                ).toString(),
+              ),
+            )
+          : 1n;
+      console.log('steakUSDC price', price);
+      price = Number.parseFloat(
+        formatEther(
+          (morphoOracleConfig.scaleFactor *
+            baseVaultPrice *
+            baseFeed1Price *
+            baseFeed2Price) /
+            quoteVaultPrice /
+            quoteFeed1Price /
+            quoteFeed2Price,
+        ),
+      );
     }
+    return price;
+  }
+
+  _readChainlink(
+    config: PoolConfig,
+    state: PoolState,
+    id: string,
+    isMultiplied: number,
+    price: number,
+  ): number {
+    let decimals: number;
+    if (Object.keys(config.oracles.chainlink).includes(id))
+      decimals = config.oracles.chainlink[id].decimals;
+    else if (Object.keys(config.oracles.redstone).includes(id))
+      decimals = config.oracles.redstone[id].decimals;
+    else decimals = config.oracles.backed[id].decimals;
+    const rate = Number.parseFloat(
+      formatUnits(state.oracles.chainlink[id].answer.toString(), decimals),
+    );
+    if (isMultiplied === 1) price *= rate;
+    else price /= rate;
     return price;
   }
 }

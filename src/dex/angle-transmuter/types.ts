@@ -8,6 +8,7 @@ export type PoolState = {
   oracles: {
     chainlink: { [address: string]: ChainLinkState };
     pyth: PythState;
+    morphoVault: { [address: string]: MorphoVaultState };
   };
 };
 
@@ -36,6 +37,10 @@ export type ChainlinkConfig = {
 
 export type PythConfig = { proxy: Address; ids: string[] };
 
+export type MorphoConfig = {
+  [address: string]: MorphoOracleState;
+};
+
 export type PoolConfig = {
   stablecoin: Token;
   transmuter: Address;
@@ -45,7 +50,25 @@ export type PoolConfig = {
     backed: ChainlinkConfig;
     redstone: ChainlinkConfig;
     pyth: PythConfig;
+    morpho: MorphoConfig;
   };
+};
+
+export type MorphoVaultState = {
+  totalAssets: bigint;
+  totalSupply: bigint;
+};
+
+export type MorphoOracleState = {
+  baseVault: Address;
+  baseVaultConversion: bigint;
+  quoteVault: Address;
+  quoteVaultConversion: bigint;
+  baseFeed1: Address;
+  baseFeed2: Address;
+  quoteFeed1: Address;
+  quoteFeed2: Address;
+  scaleFactor: bigint;
 };
 
 export type ChainlinkState = {
@@ -125,8 +148,8 @@ export type Chainlink = {
 };
 
 export type MorphoOracle = {
-  oracle: Address[];
-  normalizationFactor: BigNumber[];
+  oracle: Address;
+  normalizationFactor: BigNumber;
 };
 
 export type MaxOracle = {
