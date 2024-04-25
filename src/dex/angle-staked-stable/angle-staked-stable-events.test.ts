@@ -96,15 +96,12 @@ describe('AngleStakedStable EventPool Mainnet', () => {
     );
   });
 
-  // biome-ignore lint/complexity/noForEach: <explanation>
   Object.entries(eventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {
       describe(`Events for ${poolAddress}`, () => {
-        // biome-ignore lint/complexity/noForEach: <explanation>
         Object.entries(events).forEach(
           ([eventName, blockNumbers]: [string, number[]]) => {
             describe(`${eventName}`, () => {
-              // biome-ignore lint/complexity/noForEach: <explanation>
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async () => {
                   await testEventSubscriber(

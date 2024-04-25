@@ -37,7 +37,6 @@ function testForNetwork(
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
-        // biome-ignore lint/complexity/noForEach: <explanation>
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
@@ -102,7 +101,6 @@ describe('AngleStakedStable E2E', () => {
     Network.BSC,
   ];
 
-  // biome-ignore lint/complexity/noForEach: <explanation>
   networksEUR.forEach(network =>
     describe(`${network} - EUR`, () => {
       const tokenASymbol: string = 'EURA';
@@ -122,7 +120,6 @@ describe('AngleStakedStable E2E', () => {
     }),
   );
 
-  // biome-ignore lint/complexity/noForEach: <explanation>
   networksUSD.forEach(network =>
     describe(`${network} - USD`, () => {
       const tokenASymbol: string = 'USDA';
