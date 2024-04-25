@@ -738,7 +738,6 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     } else if (oracleType == OracleReadType.MAX) {
       price = feed.maxValue!;
     } else if (oracleType == OracleReadType.MORPHO_ORACLE) {
-      console.log('config.oracles.morpho ', config.oracles.morpho);
       const morphoOracleConfig = config.oracles.morpho[feed.morpho!.oracle];
       const baseVaultPrice =
         morphoOracleConfig.baseVault !== ethers.constants.AddressZero
@@ -810,7 +809,6 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
               ),
             )
           : 1n;
-      console.log('steakUSDC price', price);
       price = Number.parseFloat(
         formatEther(
           (morphoOracleConfig.scaleFactor *
