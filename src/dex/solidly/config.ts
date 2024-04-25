@@ -169,6 +169,8 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
         '0xbf2404274de2b11f05e5aebd49e508de933034cb5fa2d0ac3de8cbd4bcef47dc',
       poolGasCost: 180 * 1000,
       feeCode: 0,
+      // stableFee: 5, // TODO: ?
+      // volatileFee: 25 // TODO: ?,
     },
   },
   Equalizer: {

@@ -382,6 +382,8 @@ export async function testE2E(
     );
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
+    console.log(`price route`, JSON.stringify(priceRoute, null, 2));
+
     // Calculate slippage. Default is 1%
     const _slippage = slippage || 100;
     const minMaxAmount =
