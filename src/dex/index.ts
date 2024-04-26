@@ -86,7 +86,7 @@ import { Smardex } from './smardex/smardex';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
 import { EtherFi } from './etherfi';
-import { AlienBaseV3 } from './uniswap-v3/forks/alien-base-v3/alien-base-v3';
+import { AlienV3 } from './uniswap-v3/forks/alien-v3/alien-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -169,7 +169,7 @@ const Dexes = [
   Smardex,
   Wombat,
   Swell,
-  AlienBaseV3,
+  AlienV3,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

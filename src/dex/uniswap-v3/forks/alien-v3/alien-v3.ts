@@ -14,7 +14,7 @@ import { UniswapV3 } from '../../uniswap-v3';
 import AlienBaseV3RouterABI from '../../../../abi/uniswap-v3/AlienBaseV3Router.abi.json';
 
 export const AlienBaseV3Config: DexConfigMap<DexParams> = {
-  AlienBaseV3: {
+  AlienV3: {
     [Network.BASE]: {
       factory: '0x0Fd83557b2be93617c9C1C1B6fd549401C74558C',
       quoter: '0x4fDBD73aD4B1DDde594BF05497C15f76308eFfb9',
@@ -34,7 +34,7 @@ type AlienBaseV3SimpleSwapParams =
   | Omit<UniswapV3SimpleSwapSellParam, 'deadline'>
   | Omit<UniswapV3SimpleSwapBuyParam, 'deadline'>;
 
-export class AlienBaseV3 extends UniswapV3 {
+export class AlienV3 extends UniswapV3 {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(AlienBaseV3Config);
 
