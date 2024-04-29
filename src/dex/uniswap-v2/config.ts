@@ -770,6 +770,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   Alien: {
     [Network.BASE]: {
       factoryAddress: '0x3e84d913803b02a4a7f027165e8ca42c14c0fde7',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/alienbase-xyz/alien-base',
       initCode: '0x', // deprecated
       poolGasCost: 90 * 1000,
       feeCode: 16,
