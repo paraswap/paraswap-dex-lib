@@ -96,6 +96,9 @@ const implementations: Record<ImplementationNames, _xp_mem> = {
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: factoryPlain2Basic,
+
+  [ImplementationNames.FACTORY_STABLE_NG]: factoryPlain2Basic,
+  [ImplementationNames.FACTORY_STABLE_6_NG]: factoryPlain2Basic,
 };
 
 export default implementations;

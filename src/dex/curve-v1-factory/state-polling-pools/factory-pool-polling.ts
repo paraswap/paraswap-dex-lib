@@ -2,6 +2,7 @@ import { Interface, JsonFragment } from '@ethersproject/abi';
 import { Logger } from 'log4js';
 import { MultiCallParams, MultiResult } from '../../../lib/multi-wrapper';
 import {
+  DexParams,
   FactoryImplementationNames,
   PoolConstants,
   PoolContextConstants,
@@ -13,13 +14,10 @@ import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '@paraswap/core';
 import { BigNumber } from 'ethers';
-import { _require } from '../../../utils';
-import { AbiItem } from 'web3-utils';
+import { DexConfigMap } from '../../../types';
 
 const DEFAULT_2_ZERO_ARRAY = [0n, 0n];
 const DEFAULT_4_ZERO_ARRAY = [0n, 0n, 0n, 0n];
-
-type AdditionalContractFunctions = 'stored_rates';
 
 const getStoredRatesABI = (n: number) => ({
   name: 'stored_rates',
@@ -38,7 +36,8 @@ export class FactoryStateHandler extends PoolPollingBase {
     readonly implementationName: FactoryImplementationNames,
     implementationAddress: Address,
     readonly address: Address,
-    stateUpdatePeriodMs: number,
+    readonly config: DexParams,
+    // stateUpdatePeriodMs: number,
     readonly factoryAddress: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
@@ -48,6 +47,7 @@ export class FactoryStateHandler extends PoolPollingBase {
     baseStatePoolPolling?: PoolPollingBase,
     customGasCost?: number,
     readonly isStoredRatesSupported: boolean = false,
+    readonly isOffpegFeeMultiplierSupported: boolean = false,
     private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),
@@ -62,7 +62,7 @@ export class FactoryStateHandler extends PoolPollingBase {
       cacheStateKey,
       implementationName,
       implementationAddress,
-      stateUpdatePeriodMs,
+      config.stateUpdatePeriodMs,
       poolIdentifier,
       poolConstants,
       address,
@@ -81,6 +81,22 @@ export class FactoryStateHandler extends PoolPollingBase {
   }
 
   getStateMultiCalldata(): MultiCallParams<MulticallReturnedTypes>[] {
+    const factoryConfig = this.config.factories?.find(
+      ({ address }) =>
+        address.toLowerCase() === this.factoryAddress.toLowerCase(),
+    );
+
+    // console.log('this.factoryAddress: ', this.factoryAddress);
+    // console.log('factoryConfig: ', factoryConfig);
+    // console.log(
+    //   'factoryConfig?.maxPlainCoins?.toString() : ',
+    //   factoryConfig?.maxPlainCoins?.toString(),
+    // );
+    // console.log(
+    //   "`uint256[${factoryConfig?.maxPlainCoins?.toString() || ''}]`: ",
+    //   `uint256[${factoryConfig?.maxPlainCoins?.toString() || ''}]`,
+    // );
+
     const calls = [
       {
         target: this.factoryAddress,
@@ -106,8 +122,11 @@ export class FactoryStateHandler extends PoolPollingBase {
           this.address,
         ]),
         decodeFunction: (result: MultiResult<BytesLike> | BytesLike) =>
-          generalDecoder(result, ['uint256[4]'], DEFAULT_4_ZERO_ARRAY, parsed =>
-            parsed[0].map((p: BigNumber) => p.toBigInt()),
+          generalDecoder(
+            result,
+            [`uint256[${factoryConfig?.isStableNg ? '' : '4'}]`],
+            DEFAULT_4_ZERO_ARRAY,
+            parsed => parsed[0].map((p: BigNumber) => p.toBigInt()),
           ),
       },
     ];
@@ -122,10 +141,33 @@ export class FactoryStateHandler extends PoolPollingBase {
         decodeFunction: (result: MultiResult<BytesLike> | BytesLike) =>
           generalDecoder(
             result,
-            [`uint256[${this.poolContextConstants.N_COINS}]`],
+            [
+              `uint256[${
+                factoryConfig?.isStableNg
+                  ? ''
+                  : this.poolContextConstants.N_COINS
+              }]`,
+            ],
             new Array(this.poolContextConstants.N_COINS).fill(0n),
             parsed => parsed[0].map((p: BigNumber) => p.toBigInt()),
           ),
+      });
+    }
+
+    if (this.isOffpegFeeMultiplierSupported) {
+      calls.push({
+        target: this.address,
+        callData: this.abiCoder.encodeFunctionCall(
+          {
+            stateMutability: 'view',
+            type: 'function',
+            name: 'offpeg_fee_multiplier',
+            inputs: [],
+            outputs: [{ name: '', type: 'uint256' }],
+          },
+          [],
+        ),
+        decodeFunction: uint256ToBigInt,
       });
     }
 
@@ -137,12 +179,14 @@ export class FactoryStateHandler extends PoolPollingBase {
     blockNumber: number,
     updatedAtMs: number,
   ): PoolState {
-    const [A, fees, balances, storedRates] = multiOutputs as [
-      bigint,
-      bigint[],
-      bigint[],
-      bigint[] | undefined,
-    ];
+    const [A, fees, balances, storedRates, offpeg_fee_multiplier] =
+      multiOutputs as [
+        bigint,
+        bigint[],
+        bigint[],
+        bigint[] | undefined,
+        bigint | undefined,
+      ];
 
     let basePoolState: PoolState | undefined;
     if (this.isMetaPool) {
@@ -158,15 +202,17 @@ export class FactoryStateHandler extends PoolPollingBase {
     }
 
     return {
-      A: this.poolContextConstants.A_PRECISION
-        ? A * this.poolContextConstants.A_PRECISION
-        : A,
+      A: A,
+      // A: this.poolContextConstants.A_PRECISION
+      //   ? A * this.poolContextConstants.A_PRECISION
+      //   : A,
       fee: fees[0], // Array has [fee, adminFee], but we want only fee
       balances: balances,
       constants: this.poolConstants,
       basePoolState,
       updatedAtMs,
       blockNumber,
+      offpeg_fee_multiplier,
       storedRates,
     };
   }

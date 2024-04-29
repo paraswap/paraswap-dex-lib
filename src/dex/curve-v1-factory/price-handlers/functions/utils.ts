@@ -70,3 +70,11 @@ export const getCachedValueOrCallFunc = <T>(
   curveV1FactoryNodeCache.set(key, calculated);
   return calculated;
 };
+
+export function pow_mod256(a: bigint, b: bigint): bigint {
+  let result: bigint = 1n;
+  for (let i: bigint = 0n; i < b; i++) {
+    result = (result * a) % 256n;
+  }
+  return result;
+}

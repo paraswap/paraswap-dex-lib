@@ -117,6 +117,7 @@ export enum FactoryImplementationNames {
   FACTORY_PLAIN_4_OPTIMIZED = 'factory_plain_4_optimized',
 
   FACTORY_STABLE_NG = 'factory_stable_ng',
+  FACTORY_STABLE_6_NG = 'factory_stable_6_ng',
 }
 
 export enum CustomImplementationNames {
@@ -157,6 +158,7 @@ export type FactoryPoolImplementations = {
   basePoolAddress?: Address;
   customGasCost?: number;
   isStoreRateSupported?: boolean;
+  isOffpegFeeMultiplierSupported?: boolean;
   liquidityApiSlug?: string;
 };
 
@@ -177,8 +179,14 @@ export type CustomPoolConfig = {
   useForPricing: boolean;
 };
 
+type DexParamFactory = {
+  address: string;
+  maxPlainCoins?: number;
+  isStableNg?: boolean;
+};
+
 export type DexParams = {
-  factoryAddresses: string[] | null;
+  factories: DexParamFactory[] | null;
   stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;

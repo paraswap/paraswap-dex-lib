@@ -10,6 +10,7 @@ const customAvalanche3CoinLending: _dynamic_fee = (
   _fee: bigint,
   _feemul: bigint,
 ): bigint => {
+  console.log('_dynamic_fee customAvalanche3CoinLending');
   const { FEE_DENOMINATOR } = self.constants;
   if (_feemul <= FEE_DENOMINATOR) {
     return _fee;
@@ -94,6 +95,9 @@ const implementations: Record<ImplementationNames, _dynamic_fee> = {
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: notExist,
+
+  [ImplementationNames.FACTORY_STABLE_NG]: customAvalanche3CoinLending,
+  [ImplementationNames.FACTORY_STABLE_6_NG]: customAvalanche3CoinLending,
 };
 
 export default implementations;

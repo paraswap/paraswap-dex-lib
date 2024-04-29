@@ -85,6 +85,8 @@ export type get_y = (
   j: number,
   x: bigint,
   xp_: bigint[],
+  _amp?: bigint,
+  _D?: bigint,
 ) => bigint;
 
 /*

@@ -223,6 +223,9 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: customPlain3CoinThree,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: customPlain3CoinThree,
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customPlain2CoinCrv,
+
+  [ImplementationNames.FACTORY_STABLE_NG]: customPlain2CoinCrv,
+  [ImplementationNames.FACTORY_STABLE_6_NG]: customPlain2CoinCrv,
 };
 
 export default implementations;

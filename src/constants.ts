@@ -24,6 +24,8 @@ export const SETUP_RETRY_TIMEOUT = 20 * 1000; // 20s
 export const FETCH_POOL_IDENTIFIER_TIMEOUT = 1 * 1000; // 1s
 export const FETCH_POOL_PRICES_TIMEOUT = 3 * 1000; // 3s
 
+export const MAX_PLAIN_COINS = 4;
+
 // How frequently logs wil be printed
 export const STATEFUL_EVENT_SUBSCRIBER_LOG_BATCH_PERIOD = 60 * 1000;
 
