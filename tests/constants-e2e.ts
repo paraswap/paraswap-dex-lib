@@ -1028,6 +1028,10 @@ export const Tokens: {
       address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
       decimals: 18,
     },
+    ALB: {
+      address: '0x1dd2d631c92b1acdfcdd51a0f7145a50130050c4',
+      decimals: 18,
+    },
     BAL: {
       address: '0x4158734d47fc9692176b5085e0f52ee0da5d47f1',
       decimals: 18,
@@ -1289,14 +1293,15 @@ export const Holders: {
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
     PRIME: '0x956bcc6b56c99db382d9d97a30ba5f1402144b3e',
-    ETH: '0xdd9176ea3e7559d6b68b537ef555d3e89403f742',
+    ETH: '0xd34ea7278e6bd48defe656bbe263aef11101469c',
     MAV: '0x7499785aa5d1bdf0a0ac862c1ef3698d3cba6568',
     USDC: '0xaac391f166f33cdaefaa4afa6616a3bea66b694d',
-    USDbC: '0xcc46564eb2063b60cd457da49d09dca9544dfeae',
+    USDbC: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
     BAL: '0x854b004700885a61107b458f11ecc169a019b764',
     GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
     SDEX: '0xa5d378c05192e3f1f365d6298921879c4d51c5a3',
+    ALB: '0x365c6d588e8611125de3bea5b9280c304fa54113',
   },
 };
 

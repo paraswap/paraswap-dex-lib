@@ -105,6 +105,7 @@ export class UniswapV3
         'Retro',
         'BaseswapV3',
         'Pharaoh',
+        'AlienBaseV3',
       ]),
     );
 
@@ -1205,7 +1206,7 @@ export class UniswapV3
     }
   }
 
-  private _encodePath(
+  protected _encodePath(
     path: {
       tokenIn: Address;
       tokenOut: Address;

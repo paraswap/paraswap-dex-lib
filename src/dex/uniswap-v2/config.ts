@@ -313,6 +313,12 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       poolGasCost: 80 * 1000,
       feeCode: 30,
     },
+    [Network.BASE]: {
+      factoryAddress: '0xfbb4E52FEcc90924c79F980eb24a9794ae4aFFA4',
+      initCode: '0x', // deprecated
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
   },
   JulSwap: {
     [Network.BSC]: {
@@ -757,6 +763,56 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       factoryAddress: '0xFDa619b6d20975be80A10332cD39b9a4b0FAa8BB',
       initCode:
         '0xb618a2730fae167f5f8ac7bd659dd8436d571872655bcb6fd11f2158c8a64a3b',
+      poolGasCost: 90 * 1000,
+      feeCode: 25,
+    },
+  },
+  Alien: {
+    [Network.BASE]: {
+      factoryAddress: '0x3e84d913803b02a4a7f027165e8ca42c14c0fde7',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/alienbase-xyz/alien-base',
+      initCode: '0x', // deprecated
+      poolGasCost: 90 * 1000,
+      feeCode: 16,
+    },
+  },
+  RocketSwap: {
+    [Network.BASE]: {
+      factoryAddress: '0x1b8128c3a1b7d20053d10763ff02466ca7ff99fc',
+      initCode: '0x', // deprecated
+      poolGasCost: 90 * 1000,
+      feeCode: 30,
+    },
+  },
+  SoSwap: {
+    [Network.BASE]: {
+      factoryAddress: '0x539db2B4FE8016DB2594d7CfbeAb4d2B730b723E',
+      initCode: '0x', // deprecated
+      poolGasCost: 90 * 1000,
+      feeCode: 30,
+    },
+  },
+  SwapBased: {
+    [Network.BASE]: {
+      factoryAddress: '0x04C9f118d21e8B767D2e50C946f0cC9F6C367300',
+      initCode: '0x', // deprecated
+      poolGasCost: 90 * 1000,
+      feeCode: 30,
+    },
+  },
+  SharkSwap: {
+    [Network.BASE]: {
+      factoryAddress: '0x57592d44eb60011500961ef177bff8d8691d5a8b',
+      initCode: '0x', // deprecated
+      poolGasCost: 90 * 1000,
+      feeCode: 30,
+    },
+  },
+  DackieSwap: {
+    [Network.BASE]: {
+      factoryAddress: '0x591f122D1df761E616c13d265006fcbf4c6d6551',
+      initCode: '0x', // deprecated
       poolGasCost: 90 * 1000,
       feeCode: 25,
     },
