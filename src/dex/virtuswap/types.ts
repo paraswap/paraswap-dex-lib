@@ -47,25 +47,21 @@ export type OnPoolCreatedCallback = (
   blockNumber: number,
 ) => AsyncOrSync<void>;
 
-type RealPoolDataPart = {
+type RealPoolData = {
   isVirtual: false;
-  path: Address[];
+  path: [Address, Address];
 };
 
-type VirtualPoolDataPart = {
+type VirtualPoolData = {
   isVirtual: true;
   tokenOut: Address;
   commonToken: Address;
   ikPair: Address;
 };
 
-export type VirtuSwapData = {
-  router: Address;
-} & (RealPoolDataPart | VirtualPoolDataPart);
+export type VirtuSwapData = RealPoolData | VirtualPoolData;
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
   factoryAddress: Address;
   vPoolManagerAddress: Address;
   initCode: string;

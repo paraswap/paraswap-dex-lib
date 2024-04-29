@@ -11,8 +11,8 @@ export const VirtuSwapConfig: DexConfigMap<DexParams> = {
         '0x637bc1e6555f050fef1c3804f2f03647a960ac0a39ac52c519c3c6d9da312ae0',
       router: '0x3E3d15ea98429E546f30215AEfBB69A4244A8Ea9',
       isTimestampBased: false,
-      realPoolGasCost: 225 * 1000,
-      virtualPoolGasCost: 315 * 1000,
+      realPoolGasCost: 265 * 1000,
+      virtualPoolGasCost: 365 * 1000,
     },
     [Network.ARBITRUM]: {
       factoryAddress: '0x389DB0B69e74A816f1367aC081FdF24B5C7C2433',
@@ -21,24 +21,23 @@ export const VirtuSwapConfig: DexConfigMap<DexParams> = {
         '0x759724dfe39927d24bcfec0e232ca16e126330842301d9947db2223f5ddca426',
       router: '0xB455da5a32E7E374dB6d1eDfdb86C167DD983f40',
       isTimestampBased: true,
-      realPoolGasCost: 315 * 1000, // Tenderly shows much higher values for Arbitrum for unknown reasons
-      virtualPoolGasCost: 465 * 1000, // Tenderly shows much higher values for Arbitrum for unknown reasons
+      realPoolGasCost: 345 * 1000, // Tenderly shows much higher values for Arbitrum for unknown reasons
+      virtualPoolGasCost: 555 * 1000, // Tenderly shows much higher values for Arbitrum for unknown reasons
     },
   },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: update names and indexes?
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
-        name: 'PolygonAdapter01',
-        index: 4,
+        name: 'PolygonVirtuSwapAdapter',
+        index: 1,
       },
     ],
     [SwapSide.BUY]: [
       {
-        name: 'PolygonBuyAdapter',
+        name: 'PolygonVirtuSwapAdapter',
         index: 1,
       },
     ],
@@ -46,13 +45,13 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [
       {
-        name: 'ArbitrumAdapter01',
-        index: 2,
+        name: 'ArbitrumVirtuSwapAdapter',
+        index: 1,
       },
     ],
     [SwapSide.BUY]: [
       {
-        name: 'ArbitrumBuyAdapter',
+        name: 'ArbitrumVirtuSwapAdapter',
         index: 1,
       },
     ],

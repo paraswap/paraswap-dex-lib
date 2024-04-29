@@ -76,17 +76,11 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap, //TODO: add support
-        // ContractMethod.megaSwap, //TODO: add support
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
-    [
-      SwapSide.BUY,
-      [
-        ContractMethod.simpleBuy,
-        // ContractMethod.buy, //TODO: add support
-      ],
-    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`Network id: ${network}`, () => {

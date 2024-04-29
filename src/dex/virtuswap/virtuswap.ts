@@ -41,7 +41,6 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
   protected pools: { [poolAddress: string]: VirtuSwapEventPool } = {};
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
@@ -239,7 +238,6 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
                 ),
                 unit: getAmount(unitAmount, balance0, balance1, fee),
                 data: {
-                  router: this.config.router,
                   isVirtual: false,
                   path: [from.address, to.address],
                 },
@@ -279,7 +277,6 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
                   }),
                   unit: getAmount(unitAmount, balance0, balance1, fee),
                   data: {
-                    router: this.config.router,
                     isVirtual: true,
                     tokenOut: to.address,
                     commonToken: vPool.commonToken,
@@ -318,8 +315,45 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<VirtuSwapData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      (poolPrices.data.isVirtual
+        ? // functionSelector
+          CALLDATA_GAS_COST.wordNonZeroBytes(4) +
+          // tokenOut address
+          CALLDATA_GAS_COST.ADDRESS +
+          // commonToken address
+          CALLDATA_GAS_COST.ADDRESS +
+          // ikPair address
+          CALLDATA_GAS_COST.ADDRESS +
+          // deadline
+          CALLDATA_GAS_COST.TIMESTAMP
+        : // struct size
+          CALLDATA_GAS_COST.LENGTH_SMALL +
+          // functionSelector
+          CALLDATA_GAS_COST.wordNonZeroBytes(4) +
+          // path0 address
+          CALLDATA_GAS_COST.ADDRESS +
+          // path1 address
+          CALLDATA_GAS_COST.ADDRESS +
+          // deadline
+          CALLDATA_GAS_COST.TIMESTAMP)
+    );
+  }
+
+  protected getRouterFunctionName(
+    isVirtual: boolean,
+    side: SwapSide,
+    srcToken: Address,
+    destToken: Address,
+  ): string {
+    const isSell = side === SwapSide.SELL;
+    const isSwapFromNative = isETHAddress(srcToken);
+    const isSwapToNative = isETHAddress(destToken);
+
+    return `swap${isVirtual ? 'Reserve' : ''}${isSell ? 'Exact' : ''}${
+      isSwapFromNative ? 'ETH' : 'Tokens'
+    }For${isSell ? '' : 'Exact'}${isSwapToNative ? 'ETH' : 'Tokens'}`;
   }
 
   // Encode params required by the exchange adapter
@@ -333,14 +367,59 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
     data: VirtuSwapData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { router } = data;
+    const deadline = getLocalDeadlineAsFriendlyPlaceholder();
+    const functionName = this.getRouterFunctionName(
+      data.isVirtual,
+      side,
+      srcToken,
+      destToken,
+    );
 
-    // Encode here the payload for adapter
-    const payload = '';
+    const functionSelector = this.vRouterIface.getSighash(functionName);
+
+    this.logger.debug('getAdapterParam:', {
+      functionName,
+      functionSelector,
+    });
+
+    const payload = data.isVirtual
+      ? this.abiCoder.encodeParameter(
+          {
+            VirtuSwapVirtualPoolData: {
+              functionSelector: 'bytes4',
+              tokenOut: 'address',
+              commonToken: 'address',
+              ikPair: 'address',
+              deadline: 'uint256',
+            },
+          },
+          {
+            functionSelector,
+            tokenOut: data.tokenOut,
+            commonToken: data.commonToken,
+            ikPair: data.ikPair,
+            deadline,
+          },
+        )
+      : this.abiCoder.encodeParameter(
+          {
+            VirtuSwapRealPoolData: {
+              functionSelector: 'bytes4',
+              path0: 'address',
+              path1: 'address',
+              deadline: 'uint256',
+            },
+          },
+          {
+            functionSelector,
+            path0: data.path[0],
+            path1: data.path[1],
+            deadline,
+          },
+        );
 
     return {
-      targetExchange: router,
+      targetExchange: this.config.router,
       payload,
       networkFee: '0',
     };
@@ -356,18 +435,15 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
     data: VirtuSwapData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const { router } = data;
     const isSell = side === SwapSide.SELL;
-    const isSwapFromNative = isETHAddress(srcToken);
-    const isSwapToNative = isETHAddress(destToken);
     const recipient = this.augustusAddress;
     const deadline = getLocalDeadlineAsFriendlyPlaceholder();
-
-    const functionName = `swap${data.isVirtual ? 'Reserve' : ''}${
-      isSell ? 'Exact' : ''
-    }${isSwapFromNative ? 'ETH' : 'Tokens'}For${isSell ? '' : 'Exact'}${
-      isSwapToNative ? 'ETH' : 'Tokens'
-    }`;
+    const functionName = this.getRouterFunctionName(
+      data.isVirtual,
+      side,
+      srcToken,
+      destToken,
+    );
 
     let values: any[];
     if (data.isVirtual) {
@@ -413,7 +489,7 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
       destToken,
       destAmount,
       swapData,
-      router,
+      this.config.router,
     );
   }
 
