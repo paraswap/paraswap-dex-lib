@@ -261,7 +261,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         'https://api.thegraph.com/subgraphs/name/ramsesexchange/concentrated-liquidity-graph',
     },
   },
-  Pharaoh: {
+  PharaohV2: {
     [Network.AVALANCHE]: {
       factory: '0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42',
       deployer: '0x95120704f4E2D545Aea8b6B3c16d9Da1fa32E30F',

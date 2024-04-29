@@ -159,6 +159,20 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0,
     },
   },
+  PharaohV1: {
+    [Network.AVALANCHE]: {
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/66247/pharaoh-legacy/version/latest',
+      factoryAddress: '0xAAA16c016BF556fcD620328f0759252E29b1AB57',
+      router: '0x609AcD8Fc955Dd7E744c7DFFc9930a7A6654DE43',
+      initCode:
+        '0xbf2404274de2b11f05e5aebd49e508de933034cb5fa2d0ac3de8cbd4bcef47dc',
+      poolGasCost: 180 * 1000,
+      stableFee: 5,
+      volatileFee: 25,
+      feeCode: 0,
+    },
+  },
   Equalizer: {
     [Network.FANTOM]: {
       factoryAddress: '0xc6366EFD0AF1d09171fe0EBF32c7943BB310832a',

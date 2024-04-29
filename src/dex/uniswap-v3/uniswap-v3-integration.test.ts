@@ -613,8 +613,8 @@ describe('RamsesV2', () => {
   });
 });
 
-describe('Pharaoh', () => {
-  const dexKey = 'Pharaoh';
+describe('PharaohV2', () => {
+  const dexKey = 'PharaohV2';
   let blockNumber: number;
   let uniswapV3: UniswapV3;
   let uniswapV3Mainnet: UniswapV3;
