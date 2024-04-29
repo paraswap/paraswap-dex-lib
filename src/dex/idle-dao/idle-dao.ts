@@ -15,22 +15,32 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, isETHAddress, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { IdleDaoData, Param, PoolFunctions } from './types';
+import {
+  IdleDaoData,
+  Param,
+  PoolFunctions,
+  IdleToken,
+  PoolState,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Config, Adapters } from './config';
-// import { IdleDaoEventPool } from './idle-dao-pool';
+import { IdleDaoEventPool } from './idle-dao-pool';
 import { fetchTokenList } from './utils';
-import { getIdleTokenIfIdleDaoPair, setTokensOnNetwork } from './tokens';
+import {
+  getIdleTokenIfIdleDaoPair,
+  setTokensOnNetwork,
+  getPoolsByTokenAddress,
+  getTokenFromIdleToken,
+} from './tokens';
 import FACTORY_ABI from '../../abi/idle-dao/idle-cdo-factory.json';
 import CDO_ABI from '../../abi/idle-dao/idle-cdo.json';
 
-const REF_CODE = '0x0000000000000000000000000000000000000000';
 export const TOKEN_LIST_CACHE_KEY = 'token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60;
 const TOKEN_LIST_LOCAL_TTL_SECONDS = 3 * 60 * 60;
 
 export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
-  // protected eventPools: IdleDaoEventPool;
+  protected eventPools: Record<string, IdleDaoEventPool> = {};
 
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
@@ -55,16 +65,55 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    /*
-    this.eventPools = new IdleDaoEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
-    */
     this.cdo = new Interface(CDO_ABI);
     this.factory = new Interface(FACTORY_ABI);
+  }
+
+  getEventPool(idleAddress: string): IdleDaoEventPool | null {
+    return this.eventPools[idleAddress] || null;
+  }
+
+  async setupEventPool(
+    idleToken: IdleToken,
+    blockNumber: number,
+  ): Promise<IdleDaoEventPool> {
+    const idleDaoEventPool = new IdleDaoEventPool(
+      this.dexKey,
+      this.network,
+      this.dexHelper,
+      this.logger,
+      idleToken,
+    );
+
+    // this.logger.debug("idleDaoEventPool registered ", idleToken.idleAddress)
+
+    this.eventPools[idleToken.idleAddress] = idleDaoEventPool;
+
+    // Generate first state for the blockNumber and subscribe to logs
+    await idleDaoEventPool.initialize(blockNumber);
+    return idleDaoEventPool;
+  }
+
+  async getTokensList(blockNumber: number): Promise<Record<string, IdleToken>> {
+    const tokenList = await fetchTokenList(
+      this.dexHelper.web3Provider,
+      blockNumber,
+      this.config.fromBlock,
+      this.config.factoryAddress,
+      this.cdo,
+      this.erc20Interface,
+      this.dexHelper.multiWrapper,
+    );
+
+    return tokenList.reduce(
+      (acc: Record<string, IdleToken>, idleToken: IdleToken) => {
+        return {
+          ...acc,
+          [idleToken.idleAddress]: idleToken,
+        };
+      },
+      {},
+    );
   }
 
   // Initialize pricing is called once in the start of
@@ -79,11 +128,18 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       TOKEN_LIST_LOCAL_TTL_SECONDS,
     );
     if (cachedTokenList !== null) {
-      setTokensOnNetwork(this.network, JSON.parse(cachedTokenList));
+      const tokens: IdleToken[] = JSON.parse(cachedTokenList);
+      const networkTokens = setTokensOnNetwork(this.network, tokens);
+
+      await Promise.all(
+        tokens.map((idleToken: IdleToken) =>
+          this.setupEventPool(idleToken, blockNumber),
+        ),
+      );
       return;
     }
 
-    let tokenList = await fetchTokenList(
+    const tokenList = await fetchTokenList(
       this.dexHelper.web3Provider,
       blockNumber,
       this.config.fromBlock,
@@ -93,8 +149,6 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       this.dexHelper.multiWrapper,
     );
 
-    // console.log('tokenList', tokenList);
-
     await this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
@@ -103,7 +157,13 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       JSON.stringify(tokenList),
     );
 
-    setTokensOnNetwork(this.network, tokenList);
+    const networkTokens = setTokensOnNetwork(this.network, tokenList);
+
+    await Promise.all(
+      tokenList.map((idleToken: IdleToken) =>
+        this.setupEventPool(idleToken, blockNumber),
+      ),
+    );
   }
 
   // Returns the list of contract adapters (name and index)
@@ -146,6 +206,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
   // any pools can be used.
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -154,32 +215,204 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<IdleDaoData>> {
-    const _src = this.dexHelper.config.wrapETH(srcToken);
-    const _dst = this.dexHelper.config.wrapETH(destToken);
+    try {
+      const _src = this.dexHelper.config.wrapETH(srcToken);
+      const _dst = this.dexHelper.config.wrapETH(destToken);
 
-    // Look for idleToken
-    const idleToken = getIdleTokenIfIdleDaoPair(this.network, _src, _dst);
+      // Look for idleToken
+      const idleToken = getIdleTokenIfIdleDaoPair(this.network, _src, _dst);
+      if (!idleToken) {
+        // console.log('IdleToken NOT FOUND -', blockNumber, this.network, _src, _dst)
+        return null;
+      }
 
-    if (!idleToken) return null;
+      const fromIdleToken =
+        idleToken.idleAddress.toLowerCase() == _src.address.toLowerCase();
 
-    const fromIdleToken =
-      idleToken.idleAddress.toLowerCase() == _src.address.toLowerCase();
+      // Cannot buy with IdleTokens
+      // if (fromIdleToken && side === SwapSide.BUY) return null
 
-    return [
-      {
-        prices: amounts,
-        unit: getBigIntPow(
-          (side === SwapSide.SELL ? destToken : srcToken).decimals,
-        ),
-        gasCost: this.config.lendingGasCost,
-        exchange: this.dexKey,
-        data: {
-          idleToken,
-          fromIdleToken,
+      const eventPool: IdleDaoEventPool =
+        this.eventPools[idleToken.idleAddress];
+      const eventPoolState: PoolState | null = eventPool.getState(blockNumber);
+
+      this.logger.debug(
+        'eventPoolState',
+        blockNumber,
+        idleToken.idleAddress,
+        eventPoolState,
+      );
+
+      if (!eventPoolState) {
+        // console.log('eventPoolState is NULL -', blockNumber, idleToken.idleAddress, eventPoolState)
+        return null;
+      }
+
+      const tokenPrice = eventPoolState.tokenPrice;
+
+      const unitVolume = getBigIntPow(
+        (side === SwapSide.SELL ? srcToken : destToken).decimals,
+      );
+
+      const prices = [unitVolume, ...amounts].map((amount: bigint) => {
+        let output = 0;
+        if (side === SwapSide.SELL) {
+          // SELL idleToken (amount = 1000000000000000000 AA_idle_cpPOR-USDC, output = 1000000000000000000*tokenPrice/1e18)
+          if (fromIdleToken) {
+            output = Math.round(
+              (parseFloat('' + tokenPrice) * parseFloat('' + amount)) /
+                parseFloat(`1e${idleToken.decimals}`),
+            );
+            // SELL underlyingToken (amount = 1000000 USDC), output = 1000000/tokenPrice*1e18
+          } else {
+            output = Math.round(
+              (parseFloat('' + amount) / parseFloat('' + tokenPrice)) *
+                parseFloat(`1e${idleToken.decimals}`),
+            );
+          }
+        } else {
+          // BUY idleToken (amount = 1000000 USDC, output = 1000000/tokenPrice*1e18)
+          if (fromIdleToken) {
+            output = Math.round(
+              (parseFloat('' + amount) / parseFloat('' + tokenPrice)) *
+                parseFloat(`1e${idleToken.decimals}`),
+            );
+            // BUY underlyingToken (amount = 1000000000000000000 AA_idle_cpPOR-USDC, output = 1000000000000000000*tokenPrice/1e18)
+          } else {
+            output = Math.round(
+              (parseFloat('' + tokenPrice) * parseFloat('' + amount)) /
+                parseFloat(`1e${idleToken.decimals}`),
+            );
+          }
+        }
+        return BigInt(output);
+      });
+
+      // console.log('getPricesVolume', srcToken.address, destToken.address, fromIdleToken, side, unitVolume, amounts, prices)
+
+      // const unit = side === SwapSide.SELL ? prices[0] : unitVolume;
+
+      return [
+        {
+          unit: prices[0],
+          prices: prices.slice(1),
+          gasCost: this.config.lendingGasCost,
+          exchange: this.dexKey,
+          data: {
+            idleToken,
+            fromIdleToken,
+          },
+          poolAddresses: [fromIdleToken ? srcToken.address : destToken.address],
         },
-        poolAddresses: [fromIdleToken ? srcToken.address : destToken.address],
-      },
-    ];
+      ];
+    } catch (e) {
+      if (blockNumber === 0)
+        this.logger.error(
+          `Error_getPricesVolume: Aurelius block manager not yet instantiated`,
+        );
+      this.logger.error(`Error_getPrices:`, e);
+      return null;
+    }
+  }
+
+  async getPricesVolume_old(
+    srcToken: Token,
+    destToken: Token,
+    amounts: bigint[],
+    side: SwapSide,
+    blockNumber: number,
+    limitPools?: string[],
+  ): Promise<null | ExchangePrices<IdleDaoData>> {
+    try {
+      const _src = this.dexHelper.config.wrapETH(srcToken);
+      const _dst = this.dexHelper.config.wrapETH(destToken);
+
+      // Look for idleToken
+      const idleToken = getIdleTokenIfIdleDaoPair(this.network, _src, _dst);
+      if (!idleToken) {
+        // console.log('IdleToken NOT FOUND -', blockNumber, this.network, _src, _dst)
+        return null;
+      }
+
+      const fromIdleToken =
+        idleToken.idleAddress.toLowerCase() == _src.address.toLowerCase();
+
+      const eventPool: IdleDaoEventPool =
+        this.eventPools[idleToken.idleAddress];
+      const eventPoolState: PoolState | null = eventPool.getState(blockNumber);
+
+      this.logger.debug(
+        'eventPoolState',
+        blockNumber,
+        idleToken.idleAddress,
+        eventPoolState,
+      );
+
+      if (!eventPoolState) {
+        // console.log('eventPoolState is NULL -', blockNumber, idleToken.idleAddress, eventPoolState)
+        return null;
+      }
+
+      const prices = amounts.map((amount: bigint) => {
+        let tokenPrice = null;
+        if (fromIdleToken) {
+          tokenPrice = eventPoolState.tokenPrice;
+        } else {
+          tokenPrice = BigInt(
+            Math.round(
+              (parseFloat(`1e${srcToken.decimals}`) /
+                parseFloat('' + eventPoolState.tokenPrice)) *
+                parseFloat(`1e${srcToken.decimals}`),
+            ),
+          );
+        }
+
+        const destAmount = Math.round(
+          (parseFloat('' + tokenPrice) * parseFloat('' + amount)) /
+            parseFloat(`1e${srcToken.decimals}`),
+        );
+
+        const decimalsDiff = destToken.decimals - srcToken.decimals;
+        let destAmountBigInt = BigInt(0);
+        if (decimalsDiff > 0) {
+          destAmountBigInt = BigInt(
+            Math.round(destAmount * parseFloat(`1e${decimalsDiff}`)),
+          );
+          // } else if (decimalsDiff<0){
+          //   destAmountBigInt = BigInt(Math.round(destAmount/parseFloat(`1e${Math.abs(decimalsDiff)}`)))
+        } else {
+          destAmountBigInt = BigInt(destAmount);
+        }
+        // const destAmountBigInt = BigInt(destAmount)
+
+        // console.log('getPricesVolume', srcToken, destToken, fromIdleToken, ''+amount, ''+tokenPrice, destAmount, ''+destAmountBigInt)
+        return destAmountBigInt;
+      });
+
+      return [
+        {
+          prices,
+          unit: getBigIntPow(
+            (side === SwapSide.SELL ? destToken : srcToken).decimals,
+          ),
+          gasCost: this.config.lendingGasCost,
+          exchange: this.dexKey,
+          data: {
+            idleToken,
+            fromIdleToken,
+          },
+          poolAddresses: [fromIdleToken ? srcToken.address : destToken.address],
+        },
+      ];
+    } catch (e) {
+      // console.log('getPricesVolume - ERROR', srcToken, destToken, e);
+      if (blockNumber === 0)
+        this.logger.error(
+          `Error_getPricesVolume: Aurelius block manager not yet instantiated`,
+        );
+      this.logger.error(`Error_getPrices:`, e);
+      return null;
+    }
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -217,10 +450,6 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -229,26 +458,26 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     data: IdleDaoData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const amount = side === SwapSide.SELL ? srcAmount : destAmount;
     const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,
       PoolFunctions,
       Param,
     ] => {
-      if (data.fromIdleToken)
+      if (data.fromIdleToken) {
         return [
           this.cdo,
           data.idleToken.cdoAddress,
           PoolFunctions[`withdraw${data.idleToken.tokenType}`],
-          [amount],
+          [srcAmount],
         ];
+      }
 
       return [
         this.cdo,
         data.idleToken.cdoAddress,
         PoolFunctions[`deposit${data.idleToken.tokenType}`],
-        [amount, REF_CODE],
+        [srcAmount, this.augustusAddress],
       ];
     })();
 
@@ -259,7 +488,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
-      amount,
+      srcAmount,
       destToken,
       destAmount,
       swapData,
@@ -267,28 +496,23 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     );
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    return Promise.resolve();
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
-  }
+    const idleTokens: IdleToken[] = getPoolsByTokenAddress(tokenAddress);
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+    return idleTokens
+      .map((idleToken: IdleToken, i) => ({
+        liquidityUSD: 0,
+        exchange: this.dexKey,
+        address: idleToken.idleAddress,
+        connectorTokens: [getTokenFromIdleToken(idleToken)],
+      }))
+      .slice(0, limit);
   }
 }

@@ -129,6 +129,7 @@ const Dexes = [
   AaveV1,
   AaveV2,
   AaveV3,
+  IdleDao,
   KyberDmm,
   Weth,
   PolygonMigrator,

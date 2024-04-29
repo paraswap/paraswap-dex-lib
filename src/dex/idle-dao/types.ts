@@ -1,10 +1,7 @@
 import { Address } from '@paraswap/core';
 
 export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+  tokenPrice: bigint;
 };
 
 export type DexParams = {
@@ -18,6 +15,7 @@ export type IdleToken = {
   idleAddress: string;
   cdoAddress: string;
   tokenType: 'AA' | 'BB';
+  blockNumber: number;
   address: string;
   decimals: number;
 };
@@ -29,10 +27,6 @@ export type TrancheToken = {
 };
 
 export type IdleDaoData = {
-  // TODO: IdleDaoData is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
   idleToken: IdleToken;
   fromIdleToken: boolean;
 };
@@ -45,7 +39,7 @@ export type Param = Deposit | Withdraw;
 
 export enum PoolFunctions {
   withdrawAA = 'withdrawAA',
-  depositAA = 'depositAA',
+  depositAA = 'depositAARef',
   withdrawBB = 'withdrawBB',
-  depositBB = 'depositBB',
+  depositBB = 'depositBBRef',
 }

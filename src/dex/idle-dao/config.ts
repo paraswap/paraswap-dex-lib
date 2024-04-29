@@ -2,6 +2,10 @@ import { DexParams } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
+export const CustomCdos: Record<string, number> = {
+  '0x8E0A8A5c1e5B3ac0670Ea5a613bB15724D51Fc37': 17712300, // Instadapp
+};
+
 export const Config: DexConfigMap<DexParams> = {
   IdleDao: {
     [Network.MAINNET]: {
@@ -9,23 +13,12 @@ export const Config: DexConfigMap<DexParams> = {
       lendingGasCost: 328 * 1000,
       factoryAddress: '0x3c9916bb9498f637e2fa86c2028e26275dc9a631',
     },
-    /*
-    [Network.OPTIMISM]: {
-      fromBlock: 110449062,
-      factoryAddress: '0x8aA1379e46A8C1e9B7BB2160254813316b5F35B8',
-    },
-    [Network.ZKEVM]: {
-      fromBlock: 2812767,
-      factoryAddress: '0xba43DE746840eD16eE53D26af0675d8E6c24FE38',
-    },
-    */
   },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
-  // [Network.OPTIMISM]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
-  // [Network.ZKEVM]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [{ name: '', index: 0 }],
+    [SwapSide.BUY]: [{ name: '', index: 0 }],
+  },
 };

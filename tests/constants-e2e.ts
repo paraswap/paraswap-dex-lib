@@ -19,6 +19,54 @@ export const Tokens: {
   [network: number]: { [symbol: string]: SmartTokenParams };
 } = {
   [Network.MAINNET]: {
+    AA_wstETH: {
+      decimals: 18,
+      address: '0x2688fc68c4eac90d9e5e1b94776cf14eade8d877',
+    },
+    'AA_idle_cpPOR-USDC': {
+      decimals: 18,
+      address: '0x9cacd44cfdf22731bc99facf3531c809d56bd4a2',
+    },
+    'BB_idle_cpFAS-USDT': {
+      decimals: 18,
+      address: '0x3eb6318b8d9f362a0e1d99f6032edb1c4c602500',
+    },
+    AA_steakUSDC: {
+      decimals: 18,
+      address: '0x2b0e31b8ee653d2077db86dea3acf3f34ae9d5d2',
+    },
+    BB_steakUSDC: {
+      decimals: 18,
+      address: '0x7b713b1cb6eafd4061064581579ffccf7df21545',
+    },
+    AA_Re7WETH: {
+      decimals: 18,
+      address: '0x454bb3cb427b21e1c052a080e21a57753cd6969e',
+    },
+    BB_Re7WETH: {
+      decimals: 18,
+      address: '0x20aa3cd83044d2903181f7ef5c2b498a017d1c4a',
+    },
+    AA_sUSDe: {
+      decimals: 18,
+      address: '0xf3188697bd35df73e4293d04a07ebaaf1ffc4018',
+    },
+    BB_sUSDe: {
+      decimals: 18,
+      address: '0xb8d0be502a8f12cc5213733285b430a43d07349d',
+    },
+    AA_iETHv2: {
+      decimals: 18,
+      address: '0xdf17c739b666B259DA3416d01f0310a6e429f592',
+    },
+    BB_iETHv2: {
+      decimals: 18,
+      address: '0x990b3aF34dDB502715E1070CE6778d8eB3c8Ea82',
+    },
+    USDE: {
+      address: '0x4c9edd5852cd905f086c759e8383e09bff1e68b3',
+      decimals: 18,
+    },
     ETH: {
       address: ETHER_ADDRESS,
       decimals: 18,
@@ -1016,13 +1064,26 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
+    // Idle tokens
+    AA_wstETH: '0xd7C1b48877A7dFA7D51cf1144c89C0A3F134F935',
+    'AA_idle_cpPOR-USDC': '0x085c8eaccA6911fE60aE3f8FbAe5F3012E3A05Ec',
+    'BB_idle_cpFAS-USDT': '0xFDAD59EF0686C3Da702b7D651a3bD35a539c8Bc4',
+    AA_steakUSDC: '0x28C1eCF5B0f16E1D85B9D2677EfB79d68167cAf2',
+    BB_steakUSDC: '0xDc27620F4E2E3728c2A3D209F748F82eB1E99031',
+    AA_Re7WETH: '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb',
+    BB_Re7WETH: '0x442Aea0Fd2AFbd3391DAE768F7046f132F0a6300',
+    AA_sUSDe: '0xaFeb95DEF3B2A3D532D74DaBd51E62048d6c07A4',
+    BB_sUSDe: '0xaFeb95DEF3B2A3D532D74DaBd51E62048d6c07A4',
+    AA_iETHv2: '0xA118aD79E2152b9a3c7Df8B8791887762b0f1D49',
+    BB_iETHv2: '0x15079cBAa74C1df2a602fAc88Bd5b98B08FfE6A4',
     ETH: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
     USDC: '0x7713974908be4bed47172370115e8b1219f4a5f0',
+    USDE: '0x8707f238936c12c309bfc2B9959C35828AcFc512',
     AMPL: '0x223592a191ECfC7FDC38a9256c3BD96E771539A9',
     WBTC: '0x1cb17a66dc606a52785f69f08f4256526abd4943',
     sBTC: '0xA2e3475D13776C6E42ff37B47286827d959B2195',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
-    STETH: '0x9bdb521a97e95177bf252c253e256a60c3e14447',
+    STETH: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
     wstETH: '0x6cE0F913F035ec6195bC3cE885aec4C66E485BC4',
     WETH: '0x2fEb1512183545f48f6b9C5b4EbfCaF49CfCa6F3',
     USDT: '0x8A446971dbB112f3be15bc38C14D44B94D9E94b9',
