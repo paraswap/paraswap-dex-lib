@@ -696,8 +696,8 @@ describe('UniswapV3 E2E', () => {
     });
   });
 
-  describe('Pharaoh', () => {
-    const dexKey = 'Pharaoh';
+  describe('PharaohV2', () => {
+    const dexKey = 'PharaohV2';
 
     describe('Avalanche', () => {
       const network = Network.AVALANCHE;
