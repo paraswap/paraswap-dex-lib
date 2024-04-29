@@ -199,12 +199,9 @@ export class AngleStakedStable
   ): AdapterExchangeParam {
     const { exchange } = data;
 
-    // Encode here the payload for adapter
-    const payload = '';
-
     return {
       targetExchange: exchange,
-      payload,
+      payload: '0x',
       networkFee: '0',
     };
   }

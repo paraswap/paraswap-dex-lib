@@ -290,7 +290,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       ArbitrumAdapter02: '0x58a5f0b73969800FAFf8556cD2187E3FCE71A6cb',
-      ArbitrumBuyAdapter: '0x4483Ae378897eB9FbF7f15Df98Bf07233ffFEe8b',
+      ArbitrumAdapter03: '0x23a8fC19cd11912A74946f8569900cbDC7F4f598',
+      ArbitrumBuyAdapter: '0xB53f5a0c1b21a5B81feE1872Ac032322EDE6Bc60',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',

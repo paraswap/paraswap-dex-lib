@@ -43,4 +43,89 @@ export const AngleStakedStableConfig: DexConfigMap<DexParams> = {
   },
 };
 
-export const Adapters: Record<number, AdapterMappings> = {};
+export const Adapters: Record<number, AdapterMappings> = {
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'ArbitrumAdapter03',
+        index: 1,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'ArbitrumBuyAdapter',
+        index: 10,
+      },
+    ],
+  },
+  [Network.MAINNET]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'Adapter06',
+        index: 1,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BuyAdapter02',
+        index: 4,
+      },
+    ],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'OptimismAdapter01',
+        index: 13,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'OptimismBuyAdapter',
+        index: 6,
+      },
+    ],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter01',
+        index: 10,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BaseBuyAdapter',
+        index: 6,
+      },
+    ],
+  },
+  [Network.POLYGON]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'PolygonAdapter02',
+        index: 10,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'PolygonBuyAdapter',
+        index: 9,
+      },
+    ],
+  },
+  [Network.BSC]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BscAdapter02',
+        index: 10,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BscBuyAdapter',
+        index: 8,
+      },
+    ],
+  },
+};
