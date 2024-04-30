@@ -1,4 +1,4 @@
-import _, { parseInt } from 'lodash';
+import { parseInt } from 'lodash';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
 import { PlainVirtualPoolState } from './types';

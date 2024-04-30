@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { assert, AsyncOrSync, DeepReadonly } from 'ts-essentials';
-import { Address, Log, Logger, Token } from '../../types';
+import { Address, Log, Logger } from '../../types';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import {
   bigIntify,

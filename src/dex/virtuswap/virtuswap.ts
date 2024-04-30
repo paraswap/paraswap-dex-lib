@@ -1,4 +1,4 @@
-import { AsyncOrSync, assert } from 'ts-essentials';
+import { assert } from 'ts-essentials';
 import { Interface } from '@ethersproject/abi';
 import {
   Token,
@@ -358,7 +358,6 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
 
   // Encode params required by the exchange adapter
   // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: Address,
     destToken: Address,
@@ -493,15 +492,6 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
     );
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
-
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
@@ -511,11 +501,5 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
     // virtual pools have smaller liquidity than real pools, so only real pools should be returned
     //TODO: complete me!
     return [];
-  }
-
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
   }
 }
