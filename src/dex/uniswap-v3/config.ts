@@ -261,7 +261,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         'https://api.thegraph.com/subgraphs/name/ramsesexchange/concentrated-liquidity-graph',
     },
   },
-  Pharaoh: {
+  PharaohV2: {
     [Network.AVALANCHE]: {
       factory: '0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42',
       deployer: '0x95120704f4E2D545Aea8b6B3c16d9Da1fa32E30F',
@@ -338,6 +338,20 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/baseswapfi/v3-base',
+    },
+  },
+  AlienBaseV3: {
+    [Network.BASE]: {
+      factory: '0x0Fd83557b2be93617c9C1C1B6fd549401C74558C',
+      quoter: '0x4fDBD73aD4B1DDde594BF05497C15f76308eFfb9',
+      router: '0x79edabc464dcdce8cbf1b60c003aceef7e0282d9',
+      supportedFees: [10000n, 3000n, 750n, 200n],
+      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL: 'https://api.studio.thegraph.com/query/59130/v3alb/0.3',
     },
   },
 };
