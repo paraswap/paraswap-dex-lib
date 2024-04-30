@@ -29,7 +29,7 @@ export const RESTRICT_82_TTL_MS = 60 * 30 * 1000; // 30 mins
 export const RESTRICT_42_TTL_MS = 60 * 60 * 1000; // 60 mins
 export const RESTRICT_85_TTL_MS = 60 * 20 * 1000; // 20 mins
 export const RESTRICT_74_TTL_MS = 60 * 20 * 1000; // 20 mins
-export const RESTRICT_UNKNOWN_TTL_MS = 60 * 60 * 1000; // 30 mins
+export const RESTRICT_UNKNOWN_TTL_MS = 60 * 60 * 1000; // 60 mins
 export const RESTRICT_MISSING_QUOTE_DATA_TTL_MS = 60 * 10 * 1000; // 10 mins
 export const RESTRICT_MISSING_SIGNATURE_TTL_MS = 60 * 10 * 1000; // 10 mins
 
