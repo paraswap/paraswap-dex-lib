@@ -97,7 +97,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       algebraStateMulticall: '0x23d574867597c7A980024d8b83a74b6Ca6E08A7B',
       subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/chimpydev/swapbase/graphql',
+        'https://api.thegraph.com/subgraphs/name/chimpydev/swapbased-algebra-core',
       uniswapMulticall: '0xce512f490Bf09C4544A12a7264750B28FbE9AD76',
       deployer: '0xe4DFd4ad723B5DB11aa41D53603dB03B117eC690',
       version: 'v1.9-bidirectional-fee',
