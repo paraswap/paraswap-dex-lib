@@ -762,9 +762,12 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     const error = errorCodes?.[errorCode];
 
-    if (!error) {
+    if (
+      !error ||
+      error.addedDatetimeMS + CONSECUTIVE_ERROR_TIMESPAN_MS < Date.now()
+    ) {
       this.logger.warn(
-        `${this.dexKey}-${this.network}: First encounter of error code=${errorCode} for ${mm}, setting up counter`,
+        `${this.dexKey}-${this.network}: First encounter of error code=${errorCode} for ${mm} OR error ocurred outside of threshold, setting up counter`,
       );
       const data: CacheErrorCodesData = {
         ...errorCodes,
@@ -783,26 +786,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       const restrictTTLMs =
         ERROR_CODE_TO_RESTRICT_TTL[errorCode] ||
         ERROR_CODE_TO_RESTRICT_TTL[UNKNOWN_ERROR_CODE];
-
-      if (error.addedDatetimeMS + CONSECUTIVE_ERROR_TIMESPAN_MS < Date.now()) {
-        this.logger.warn(
-          `${this.dexKey}-${this.network}: Error: ${errorCode} for ${mm} occurred not within threshold timespan for restriction. Resetting counter`,
-        );
-        // Reset the counter, this error code appeared after CONSECUTIVE_ERROR_TIMESPAN_MS
-        const data: CacheErrorCodesData = {
-          ...errorCodes,
-          [errorCode]: {
-            count: 1,
-            addedDatetimeMS: Date.now(),
-          },
-        };
-        await this.dexHelper.cache.hset(
-          this.runtimeMMsRestrictHashMapErrorCodesKey,
-          mm,
-          Utils.Serialize(data),
-        );
-        return;
-      }
 
       if (error.count + 1 > CONSECUTIVE_ERROR_THRESHOLD) {
         this.logger.warn(
