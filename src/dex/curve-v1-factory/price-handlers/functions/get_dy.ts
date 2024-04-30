@@ -170,8 +170,6 @@ const stableNg: get_dy = (
   j: number,
   dx: bigint,
 ) => {
-  console.log('STABLE NG get_dy');
-
   const rates = requireValue(self, state, 'storedRates', 'stableNg');
   const A = requireValue(self, state, 'A', 'stableNg');
   const stateFee = requireValue(self, state, 'fee', 'stableNg');
@@ -186,22 +184,11 @@ const stableNg: get_dy = (
   const xp: bigint[] = [];
   const { balances } = state;
 
-  console.log('I: ', i);
-  console.log('J: ', j);
-  console.log('DX: ', dx);
-
-  console.log('N_COINS: ', N_COINS);
-  console.log('RATES: ', rates);
-  console.log('BALANCES: ', balances);
-
   for (const idx of _.range(N_COINS)) {
     xp.push((rates[idx] * balances[idx]) / PRECISION);
   }
 
-  console.log('XP: ', xp);
-
   const amp = A;
-  console.log('A: ', amp);
   const D = self.get_D(self, xp, amp);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
@@ -209,9 +196,7 @@ const stableNg: get_dy = (
   const dy = xp[j] - y - 1n;
 
   const base_fee = stateFee;
-  console.log('fee: ', base_fee);
   const fee_multiplier = offpeg_fee_multiplier;
-  console.log('offpeg_fee_multiplier: ', offpeg_fee_multiplier);
   const dynamic_fee = self._dynamic_fee(
     self,
     (xp[i] + x) / 2n,
@@ -220,19 +205,43 @@ const stableNg: get_dy = (
     fee_multiplier,
   );
 
-  console.log('dynamic_fee: ', dynamic_fee);
-
   const fee = (dynamic_fee * dy) / FEE_DENOMINATOR;
-
-  console.log('fee: ', fee);
-  console.log('rates[j]: ', rates[j]);
-  console.log('dy: ', dy);
 
   const res = ((dy - fee) * PRECISION) / rates[j];
 
-  console.log('RES: ', res);
+  if (dx === 1000000000000000000n) {
+    console.log('STABLE NG get_dy');
 
-  console.log('--------------------------------------------------------');
+    console.log('I: ', i);
+    console.log('J: ', j);
+    console.log('DX: ', dx);
+
+    console.log('N_COINS: ', N_COINS);
+    console.log('RATES: ', rates);
+    console.log('BALANCES: ', balances);
+
+    console.log('XP: ', xp);
+
+    console.log('D: ', D);
+
+    console.log('XP[j]: ', xp[j]);
+    console.log('X: ', x);
+    console.log('Y: ', y);
+    console.log('dy: ', dy);
+
+    console.log('A: ', amp);
+
+    console.log('fee: ', base_fee);
+
+    console.log('offpeg_fee_multiplier: ', offpeg_fee_multiplier);
+    console.log('dynamic_fee: ', dynamic_fee);
+
+    console.log('fee: ', fee);
+    console.log('rates[j]: ', rates[j]);
+
+    console.log('RES: ', res);
+    console.log('--------------------------------------------------------');
+  }
 
   return res;
 };

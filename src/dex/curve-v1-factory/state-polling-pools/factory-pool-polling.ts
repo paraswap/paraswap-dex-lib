@@ -202,10 +202,9 @@ export class FactoryStateHandler extends PoolPollingBase {
     }
 
     return {
-      A: A,
-      // A: this.poolContextConstants.A_PRECISION
-      //   ? A * this.poolContextConstants.A_PRECISION
-      //   : A,
+      A: this.poolContextConstants.A_PRECISION
+        ? A * this.poolContextConstants.A_PRECISION
+        : A,
       fee: fees[0], // Array has [fee, adminFee], but we want only fee
       balances: balances,
       constants: this.poolConstants,

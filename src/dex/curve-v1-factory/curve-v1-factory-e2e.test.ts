@@ -380,6 +380,25 @@ describe('CurveV1Factory E2E', () => {
       );
     });
 
+    describe('Fantom Stable NG 2', () => {
+      const network = Network.FANTOM;
+
+      const tokenASymbol: string = 'scrvUSDC_e';
+      const tokenBSymbol: string = 'scrvUSDC_p';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
     describe('Arbitrum Stable NG', () => {
       const network = Network.ARBITRUM;
 

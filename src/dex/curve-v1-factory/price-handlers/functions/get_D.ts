@@ -57,9 +57,7 @@ const stableNg: get_D = (
   xp: bigint[],
   amp: bigint,
 ): bigint => {
-  console.log('STABLE NG get_D');
   const { BI_N_COINS } = self.constants;
-  console.log('GET D BI_N_COINS: ', BI_N_COINS);
   const A_PRECISION = requireConstant(self, 'A_PRECISION', 'stableNg');
 
   let S = 0n;
@@ -80,7 +78,7 @@ const stableNg: get_D = (
       D_P = (D_P * D) / _x;
     }
 
-    D_P = D_P / pow_mod256(BI_N_COINS, BI_N_COINS);
+    D_P /= pow_mod256(BI_N_COINS, BI_N_COINS);
     Dprev = D;
     D =
       (((Ann * S) / A_PRECISION + D_P * BI_N_COINS) * D) /
@@ -100,7 +98,7 @@ const stableNg: get_D = (
   // convergence typically occurs in 4 rounds or less, this should be unreachable!
   // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
   throw new Error(
-    `${CONVERGENCE_ERROR_PREFIX}_${self.IMPLEMENTATION_NAME}: function customPlain2CoinFrax didn't converge`,
+    `${CONVERGENCE_ERROR_PREFIX}_${self.IMPLEMENTATION_NAME}: function stableNg didn't converge`,
   );
 };
 
