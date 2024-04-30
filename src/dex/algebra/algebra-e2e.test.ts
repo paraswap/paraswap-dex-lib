@@ -297,8 +297,8 @@ describe('Algebra', () => {
     });
   });
 
-  describe('SwapBased', () => {
-    const dexKey = 'SwapBased';
+  describe('SwapBasedV3', () => {
+    const dexKey = 'SwapBasedV3';
     const network = Network.BASE;
 
     const tokenASymbol: string = 'USDC';
