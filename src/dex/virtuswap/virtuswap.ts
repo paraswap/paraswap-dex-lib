@@ -68,10 +68,14 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
       network,
       dexHelper,
       this.logger,
-      this.addPool.bind(this),
+      this.addPools.bind(this),
       config.factoryAddress,
       vPairFactoryIface,
     );
+  }
+
+  get routerAddress(): Address {
+    return this.config.router;
   }
 
   async initialize(blockNumber: number) {
@@ -97,20 +101,34 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
     return this.pools[pool]?.getState(blockNumber - 1) ?? null;
   }
 
-  async addPool(pool: Address, blockNumber: number) {
-    if (!this.pools[pool]) {
-      this.pools[pool] = new VirtuSwapEventPool(
-        this.dexKey,
-        this.network,
-        this.dexHelper,
-        this.logger,
-        this.config.isTimestampBased,
-        pool,
-        this.getPoolState.bind(this),
-        this.vPairIface,
-      );
-      await this.pools[pool].initialize(blockNumber);
-    }
+  async addPools(addresses: Address[], blockNumber: number) {
+    const states = await VirtuSwapEventPool.generateManyPoolsStates(
+      addresses,
+      blockNumber,
+      this.dexHelper.multiWrapper,
+      this.vPairIface,
+    );
+
+    await Promise.all(
+      addresses.map(async (address, index) => {
+        const state = states[index];
+        if (!this.pools[address]) {
+          this.pools[address] = new VirtuSwapEventPool(
+            this.dexKey,
+            this.network,
+            this.dexHelper,
+            this.logger,
+            this.config.isTimestampBased,
+            address,
+            this.getPoolState.bind(this),
+            this.vPairIface,
+          );
+          await this.pools[address].initialize(blockNumber, { state });
+        } else {
+          this.pools[address].setState(state, blockNumber);
+        }
+      }),
+    );
   }
 
   // Returns the list of contract adapters (name and index)
@@ -418,7 +436,7 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
         );
 
     return {
-      targetExchange: this.config.router,
+      targetExchange: this.routerAddress,
       payload,
       networkFee: '0',
     };
@@ -488,7 +506,7 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
       destToken,
       destAmount,
       swapData,
-      this.config.router,
+      this.routerAddress,
     );
   }
 

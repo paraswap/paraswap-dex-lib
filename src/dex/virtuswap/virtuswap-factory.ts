@@ -5,7 +5,7 @@ import { MultiCallParams } from '../../lib/multi-wrapper';
 import { catchParseLogError, normalizeAddress, stringify } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper';
-import { FactoryState, OnPoolCreatedCallback } from './types';
+import { FactoryState, OnPoolsCreatedCallback } from './types';
 import vPairFactoryABI from '../../abi/virtuswap/vPairFactory.json';
 import { abiCoderParsers } from './utils';
 
@@ -37,7 +37,7 @@ export class VirtuSwapFactory extends StatefulEventSubscriber<FactoryState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected onPoolCreatedCallback: OnPoolCreatedCallback,
+    protected onPoolsCreatedCallback: OnPoolsCreatedCallback,
     protected factoryAddress: Address,
     protected vPairFactoryIface: Interface = VirtuSwapFactory.vPairFactoryInterface,
   ) {
@@ -126,9 +126,7 @@ export class VirtuSwapFactory extends StatefulEventSubscriber<FactoryState> {
       blockNumber,
     );
 
-    await Promise.all(
-      pools.map(pool => this.onPoolCreatedCallback(pool, blockNumber)),
-    );
+    await this.onPoolsCreatedCallback(pools, blockNumber);
 
     return {
       pools,
@@ -142,7 +140,7 @@ export class VirtuSwapFactory extends StatefulEventSubscriber<FactoryState> {
   ): Promise<DeepReadonly<FactoryState> | null> {
     const pool = normalizeAddress(stringify(event.args.poolAddress));
 
-    await this.onPoolCreatedCallback(pool, log.blockNumber);
+    await this.onPoolsCreatedCallback([pool], log.blockNumber);
 
     return {
       ...state,

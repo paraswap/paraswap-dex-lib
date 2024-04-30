@@ -16,6 +16,8 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
+jest.setTimeout(50 * 1000);
+
 function getReaderCalldata(
   routerAddress: Address,
   readerIface: Interface,
@@ -54,10 +56,9 @@ async function checkOnChainPricing(
   amounts: bigint[],
 ) {
   const readerIface = virtuswap.vRouterIface;
+  const routerAddress = virtuswap.routerAddress;
 
   for (const prices of poolPrices) {
-    const routerAddress = prices.data.router;
-
     let address1: Address;
     let address2: Address;
     if (prices.data.isVirtual) {

@@ -42,8 +42,8 @@ export type FactoryState = {
   pools: Address[];
 };
 
-export type OnPoolCreatedCallback = (
-  pool: Address,
+export type OnPoolsCreatedCallback = (
+  pools: Address[],
   blockNumber: number,
 ) => AsyncOrSync<void>;
 

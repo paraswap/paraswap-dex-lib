@@ -13,6 +13,8 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
+jest.setTimeout(50 * 1000);
+
 function testForNetwork(
   network: Network,
   dexKey: string,

@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Interface } from '@ethersproject/abi';
 import { assert, AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { Address, Log, Logger } from '../../types';
-import { MultiCallParams } from '../../lib/multi-wrapper';
+import { MultiCallParams, MultiWrapper } from '../../lib/multi-wrapper';
 import {
   bigIntify,
   catchParseLogError,
@@ -118,6 +118,72 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   /**
+   * The function is called to fetch reserves of multiple pools
+   * @param pools - Array of pool addresses and their allowed reserve tokens
+   * @param blockNumber - Blocknumber for which the reserves should be fetched
+   * @param multiWrapper - MultiWrapper instance
+   * @param vPairIface - Interface for the vPair contract
+   * @returns Reserves of the pools
+   */
+  protected static async fetchManyPoolsReserves(
+    pools: { poolAddress: Address; reservesAddresses: Address[] }[],
+    blockNumber: number,
+    multiWrapper: MultiWrapper,
+    vPairIface: Interface = VirtuSwapEventPool.vPairInterface,
+  ): Promise<PoolState['reserves'][]> {
+    const targetsAndInputs = pools.flatMap(
+      ({ poolAddress, reservesAddresses }) =>
+        reservesAddresses.map(reserveAddress => ({
+          poolAddress,
+          reserveAddress,
+        })),
+    );
+    const reservesMultiCallParams = targetsAndInputs.flatMap(
+      ({ poolAddress, reserveAddress }) =>
+        [
+          {
+            target: poolAddress,
+            callData: vPairIface.encodeFunctionData('reservesBaseValue', [
+              reserveAddress,
+            ]),
+            decodeFunction:
+              VirtuSwapEventPool.contractReservesBaseValueParser.decodeFunction,
+          },
+          {
+            target: poolAddress,
+            callData: vPairIface.encodeFunctionData('reserves', [
+              reserveAddress,
+            ]),
+            decodeFunction:
+              VirtuSwapEventPool.contractReservesParser.decodeFunction,
+          },
+        ] as MultiCallParams<bigint>[],
+    );
+
+    const reservesReturnData = await multiWrapper.aggregate(
+      reservesMultiCallParams,
+      blockNumber,
+    );
+
+    const reservesByPools = _.mapValues(
+      _.groupBy(
+        _.map(
+          _.chunk(reservesReturnData, 2),
+          ([baseValue, balance], index) =>
+            [targetsAndInputs[index], { baseValue, balance }] as const,
+        ),
+        ([{ poolAddress }]) => poolAddress,
+      ),
+      pairs =>
+        _.fromPairs(
+          _.map(pairs, ([{ reserveAddress }, data]) => [reserveAddress, data]),
+        ),
+    );
+
+    return _.map(pools, ({ poolAddress }) => reservesByPools[poolAddress]);
+  }
+
+  /**
    * The function is called to fetch reserves of the pool
    * @param addresses - Addresses of the allowed reserve tokens in the pool
    * @param blockNumber - Blocknumber for which the reserves should be fetched
@@ -127,37 +193,136 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
     addresses: Address[],
     blockNumber: number,
   ): Promise<PoolState['reserves']> {
-    const reservesMultiCallParams = addresses.flatMap(
-      address =>
-        [
-          {
-            target: this.poolAddress,
-            callData: this.vPairIface.encodeFunctionData('reservesBaseValue', [
-              address,
-            ]),
-            decodeFunction:
-              VirtuSwapEventPool.contractReservesBaseValueParser.decodeFunction,
-          },
-          {
-            target: this.poolAddress,
-            callData: this.vPairIface.encodeFunctionData('reserves', [address]),
-            decodeFunction:
-              VirtuSwapEventPool.contractReservesParser.decodeFunction,
-          },
-        ] as MultiCallParams<bigint>[],
+    return (
+      await VirtuSwapEventPool.fetchManyPoolsReserves(
+        [{ poolAddress: this.poolAddress, reservesAddresses: addresses }],
+        blockNumber,
+        this.dexHelper.multiWrapper,
+        this.vPairIface,
+      )
+    )[0];
+  }
+
+  /**
+   * The function is called to generate states
+   * of multiple pools using on-chain calls
+   * @param pools - Array of pool addresses
+   * @param blockNumber - Blocknumber for which the states
+   * should be generated
+   * @param multiWrapper - MultiWrapper instance
+   * @param vPairIface - Interface for the vPair contract
+   * @returns States of the pools
+   */
+  static async generateManyPoolsStates(
+    pools: Address[],
+    blockNumber: number,
+    multiWrapper: MultiWrapper,
+    vPairIface: Interface = VirtuSwapEventPool.vPairInterface,
+  ): Promise<DeepReadonly<PoolState[]>> {
+    // Get initial data and allowListLength
+    const initialMultiCallParams = pools.flatMap(poolAddress =>
+      VirtuSwapEventPool.contractStateFunctionsParsers.map(
+        ({ name, decodeFunction }) =>
+          ({
+            target: poolAddress,
+            callData: vPairIface.encodeFunctionData(name),
+            decodeFunction,
+          } as MultiCallParams<ReturnType<typeof decodeFunction>>),
+      ),
     );
 
-    const reservesReturnData = await this.dexHelper.multiWrapper.aggregate(
-      reservesMultiCallParams,
+    const poolsInitialReturnData = await multiWrapper.aggregate(
+      initialMultiCallParams,
       blockNumber,
     );
 
-    return _.fromPairs(
-      _.map(_.chunk(reservesReturnData, 2), ([baseValue, balance], index) => [
-        addresses[index],
-        { baseValue, balance },
-      ]),
+    const chunkedInitialReturnData = _.chunk(
+      poolsInitialReturnData,
+      VirtuSwapEventPool.contractStateFunctionsParsers.length,
     );
+
+    type stateFunctionParserType =
+      typeof VirtuSwapEventPool.contractStateFunctionsParsers[number];
+
+    const poolsInitialStates = chunkedInitialReturnData.map(
+      initialReturnData =>
+        _.fromPairs(
+          VirtuSwapEventPool.contractStateFunctionsParsers
+            .filter(({ name }) => name !== 'allowListLength')
+            .map(({ name }, i) => [
+              name === 'calculateReserveRatio' ? 'rRatio' : name,
+              initialReturnData[i],
+            ]),
+        ) as Pick<
+          PoolState,
+          | Exclude<
+              stateFunctionParserType['name'],
+              'calculateReserveRatio' | 'allowListLength'
+            >
+          | 'rRatio'
+        >,
+    );
+
+    const allowListsLengths = chunkedInitialReturnData.map(
+      initialReturnData => _.last(initialReturnData) as number,
+    );
+
+    const allowListsTargetsAndInputs = pools.flatMap((poolAddress, i) =>
+      Array.from({ length: allowListsLengths[i] }, (_, j) => ({
+        poolAddress,
+        index: j,
+      })),
+    );
+
+    // Get allow list (addresses of allowed tokens)
+    const allowedAddressesMultiCallParams = allowListsTargetsAndInputs.map(
+      ({ poolAddress, index }) =>
+        ({
+          target: poolAddress,
+          callData: vPairIface.encodeFunctionData('allowList', [index]),
+          decodeFunction:
+            VirtuSwapEventPool.contractAllowListAddressParser.decodeFunction,
+        } as MultiCallParams<Address>),
+    );
+
+    const allowedAddresses = await multiWrapper.aggregate(
+      allowedAddressesMultiCallParams,
+      blockNumber,
+    );
+
+    const poolsAllowLists = _.mapValues(
+      _.groupBy(
+        _.map(
+          allowedAddresses,
+          (address, i) =>
+            [allowListsTargetsAndInputs[i].poolAddress, address] as const,
+        ),
+        ([poolAddress]) => poolAddress,
+      ),
+      pairs => _.map(pairs, ([, address]) => address),
+    );
+
+    const allowLists = pools.map((poolAddress, index) => ({
+      poolAddress,
+      reservesAddresses: poolsAllowLists[poolAddress].filter(
+        address =>
+          address !== poolsInitialStates[index].token0 &&
+          address !== poolsInitialStates[index].token1,
+      ),
+    }));
+
+    // Get reserves info for each token in allow list of each pool
+    const poolsReserves = await VirtuSwapEventPool.fetchManyPoolsReserves(
+      allowLists,
+      blockNumber,
+      multiWrapper,
+      vPairIface,
+    );
+
+    return poolsInitialStates.map((initialState, index) => ({
+      ...initialState,
+      reserves: poolsReserves[index],
+    }));
   }
 
   /**
@@ -170,72 +335,14 @@ export class VirtuSwapEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // Get initial data and allowListLength
-    const initialMultiCallParams =
-      VirtuSwapEventPool.contractStateFunctionsParsers.map(
-        ({ name, decodeFunction }) =>
-          ({
-            target: this.poolAddress,
-            callData: this.vPairIface.encodeFunctionData(name),
-            decodeFunction,
-          } as MultiCallParams<ReturnType<typeof decodeFunction>>),
-      );
-
-    const initialReturnData = await this.dexHelper.multiWrapper.aggregate(
-      initialMultiCallParams,
-      blockNumber,
-    );
-
-    type stateFunctionParserType =
-      typeof VirtuSwapEventPool.contractStateFunctionsParsers[number];
-
-    const initialState = _.fromPairs(
-      VirtuSwapEventPool.contractStateFunctionsParsers
-        .filter(({ name }) => name !== 'allowListLength')
-        .map(({ name }, i) => [
-          name === 'calculateReserveRatio' ? 'rRatio' : name,
-          initialReturnData[i],
-        ]),
-    ) as Pick<
-      PoolState,
-      | Exclude<
-          stateFunctionParserType['name'],
-          'calculateReserveRatio' | 'allowListLength'
-        >
-      | 'rRatio'
-    >;
-
-    const allowListLength = _.last(initialReturnData) as number;
-
-    // Get allow list (addresses of allowed tokens)
-    const allowListMultiCallParams = Array.from(
-      { length: allowListLength },
-      (_, i) =>
-        ({
-          target: this.poolAddress,
-          callData: this.vPairIface.encodeFunctionData('allowList', [i]),
-          decodeFunction:
-            VirtuSwapEventPool.contractAllowListAddressParser.decodeFunction,
-        } as MultiCallParams<Address>),
-    );
-
-    const allowList = (
-      await this.dexHelper.multiWrapper.aggregate(
-        allowListMultiCallParams,
+    return (
+      await VirtuSwapEventPool.generateManyPoolsStates(
+        [this.poolAddress],
         blockNumber,
+        this.dexHelper.multiWrapper,
+        this.vPairIface,
       )
-    ).filter(
-      (address: Address) =>
-        address !== initialState.token0 && address !== initialState.token1,
-    );
-
-    // Get reserves info for each token in allow list
-    const reserves = await this.fetchReserves(allowList, blockNumber);
-
-    return {
-      ...initialState,
-      reserves,
-    };
+    )[0];
   }
 
   handleSync(
