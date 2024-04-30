@@ -159,7 +159,6 @@ function _priceComputationCycles(
 
     if (state.sqrtPriceX96 === step.sqrtPriceNextX96) {
       if (step.initialized) {
-
         if (state.amountSpecifiedRemaining === 0n) {
           const castTickNext = Number(step.tickNext);
           lastTicksCopy = {
@@ -168,10 +167,7 @@ function _priceComputationCycles(
           };
         }
 
-        let liquidityNet = Tick.cross(
-          ticksCopy,
-          step.tickNext,
-        );
+        let liquidityNet = Tick.cross(ticksCopy, step.tickNext);
         if (zeroForOne) liquidityNet = -liquidityNet;
 
         state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
@@ -424,11 +420,7 @@ class UniswapV3Math {
 
       if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
         if (step.initialized) {
-
-          let liquidityNet = Tick.cross(
-            poolState.ticks,
-            step.tickNext,
-          );
+          let liquidityNet = Tick.cross(poolState.ticks, step.tickNext);
 
           if (zeroForOne) liquidityNet = -liquidityNet;
 
@@ -445,10 +437,10 @@ class UniswapV3Math {
     }
 
     if (slot0Start.tick !== newTick) {
-      [
-        poolState.slot0.sqrtPriceX96,
-        poolState.slot0.tick,
-      ] = [newSqrtPriceX96, newTick];
+      [poolState.slot0.sqrtPriceX96, poolState.slot0.tick] = [
+        newSqrtPriceX96,
+        newTick,
+      ];
     } else {
       poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
     }
