@@ -377,8 +377,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs: [],
     adapterAddresses: {
-      BaseAdapter01: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
-      BaseBuyAdapter: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
+      BaseAdapter01: '0xf531fC01aFa26dAa71f581e1e18AA3B37Ee515A6',
+      BaseBuyAdapter: '0x2B99cefbfeE6f134D68aBB291386588ADe3808F8',
     },
     uniswapV2ExchangeRouterAddress:
       '0x75d199EfB540e47D27D52c62Da3E7daC2B9e834F',
