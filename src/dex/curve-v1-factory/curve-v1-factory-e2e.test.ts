@@ -27,9 +27,9 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-        // ContractMethod.directCurveV1Swap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+        ContractMethod.directCurveV1Swap,
       ],
     ],
   ]);
@@ -57,19 +57,19 @@ function testForNetwork(
                 5000,
               );
             });
-            // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenBSymbol],
-            //     tokens[tokenASymbol],
-            //     holders[tokenBSymbol],
-            //     tokenBAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),
