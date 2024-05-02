@@ -76,18 +76,19 @@ describe('SDai E2E', () => {
   const dexKey = 'SDai';
 
   describe('Mainnet', () => {
-    // const network = Network.MAINNET;
-    // const tokenASymbol: string = 'POL';
-    // const tokenBSymbol: string = 'MATIC';
-    // const tokenAAmount: string = '10000000000000000000';
-    // const tokenBAmount: string = '20000000000000000000000';
-    // testForNetwork(
-    //   network,
-    //   dexKey,
-    //   tokenASymbol,
-    //   tokenBSymbol,
-    //   tokenAAmount,
-    //   tokenBAmount,
-    // );
+    const network = Network.MAINNET;
+    const tokenASymbol: string = 'sDAI';
+    const tokenBSymbol: string = 'DAI';
+    const tokenAAmount: string = BigInt(1.2345e18).toString();
+    const tokenBAmount: string = BigInt(5.4321e18).toString();
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
   });
 });

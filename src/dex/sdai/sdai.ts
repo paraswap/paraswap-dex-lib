@@ -1,7 +1,7 @@
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
 import { DexParams, SDaiData, SDaiFunctions } from './types';
-import { Network, SwapSide } from '../../constants';
+import { NULL_ADDRESS, Network, SwapSide } from '../../constants';
 import { getDexKeysWithNetwork } from '../../utils';
 import { Adapters, SDaiConfig } from './config';
 import {
@@ -17,9 +17,10 @@ import {
 import { IDexHelper } from '../../dex-helper';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { BI_POWS } from '../../bigint-constants';
-import { SDAI_GAS_COST } from './constants';
-import PolygonMigrationAbi from '../../abi/polygon-migration/PolygonMigration.abi.json';
+import SavingsDaiAbi from '../../abi/sdai/SavingsDai.abi.json';
 import { Interface } from 'ethers/lib/utils';
+
+const SDAI_GAS_COST = 1000000;
 
 export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
   readonly hasConstantPriceLargeAmounts = true;
@@ -34,16 +35,20 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
+
     readonly sdaiAddress: string = SDaiConfig[dexKey][network].sdaiAddress,
     readonly daiAddress: string = SDaiConfig[dexKey][network].daiAddress,
+
     protected unitPrice = BI_POWS[18],
     protected adapters = Adapters[network] || {},
-    protected migratorInterface = new Interface(PolygonMigrationAbi),
+
+    protected sdaiInterface = new Interface(SavingsDaiAbi),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
   }
 
+  // TODO:
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] || null;
   }
@@ -88,6 +93,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
       return null;
     }
 
+    // TODO: wtf is unit???
     return [
       {
         prices: amounts,
@@ -105,19 +111,11 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: SDaiData,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    return {
-      targetExchange: this.sdaiAddress,
-      payload: '0x',
-      networkFee: '0',
-    };
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    limit: number,
+  ): Promise<PoolLiquidity[]> {
+    return [];
   }
 
   async getSimpleParam(
@@ -128,9 +126,9 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     data: SDaiData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapData = this.migratorInterface.encodeFunctionData(
+    const swapData = this.sdaiInterface.encodeFunctionData(
       this.isDai(srcToken) ? SDaiFunctions.deposit : SDaiFunctions.redeem,
-      [srcAmount],
+      [srcAmount, this.augustusAddress],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -143,10 +141,18 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     );
   }
 
-  async getTopPoolsForToken(
-    tokenAddress: Address,
-    limit: number,
-  ): Promise<PoolLiquidity[]> {
-    return [];
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: SDaiData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    return {
+      targetExchange: NULL_ADDRESS,
+      payload: '0x',
+      networkFee: '0',
+    };
   }
 }
