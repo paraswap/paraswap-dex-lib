@@ -9,7 +9,6 @@ const dynamicFee: _dynamic_fee = (
   _fee: bigint,
   _feemul: bigint,
 ): bigint => {
-  // console.log('_dynamic_fee customAvalanche3CoinLending');
   const { FEE_DENOMINATOR } = self.constants;
   if (_feemul <= FEE_DENOMINATOR) {
     return _fee;

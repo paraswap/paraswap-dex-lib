@@ -207,43 +207,7 @@ const stableNg: get_dy = (
 
   const fee = (dynamic_fee * dy) / FEE_DENOMINATOR;
 
-  const res = ((dy - fee) * PRECISION) / rates[j];
-
-  if (dx === 1000000000000000000n) {
-    console.log('STABLE NG get_dy');
-
-    console.log('I: ', i);
-    console.log('J: ', j);
-    console.log('DX: ', dx);
-
-    console.log('N_COINS: ', N_COINS);
-    console.log('RATES: ', rates);
-    console.log('BALANCES: ', balances);
-
-    console.log('XP: ', xp);
-
-    console.log('D: ', D);
-
-    console.log('XP[j]: ', xp[j]);
-    console.log('X: ', x);
-    console.log('Y: ', y);
-    console.log('dy: ', dy);
-
-    console.log('A: ', amp);
-
-    console.log('fee: ', base_fee);
-
-    console.log('offpeg_fee_multiplier: ', offpeg_fee_multiplier);
-    console.log('dynamic_fee: ', dynamic_fee);
-
-    console.log('fee: ', fee);
-    console.log('rates[j]: ', rates[j]);
-
-    console.log('RES: ', res);
-    console.log('--------------------------------------------------------');
-  }
-
-  return res;
+  return ((dy - fee) * PRECISION) / rates[j];
 };
 
 const customAvalanche3CoinLending: get_dy = (

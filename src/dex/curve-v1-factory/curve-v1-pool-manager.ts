@@ -151,10 +151,6 @@ export class CurveV1FactoryPoolManager {
   }
 
   initializeNewPool(identifier: string, pool: PoolPollingBase) {
-    // console.log('initializeNewPool: ', identifier);
-    // console.log('pool addr:', pool.address);
-    // console.log('pool: ', pool.poolConstants);
-
     if (this.statePollingPoolsFromId[identifier]) {
       return;
     }

@@ -564,11 +564,6 @@ export class CurveV1Factory
             }
           });
 
-          console.log(
-            'allAvailableImplementations: ',
-            allAvailableImplementations,
-          );
-
           const stateInitializePromises: Promise<void>[] = [];
           _.chunk(resultsFromFactory, 3).forEach((result, i) => {
             if (this.config.disabledPools.has(poolAddresses[i])) {
@@ -699,7 +694,6 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // console.log('getPoolIdentifiers side: ', side);
     if (side === SwapSide.BUY) {
       return [];
     }
@@ -828,8 +822,6 @@ export class CurveV1Factory
               srcTokenAddress,
               destTokenAddress,
             );
-
-            console.log('POOL: ', pool);
 
             if (poolData === null) {
               this.logger.error(

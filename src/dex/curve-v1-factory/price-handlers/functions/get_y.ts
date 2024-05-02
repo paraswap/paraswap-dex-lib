@@ -15,7 +15,6 @@ const stableNg = (
   _amp?: bigint,
   _D?: bigint,
 ): bigint => {
-  // console.log('stableNg get_y');
   const A_PRECISION = requireConstant(self, 'A_PRECISION', 'stableNg');
 
   const { N_COINS, BI_N_COINS } = self.constants;

@@ -86,17 +86,6 @@ export class FactoryStateHandler extends PoolPollingBase {
         address.toLowerCase() === this.factoryAddress.toLowerCase(),
     );
 
-    // console.log('this.factoryAddress: ', this.factoryAddress);
-    // console.log('factoryConfig: ', factoryConfig);
-    // console.log(
-    //   'factoryConfig?.maxPlainCoins?.toString() : ',
-    //   factoryConfig?.maxPlainCoins?.toString(),
-    // );
-    // console.log(
-    //   "`uint256[${factoryConfig?.maxPlainCoins?.toString() || ''}]`: ",
-    //   `uint256[${factoryConfig?.maxPlainCoins?.toString() || ''}]`,
-    // );
-
     const calls = [
       {
         target: this.factoryAddress,
