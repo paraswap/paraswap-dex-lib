@@ -30,8 +30,15 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [SwapSide.SELL, [ContractMethod.simpleSwap]],
-    [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.simpleSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+      ],
+    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -81,10 +88,6 @@ function testForNetwork(
 }
 
 describe('AngleStakedStable E2E', () => {
-  // same addresses accross all chains
-  const tokens = Tokens[Network.MAINNET];
-  const dexKey = 'AngleStakedStable';
-
   const networksEUR = [
     Network.MAINNET,
     Network.ARBITRUM,
@@ -103,6 +106,7 @@ describe('AngleStakedStable E2E', () => {
 
   networksEUR.forEach(network =>
     describe(`${network} - EUR`, () => {
+      const dexKey = 'AngleStakedStableEUR';
       const tokenASymbol: string = 'EURA';
       const tokenBSymbol: string = 'stEUR';
       const tokenAAmount: string = '990000000000000000';
@@ -122,6 +126,7 @@ describe('AngleStakedStable E2E', () => {
 
   networksUSD.forEach(network =>
     describe(`${network} - USD`, () => {
+      const dexKey = 'AngleStakedStableUSD';
       const tokenASymbol: string = 'USDA';
       const tokenBSymbol: string = 'stUSD';
       const tokenAAmount: string = '990000000000000000';

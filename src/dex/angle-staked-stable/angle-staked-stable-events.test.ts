@@ -24,7 +24,7 @@ async function fetchPoolState(
 type EventMappings = Record<string, number[]>;
 
 describe('AngleStakedStable EventPool Mainnet', () => {
-  const dexKey = 'AngleStakedStable';
+  const dexKey = 'AngleStakedStableEUR';
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
@@ -57,8 +57,8 @@ describe('AngleStakedStable EventPool Mainnet', () => {
       dexKey,
       network,
       dexHelper,
-      AngleStakedStableConfig[dexKey][network].stEUR,
-      AngleStakedStableConfig[dexKey][network].EURA,
+      AngleStakedStableConfig[dexKey][network].stakeToken,
+      AngleStakedStableConfig[dexKey][network].agToken,
       logger,
     );
   });

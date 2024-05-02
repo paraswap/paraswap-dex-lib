@@ -53,49 +53,27 @@ export class AngleStakedStable
     const config = AngleStakedStableConfig[dexKey][network];
     this.logger = dexHelper.getLogger(dexKey);
     this.config = {
-      stEUR: config.stEUR.toLowerCase(),
-      EURA: config.EURA.toLowerCase(),
-      stUSD: config.stUSD.toLowerCase(),
-      USDA: config.USDA.toLowerCase(),
+      stakeToken: config.stakeToken.toLowerCase(),
+      agToken: config.agToken.toLowerCase(),
     };
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
-    this.eventPools[this.config.stEUR] = new AngleStakedStableEventPool(
-      `${this.dexKey}_${this.config.stEUR!.toLowerCase()}`,
+    this.eventPools[this.config.stakeToken] = new AngleStakedStableEventPool(
+      `${this.dexKey}_${this.config.stakeToken!.toLowerCase()}`,
       this.network,
       this.dexHelper,
-      this.config.stEUR,
-      this.config.EURA,
+      this.config.stakeToken,
+      this.config.agToken,
       this.logger,
     );
-    await this.eventPools[this.config.stEUR].initialize(blockNumber);
-
-    this.eventPools[this.config.stUSD] = new AngleStakedStableEventPool(
-      `${this.dexKey}_${this.config.stUSD!.toLowerCase()}`,
-      this.network,
-      this.dexHelper,
-      this.config.stUSD,
-      this.config.USDA,
-      this.logger,
-    );
-    await this.eventPools[this.config.stUSD].initialize(blockNumber);
+    await this.eventPools[this.config.stakeToken].initialize(blockNumber);
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -107,10 +85,6 @@ export class AngleStakedStable
     return [`${this.dexKey}_${knownInfo.stakeToken!.toLowerCase()}`];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -128,7 +102,6 @@ export class AngleStakedStable
     const stakeToken = knownInfo.stakeToken!;
     const eventPool = this.eventPools[stakeToken];
     const exchange = `${this.dexKey}`;
-    // const exchange = `${this.dexKey}_${stakeToken.toLowerCase()}`;
     const state = eventPool?.getState(blockNumber);
     if (this.eventPools === null || state === undefined || state === null)
       return null;
@@ -186,9 +159,6 @@ export class AngleStakedStable
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -199,9 +169,20 @@ export class AngleStakedStable
   ): AdapterExchangeParam {
     const { exchange } = data;
 
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          toStaked: 'bool',
+        },
+      },
+      {
+        toStaked: srcToken.toLowerCase() === this.config.agToken,
+      },
+    );
+
     return {
       targetExchange: exchange,
-      payload: '0x',
+      payload,
       networkFee: '0',
     };
   }
@@ -222,8 +203,7 @@ export class AngleStakedStable
 
     // Encode here the transaction arguments
     const swapData =
-      srcToken.toLowerCase() === this.config.EURA ||
-      srcToken.toLowerCase() === this.config.USDA
+      srcToken.toLowerCase() === this.config.agToken
         ? AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
             side === SwapSide.SELL ? 'deposit' : 'mint',
             [
@@ -258,14 +238,7 @@ export class AngleStakedStable
   async updatePoolState(): Promise<void> {
     const tokenBalanceMultiCall = [
       {
-        target: this.config.stEUR,
-        callData:
-          AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
-            'paused',
-          ),
-      },
-      {
-        target: this.config.stUSD,
+        target: this.config.stakeToken,
         callData:
           AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
             'paused',
@@ -278,15 +251,10 @@ export class AngleStakedStable
         .call()
     ).returnData;
 
-    this.isPaused[this.config.stEUR] =
+    this.isPaused[this.config.stakeToken] =
       AngleStakedStableEventPool.angleStakedStableIface.decodeFunctionResult(
         'paused',
         returnData[0],
-      )[0] as boolean;
-    this.isPaused[this.config.stUSD] =
-      AngleStakedStableEventPool.angleStakedStableIface.decodeFunctionResult(
-        'paused',
-        returnData[1],
       )[0] as boolean;
   }
 
@@ -297,45 +265,23 @@ export class AngleStakedStable
     limit: number,
   ): Promise<PoolLiquidity[]> {
     if (
-      (this.isPaused[this.config.stEUR] ||
-        (tokenAddress.toLowerCase() !== this.config.EURA &&
-          tokenAddress.toLowerCase() !== this.config.stEUR)) &&
-      (this.isPaused[this.config.stUSD] ||
-        (tokenAddress.toLowerCase() !== this.config.USDA &&
-          tokenAddress.toLowerCase() !== this.config.stUSD))
-    )
+      this.isPaused[this.config.stakeToken] ||
+      (tokenAddress.toLowerCase() !== this.config.agToken &&
+        tokenAddress.toLowerCase() !== this.config.stakeToken)
+    ) {
       return [];
+    }
 
-    if (
-      !(
-        this.isPaused[this.config.stEUR] ||
-        (tokenAddress.toLowerCase() !== this.config.EURA &&
-          tokenAddress.toLowerCase() !== this.config.stEUR)
-      )
-    )
-      return [
-        {
-          exchange: `${this.dexKey}_${this.config.stEUR!.toLowerCase()}`,
-          address: this.config.stEUR,
-          connectorTokens: [
-            tokenAddress.toLowerCase() === this.config.EURA
-              ? ({ address: this.config.stEUR, decimals: 18 } as Token)
-              : ({ address: this.config.EURA, decimals: 18 } as Token),
-          ],
-          // liquidity is infinite as to have been able to mint stEUR, you must have deposited EURA
-          liquidityUSD: 1e12,
-        },
-      ];
     return [
       {
-        exchange: `${this.dexKey}_${this.config.stUSD!.toLowerCase()}`,
-        address: this.config.stUSD,
+        exchange: `${this.dexKey}_${this.config.stakeToken!.toLowerCase()}`,
+        address: this.config.stakeToken,
         connectorTokens: [
-          tokenAddress.toLowerCase() === this.config.USDA
-            ? ({ address: this.config.stUSD, decimals: 18 } as Token)
-            : ({ address: this.config.USDA, decimals: 18 } as Token),
+          tokenAddress.toLowerCase() === this.config.agToken
+            ? ({ address: this.config.stakeToken, decimals: 18 } as Token)
+            : ({ address: this.config.agToken, decimals: 18 } as Token),
         ],
-        // liquidity is infinite as to have been able to mint stUSD, you must have deposited USDA
+        // liquidity is infinite as to have been able to mint stakeToken, you must have deposited agToken
         liquidityUSD: 1e12,
       },
     ];
@@ -352,27 +298,15 @@ export class AngleStakedStable
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
     if (
-      (srcTokenAddress === this.config.EURA &&
-        destTokenAddress === this.config.stEUR) ||
-      (srcTokenAddress === this.config.stEUR &&
-        destTokenAddress === this.config.EURA)
+      (srcTokenAddress === this.config.agToken &&
+        destTokenAddress === this.config.stakeToken) ||
+      (srcTokenAddress === this.config.stakeToken &&
+        destTokenAddress === this.config.agToken)
     ) {
       return {
         known: true,
-        agToken: this.config.EURA,
-        stakeToken: this.config.stEUR,
-      };
-    }
-    if (
-      (srcTokenAddress === this.config.USDA &&
-        destTokenAddress === this.config.stUSD) ||
-      (srcTokenAddress === this.config.stUSD &&
-        destTokenAddress === this.config.USDA)
-    ) {
-      return {
-        known: true,
-        agToken: this.config.USDA,
-        stakeToken: this.config.stUSD,
+        agToken: this.config.agToken,
+        stakeToken: this.config.stakeToken,
       };
     }
     return { known: false, agToken: null, stakeToken: null };
