@@ -5,15 +5,15 @@ import {
   AdapterExchangeParam,
   Address,
   ExchangePrices,
+  ExchangeTxInfo,
   Log,
   Logger,
-  TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
+  TxInfo,
 } from '../../types';
 import {
   ETHER_ADDRESS,
@@ -29,12 +29,14 @@ import { StablePool } from './pools/stable/StablePool';
 import { WeightedPool } from './pools/weighted/WeightedPool';
 import { PhantomStablePool } from './pools/phantom-stable/PhantomStablePool';
 import { LinearPool } from './pools/linear/LinearPool';
+import { Gyro3Pool } from './pools/gyro/Gyro3Pool';
+import { GyroEPool } from './pools/gyro/GyroEPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
-  getDexKeysWithNetwork,
   getBigIntPow,
+  getDexKeysWithNetwork,
   uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -44,12 +46,12 @@ import {
   BalancerPoolTypes,
   BalancerSwap,
   BalancerV2Data,
+  BalancerV2DirectParam,
   OptimizedBalancerV2Data,
   PoolState,
   PoolStateCache,
   PoolStateMap,
   SubgraphPoolAddressDictionary,
-  BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
 } from './types';
@@ -57,7 +59,7 @@ import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { BalancerConfig, Adapters } from './config';
+import { Adapters, BalancerConfig } from './config';
 import {
   getAllPoolsUsedInPaths,
   isSameAddress,
@@ -91,6 +93,8 @@ const enabledPoolTypes = [
   BalancerPoolTypes.SiloLinear,
   BalancerPoolTypes.TetuLinear,
   BalancerPoolTypes.YearnLinear,
+  BalancerPoolTypes.GyroE,
+  BalancerPoolTypes.Gyro3,
 ];
 
 const disabledPoolIds = [
@@ -111,6 +115,7 @@ const disabledPoolIds = [
   '0x8a6b25e33b12d1bb6929a8793961076bd1f9d3eb0002000000000000000003e8',
   '0x959216bb492b2efa72b15b7aacea5b5c984c3cca000200000000000000000472',
   '0x9b692f571b256140a39a34676bffa30634c586e100000000000000000000059d',
+  '0xe7b1d394f3b40abeaa0b64a545dbcf89da1ecb3f00010000000000000000009a',
 
   // polygon
   '0xb3d658d5b95bf04e2932370dd1ff976fe18dd66a000000000000000000000ace',
@@ -185,12 +190,15 @@ const fetchAllPools = `query ($count: Int) {
     id
     address
     poolType
+    poolTypeVersion
     tokens (orderBy: index) {
       address
       decimals
     }
     mainIndex
     wrappedIndex
+
+    root3Alpha
   }
 }`;
 // skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Experimental.
@@ -223,11 +231,22 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   } = {};
 
   pools: {
-    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
+    [type: string]:
+      | WeightedPool
+      | StablePool
+      | LinearPool
+      | PhantomStablePool
+      | Gyro3Pool
+      | GyroEPool;
   };
 
   public allPools: SubgraphPoolBase[] = [];
   vaultDecoder: (log: Log) => any;
+
+  buySupportedPoolTypes: Set<BalancerPoolTypes> = new Set([
+    BalancerPoolTypes.Weighted,
+    BalancerPoolTypes.GyroE,
+  ]);
 
   eventSupportedPoolTypes: BalancerPoolTypes[] = [
     BalancerPoolTypes.Stable,
@@ -286,6 +305,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       true,
     );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
+    const gyro3Pool = new Gyro3Pool(this.vaultAddress, this.vaultInterface);
+    const gyroEPool = new GyroEPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
     this.pools[BalancerPoolTypes.Weighted] = weightedPool;
@@ -307,6 +328,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.BeefyLinear] = linearPool;
     // Beets uses "Linear" generically for all linear pool types
     this.pools[BalancerPoolTypes.Linear] = linearPool;
+
+    this.pools[BalancerPoolTypes.Gyro3] = gyro3Pool;
+    this.pools[BalancerPoolTypes.GyroE] = gyroEPool;
+
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -365,6 +390,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.logger.info(
       `Fetching ${this.parentName}_${this.network} Pools from subgraph`,
     );
+
     const variables = {
       count: MAX_POOL_CNT,
     };
@@ -400,6 +426,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.logger.info(
       `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
     );
+
     return allPools;
   }
 
@@ -463,8 +490,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
 
     if (
-      subgraphPool.poolType !== BalancerPoolTypes.Weighted &&
-      side === SwapSide.BUY
+      side === SwapSide.BUY &&
+      !this.buySupportedPoolTypes.has(subgraphPool.poolType)
     ) {
       return null;
     }
@@ -801,6 +828,7 @@ export class BalancerV2
       }
 
       const allPools = this.getPoolsWithTokenPair(_from, _to);
+
       const allowedPools = limitPools
         ? allPools.filter(({ address }) =>
             limitPools.includes(`${this.dexKey}_${address.toLowerCase()}`),
@@ -852,72 +880,85 @@ export class BalancerV2
 
       const poolPrices = allowedPools
         .map((pool: SubgraphPoolBase) => {
-          const poolAddress = pool.address.toLowerCase();
+          try {
+            const poolAddress = pool.address.toLowerCase();
 
-          const path = poolGetPathForTokenInOut(
-            _from.address,
-            _to.address,
-            pool,
-            this.poolAddressMap,
-            side,
-          );
-
-          let pathAmounts = amounts;
-          let resOut: { unit: bigint; prices: bigint[] } | null = null;
-
-          for (let i = 0; i < path.length; i++) {
-            const poolAddress = path[i].pool.address.toLowerCase();
-            const poolState = (eventPoolStates[poolAddress] ||
-              nonEventPoolStates[poolAddress]) as PoolState | undefined;
-            if (!poolState) {
-              this.logger.error(`Unable to find the poolState ${poolAddress}`);
-              return null;
-            }
-
-            const unitVolume = getBigIntPow(
-              (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
-                .decimals,
-            );
-
-            const res = this.eventPools.getPricesPool(
-              path[i].tokenIn,
-              path[i].tokenOut,
-              path[i].pool,
-              poolState,
-              pathAmounts,
-              unitVolume,
+            const path = poolGetPathForTokenInOut(
+              _from.address,
+              _to.address,
+              pool,
+              this.poolAddressMap,
               side,
             );
 
-            if (!res) {
+            let pathAmounts = amounts;
+            let resOut: { unit: bigint; prices: bigint[] } | null = null;
+
+            for (let i = 0; i < path.length; i++) {
+              const poolAddress = path[i].pool.address.toLowerCase();
+              const poolState = (eventPoolStates[poolAddress] ||
+                nonEventPoolStates[poolAddress]) as PoolState | undefined;
+              if (!poolState) {
+                this.logger.error(
+                  `Unable to find the poolState ${poolAddress}`,
+                );
+                return null;
+              }
+
+              const unitVolume = getBigIntPow(
+                (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
+                  .decimals,
+              );
+
+              const res = this.eventPools.getPricesPool(
+                path[i].tokenIn,
+                path[i].tokenOut,
+                path[i].pool,
+                poolState,
+                pathAmounts,
+                unitVolume,
+                side,
+              );
+
+              if (!res) {
+                return null;
+              }
+
+              pathAmounts = res.prices;
+
+              if (i === path.length - 1) {
+                resOut = res;
+              }
+            }
+
+            if (!resOut) {
               return null;
             }
 
-            pathAmounts = res.prices;
+            return {
+              unit: resOut.unit,
+              prices: resOut.prices,
+              data: {
+                poolId: pool.id,
+              },
+              poolAddresses: [poolAddress],
+              exchange: this.dexKey,
+              gasCost:
+                STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
+              poolIdentifier: `${this.dexKey}_${poolAddress}`,
+            };
 
-            if (i === path.length - 1) {
-              resOut = res;
-            }
+            // TODO: re-check what should be the current block time stamp
+          } catch (e) {
+            this.logger.warn(
+              `Error_getPrices ${from.symbol || from.address}, ${
+                to.symbol || to.address
+              }, ${side}, ${pool.address}:`,
+              e,
+            );
+
+            return;
           }
-
-          if (!resOut) {
-            return null;
-          }
-
-          return {
-            unit: resOut.unit,
-            prices: resOut.prices,
-            data: {
-              poolId: pool.id,
-            },
-            poolAddresses: [poolAddress],
-            exchange: this.dexKey,
-            gasCost:
-              STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
-            poolIdentifier: `${this.dexKey}_${poolAddress}`,
-          };
-
-          // TODO: re-check what should be the current block time stamp
         })
         .filter(p => !!p);
       return poolPrices as ExchangePrices<BalancerV2Data>;

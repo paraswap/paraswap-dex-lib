@@ -49,11 +49,14 @@ import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { AlgebraEventPoolV1_9_bidirectional_fee } from './algebra-pool-v1_9_bidirectional_fee';
 
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
 };
+
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
 
 // const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 // const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
@@ -67,7 +70,10 @@ const MAX_STALE_STATE_BLOCK_AGE = {
   [Network.ZKEVM]: 150, // approximately 3min
 };
 
-type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
+type IAlgebraEventPool =
+  | AlgebraEventPoolV1_1
+  | AlgebraEventPoolV1_9
+  | AlgebraEventPoolV1_9_bidirectional_fee;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private readonly factory: AlgebraFactory;
@@ -93,7 +99,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
   private AlgebraPoolImplem:
     | typeof AlgebraEventPoolV1_1
-    | typeof AlgebraEventPoolV1_9;
+    | typeof AlgebraEventPoolV1_9
+    | typeof AlgebraEventPoolV1_9_bidirectional_fee;
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
@@ -130,7 +137,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
     this.AlgebraPoolImplem =
-      config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
+      config.version === 'v1.1'
+        ? AlgebraEventPoolV1_1
+        : config.version === 'v1.9-bidirectional-fee'
+        ? AlgebraEventPoolV1_9_bidirectional_fee
+        : AlgebraEventPoolV1_9;
 
     this.factory = new AlgebraFactory(
       dexHelper,
@@ -269,15 +280,6 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
         return null;
       }
-
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-        }),
-      );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -314,7 +316,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       }
     } catch (e) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-        /* 
+        /*
          protection against 2 race conditions
           1/ if pool.initialize() promise rejects after the Pool creation event got treated
           2/ if the rpc node we hit on the http request is lagging behind the one we got event from (websocket)
@@ -372,10 +374,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(
+      PoolsRegistryHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }

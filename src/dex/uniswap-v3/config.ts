@@ -8,6 +8,7 @@ import { decodeStateMultiCallResultWithRelativeBitmaps } from './forks/ramses-v2
 import { RamsesV2EventPool } from './forks/ramses-v2/ramses-v2-pool';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
+const RAMSES_FORKS_FEES = [...SUPPORTED_FEES, 50n, 250n];
 
 // Pools that will be initialized on app startup
 // They are added for testing
@@ -246,7 +247,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       deployer: '0xb3e423ab9cE6C03D98326A3A2a0D7D96b0829f22',
       quoter: '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
       router: '0xAA23611badAFB62D37E7295A682D21960ac85A90',
-      supportedFees: [...SUPPORTED_FEES, 50n],
+      supportedFees: RAMSES_FORKS_FEES,
       stateMulticall: '0x50EE4112Cab9c79812F23bE079aB3911395ACc8e',
       stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
@@ -258,6 +259,26 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       subgraphURL:
         'https://api.thegraph.com/subgraphs/name/ramsesexchange/concentrated-liquidity-graph',
+    },
+  },
+  PharaohV2: {
+    [Network.AVALANCHE]: {
+      factory: '0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42',
+      deployer: '0x95120704f4E2D545Aea8b6B3c16d9Da1fa32E30F',
+      quoter: '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
+      router: '0xAAAE99091Fbb28D400029052821653C1C752483B',
+      supportedFees: RAMSES_FORKS_FEES,
+      stateMulticall: '0xd32C191e0febaa6Cc93A29Cb676474c72486E00b',
+      stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
+      uniswapMulticall: '0x0139141Cd4Ee88dF3Cdb65881D411bAE271Ef0C2',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      eventPoolImplementation: RamsesV2EventPool,
+      decodeStateMultiCallResultWithRelativeBitmaps,
+      initHash:
+        '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/66247/pharaoh-cl/version/latest',
     },
   },
   'QuickSwapV3.1': {
@@ -273,6 +294,22 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL:
         'https://api.studio.thegraph.com/query/44554/uniswap-v3/version/latest',
+    },
+  },
+  SpookySwapV3: {
+    [Network.FANTOM]: {
+      factory: '0x7928a2c48754501f3a8064765ECaE541daE5c3E6',
+      quoter: '0xB9507f2ED171D52c5c2EFaeAbdE440d264504A92',
+      router: '0x765132A0630Cd4401b971706Bb21c0FB5Ab547ad',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x2cc482a66dd677ad33900018f774052717c533fb',
+      uniswapMulticall: '0x96a7F0E4905F39508b17Faef5aC456C72a4E1319',
+      chunksCount: 5,
+      initRetryFrequency: 30,
+      initHash:
+        '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54',
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/0xalucard/ftm-spooky-v3',
     },
   },
   Retro: {
@@ -301,6 +338,20 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/baseswapfi/v3-base',
+    },
+  },
+  AlienBaseV3: {
+    [Network.BASE]: {
+      factory: '0x0Fd83557b2be93617c9C1C1B6fd549401C74558C',
+      quoter: '0x4fDBD73aD4B1DDde594BF05497C15f76308eFfb9',
+      router: '0x79edabc464dcdce8cbf1b60c003aceef7e0282d9',
+      supportedFees: [10000n, 3000n, 750n, 200n],
+      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL: 'https://api.studio.thegraph.com/query/59130/v3alb/0.3',
     },
   },
 };

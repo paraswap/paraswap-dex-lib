@@ -1245,6 +1245,27 @@ describe('Solidly E2E', () => {
         });
       });
     });
+
+    describe('PharaohV1', () => {
+      const dexKey = 'PharaohV1';
+
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'WAVAX';
+
+      const tokenAAmount: string = '100000';
+      const tokenBAmount: string = '100000000000000000';
+      const nativeTokenAmount = '100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
   });
 
   describe('Arbitrum', () => {
