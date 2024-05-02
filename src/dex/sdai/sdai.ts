@@ -2,7 +2,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
 import { DexParams, SDaiData, SDaiFunctions } from './types';
 import { NULL_ADDRESS, Network, SwapSide } from '../../constants';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { Adapters, SDaiConfig } from './config';
 import {
   AdapterExchangeParam,
@@ -39,9 +39,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     readonly sdaiAddress: string = SDaiConfig[dexKey][network].sdaiAddress,
     readonly daiAddress: string = SDaiConfig[dexKey][network].daiAddress,
 
-    protected unitPrice = BI_POWS[18],
     protected adapters = Adapters[network] || {},
-
     protected sdaiInterface = new Interface(SavingsDaiAbi),
   ) {
     super(dexHelper, dexKey);
@@ -50,7 +48,8 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
 
   // TODO:
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] || null;
+    // return this.adapters[side] || null;
+    return null;
   }
 
   isSDai(tokenAddress: Address) {
@@ -75,10 +74,10 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     blockNumber: number,
   ): Promise<string[]> {
     if (this.isAppropriatePair(srcToken, destToken)) {
-      return [`${this.dexKey}_${srcToken.address}_${destToken.address}`];
+      return [];
     }
 
-    return [];
+    return [`${this.dexKey}_${srcToken.address}_${destToken.address}`];
   }
 
   async getPricesVolume(
@@ -93,11 +92,12 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
       return null;
     }
 
-    // TODO: wtf is unit???
     return [
       {
         prices: amounts,
-        unit: this.unitPrice,
+        unit: getBigIntPow(
+          (side === SwapSide.SELL ? destToken : srcToken).decimals,
+        ),
         gasCost: SDAI_GAS_COST,
         exchange: this.dexKey,
         poolAddresses: [this.sdaiAddress],

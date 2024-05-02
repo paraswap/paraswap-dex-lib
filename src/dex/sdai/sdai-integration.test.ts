@@ -32,7 +32,7 @@ describe('SDai', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(`${DaiToken} <> ${SDaiToken} Pool Identifiers: `, pools);
+    console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -44,7 +44,7 @@ describe('SDai', function () {
       blocknumber,
       pools,
     );
-    console.log(`${DaiToken} <> ${SDaiToken} Pool Prices: `, poolPrices);
+    console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
@@ -61,7 +61,7 @@ describe('SDai', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(`${SDaiToken} <> ${DaiToken} Pool Identifiers: `, pools);
+    console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -73,7 +73,7 @@ describe('SDai', function () {
       blocknumber,
       pools,
     );
-    console.log(`${SDaiToken} <> ${DaiToken} Pool Prices: `, poolPrices);
+    console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
@@ -90,7 +90,7 @@ describe('SDai', function () {
       SwapSide.BUY,
       blocknumber,
     );
-    console.log(`${DaiToken} <> ${SDaiToken} Pool Identifiers: `, pools);
+    console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -102,7 +102,7 @@ describe('SDai', function () {
       blocknumber,
       pools,
     );
-    console.log(`${DaiToken} <> ${SDaiToken} Pool Prices: `, poolPrices);
+    console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
@@ -119,7 +119,7 @@ describe('SDai', function () {
       SwapSide.BUY,
       blocknumber,
     );
-    console.log(`${SDaiToken} <> ${DaiToken} Pool Identifiers: `, pools);
+    console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 
@@ -131,7 +131,7 @@ describe('SDai', function () {
       blocknumber,
       pools,
     );
-    console.log(`${SDaiToken} <> ${DaiToken} Pool Prices: `, poolPrices);
+    console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
