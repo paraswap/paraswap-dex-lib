@@ -286,8 +286,8 @@ const implementations: Record<ImplementationNames, _calc_withdraw_one_coin> = {
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: factoryPlain2EthEma2,
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customArbitrum2CoinBtc,
 
-  [ImplementationNames.FACTORY_STABLE_NG]: factoryPlain2EthEma2,
-  [ImplementationNames.FACTORY_STABLE_6_NG]: factoryPlain2EthEma2,
+  [ImplementationNames.FACTORY_STABLE_NG]: notImplemented,
+  [ImplementationNames.FACTORY_STABLE_6_NG]: notImplemented,
 };
 
 export default implementations;
