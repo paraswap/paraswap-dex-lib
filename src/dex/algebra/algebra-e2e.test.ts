@@ -296,4 +296,26 @@ describe('Algebra', () => {
       );
     });
   });
+
+  describe('SwapBasedV3', () => {
+    const dexKey = 'SwapBasedV3';
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'WETH';
+
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
 });
