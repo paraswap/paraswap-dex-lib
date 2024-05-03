@@ -175,32 +175,24 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xdcc91f930b42619377c200ba05b7513f2958b202',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
         '0x933f4769dcc27fc7345d9d5975ae48ec4d0f829c': {
           name: ImplementationNames.FACTORY_STABLE_NG,
           address: '0x933f4769dcc27fc7345d9d5975ae48ec4d0f829c',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
         '0xede71f77d7c900dca5892720e76316c6e575f0f7': {
           name: ImplementationNames.FACTORY_STABLE_NG,
           address: '0xede71f77d7c900dca5892720e76316c6e575f0f7',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
         '0xdd7ebb1c49780519dd9755b8b1a23a6f42ce099e': {
           name: ImplementationNames.FACTORY_STABLE_NG,
           address: '0xdd7ebb1c49780519dd9755b8b1a23a6f42ce099e',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
       },
       customPools: {
@@ -349,16 +341,12 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xe265fc390e9129b7e337da23cd42e00c34da2ce3',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
         '0xa7ba18eefcd9513230987ec2fab6711af5abd9c2': {
           name: ImplementationNames.FACTORY_STABLE_NG,
           address: '0xa7ba18eefcd9513230987ec2fab6711af5abd9c2',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
       },
       customPools: {
@@ -480,8 +468,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x5702bdb1ec244704e3cbbaae11a0275ae5b07499',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
       },
       customPools: {
@@ -726,16 +712,12 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xf6841c27fe35ed7069189afd5b81513578afd7ff',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
         '0xff02cbd91f57a778bab7218da562594a680b8b61': {
           name: ImplementationNames.FACTORY_STABLE_NG,
           address: '0xff02cbd91f57a778bab7218da562594a680b8b61',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
       },
       customPools: {
@@ -867,8 +849,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x635742dcc8313dcf8c904206037d962c042eafbd',
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
-          isOffpegFeeMultiplierSupported: true,
-          needsToPullNCoins: true,
         },
       },
       customPools: {
@@ -1000,10 +980,7 @@ const configAddressesNormalizer = (
               ? normalizeAddress(implementationConfig.basePoolAddress)
               : undefined,
             isStoreRateSupported: implementationConfig.isStoreRateSupported,
-            isOffpegFeeMultiplierSupported:
-              implementationConfig.isOffpegFeeMultiplierSupported,
             liquidityApiSlug: implementationConfig.liquidityApiSlug,
-            needsToPullNCoins: implementationConfig.needsToPullNCoins,
           };
           acc[normalizeAddress(implementationAddress)] =
             normalizedImplementation;

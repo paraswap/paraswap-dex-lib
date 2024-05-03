@@ -50,8 +50,6 @@ export class FactoryStateHandler extends PoolPollingBase {
     baseStatePoolPolling?: PoolPollingBase,
     customGasCost?: number,
     readonly isStoredRatesSupported: boolean = false,
-    readonly isOffpegFeeMultiplierSupported: boolean = false,
-    readonly needsToPullNCoins: boolean = false,
     private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),
@@ -147,7 +145,7 @@ export class FactoryStateHandler extends PoolPollingBase {
       });
     }
 
-    if (this.isOffpegFeeMultiplierSupported) {
+    if (factoryConfig?.isStableNg) {
       calls.push({
         target: this.address,
         callData: this.abiCoder.encodeFunctionCall(
@@ -162,9 +160,7 @@ export class FactoryStateHandler extends PoolPollingBase {
         ),
         decodeFunction: uint256ToBigInt,
       });
-    }
 
-    if (this.needsToPullNCoins) {
       calls.push({
         target: this.address,
         callData: this.abiCoder.encodeFunctionCall(

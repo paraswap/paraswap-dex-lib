@@ -160,9 +160,7 @@ export type FactoryPoolImplementations = {
   basePoolAddress?: Address;
   customGasCost?: number;
   isStoreRateSupported?: boolean;
-  isOffpegFeeMultiplierSupported?: boolean;
   liquidityApiSlug?: string;
-  needsToPullNCoins?: boolean;
 };
 
 export type CustomPoolConfig = {
