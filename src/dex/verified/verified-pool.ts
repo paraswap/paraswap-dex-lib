@@ -278,7 +278,7 @@ export class VerifiedEventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   //gets prices for from and to in a pool(primary or secondarypool) when buying or selling
-  //amounnt must be an array with 0 as first element: [0n, amounts]
+  //amounnt must be an array with 0 as first element: [0n, amount]
   getPricesPool(
     from: Token,
     to: Token,

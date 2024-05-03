@@ -29,7 +29,9 @@ export function decodeThrowError(
   poolAddress: string,
 ): Result {
   if (!resultEntry.success)
-    throw new Error(`Failed to execute ${functionName} for ${poolAddress}`);
+    throw new Error(
+      `Failed to execute ${functionName} for ${poolAddress} result: ${resultEntry}`,
+    );
   return contractInterface.decodeFunctionResult(
     functionName,
     resultEntry.returnData,

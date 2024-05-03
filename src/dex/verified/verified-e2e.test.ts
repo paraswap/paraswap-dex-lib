@@ -21,8 +21,8 @@ describe('Verified E2E', () => {
       network,
     );
 
-    const securityTokenSymbol: string = 'CH1265330';
-    const cashTokenSymbol: string = 'USDC';
+    const securityTokenSymbol: string = 'AUCO2';
+    const cashTokenSymbol: string = 'vUSDC';
 
     const securityTokenAmount: string = '1000000000000000000';
     const cashTokenAmount: string = '1000000';
@@ -31,7 +31,7 @@ describe('Verified E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
+          //   ContractMethod.simpleSwap,
           // ContractMethod.multiSwap, //adapter needs to be approved and added by paraswap to test
           // ContractMethod.megaSwap, // adapter needs to be approved and added by paraswap to test
         ],

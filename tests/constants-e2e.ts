@@ -453,6 +453,18 @@ export const Tokens: {
       addBalance: _balancesFn,
       addAllowance: _allowancesFn,
     },
+    AUCO2: {
+      address: '0x5D0270967baB81d0822e500b986CB6652186eaa9',
+      decimals: 18,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
+    },
+    vUSDC: {
+      address: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359',
+      decimals: 6,
+      addBalance: _balancesFn,
+      addAllowance: _allowancesFn,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },

@@ -164,18 +164,18 @@ async function testPricingOnNetwork(
   });
 }
 
-describe('Verified Integration Tests', function () {
+describe('Verified Integration Tests on Polygon', function () {
   const dexKey = 'Verified';
   let verified: Verified;
   let blockNumber: number;
   const network = Network.POLYGON;
   const dexHelper = new DummyDexHelper(network);
   const tokens = Tokens[network];
-  const srcTokenSymbol = 'USDC';
-  const destTokenSymbol = 'CH1265330';
+  const srcTokenSymbol = 'vUSDC';
+  const destTokenSymbol = 'AUCO2';
 
-  //stop at 2 USDC(2000000) because to avoid 0 prices current USDC balance is 2.25016(2250160)
-  //anything above the balance when buying will give 0 price
+  //stop at 2 USDC(2000000) because to avoid many 0 prices current USDC balance is 1.5(150000)
+  //anything above the balance when buying will give 0 price for primary pool
   const usdcAmounts = [
     0n,
     1n * BI_POWS[tokens[srcTokenSymbol].decimals],
@@ -240,7 +240,6 @@ describe('Verified Integration Tests', function () {
     );
   });
 
-  //will return 0 prices due to minimumOrderSize of the pool
   it('getPoolIdentifiers and getPricesVolume **BUY** for Security in USDC out', async function () {
     await testPricingOnNetwork(
       verified,
@@ -277,17 +276,17 @@ describe('Verified Integration Tests', function () {
     ).not.toEqual(undefined || null);
 
     //don't check liquidity for now polygon pools do not have liquidity yet
-    // if (!verified.hasConstantPriceLargeAmounts) {
-    //   checkPoolsLiquidity(
-    //     usdcPoolLiquidity,
-    //     networkTokens[srcTokenSymbol].address,
-    //     dexKey,
-    //   );
-    //   checkPoolsLiquidity(
-    //     securityPoolLiquidity,
-    //     networkTokens[destTokenSymbol].address,
-    //     dexKey,
-    //   );
-    // }
+    if (!verified.hasConstantPriceLargeAmounts) {
+      checkPoolsLiquidity(
+        usdcPoolLiquidity,
+        networkTokens[srcTokenSymbol].address,
+        dexKey,
+      );
+      checkPoolsLiquidity(
+        securityPoolLiquidity,
+        networkTokens[destTokenSymbol].address,
+        dexKey,
+      );
+    }
   });
 });

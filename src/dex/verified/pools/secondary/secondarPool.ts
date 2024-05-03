@@ -9,10 +9,7 @@ import {
   callData,
 } from '../../types';
 import { decodeThrowError } from '../../utils';
-import { BigNumber, formatFixed, parseFixed } from '@ethersproject/bignumber';
-import { SwapSide } from '@paraswap/core';
 import { MathSol } from '../generalPoolMath';
-import { WeiPerEther as ONE } from '@ethersproject/constants';
 
 //Todo: explain the math better(after testing secondary)
 export class SecondaryIssuePool {
@@ -83,7 +80,6 @@ export class SecondaryIssuePool {
         callData: this.poolInterface.encodeFunctionData('getMinOrderSize'),
       },
     ];
-
     return poolCallData;
   }
 
@@ -162,8 +158,12 @@ export class SecondaryIssuePool {
   ): bigint {
     let returnAmount = BigInt(0);
     for (let i = 0; i < ordersDataScaled.length; i++) {
-      const amountOffered = ordersDataScaled[i].amountOffered;
-      const priceOffered = ordersDataScaled[i].priceOffered;
+      const amountOffered = BigInt(
+        Number(ordersDataScaled[i].amountOffered) * 10 ** 18,
+      ); //manual upscale
+      const priceOffered = BigInt(
+        Number(ordersDataScaled[i].priceOffered) * 10 ** 18,
+      ); //manual  upscale
       const checkValue =
         orderType === 'Sell'
           ? MathSol.divDownFixed(amountOffered, priceOffered)
@@ -178,13 +178,11 @@ export class SecondaryIssuePool {
             : MathSol.divDownFixed(amount, priceOffered),
         );
       }
-      amount = MathSol.sub(amount, checkValue);
-      if (amount < 0n) break;
+      amount = amount - checkValue;
+      if (amount < 0n) {
+        break;
+      }
     }
-    returnAmount =
-      orderType === 'Sell'
-        ? MathSol.divDown(returnAmount, scalingFactor)
-        : returnAmount;
 
     return returnAmount;
   }
@@ -197,18 +195,6 @@ export class SecondaryIssuePool {
     isCurrencyIn: boolean,
   ): bigint {
     try {
-      poolPairData.orders!.map(order => {
-        order.amountOffered = BigInt(
-          Number(parseFixed(order.amountOffered.toString(), 18)),
-        );
-        order.priceOffered = BigInt(
-          Number(parseFixed(order.priceOffered.toString(), 18)),
-        );
-      });
-      poolPairData.secondaryTrades!.map(trade => {
-        trade.amount = BigInt(Number(parseFixed(trade.amount.toString(), 18)));
-        trade.price = BigInt(Number(parseFixed(trade.price.toString(), 18)));
-      });
       let security: string;
       let scalingFactor;
       if (isCurrencyIn) {
@@ -268,29 +254,19 @@ export class SecondaryIssuePool {
         (a, b) => Number(b.priceOffered) - Number(a.priceOffered),
       );
 
-      const orderBookdepth = BigInt(
-        buyOrders
-          .map(
-            order =>
-              (Number(order.amountOffered) / Number(order.priceOffered)) *
-              Number(ONE),
-          )
-          .reduce((partialSum, a) => Number(partialSum + a), 0),
-      );
-      if (amount > orderBookdepth) return 0n;
+      const orderBookdepth = buyOrders
+        .map(order => Number(order.amountOffered) / Number(order.priceOffered))
+        .reduce((partialSum, a) => (partialSum + a) * 10 ** 18, 0);
+      if (amount > BigInt(orderBookdepth)) {
+        return 0n;
+      }
 
-      const amountOut = this._getSecondaryTokenAmount(
+      return this._getSecondaryTokenAmount(
         amount,
         buyOrders,
         scalingFactor,
         'Sell',
       );
-      const scaledAmountOut = formatFixed(
-        BigNumber.from(Math.trunc(Number(amountOut.toString())).toString()),
-        poolPairData.decimals[poolPairData.indexOut],
-      );
-      return BigInt(scaledAmountOut);
-      // return MathSol.divDown(amountOut, poolPairData.scalingFactors[poolPairData.indexOut]);
     } catch (error) {
       return 0n;
     }
@@ -304,18 +280,6 @@ export class SecondaryIssuePool {
     isCurrencyIn: boolean,
   ): bigint {
     try {
-      poolPairData.orders!.map(order => {
-        order.amountOffered = BigInt(
-          Number(parseFixed(order.amountOffered.toString(), 18)),
-        );
-        order.priceOffered = BigInt(
-          Number(parseFixed(order.priceOffered.toString(), 18)),
-        );
-      });
-      poolPairData.secondaryTrades!.map(trade => {
-        trade.amount = BigInt(Number(parseFixed(trade.amount.toString(), 18)));
-        trade.price = BigInt(Number(parseFixed(trade.price.toString(), 18)));
-      });
       let currency: string;
       let security: string;
       let scalingFactor;
@@ -331,7 +295,9 @@ export class SecondaryIssuePool {
         scalingFactor = poolPairData.scalingFactors[poolPairData.indexOut];
       }
       const scaledAmount = MathSol.mul(amount, scalingFactor);
-      if (scaledAmount == 0n) return 0n;
+      if (scaledAmount == 0n) {
+        return 0n;
+      }
       let sellOrders = poolPairData
         .orders!.filter(
           order =>
@@ -377,29 +343,19 @@ export class SecondaryIssuePool {
       sellOrders = sellOrders.sort(
         (a, b) => Number(a.priceOffered) - Number(b.priceOffered),
       );
-      const orderBookdepth = BigInt(
-        sellOrders
-          .map(
-            order =>
-              (Number(order.amountOffered) * Number(order.priceOffered)) /
-              Number(ONE),
-          )
-          .reduce((partialSum, a) => Number(partialSum + a), 0),
-      );
+      const orderBookdepth = sellOrders
+        .map(order => Number(order.amountOffered) * Number(order.priceOffered))
+        .reduce((partialSum, a) => (partialSum + a) * 10 ** 18, 0);
+      if (amount > BigInt(orderBookdepth)) {
+        return 0n;
+      }
 
-      if (amount > orderBookdepth) return 0n;
-
-      const amountIn = this._getSecondaryTokenAmount(
+      return this._getSecondaryTokenAmount(
         amount,
         sellOrders,
         scalingFactor,
         'Buy',
       );
-      const scaledAmountIn = formatFixed(
-        BigNumber.from(Math.trunc(Number(amountIn.toString())).toString()),
-        poolPairData.decimals[poolPairData.indexOut],
-      );
-      return BigInt(scaledAmountIn);
     } catch (err) {
       return 0n;
     }
