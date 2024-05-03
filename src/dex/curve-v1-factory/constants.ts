@@ -15,7 +15,7 @@ export const MAX_ALLOWED_STATE_DELAY_FACTOR = 3;
 export const POOL_EXCHANGE_GAS_COST = 200 * 1000;
 
 // This is a liquidity threshold used for pool state update
-export const MIN_LIQUIDITY_IN_USD = 1;
+export const MIN_LIQUIDITY_IN_USD = 50;
 
 export const LIQUIDITY_FETCH_TIMEOUT_MS = 1_500;
 

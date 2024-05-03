@@ -17,8 +17,6 @@ const stableNg = (
 ): bigint => {
   const A_PRECISION = requireConstant(self, 'A_PRECISION', 'stableNg');
   const N_COINS = requireValue(self, state, 'n_coins', 'stableNg');
-
-  // const { N_COINS, BI_N_COINS } = self.constants;
   // x in the input is converted to the same price/precision
 
   _require(i !== j, 'same coin', { i, j }, 'i !== j');
