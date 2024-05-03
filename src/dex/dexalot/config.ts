@@ -7,6 +7,9 @@ export const DexalotConfig: DexConfigMap<DexParams> = {
     [Network.AVALANCHE]: {
       mainnetRFQAddress: '0xEed3c159F3A96aB8d41c8B9cA49EE1e5071A7cdD',
     },
+    [Network.ARBITRUM]: {
+      mainnetRFQAddress: '0x010224949cCa211Fb5dDfEDD28Dc8Bf9D2990368',
+    },
   },
 };
 
