@@ -211,4 +211,26 @@ describe('Dexalot E2E', () => {
       true,
     );
   });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '1000000';
+    const tokenBAmount: string = '1000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+      true,
+    );
+  });
 });
