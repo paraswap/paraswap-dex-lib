@@ -37,7 +37,6 @@ export class FactoryStateHandler extends PoolPollingBase {
     implementationAddress: Address,
     readonly address: Address,
     readonly config: DexParams,
-    // stateUpdatePeriodMs: number,
     readonly factoryAddress: Address,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
