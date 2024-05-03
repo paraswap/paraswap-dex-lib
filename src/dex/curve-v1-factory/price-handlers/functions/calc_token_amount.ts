@@ -225,7 +225,6 @@ const implementations: Record<ImplementationNames, calc_token_amount> = {
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customPlain2CoinCrv,
 
   [ImplementationNames.FACTORY_STABLE_NG]: notImplemented,
-  [ImplementationNames.FACTORY_STABLE_6_NG]: notImplemented,
 };
 
 export default implementations;

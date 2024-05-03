@@ -58,6 +58,7 @@ export type PoolState = {
   offpeg_fee_multiplier?: bigint; // from pool
   basePoolState?: PoolState;
   storedRates?: bigint[]; // from pool, but only for oracle ones
+  n_coins?: number;
 };
 
 export type PoolStateWithUpdateInfo<T> = {
@@ -117,7 +118,8 @@ export enum FactoryImplementationNames {
   FACTORY_PLAIN_4_OPTIMIZED = 'factory_plain_4_optimized',
 
   FACTORY_STABLE_NG = 'factory_stable_ng',
-  FACTORY_STABLE_6_NG = 'factory_stable_6_ng',
+  // FACTORY_STABLE_6_NG = 'factory_stable_6_ng',
+  // FACTORY_STABLE_8_NG = 'factory_stable_8_ng',
 }
 
 export enum CustomImplementationNames {
@@ -160,6 +162,7 @@ export type FactoryPoolImplementations = {
   isStoreRateSupported?: boolean;
   isOffpegFeeMultiplierSupported?: boolean;
   liquidityApiSlug?: string;
+  needsToPullNCoins?: boolean;
 };
 
 export type CustomPoolConfig = {

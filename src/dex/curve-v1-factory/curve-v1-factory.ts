@@ -652,6 +652,7 @@ export class CurveV1Factory
               factoryImplementationFromConfig.customGasCost,
               factoryImplementationFromConfig.isStoreRateSupported,
               factoryImplementationFromConfig.isOffpegFeeMultiplierSupported,
+              factoryImplementationFromConfig.needsToPullNCoins,
             );
 
             this.poolManager.initializeNewPool(poolIdentifier, newPool);

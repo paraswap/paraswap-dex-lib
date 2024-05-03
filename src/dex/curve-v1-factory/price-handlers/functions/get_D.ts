@@ -2,7 +2,12 @@ import _ from 'lodash';
 import { CONVERGENCE_ERROR_PREFIX } from '../../constants';
 import { ImplementationNames } from '../../types';
 import { get_D, IPoolContext } from '../types';
-import { getCachedValueOrCallFunc, pow_mod256, requireConstant } from './utils';
+import {
+  getCachedValueOrCallFunc,
+  pow_mod256,
+  requireConstant,
+  requireValue,
+} from './utils';
 
 /*
  * This function get_D may be optimized further. We are doing many redundant
@@ -56,9 +61,10 @@ const stableNg: get_D = (
   self: IPoolContext,
   xp: bigint[],
   amp: bigint,
+  N_COINS?: number,
 ): bigint => {
-  const { BI_N_COINS } = self.constants;
   const A_PRECISION = requireConstant(self, 'A_PRECISION', 'stableNg');
+  const BI_N_COINS = BigInt(N_COINS!);
 
   let S = 0n;
   let Dprev = 0n;
@@ -374,8 +380,7 @@ const implementations: Record<ImplementationNames, get_D> = {
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]:
     makeFuncCacheable(factoryPlain2Basic),
 
-  [ImplementationNames.FACTORY_STABLE_NG]: makeFuncCacheable(stableNg),
-  [ImplementationNames.FACTORY_STABLE_6_NG]: makeFuncCacheable(stableNg),
+  [ImplementationNames.FACTORY_STABLE_NG]: stableNg,
 };
 
 export default implementations;

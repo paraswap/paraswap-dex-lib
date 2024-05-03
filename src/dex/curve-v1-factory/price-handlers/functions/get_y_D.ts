@@ -178,7 +178,6 @@ const implementations: Record<ImplementationNames, get_y_D> = {
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customPlain2CoinFrax,
 
   [ImplementationNames.FACTORY_STABLE_NG]: customPlain2CoinFrax,
-  [ImplementationNames.FACTORY_STABLE_6_NG]: customPlain2CoinFrax,
 };
 
 export default implementations;

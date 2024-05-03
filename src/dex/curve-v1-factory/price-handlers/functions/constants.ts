@@ -601,17 +601,6 @@ const implementationConstants: Record<
     FEE_DENOMINATOR: BI_POWS[10],
     A_PRECISION: 100n,
   },
-  [ImplementationNames.FACTORY_STABLE_6_NG]: {
-    isWrapNative: false,
-    isFeeOnTransferSupported: false,
-    isLending: false,
-
-    N_COINS: 6,
-    BI_N_COINS: 6n,
-    PRECISION: BI_POWS[18],
-    FEE_DENOMINATOR: BI_POWS[10],
-    A_PRECISION: 100n,
-  },
 };
 
 export default implementationConstants;

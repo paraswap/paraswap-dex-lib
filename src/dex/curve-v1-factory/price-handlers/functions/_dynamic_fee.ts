@@ -98,7 +98,6 @@ const implementations: Record<ImplementationNames, _dynamic_fee> = {
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: notExist,
 
   [ImplementationNames.FACTORY_STABLE_NG]: stableNg,
-  [ImplementationNames.FACTORY_STABLE_6_NG]: stableNg,
 };
 
 export default implementations;

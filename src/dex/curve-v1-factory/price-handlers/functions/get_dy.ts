@@ -171,6 +171,7 @@ const stableNg: get_dy = (
   dx: bigint,
 ) => {
   const rates = requireValue(self, state, 'storedRates', 'stableNg');
+  const N_COINS = requireValue(self, state, 'n_coins', 'stableNg');
   const A = requireValue(self, state, 'A', 'stableNg');
   const stateFee = requireValue(self, state, 'fee', 'stableNg');
   const offpeg_fee_multiplier = requireValue(
@@ -180,7 +181,7 @@ const stableNg: get_dy = (
     'stableNg',
   );
 
-  const { N_COINS, FEE_DENOMINATOR, PRECISION } = self.constants;
+  const { FEE_DENOMINATOR, PRECISION } = self.constants;
   const xp: bigint[] = [];
   const { balances } = state;
 
@@ -189,7 +190,7 @@ const stableNg: get_dy = (
   }
 
   const amp = A;
-  const D = self.get_D(self, xp, amp);
+  const D = self.get_D(self, xp, amp, N_COINS);
 
   const x = xp[i] + (dx * rates[i]) / PRECISION;
   const y = self.get_y(self, state, i, j, x, xp, amp, D);
@@ -317,7 +318,6 @@ const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: factoryPlain2Basic,
 
   [ImplementationNames.FACTORY_STABLE_NG]: stableNg,
-  [ImplementationNames.FACTORY_STABLE_6_NG]: stableNg,
 };
 
 export default implementations;

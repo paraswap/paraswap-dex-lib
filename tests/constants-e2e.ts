@@ -372,11 +372,15 @@ export const Tokens: {
       address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
       decimals: 18,
     },
-    USDC: {
+    USDCe: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
       decimals: 6,
       addBalance: _balancesFn,
       addAllowance: _allowancesFn,
+    },
+    USDC: {
+      address: '0x576Cf361711cd940CD9C397BB98C4C896cBd38De',
+      decimals: 6,
     },
     POPS: {
       address: '0xa92A1576D11dB45c53be71d59245ac97ce0d8147',
@@ -1161,7 +1165,8 @@ export const Holders: {
     WETH: '0x62ac55b745f9b08f1a81dcbbe630277095cf4be1',
     WMATIC: '0x016ba20db4b681f83e5fbbe0c433c96268ab5815',
     AMWMATIC: '0x8832924854e3Cedb0a6Abf372e6CCFF9F7654332',
-    USDC: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
+    USDCe: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
+    USDC: '0x53207E216540125e322CdA8A693b0b89576DEb46',
     POPS: '0x2693b57ee51f4e2a26dfb339a911fa8731061f49',
     MUST: '0x9f2a409848fb9b7bd058b24a23e8dbf1e166a109',
     AMDAI: '0xFA0DCe8280FCDf369a4cbFc1830d3302789307a6',

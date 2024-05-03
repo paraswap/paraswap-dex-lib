@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { ImplementationNames, PoolState } from '../../types';
 import { _require } from '../../../../utils';
 import { get_y, IPoolContext } from '../types';
-import { requireConstant } from './utils';
+import { requireConstant, requireValue } from './utils';
 import { CONVERGENCE_ERROR_PREFIX } from '../../constants';
 
 const stableNg = (
@@ -16,8 +16,9 @@ const stableNg = (
   _D?: bigint,
 ): bigint => {
   const A_PRECISION = requireConstant(self, 'A_PRECISION', 'stableNg');
+  const N_COINS = requireValue(self, state, 'n_coins', 'stableNg');
 
-  const { N_COINS, BI_N_COINS } = self.constants;
+  // const { N_COINS, BI_N_COINS } = self.constants;
   // x in the input is converted to the same price/precision
 
   _require(i !== j, 'same coin', { i, j }, 'i !== j');
@@ -27,6 +28,8 @@ const stableNg = (
   // should be unreachable, but good for safety
   _require(i >= 0, 'i below zero', { i, j }, 'i >= 0');
   _require(i < N_COINS, 'i above N_COINS', { i, j, N_COINS }, 'i < N_COINS');
+
+  const BI_N_COINS = BigInt(N_COINS);
 
   const amp = _amp!;
   const D = _D!;
@@ -256,7 +259,6 @@ const implementations: Record<ImplementationNames, get_y> = {
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: customPlain2CoinFrax,
 
   [ImplementationNames.FACTORY_STABLE_NG]: stableNg,
-  [ImplementationNames.FACTORY_STABLE_6_NG]: stableNg,
 };
 
 export default implementations;

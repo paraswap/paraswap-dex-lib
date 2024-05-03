@@ -10,7 +10,11 @@ import {
 } from '../types';
 import { PoolPollingBase, MulticallReturnedTypes } from './pool-polling-base';
 import FactoryCurveV1ABI from '../../../abi/curve-v1-factory/FactoryCurveV1.json';
-import { generalDecoder, uint256ToBigInt } from '../../../lib/decoders';
+import {
+  generalDecoder,
+  uint256DecodeToNumber,
+  uint256ToBigInt,
+} from '../../../lib/decoders';
 import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '@paraswap/core';
 import { BigNumber } from 'ethers';
@@ -19,7 +23,7 @@ import { DexConfigMap } from '../../../types';
 const DEFAULT_2_ZERO_ARRAY = [0n, 0n];
 const DEFAULT_4_ZERO_ARRAY = [0n, 0n, 0n, 0n];
 
-const getStoredRatesABI = (n: number) => ({
+const getStoredRatesABI = (n: string) => ({
   name: 'stored_rates',
   stateMutability: 'view',
   type: 'function',
@@ -47,11 +51,12 @@ export class FactoryStateHandler extends PoolPollingBase {
     customGasCost?: number,
     readonly isStoredRatesSupported: boolean = false,
     readonly isOffpegFeeMultiplierSupported: boolean = false,
+    readonly needsToPullNCoins: boolean = false,
     private factoryIface: Interface = new Interface(
       FactoryCurveV1ABI as JsonFragment[],
     ),
     private additionalFuncsIface: Interface = new Interface([
-      getStoredRatesABI(poolContextConstants.N_COINS),
+      getStoredRatesABI(poolContextConstants?.N_COINS?.toString() || ''),
     ]),
   ) {
     super(
@@ -159,6 +164,23 @@ export class FactoryStateHandler extends PoolPollingBase {
       });
     }
 
+    if (this.needsToPullNCoins) {
+      calls.push({
+        target: this.address,
+        callData: this.abiCoder.encodeFunctionCall(
+          {
+            stateMutability: 'view',
+            type: 'function',
+            name: 'N_COINS',
+            inputs: [],
+            outputs: [{ name: '', type: 'uint256' }],
+          },
+          [],
+        ),
+        decodeFunction: uint256DecodeToNumber,
+      });
+    }
+
     return calls;
   }
 
@@ -167,13 +189,14 @@ export class FactoryStateHandler extends PoolPollingBase {
     blockNumber: number,
     updatedAtMs: number,
   ): PoolState {
-    const [A, fees, balances, storedRates, offpeg_fee_multiplier] =
+    const [A, fees, balances, storedRates, offpeg_fee_multiplier, n_coins] =
       multiOutputs as [
         bigint,
         bigint[],
         bigint[],
         bigint[] | undefined,
         bigint | undefined,
+        number | undefined,
       ];
 
     let basePoolState: PoolState | undefined;
@@ -196,6 +219,7 @@ export class FactoryStateHandler extends PoolPollingBase {
       fee: fees[0], // Array has [fee, adminFee], but we want only fee
       balances: balances,
       constants: this.poolConstants,
+      n_coins,
       basePoolState,
       updatedAtMs,
       blockNumber,

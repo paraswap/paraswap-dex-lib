@@ -345,20 +345,39 @@ describe('CurveV1Factory E2E', () => {
     describe('Polygon Stable NG', () => {
       const network = Network.POLYGON;
 
-      const tokenASymbol: string = 'crvUSD';
-      const tokenBSymbol: string = 'USDT';
+      describe('crvUSD -> USDT', () => {
+        const tokenASymbol: string = 'crvUSD';
+        const tokenBSymbol: string = 'USDT';
 
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '10000000';
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '10000000';
 
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-      );
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+
+      describe('USDC.e -> USDC', () => {
+        const tokenASymbol: string = 'USDCe';
+        const tokenBSymbol: string = 'USDC';
+
+        const tokenAAmount: string = '10000000';
+        const tokenBAmount: string = '10000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
     });
 
     describe('Fantom Stable NG', () => {
