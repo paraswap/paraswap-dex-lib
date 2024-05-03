@@ -385,7 +385,6 @@ export async function testE2E(
       transferFees,
     );
 
-    console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Calculate slippage. Default is 1%

@@ -7,8 +7,9 @@ import {
   ImplementationNames,
 } from './types';
 import { DexConfigMap, AdapterMappings } from '../../types';
-import { MAX_PLAIN_COINS, Network, SwapSide } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { normalizeAddress } from '../../utils';
+import { MAX_PLAIN_COINS } from './constants';
 
 // stable ng factories addresses are taken from https://github.com/curvefi/curve-api/blob/main/constants/configs/configs.js
 const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
