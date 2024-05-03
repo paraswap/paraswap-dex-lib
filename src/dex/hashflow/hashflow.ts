@@ -837,14 +837,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           Utils.Serialize(data),
         );
 
-        // Expiry cache because it has levels for blacklisted MM
-        await this.dexHelper.cache
-          .del(this.dexKey, this.network, 'levels')
-          .catch(e => {
-            this.logger.error(
-              `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
-            );
-          });
         return;
       } else {
         const newCount = +error.count + 1;
