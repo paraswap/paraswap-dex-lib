@@ -313,7 +313,21 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
-      initHash: `0x7ab14e1c9a50601853aa424ba830356bbd4af40db6933a7d00d0825d493746ca`,
+      initHash: `0x7ab14e1c9a50601853aa424ba830356bbd4af40db6933a7d00d0825d493746ca`, // Pool addresses computed without needing initHash: https://github.com/velodrome-finance/slipstream/blob/main/contracts/periphery/libraries/PoolAddress.sol#L30
+      subgraphURL: '', // Does not have subgraph
+    },
+  },
+  AerodromeSlipstream: {
+    [Network.BASE]: {
+      factory: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A',
+      quoter: '0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0',
+      router: '0x6Cb442acF35158D5eDa88fe602221b67B400Be3E',
+      supportedFees: [10000n, 3000n, 500n, 100n],
+      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0x7ab14e1c9a50601853aa424ba830356bbd4af40db6933a7d00d0825d493746ca`, // Pool addresses computed without needing initHash: https://github.com/aerodrome-finance/slipstream/blob/main/contracts/periphery/libraries/PoolAddress.sol#L30
       subgraphURL: '', // Does not have subgraph
     },
   },

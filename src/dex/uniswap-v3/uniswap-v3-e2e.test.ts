@@ -1183,4 +1183,28 @@ describe('UniswapV3 E2E', () => {
       );
     });
   });
+
+  describe('AerodromeSlipstream', () => {
+    const dexKey = 'AerodromeSlipstream';
+    describe('Base', () => {
+      const network = Network.BASE;
+
+      const tokenASymbol: string = 'USDbC';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '111110000';
+      const tokenBAmount: string = '110000000000000000';
+      const nativeTokenAmount = '1100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
 });

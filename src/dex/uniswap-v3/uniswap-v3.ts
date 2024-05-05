@@ -102,6 +102,7 @@ export class UniswapV3
         'Retro',
         'BaseswapV3',
         'VelodromeSlipstream',
+        'AerodromeSlipstream',
       ]),
     );
 
