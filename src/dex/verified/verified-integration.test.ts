@@ -97,7 +97,7 @@ async function testPricingOnNetwork(
   dexKey: string,
   blockNumber: number,
   srcTokenSymbol: string,
-  destTokenSymbol: string,
+  secondaryDestTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
   funcNameToCheck: string,
@@ -106,12 +106,12 @@ async function testPricingOnNetwork(
 
   const pools = await verified.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
+    networkTokens[secondaryDestTokenSymbol],
     side,
     blockNumber,
   );
   console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
+    `${srcTokenSymbol} <> ${secondaryDestTokenSymbol} Pool Identifiers: `,
     pools,
   );
 
@@ -119,14 +119,14 @@ async function testPricingOnNetwork(
 
   const poolPrices = await verified.getPricesVolume(
     networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
+    networkTokens[secondaryDestTokenSymbol],
     amounts,
     side,
     blockNumber,
     pools,
   );
   console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices When ${side}ING amounts: [${amounts}] are:`,
+    `${srcTokenSymbol} <> ${secondaryDestTokenSymbol} Pool Prices When ${side}ING amounts: [${amounts}] are:`,
     poolPrices,
   );
 
@@ -152,7 +152,7 @@ async function testPricingOnNetwork(
       const onChainPrice = await checkOnChainPricing(
         verified,
         networkTokens[srcTokenSymbol].address,
-        networkTokens[destTokenSymbol].address,
+        networkTokens[secondaryDestTokenSymbol].address,
         funcNameToCheck,
         blockNumber,
         amounts[idx],
@@ -172,22 +172,27 @@ describe('Verified Integration Tests on Polygon', function () {
   const dexHelper = new DummyDexHelper(network);
   const tokens = Tokens[network];
   const srcTokenSymbol = 'vUSDC';
-  const destTokenSymbol = 'AUCO2';
+  const secondaryDestTokenSymbol = 'AUCO2';
+  const primaryDestTokenSymbol = 'CH1318755548';
 
-  //stop at 2 USDC(2000000) because to avoid many 0 prices current USDC balance is 1.5(150000)
-  //anything above the balance when buying will give 0 price for primary pool
   const usdcAmounts = [
     0n,
     1n * BI_POWS[tokens[srcTokenSymbol].decimals],
     2n * BI_POWS[tokens[srcTokenSymbol].decimals],
   ];
 
-  //stop at 3 (3000000000000000000) to keep it minimal
-  const securityAmounts = [
+  const secondarySecurityAmounts = [
     0n,
-    1n * BI_POWS[tokens[destTokenSymbol].decimals],
-    2n * BI_POWS[tokens[destTokenSymbol].decimals],
-    3n * BI_POWS[tokens[destTokenSymbol].decimals],
+    1n * BI_POWS[tokens[secondaryDestTokenSymbol].decimals],
+    2n * BI_POWS[tokens[secondaryDestTokenSymbol].decimals],
+    3n * BI_POWS[tokens[secondaryDestTokenSymbol].decimals],
+  ];
+
+  const primarySecurityAmounts = [
+    0n,
+    1n * BI_POWS[tokens[primaryDestTokenSymbol].decimals],
+    2n * BI_POWS[tokens[primaryDestTokenSymbol].decimals],
+    3n * BI_POWS[tokens[primaryDestTokenSymbol].decimals],
   ];
 
   beforeAll(async () => {
@@ -198,85 +203,60 @@ describe('Verified Integration Tests on Polygon', function () {
     }
   });
 
-  it('getPoolIdentifiers and getPricesVolume **SELL** for USDC in Security out', async function () {
-    const a = await testPricingOnNetwork(
-      verified,
-      network,
-      dexKey,
-      blockNumber,
-      srcTokenSymbol,
-      destTokenSymbol,
-      SwapSide.SELL,
-      usdcAmounts, //amount will be amount in/srcToken amount since we are selling
-      'queryBatchSwap',
-    );
-  });
+  describe('Secondary Pool Integrattion Tests', () => {
+    it('getPoolIdentifiers and getPricesVolume **SELL** for USDC in Security out', async function () {
+      await testPricingOnNetwork(
+        verified,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        secondaryDestTokenSymbol,
+        SwapSide.SELL,
+        usdcAmounts,
+        'queryBatchSwap',
+      );
+    });
 
-  it('getPoolIdentifiers and getPricesVolume **SELL** for Security in USDC out', async function () {
-    const a = await testPricingOnNetwork(
-      verified,
-      network,
-      dexKey,
-      blockNumber,
-      destTokenSymbol, //Security Token is now srcToken
-      srcTokenSymbol,
-      SwapSide.SELL,
-      securityAmounts, //amount will be amount in/srcToken amount since we are selling
-      'queryBatchSwap',
-    );
-  });
+    it('getPoolIdentifiers and getPricesVolume **BUY** for USDC in Security out', async function () {
+      await testPricingOnNetwork(
+        verified,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        secondaryDestTokenSymbol,
+        SwapSide.BUY,
+        secondarySecurityAmounts,
+        'queryBatchSwap',
+      );
+    });
 
-  it('getPoolIdentifiers and getPricesVolume **BUY** for USDC in Security out', async function () {
-    await testPricingOnNetwork(
-      verified,
-      network,
-      dexKey,
-      blockNumber,
-      srcTokenSymbol,
-      destTokenSymbol,
-      SwapSide.BUY,
-      securityAmounts, //amount will be amount out/destToken amount since we are buying
-      'queryBatchSwap',
-    );
-  });
+    it('getTopPoolsForToken and checkLiquidity', async function () {
+      const networkTokens = Tokens[network];
+      const usdcPoolLiquidity = await verified.getTopPoolsForToken(
+        networkTokens[srcTokenSymbol].address,
+        10,
+      );
+      const securityPoolLiquidity = await verified.getTopPoolsForToken(
+        networkTokens[secondaryDestTokenSymbol].address,
+        10,
+      );
+      console.log(srcTokenSymbol, ' Top Pools:', usdcPoolLiquidity);
+      console.log(
+        secondaryDestTokenSymbol,
+        ' Top Pools:',
+        securityPoolLiquidity,
+      );
 
-  it('getPoolIdentifiers and getPricesVolume **BUY** for Security in USDC out', async function () {
-    await testPricingOnNetwork(
-      verified,
-      network,
-      dexKey,
-      blockNumber,
-      destTokenSymbol, //Security Token is now srcToken
-      srcTokenSymbol,
-      SwapSide.BUY,
-      usdcAmounts, //amount will be amount out/destToken amount since we are buying
-      'queryBatchSwap',
-    );
-  });
-
-  it('getTopPoolsForToken', async function () {
-    const networkTokens = Tokens[network];
-    const usdcPoolLiquidity = await verified.getTopPoolsForToken(
-      networkTokens[srcTokenSymbol].address,
-      10,
-    );
-    const securityPoolLiquidity = await verified.getTopPoolsForToken(
-      networkTokens[destTokenSymbol].address,
-      10,
-    );
-    console.log(srcTokenSymbol, ' Top Pools:', usdcPoolLiquidity);
-    console.log(destTokenSymbol, ' Top Pools:', securityPoolLiquidity);
-
-    expect(
-      usdcPoolLiquidity.map(pool =>
-        securityPoolLiquidity.find(
-          _pool => pool.address.toLowerCase() === _pool.address.toLowerCase(),
+      expect(
+        usdcPoolLiquidity.map(pool =>
+          securityPoolLiquidity.find(
+            _pool => pool.address.toLowerCase() === _pool.address.toLowerCase(),
+          ),
         ),
-      ),
-    ).not.toEqual(undefined || null);
+      ).not.toEqual(undefined || null);
 
-    //don't check liquidity for now polygon pools do not have liquidity yet
-    if (!verified.hasConstantPriceLargeAmounts) {
       checkPoolsLiquidity(
         usdcPoolLiquidity,
         networkTokens[srcTokenSymbol].address,
@@ -284,9 +264,100 @@ describe('Verified Integration Tests on Polygon', function () {
       );
       checkPoolsLiquidity(
         securityPoolLiquidity,
-        networkTokens[destTokenSymbol].address,
+        networkTokens[secondaryDestTokenSymbol].address,
         dexKey,
       );
-    }
+    });
+  });
+
+  describe('Primary Pool Integrattion Tests', () => {
+    it('getPoolIdentifiers and getPricesVolume **SELL** for USDC in Security out', async function () {
+      await testPricingOnNetwork(
+        verified,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        primaryDestTokenSymbol,
+        SwapSide.SELL,
+        usdcAmounts, //amount will be amount in/srcToken amount since we are selling
+        'queryBatchSwap',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume **SELL** for Security in USDC out', async function () {
+      await testPricingOnNetwork(
+        verified,
+        network,
+        dexKey,
+        blockNumber,
+        primaryDestTokenSymbol, //Security Token is now srcToken
+        srcTokenSymbol,
+        SwapSide.SELL,
+        primarySecurityAmounts, //amount will be amount in/srcToken amount since we are selling
+        'queryBatchSwap',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume **BUY** for USDC in Security out', async function () {
+      await testPricingOnNetwork(
+        verified,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        primaryDestTokenSymbol,
+        SwapSide.BUY,
+        primarySecurityAmounts, //amount will be amount out/destToken amount since we are buying
+        'queryBatchSwap',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume **BUY** for Security in USDC out', async function () {
+      await testPricingOnNetwork(
+        verified,
+        network,
+        dexKey,
+        blockNumber,
+        primaryDestTokenSymbol, //Security Token is now srcToken
+        srcTokenSymbol,
+        SwapSide.BUY,
+        usdcAmounts, //amount will be amount out/destToken amount since we are buying
+        'queryBatchSwap',
+      );
+    });
+
+    it('getTopPoolsForToken and checkLiquidity', async function () {
+      const networkTokens = Tokens[network];
+      const usdcPoolLiquidity = await verified.getTopPoolsForToken(
+        networkTokens[srcTokenSymbol].address,
+        10,
+      );
+      const securityPoolLiquidity = await verified.getTopPoolsForToken(
+        networkTokens[primaryDestTokenSymbol].address,
+        10,
+      );
+      console.log(srcTokenSymbol, ' Top Pools:', usdcPoolLiquidity);
+      console.log(primaryDestTokenSymbol, ' Top Pools:', securityPoolLiquidity);
+
+      expect(
+        usdcPoolLiquidity.map(pool =>
+          securityPoolLiquidity.find(
+            _pool => pool.address.toLowerCase() === _pool.address.toLowerCase(),
+          ),
+        ),
+      ).not.toEqual(undefined || null);
+
+      checkPoolsLiquidity(
+        usdcPoolLiquidity,
+        networkTokens[srcTokenSymbol].address,
+        dexKey,
+      );
+      checkPoolsLiquidity(
+        securityPoolLiquidity,
+        networkTokens[primaryDestTokenSymbol].address,
+        dexKey,
+      );
+    });
   });
 });

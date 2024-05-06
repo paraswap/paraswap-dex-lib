@@ -441,14 +441,8 @@ export const Tokens: {
       address: '0xa3fa99a148fa48d14ed51d610c367c61876997f1',
       decimals: 18,
     },
-    CH1265330: {
-      address: '0x19d080d458fdadb9524cf6d0c0d7830addd1dd08',
-      decimals: 18,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
-    },
-    ROMNEY: {
-      address: '0xebe153c59c60f8199db5b75328745ae2e2adc7a1',
+    CH1318755548: {
+      address: '0x744C1F9960DaeF0a38e63323782C2C72706Eee42',
       decimals: 18,
       addBalance: _balancesFn,
       addAllowance: _allowancesFn,

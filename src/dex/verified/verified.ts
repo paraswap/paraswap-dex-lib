@@ -686,10 +686,12 @@ export class Verified
                    swapEnabled: true,
             }) {
         address
+        currency
         totalLiquidity
         tokens {
           address
           decimals
+          balance
         }
       }
     }`;
@@ -697,8 +699,9 @@ export class Verified
       data: {
         pools: {
           address: string;
+          currency: string;
           totalLiquidity: string;
-          tokens: { address: string; decimals: number }[];
+          tokens: { address: string; decimals: number; balance: string }[];
         }[];
       };
     }>(
@@ -726,7 +729,16 @@ export class Verified
         connectorTokens: subgraphPool.mainTokens.filter(
           token => !isSameAddress(tokenAddress, token.address),
         ),
-        liquidityUSD: parseFloat(pool.totalLiquidity),
+        liquidityUSD:
+          pool.totalLiquidity === '0'
+            ? parseFloat(
+                pool.tokens.find(
+                  token =>
+                    token?.address.toLowerCase() ===
+                    pool.currency?.toLowerCase(),
+                )?.balance!,
+              )
+            : parseFloat(pool.totalLiquidity),
       };
     });
   }
