@@ -7,7 +7,7 @@ import { Network } from '../src/constants';
 import { Address } from '../src/types';
 import { generateConfig } from '../src/config';
 // TODO: Import correct ABI
-import ABI from '../src/abi/angle/stagToken.json';
+import ABI from '../src/abi/erc20.json';
 
 // This is a helper script to fetch blockNumbers where a certain
 // event was released by a certain contract
@@ -40,18 +40,12 @@ async function getBlockNumbersForEvents(
 }
 
 // TODO: Set your values here
-const network = Network.MAINNET;
-const eventNames = [
-  'Accrued',
-  'Deposit',
-  'Withdraw',
-  'ToggledPause',
-  'RateUpdated',
-];
-const address = '0x004626a008b1acdc4c74ab51644093b155e59a23';
+const network = Network.AVALANCHE;
+const eventNames = ['Transfer'];
+const address = '0xc0253c3cc6aa5ab407b5795a04c28fb063273894';
 const provider = new StaticJsonRpcProvider(
   generateConfig(network).privateHttpProvider,
   network,
 );
 
-getBlockNumbersForEvents(address, ABI, eventNames, 0, 20000000, provider);
+getBlockNumbersForEvents(address, ABI, eventNames, 0, 2000, provider);
