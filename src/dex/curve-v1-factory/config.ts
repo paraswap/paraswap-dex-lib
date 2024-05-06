@@ -9,7 +9,7 @@ import {
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { normalizeAddress } from '../../utils';
-import { MAX_PLAIN_COINS } from './constants';
+import { FACTORY_MAX_PLAIN_COINS } from './constants';
 
 // stable ng factories addresses are taken from https://github.com/curvefi/curve-api/blob/main/constants/configs/configs.js
 const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
@@ -18,11 +18,11 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       factories: [
         {
           address: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
-          maxPlainCoins: MAX_PLAIN_COINS,
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
         {
           address: '0x4f8846ae9380b90d2e71d5e3d042dff3e7ebb40d',
-          maxPlainCoins: MAX_PLAIN_COINS,
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
         {
           address: '0x6A8cbed756804B16E05E741eDaBd5cB544AE21bf', // factory stable ng
@@ -247,7 +247,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       factories: [
         {
           address: '0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee',
-          maxPlainCoins: MAX_PLAIN_COINS,
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
         {
           address: '0x1764ee18e8B3ccA4787249Ceb249356192594585', // factory stable ng
@@ -374,7 +374,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       factories: [
         {
           address: '0x686d67265703D1f124c45E33d47d794c566889Ba',
-          maxPlainCoins: MAX_PLAIN_COINS,
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
         {
           address: '0xe61Fb97Ef6eBFBa12B36Ffd7be785c1F5A2DE66b', // factory stable ng
@@ -504,7 +504,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       factories: [
         {
           address: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
-          maxPlainCoins: MAX_PLAIN_COINS,
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
       ],
       stateUpdatePeriodMs: 2 * 1000,
@@ -607,7 +607,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       factories: [
         {
           address: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
-          maxPlainCoins: MAX_PLAIN_COINS,
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
         {
           address: '0x9AF14D26075f142eb3F292D5065EB3faa646167b', // factory stable ng
@@ -754,7 +754,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       factories: [
         {
           address: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
-          maxPlainCoins: MAX_PLAIN_COINS,
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
         {
           address: '0x5eeE3091f747E60a045a2E715a4c71e600e31F6E', // factory stable ng
