@@ -45,6 +45,7 @@ export class CurveV1FactoryPoolManager {
   private allCurveLiquidityApiSlugs: Set<string> = new Set([
     '/factory',
     '/factory-crvusd',
+    '/factory-stable-ng',
   ]);
 
   private statePollingManager = StatePollingManager;
