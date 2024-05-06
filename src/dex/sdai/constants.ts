@@ -1,2 +1,2 @@
-export const SDAI_DEPOSIT_GAS_COST = 90_000;
+export const SDAI_DEPOSIT_GAS_COST = 165_000;
 export const SDAI_REDEEM_GAS_COST = 90_000;

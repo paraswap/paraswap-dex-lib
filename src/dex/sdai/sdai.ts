@@ -2,7 +2,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
 import { SDaiParams, SDaiData, SDaiFunctions } from './types';
 import { NULL_ADDRESS, Network, SwapSide } from '../../constants';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork } from '../../utils';
 import { Adapters, SDaiConfig } from './config';
 import {
   AdapterExchangeParam,
@@ -22,8 +22,7 @@ import { Interface } from 'ethers/lib/utils';
 import { getOnChainState } from './utils';
 import { SDaiPool } from './sdai-pool';
 import { BI_POWS } from '../../bigint-constants';
-
-const SDAI_GAS_COST = 1000000;
+import { SDAI_DEPOSIT_GAS_COST } from './constants';
 
 export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   readonly hasConstantPriceLargeAmounts = true;
@@ -59,7 +58,6 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
     );
   }
 
-  // TODO:
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] || null;
   }
@@ -132,7 +130,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
       {
         prices: amountsOut,
         unit: unitOut,
-        gasCost: SDAI_GAS_COST,
+        gasCost: SDAI_DEPOSIT_GAS_COST,
         exchange: this.dexKey,
         poolAddresses: [this.sdaiAddress],
         data: null,
@@ -178,7 +176,9 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   ): Promise<SimpleExchangeParam> {
     const swapData = this.sdaiInterface.encodeFunctionData(
       this.isDai(srcToken) ? SDaiFunctions.deposit : SDaiFunctions.redeem,
-      [srcAmount, this.augustusAddress],
+      this.isDai(srcToken)
+        ? [srcAmount, this.augustusAddress]
+        : [srcAmount, this.augustusAddress, this.augustusAddress],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
