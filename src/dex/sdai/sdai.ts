@@ -1,6 +1,6 @@
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
-import { DexParams, SDaiData, SDaiFunctions } from './types';
+import { SDaiParams, SDaiData, SDaiFunctions } from './types';
 import { NULL_ADDRESS, Network, SwapSide } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { Adapters, SDaiConfig } from './config';
@@ -16,19 +16,23 @@ import {
 } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { BI_POWS } from '../../bigint-constants';
+import PotAbi from '../../abi/maker-psm/pot.json';
 import SavingsDaiAbi from '../../abi/sdai/SavingsDai.abi.json';
 import { Interface } from 'ethers/lib/utils';
+import { getOnChainState } from './utils';
+import { SDaiPool } from './sdai-pool';
+import { BI_POWS } from '../../bigint-constants';
 
 const SDAI_GAS_COST = 1000000;
 
-export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
+export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SDaiConfig);
 
+  protected eventPool: SDaiPool;
   logger: Logger;
 
   constructor(
@@ -36,20 +40,28 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     dexKey: string,
     protected dexHelper: IDexHelper,
 
-    readonly sdaiAddress: string = SDaiConfig[dexKey][network].sdaiAddress,
     readonly daiAddress: string = SDaiConfig[dexKey][network].daiAddress,
+    readonly sdaiAddress: string = SDaiConfig[dexKey][network].sdaiAddress,
+    readonly potAddress: string = SDaiConfig[dexKey][network].potAddress,
 
     protected adapters = Adapters[network] || {},
     protected sdaiInterface = new Interface(SavingsDaiAbi),
+    protected potInterface = new Interface(PotAbi),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
+    this.eventPool = new SDaiPool(
+      this.dexKey,
+      dexHelper,
+      this.potAddress,
+      this.potInterface,
+      this.logger,
+    );
   }
 
   // TODO:
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    // return this.adapters[side] || null;
-    return null;
+    return this.adapters[side] || null;
   }
 
   isSDai(tokenAddress: Address) {
@@ -67,17 +79,31 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     );
   }
 
+  async initializePricing(blockNumber: number) {
+    const poolState = await getOnChainState(
+      this.dexHelper.multiContract,
+      this.potAddress,
+      this.potInterface,
+      blockNumber,
+    );
+
+    await this.eventPool.initialize(blockNumber, {
+      state: poolState,
+    });
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (this.isAppropriatePair(srcToken, destToken)) {
-      return [];
-    }
+    // TODO: remove this fn call
+    await this.initializePricing(blockNumber);
 
-    return [`${this.dexKey}_${srcToken.address}_${destToken.address}`];
+    return this.isAppropriatePair(srcToken, destToken)
+      ? [`${this.dexKey}_${srcToken.address}_${destToken.address}`]
+      : [];
   }
 
   async getPricesVolume(
@@ -88,16 +114,24 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SDaiData>> {
-    if (!this.isAppropriatePair(srcToken, destToken)) {
-      return null;
-    }
+    if (!this.isAppropriatePair(srcToken, destToken)) return null;
+    if (this.eventPool.getState(blockNumber) === null) return null;
+
+    const convertFn = (blockNumber: number, amountIn: bigint) =>
+      this.isDai(srcToken.address)
+        ? this.eventPool.convertToSDai(blockNumber, amountIn)
+        : this.eventPool.convertToDai(blockNumber, amountIn);
+
+    const unitIn = BI_POWS[18];
+    const unitOut = convertFn(blockNumber, unitIn);
+    const amountsOut = amounts.map(amountIn =>
+      convertFn(blockNumber, amountIn),
+    );
 
     return [
       {
-        prices: amounts,
-        unit: getBigIntPow(
-          (side === SwapSide.SELL ? destToken : srcToken).decimals,
-        ),
+        prices: amountsOut,
+        unit: unitOut,
         gasCost: SDAI_GAS_COST,
         exchange: this.dexKey,
         poolAddresses: [this.sdaiAddress],
@@ -115,7 +149,23 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, DexParams> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    return [];
+    if (!this.isDai(tokenAddress) && !this.isSDai(tokenAddress)) return [];
+
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.sdaiAddress,
+        connectorTokens: [
+          {
+            decimals: 18,
+            address: this.isDai(tokenAddress)
+              ? this.sdaiAddress
+              : this.daiAddress,
+          },
+        ],
+        liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+      },
+    ];
   }
 
   async getSimpleParam(

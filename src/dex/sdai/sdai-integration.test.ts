@@ -3,7 +3,7 @@ dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
-import { checkConstantPoolPrices } from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { BI_POWS } from '../../bigint-constants';
 import { SDai } from './sdai';
@@ -47,7 +47,7 @@ describe('SDai', function () {
     console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
   });
 
   it('getPoolIdentifiers and getPricesVolume sDAI -> DAI SELL', async function () {
@@ -76,7 +76,7 @@ describe('SDai', function () {
     console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
   });
 
   it('getPoolIdentifiers and getPricesVolume DAI -> sDAI BUY', async function () {
@@ -105,7 +105,7 @@ describe('SDai', function () {
     console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
   });
 
   it('getPoolIdentifiers and getPricesVolume sDAI -> DAI BUY', async function () {
@@ -134,6 +134,32 @@ describe('SDai', function () {
     console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Prices: `, poolPrices);
 
     expect(poolPrices).not.toBeNull();
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+  });
+
+  it('Dai getTopPoolsForToken', async function () {
+    const dexHelper = new DummyDexHelper(network);
+    const makerPsm = new SDai(network, dexKey, dexHelper);
+
+    const poolLiquidity = await makerPsm.getTopPoolsForToken(
+      DaiToken.address,
+      10,
+    );
+    console.log(`${DaiSymbol} Top Pools:`, poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, DaiToken.address, dexKey);
+  });
+
+  it('SDai getTopPoolsForToken', async function () {
+    const dexHelper = new DummyDexHelper(network);
+    const makerPsm = new SDai(network, dexKey, dexHelper);
+
+    const poolLiquidity = await makerPsm.getTopPoolsForToken(
+      SDaiToken.address,
+      10,
+    );
+    console.log(`${SDaiSymbol} Top Pools:`, poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, SDaiToken.address, dexKey);
   });
 });
