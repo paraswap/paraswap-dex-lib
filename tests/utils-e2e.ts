@@ -119,7 +119,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       amount: amount.toString(),
       options: {
         includeDEXS: [this.dexKey],
-        includeContractMethods: [contractMethod as any],
+        includeContractMethods: [contractMethod],
         partner: 'any',
       },
       srcDecimals: from.decimals,
@@ -382,7 +382,7 @@ export async function testE2E(
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Calculate slippage. Default is 1%
-    const _slippage = slippage === undefined ? 100 : slippage;
+    const _slippage = slippage || 100;
     const minMaxAmount =
       (swapSide === SwapSide.SELL
         ? BigInt(priceRoute.destAmount) * (10000n - BigInt(_slippage))
