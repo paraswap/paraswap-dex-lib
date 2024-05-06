@@ -83,8 +83,8 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [
       {
-        name: 'OptimismAdapter01',
-        index: 13,
+        name: 'OptimismAdapter02',
+        index: 1,
       },
     ],
     [SwapSide.BUY]: [
