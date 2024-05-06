@@ -213,7 +213,7 @@ describe('Verified Integration Tests on Polygon', function () {
         srcTokenSymbol,
         secondaryDestTokenSymbol,
         SwapSide.SELL,
-        usdcAmounts,
+        secondarySecurityAmounts,
         'queryBatchSwap',
       );
     });
