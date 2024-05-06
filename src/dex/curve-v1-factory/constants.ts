@@ -1,7 +1,5 @@
 import { Network } from '../../constants';
 
-export const MAX_PLAIN_COINS = 4;
-
 export const MIN_AMOUNT_TO_RECEIVE = 1;
 
 export const STATE_UPDATE_PERIOD_MS = 5 * 1000;
