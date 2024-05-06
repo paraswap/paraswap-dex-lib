@@ -260,7 +260,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
 
     adapterAddresses: {
       FantomAdapter01: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
-      FantomBuyAdapter: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
+      FantomAdapter02: '0x248009f6F78b5AcD5EA2fc86d56b77A7AeEe2eFc',
+      FantomBuyAdapter: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
     },
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
@@ -376,8 +377,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs: [],
     adapterAddresses: {
-      BaseAdapter01: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
-      BaseBuyAdapter: '0xEECA9223063bD13e8ca77ed9e39a07f2BD1923E6',
+      BaseAdapter01: '0xf531fC01aFa26dAa71f581e1e18AA3B37Ee515A6',
+      BaseBuyAdapter: '0x2B99cefbfeE6f134D68aBB291386588ADe3808F8',
     },
     uniswapV2ExchangeRouterAddress:
       '0x75d199EfB540e47D27D52c62Da3E7daC2B9e834F',

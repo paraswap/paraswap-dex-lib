@@ -33,7 +33,6 @@ import {
 } from '../simple-exchange';
 import { SolidlyV3Config, Adapters, PoolsToPreload } from './config';
 import { SolidlyV3EventPool } from './solidly-v3-pool';
-import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import SolidlyV3StateMulticallABI from '../../abi/solidly-v3/SolidlyV3StateMulticall.abi.json';
 import SolidlyV3PoolABI from '../../abi/solidly-v3/SolidlyV3Pool.abi.json';
@@ -56,6 +55,8 @@ type PoolPairsInfo = {
   token1: Address;
   fee: string;
 };
+
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
 
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 60 * 60 * 24 * 1000; // 24 hours
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 30 * 60 * 1000; // Once in 30 minutes
@@ -91,7 +92,6 @@ export class SolidlyV3
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
     readonly poolIface = new Interface(SolidlyV3PoolABI),
-    readonly quoterIface = new Interface(UniswapV3QuoterV2ABI),
     protected config = SolidlyV3Config[dexKey][network],
     protected poolsToPreload = PoolsToPreload[dexKey]?.[network] || [],
   ) {
@@ -258,16 +258,6 @@ export class SolidlyV3
         ] = null;
         return null;
       }
-
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-          fee: tickSpacing.toString(),
-        }),
-      );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -344,10 +334,13 @@ export class SolidlyV3
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(
+      PoolsRegistryHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }
@@ -851,7 +844,6 @@ export class SolidlyV3
   private _toLowerForAllConfigAddresses() {
     // If new config property will be added, the TS will throw compile error
     const newConfig: DexParams = {
-      quoter: this.config.quoter.toLowerCase(),
       factory: this.config.factory.toLowerCase(),
       supportedTickSpacings: this.config.supportedTickSpacings,
       stateMulticall: this.config.stateMulticall.toLowerCase(),

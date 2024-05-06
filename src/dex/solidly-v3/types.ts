@@ -46,7 +46,6 @@ export type DecodeStateMultiCallFunc = (
 ) => DecodedStateMultiCallResultWithRelativeBitmaps;
 
 export type DexParams = {
-  quoter: Address;
   factory: Address;
   stateMulticall: Address;
   supportedTickSpacings: bigint[];

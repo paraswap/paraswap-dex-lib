@@ -72,6 +72,8 @@ type PoolPairsInfo = {
   fee: string;
 };
 
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
+
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
@@ -97,10 +99,13 @@ export class UniswapV3
         'UniswapV3',
         'SushiSwapV3',
         'QuickSwapV3.1',
+        'SpookySwapV3',
         'RamsesV2',
         'ChronosV3',
         'Retro',
         'BaseswapV3',
+        'PharaohV2',
+        'AlienBaseV3',
         'VelodromeSlipstream',
         'AerodromeSlipstream',
       ]),
