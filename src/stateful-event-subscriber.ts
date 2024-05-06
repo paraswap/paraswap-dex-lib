@@ -145,7 +145,15 @@ export abstract class StatefulEventSubscriber<State>
           this.setState(state, blockNumber);
 
           // we should publish only if generateState succeeded
-          this.dexHelper.cache.publish('new_pools', this.cacheName);
+          const data = this.getPoolIdentifierData();
+
+          this.dexHelper.cache.publish(
+            'new_pools',
+            JSON.stringify({
+              key: this.cacheName,
+              value: data,
+            }),
+          );
         }
       } else {
         // if you are not a slave instance always generate new state
@@ -171,6 +179,10 @@ export abstract class StatefulEventSubscriber<State>
       masterBn || blockNumber,
     );
     this.isInitialized = true;
+  }
+
+  protected getPoolIdentifierData() {
+    throw new Error('getPoolIdentifierData method is not implemented');
   }
 
   //Function which transforms the given state for the given log event.

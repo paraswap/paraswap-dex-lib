@@ -1,6 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 /* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
+import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
+
 import {
   IParaSwapSDK,
   LocalParaswapSDK,
@@ -32,7 +36,7 @@ import { DummyDexHelper, DummyLimitOrderProvider } from '../src/dex-helper';
 import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
-import { GIFTER_ADDRESS } from './constants-e2e';
+import { GIFTER_ADDRESS, Holders, Tokens } from './constants-e2e';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
@@ -119,7 +123,8 @@ class APIParaswapSDK implements IParaSwapSDK {
       amount: amount.toString(),
       options: {
         includeDEXS: [this.dexKey],
-        includeContractMethods: [contractMethod],
+        // TODO: Improve typing
+        includeContractMethods: [contractMethod as any],
         partner: 'any',
       },
       srcDecimals: from.decimals,
@@ -379,6 +384,7 @@ export async function testE2E(
       poolIdentifiers,
       transferFees,
     );
+
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // Calculate slippage. Default is 1%
@@ -644,4 +650,81 @@ export const getEnv = (envName: string, optional: boolean = false): string => {
   }
 
   return process.env[envName]!;
+};
+
+/// EXPERIMENTAL MEANT TO BE ADJUSTED OVERTIME
+
+type Pairs = { name: string; sellAmount: string; buyAmount: string }[][];
+type DexToPair = Record<string, Pairs>;
+
+export const constructE2ETests = (
+  testSuiteName: string,
+  network: Network,
+  testDataset: DexToPair,
+) => {
+  const sideToContractMethods = new Map([
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.simpleSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+      ],
+    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+  ]);
+
+  describe(testSuiteName, () => {
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    Object.entries(testDataset).forEach(([dexKey, pairs]) => {
+      describe(dexKey, () => {
+        sideToContractMethods.forEach((contractMethods, side) =>
+          describe(`${side}`, () => {
+            contractMethods.forEach((contractMethod: ContractMethod) => {
+              pairs.forEach(pair => {
+                describe(`${contractMethod}`, () => {
+                  it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                    await testE2E(
+                      tokens[pair[0].name],
+                      tokens[pair[1].name],
+                      holders[pair[0].name],
+                      side === SwapSide.SELL
+                        ? pair[0].sellAmount
+                        : pair[0].buyAmount,
+                      side,
+                      dexKey,
+                      contractMethod,
+                      network,
+                      provider,
+                    );
+                  });
+                  it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                    await testE2E(
+                      tokens[pair[1].name],
+                      tokens[pair[0].name],
+                      holders[pair[1].name],
+                      side === SwapSide.SELL
+                        ? pair[1].sellAmount
+                        : pair[1].buyAmount,
+                      side,
+                      dexKey,
+                      contractMethod,
+                      network,
+                      provider,
+                    );
+                  });
+                });
+              });
+            });
+          }),
+        );
+      });
+    });
+  });
 };

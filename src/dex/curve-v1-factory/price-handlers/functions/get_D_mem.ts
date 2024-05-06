@@ -141,6 +141,8 @@ export const implementations: Record<ImplementationNames, get_D_mem> = {
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: factoryPlain2EthEma2,
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: factoryPlain2Basic,
+
+  [ImplementationNames.FACTORY_STABLE_NG]: notImplemented,
 };
 
 export default implementations;
