@@ -101,6 +101,8 @@ export class CurveV1Factory
   readonly isFeeOnTransferSupported = true;
   readonly isStatePollingDex = true;
 
+  private factoryAddresses: string[];
+
   readonly poolManager: CurveV1FactoryPoolManager;
   readonly ifaces: CurveV1FactoryIfaces;
 
@@ -128,6 +130,8 @@ export class CurveV1Factory
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(`${this.dexKey}-${this.network}`);
+    this.factoryAddresses =
+      this.config.factories?.map(e => e.address.toLowerCase()) || [];
     this.ifaces = {
       exchangeRouter: new Interface(CurveABI),
       factory: new Interface(FactoryCurveV1ABI as JsonFragment[]),
@@ -348,10 +352,7 @@ export class CurveV1Factory
       return;
     }
 
-    if (
-      !this.config.factoryAddresses ||
-      this.config.factoryAddresses.length == 0
-    ) {
+    if (!this.factoryAddresses || this.factoryAddresses.length == 0) {
       this.logger.warn(`No factory address specified in configs`);
       return;
     }
@@ -360,13 +361,13 @@ export class CurveV1Factory
     // So I put it here to not forget call, because custom pools must be initialised before factory pools
     // This function may be called multiple times, but will execute only once
     await this.initializeCustomPollingPools(
-      this.config.factoryAddresses,
+      this.factoryAddresses,
       blockNumber,
       initializeInitialState,
     );
 
     await Promise.all(
-      this.config.factoryAddresses.map(async factoryAddress => {
+      this.factoryAddresses.map(async factoryAddress => {
         try {
           const poolCountResult =
             await this.dexHelper.multiWrapper!.tryAggregate(true, [
@@ -426,6 +427,11 @@ export class CurveV1Factory
             }
           });
 
+          const factoryConfig = this.config.factories?.find(
+            ({ address }) =>
+              factoryAddress.toLowerCase() === address.toLowerCase(),
+          );
+
           let callDataFromFactoryPools: MultiCallParams<
             string[] | number[] | string
           >[] = poolAddresses
@@ -448,7 +454,11 @@ export class CurveV1Factory
                 ): string[] =>
                   generalDecoder<string[]>(
                     result,
-                    ['address[4]'],
+                    [
+                      `address[${
+                        factoryConfig?.maxPlainCoins?.toString() || ''
+                      }]`,
+                    ],
                     new Array(4).fill(NULL_ADDRESS),
                     parsed => parsed[0].map((p: string) => p.toLowerCase()),
                   ),
@@ -464,7 +474,11 @@ export class CurveV1Factory
                 ): number[] =>
                   generalDecoder<number[]>(
                     result,
-                    ['uint256[4]'],
+                    [
+                      `uint256[${
+                        factoryConfig?.maxPlainCoins?.toString() || ''
+                      }]`,
+                    ],
                     [0, 0, 0, 0],
                     parsed =>
                       parsed[0].map((p: BigNumber) => Number(p.toString())),
@@ -476,43 +490,51 @@ export class CurveV1Factory
           // This is divider between pools related results and implementations
           const factoryResultsDivider = callDataFromFactoryPools.length;
 
+          const metaPoolImplementations = factoryConfig?.isStableNg
+            ? []
+            : basePoolAddresses.map(basePoolAddress => ({
+                target: factoryAddress,
+                callData: this.ifaces.factory.encodeFunctionData(
+                  'metapool_implementations',
+                  [basePoolAddress],
+                ),
+                decodeFunction: (
+                  result: MultiResult<BytesLike> | BytesLike,
+                ): string[] =>
+                  generalDecoder<string[]>(
+                    result,
+                    ['address[10]'],
+                    new Array(10).fill(NULL_ADDRESS),
+                    parsed => parsed[0].map((p: string) => p.toLowerCase()),
+                  ),
+              }));
+
+          const plainImplementations = factoryConfig?.isStableNg
+            ? []
+            : _.flattenDeep(
+                _.range(2, FACTORY_MAX_PLAIN_COINS + 1).map(coinNumber =>
+                  _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(
+                    implInd => ({
+                      target: factoryAddress,
+                      callData: this.ifaces.factory.encodeFunctionData(
+                        'plain_implementations',
+                        [coinNumber, implInd],
+                      ),
+                      decodeFunction: addressDecode,
+                    }),
+                  ),
+                ),
+              );
+
           // Implementations must be requested from factory, but it accepts as arg basePool address
           // for metaPools
           callDataFromFactoryPools = callDataFromFactoryPools.concat(
-            ...basePoolAddresses.map(basePoolAddress => ({
-              target: factoryAddress,
-              callData: this.ifaces.factory.encodeFunctionData(
-                'metapool_implementations',
-                [basePoolAddress],
-              ),
-              decodeFunction: (
-                result: MultiResult<BytesLike> | BytesLike,
-              ): string[] =>
-                generalDecoder<string[]>(
-                  result,
-                  ['address[10]'],
-                  new Array(10).fill(NULL_ADDRESS),
-                  parsed => parsed[0].map((p: string) => p.toLowerCase()),
-                ),
-            })),
+            ...metaPoolImplementations,
             // To receive plain pool implementation address, you have to call plain_implementations
             // with two variables: N_COINS and implementations_index
             // N_COINS is between 2-4. Currently more than 4 coins is not supported
             // as for implementation index, there are only 0-9 indexes
-            ..._.flattenDeep(
-              _.range(2, FACTORY_MAX_PLAIN_COINS + 1).map(coinNumber =>
-                _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(
-                  implInd => ({
-                    target: factoryAddress,
-                    callData: this.ifaces.factory.encodeFunctionData(
-                      'plain_implementations',
-                      [coinNumber, implInd],
-                    ),
-                    decodeFunction: addressDecode,
-                  }),
-                ),
-              ),
-            ),
+            ...plainImplementations,
           );
 
           const allResultsFromFactory = (
@@ -619,7 +641,7 @@ export class CurveV1Factory
               factoryImplementationFromConfig.name,
               implementationAddress.toLowerCase(),
               poolAddresses[i],
-              this.config.stateUpdatePeriodMs,
+              this.config,
               factoryAddress,
               poolIdentifier,
               poolConstants,
