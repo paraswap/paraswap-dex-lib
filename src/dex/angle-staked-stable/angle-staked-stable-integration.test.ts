@@ -159,7 +159,8 @@ describe('AngleStakedStable', () => {
     const funcNameSellExit = 'previewRedeem';
     const funcNameBuyExit = 'previewWithdraw';
 
-    const exchangeSTUSD = `${dexKey}_${tokens.stUSD.address.toLowerCase()}`;
+    const exchangeSTUSD = dexKey;
+    // const exchangeSTUSD = `${dexKey}_${tokens.stUSD.address.toLowerCase()}`;
 
     const amountsForSell = [
       0n,
@@ -325,7 +326,8 @@ describe('AngleStakedStable', () => {
     const funcNameSellExit = 'previewRedeem';
     const funcNameBuyExit = 'previewWithdraw';
 
-    const exchangeSTEUR = `${dexKey}_${tokens.stEUR.address.toLowerCase()}`;
+    // const exchangeSTEUR = `${dexKey}_${tokens.stEUR.address.toLowerCase()}`;
+    const exchangeSTEUR = dexKey;
 
     const amountsForSell = [
       0n,

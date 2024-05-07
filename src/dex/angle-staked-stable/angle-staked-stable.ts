@@ -274,7 +274,7 @@ export class AngleStakedStable
 
     return [
       {
-        exchange: `${this.dexKey}_${this.config.stakeToken!.toLowerCase()}`,
+        exchange: this.dexKey,
         address: this.config.stakeToken,
         connectorTokens: [
           tokenAddress.toLowerCase() === this.config.agToken
