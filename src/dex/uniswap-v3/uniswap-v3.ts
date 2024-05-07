@@ -1196,6 +1196,8 @@ export class UniswapV3
     variables: Object,
     timeout = 30000,
   ) {
+    if (!this.config.subgraphURL) return [];
+
     try {
       const res = await this.dexHelper.httpRequest.post(
         this.config.subgraphURL,
