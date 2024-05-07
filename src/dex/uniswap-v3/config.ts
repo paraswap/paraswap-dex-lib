@@ -340,6 +340,20 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/baseswapfi/v3-base',
     },
   },
+  AlienBaseV3: {
+    [Network.BASE]: {
+      factory: '0x0Fd83557b2be93617c9C1C1B6fd549401C74558C',
+      quoter: '0x4fDBD73aD4B1DDde594BF05497C15f76308eFfb9',
+      router: '0x79edabc464dcdce8cbf1b60c003aceef7e0282d9',
+      supportedFees: [10000n, 3000n, 750n, 200n],
+      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL: 'https://api.studio.thegraph.com/query/59130/v3alb/0.3',
+    },
+  },
   VelodromeSlipstream: {
     [Network.OPTIMISM]: {
       factory: '0x548118C7E0B865C2CfA94D15EC86B666468ac758',
@@ -351,7 +365,6 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0x7ab14e1c9a50601853aa424ba830356bbd4af40db6933a7d00d0825d493746ca`, // Pool addresses computed without needing initHash: https://github.com/velodrome-finance/slipstream/blob/main/contracts/periphery/libraries/PoolAddress.sol#L30
-      subgraphURL: '', // Does not have subgraph
     },
   },
   AerodromeSlipstream: {
@@ -365,21 +378,6 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0x7ab14e1c9a50601853aa424ba830356bbd4af40db6933a7d00d0825d493746ca`, // Pool addresses computed without needing initHash: https://github.com/aerodrome-finance/slipstream/blob/main/contracts/periphery/libraries/PoolAddress.sol#L30
-      subgraphURL: '', // Does not have subgraph
-    },
-  },
-  AlienBaseV3: {
-    [Network.BASE]: {
-      factory: '0x0Fd83557b2be93617c9C1C1B6fd549401C74558C',
-      quoter: '0x4fDBD73aD4B1DDde594BF05497C15f76308eFfb9',
-      router: '0x79edabc464dcdce8cbf1b60c003aceef7e0282d9',
-      supportedFees: [10000n, 3000n, 750n, 200n],
-      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
-      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
-      chunksCount: 10,
-      initRetryFrequency: 10,
-      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.studio.thegraph.com/query/59130/v3alb/0.3',
     },
   },
 };

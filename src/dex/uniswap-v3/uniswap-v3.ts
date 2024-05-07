@@ -1018,6 +1018,8 @@ export class UniswapV3
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.config.subgraphURL) return [];
+
     const _tokenAddress = tokenAddress.toLowerCase();
 
     const res = await this._querySubgraph(

@@ -80,7 +80,7 @@ export type DexParams = {
   chunksCount: number;
   initRetryFrequency: number;
   deployer?: Address;
-  subgraphURL: string;
+  subgraphURL?: string;
   initHash: string;
   stateMultiCallAbi?: AbiItem[];
   eventPoolImplementation?: typeof UniswapV3EventPool;
