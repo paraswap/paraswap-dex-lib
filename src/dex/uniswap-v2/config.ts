@@ -799,6 +799,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       initCode: '0x', // deprecated
       poolGasCost: 90 * 1000,
       feeCode: 30,
+      subgraphURL:
+        'https://api.thegraph.com/subgraphs/name/chimpydev/swapbase/graphql',
     },
   },
   SharkSwap: {
