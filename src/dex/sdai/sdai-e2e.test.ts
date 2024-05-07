@@ -1,11 +1,11 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { ContractMethod, Network, SwapSide } from '../../constants';
+import { testE2E } from '../../../tests/utils-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
+import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
-import { Holders, Tokens } from '../../../tests/constants-e2e';
-import { testE2E } from '../../../tests/utils-e2e';
 
 function testForNetwork(
   network: Network,
@@ -31,7 +31,7 @@ function testForNetwork(
         ContractMethod.megaSwap,
       ],
     ],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -72,15 +72,17 @@ function testForNetwork(
   });
 }
 
-describe('SDai E2E', () => {
-  const dexKey = 'SDai';
+describe('sDAI E2E', () => {
+  const dexKey = 'sdai';
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
-    const tokenASymbol: string = 'sDAI';
-    const tokenBSymbol: string = 'DAI';
-    const tokenAAmount: string = BigInt(1.2345e18).toString();
-    const tokenBAmount: string = BigInt(5.4321e18).toString();
+
+    const tokenASymbol: string = 'DAI';
+    const tokenBSymbol: string = 'sDAI';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(
       network,
