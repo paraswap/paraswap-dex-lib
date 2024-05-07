@@ -67,6 +67,7 @@ export class Solidly extends UniswapV2 {
       _.omit(SolidlyConfig, [
         'Velodrome',
         'VelodromeV2',
+        'Aerodrome',
         'SpiritSwapV2',
         'Cone',
         'SolidlyV2',
@@ -77,6 +78,7 @@ export class Solidly extends UniswapV2 {
         'Equalizer',
         'Velocimeter',
         'Usdfi',
+        'PharaohV1',
       ]),
     );
 

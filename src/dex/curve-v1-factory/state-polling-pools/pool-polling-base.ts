@@ -53,6 +53,7 @@ export abstract class PoolPollingBase {
     this.fullName = `${dexKey}-${network}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
     this.isMetaPool = baseStatePoolPolling !== undefined;
     this.coinsToIndices = this._reduceToIndexMapping(poolConstants.COINS);
+
     this.underlyingCoinsToIndices = baseStatePoolPolling
       ? this._reduceToIndexMapping([
           poolConstants.COINS[0],

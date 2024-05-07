@@ -209,8 +209,10 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         ? overOrder(optimalSwapExchange.srcAmount, OVERORDER_BPS)
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
+      this.augustusAddress,
       options.txOrigin,
       options.partner,
+      options.special,
     );
 
     const expiryAsBigInt = BigInt(order.order.expiry);

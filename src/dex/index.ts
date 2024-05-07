@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2';
 import { IDexTxBuilder, DexConstructor, IDex, IRouteOptimizer } from './idex';
@@ -83,6 +84,9 @@ import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
 import { Smardex } from './smardex/smardex';
 import { Wombat } from './wombat/wombat';
+import { Swell } from './swell/swell';
+import { PharaohV1 } from './solidly/forks-override/pharaohV1';
+import { EtherFi } from './etherfi';
 
 const LegacyDexes = [
   CurveV2,
@@ -106,6 +110,7 @@ const LegacyDexes = [
   Jarvis,
   Lido,
   AugustusRFQOrder,
+  EtherFi,
 ];
 
 const Dexes = [
@@ -163,6 +168,8 @@ const Dexes = [
   SolidlyV3,
   Smardex,
   Wombat,
+  Swell,
+  PharaohV1,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
@@ -292,7 +299,7 @@ export class DexAdapterService {
   }
 
   getAllDexKeys() {
-    return this.dexKeys;
+    return _.uniq(this.dexKeys);
   }
 
   getDexByKey(key: string): IDex<any, any, any> {
