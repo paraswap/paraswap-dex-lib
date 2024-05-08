@@ -87,7 +87,9 @@ export class PancakeswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(PancakeswapV3Config, ['PancakeswapV3']));
+    getDexKeysWithNetwork(
+      _.pick(PancakeswapV3Config, ['PancakeswapV3', 'DackieSwapV3']),
+    );
 
   logger: Logger;
 
