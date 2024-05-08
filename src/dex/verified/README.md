@@ -147,12 +147,12 @@ verified.ts: contains core mehods for paraswap integration
 1. clone the verified-paraswap repo using command:
    `git clone https://github.com/verified-network/verified-paraswap.git`
    or clone any branch incase master branch is nott up to date:
-   `it clone -b {branch-name} https://github.com/verified-network/verified-paraswap.git`
+   `git clone -b {branch-name} https://github.com/verified-network/verified-paraswap.git`
 
 2. Install dependencies: under the base directory 'verified-paraswap' run command:
    `yarn install`
 
-3. Add .env file: Verified tests run on polygon(137) chain and it requires an ethers provider to run. Create an infura account and add api key infura url will be used to initialize the provider.
+3. Add .env file: Verified tests run on polygon(137) chain and it requires an ethers provider to run. Create an infura account and add api key, infura url will be used to initialize the provider.
    From the base directory 'verified-paraswap' create a new file with name '.env'.
    In the env file add the parameter:
    `HTTP_PROVIDER_137= https://polygon-mainnet.infura.io/v3/{infura-api-key}`
