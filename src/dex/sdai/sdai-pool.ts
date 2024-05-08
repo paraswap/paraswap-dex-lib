@@ -4,7 +4,7 @@ import { Interface } from '@ethersproject/abi';
 
 import type { IDexHelper } from '../../dex-helper';
 import type { AsyncOrSync, DeepReadonly } from 'ts-essentials';
-import type { Address, Log, Logger } from '../../types';
+import type { Address, BlockHeader, Log, Logger } from '../../types';
 import type { SDaiPoolState } from './types';
 import { getOnChainState } from './utils';
 import { currentBigIntTimestampInS } from '../../utils';
@@ -32,6 +32,19 @@ const rpow = (x: bigint, n: bigint): bigint => {
   return z;
 };
 
+const calcChi = (state: SDaiPoolState, currentTimestamp?: number) => {
+  currentTimestamp ||= Math.floor(Date.now() / 1000);
+  if (!state.live) return RAY;
+
+  const { dsr: dsr_, chi: chi_, rho: rho_ } = state;
+  const now = BigInt(currentTimestamp);
+  const rho = BigInt(rho_);
+  const dsr = BigInt(dsr_);
+  const chi = BigInt(chi_);
+
+  return now > rho ? (rpow(dsr, now - rho) * chi) / RAY : chi;
+};
+
 export class SDaiPool extends StatefulEventSubscriber<SDaiPoolState> {
   decoder = (log: Log) => this.potInterface.parseLog(log);
 
@@ -49,16 +62,32 @@ export class SDaiPool extends StatefulEventSubscriber<SDaiPoolState> {
   protected processLog(
     state: DeepReadonly<SDaiPoolState>,
     log: Readonly<Log>,
+    blockHeader: Readonly<BlockHeader>,
   ): AsyncOrSync<DeepReadonly<SDaiPoolState> | null> {
     const event = this.decoder(log);
-    // if (event.name === 'Reprice')
-    //   return {
-    //     dsr: BigInt(event.args.newSwETHToETHRate),
-    //     rho: BigInt(event.args.newSwETHToETHRate),
-    //     chi: BigInt(event.args.newSwETHToETHRate),
-    //     timestamp: BigInt(0),
-    //     // timestamp: BigInt(event.b);
-    //   };
+    if (event.name === 'cage') {
+      return {
+        dsr: RAY.toString(),
+        chi: RAY.toString(),
+        rho: RAY.toString(),
+        live: false,
+      };
+    }
+
+    if (event.name === 'file' && event.args.what === 'dsr') {
+      return {
+        ...state,
+        dsr: BigInt(event.args.data).toString(),
+      };
+    }
+
+    if (event.name === 'drip') {
+      return {
+        ...state,
+        rho: blockHeader.timestamp.toString(),
+        chi: calcChi(state, +blockHeader.timestamp).toString(),
+      };
+    }
 
     return null;
   }
@@ -66,36 +95,25 @@ export class SDaiPool extends StatefulEventSubscriber<SDaiPoolState> {
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<SDaiPoolState>> {
-    const state = await getOnChainState(
-      this.dexHelper.multiContract,
-      this.potAddress,
-      this.potInterface,
-      blockNumber,
-    );
-
-    return state;
+    return {
+      dsr: RAY.toString(),
+      chi: RAY.toString(),
+      rho: RAY.toString(),
+      live: true,
+    };
   }
 
-  chi(blockNumber: number): bigint {
+  convertToSDai(daiAmount: bigint, blockNumber: number): bigint {
     const state = this.getState(blockNumber);
-    if (!state) throw new Error('Cannot compute price');
+    if (!state) throw new Error('Unable to fetch state for SDAI');
 
-    const { rho, chi, dsr } = state;
-
-    const timestamp = currentBigIntTimestampInS();
-    const multiplier = rpow(BigInt(dsr), timestamp - BigInt(rho));
-    return timestamp > BigInt(rho)
-      ? (multiplier * BigInt(chi)) / RAY
-      : BigInt(chi);
+    return (daiAmount * RAY) / calcChi(state);
   }
 
-  convertToSDai(blockNumber: number, daiAmount: bigint): bigint {
-    const chi = this.chi(blockNumber);
-    return (daiAmount * RAY) / chi;
-  }
+  convertToDai(sdaiAmount: bigint, blockNumber: number): bigint {
+    const state = this.getState(blockNumber);
+    if (!state) throw new Error('Unable to fetch state for SDAI');
 
-  convertToDai(blockNumber: number, sdaiAmount: bigint): bigint {
-    const chi = this.chi(blockNumber);
-    return (sdaiAmount * chi) / RAY;
+    return (sdaiAmount * calcChi(state)) / RAY;
   }
 }

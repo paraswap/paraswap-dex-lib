@@ -96,9 +96,6 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: remove this fn call
-    await this.initializePricing(blockNumber);
-
     return this.isAppropriatePair(srcToken, destToken)
       ? [`${this.dexKey}_${srcToken.address}_${destToken.address}`]
       : [];
@@ -117,8 +114,8 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
 
     const convertFn = (blockNumber: number, amountIn: bigint) =>
       this.isDai(srcToken.address)
-        ? this.eventPool.convertToSDai(blockNumber, amountIn)
-        : this.eventPool.convertToDai(blockNumber, amountIn);
+        ? this.eventPool.convertToSDai(amountIn, blockNumber)
+        : this.eventPool.convertToDai(amountIn, blockNumber);
 
     const unitIn = BI_POWS[18];
     const unitOut = convertFn(blockNumber, unitIn);

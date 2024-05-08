@@ -17,4 +17,5 @@ export type SDaiPoolState = {
   rho: string;
   chi: string;
   dsr: string;
+  live: boolean;
 };

@@ -28,14 +28,19 @@ export async function getOnChainState(
         target: potAddress,
         callData: potInterface.encodeFunctionData('rho', []),
       },
+      {
+        target: potAddress,
+        callData: potInterface.encodeFunctionData('live', []),
+      },
     ])
     .call({}, blockNumber);
 
-  const [dsr, chi, rho] = data.returnData.map(item =>
+  const [dsr, chi, rho, live] = data.returnData.map(item =>
     coder.decode(['uint256'], item)[0].toString(),
   );
 
   return {
+    live: !!live,
     dsr,
     chi,
     rho,
