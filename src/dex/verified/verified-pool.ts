@@ -20,7 +20,7 @@ import {
 import { MAX_POOL_CNT, POOL_CACHE_TTL } from './constants';
 import VAULTABI from '../../abi/verified/vault.json';
 import { PrimaryIssuePool } from './pools/primary/primaryPool';
-import { SecondaryIssuePool } from './pools/secondary/secondarPool';
+import { SecondaryIssuePool } from './pools/secondary/secondaryPool';
 
 //TODO: verify why polygon pools have no liquidity and update the query
 //it must filter with liquidity

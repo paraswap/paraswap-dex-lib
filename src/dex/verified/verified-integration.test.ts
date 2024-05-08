@@ -14,7 +14,6 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { VerifiedData, VerifiedParam } from './types';
-import { SmartTokenParams } from '../../../tests/smart-tokens';
 import { PoolPrices } from '../../types';
 
 function getReaderCalldata(
@@ -41,8 +40,12 @@ function decodeReaderResult(
     funcName,
     result.returnData[0],
   );
-  const resultIndex = side === SwapSide.SELL ? parsed[0].length - 1 : 0;
-  return BigInt(parsed[0][resultIndex]._hex.replace('-', ''));
+  //   if(side === SwapSide.SELL) {
+  //     console.log("parsed s: ", parsed)
+  //   }else{
+  //     console.log("parsed b: ", parsed)
+  //   }
+  return BigInt(parsed[0][0]._hex.replace('-', ''));
 }
 
 async function checkOnChainPricing(
@@ -74,7 +77,7 @@ async function checkOnChainPricing(
     data,
     side,
   );
-  // console.log("verified params: ", params)
+  //   console.log("verified swap params: ", params)
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
@@ -97,7 +100,7 @@ async function testPricingOnNetwork(
   dexKey: string,
   blockNumber: number,
   srcTokenSymbol: string,
-  secondaryDestTokenSymbol: string,
+  destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
   funcNameToCheck: string,
@@ -106,12 +109,12 @@ async function testPricingOnNetwork(
 
   const pools = await verified.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
-    networkTokens[secondaryDestTokenSymbol],
+    networkTokens[destTokenSymbol],
     side,
     blockNumber,
   );
   console.log(
-    `${srcTokenSymbol} <> ${secondaryDestTokenSymbol} Pool Identifiers: `,
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
     pools,
   );
 
@@ -119,14 +122,14 @@ async function testPricingOnNetwork(
 
   const poolPrices = await verified.getPricesVolume(
     networkTokens[srcTokenSymbol],
-    networkTokens[secondaryDestTokenSymbol],
+    networkTokens[destTokenSymbol],
     amounts,
     side,
     blockNumber,
     pools,
   );
   console.log(
-    `${srcTokenSymbol} <> ${secondaryDestTokenSymbol} Pool Prices When ${side}ING amounts: [${amounts}] are:`,
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices When ${side}ING amounts: [${amounts}] are:`,
     poolPrices,
   );
 
@@ -146,22 +149,25 @@ async function testPricingOnNetwork(
       : checkPoolPrices(poolPrices!, amounts, side, dexKey, false);
   }
 
-  //Check if onchain pricing equals to calculated ones
-  poolPrices![0].prices.map(async (price, idx) => {
-    if (amounts[idx] !== 0n) {
-      const onChainPrice = await checkOnChainPricing(
-        verified,
-        networkTokens[srcTokenSymbol].address,
-        networkTokens[secondaryDestTokenSymbol].address,
-        funcNameToCheck,
-        blockNumber,
-        amounts[idx],
-        poolPrices![0],
-        side,
-      );
-      expect(onChainPrice).toEqual(price);
-    }
-  });
+  //Check if onchain pricing equals to calculated ones if it's not for secondary pool
+  //verified secondary pool swap from onchain will return amount of VPT while poolPrices is tokenOut/tokenIn amount
+  if (srcTokenSymbol !== 'AUCO2' && destTokenSymbol !== 'AUCO2') {
+    poolPrices![0].prices.map(async (price, idx) => {
+      if (amounts[idx] !== 0n) {
+        const onChainPrice = await checkOnChainPricing(
+          verified,
+          networkTokens[srcTokenSymbol].address,
+          networkTokens[destTokenSymbol].address,
+          funcNameToCheck,
+          blockNumber,
+          amounts[idx],
+          poolPrices![0],
+          side,
+        );
+        expect(onChainPrice).toEqual(price);
+      }
+    });
+  }
 }
 
 describe('Verified Integration Tests on Polygon', function () {
@@ -183,9 +189,9 @@ describe('Verified Integration Tests on Polygon', function () {
 
   const secondarySecurityAmounts = [
     0n,
-    1n * BI_POWS[tokens[secondaryDestTokenSymbol].decimals],
-    2n * BI_POWS[tokens[secondaryDestTokenSymbol].decimals],
-    3n * BI_POWS[tokens[secondaryDestTokenSymbol].decimals],
+    BigInt(0.0001 * Number(BI_POWS[tokens[secondaryDestTokenSymbol].decimals])),
+    BigInt(0.0002 * Number(BI_POWS[tokens[secondaryDestTokenSymbol].decimals])),
+    BigInt(0.0003 * Number(BI_POWS[tokens[secondaryDestTokenSymbol].decimals])),
   ];
 
   const primarySecurityAmounts = [
@@ -210,10 +216,10 @@ describe('Verified Integration Tests on Polygon', function () {
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbol,
         secondaryDestTokenSymbol,
+        srcTokenSymbol,
         SwapSide.SELL,
-        secondarySecurityAmounts,
+        secondarySecurityAmounts, //0, 0.0001, 0.0002, 0.0003 to return non 0 price due to current pool balance
         'queryBatchSwap',
       );
     });
@@ -227,7 +233,7 @@ describe('Verified Integration Tests on Polygon', function () {
         srcTokenSymbol,
         secondaryDestTokenSymbol,
         SwapSide.BUY,
-        secondarySecurityAmounts,
+        usdcAmounts, // amt is srcToken amounts
         'queryBatchSwap',
       );
     });
@@ -308,7 +314,7 @@ describe('Verified Integration Tests on Polygon', function () {
         srcTokenSymbol,
         primaryDestTokenSymbol,
         SwapSide.BUY,
-        primarySecurityAmounts, //amount will be amount out/destToken amount since we are buying
+        usdcAmounts, //amount will be amount out/destToken amount since we are buying
         'queryBatchSwap',
       );
     });
@@ -322,7 +328,7 @@ describe('Verified Integration Tests on Polygon', function () {
         primaryDestTokenSymbol, //Security Token is now srcToken
         srcTokenSymbol,
         SwapSide.BUY,
-        usdcAmounts, //amount will be amount out/destToken amount since we are buying
+        primarySecurityAmounts, //amount will be amount out/destToken amount since we are buying
         'queryBatchSwap',
       );
     });

@@ -67,6 +67,7 @@ export type OrdersState = {
   priceOffered: bigint;
   timestamp: bigint;
   orderReference: string;
+  isMatched?: boolean;
 };
 
 export type SecondaryTradeState = {
@@ -97,6 +98,8 @@ export interface SubgraphPoolBase {
 export type VerifiedSwapParam = {
   poolId: string;
   amount: string;
+  limitOrder?: boolean;
+  price?: string;
 };
 
 export type OptimizedBalancerV2Data = {

@@ -238,12 +238,17 @@ export class SecondaryIssuePool {
             if (matchedTrade) {
               const price =
                 order.tokenIn.id.toLowerCase() === security.toLowerCase()
-                  ? BigInt((1 / Number(matchedTrade.price)) * 10 ** 18)
-                  : BigInt(Number(matchedTrade.price) / 10 ** 18);
-              const amount = MathSol.mul(matchedTrade.amount, price);
+                  ? 1 / Number(matchedTrade.price)
+                  : Number(matchedTrade.price);
+              const amount = Number(matchedTrade.amount) * price;
+              const amtCalculated = BigInt(
+                (Number(order.amountOffered) - amount) * 10 ** 18,
+              );
+
               return {
                 ...order,
-                amountOffered: MathSol.sub(order.amountOffered, amount),
+                amountOffered: amtCalculated,
+                isMatched: amtCalculated === 0n ? false : true,
               };
             }
             return order;
@@ -255,9 +260,14 @@ export class SecondaryIssuePool {
       );
 
       const orderBookdepth = buyOrders
-        .map(order => Number(order.amountOffered) / Number(order.priceOffered))
-        .reduce((partialSum, a) => (partialSum + a) * 10 ** 18, 0);
-      if (amount > BigInt(orderBookdepth)) {
+        .map(order =>
+          order.isMatched
+            ? Number(order.amountOffered) / Number(order.priceOffered)
+            : (Number(order.amountOffered) * 10 ** 18) /
+              Number(order.priceOffered),
+        )
+        .reduce((partialSum, a) => partialSum + a, 0);
+      if (Number(amount) > orderBookdepth) {
         return 0n;
       }
 
@@ -328,12 +338,17 @@ export class SecondaryIssuePool {
             if (matchedTrade) {
               const price =
                 order.tokenIn.id.toLowerCase() === security.toLowerCase()
-                  ? BigInt((1 / Number(matchedTrade.price)) * 10 ** 18)
-                  : BigInt(Number(matchedTrade.price) / 10 ** 18);
-              const amount = MathSol.mul(matchedTrade.amount, price);
+                  ? 1 / Number(matchedTrade.price)
+                  : Number(matchedTrade.price);
+              const amount = Number(matchedTrade.amount) * price;
+              const amtCalculated = BigInt(
+                (Number(order.amountOffered) - amount) * 10 ** 18,
+              );
+
               return {
                 ...order,
-                amountOffered: MathSol.sub(order.amountOffered, amount),
+                amountOffered: amtCalculated,
+                isMatched: amtCalculated === 0n ? false : true, //track upscaled amountOffered
               };
             }
             return order;
@@ -344,9 +359,15 @@ export class SecondaryIssuePool {
         (a, b) => Number(a.priceOffered) - Number(b.priceOffered),
       );
       const orderBookdepth = sellOrders
-        .map(order => Number(order.amountOffered) * Number(order.priceOffered))
-        .reduce((partialSum, a) => (partialSum + a) * 10 ** 18, 0);
-      if (amount > BigInt(orderBookdepth)) {
+        .map(order =>
+          order.isMatched
+            ? Number(order.amountOffered) * Number(order.priceOffered)
+            : Number(order.amountOffered) *
+              10 ** 18 *
+              Number(order.priceOffered),
+        )
+        .reduce((partialSum, a) => partialSum + a, 0);
+      if (Number(amount) > orderBookdepth) {
         return 0n;
       }
 

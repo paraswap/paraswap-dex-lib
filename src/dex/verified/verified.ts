@@ -36,6 +36,7 @@ import {
   VerifiedData,
   VerifiedDirectParam,
   VerifiedParam,
+  VerifiedPoolTypes,
   VerifiedSwap,
 } from './types';
 import {
@@ -67,6 +68,8 @@ import {
 } from './constants';
 import { Interface } from 'ethers/lib/utils';
 import _ from 'lodash';
+import { AbiCoder } from '@ethersproject/abi';
+import { formatBytes32String } from '@ethersproject/strings';
 
 export class Verified
   extends SimpleExchange
@@ -116,6 +119,7 @@ export class Verified
   }
 
   //gets first 10 pools with from and to tokens as their maintokens
+  //Todo: mmake nummber of pools returned dynamic??
   getPoolsWithTokenPair(from: Token, to: Token): SubgraphPoolBase[] {
     const pools = this.eventPools.allPools.filter(p => {
       return (
@@ -244,7 +248,7 @@ export class Verified
               (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
                 .decimals,
             );
-            const creator = '';
+            const creator = ''; //must change to sender's wallet if paraswap accept changing params
             const res = this.eventPools.getPricesPool(
               path[i].tokenIn,
               path[i].tokenOut,
@@ -359,9 +363,13 @@ export class Verified
     let swaps: VerifiedSwap[] = [];
     let assets: string[] = [];
     let limits: string[] = [];
-
+    let isSecondaryPool = false;
+    const abiCoder = new AbiCoder();
     for (const swapData of data.swaps) {
       const pool = mapPoolsBy(this.eventPools.allPools, 'id')[swapData.poolId];
+      pool.poolType === VerifiedPoolTypes.SecondaryIssuePool
+        ? (isSecondaryPool = true)
+        : (isSecondaryPool = false);
       const hasEth = [srcToken.toLowerCase(), destToken.toLowerCase()].includes(
         ETHER_ADDRESS.toLowerCase(),
       );
@@ -386,26 +394,59 @@ export class Verified
         path = path.reverse();
       }
 
+      // BalancerV2 Uses Address(0) as ETH
+      const _assets =
+        pool.poolType === VerifiedPoolTypes.SecondaryIssuePool
+          ? [
+              _srcToken,
+              pool.address,
+              ...path.map(hop => hop.tokenOut.address),
+            ].map(t =>
+              hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t,
+            )
+          : [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(t =>
+              hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t,
+            );
+
+      const _limits = _assets.map((_, idx) =>
+        idx ===
+        _assets.findIndex(
+          asst => asst.toLowerCase() === _srcToken.toLowerCase(),
+        )
+          ? swapData.amount
+          : '0',
+      );
+
       const _swaps = path.map((hop, index) => ({
         poolId: hop.pool.id,
-        assetInIndex: swapOffset + index,
-        assetOutIndex: swapOffset + index + 1,
+        assetInIndex: _assets.findIndex(
+          asst => asst.toLowerCase() === _srcToken.toLowerCase(),
+        ),
+        assetOutIndex:
+          hop.pool.poolType === VerifiedPoolTypes.SecondaryIssuePool
+            ? _assets.findIndex(
+                asst => asst.toLowerCase() === hop.pool.address.toLowerCase(),
+              )
+            : _assets.findIndex(
+                asst => asst.toLowerCase() === _destToken.toLowerCase(),
+              ), //use Vpt for secondary pools
         amount:
           (side === SwapSide.SELL && index === 0) ||
           (side === SwapSide.BUY && index === path.length - 1)
             ? swapData.amount
             : '0',
-        userData: '0x',
+        userData:
+          hop.pool.poolType === VerifiedPoolTypes.SecondaryIssuePool
+            ? swapData.limitOrder
+              ? abiCoder.encode(
+                  ['bytes32', 'uint256'],
+                  [formatBytes32String('Limit'), swapData.price],
+                )
+              : '0x'
+            : '0x', //handle limit order for secondary pool
       }));
 
       swapOffset += path.length + 1;
-
-      // BalancerV2 Uses Address(0) as ETH
-      const _assets = [_srcToken, ...path.map(hop => hop.tokenOut.address)].map(
-        t => (hasEth && this.dexHelper.config.isWETH(t) ? NULL_ADDRESS : t),
-      );
-
-      const _limits = _assets.map(_ => MAX_INT);
 
       swaps = swaps.concat(_swaps);
       assets = assets.concat(_assets);
@@ -420,7 +461,11 @@ export class Verified
     };
 
     const params: VerifiedParam = [
-      side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
+      isSecondaryPool
+        ? SwapTypes.SwapExactIn
+        : side === SwapSide.SELL
+        ? SwapTypes.SwapExactIn
+        : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
       assets,
       funds,
@@ -491,7 +536,6 @@ export class Verified
 
   // Encode params required by the exchange adapter
   // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -661,7 +705,7 @@ export class Verified
     this.eventPools.allPools = await this.eventPools.fetchAllSubgraphPools();
   }
 
-  // Returns list of top pools based on liquidity. Max
+  // Returns list of top pools that allow for a token. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
@@ -677,9 +721,6 @@ export class Verified
       poolIds: poolsWithToken.map(pool => pool.id),
       count,
     };
-
-    //TODO: verify why polygon pools have no liquidity and update the query
-    //it must filter with liquidity
     const query = `query ($poolIds: [String!]!, $count: Int) {
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
            where: {id_in: $poolIds,
