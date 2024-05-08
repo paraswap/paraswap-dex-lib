@@ -774,7 +774,7 @@ export const Tokens: {
       decimals: 8,
     },
     BTCb: {
-      address: '0x152b9d0FdC40C096757F570A51E494bd4b943E50',
+      address: '0x4bb7f4c3d47C4b431cb0658F44287d52006fb506',
       decimals: 8,
     },
     ADAI: {
