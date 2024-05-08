@@ -1,4 +1,4 @@
-### Verified Network Setup
+## Verified Network Setup
 
 The Verified Network contains 2 major files:
 verified-pool.ts: contains utilities methods for paraswap integration
@@ -125,7 +125,7 @@ verified.ts: contains core mehods for paraswap integration
     tokenAddress: address of token to get top pools for,
     count: maximum number of pools to return.
 
-## Verified Tests.
+## Verified Tests
 
 1.  verified-events.test.ts: Verified supports 2 events for it pools. "Swap" and "PoolBalanceChanged" eventts hence why there are 2 handlers: handleSwap and handlePoolBalanceChanged respectively in verified-pool.ts file. Tests under this file ensure that the Swap event is working as intended for both primary and secondary issue pools. Itt will fettch all subgraph pools, make onchain calls for all fetched pools and save their states then ensure the Swap event is handled. It tests mainly Swap event and verified-pool.ts methods
 
@@ -142,7 +142,7 @@ verified.ts: contains core mehods for paraswap integration
 
 3.  verified-e2e.test.ts: This test different ttype of onchain tests for simpleSwap, directSwap, megaSwap e.t.c. It uses ttenderly to send transactions emulating real blockchain. This test is incomplete for now since paraswap needs to approve and add verified adapter for e2e tests to run.
 
-## How to run verified testts
+## How to run verified tests
 
 1. clone the verified-paraswap repo using command:
    `git clone https://github.com/verified-network/verified-paraswap.git`
