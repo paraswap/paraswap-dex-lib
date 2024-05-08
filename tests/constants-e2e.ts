@@ -774,7 +774,7 @@ export const Tokens: {
       decimals: 8,
     },
     BTCb: {
-      address: '0x4bb7f4c3d47C4b431cb0658F44287d52006fb506',
+      address: '0x152b9d0FdC40C096757F570A51E494bd4b943E50',
       decimals: 8,
     },
     ADAI: {
@@ -1271,7 +1271,7 @@ export const Holders: {
     nETH: '0xcf2ef00e75558512ae735679ea5df62ad2056786',
     avWETH: '0x92d78e32b990d10aeca0875dc5585f1a6f958179',
     YUSD: '0x6c1a5ef2acde1fd2fc68def440d2c1eb35bae24a',
-    BTCb: '0x84c06d3c27821d0136f66306f5028d43ceac268d',
+    BTCb: '0x4bb7f4c3d47C4b431cb0658F44287d52006fb506',
     AMPL: '0xfcaA5ea7F8eb0631BcA72C345025C0A5a6D93f0E',
     PHAR: '0x654296D56532f62B7d91d335791d3c364a9385b5',
   },

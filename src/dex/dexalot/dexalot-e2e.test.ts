@@ -196,7 +196,7 @@ describe('Dexalot E2E', () => {
     const tokenASymbol: string = 'BTCb';
     const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '100';
+    const tokenAAmount: string = '10000';
     const tokenBAmount: string = '9000000000';
     const nativeTokenAmount = '1000000000000000000';
 
