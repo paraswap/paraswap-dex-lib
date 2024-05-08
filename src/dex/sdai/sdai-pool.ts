@@ -7,25 +7,31 @@ import type { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import type { Address, BlockHeader, Log, Logger } from '../../types';
 import type { SDaiPoolState } from './types';
 import { getOnChainState } from './utils';
-import { currentBigIntTimestampInS } from '../../utils';
 
 const RAY = BI_POWS[27];
 const ZERO = BigInt(0);
 const TWO = BigInt(2);
 const HALF = RAY / TWO;
 
+// function file(bytes32,uint256)
+const FILE_TOPICHASH = `0x29ae811400000000000000000000000000000000000000000000000000000000`;
+// function drip()
+const DRIP_TOPICHASH = `0x9f678cca00000000000000000000000000000000000000000000000000000000`;
+// function cage()
+const CAGE_TOPICHASH = `0x6924500900000000000000000000000000000000000000000000000000000000`;
+// bytes32 repr of "dsr" string
+const DSR_TOPIC = `0x6473720000000000000000000000000000000000000000000000000000000000`;
+
 const rpow = (x: bigint, n: bigint): bigint => {
   // REF: https://etherscan.io/address/0x83f20f44975d03b1b09e64809b757c47f942beea#code#L122
   let z = RAY;
   if (!x && !n) return z;
   if (!x) return ZERO;
-  if (n % TWO > ZERO) {
-    z = x;
-  }
+  if (n % TWO) z = x;
 
   for (n = n / TWO; n > ZERO; n /= TWO) {
     x = (x * x + HALF) / RAY;
-    if (n % TWO > ZERO) continue;
+    if (n % TWO) continue;
     z = (z * x + HALF) / RAY;
   }
 
@@ -45,9 +51,7 @@ const calcChi = (state: SDaiPoolState, currentTimestamp?: number) => {
   return now > rho ? (rpow(dsr, now - rho) * chi) / RAY : chi;
 };
 
-export class SDaiPool extends StatefulEventSubscriber<SDaiPoolState> {
-  decoder = (log: Log) => this.potInterface.parseLog(log);
-
+export class SDaiEventPool extends StatefulEventSubscriber<SDaiPoolState> {
   constructor(
     parentName: string,
     protected dexHelper: IDexHelper,
@@ -64,8 +68,7 @@ export class SDaiPool extends StatefulEventSubscriber<SDaiPoolState> {
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): AsyncOrSync<DeepReadonly<SDaiPoolState> | null> {
-    const event = this.decoder(log);
-    if (event.name === 'cage') {
+    if (log.topics[0] === CAGE_TOPICHASH) {
       return {
         dsr: RAY.toString(),
         chi: RAY.toString(),
@@ -74,14 +77,14 @@ export class SDaiPool extends StatefulEventSubscriber<SDaiPoolState> {
       };
     }
 
-    if (event.name === 'file' && event.args.what === 'dsr') {
+    if (log.topics[0] === FILE_TOPICHASH && log.topics[2] === DSR_TOPIC) {
       return {
         ...state,
-        dsr: BigInt(event.args.data).toString(),
+        dsr: BigInt(log.topics[2]).toString(),
       };
     }
 
-    if (event.name === 'drip') {
+    if (log.topics[0] === DRIP_TOPICHASH) {
       return {
         ...state,
         rho: blockHeader.timestamp.toString(),
@@ -95,12 +98,12 @@ export class SDaiPool extends StatefulEventSubscriber<SDaiPoolState> {
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<SDaiPoolState>> {
-    return {
-      dsr: RAY.toString(),
-      chi: RAY.toString(),
-      rho: RAY.toString(),
-      live: true,
-    };
+    return getOnChainState(
+      this.dexHelper.multiContract,
+      this.potAddress,
+      this.potInterface,
+      blockNumber,
+    );
   }
 
   convertToSDai(daiAmount: bigint, blockNumber: number): bigint {

@@ -1,7 +1,7 @@
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
 import { SDaiParams, SDaiData, SDaiFunctions } from './types';
-import { NULL_ADDRESS, Network, SwapSide } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { getDexKeysWithNetwork } from '../../utils';
 import { Adapters, SDaiConfig } from './config';
 import {
@@ -19,8 +19,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import PotAbi from '../../abi/maker-psm/pot.json';
 import SavingsDaiAbi from '../../abi/sdai/SavingsDai.abi.json';
 import { Interface } from 'ethers/lib/utils';
-import { getOnChainState } from './utils';
-import { SDaiPool } from './sdai-pool';
+import { SDaiEventPool } from './sdai-pool';
 import { BI_POWS } from '../../bigint-constants';
 import { SDAI_DEPOSIT_GAS_COST } from './constants';
 
@@ -31,7 +30,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SDaiConfig);
 
-  protected eventPool: SDaiPool;
+  protected eventPool: SDaiEventPool;
   logger: Logger;
 
   constructor(
@@ -49,7 +48,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPool = new SDaiPool(
+    this.eventPool = new SDaiEventPool(
       this.dexKey,
       dexHelper,
       this.potAddress,
@@ -78,16 +77,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   }
 
   async initializePricing(blockNumber: number) {
-    const poolState = await getOnChainState(
-      this.dexHelper.multiContract,
-      this.potAddress,
-      this.potInterface,
-      blockNumber,
-    );
-
-    await this.eventPool.initialize(blockNumber, {
-      state: poolState,
-    });
+    await this.eventPool.generateState(blockNumber);
   }
 
   async getPoolIdentifiers(
@@ -97,7 +87,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
     blockNumber: number,
   ): Promise<string[]> {
     return this.isAppropriatePair(srcToken, destToken)
-      ? [`${this.dexKey}_${srcToken.address}_${destToken.address}`]
+      ? [`${this.dexKey}_${this.sdaiAddress}`]
       : [];
   }
 
@@ -110,7 +100,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SDaiData>> {
     if (!this.isAppropriatePair(srcToken, destToken)) return null;
-    if (this.eventPool.getState(blockNumber) === null) return null;
+    if (!this.eventPool.getState(blockNumber)) return null;
 
     const convertFn = (blockNumber: number, amountIn: bigint) =>
       this.isDai(srcToken.address)
@@ -130,7 +120,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
         gasCost: SDAI_DEPOSIT_GAS_COST,
         exchange: this.dexKey,
         poolAddresses: [this.sdaiAddress],
-        data: null,
+        data: { exchange: this.sdaiAddress },
       },
     ];
   }
@@ -196,9 +186,22 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
     data: SDaiData,
     side: SwapSide,
   ): AdapterExchangeParam {
+    const { exchange } = data;
+
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          toStaked: 'bool',
+        },
+      },
+      {
+        toStaked: this.isDai(srcToken),
+      },
+    );
+
     return {
-      targetExchange: NULL_ADDRESS,
-      payload: '0x',
+      targetExchange: exchange,
+      payload,
       networkFee: '0',
     };
   }

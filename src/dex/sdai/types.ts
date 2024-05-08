@@ -1,6 +1,6 @@
 import { Address } from '../../types';
 
-export type SDaiData = null;
+export type SDaiData = { exchange: Address };
 
 export type SDaiParams = {
   sdaiAddress: Address;
