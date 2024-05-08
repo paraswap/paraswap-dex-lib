@@ -88,7 +88,11 @@ export class PancakeswapV3
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.pick(PancakeswapV3Config, ['PancakeswapV3', 'DackieSwapV3']),
+      _.pick(PancakeswapV3Config, [
+        'PancakeswapV3',
+        'DackieSwapV3',
+        'SwapBasedV3',
+      ]),
     );
 
   logger: Logger;
