@@ -86,6 +86,8 @@ describe('SDai Event', function () {
             logger,
           );
 
+          await sdaiPool.initialize(blockNumber);
+
           await testEventSubscriber(
             sdaiPool,
             sdaiPool.addressesSubscribed,

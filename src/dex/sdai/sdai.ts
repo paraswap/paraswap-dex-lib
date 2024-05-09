@@ -77,7 +77,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   }
 
   async initializePricing(blockNumber: number) {
-    await this.eventPool.generateState(blockNumber);
+    await this.eventPool.initialize(blockNumber);
   }
 
   async getPoolIdentifiers(

@@ -19,13 +19,20 @@ const DaiToken = Tokens[network][DaiSymbol];
 const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
 const dexKey = 'SDai';
+const dexHelper = new DummyDexHelper(network);
+let blocknumber: number;
+let sdai: SDai;
 
 describe('SDai', function () {
-  it('getPoolIdentifiers and getPricesVolume DAI -> sDAI SELL', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const sdai = new SDai(network, dexKey, dexHelper);
+  beforeAll(async () => {
+    blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    sdai = new SDai(network, dexKey, dexHelper);
+    if (sdai.initializePricing) {
+      await sdai.initializePricing(blocknumber);
+    }
+  });
 
+  it('getPoolIdentifiers and getPricesVolume DAI -> sDAI SELL', async function () {
     const pools = await sdai.getPoolIdentifiers(
       DaiToken,
       SDaiToken,
@@ -51,10 +58,6 @@ describe('SDai', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume sDAI -> DAI SELL', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const sdai = new SDai(network, dexKey, dexHelper);
-
     const pools = await sdai.getPoolIdentifiers(
       SDaiToken,
       DaiToken,
@@ -80,10 +83,6 @@ describe('SDai', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume DAI -> sDAI BUY', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const sdai = new SDai(network, dexKey, dexHelper);
-
     const pools = await sdai.getPoolIdentifiers(
       DaiToken,
       SDaiToken,
@@ -109,10 +108,6 @@ describe('SDai', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume sDAI -> DAI BUY', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const sdai = new SDai(network, dexKey, dexHelper);
-
     const pools = await sdai.getPoolIdentifiers(
       SDaiToken,
       DaiToken,
@@ -138,26 +133,14 @@ describe('SDai', function () {
   });
 
   it('Dai getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const makerPsm = new SDai(network, dexKey, dexHelper);
-
-    const poolLiquidity = await makerPsm.getTopPoolsForToken(
-      DaiToken.address,
-      10,
-    );
+    const poolLiquidity = await sdai.getTopPoolsForToken(DaiToken.address, 10);
     console.log(`${DaiSymbol} Top Pools:`, poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, DaiToken.address, dexKey);
   });
 
   it('SDai getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const makerPsm = new SDai(network, dexKey, dexHelper);
-
-    const poolLiquidity = await makerPsm.getTopPoolsForToken(
-      SDaiToken.address,
-      10,
-    );
+    const poolLiquidity = await sdai.getTopPoolsForToken(SDaiToken.address, 10);
     console.log(`${SDaiSymbol} Top Pools:`, poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, SDaiToken.address, dexKey);
