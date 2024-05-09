@@ -99,14 +99,14 @@ export class SDaiEventPool extends StatefulEventSubscriber<SDaiPoolState> {
 
   convertToSDai(daiAmount: bigint, blockNumber: number): bigint {
     const state = this.getState(blockNumber);
-    if (!state) throw new Error('Unable to fetch state for SDAI');
+    if (!state) throw new Error(`SDai state at ${blockNumber} does not exists`);
 
     return (daiAmount * RAY) / calcChi(state);
   }
 
   convertToDai(sdaiAmount: bigint, blockNumber: number): bigint {
     const state = this.getState(blockNumber);
-    if (!state) throw new Error('Unable to fetch state for SDAI');
+    if (!state) throw new Error(`SDai state at ${blockNumber} does not exists`);
 
     return (sdaiAmount * calcChi(state)) / RAY;
   }
