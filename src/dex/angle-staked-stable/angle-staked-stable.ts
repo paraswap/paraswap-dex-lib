@@ -114,7 +114,7 @@ export class AngleStakedStable
           unit: eventPool.getRateDeposit(1n * BigInt(10 ** 18), state),
           gasCost: AngleStakedGasCost,
           exchange: exchange,
-          data: { exchange: `${stakeToken}` },
+          data: { exchange: stakeToken },
           poolAddresses: [stakeToken],
         },
       ];
@@ -125,7 +125,7 @@ export class AngleStakedStable
           unit: eventPool.getRateRedeem(1n * BigInt(10 ** 18), state),
           gasCost: AngleStakedGasCost,
           exchange: exchange,
-          data: { exchange: `${stakeToken}` },
+          data: { exchange: stakeToken },
           poolAddresses: [stakeToken],
         },
       ];
@@ -136,7 +136,7 @@ export class AngleStakedStable
           unit: eventPool.getRateMint(1n * BigInt(10 ** 18), state),
           gasCost: AngleStakedGasCost,
           exchange: exchange,
-          data: { exchange: `${stakeToken}` },
+          data: { exchange: stakeToken },
           poolAddresses: [stakeToken],
         },
       ];
@@ -146,7 +146,7 @@ export class AngleStakedStable
         unit: eventPool.getRateWithdraw(1n * BigInt(10 ** 18), state),
         gasCost: AngleStakedGasCost,
         exchange: exchange,
-        data: { exchange: `${stakeToken}` },
+        data: { exchange: stakeToken },
         poolAddresses: [stakeToken],
       },
     ];
