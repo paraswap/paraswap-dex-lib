@@ -11,6 +11,8 @@ export type SDaiParams = {
 export enum SDaiFunctions {
   deposit = 'deposit',
   redeem = 'redeem',
+  withdraw = 'withdraw',
+  mint = 'mint',
 }
 
 export type SDaiPoolState = {

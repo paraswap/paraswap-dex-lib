@@ -55,9 +55,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
       Adapter04: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       Adapter05: '0x3329dfa55A40B450952FBE0203167Ae6908E656d',
-      Adapter06: '0x476e0515eA63B5c3008014Fe5e22Ed126e81f289',
+      Adapter06: '0x28bb3069aaa8ff9a39480c8c096718d3b354108b',
       BuyAdapter: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
-      BuyAdapter02: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
+      BuyAdapter02: '0x40dB7541b0c655a3a70c4713aD6879Ec3861c1FE',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',

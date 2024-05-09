@@ -21,7 +21,7 @@ import SavingsDaiAbi from '../../abi/sdai/SavingsDai.abi.json';
 import { Interface } from 'ethers/lib/utils';
 import { SDaiEventPool } from './sdai-pool';
 import { BI_POWS } from '../../bigint-constants';
-import { SDAI_DEPOSIT_GAS_COST } from './constants';
+import { SDAI_DEPOSIT_GAS_COST, SDAI_REDEEM_GAS_COST } from './constants';
 
 export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   readonly hasConstantPriceLargeAmounts = true;
@@ -102,27 +102,39 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
     if (!this.isAppropriatePair(srcToken, destToken)) return null;
     if (!this.eventPool.getState(blockNumber)) return null;
 
-    const convertFn = (blockNumber: number, amountIn: bigint) =>
-      this.isDai(srcToken.address)
-        ? this.eventPool.convertToSDai(amountIn, blockNumber)
-        : this.eventPool.convertToDai(amountIn, blockNumber);
+    if (side === SwapSide.SELL) {
+      const calcSellFn = (blockNumber: number, amountIn: bigint) =>
+        this.isDai(srcToken.address)
+          ? this.eventPool.convertToSDai(amountIn, blockNumber)
+          : this.eventPool.convertToDai(amountIn, blockNumber);
 
-    const unitIn = BI_POWS[18];
-    const unitOut = convertFn(blockNumber, unitIn);
-    const amountsOut = amounts.map(amountIn =>
-      convertFn(blockNumber, amountIn),
-    );
+      return [
+        {
+          prices: amounts.map(amount => calcSellFn(blockNumber, amount)),
+          unit: calcSellFn(blockNumber, BI_POWS[18]),
+          gasCost: SDAI_DEPOSIT_GAS_COST,
+          exchange: this.dexKey,
+          data: { exchange: `${this.sdaiAddress}` },
+          poolAddresses: [`${this.sdaiAddress}`],
+        },
+      ];
+    } else {
+      const calcBuyFn = (blockNumber: number, amountIn: bigint) =>
+        this.isDai(srcToken.address)
+          ? this.eventPool.convertToDai(amountIn, blockNumber)
+          : this.eventPool.convertToSDai(amountIn, blockNumber);
 
-    return [
-      {
-        prices: amountsOut,
-        unit: unitOut,
-        gasCost: SDAI_DEPOSIT_GAS_COST,
-        exchange: this.dexKey,
-        poolAddresses: [this.sdaiAddress],
-        data: { exchange: this.sdaiAddress },
-      },
-    ];
+      return [
+        {
+          prices: amounts.map(amount => calcBuyFn(blockNumber, amount)),
+          unit: calcBuyFn(blockNumber, BI_POWS[18]),
+          gasCost: SDAI_REDEEM_GAS_COST,
+          exchange: this.dexKey,
+          data: { exchange: `${this.sdaiAddress}` },
+          poolAddresses: [`${this.sdaiAddress}`],
+        },
+      ];
+    }
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -161,12 +173,25 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
     data: SDaiData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapData = this.sdaiInterface.encodeFunctionData(
-      this.isDai(srcToken) ? SDaiFunctions.deposit : SDaiFunctions.redeem,
-      this.isDai(srcToken)
-        ? [srcAmount, this.augustusAddress]
-        : [srcAmount, this.augustusAddress, this.augustusAddress],
-    );
+    const isSell = side === SwapSide.SELL;
+    const { exchange } = data;
+
+    let swapData: string;
+    if (this.isDai(srcToken)) {
+      swapData = this.sdaiInterface.encodeFunctionData(
+        isSell ? SDaiFunctions.deposit : SDaiFunctions.mint,
+        [isSell ? srcAmount : destAmount, this.augustusAddress],
+      );
+    } else {
+      swapData = this.sdaiInterface.encodeFunctionData(
+        isSell ? SDaiFunctions.redeem : SDaiFunctions.withdraw,
+        [
+          isSell ? srcAmount : destAmount,
+          this.augustusAddress,
+          this.augustusAddress,
+        ],
+      );
+    }
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -174,7 +199,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
       destToken,
       destAmount,
       swapData,
-      this.sdaiAddress,
+      exchange,
     );
   }
 
