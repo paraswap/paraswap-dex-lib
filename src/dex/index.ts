@@ -71,6 +71,7 @@ import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
+import { MaverickV2 } from './maverick-v2/maverick-v2';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
 import { TraderJoeV2 } from './trader-joe-v2';
@@ -165,6 +166,7 @@ const Dexes = [
   WstETH,
   Hashflow,
   MaverickV1,
+  MaverickV2,
   Camelot,
   SwaapV2,
   AngleStakedStable,
