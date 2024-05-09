@@ -59,12 +59,10 @@ async function fetchPoolState(
 describe('SDai Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     drip: [19827559, 19827524, 19827163, 19827124, 19827000, 19826892],
-    // TODO: no matching logs
+    // TODO: no matching logs, you have to manually call "file"
+    // from "0xbe8e3e3618f7474f8cb1d074a26affef007e98fb" address
     // https://etherscan.io/advanced-filter?fadd=0x197e90f9fad81970ba7976f33cbd77088e5d7cf7&tadd=0x197e90f9fad81970ba7976f33cbd77088e5d7cf7&mtd=0x29ae8114%7eFile
-    file: [],
-    // TODO: no matching logs
-    // https://etherscan.io/advanced-filter?fadd=0x197e90f9fad81970ba7976f33cbd77088e5d7cf7&tadd=0x197e90f9fad81970ba7976f33cbd77088e5d7cf7&mtd=0x69245009%7eCage
-    cage: [],
+    // file: [19831086]
   };
 
   const addresses: { [contract: string]: string } = {

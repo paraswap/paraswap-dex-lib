@@ -68,19 +68,10 @@ export class SDaiEventPool extends StatefulEventSubscriber<SDaiPoolState> {
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): AsyncOrSync<DeepReadonly<SDaiPoolState> | null> {
-    if (log.topics[0] === CAGE_TOPICHASH) {
-      return {
-        dsr: RAY.toString(),
-        chi: RAY.toString(),
-        rho: RAY.toString(),
-        live: false,
-      };
-    }
-
     if (log.topics[0] === FILE_TOPICHASH && log.topics[2] === DSR_TOPIC) {
       return {
         ...state,
-        dsr: BigInt(log.topics[2]).toString(),
+        dsr: BigInt(log.topics[3]).toString(),
       };
     }
 
