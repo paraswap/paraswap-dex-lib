@@ -12,14 +12,7 @@ import { SDaiConfig } from '../config';
 import { getOnChainState } from '../utils';
 import { Interface } from '@ethersproject/abi';
 import PotAbi from '../../../abi/maker-psm/pot.json';
-import multiABIV2 from '../../../abi/multi-v2.json';
-import Web3 from 'web3';
 
-const web3Provider = new Web3('');
-const multiContract = new web3Provider.eth.Contract(
-  multiABIV2 as any,
-  '0x5ba1e12693dc8f9c48aad8770482f4739beed696',
-);
 const network = Network.MAINNET;
 const dexKey = 'SDai';
 
@@ -75,18 +68,18 @@ async function isPoolStateEqualToReal(
   state: SDaiPoolState,
   blockNumber: number,
 ) {
-  const { rho, chi, dsr, live } = await getOnChainState(
-    multiContract,
+  const expected = await getOnChainState(
+    dexHelper.multiContract,
     potAddress,
     new Interface(PotAbi),
     blockNumber,
   );
 
-  const isValidState = compareAndLogDifferences(
-    state,
-    { rho, chi, dsr, live },
-    ['rho', 'chi', 'dsr', 'dsr'],
-  );
+  const isValidState = compareAndLogDifferences(state, expected, [
+    'rho',
+    'dsr',
+    'dsr',
+  ]);
 
   return isValidState;
 }
@@ -143,7 +136,7 @@ async function main() {
   // use findBreakingBlock to find the block where the state is broken
   // console.log(await findBreakingBlock(startBlockNumber, endBlockNumber));
   // previously broken block 150502863
-  console.log(await checkPoolStateForBlockRange(8928160, 19199247));
+  console.log(await checkPoolStateForBlockRange(19199247 - 10000, 19199247));
 }
 
 main()
