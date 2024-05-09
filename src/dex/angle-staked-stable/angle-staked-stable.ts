@@ -115,6 +115,7 @@ export class AngleStakedStable
           gasCost: AngleStakedGasCost,
           exchange: exchange,
           data: { exchange: `${stakeToken}` },
+          poolAddresses: [stakeToken],
         },
       ];
     if (destTokenAddress === agToken && side === SwapSide.SELL)
@@ -125,6 +126,7 @@ export class AngleStakedStable
           gasCost: AngleStakedGasCost,
           exchange: exchange,
           data: { exchange: `${stakeToken}` },
+          poolAddresses: [stakeToken],
         },
       ];
     if (srcTokenAddress === agToken && side === SwapSide.BUY)
@@ -135,6 +137,7 @@ export class AngleStakedStable
           gasCost: AngleStakedGasCost,
           exchange: exchange,
           data: { exchange: `${stakeToken}` },
+          poolAddresses: [stakeToken],
         },
       ];
     return [
@@ -144,6 +147,7 @@ export class AngleStakedStable
         gasCost: AngleStakedGasCost,
         exchange: exchange,
         data: { exchange: `${stakeToken}` },
+        poolAddresses: [stakeToken],
       },
     ];
   }
