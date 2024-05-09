@@ -30,7 +30,7 @@ export class SDai extends SimpleExchange implements IDex<SDaiData, SDaiParams> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SDaiConfig);
 
-  protected eventPool: SDaiEventPool;
+  public readonly eventPool: SDaiEventPool;
   logger: Logger;
 
   constructor(
