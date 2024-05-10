@@ -288,10 +288,12 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
+    dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       ArbitrumAdapter02: '0x58a5f0b73969800FAFf8556cD2187E3FCE71A6cb',
-      ArbitrumBuyAdapter: '0x4483Ae378897eB9FbF7f15Df98Bf07233ffFEe8b',
+      ArbitrumAdapter03: '0x97bdD2B98D9802b0e387FefdB2882C1b2dc2c344',
+      ArbitrumBuyAdapter: '0x005213c48d4aafFcA0b6D1CbA8710F4D035C18f9',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
