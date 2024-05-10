@@ -19,6 +19,9 @@ export const Adapters: {
   };
 } = {
   [Network.MAINNET]: {
+    // TODO: uncomment this when SDAI integration got deployed
+    // [SwapSide.SELL]: [{ name: 'Adapter06', index: 2 }],
+    // [SwapSide.BUY]: [{ name: 'BuyAdapter02', index: 5 }],
     [SwapSide.SELL]: [{ name: 'Adapter06', index: 1 }],
     [SwapSide.BUY]: [{ name: 'BuyAdapter02', index: 4 }],
   },

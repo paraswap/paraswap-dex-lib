@@ -23,16 +23,16 @@ const CAGE_TOPICHASH = `0x692450090000000000000000000000000000000000000000000000
 const DSR_TOPIC = `0x6473720000000000000000000000000000000000000000000000000000000000`;
 
 const rpow = (x: bigint, n: bigint): bigint => {
-  // REF: https://etherscan.io/address/0x83f20f44975d03b1b09e64809b757c47f942beea#code#L122
-  let z = RAY;
-  if (!x && !n) return z;
+  if (!x && !n) return RAY;
   if (!x) return ZERO;
-  if (n % TWO) z = x;
 
-  for (n = n / TWO; n > ZERO; n /= TWO) {
+  let z = n % TWO > ZERO ? x : RAY;
+
+  for (n = n / TWO; n; n /= TWO) {
     x = (x * x + HALF) / RAY;
-    if (n % TWO) continue;
-    z = (z * x + HALF) / RAY;
+    if (n % TWO > ZERO) {
+      z = (z * x + HALF) / RAY;
+    }
   }
 
   return z;
