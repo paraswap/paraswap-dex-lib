@@ -257,29 +257,27 @@ describe('VirtuSwap', function () {
         );
       });
 
-      // TODO: add subgraphURL to set up getTopPoolsForToken
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newVirtuSwap = new VirtuSwap(network, dexKey, dexHelper);
+        if (newVirtuSwap.updatePoolState) {
+          await newVirtuSwap.updatePoolState();
+        }
+        const poolLiquidity = await newVirtuSwap.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      // it('getTopPoolsForToken', async function () {
-      //   // We have to check without calling initializePricing, because
-      //   // pool-tracker is not calling that function
-      //   const newVirtuSwap = new VirtuSwap(network, dexKey, dexHelper);
-      //   if (newVirtuSwap.updatePoolState) {
-      //     await newVirtuSwap.updatePoolState();
-      //   }
-      //   const poolLiquidity = await newVirtuSwap.getTopPoolsForToken(
-      //     tokens[srcTokenSymbol].address,
-      //     10,
-      //   );
-      //   console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-      //
-      //   if (!newVirtuSwap.hasConstantPriceLargeAmounts) {
-      //     checkPoolsLiquidity(
-      //       poolLiquidity,
-      //       Tokens[network][srcTokenSymbol].address,
-      //       dexKey,
-      //     );
-      //   }
-      // });
+        if (!newVirtuSwap.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
     });
   }
 });

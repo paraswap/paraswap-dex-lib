@@ -13,6 +13,9 @@ export const VirtuSwapConfig: DexConfigMap<DexParams> = {
       isTimestampBased: false,
       realPoolGasCost: 265 * 1000,
       virtualPoolGasCost: 365 * 1000,
+      getTokensURL: 'https://api.virtuswap.io/graph/tokens?chainId=137',
+      getTokensPricesURL:
+        'https://api.virtuswap.io/tokensPricesUsd?chainId=137',
     },
     [Network.ARBITRUM]: {
       factoryAddress: '0x389DB0B69e74A816f1367aC081FdF24B5C7C2433',
@@ -23,6 +26,9 @@ export const VirtuSwapConfig: DexConfigMap<DexParams> = {
       isTimestampBased: true,
       realPoolGasCost: 345 * 1000, // Tenderly shows much higher values for Arbitrum for unknown reasons
       virtualPoolGasCost: 555 * 1000, // Tenderly shows much higher values for Arbitrum for unknown reasons
+      getTokensURL: 'https://api.virtuswap.io/graph/tokens?chainId=42161',
+      getTokensPricesURL:
+        'https://api.virtuswap.io/tokensPricesUsd?chainId=42161',
     },
   },
 };

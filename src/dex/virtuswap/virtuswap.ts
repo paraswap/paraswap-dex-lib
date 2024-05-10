@@ -1,5 +1,6 @@
 import { assert } from 'ts-essentials';
 import { Interface } from '@ethersproject/abi';
+import { ethers } from 'ethers';
 import {
   Token,
   Address,
@@ -11,11 +12,19 @@ import {
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
-import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { BI_POWS, BI_MAX_UINT256 } from '../../bigint-constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
+import {
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  isETHAddress,
+  normalizeAddress,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
+import { MultiCallParams } from '../../lib/multi-wrapper';
+import { erc20Iface } from '../../lib/utils-interfaces';
+import { abiCoderParsers } from './utils';
 import { PoolState, VirtuSwapData } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -37,8 +46,14 @@ import {
 
 export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
   static readonly vRouterInterface = new Interface(vRouterABI);
+  static readonly erc20DecimalsParser = abiCoderParsers.Int.create(
+    'decimals',
+    'uint8',
+  );
   protected factory: VirtuSwapFactory;
-  protected pools: { [poolAddress: string]: VirtuSwapEventPool } = {};
+  protected pools: { [poolAddress: Address]: VirtuSwapEventPool } = {};
+  protected tokensDecimals: { [tokenAddress: Address]: number } = {};
+  protected tokensPricesUSD: { [tokenAddress: Address]: number } = {};
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
@@ -86,8 +101,7 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
 
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
+  // for pricing requests.
   async initializePricing(blockNumber: number) {
     await this.initialize(blockNumber);
 
@@ -109,8 +123,23 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
       this.vPairIface,
     );
 
-    await Promise.all(
-      addresses.map(async (address, index) => {
+    const tokens = states.flatMap(state => [state.token0, state.token1]);
+    const uniqueTokens = [...new Set(tokens)];
+
+    const decimalsMultiCallParams = uniqueTokens.map(
+      target =>
+        ({
+          target,
+          callData: erc20Iface.encodeFunctionData('decimals'),
+          decodeFunction: VirtuSwap.erc20DecimalsParser.decodeFunction,
+          cb: (result: number) => {
+            this.tokensDecimals[normalizeAddress(target)] = result || 18;
+          },
+        } as MultiCallParams<number>),
+    );
+
+    await Promise.all([
+      ...addresses.map(async (address, index) => {
         const state = states[index];
         if (!this.pools[address]) {
           this.pools[address] = new VirtuSwapEventPool(
@@ -128,7 +157,12 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
           this.pools[address].setState(state, blockNumber);
         }
       }),
-    );
+      this.dexHelper.multiWrapper.tryAggregate(
+        false,
+        decimalsMultiCallParams,
+        blockNumber,
+      ),
+    ]);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -510,14 +544,218 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
     );
   }
 
+  // This is called once before getTopPoolsForToken is
+  // called for multiple tokens. This can be helpful to
+  // update common state required for calculating
+  // getTopPoolsForToken.
+  async updatePoolState(): Promise<void> {
+    if (this.config.getTokensURL) {
+      try {
+        const tokensInfo = await this.dexHelper.httpRequest.get<
+          {
+            id: Address;
+            decimals: string | number;
+            name: string;
+            symbol: string;
+          }[]
+        >(this.config.getTokensURL);
+
+        tokensInfo.forEach(token => {
+          this.tokensDecimals[normalizeAddress(token.id)] = Number(
+            token.decimals,
+          );
+        });
+      } catch (e) {
+        this.logger.error(
+          'updatePoolState: error on fetching tokens from URL',
+          e,
+        );
+      }
+    }
+
+    let tokens = Object.keys(this.tokensDecimals);
+    const pools = Object.keys(this.pools);
+
+    // initialize DEX if tokens are not fetched from URL or no pools found
+    if (tokens.length === 0 || pools.length === 0) {
+      this.logger.info(
+        `updatePoolState: reinitializing DEX, missing state: tokens.length=${tokens.length}, pools.length=${pools.length}`,
+      );
+      const blockNumber = await this.dexHelper.provider.getBlockNumber();
+      await this.initialize(blockNumber);
+      tokens = Object.keys(this.tokensDecimals);
+    }
+
+    let needRefetchPrices = false;
+    if (this.config.getTokensPricesURL) {
+      try {
+        const getTokensPricesURL = new URL(this.config.getTokensPricesURL);
+        getTokensPricesURL.searchParams.set(
+          'tokensAddresses',
+          tokens.toString(),
+        );
+
+        const tokensPrices = await this.dexHelper.httpRequest.get<number[]>(
+          getTokensPricesURL.toString(),
+        );
+
+        assert(
+          tokensPrices.length === tokens.length,
+          'updatePoolState: invalid tokens prices length',
+        );
+
+        tokens.forEach((token, index) => {
+          this.tokensPricesUSD[normalizeAddress(token)] = tokensPrices[index];
+        });
+      } catch (e) {
+        this.logger.error(
+          'updatePoolState: error on fetching tokens prices from URL',
+          e,
+        );
+        needRefetchPrices = true;
+      }
+    } else {
+      needRefetchPrices = true;
+    }
+
+    // refetch prices if failed to fetch from URL
+    if (needRefetchPrices) {
+      const prices = await Promise.all(
+        tokens.map(async address =>
+          this.dexHelper.getTokenUSDPrice(
+            { address, decimals: this.tokensDecimals[address] || 18 },
+            BI_POWS[this.tokensDecimals[address] || 18] ||
+              BigInt(`1${'0'.repeat(this.tokensDecimals[address])}`),
+          ),
+        ),
+      );
+
+      tokens.forEach((token, index) => {
+        this.tokensPricesUSD[normalizeAddress(token)] = prices[index];
+      });
+    }
+  }
+
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    // virtual pools have smaller liquidity than real pools, so only real pools should be returned
-    //TODO: complete me!
-    return [];
+    const wrappedAddress = normalizeAddress(
+      isETHAddress(tokenAddress)
+        ? this.dexHelper.config.data.wrappedNativeTokenAddress
+        : tokenAddress,
+    );
+
+    const allPools = Object.values(this.pools)
+      .map(
+        pool => pool.getState(0), // ignore block number
+      )
+      .filter(state => !!state) as PoolState[];
+
+    const realPoolsWithToken = allPools.filter(
+      state =>
+        state.token0 === wrappedAddress || state.token1 === wrappedAddress,
+    );
+
+    const topPools: PoolLiquidity[] = realPoolsWithToken.map(pool => ({
+      exchange: this.dexKey,
+      address: this.computePoolAddress(pool),
+      connectorTokens: [
+        wrappedAddress === pool.token0
+          ? {
+              address: pool.token1,
+              decimals: this.tokensDecimals[pool.token1],
+            }
+          : {
+              address: pool.token0,
+              decimals: this.tokensDecimals[pool.token0],
+            },
+      ],
+      liquidityUSD:
+        Number(
+          ethers.utils.formatUnits(
+            pool.pairBalance0,
+            this.tokensDecimals[pool.token0],
+          ),
+        ) *
+          this.tokensPricesUSD[pool.token0] +
+          Number(
+            ethers.utils.formatUnits(
+              pool.pairBalance1,
+              this.tokensDecimals[pool.token1],
+            ),
+          ) *
+            this.tokensPricesUSD[pool.token1] || 0,
+    }));
+
+    const otherTokens = realPoolsWithToken.map(state =>
+      state.token0 === wrappedAddress ? state.token1 : state.token0,
+    );
+
+    const otherPoolsWithCommonToken = otherTokens.map((commonToken, index) =>
+      allPools.filter(
+        state =>
+          (state.token0 === commonToken &&
+            state.token1 !== wrappedAddress &&
+            state.reserves[wrappedAddress] !== undefined &&
+            realPoolsWithToken[index].reserves[state.token1] !== undefined) ||
+          (state.token1 === commonToken &&
+            state.token0 !== wrappedAddress &&
+            state.reserves[wrappedAddress] !== undefined &&
+            realPoolsWithToken[index].reserves[state.token0] !== undefined),
+      ),
+    );
+
+    try {
+      const virtualPoolsWithToken = otherPoolsWithCommonToken.flatMap(
+        (jkPairs, index) =>
+          jkPairs.map(jkPair =>
+            getVirtualPool(
+              jkPair,
+              realPoolsWithToken[index],
+              Number.POSITIVE_INFINITY, // infinity to ignore time locks
+            ),
+          ),
+      );
+
+      topPools.push(
+        ...virtualPoolsWithToken.map(vPool => ({
+          exchange: this.dexKey,
+          address: normalizeAddress(this.config.vPoolManagerAddress), // virtual pools don't have addresses, so the manager address is used
+          connectorTokens: [vPool.token0, vPool.commonToken, vPool.token1]
+            .filter(token => token !== wrappedAddress)
+            .map(address => ({
+              address,
+              decimals: this.tokensDecimals[address],
+            })),
+          liquidityUSD:
+            Number(
+              ethers.utils.formatUnits(
+                vPool.balance0,
+                this.tokensDecimals[vPool.token0],
+              ),
+            ) *
+              this.tokensPricesUSD[vPool.token0] +
+              Number(
+                ethers.utils.formatUnits(
+                  vPool.balance1,
+                  this.tokensDecimals[vPool.token1],
+                ),
+              ) *
+                this.tokensPricesUSD[vPool.token1] || 0,
+        })),
+      );
+    } catch (e) {
+      this.logger.error(
+        `getTopPoolsForToken: error on calculating virtual pools`,
+        e,
+      );
+    }
+
+    return topPools
+      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
+      .slice(0, limit);
   }
 }

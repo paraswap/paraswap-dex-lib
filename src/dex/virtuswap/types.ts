@@ -69,4 +69,6 @@ export type DexParams = {
   isTimestampBased: boolean;
   realPoolGasCost: number;
   virtualPoolGasCost: number;
+  getTokensURL?: string;
+  getTokensPricesURL?: string;
 };
