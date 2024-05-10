@@ -86,24 +86,6 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       forceRPC: true,
     },
   },
-  SwapBasedV3: {
-    [Network.BASE]: {
-      factory: '0xC207628E5e2b59E9C690071e68c7C1c4193b0252',
-      router: '0xd58f563a7d6150a2575c74065cb18f53ec2e9d07',
-      quoter: '0x64F477C68049B554113Bab6526038bcF5643136c',
-      initHash:
-        '0xbce37a54eab2fcd71913a0d40723e04238970e7fc1159bfd58ad5b79531697e7',
-      chunksCount: 10,
-      initRetryFrequency: 10,
-      algebraStateMulticall: '0x23d574867597c7A980024d8b83a74b6Ca6E08A7B',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/chimpydev/swapbased-algebra-core',
-      uniswapMulticall: '0xce512f490Bf09C4544A12a7264750B28FbE9AD76',
-      deployer: '0xe4DFd4ad723B5DB11aa41D53603dB03B117eC690',
-      version: 'v1.9-bidirectional-fee',
-      forceRPC: true,
-    },
-  },
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
