@@ -23,7 +23,7 @@ export class Oracle {
   ): OracleObservation {
     const delta = blockTimestamp - last.blockTimestamp;
     return {
-      blockTimestamp: state.blockTimestamp,
+      blockTimestamp,
       tickCumulative: last.tickCumulative + BigInt.asIntN(56, tick) * delta,
       secondsPerLiquidityCumulativeX128:
         last.secondsPerLiquidityCumulativeX128 +
@@ -93,12 +93,12 @@ export class Oracle {
     let beforeOrAt;
     let atOrAfter;
     while (true) {
-      i = (l + r) / 2;
+      i = Math.floor((l + r) / 2);
 
       beforeOrAt = state.observations[i % cardinality];
 
       // we've landed on an uninitialized tick, keep searching higher (more recently)
-      if (!beforeOrAt.initialized) {
+      if (!beforeOrAt || !beforeOrAt.initialized) {
         l = i + 1;
         continue;
       }
@@ -150,7 +150,8 @@ export class Oracle {
     }
 
     beforeOrAt = state.observations[(index + 1) % cardinality];
-    if (!beforeOrAt.initialized) beforeOrAt = state.observations[0];
+    if (!beforeOrAt || !beforeOrAt.initialized)
+      beforeOrAt = state.observations[0];
 
     _require(
       Oracle.lte(time, beforeOrAt.blockTimestamp, target),
