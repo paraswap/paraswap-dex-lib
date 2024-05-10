@@ -2,7 +2,12 @@ import _ from 'lodash';
 import { CONVERGENCE_ERROR_PREFIX } from '../../constants';
 import { ImplementationNames } from '../../types';
 import { get_D, IPoolContext } from '../types';
-import { getCachedValueOrCallFunc, requireConstant } from './utils';
+import {
+  getCachedValueOrCallFunc,
+  pow_mod256,
+  requireConstant,
+  requireValue,
+} from './utils';
 
 /*
  * This function get_D may be optimized further. We are doing many redundant
@@ -50,6 +55,57 @@ const customPlain3CoinThree: get_D = (
     }
   }
   return D;
+};
+
+const stableNg: get_D = (
+  self: IPoolContext,
+  xp: bigint[],
+  amp: bigint,
+  N_COINS?: number,
+): bigint => {
+  const A_PRECISION = requireConstant(self, 'A_PRECISION', 'stableNg');
+  const BI_N_COINS = BigInt(N_COINS!);
+
+  let S = 0n;
+  let Dprev = 0n;
+
+  for (const _x of xp) {
+    S += _x;
+  }
+  if (S === 0n) {
+    return 0n;
+  }
+
+  let D = S;
+  const Ann = amp * BI_N_COINS;
+  for (const _i of _.range(255)) {
+    let D_P = D;
+    for (const _x of xp) {
+      D_P = (D_P * D) / _x;
+    }
+
+    D_P /= pow_mod256(BI_N_COINS, BI_N_COINS);
+    Dprev = D;
+    D =
+      (((Ann * S) / A_PRECISION + D_P * BI_N_COINS) * D) /
+      (((Ann - A_PRECISION) * D) / A_PRECISION + (BI_N_COINS + 1n) * D_P);
+    // Equality with the precision of 1
+    if (D > Dprev) {
+      if (D - Dprev <= 1n) {
+        return D;
+      }
+    } else {
+      if (Dprev - D <= 1n) {
+        return D;
+      }
+    }
+  }
+
+  // convergence typically occurs in 4 rounds or less, this should be unreachable!
+  // if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
+  throw new Error(
+    `${CONVERGENCE_ERROR_PREFIX}_${self.IMPLEMENTATION_NAME}: function stableNg didn't converge`,
+  );
 };
 
 const customPlain2CoinFrax: get_D = (
@@ -323,6 +379,8 @@ const implementations: Record<ImplementationNames, get_D> = {
     makeFuncCacheable(factoryPlain2Basic),
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]:
     makeFuncCacheable(factoryPlain2Basic),
+
+  [ImplementationNames.FACTORY_STABLE_NG]: stableNg,
 };
 
 export default implementations;

@@ -52,7 +52,12 @@ export type get_D_precisions = (
   amp: bigint,
 ) => bigint;
 
-export type get_D = (self: IPoolContext, xp: bigint[], amp: bigint) => bigint;
+export type get_D = (
+  self: IPoolContext,
+  xp: bigint[],
+  amp: bigint,
+  N_COINS?: number,
+) => bigint;
 
 export type get_dy_underlying = (
   self: IPoolContext,
@@ -85,6 +90,8 @@ export type get_y = (
   j: number,
   x: bigint,
   xp_: bigint[],
+  _amp?: bigint,
+  _D?: bigint,
 ) => bigint;
 
 /*
