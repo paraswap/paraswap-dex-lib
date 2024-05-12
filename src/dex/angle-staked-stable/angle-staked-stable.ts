@@ -21,7 +21,7 @@ import { AngleStakedStableConfig, Adapters } from './config';
 import { AngleStakedStableEventPool } from './angle-staked-stable-pool';
 import StakedStableABI from '../../abi/angle/stagToken.json';
 
-const AngleStakedGasCost = 80_000;
+const AngleStakedGasCost = 80000;
 
 export class AngleStakedStable
   extends SimpleExchange
