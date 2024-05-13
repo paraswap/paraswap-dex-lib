@@ -14,7 +14,7 @@ import { Interface } from '@ethersproject/abi';
 import PotAbi from '../../../abi/maker-psm/pot.json';
 
 const network = Network.MAINNET;
-const dexKey = 'SDai';
+const dexKey = 'sdai';
 
 const { potAddress } = SDaiConfig[dexKey][network];
 const blockHeaders: Record<number, BlockHeader> = {};
@@ -89,7 +89,7 @@ async function checkPoolStateForBlockRange(
   endBlockNumber: number,
 ): Promise<boolean> {
   const network = Network.MAINNET;
-  const dexKey = 'SDai';
+  const dexKey = 'sdai';
   const dexHelper = new DummyDexHelper(network);
 
   const sdai = new SDai(network, dexKey, dexHelper);
