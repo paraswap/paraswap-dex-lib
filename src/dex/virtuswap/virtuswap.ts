@@ -428,11 +428,6 @@ export class VirtuSwap extends SimpleExchange implements IDex<VirtuSwapData> {
 
     const functionSelector = this.vRouterIface.getSighash(functionName);
 
-    this.logger.debug('getAdapterParam:', {
-      functionName,
-      functionSelector,
-    });
-
     const payload = data.isVirtual
       ? this.abiCoder.encodeParameter(
           {
