@@ -18,7 +18,7 @@ const DaiToken = Tokens[network][DaiSymbol];
 
 const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
-const dexKey = 'SDai';
+const dexKey = 'sdai';
 const dexHelper = new DummyDexHelper(network);
 let blocknumber: number;
 let sdai: SDai;

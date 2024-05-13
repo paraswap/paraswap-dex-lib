@@ -46,7 +46,7 @@ import _ from 'lodash';
 */
 
 jest.setTimeout(50 * 1000);
-const dexKey = 'SDai';
+const dexKey = 'sdai';
 const network = Network.MAINNET;
 
 async function fetchPoolState(
