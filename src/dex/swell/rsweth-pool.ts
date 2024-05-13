@@ -3,11 +3,11 @@ import { IDexHelper } from '../../dex-helper';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, Log, Logger } from '../../types';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
-import { SWETHPoolState } from './type';
-import { getOnChainStateSwETH } from './utils';
+import { RSWETHPoolState } from './type';
+import { getOnChainStateRswETH } from './utils';
 import { BI_POWS } from '../../bigint-constants';
 
-export class SwethPool extends StatefulEventSubscriber<SWETHPoolState> {
+export class RswethPool extends StatefulEventSubscriber<RSWETHPoolState> {
   decoder = (log: Log) => this.poolInterface.parseLog(log);
 
   constructor(
@@ -17,18 +17,18 @@ export class SwethPool extends StatefulEventSubscriber<SWETHPoolState> {
     private poolInterface: Interface,
     logger: Logger,
   ) {
-    super(parentName, 'sweth', dexHelper, logger);
+    super(parentName, 'rsweth', dexHelper, logger);
     this.addressesSubscribed = [poolAddress];
   }
 
   protected processLog(
-    state: DeepReadonly<SWETHPoolState>,
+    state: DeepReadonly<RSWETHPoolState>,
     log: Readonly<Log>,
-  ): AsyncOrSync<DeepReadonly<SWETHPoolState> | null> {
+  ): AsyncOrSync<DeepReadonly<RSWETHPoolState> | null> {
     const event = this.decoder(log);
     if (event.name === 'Reprice')
       return {
-        swETHToETHRateFixed: BigInt(event.args.newSwETHToETHRate),
+        rswETHToETHRateFixed: BigInt(event.args.newRswETHToETHRate),
       };
 
     return null;
@@ -36,8 +36,8 @@ export class SwethPool extends StatefulEventSubscriber<SWETHPoolState> {
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<SWETHPoolState>> {
-    const state = await getOnChainStateSwETH(
+  ): Promise<DeepReadonly<RSWETHPoolState>> {
+    const state = await getOnChainStateRswETH(
       this.dexHelper.multiContract,
       this.poolAddress,
       this.poolInterface,
@@ -50,9 +50,9 @@ export class SwethPool extends StatefulEventSubscriber<SWETHPoolState> {
   getPrice(blockNumber: number, ethAmount: bigint): bigint {
     const state = this.getState(blockNumber);
     if (!state) throw new Error('Cannot compute price');
-    const { swETHToETHRateFixed } = state;
+    const { rswETHToETHRateFixed } = state;
 
     // calculation in contract are made with UD60x18 precision
-    return (ethAmount * BI_POWS[18]) / swETHToETHRateFixed;
+    return (ethAmount * BI_POWS[18]) / rswETHToETHRateFixed;
   }
 }
