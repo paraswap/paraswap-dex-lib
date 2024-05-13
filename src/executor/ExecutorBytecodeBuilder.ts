@@ -136,7 +136,7 @@ export abstract class ExecutorBytecodeBuilder {
   ): string {
     return this.buildCallData(
       wethAddress,
-      depositCallData,
+      "0x",
       WRAP_UNWRAP_FROM_AMOUNT_POS,
       destTokenPos,
       SpecialDex.DEFAULT,
