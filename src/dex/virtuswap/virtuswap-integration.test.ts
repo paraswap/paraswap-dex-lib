@@ -188,7 +188,7 @@ describe('VirtuSwap', function () {
 
       const tokens = Tokens[network];
 
-      const srcTokenSymbol = tokens['USDCe'] ? 'USDCe' : 'USDC';
+      const srcTokenSymbol = 'USDCe';
       const destTokenSymbol = 'VRSW';
 
       const amountsForSell = [

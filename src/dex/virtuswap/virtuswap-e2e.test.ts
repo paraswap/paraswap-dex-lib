@@ -146,7 +146,7 @@ describe('VirtuSwap E2E', () => {
 
   for (const network of networks) {
     const tokenASymbol: string = 'VRSW';
-    const tokenBSymbol: string = Tokens[network]['USDCe'] ? 'USDCe' : 'USDC';
+    const tokenBSymbol: string = 'USDCe';
     const tokenCSymbol: string = 'USDT'; // 3rd token to test virtual pools
 
     const tokenAAmount: string = '10000000000000000000';
