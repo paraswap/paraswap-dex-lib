@@ -200,6 +200,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
       PolygonAdapter02: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
       PolygonBuyAdapter: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
+      PolygonVirtuSwapAdapter: '', //TODO: deploy VirtuSwap adapter from https://github.com/Virtuswap/v1-core/blob/paraswap/contracts/paraswap/VirtuSwapAdapter.sol
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -294,6 +295,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       ArbitrumAdapter02: '0x58a5f0b73969800FAFf8556cD2187E3FCE71A6cb',
       ArbitrumAdapter03: '0x97bdD2B98D9802b0e387FefdB2882C1b2dc2c344',
       ArbitrumBuyAdapter: '0x005213c48d4aafFcA0b6D1CbA8710F4D035C18f9',
+      ArbitrumVirtuSwapAdapter: '', //TODO: deploy VirtuSwap adapter from https://github.com/Virtuswap/v1-core/blob/paraswap/contracts/paraswap/VirtuSwapAdapter.sol
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
