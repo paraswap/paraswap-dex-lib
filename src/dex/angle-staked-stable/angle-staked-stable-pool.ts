@@ -8,7 +8,7 @@ import {
 } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import type { IDexHelper } from '../../dex-helper/idex-helper';
-import type { DexParams, PoolState } from './types';
+import type { PoolState } from './types';
 import StakedStableABI from '../../abi/angle/stagToken.json';
 import ERC20ABI from '../../abi/erc20.json';
 

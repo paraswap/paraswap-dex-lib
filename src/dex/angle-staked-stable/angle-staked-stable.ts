@@ -19,7 +19,6 @@ import type { AngleStakedStableData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AngleStakedStableConfig, Adapters } from './config';
 import { AngleStakedStableEventPool } from './angle-staked-stable-pool';
-import StakedStableABI from '../../abi/angle/stagToken.json';
 
 const AngleStakedGasCost = 80000;
 
@@ -27,7 +26,6 @@ export class AngleStakedStable
   extends SimpleExchange
   implements IDex<AngleStakedStableData>
 {
-  static readonly wstETHIface = new Interface(StakedStableABI);
   protected config: DexParams;
 
   readonly hasConstantPriceLargeAmounts = false;
