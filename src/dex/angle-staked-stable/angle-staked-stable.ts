@@ -61,7 +61,6 @@ export class AngleStakedStable
   async initializePricing(blockNumber: number) {
     this.eventPools[this.config.stakeToken] = new AngleStakedStableEventPool(
       this.dexKey,
-      `${this.dexKey}_${this.config.stakeToken.toLowerCase()}`,
       this.network,
       this.dexHelper,
       this.config.stakeToken,

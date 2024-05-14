@@ -35,14 +35,18 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
 
   constructor(
     readonly parentName: string,
-    name: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     public stakeToken: string,
     public agToken: string,
     logger: Logger,
   ) {
-    super(parentName, name, dexHelper, logger);
+    super(
+      parentName,
+      `${parentName}_${stakeToken.toLowerCase()}`,
+      dexHelper,
+      logger,
+    );
 
     this.logDecoder = (log: Log) =>
       AngleStakedStableEventPool.angleStakedStableIface.parseLog(log);
