@@ -87,7 +87,7 @@ import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
-import { SDai } from './sdai/sdai';
+import { Spark } from './spark/spark';
 
 const LegacyDexes = [
   CurveV2,
@@ -171,7 +171,7 @@ const Dexes = [
   Wombat,
   Swell,
   PharaohV1,
-  SDai,
+  Spark,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

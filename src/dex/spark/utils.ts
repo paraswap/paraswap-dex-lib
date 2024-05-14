@@ -1,7 +1,6 @@
 import { Contract } from 'web3-eth-contract';
-import { SDaiPoolState } from './types';
+import { SparkSDaiPoolState } from './types';
 import { Interface, AbiCoder } from '@ethersproject/abi';
-import { currentBigIntTimestampInS } from '../../utils';
 
 const coder = new AbiCoder();
 
@@ -13,7 +12,7 @@ export async function getOnChainState(
   potAddress: string,
   potInterface: Interface,
   blockNumber: number | 'latest',
-): Promise<SDaiPoolState> {
+): Promise<SparkSDaiPoolState> {
   const data: { returnData: any[] } = await multiContract.methods
     .aggregate([
       {

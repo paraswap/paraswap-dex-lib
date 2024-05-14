@@ -4,17 +4,17 @@ dotenv.config();
 
 import { Network } from '../../../constants';
 import { DummyDexHelper } from '../../../dex-helper';
-import { SDaiPoolState } from '../types';
+import { SparkSDaiPoolState } from '../types';
 import { BlockHeader } from 'web3-eth';
 import { ethers } from 'ethers';
-import { SDai } from '../sdai';
+import { Spark } from '../spark';
 import { SDaiConfig } from '../config';
 import { getOnChainState } from '../utils';
 import { Interface } from '@ethersproject/abi';
 import PotAbi from '../../../abi/maker-psm/pot.json';
 
 const network = Network.MAINNET;
-const dexKey = 'sdai';
+const dexKey = 'Spark';
 
 const { potAddress } = SDaiConfig[dexKey][network];
 const blockHeaders: Record<number, BlockHeader> = {};
@@ -65,7 +65,7 @@ function compareAndLogDifferences<T extends object, Y extends object>(
 }
 
 async function isPoolStateEqualToReal(
-  state: SDaiPoolState,
+  state: SparkSDaiPoolState,
   blockNumber: number,
 ) {
   const expected = await getOnChainState(
@@ -89,11 +89,11 @@ async function checkPoolStateForBlockRange(
   endBlockNumber: number,
 ): Promise<boolean> {
   const network = Network.MAINNET;
-  const dexKey = 'sdai';
+  const dexKey = 'Spark';
   const dexHelper = new DummyDexHelper(network);
 
-  const sdai = new SDai(network, dexKey, dexHelper);
-  const pool = await sdai.eventPool;
+  const spark = new Spark(network, dexKey, dexHelper);
+  const pool = await spark.eventPool;
 
   const logsToDispatch = await dexHelper.provider.getLogs({
     fromBlock: startBlockNumber,
@@ -128,7 +128,7 @@ async function checkPoolStateForBlockRange(
     });
   }
 
-  const state = pool?.getState(startBlockNumber) as SDaiPoolState;
+  const state = pool?.getState(startBlockNumber) as SparkSDaiPoolState;
   return isPoolStateEqualToReal(state, endBlockNumber);
 }
 

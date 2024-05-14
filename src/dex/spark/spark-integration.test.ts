@@ -6,7 +6,7 @@ import { Network, SwapSide } from '../../constants';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { BI_POWS } from '../../bigint-constants';
-import { SDai } from './sdai';
+import { Spark } from './spark';
 
 const network = Network.MAINNET;
 
@@ -18,22 +18,22 @@ const DaiToken = Tokens[network][DaiSymbol];
 
 const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
-const dexKey = 'sdai';
+const dexKey = 'Spark';
 const dexHelper = new DummyDexHelper(network);
 let blocknumber: number;
-let sdai: SDai;
+let spark: Spark;
 
-describe('SDai', function () {
+describe('Spark', function () {
   beforeAll(async () => {
     blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    sdai = new SDai(network, dexKey, dexHelper);
-    if (sdai.initializePricing) {
-      await sdai.initializePricing(blocknumber);
+    spark = new Spark(network, dexKey, dexHelper);
+    if (spark.initializePricing) {
+      await spark.initializePricing(blocknumber);
     }
   });
 
   it('getPoolIdentifiers and getPricesVolume DAI -> sDAI SELL', async function () {
-    const pools = await sdai.getPoolIdentifiers(
+    const pools = await spark.getPoolIdentifiers(
       DaiToken,
       SDaiToken,
       SwapSide.SELL,
@@ -43,7 +43,7 @@ describe('SDai', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await sdai.getPricesVolume(
+    const poolPrices = await spark.getPricesVolume(
       DaiToken,
       SDaiToken,
       amounts,
@@ -58,7 +58,7 @@ describe('SDai', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume sDAI -> DAI SELL', async function () {
-    const pools = await sdai.getPoolIdentifiers(
+    const pools = await spark.getPoolIdentifiers(
       SDaiToken,
       DaiToken,
       SwapSide.SELL,
@@ -68,7 +68,7 @@ describe('SDai', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await sdai.getPricesVolume(
+    const poolPrices = await spark.getPricesVolume(
       SDaiToken,
       DaiToken,
       amounts,
@@ -83,7 +83,7 @@ describe('SDai', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume DAI -> sDAI BUY', async function () {
-    const pools = await sdai.getPoolIdentifiers(
+    const pools = await spark.getPoolIdentifiers(
       DaiToken,
       SDaiToken,
       SwapSide.BUY,
@@ -93,7 +93,7 @@ describe('SDai', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await sdai.getPricesVolume(
+    const poolPrices = await spark.getPricesVolume(
       DaiToken,
       SDaiToken,
       amounts,
@@ -108,7 +108,7 @@ describe('SDai', function () {
   });
 
   it('getPoolIdentifiers and getPricesVolume sDAI -> DAI BUY', async function () {
-    const pools = await sdai.getPoolIdentifiers(
+    const pools = await spark.getPoolIdentifiers(
       SDaiToken,
       DaiToken,
       SwapSide.BUY,
@@ -118,7 +118,7 @@ describe('SDai', function () {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await sdai.getPricesVolume(
+    const poolPrices = await spark.getPricesVolume(
       SDaiToken,
       DaiToken,
       amounts,
@@ -133,14 +133,17 @@ describe('SDai', function () {
   });
 
   it('Dai getTopPoolsForToken', async function () {
-    const poolLiquidity = await sdai.getTopPoolsForToken(DaiToken.address, 10);
+    const poolLiquidity = await spark.getTopPoolsForToken(DaiToken.address, 10);
     console.log(`${DaiSymbol} Top Pools:`, poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, DaiToken.address, dexKey);
   });
 
   it('SDai getTopPoolsForToken', async function () {
-    const poolLiquidity = await sdai.getTopPoolsForToken(SDaiToken.address, 10);
+    const poolLiquidity = await spark.getTopPoolsForToken(
+      SDaiToken.address,
+      10,
+    );
     console.log(`${SDaiSymbol} Top Pools:`, poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, SDaiToken.address, dexKey);

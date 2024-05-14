@@ -1,21 +1,21 @@
 import { Address } from '../../types';
 
-export type SDaiData = { exchange: Address };
+export type SparkData = { exchange: Address };
 
-export type SDaiParams = {
+export type SparkParams = {
   sdaiAddress: Address;
   daiAddress: Address;
   potAddress: Address;
 };
 
-export enum SDaiFunctions {
+export enum SparkSDaiFunctions {
   deposit = 'deposit',
   redeem = 'redeem',
   withdraw = 'withdraw',
   mint = 'mint',
 }
 
-export type SDaiPoolState = {
+export type SparkSDaiPoolState = {
   rho: string;
   chi: string;
   dsr: string;

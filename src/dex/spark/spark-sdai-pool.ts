@@ -5,7 +5,7 @@ import { Interface } from '@ethersproject/abi';
 import type { IDexHelper } from '../../dex-helper';
 import type { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import type { Address, BlockHeader, Log, Logger } from '../../types';
-import type { SDaiPoolState } from './types';
+import type { SparkSDaiPoolState } from './types';
 import { getOnChainState } from './utils';
 
 const RAY = BI_POWS[27];
@@ -38,7 +38,7 @@ const rpow = (x: bigint, n: bigint): bigint => {
   return z;
 };
 
-const calcChi = (state: SDaiPoolState, currentTimestamp?: number) => {
+const calcChi = (state: SparkSDaiPoolState, currentTimestamp?: number) => {
   currentTimestamp ||= Math.floor(Date.now() / 1000);
   if (!state.live) return RAY;
 
@@ -51,7 +51,7 @@ const calcChi = (state: SDaiPoolState, currentTimestamp?: number) => {
   return now > rho ? (rpow(dsr, now - rho) * chi) / RAY : chi;
 };
 
-export class SDaiEventPool extends StatefulEventSubscriber<SDaiPoolState> {
+export class SparkSDaiEventPool extends StatefulEventSubscriber<SparkSDaiPoolState> {
   constructor(
     parentName: string,
     protected dexHelper: IDexHelper,
@@ -59,15 +59,15 @@ export class SDaiEventPool extends StatefulEventSubscriber<SDaiPoolState> {
     private potInterface: Interface,
     logger: Logger,
   ) {
-    super(parentName, 'sdai', dexHelper, logger);
+    super(parentName, 'Spark', dexHelper, logger);
     this.addressesSubscribed = [potAddress];
   }
 
   protected processLog(
-    state: DeepReadonly<SDaiPoolState>,
+    state: DeepReadonly<SparkSDaiPoolState>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
-  ): AsyncOrSync<DeepReadonly<SDaiPoolState> | null> {
+  ): AsyncOrSync<DeepReadonly<SparkSDaiPoolState> | null> {
     if (log.topics[0] === FILE_TOPICHASH && log.topics[2] === DSR_TOPIC) {
       return {
         ...state,
@@ -88,7 +88,7 @@ export class SDaiEventPool extends StatefulEventSubscriber<SDaiPoolState> {
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<SDaiPoolState>> {
+  ): Promise<DeepReadonly<SparkSDaiPoolState>> {
     return getOnChainState(
       this.dexHelper.multiContract,
       this.potAddress,

@@ -1,12 +1,12 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { SDaiEventPool } from './sdai-pool';
+import { SparkSDaiEventPool } from './spark-sdai-pool';
 import { SDaiConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { SDaiPoolState } from './types';
+import { SparkSDaiPoolState } from './types';
 
 import PotAbi from '../../abi/maker-psm/pot.json';
 import { Interface } from '@ethersproject/abi';
@@ -46,13 +46,13 @@ import _ from 'lodash';
 */
 
 jest.setTimeout(50 * 1000);
-const dexKey = 'sdai';
+const dexKey = 'Spark';
 const network = Network.MAINNET;
 
 async function fetchPoolState(
-  sdaiPool: SDaiEventPool,
+  sdaiPool: SparkSDaiEventPool,
   blockNumber: number,
-): Promise<SDaiPoolState> {
+): Promise<SparkSDaiPoolState> {
   return sdaiPool.generateState(blockNumber);
 }
 
@@ -76,7 +76,7 @@ describe('SDai Event', function () {
           const dexHelper = new DummyDexHelper(network);
           const logger = dexHelper.getLogger(dexKey);
 
-          const sdaiPool = new SDaiEventPool(
+          const sdaiPool = new SparkSDaiEventPool(
             dexKey,
             dexHelper,
             addresses.potAddress,

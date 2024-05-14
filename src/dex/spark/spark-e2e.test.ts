@@ -73,7 +73,7 @@ function testForNetwork(
 }
 
 describe('sDAI E2E', () => {
-  const dexKey = 'sdai';
+  const dexKey = 'Spark';
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
