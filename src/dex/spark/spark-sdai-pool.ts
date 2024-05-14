@@ -54,12 +54,13 @@ const calcChi = (state: SparkSDaiPoolState, currentTimestamp?: number) => {
 export class SparkSDaiEventPool extends StatefulEventSubscriber<SparkSDaiPoolState> {
   constructor(
     parentName: string,
+    poolName: string,
     protected dexHelper: IDexHelper,
     private potAddress: Address,
     private potInterface: Interface,
     logger: Logger,
   ) {
-    super(parentName, 'Spark', dexHelper, logger);
+    super(parentName, poolName, dexHelper, logger);
     this.addressesSubscribed = [potAddress];
   }
 

@@ -78,6 +78,7 @@ describe('SDai Event', function () {
 
           const sdaiPool = new SparkSDaiEventPool(
             dexKey,
+            `dai-sdai-pool`,
             dexHelper,
             addresses.potAddress,
             new Interface(PotAbi),
@@ -93,10 +94,6 @@ describe('SDai Event', function () {
             blockNumber,
             `${dexKey}_${sdaiPool}`,
             dexHelper.provider,
-            (state, expected) => {
-              // TODO:
-              expect(_.omit(state, ['chi'])).toEqual(_.omit(expected, ['chi']));
-            },
           );
         });
       });

@@ -53,6 +53,7 @@ export class Spark
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPool = new SparkSDaiEventPool(
       this.dexKey,
+      `${this.daiAddress}_${this.sdaiAddress}`,
       dexHelper,
       this.potAddress,
       this.potInterface,
