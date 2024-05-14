@@ -55,6 +55,7 @@ describe('AngleStakedStable EventPool Mainnet', () => {
   beforeEach(async () => {
     angleStakedStablePool = new AngleStakedStableEventPool(
       dexKey,
+      `${dexKey}_${AngleStakedStableConfig[dexKey][network].stakeToken}`,
       network,
       dexHelper,
       AngleStakedStableConfig[dexKey][network].stakeToken,

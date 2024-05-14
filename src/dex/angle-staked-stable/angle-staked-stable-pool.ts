@@ -35,13 +35,14 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
 
   constructor(
     readonly parentName: string,
+    name: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     public stakeToken: string,
     public agToken: string,
     logger: Logger,
   ) {
-    super(parentName, 'Staked_Stable', dexHelper, logger);
+    super(parentName, name, dexHelper, logger);
 
     this.logDecoder = (log: Log) =>
       AngleStakedStableEventPool.angleStakedStableIface.parseLog(log);
@@ -177,6 +178,29 @@ export class AngleStakedStableEventPool extends StatefulEventSubscriber<PoolStat
     );
 
     return poolState;
+  }
+
+  async getOrGenerateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const state = this.getState(blockNumber);
+    if (state) {
+      return state;
+    }
+
+    this.logger.debug(
+      `No state found for ${this.addressesSubscribed[0]}, generating new one`,
+    );
+    const newState = await this.generateState(blockNumber);
+
+    if (!newState) {
+      this.logger.debug(
+        `Could not regenerate state for ${this.addressesSubscribed[0]}`,
+      );
+      return null;
+    }
+    this.setState(newState, blockNumber);
+    return newState;
   }
 
   getRateDeposit(amount: bigint, state: PoolState): bigint {

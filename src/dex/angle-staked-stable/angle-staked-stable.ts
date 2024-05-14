@@ -60,7 +60,8 @@ export class AngleStakedStable
 
   async initializePricing(blockNumber: number) {
     this.eventPools[this.config.stakeToken] = new AngleStakedStableEventPool(
-      `${this.dexKey}_${this.config.stakeToken!.toLowerCase()}`,
+      this.dexKey,
+      `${this.dexKey}_${this.config.stakeToken.toLowerCase()}`,
       this.network,
       this.dexHelper,
       this.config.stakeToken,
@@ -102,7 +103,7 @@ export class AngleStakedStable
     const stakeToken = knownInfo.stakeToken!;
     const eventPool = this.eventPools[stakeToken];
     const exchange = `${this.dexKey}`;
-    const state = eventPool?.getState(blockNumber);
+    const state = await eventPool?.getOrGenerateState(blockNumber);
     if (this.eventPools === null || state === undefined || state === null)
       return null;
     if (srcTokenAddress === agToken && side === SwapSide.SELL)
