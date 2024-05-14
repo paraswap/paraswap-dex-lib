@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2';
-import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
+import { IDexTxBuilder, DexConstructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool';
@@ -86,6 +86,8 @@ import { Dexalot } from './dexalot/dexalot';
 import { Smardex } from './smardex/smardex';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
+import { PharaohV1 } from './solidly/forks-override/pharaohV1';
+import { EtherFi } from './etherfi';
 
 const LegacyDexes = [
   CurveV2,
@@ -109,6 +111,7 @@ const LegacyDexes = [
   Jarvis,
   Lido,
   AugustusRFQOrder,
+  EtherFi,
 ];
 
 const Dexes = [
@@ -168,6 +171,7 @@ const Dexes = [
   Smardex,
   Wombat,
   Swell,
+  PharaohV1,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
@@ -181,7 +185,7 @@ interface IGetDirectFunctionName {
 
 export class DexAdapterService {
   dexToKeyMap: {
-    [key: string]: LegacyDexConstructor | DexContructor<any, any, any>;
+    [key: string]: LegacyDexConstructor | DexConstructor<any, any, any>;
   } = {};
   directFunctionsNames: string[];
   dexInstances: {

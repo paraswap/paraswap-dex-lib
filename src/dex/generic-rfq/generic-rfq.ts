@@ -212,6 +212,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       this.augustusAddress,
       options.txOrigin,
       options.partner,
+      options.special,
     );
 
     const expiryAsBigInt = BigInt(order.order.expiry);

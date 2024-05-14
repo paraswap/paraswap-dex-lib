@@ -67,6 +67,8 @@ type PoolPairsInfo = {
   fee: string;
 };
 
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
+
 const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const PANCAKESWAPV3_QUOTE_GASLIMIT = 200_000;
@@ -85,7 +87,13 @@ export class PancakeswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(PancakeswapV3Config, ['PancakeswapV3']));
+    getDexKeysWithNetwork(
+      _.pick(PancakeswapV3Config, [
+        'PancakeswapV3',
+        'DackieSwapV3',
+        'SwapBasedV3',
+      ]),
+    );
 
   logger: Logger;
 
@@ -250,16 +258,6 @@ export class PancakeswapV3
           null;
         return null;
       }
-
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-          fee: fee.toString(),
-        }),
-      );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -339,10 +337,13 @@ export class PancakeswapV3
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(
+      PoolsRegistryHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }
