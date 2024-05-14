@@ -14,7 +14,7 @@ import {
 import { IDex } from '../idex';
 import SWETH_ABI from '../../abi/swETH.json';
 import RSWETH_ABI from '../../abi/rswETH.json';
-import { ETHER_ADDRESS, Network } from '../../constants';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { SimpleExchange } from '../simple-exchange';
 import { BI_POWS } from '../../bigint-constants';
@@ -240,15 +240,8 @@ export class Swell
   ): AdapterExchangeParam {
     this.assertEligibility(srcToken, destToken, side);
 
-    let targetExchange: string;
-    if (destToken === this.swETHAddress) {
-      targetExchange = this.swETHAddress;
-    } else {
-      targetExchange = this.rswETHAddress;
-    }
-
     return {
-      targetExchange, // not used contract side
+      targetExchange: NULL_ADDRESS,
       payload: '0x',
       networkFee: '0',
     };
@@ -279,21 +272,11 @@ export class Swell
       values.push('0');
     }
 
-    let swapData: string;
-    if (destToken === this.swETHAddress) {
-      swapData = this.swETHInterface.encodeFunctionData(
-        swETHFunctions.deposit,
-        [],
-      );
-    } else {
-      swapData = this.rswETHInterface.encodeFunctionData(
-        rswETHFunctions.deposit,
-        [],
-      );
-    }
-
-    callees.push(this.swETHAddress);
-    calldata.push(swapData);
+    callees.push(destToken);
+    calldata.push(this.swETHInterface.encodeFunctionData(
+      swETHFunctions.deposit, // rswETH has the same interface
+      [],
+    ));
     values.push(srcAmount);
 
     return {
