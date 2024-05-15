@@ -99,6 +99,7 @@ const mustBeAugustusSwapper = (
 ): string | ErrorReport => {
   const allowedTakers = [
     '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57'.toLowerCase(),
+    '0x59C7C832e96D2568bea6db468C1aAdcbbDa08A52'.toLowerCase(),
   ];
   return allowedTakers.includes(value.toLowerCase())
     ? value
