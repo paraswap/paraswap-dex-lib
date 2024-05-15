@@ -46,7 +46,7 @@ interface FeeParams {
   isTakeSurplus: boolean;
   isCapSurplus: boolean;
   isUserSurplus: boolean;
-  isDirectTransfer: boolean;
+  isDirectFeeTransfer: boolean;
   isReferral: boolean;
   isSkipBlacklist: boolean;
 }
@@ -211,7 +211,7 @@ export class GenericSwapTransactionBuilder {
     takeSurplus: boolean,
     isCapSurplus: boolean,
     isUserSurplus: boolean,
-    isDirectTransfer: boolean,
+    isDirectFeeTransfer: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -238,7 +238,7 @@ export class GenericSwapTransactionBuilder {
       takeSurplus,
       isCapSurplus,
       isUserSurplus,
-      isDirectTransfer,
+      isDirectFeeTransfer,
       priceRoute,
     });
 
@@ -283,7 +283,7 @@ export class GenericSwapTransactionBuilder {
     takeSurplus: boolean,
     isCapSurplus: boolean,
     isUserSurplus: boolean,
-    isDirectTransfer: boolean,
+    isDirectFeeTransfer: boolean,
     permit: string,
     uuid: string,
     beneficiary: Address,
@@ -329,7 +329,7 @@ export class GenericSwapTransactionBuilder {
       takeSurplus,
       isCapSurplus,
       isUserSurplus,
-      isDirectTransfer,
+      isDirectFeeTransfer,
       priceRoute,
     });
 
@@ -356,7 +356,7 @@ export class GenericSwapTransactionBuilder {
     takeSurplus,
     isCapSurplus,
     isUserSurplus,
-    isDirectTransfer,
+    isDirectFeeTransfer,
     partnerAddress,
     partnerFeePercent,
     skipBlacklist = false,
@@ -367,7 +367,7 @@ export class GenericSwapTransactionBuilder {
     takeSurplus: boolean;
     isCapSurplus: boolean;
     isUserSurplus: boolean;
-    isDirectTransfer: boolean;
+    isDirectFeeTransfer: boolean;
     priceRoute: OptimalRate;
     skipBlacklist?: boolean;
   }) {
@@ -378,7 +378,7 @@ export class GenericSwapTransactionBuilder {
           isTakeSurplus: takeSurplus,
           isCapSurplus,
           isUserSurplus,
-          isDirectTransfer,
+          isDirectFeeTransfer,
           isReferral: true,
           isSkipBlacklist: skipBlacklist,
         })
@@ -388,7 +388,7 @@ export class GenericSwapTransactionBuilder {
           isTakeSurplus: takeSurplus,
           isCapSurplus,
           isUserSurplus,
-          isDirectTransfer,
+          isDirectFeeTransfer,
           isSkipBlacklist: skipBlacklist,
           isReferral: false,
         });
@@ -406,7 +406,7 @@ export class GenericSwapTransactionBuilder {
     takeSurplus,
     isCapSurplus,
     isUserSurplus,
-    isDirectTransfer,
+    isDirectFeeTransfer,
     gasPrice,
     maxFeePerGas,
     maxPriorityFeePerGas,
@@ -425,7 +425,7 @@ export class GenericSwapTransactionBuilder {
     takeSurplus?: boolean;
     isCapSurplus?: boolean;
     isUserSurplus?: boolean;
-    isDirectTransfer?: boolean;
+    isDirectFeeTransfer?: boolean;
     gasPrice?: string;
     maxFeePerGas?: string;
     maxPriorityFeePerGas?: string;
@@ -457,7 +457,7 @@ export class GenericSwapTransactionBuilder {
         takeSurplus ?? false,
         isCapSurplus ?? true,
         isUserSurplus ?? false,
-        isDirectTransfer ?? false,
+        isDirectFeeTransfer ?? false,
         permit || '0x',
         uuid,
         _beneficiary,
@@ -473,7 +473,7 @@ export class GenericSwapTransactionBuilder {
         takeSurplus ?? false,
         isCapSurplus ?? true,
         isUserSurplus ?? false,
-        isDirectTransfer ?? false,
+        isDirectFeeTransfer ?? false,
         _beneficiary,
         permit || '0x',
         deadline,
@@ -508,7 +508,7 @@ export class GenericSwapTransactionBuilder {
     isTakeSurplus,
     isCapSurplus,
     isUserSurplus,
-    isDirectTransfer,
+    isDirectFeeTransfer,
     isReferral,
     isSkipBlacklist,
   }: FeeParams): string {
@@ -551,7 +551,7 @@ export class GenericSwapTransactionBuilder {
         partialFeeCodeWithBitFlags.or(IS_USER_SURPLUS_MASK);
     }
 
-    if (isDirectTransfer) {
+    if (isDirectFeeTransfer) {
       partialFeeCodeWithBitFlags = partialFeeCodeWithBitFlags.or(
         IS_DIRECT_TRANSFER_MASK,
       );
