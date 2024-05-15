@@ -21,7 +21,7 @@ import {
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
 import AugustusV6ABI from './abi/augustus-v6/ABI.json';
-import { isETHAddress, uuidToBytes16 } from './utils';
+import { isDirectSwap, isETHAddress, uuidToBytes16 } from './utils';
 import {
   DepositWithdrawReturn,
   IWethDepositorWithdrawer,
@@ -213,6 +213,9 @@ export class GenericSwapTransactionBuilder {
   ) {
     const executorName =
       this.executorDetector.getExecutorByPriceRoute(priceRoute);
+    const executionContractAddress =
+      this.getExecutionContractAddress(priceRoute);
+
     const bytecodeBuilder =
       this.executorDetector.getBytecodeBuilder(executorName);
     const bytecode = await this.buildCalls(
@@ -235,7 +238,7 @@ export class GenericSwapTransactionBuilder {
     });
 
     const swapParams = [
-      bytecodeBuilder.getAddress(),
+      executionContractAddress,
       [
         priceRoute.srcToken,
         priceRoute.destToken,
@@ -529,6 +532,17 @@ export class GenericSwapTransactionBuilder {
       priceRoute.contractMethod,
     );
     if (isDirectMethod) return this.augustusV6Address;
+
+    if (
+      isDirectSwap(priceRoute.bestRoute) &&
+      isETHAddress(priceRoute.srcToken) &&
+      this.dexAdapterService.dexHelper.config.isWETH(priceRoute.destToken) &&
+      priceRoute.side === SwapSide.SELL &&
+      priceRoute.contractMethod === 'simpleSwap'
+    ) {
+      return this.dexAdapterService.dexHelper.config.data
+        .wrappedNativeTokenAddress;
+    }
 
     const executorName =
       this.executorDetector.getExecutorByPriceRoute(priceRoute);

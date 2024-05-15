@@ -789,7 +789,7 @@ export async function newTestE2E({
       destToken.applyOverrides(stateOverrides);
 
       const swapTx = await ts.simulate(swapParams, stateOverrides);
-      console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
+      // console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
       // Only log gas estimate if testing against API
       if (useAPI)
         console.log(
