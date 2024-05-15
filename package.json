@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "3.1.0-balancerv2-direct.3",
+  "version": "3.1.0-new-params-encoding",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
