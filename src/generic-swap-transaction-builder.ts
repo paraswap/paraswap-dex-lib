@@ -45,7 +45,7 @@ interface FeeParams {
   feePercent: string;
   isTakeSurplus: boolean;
   isCapSurplus: boolean;
-  isUserSurplus: boolean;
+  isSurplusToUser: boolean;
   isDirectFeeTransfer: boolean;
   isReferral: boolean;
   isSkipBlacklist: boolean;
@@ -210,7 +210,7 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent: string,
     takeSurplus: boolean,
     isCapSurplus: boolean,
-    isUserSurplus: boolean,
+    isSurplusToUser: boolean,
     isDirectFeeTransfer: boolean,
     beneficiary: Address,
     permit: string,
@@ -237,7 +237,7 @@ export class GenericSwapTransactionBuilder {
       partnerFeePercent,
       takeSurplus,
       isCapSurplus,
-      isUserSurplus,
+      isSurplusToUser,
       isDirectFeeTransfer,
       priceRoute,
     });
@@ -282,7 +282,7 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent: string,
     takeSurplus: boolean,
     isCapSurplus: boolean,
-    isUserSurplus: boolean,
+    isSurplusToUser: boolean,
     isDirectFeeTransfer: boolean,
     permit: string,
     uuid: string,
@@ -328,7 +328,7 @@ export class GenericSwapTransactionBuilder {
       partnerFeePercent,
       takeSurplus,
       isCapSurplus,
-      isUserSurplus,
+      isSurplusToUser,
       isDirectFeeTransfer,
       priceRoute,
     });
@@ -355,7 +355,7 @@ export class GenericSwapTransactionBuilder {
     priceRoute,
     takeSurplus,
     isCapSurplus,
-    isUserSurplus,
+    isSurplusToUser,
     isDirectFeeTransfer,
     partnerAddress,
     partnerFeePercent,
@@ -366,7 +366,7 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent: string;
     takeSurplus: boolean;
     isCapSurplus: boolean;
-    isUserSurplus: boolean;
+    isSurplusToUser: boolean;
     isDirectFeeTransfer: boolean;
     priceRoute: OptimalRate;
     skipBlacklist?: boolean;
@@ -377,7 +377,7 @@ export class GenericSwapTransactionBuilder {
           feePercent: '0',
           isTakeSurplus: takeSurplus,
           isCapSurplus,
-          isUserSurplus,
+          isSurplusToUser,
           isDirectFeeTransfer,
           isReferral: true,
           isSkipBlacklist: skipBlacklist,
@@ -387,7 +387,7 @@ export class GenericSwapTransactionBuilder {
           feePercent: partnerFeePercent,
           isTakeSurplus: takeSurplus,
           isCapSurplus,
-          isUserSurplus,
+          isSurplusToUser,
           isDirectFeeTransfer,
           isSkipBlacklist: skipBlacklist,
           isReferral: false,
@@ -405,7 +405,7 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent,
     takeSurplus,
     isCapSurplus,
-    isUserSurplus,
+    isSurplusToUser,
     isDirectFeeTransfer,
     gasPrice,
     maxFeePerGas,
@@ -424,7 +424,7 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent: string;
     takeSurplus?: boolean;
     isCapSurplus?: boolean;
-    isUserSurplus?: boolean;
+    isSurplusToUser?: boolean;
     isDirectFeeTransfer?: boolean;
     gasPrice?: string;
     maxFeePerGas?: string;
@@ -456,7 +456,7 @@ export class GenericSwapTransactionBuilder {
         partnerFeePercent,
         takeSurplus ?? false,
         isCapSurplus ?? true,
-        isUserSurplus ?? false,
+        isSurplusToUser ?? false,
         isDirectFeeTransfer ?? false,
         permit || '0x',
         uuid,
@@ -472,7 +472,7 @@ export class GenericSwapTransactionBuilder {
         partnerFeePercent,
         takeSurplus ?? false,
         isCapSurplus ?? true,
-        isUserSurplus ?? false,
+        isSurplusToUser ?? false,
         isDirectFeeTransfer ?? false,
         _beneficiary,
         permit || '0x',
@@ -507,7 +507,7 @@ export class GenericSwapTransactionBuilder {
     feePercent,
     isTakeSurplus,
     isCapSurplus,
-    isUserSurplus,
+    isSurplusToUser,
     isDirectFeeTransfer,
     isReferral,
     isSkipBlacklist,
@@ -546,7 +546,7 @@ export class GenericSwapTransactionBuilder {
         partialFeeCodeWithBitFlags.or(IS_CAP_SURPLUS_MASK);
     }
 
-    if (isUserSurplus) {
+    if (isSurplusToUser) {
       partialFeeCodeWithBitFlags =
         partialFeeCodeWithBitFlags.or(IS_USER_SURPLUS_MASK);
     }
