@@ -83,6 +83,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     data: ExchangeData,
     side: SwapSide,
     context: Context,
+    bytecodeBuilderAddress: Address,
   ): AsyncOrSync<DexExchangeParam>;
 
   // Returns params required by direct swap method.

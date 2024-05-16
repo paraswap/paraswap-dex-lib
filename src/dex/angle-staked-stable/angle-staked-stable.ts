@@ -9,11 +9,13 @@ import type {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, type Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
-import type { IDex } from '../../dex/idex';
+import type { Context, IDex } from '../../dex/idex';
 import type { IDexHelper } from '../../dex-helper/idex-helper';
 import type { AngleStakedStableData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -226,6 +228,43 @@ export class AngleStakedStable
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AngleStakedStableData,
+    side: SwapSide,
+    _: Context,
+    bytecodeBuilderAddress: Address,
+  ): DexExchangeParam {
+    const { exchange } = data;
+
+    const swapData =
+      srcToken.toLowerCase() === this.config.agToken
+        ? AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
+            side === SwapSide.SELL ? 'deposit' : 'mint',
+            [side === SwapSide.SELL ? srcAmount : destAmount, recipient],
+          )
+        : AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
+            side === SwapSide.SELL ? 'redeem' : 'withdraw',
+            [
+              side === SwapSide.SELL ? srcAmount : destAmount,
+              recipient,
+              bytecodeBuilderAddress,
+              // '0xc7df6d62a0769f35c77e8dde7fd0a8b12893e8a2',
+            ],
+          );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+    };
   }
 
   // This is called once before getTopPoolsForToken is

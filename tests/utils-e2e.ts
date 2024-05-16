@@ -52,7 +52,6 @@ import {
   Tokens,
   WrappedNativeTokenSymbols,
 } from './constants-e2e';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
@@ -793,7 +792,7 @@ export async function newTestE2E({
       destToken.applyOverrides(stateOverrides);
 
       const swapTx = await ts.simulate(swapParams, stateOverrides);
-      console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
+      console.log(`${srcToken.address}_${destToken.address}_${dexKeys!}`);
       // Only log gas estimate if testing against API
       if (useAPI)
         console.log(
