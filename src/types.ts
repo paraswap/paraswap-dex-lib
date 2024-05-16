@@ -321,6 +321,7 @@ export type PreprocessTransactionOptions = {
   partner?: string;
   recipient: string;
   version: ParaSwapVersion;
+  special?: boolean;
 };
 
 export type TransferFeeParams = {
