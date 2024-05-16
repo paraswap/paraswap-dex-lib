@@ -26,6 +26,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import _ from 'lodash';
 import { SwellConfig, Adapters } from './config';
 import { RswethPool } from './rsweth-pool';
+import { ethers } from 'ethers';
 
 export enum swETHFunctions {
   deposit = 'deposit',
@@ -84,9 +85,40 @@ export class Swell
   }
 
   async initializePricing(blockNumber: number) {
+    const data: { returnData: any[] } =
+      await this.dexHelper.multiContract.methods
+        .aggregate([
+          {
+            target: this.swETHAddress,
+            callData: this.swETHInterface.encodeFunctionData(
+              'swETHToETHRate',
+              [],
+            ),
+          },
+          {
+            target: this.rswETHAddress,
+            callData: this.rswETHInterface.encodeFunctionData(
+              'rswETHToETHRate',
+              [],
+            ),
+          },
+        ])
+        .call({}, blockNumber);
+
+    const decodedData = data.returnData.map(d =>
+      ethers.utils.defaultAbiCoder.decode(['uint256'], d),
+    );
+    const [swETHToETHRateFixed, rswETHToETHRateFixed] = decodedData.map(d =>
+      BigInt(d[0].toString()),
+    );
+
     await Promise.all([
-      this.swethPool.initialize(blockNumber),
-      this.rswethPool.initialize(blockNumber),
+      this.swethPool.initialize(blockNumber, {
+        state: { swETHToETHRateFixed },
+      }),
+      this.rswethPool.initialize(blockNumber, {
+        state: { rswETHToETHRateFixed },
+      }),
     ]);
   }
 
