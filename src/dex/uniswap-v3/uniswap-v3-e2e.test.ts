@@ -1209,51 +1209,53 @@ describe('UniswapV3 E2E', () => {
     });
   });
 
-  describe('VelodromeSlipstream', () => {
-    const dexKey = 'VelodromeSlipstream';
-    describe('Optimism', () => {
-      const network = Network.OPTIMISM;
+  describe('Slipstream', () => {
+    describe('VelodromeSlipstream', () => {
+      const dexKey = 'VelodromeSlipstream';
+      describe('Optimism', () => {
+        const network = Network.OPTIMISM;
 
-      const tokenASymbol: string = 'wstETH';
-      const tokenBSymbol: string = 'WETH';
+        const tokenASymbol: string = 'wstETH';
+        const tokenBSymbol: string = 'WETH';
 
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '1000000000000000000';
-      const nativeTokenAmount = '1000000000000000000';
+        const tokenAAmount: string = '10000000000000000';
+        const tokenBAmount: string = '10000000000000000';
+        const nativeTokenAmount = '1000000000000000000';
 
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-        nativeTokenAmount,
-      );
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+          nativeTokenAmount,
+        );
+      });
     });
-  });
 
-  describe('AerodromeSlipstream', () => {
-    const dexKey = 'AerodromeSlipstream';
-    describe('Base', () => {
-      const network = Network.BASE;
+    describe('AerodromeSlipstream', () => {
+      const dexKey = 'AerodromeSlipstream';
+      describe('Base', () => {
+        const network = Network.BASE;
 
-      const tokenASymbol: string = 'USDbC';
-      const tokenBSymbol: string = 'DAI';
+        const tokenASymbol: string = 'DOG';
+        const tokenBSymbol: string = 'WETH';
 
-      const tokenAAmount: string = '111110000';
-      const tokenBAmount: string = '110000000000000000';
-      const nativeTokenAmount = '1100000000000000000';
+        const tokenAAmount: string = '1100000000000000000';
+        const tokenBAmount: string = '1100000000000000000';
+        const nativeTokenAmount = '2100000000000000000';
 
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-        nativeTokenAmount,
-      );
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+          nativeTokenAmount,
+        );
+      });
     });
   });
 });

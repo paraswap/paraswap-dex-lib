@@ -1056,6 +1056,14 @@ export const Tokens: {
       address: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA',
       decimals: 6,
     },
+    DOG: {
+      address: '0xAfb89a09D82FBDE58f18Ac6437B3fC81724e4dF6',
+      decimals: 18,
+    },
+    tBTC: {
+      address: '0x236aa50979d5f3de3bd1eeb40e81137f22ab794b',
+      decimals: 18,
+    },
     DAI: {
       address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
       decimals: 18,
@@ -1305,7 +1313,7 @@ export const Holders: {
     crvUSD: '0x171c53d55b1bcb725f660677d9e8bad7fd084282',
   },
   [Network.OPTIMISM]: {
-    ETH: '0x9ef21bE1C270AA1c3c3d750F458442397fBFFCB6',
+    ETH: '0xF6D4E5a7c5215F91f59a95065190CCa24bf64554',
     DAI: '0x1337bedc9d22ecbe766df105c9623922a27963ec',
     WETH: '0x68F5C0A2DE713a54991E01858Fd27a3832401849',
     POPS: '0x3cbd9044aaabef08ce93a68448e093cff405ad76',
@@ -1317,7 +1325,7 @@ export const Holders: {
     sBTC: '0xbbb33d2e7bd7ddc722e53da9ca8ee97df41cfabf',
     sETH: '0xce3850927d0e631b6082f9d45a6391a3794c51eb',
     sUSD: '0xa5f7a39e55d7878bc5bd754ee5d6bd7a7662355b',
-    wstETH: '0xf7626459234e9249808a06aa08dc6b67c8e0a2fc',
+    wstETH: '0x63f6D9E7d3953106bCaf98832BD9C88A54AfCc9D',
     rETH: '0x4c2e69e58b14de9afedfb94319519ce34e087283',
     WBTC: '0xb9c8f0d3254007ee4b98970b94544e473cd610ec',
     frxETH: '0x4d4edf8291d169f975b99914b6ab3326abb45938',
@@ -1342,6 +1350,8 @@ export const Holders: {
     GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
     SDEX: '0xa5d378c05192e3f1f365d6298921879c4d51c5a3',
     ALB: '0x365c6d588e8611125de3bea5b9280c304fa54113',
+    tBTC: '0x9f1920d0cbb63ed03376a1e09fd2851d601234c8',
+    DOG: '0xbe3ab8a87730684ef1e476064c2e43c3e982f8e8',
   },
 };
 

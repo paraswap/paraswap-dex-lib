@@ -66,23 +66,24 @@ import {
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 
-type PoolPairsInfo = {
+export type PoolPairsInfo = {
   token0: Address;
   token1: Address;
   fee: string;
 };
 
-const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
+export const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
 
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
-const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
+export const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+export const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS =
+  24 * 60 * 60 * 1000; // Once in a day
+export const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param>
 {
-  private readonly factory: UniswapV3Factory;
+  protected readonly factory: UniswapV3Factory;
   readonly isFeeOnTransferSupported: boolean = false;
   readonly eventPools: Record<string, UniswapV3EventPool | null> = {};
 
@@ -106,17 +107,15 @@ export class UniswapV3
         'BaseswapV3',
         'PharaohV2',
         'AlienBaseV3',
-        'VelodromeSlipstream',
-        'AerodromeSlipstream',
       ]),
     );
 
   logger: Logger;
 
-  private uniswapMulti: Contract;
-  private stateMultiContract: Contract;
+  protected uniswapMulti: Contract;
+  protected stateMultiContract: Contract;
 
-  private notExistingPoolSetKey: string;
+  protected notExistingPoolSetKey: string;
 
   constructor(
     protected network: Network,
@@ -249,6 +248,7 @@ export class UniswapV3
     destAddress: Address,
     fee: bigint,
     blockNumber: number,
+    tickSpacing?: bigint,
   ): Promise<UniswapV3EventPool | null> {
     let pool = this.eventPools[
       this.getPoolIdentifier(srcAddress, destAddress, fee)
@@ -291,26 +291,7 @@ export class UniswapV3
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
-    const poolImplementation =
-      this.config.eventPoolImplementation !== undefined
-        ? this.config.eventPoolImplementation
-        : UniswapV3EventPool;
-    pool =
-      pool ||
-      new poolImplementation(
-        this.dexHelper,
-        this.dexKey,
-        this.stateMultiContract,
-        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
-        this.erc20Interface,
-        this.config.factory,
-        fee,
-        token0,
-        token1,
-        this.logger,
-        this.cacheStateKey,
-        this.config.initHash,
-      );
+    pool = pool || this.getPoolInstance(token0, token1, fee, tickSpacing);
 
     try {
       await pool.initialize(blockNumber, {
@@ -368,6 +349,33 @@ export class UniswapV3
     this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
       pool;
     return pool;
+  }
+
+  protected getPoolInstance(
+    token0: string,
+    token1: string,
+    fee: bigint,
+    tickSpacing?: bigint,
+  ) {
+    const poolImplementation =
+      this.config.eventPoolImplementation !== undefined
+        ? this.config.eventPoolImplementation
+        : UniswapV3EventPool;
+
+    return new poolImplementation(
+      this.dexHelper,
+      this.dexKey,
+      this.stateMultiContract,
+      this.config.decodeStateMultiCallResultWithRelativeBitmaps,
+      this.erc20Interface,
+      this.config.factory,
+      fee,
+      token0,
+      token1,
+      this.logger,
+      this.cacheStateKey,
+      this.config.initHash,
+    );
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
@@ -743,16 +751,7 @@ export class UniswapV3
           return {
             unit: unitResult.outputs[0],
             prices,
-            data: {
-              path: [
-                {
-                  tokenIn: _srcAddress,
-                  tokenOut: _destAddress,
-                  fee: pool.feeCode.toString(),
-                  currentFee: state.fee.toString(),
-                },
-              ],
-            },
+            data: this.prepareData(_srcAddress, _destAddress, pool, state),
             poolIdentifier: this.getPoolIdentifier(
               pool.token0,
               pool.token1,
@@ -788,6 +787,24 @@ export class UniswapV3
       );
       return null;
     }
+  }
+
+  protected prepareData(
+    srcAddress: string,
+    destAddress: string,
+    pool: UniswapV3EventPool,
+    state: PoolState,
+  ): UniswapV3Data {
+    return {
+      path: [
+        {
+          tokenIn: srcAddress,
+          tokenOut: destAddress,
+          fee: pool.feeCode.toString(),
+          currentFee: state.fee.toString(),
+        },
+      ],
+    };
   }
 
   getAdapterParam(
@@ -1109,11 +1126,11 @@ export class UniswapV3
     return pools.filter(pool => pool) as UniswapV3EventPool[];
   }
 
-  private _getLoweredAddresses(srcToken: Token, destToken: Token) {
+  protected _getLoweredAddresses(srcToken: Token, destToken: Token) {
     return [srcToken.address.toLowerCase(), destToken.address.toLowerCase()];
   }
 
-  private _sortTokens(srcAddress: Address, destAddress: Address) {
+  protected _sortTokens(srcAddress: Address, destAddress: Address) {
     return [srcAddress, destAddress].sort((a, b) => (a < b ? -1 : 1));
   }
 
@@ -1139,7 +1156,7 @@ export class UniswapV3
     return newConfig;
   }
 
-  private _getOutputs(
+  protected _getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,

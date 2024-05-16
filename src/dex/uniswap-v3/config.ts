@@ -3,9 +3,12 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { Address } from '../../types';
 import RamsesV2StateMulticallABI from '../../abi/RamsesV2StateMulticall.abi.json';
+import VelodromeSlipstreamMulticallABi from '../../abi/velodrome-slipstream/VelodromeSlipstreamStateMulticall.abi.json';
 import { AbiItem } from 'web3-utils';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from './forks/ramses-v2/utils';
+import { decodeStateMultiCallResultWithRelativeBitmaps as decodeStateMultiCallResultWithRelativeBitmapsForRamses } from './forks/ramses-v2/utils';
+import { decodeStateMultiCallResultWithRelativeBitmaps as decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream } from './forks/velodrome-slipstream/utils';
 import { RamsesV2EventPool } from './forks/ramses-v2/ramses-v2-pool';
+import { VelodromeSlipstreamEventPool } from './forks/velodrome-slipstream/velodrome-slipstream-pool';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
 const RAMSES_FORKS_FEES = [...SUPPORTED_FEES, 50n, 250n];
@@ -254,7 +257,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       eventPoolImplementation: RamsesV2EventPool,
-      decodeStateMultiCallResultWithRelativeBitmaps,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForRamses,
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       subgraphURL:
@@ -274,7 +278,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       eventPoolImplementation: RamsesV2EventPool,
-      decodeStateMultiCallResultWithRelativeBitmaps,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForRamses,
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       subgraphURL:
@@ -358,26 +363,50 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
     [Network.OPTIMISM]: {
       factory: '0x548118C7E0B865C2CfA94D15EC86B666468ac758',
       quoter: '0xA2DEcF05c16537C702779083Fe067e308463CE45',
-      router: '0xF132bdb9573867cD72f2585C338B923F973EB817',
-      supportedFees: [10000n, 3000n, 500n, 100n],
-      stateMulticall: '0x4FF0dEC5f9a763Aa1E5C2a962aa6f4eDFeE4f9eA',
+      router: '0x93A3b44C38A8557E935B3e2549B2809a582c28EE',
+      supportedFees: SUPPORTED_FEES,
+      tickSpacings: [1n, 50n, 100n, 200n, 2000n],
+      tickSpacingsToFees: {
+        '1': 100n,
+        '50': 500n,
+        '100': 500n,
+        '200': 3000n,
+        '2000': 10000n,
+      },
+      stateMulticall: '0xc055b23319b3a140D4De2d0001bd0A885B3d7DbB',
+      stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
+      eventPoolImplementation: VelodromeSlipstreamEventPool,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
-      initHash: `0x7ab14e1c9a50601853aa424ba830356bbd4af40db6933a7d00d0825d493746ca`, // Pool addresses computed without needing initHash: https://github.com/velodrome-finance/slipstream/blob/main/contracts/periphery/libraries/PoolAddress.sol#L30
+      initHash: '0xE0A596c403E854FFb9C828aB4f07eEae04A05D37', // pool implementation address from factory contract is used instead of initHash here
     },
   },
   AerodromeSlipstream: {
     [Network.BASE]: {
       factory: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A',
       quoter: '0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0',
-      router: '0x6Cb442acF35158D5eDa88fe602221b67B400Be3E',
-      supportedFees: [10000n, 3000n, 500n, 100n],
-      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
+      router: '0x1b2b6cE813b99b840Fe632c63bcA5394938Ef01e',
+      supportedFees: SUPPORTED_FEES,
+      tickSpacings: [1n, 50n, 100n, 200n, 2000n],
+      tickSpacingsToFees: {
+        '1': 100n,
+        '50': 500n,
+        '100': 500n,
+        '200': 3000n,
+        '2000': 10000n,
+      },
+      stateMulticall: '0x736518161516c1cfBD5bf5e7049FCBDC9b933987',
+      stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
+      eventPoolImplementation: VelodromeSlipstreamEventPool,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
       uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
       chunksCount: 10,
       initRetryFrequency: 10,
-      initHash: `0x7ab14e1c9a50601853aa424ba830356bbd4af40db6933a7d00d0825d493746ca`, // Pool addresses computed without needing initHash: https://github.com/aerodrome-finance/slipstream/blob/main/contracts/periphery/libraries/PoolAddress.sol#L30
+      initHash: '0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831', // pool implementation address from factory contract is used instead of initHash here
     },
   },
 };

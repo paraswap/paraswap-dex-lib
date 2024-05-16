@@ -503,7 +503,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return pool;
   }
 
-  private _computePoolAddress(
+  protected _computePoolAddress(
     token0: Address,
     token1: Address,
     fee: bigint,
