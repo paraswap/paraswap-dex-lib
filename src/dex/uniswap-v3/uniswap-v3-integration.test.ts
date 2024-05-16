@@ -77,7 +77,6 @@ async function checkOnChainPricing(
 ) {
   // Quoter address
   // const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
-  // const readerIface = quoterIface;
 
   const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
 

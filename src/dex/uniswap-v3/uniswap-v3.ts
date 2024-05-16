@@ -66,7 +66,7 @@ import {
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 
-export type PoolPairsInfo = {
+type PoolPairsInfo = {
   token0: Address;
   token1: Address;
   fee: string;
@@ -112,7 +112,7 @@ export class UniswapV3
 
   logger: Logger;
 
-  protected uniswapMulti: Contract;
+  private uniswapMulti: Contract;
   protected stateMultiContract: Contract;
 
   protected notExistingPoolSetKey: string;
