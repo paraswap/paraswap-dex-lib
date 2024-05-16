@@ -112,7 +112,7 @@ export class GenericSwapTransactionBuilder {
               se.exchange,
             );
 
-            const bytecodeBuilderAddress = bytecodeBuilder.getAddress();
+            const executorAddress = bytecodeBuilder.getAddress();
             const {
               srcToken,
               destToken,
@@ -129,7 +129,7 @@ export class GenericSwapTransactionBuilder {
               se,
               minMaxAmount,
               dex,
-              bytecodeBuilderAddress,
+              executorAddress,
             );
 
             const dexParams = await dex.getDexParam!(
@@ -147,7 +147,7 @@ export class GenericSwapTransactionBuilder {
                   priceRoute.destToken.toLowerCase() ===
                   destToken.toLowerCase(),
               },
-              bytecodeBuilderAddress,
+              executorAddress,
             );
 
             return {

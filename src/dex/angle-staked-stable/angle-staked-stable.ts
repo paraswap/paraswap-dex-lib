@@ -239,7 +239,7 @@ export class AngleStakedStable
     data: AngleStakedStableData,
     side: SwapSide,
     _: Context,
-    bytecodeBuilderAddress: Address,
+    executorAddress: Address,
   ): DexExchangeParam {
     const { exchange } = data;
 
@@ -254,7 +254,7 @@ export class AngleStakedStable
             [
               side === SwapSide.SELL ? srcAmount : destAmount,
               recipient,
-              bytecodeBuilderAddress,
+              executorAddress,
             ],
           );
 

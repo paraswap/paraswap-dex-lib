@@ -218,7 +218,7 @@ export class Spark
     data: SparkData,
     side: SwapSide,
     _: Context,
-    bytecodeBuilderAddress: Address,
+    executorAddress: Address,
   ): DexExchangeParam {
     const isSell = side === SwapSide.SELL;
     const { exchange } = data;
@@ -232,7 +232,7 @@ export class Spark
     } else {
       swapData = this.sdaiInterface.encodeFunctionData(
         isSell ? SparkSDaiFunctions.redeem : SparkSDaiFunctions.withdraw,
-        [isSell ? srcAmount : destAmount, recipient, bytecodeBuilderAddress],
+        [isSell ? srcAmount : destAmount, recipient, executorAddress],
       );
     }
 
