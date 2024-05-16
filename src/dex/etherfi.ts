@@ -1,7 +1,13 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDexTxBuilder } from './idex';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  NumberAsString,
+  SimpleExchangeParam,
+} from '../types';
+import { Context, IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import eETHPoolABI from '../abi/etherfi/eETHPool.json';
 import weETHABI from '../abi/etherfi/weETH.json';
@@ -142,6 +148,20 @@ export class EtherFi
           }
         : undefined,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: EtherFiData,
+    side: SwapSide,
+    _: Context,
+    bytecodeBuilderAddress: Address,
+  ): DexExchangeParam {
+    throw new Error('TODO: Implement');
   }
 
   getAdapterParam(
