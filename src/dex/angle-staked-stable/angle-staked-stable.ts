@@ -255,7 +255,6 @@ export class AngleStakedStable
               side === SwapSide.SELL ? srcAmount : destAmount,
               recipient,
               bytecodeBuilderAddress,
-              // '0xc7df6d62a0769f35c77e8dde7fd0a8b12893e8a2',
             ],
           );
 

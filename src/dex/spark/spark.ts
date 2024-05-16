@@ -1,5 +1,5 @@
 import { SimpleExchange } from '../simple-exchange';
-import { IDex } from '../idex';
+import { Context, IDex } from '../idex';
 import { SparkParams, SparkData, SparkSDaiFunctions } from './types';
 import { Network, SwapSide } from '../../constants';
 import { getDexKeysWithNetwork } from '../../utils';
@@ -7,8 +7,10 @@ import { Adapters, SDaiConfig } from './config';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Logger,
+  NumberAsString,
   PoolLiquidity,
   PoolPrices,
   SimpleExchangeParam,
@@ -205,6 +207,41 @@ export class Spark
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SparkData,
+    side: SwapSide,
+    _: Context,
+    bytecodeBuilderAddress: Address,
+  ): DexExchangeParam {
+    const isSell = side === SwapSide.SELL;
+    const { exchange } = data;
+
+    let swapData: string;
+    if (this.isDai(srcToken)) {
+      swapData = this.sdaiInterface.encodeFunctionData(
+        isSell ? SparkSDaiFunctions.deposit : SparkSDaiFunctions.mint,
+        [isSell ? srcAmount : destAmount, recipient],
+      );
+    } else {
+      swapData = this.sdaiInterface.encodeFunctionData(
+        isSell ? SparkSDaiFunctions.redeem : SparkSDaiFunctions.withdraw,
+        [isSell ? srcAmount : destAmount, recipient, bytecodeBuilderAddress],
+      );
+    }
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+    };
   }
 
   getAdapterParam(
