@@ -53,7 +53,7 @@ const MAX_BATCH_SIZE = 100;
 const MAX_NUMBER_OF_BATCH_REQUEST_HALVING = 3;
 
 export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1> {
-  handlers: {
+  protected handlers: {
     [event: string]: (
       event: any,
       state: DeepReadonly<PoolStateV1_1>,
@@ -95,6 +95,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     readonly poolInitCodeHash: string,
     readonly poolDeployer: string,
     private readonly forceManualStateGeneration: boolean = false,
+    private readonly areTicksCompressed: boolean = true,
   ) {
     super(parentName, `${token0}_${token1}`, dexHelper, logger, true, mapKey);
     this.token0 = token0.toLowerCase();
@@ -648,7 +649,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
       isValid: true,
       balance0,
       balance1,
-      areTicksCompressed: true,
+      areTicksCompressed: this.areTicksCompressed,
     };
   }
 

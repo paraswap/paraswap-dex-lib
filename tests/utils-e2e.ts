@@ -1,6 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 /* eslint-disable no-console */
 import { Interface } from '@ethersproject/abi';
-import { Provider } from '@ethersproject/providers';
+import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
+
 import {
   IParaSwapSDK,
   LocalParaswapSDK,
@@ -48,7 +52,6 @@ import {
   Tokens,
   WrappedNativeTokenSymbols,
 } from './constants-e2e';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
@@ -789,7 +792,7 @@ export async function newTestE2E({
       destToken.applyOverrides(stateOverrides);
 
       const swapTx = await ts.simulate(swapParams, stateOverrides);
-      console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
+      console.log(`${srcToken.address}_${destToken.address}_${dexKeys!}`);
       // Only log gas estimate if testing against API
       if (useAPI)
         console.log(
@@ -940,3 +943,79 @@ export function testE2E_V6(
     );
   });
 }
+/// EXPERIMENTAL MEANT TO BE ADJUSTED OVERTIME
+
+type Pairs = { name: string; sellAmount: string; buyAmount: string }[][];
+type DexToPair = Record<string, Pairs>;
+
+export const constructE2ETests = (
+  testSuiteName: string,
+  network: Network,
+  testDataset: DexToPair,
+) => {
+  const sideToContractMethods = new Map([
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.simpleSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+      ],
+    ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+  ]);
+
+  describe(testSuiteName, () => {
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    Object.entries(testDataset).forEach(([dexKey, pairs]) => {
+      describe(dexKey, () => {
+        sideToContractMethods.forEach((contractMethods, side) =>
+          describe(`${side}`, () => {
+            contractMethods.forEach((contractMethod: ContractMethod) => {
+              pairs.forEach(pair => {
+                describe(`${contractMethod}`, () => {
+                  it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                    await testE2E(
+                      tokens[pair[0].name],
+                      tokens[pair[1].name],
+                      holders[pair[0].name],
+                      side === SwapSide.SELL
+                        ? pair[0].sellAmount
+                        : pair[0].buyAmount,
+                      side,
+                      dexKey,
+                      contractMethod,
+                      network,
+                      provider,
+                    );
+                  });
+                  it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                    await testE2E(
+                      tokens[pair[1].name],
+                      tokens[pair[0].name],
+                      holders[pair[1].name],
+                      side === SwapSide.SELL
+                        ? pair[1].sellAmount
+                        : pair[1].buyAmount,
+                      side,
+                      dexKey,
+                      contractMethod,
+                      network,
+                      provider,
+                    );
+                  });
+                });
+              });
+            });
+          }),
+        );
+      });
+    });
+  });
+};

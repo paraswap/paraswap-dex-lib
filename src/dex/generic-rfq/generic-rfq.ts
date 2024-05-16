@@ -324,6 +324,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       options.executionContractAddress,
       options.txOrigin,
       options.partner,
+      options.special,
     );
 
     const expiryAsBigInt = BigInt(order.order.expiry);

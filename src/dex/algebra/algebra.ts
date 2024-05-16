@@ -51,6 +51,7 @@ import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { AlgebraEventPoolV1_9_bidirectional_fee } from './algebra-pool-v1_9_bidirectional_fee';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -71,7 +72,10 @@ const MAX_STALE_STATE_BLOCK_AGE = {
   [Network.ZKEVM]: 150, // approximately 3min
 };
 
-type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
+type IAlgebraEventPool =
+  | AlgebraEventPoolV1_1
+  | AlgebraEventPoolV1_9
+  | AlgebraEventPoolV1_9_bidirectional_fee;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private readonly factory: AlgebraFactory;
@@ -97,7 +101,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
   private AlgebraPoolImplem:
     | typeof AlgebraEventPoolV1_1
-    | typeof AlgebraEventPoolV1_9;
+    | typeof AlgebraEventPoolV1_9
+    | typeof AlgebraEventPoolV1_9_bidirectional_fee;
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
@@ -134,7 +139,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
     this.AlgebraPoolImplem =
-      config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
+      config.version === 'v1.1'
+        ? AlgebraEventPoolV1_1
+        : config.version === 'v1.9-bidirectional-fee'
+        ? AlgebraEventPoolV1_9_bidirectional_fee
+        : AlgebraEventPoolV1_9;
 
     this.factory = new AlgebraFactory(
       dexHelper,
