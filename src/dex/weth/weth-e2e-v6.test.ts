@@ -57,32 +57,32 @@ describe('Wrapped Native E2E v6', () => {
         ContractMethod.megaSwap,
       ].forEach(contractMethod => {
         describe(`${contractMethod}`, () => {
-          // it(`SELL ${nativeTokenSymbol} -> ${wrappedTokenSymbol}`, async () => {
-          //   await testE2E(
-          //     nativeToken,
-          //     wrappedToken,
-          //     nativeHolder,
-          //     nativeAmount,
-          //     SwapSide.SELL,
-          //     dexKey,
-          //     contractMethod,
-          //     network,
-          //     provider,
-          //   );
-          // });
-          // it(`SELL ${wrappedTokenSymbol} -> ${nativeTokenSymbol}`, async () => {
-          //   await testE2E(
-          //     wrappedToken,
-          //     nativeToken,
-          //     wrappedHolder,
-          //     wrappedAmount,
-          //     SwapSide.SELL,
-          //     dexKey,
-          //     contractMethod,
-          //     network,
-          //     provider,
-          //   );
-          // });
+          it(`SELL ${nativeTokenSymbol} -> ${wrappedTokenSymbol}`, async () => {
+            await testE2E(
+              nativeToken,
+              wrappedToken,
+              nativeHolder,
+              nativeAmount,
+              SwapSide.SELL,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it(`SELL ${wrappedTokenSymbol} -> ${nativeTokenSymbol}`, async () => {
+            await testE2E(
+              wrappedToken,
+              nativeToken,
+              wrappedHolder,
+              wrappedAmount,
+              SwapSide.SELL,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
           it(`BUY ${nativeTokenSymbol} -> ${wrappedTokenSymbol}`, async () => {
             await testE2E(
               nativeToken,
@@ -96,19 +96,19 @@ describe('Wrapped Native E2E v6', () => {
               provider,
             );
           });
-          //   it(`BUY ${wrappedTokenSymbol} -> ${nativeTokenSymbol}`, async () => {
-          //     await testE2E(
-          //       wrappedToken,
-          //       nativeToken,
-          //       wrappedHolder,
-          //       wrappedAmount,
-          //       SwapSide.BUY,
-          //       dexKey,
-          //       contractMethod,
-          //       network,
-          //       provider,
-          //     );
-          //   });
+          it(`BUY ${wrappedTokenSymbol} -> ${nativeTokenSymbol}`, async () => {
+            await testE2E(
+              wrappedToken,
+              nativeToken,
+              wrappedHolder,
+              wrappedAmount,
+              SwapSide.BUY,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
         });
       });
     });
