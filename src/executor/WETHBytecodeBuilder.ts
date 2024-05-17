@@ -59,57 +59,15 @@ export class WETHBytecodeBuilder extends ExecutorBytecodeBuilder {
     exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
-    const { srcToken, destToken } =
-      priceRoute.bestRoute[routeIndex].swaps[swapIndex];
-    const isEthSrc = isETHAddress(srcToken);
-    const isEthDest = isETHAddress(destToken);
-
-    const exchangeParam = exchangeParams[exchangeParamIndex];
-    const {
-      dexFuncHasRecipient,
-      needWrapNative,
-      specialDexFlag,
-      specialDexSupportsInsertFromAmount,
-      swappedAmountNotPresentInExchangeData,
-    } = exchangeParam;
-
-    const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
-    const needUnwrap =
-      needWrapNative && isEthDest && maybeWethCallData?.withdraw;
-    const isSpecialDex =
-      specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
-
-    const forcePreventInsertFromAmount =
-      swappedAmountNotPresentInExchangeData ||
-      (isSpecialDex && !specialDexSupportsInsertFromAmount);
-
-    let dexFlag = forcePreventInsertFromAmount
-      ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP
-      : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0 or 3
-    let approveFlag =
-      Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
-
-    if (isEthSrc && !needWrap) {
-      dexFlag =
-        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
-    } else if (isEthDest && !needUnwrap) {
-      dexFlag = forcePreventInsertFromAmount
-        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP
-        : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4 or 7
-    } else if (!dexFuncHasRecipient || (isEthDest && needUnwrap)) {
-      dexFlag = forcePreventInsertFromAmount
-        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP
-        : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8 or 11
-    }
-
     return {
-      dexFlag,
-      approveFlag,
+      dexFlag:
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP,
+      approveFlag: 0,
     };
   }
 
   /**
-   * Executor01 Flags:
+   * WETH Flags:
    * switch (flag % 4):
    * case 0: don't insert fromAmount
    * case 1: sendEth equal to fromAmount
@@ -131,84 +89,10 @@ export class WETHBytecodeBuilder extends ExecutorBytecodeBuilder {
     exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
   ): { dexFlag: Flag; approveFlag: Flag } {
-    // same as for Executor02 multi flags, except forceBalanceOfCheck
-    const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
-    const { srcToken, destToken } = swap;
-    const exchangeParam = exchangeParams[exchangeParamIndex];
-    const {
-      dexFuncHasRecipient,
-      needWrapNative,
-      specialDexFlag,
-      specialDexSupportsInsertFromAmount,
-      swappedAmountNotPresentInExchangeData,
-      sendEthButSupportsInsertFromAmount,
-    } = exchangeParam;
-
-    const isLastSwap =
-      swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;
-    const isEthSrc = isETHAddress(srcToken);
-    const isEthDest = isETHAddress(destToken);
-
-    const isSpecialDex =
-      specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
-
-    const forcePreventInsertFromAmount =
-      swappedAmountNotPresentInExchangeData ||
-      (isSpecialDex && !specialDexSupportsInsertFromAmount);
-
-    const needUnwrap =
-      needWrapNative && isEthDest && maybeWethCallData?.withdraw;
-
-    const forceBalanceOfCheck = isLastSwap
-      ? !dexFuncHasRecipient || needUnwrap
-      : true;
-
-    const needSendEth = isEthSrc && !needWrapNative;
-    const needCheckEthBalance = isEthDest && !needWrapNative;
-
-    const needCheckSrcTokenBalanceOf = needUnwrap && !isLastSwap;
-
-    let dexFlag: Flag;
-    let approveFlag =
-      Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
-
-    if (needSendEth) {
-      const preventInsertForSendEth =
-        forcePreventInsertFromAmount || !sendEthButSupportsInsertFromAmount;
-      dexFlag = forceBalanceOfCheck
-        ? preventInsertForSendEth
-          ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
-          : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 14
-        : dexFuncHasRecipient
-        ? preventInsertForSendEth
-          ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
-          : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 18
-        : preventInsertForSendEth
-        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
-        : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 18
-    } else if (needCheckEthBalance) {
-      dexFlag =
-        needCheckSrcTokenBalanceOf || forceBalanceOfCheck
-          ? forcePreventInsertFromAmount && dexFuncHasRecipient
-            ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
-            : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 7
-          : forcePreventInsertFromAmount && dexFuncHasRecipient
-          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
-    } else {
-      dexFlag =
-        needCheckSrcTokenBalanceOf || forceBalanceOfCheck
-          ? forcePreventInsertFromAmount
-            ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
-            : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 11
-          : forcePreventInsertFromAmount
-          ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
-          : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
-    }
-
     return {
-      dexFlag,
-      approveFlag,
+      dexFlag:
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP,
+      approveFlag: 0,
     };
   }
 
