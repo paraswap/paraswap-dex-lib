@@ -6,35 +6,45 @@ import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { DummyDexHelper } from '../../dex-helper';
+import { WethConfig } from './config';
 
 const NETWORKS = [
   Network.MAINNET,
-  Network.ARBITRUM,
   Network.AVALANCHE,
   Network.BSC,
   Network.BASE,
   Network.POLYGON,
-  Network.FANTOM,
   Network.OPTIMISM,
+
+  // Network.FANTOM,
+  // Network.ARBITRUM
 ];
 
-const dexKey = 'Weth';
+const nativeAmount = '10000000000000000';
+const wrappedAmount = '10000000000000000';
 
-const nativeTokenSymbol = 'ETH';
-const wrappedTokenSymbol = 'WETH';
-
-const nativeAmount = '1000000000000000000';
-const wrappedAmount = '1000000000000000000';
-
-describe('Weth E2E v6', () => {
+describe('Wrapped Native E2E v6', () => {
   NETWORKS.forEach(network => {
     describe(`${network}`, () => {
+      const dexKey = Object.keys(WethConfig).find(
+        key => !!WethConfig[key][network],
+      );
+      if (!dexKey) return;
+
       const tokens = Tokens[network];
       const holders = Holders[network];
       const provider = new StaticJsonRpcProvider(
         generateConfig(network).privateHttpProvider,
         network,
       );
+
+      const dexHelper = new DummyDexHelper(network);
+
+      const nativeTokenSymbol =
+        dexHelper.config.data.nativeTokenSymbol.toUpperCase();
+      const wrappedTokenSymbol =
+        dexHelper.config.data.wrappedNativeTokenSymbol.toUpperCase();
 
       const nativeToken = tokens[nativeTokenSymbol];
       const wrappedToken = tokens[wrappedTokenSymbol];
@@ -44,11 +54,11 @@ describe('Weth E2E v6', () => {
 
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ].forEach(contractMethod => {
         describe(`${contractMethod}`, () => {
-          it('native -> wrapped', async () => {
+          it(`${nativeTokenSymbol} -> ${wrappedTokenSymbol}`, async () => {
             await testE2E(
               nativeToken,
               wrappedToken,
@@ -61,19 +71,19 @@ describe('Weth E2E v6', () => {
               provider,
             );
           });
-          // it('wrapped -> native', async () => {
-          //   await testE2E(
-          //     wrappedToken,
-          //     nativeToken,
-          //     wrappedHolder,
-          //     wrappedAmount,
-          //     SwapSide.SELL,
-          //     dexKey,
-          //     contractMethod,
-          //     network,
-          //     provider,
-          //   );
-          // });
+          it(`${wrappedTokenSymbol} -> ${nativeTokenSymbol}`, async () => {
+            await testE2E(
+              wrappedToken,
+              nativeToken,
+              wrappedHolder,
+              wrappedAmount,
+              SwapSide.SELL,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
         });
       });
     });

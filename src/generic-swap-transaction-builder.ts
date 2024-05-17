@@ -536,17 +536,6 @@ export class GenericSwapTransactionBuilder {
     );
     if (isDirectMethod) return this.augustusV6Address;
 
-    if (
-      isDirectSwap(priceRoute.bestRoute) &&
-      isETHAddress(priceRoute.srcToken) &&
-      this.dexAdapterService.dexHelper.config.isWETH(priceRoute.destToken) &&
-      priceRoute.side === SwapSide.SELL &&
-      priceRoute.contractMethod === 'simpleSwap'
-    ) {
-      return this.dexAdapterService.dexHelper.config.data
-        .wrappedNativeTokenAddress;
-    }
-
     const executorName =
       this.executorDetector.getExecutorByPriceRoute(priceRoute);
     const bytecodeBuilder =
