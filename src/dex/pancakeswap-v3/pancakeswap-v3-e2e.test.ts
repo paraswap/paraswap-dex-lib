@@ -435,4 +435,25 @@ describe('PancakeswapV3 E2E', () => {
       nativeTokenAmount,
     );
   });
+
+  describe('SwapBasedV3 Base', () => {
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'USDbC';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '11111000000';
+    const tokenBAmount: string = '11111000000';
+    const nativeTokenAmount = '110000000000000000000';
+
+    testForNetwork(
+      network,
+      'SwapBasedV3',
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
 });

@@ -51,6 +51,11 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                5000,
               );
             });
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
@@ -112,7 +117,6 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
-
   describe('Mainnet crvUSD', () => {
     const network = Network.MAINNET;
 
@@ -149,6 +153,7 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
+
   describe('Mainnet SBTC2 pool', () => {
     const network = Network.MAINNET;
 
@@ -315,5 +320,121 @@ describe('CurveV1Factory E2E', () => {
       tokenAAmount,
       tokenBAmount,
     );
+  });
+
+  describe('Stable NG Pools', () => {
+    describe('Mainnet Stable NG', () => {
+      const network = Network.MAINNET;
+
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'USDe';
+
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('Polygon Stable NG', () => {
+      const network = Network.POLYGON;
+
+      describe('crvUSD -> USDT', () => {
+        const tokenASymbol: string = 'crvUSD';
+        const tokenBSymbol: string = 'USDT';
+
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '10000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+
+      describe('USDC.e -> USDC', () => {
+        const tokenASymbol: string = 'USDCe';
+        const tokenBSymbol: string = 'USDC';
+
+        const tokenAAmount: string = '10000000';
+        const tokenBAmount: string = '10000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+    });
+
+    describe('Fantom Stable NG', () => {
+      const network = Network.FANTOM;
+
+      const tokenASymbol: string = 'scrvUSDC_e';
+      const tokenBSymbol: string = 'scrvUSDC_p';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('Arbitrum Stable NG', () => {
+      const network = Network.ARBITRUM;
+
+      const tokenASymbol: string = 'crvUSD';
+      const tokenBSymbol: string = 'USDCe';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('Optimism Stable NG', () => {
+      const network = Network.OPTIMISM;
+
+      const tokenASymbol: string = 'crvUSD';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
 });

@@ -84,7 +84,7 @@ export type DexParams = {
   deployer: Address;
   subgraphURL: string;
   initHash: string;
-  version: 'v1.1' | 'v1.9';
+  version: 'v1.1' | 'v1.9' | 'v1.9-bidirectional-fee';
   forceRPC?: boolean;
   forceManualStateGenerate?: boolean;
 };

@@ -378,6 +378,7 @@ export class RateFetcher {
     takerAddress: Address,
     userAddress: Address,
     partner?: string,
+    special?: boolean,
   ): Promise<OrderInfo> {
     const srcToken = this.dexHelper.config.wrapETH(_srcToken);
     const destToken = this.dexHelper.config.wrapETH(_destToken);
@@ -394,6 +395,7 @@ export class RateFetcher {
       userAddress,
       takerAddress,
       partner,
+      special: special || false,
     };
 
     try {

@@ -88,6 +88,7 @@ export class Solidly extends UniswapV2 {
         'Equalizer',
         'Velocimeter',
         'Usdfi',
+        'PharaohV1',
       ]),
     );
 
