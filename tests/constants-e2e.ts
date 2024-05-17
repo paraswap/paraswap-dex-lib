@@ -27,6 +27,10 @@ export const Tokens: {
       address: '0xf951e335afb289353dc249e82926178eac7ded78',
       decimals: 18,
     },
+    rswETH: {
+      address: '0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0',
+      decimals: 18,
+    },
     REQ: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
