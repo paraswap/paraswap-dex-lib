@@ -763,7 +763,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder {
 
       const depositCallData = this.buildWrapEthCallData(
         this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
-        calldata,
+        callData,
         checkWethBalanceAfter
           ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 5
           : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
