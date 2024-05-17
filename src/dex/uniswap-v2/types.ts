@@ -145,7 +145,7 @@ export type UniswapV2Data = {
 export interface DexParams {
   subgraphURL?: string;
   factoryAddress: Address;
-  initCode: string;
+  initCode: string; // deprecated
   poolGasCost?: number;
   feeCode: number;
   router?: Address;

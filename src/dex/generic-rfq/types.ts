@@ -89,6 +89,7 @@ export type RFQPayload = {
   userAddress: Address;
   takerAddress: Address;
   partner?: string;
+  special?: boolean;
 };
 
 export type AugustusOrderWithStringAndSignature = AugustusOrderWithString & {

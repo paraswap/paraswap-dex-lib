@@ -205,7 +205,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
   }
 
   static getDirectFunctionNameV6(): string[] {
-    return [ContractMethodV6.swapExactAmountInOutOnAugustusRFQTryBatchFill];
+    return [ContractMethodV6.swapOnAugustusRFQTryBatchFill];
   }
 
   getDirectParamV6(
@@ -262,7 +262,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
 
     const encoder = (...params: (string | RFQDirectPayload)[]) => {
       return this.augustusV6Interface.encodeFunctionData(
-        ContractMethodV6.swapExactAmountInOutOnAugustusRFQTryBatchFill,
+        ContractMethodV6.swapOnAugustusRFQTryBatchFill,
         [...params],
       );
     };
@@ -324,6 +324,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       options.executionContractAddress,
       options.txOrigin,
       options.partner,
+      options.special,
     );
 
     const expiryAsBigInt = BigInt(order.order.expiry);

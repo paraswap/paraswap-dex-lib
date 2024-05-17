@@ -118,6 +118,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidToAmount",
     "type": "error"
   },
@@ -833,12 +838,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "quotedAmount",
+            "name": "toAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "toAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
@@ -914,12 +919,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "quotedAmount",
+            "name": "toAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "toAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
@@ -1162,12 +1167,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "quotedAmount",
+            "name": "toAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "toAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
@@ -1248,12 +1253,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "quotedAmount",
+            "name": "toAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "toAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
@@ -1482,5 +1487,86 @@
   {
     "stateMutability": "payable",
     "type": "receive"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "contract IERC20",
+            "name": "srcToken",
+            "type": "address"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "destToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fromAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "toll",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "to18ConversionFactor",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "exchange",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "gemJoinAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadata",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "beneficiaryDirectionApproveFlag",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MakerPSMData",
+        "name": "makerPSMData",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "permit",
+        "type": "bytes"
+      }
+    ],
+    "name": "swapExactAmountInOutOnMakerPSM",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "spentAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "receivedAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]

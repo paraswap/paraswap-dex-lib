@@ -83,6 +83,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     data: ExchangeData,
     side: SwapSide,
     context: Context,
+    executorAddress: Address,
   ): AsyncOrSync<DexExchangeParam>;
 
   // Returns params required by direct swap method.
@@ -228,7 +229,7 @@ export interface IDex<
     IDexPooltracker {}
 
 // Defines the static objects of the IDex class
-export interface DexContructor<
+export interface DexConstructor<
   ExchangeData,
   DirectParam = null,
   OptimizedExchangeData = ExchangeData,
