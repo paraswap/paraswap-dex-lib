@@ -21,7 +21,7 @@ import {
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
 import AugustusV6ABI from './abi/augustus-v6/ABI.json';
-import { isDirectSwap, isETHAddress, uuidToBytes16 } from './utils';
+import { isETHAddress, uuidToBytes16 } from './utils';
 import {
   DepositWithdrawReturn,
   IWethDepositorWithdrawer,

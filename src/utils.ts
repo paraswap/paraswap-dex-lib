@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getAddress } from 'ethers/lib/utils';
-import { OptimalRoute, SwapSide } from '@paraswap/core';
+import { SwapSide } from '@paraswap/core';
 import { BI_MAX_UINT256, BI_POWS } from './bigint-constants';
 import { ETHER_ADDRESS, Network } from './constants';
 import { DexConfigMap, Logger, TransferFeeParams } from './types';
@@ -385,11 +385,6 @@ export const blockAndTryAggregate = async (
     })),
   };
 };
-
-export const isDirectSwap = (bestRoute: OptimalRoute[]): boolean =>
-  bestRoute.length === 1 &&
-  bestRoute[0].swaps.length === 1 &&
-  bestRoute[0].swaps[0].swapExchanges.length === 1;
 
 export const isContractAddress = async (web3: Web3, addr: string) => {
   const contractCode = await web3.eth.getCode(addr);

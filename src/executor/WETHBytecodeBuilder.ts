@@ -1,19 +1,39 @@
-import { ethers } from 'ethers';
 import { DexExchangeBuildParam } from '../types';
-import { OptimalRate } from '@paraswap/core';
+import { OptimalRate, SwapSide } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
+import { WethConfig } from '../dex/weth/config';
 import { Executors, Flag, SpecialDex } from './types';
-import { BYTES_64_LENGTH } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
-import { assert } from 'ts-essentials';
+import { Network } from '../constants';
 
-const {
-  utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
-} = ethers;
+export const isSingleWrapRoute = (priceRoute: OptimalRate): boolean => {
+  const wrappedExchanges = Object.keys(WethConfig);
+
+  //note: FANTOM and ARBITRUM doesnt support fallback deposit case
+  const supportedNetwork = [
+    Network.MAINNET,
+    Network.AVALANCHE,
+    Network.BSC,
+    Network.BASE,
+    Network.POLYGON,
+    Network.OPTIMISM,
+  ].includes(priceRoute.network);
+
+  const isSingleSwap =
+    priceRoute.bestRoute.length === 1 &&
+    priceRoute.bestRoute[0].swaps.length === 1 &&
+    priceRoute.bestRoute[0].swaps[0].swapExchanges.length === 1;
+
+  const { exchange } = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];
+  const isWethExchange = wrappedExchanges.includes(exchange);
+  const isWrap = isETHAddress(priceRoute.srcToken);
+
+  return supportedNetwork && isSingleSwap && isWethExchange && isWrap;
+};
 
 /**
- * Class to build bytecode for Executor01 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
+ * Class to build bytecode for WETH - simple optimisation for a single ETH->WETH Swap
  */
 export class WETHBytecodeBuilder extends ExecutorBytecodeBuilder {
   type = Executors.WETH;
