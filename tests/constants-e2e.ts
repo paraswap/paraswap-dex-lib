@@ -351,6 +351,15 @@ export const Tokens: {
       address: '0xe07f9d810a48ab5c3c914ba3ca53af14e4491e8a',
       decimals: 18,
     },
+    // todo: update with mainnet addresses (these are on Sepolia)
+    divETH: {
+      address: '0x78Cb3BE3ee9C7aD14967aD10F9D2baFA79F2DC94',
+      decimals: 18,
+    },
+    wdivETH: {
+      address: '0x3F806A22dc942934c66DeF5FF8eC45a89A5aF454',
+      decimals: 18,
+    },
   },
   [Network.ROPSTEN]: {
     DAI: {
@@ -1152,6 +1161,9 @@ export const Holders: {
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     frxETH: '0x9df2322bdAEC46627100C999E6dDdD27837fec6e',
     USDe: '0x74e6c48e667d698a4cf90665b6960a5bae39e603',
+    // todo: update with real holders
+    divETH: '0x75C94990D2Ad92D8da4E0a238d872D09ec16706E',
+    wdivETH: '0x75C94990D2Ad92D8da4E0a238d872D09ec16706E',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',

@@ -14,10 +14,9 @@ import {
 import { IDex } from '../idex';
 import DIVETH_ABI from '../../abi/divETH.json';
 import WDIVETH_ABI from '../../abi/wdivETH.json';
-import { ETHER_ADDRESS, Network } from '../../constants';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { SimpleExchange } from '../simple-exchange';
-import { BI_POWS } from '../../bigint-constants';
 import { AsyncOrSync } from 'ts-essentials';
 import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { WethFunctions } from '../weth/types';
@@ -25,10 +24,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import _ from 'lodash';
 import { DivaConfig, Adapters } from './config';
 import { DivETHEventPool } from './diveth-pool';
-
-export enum swETHFunctions {
-  deposit = 'deposit',
-}
+import { BI_POWS } from '../../bigint-constants';
 
 export type SwellData = {};
 export type SwellParams = {};
@@ -48,7 +44,7 @@ export class Diva
   logger: Logger;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(DivaConfig, ['Swell']));
+    getDexKeysWithNetwork(_.pick(DivaConfig, ['Diva']));
 
   constructor(
     protected network: Network,
@@ -57,7 +53,7 @@ export class Diva
     protected config = DivaConfig[dexKey][network],
     protected adapters = Adapters[network],
   ) {
-    super(dexHelper, 'Diva');
+    super(dexHelper, dexKey);
 
     this.network = dexHelper.config.data.network;
     this.divETHInterface = new Interface(DIVETH_ABI as JsonFragment[]);
@@ -76,10 +72,6 @@ export class Diva
 
   async initializePricing(blockNumber: number) {
     await this.divETHEventPool.initialize(blockNumber);
-  }
-
-  getPoolIdentifierKey(): string {
-    return `${ETHER_ADDRESS}_${this.divETHEventPool}`.toLowerCase();
   }
 
   isEligibleSwap(
@@ -108,7 +100,7 @@ export class Diva
     side: SwapSide,
   ) {
     if (!this.isEligibleSwap(srcToken, destToken, side)) {
-      throw new Error('Only eth -> divETH/wdivETH and divETH <-> wdivETH swaps are supported');
+      throw new Error('Only ETH/wETH -> divETH/wdivETH and divETH <-> wdivETH swaps are supported');
     }
   }
 
@@ -118,9 +110,9 @@ export class Diva
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    return this.isEligibleSwap(srcToken, destToken, side)
-      ? [this.getPoolIdentifierKey()]
-      : [];
+    if(!this.isEligibleSwap(srcToken, destToken, side)) return [];
+
+    return [`${ETHER_ADDRESS}_${destToken}`.toLowerCase()];
   }
 
   async getPricesVolume(
@@ -136,25 +128,23 @@ export class Diva
     if (!this.isEligibleSwap(srcToken, destToken, side)) return null;
     if (this.divETHEventPool.getState(blockNumber) === null) return null;
 
-    return null;
+    const unitIn = BI_POWS[18];
+    const unitOut = this.divETHEventPool.convertToShares(blockNumber, unitIn);
+    const amountsOut = amountsIn.map(amountIn =>
+      this.divETHEventPool.convertToShares(blockNumber, amountIn),
+    );
 
-    // const unitIn = BI_POWS[18];
-    // const unitOut = this.divETHEventPool.getPrice(blockNumber, unitIn);
-    // const amountsOut = amountsIn.map(amountIn =>
-    //   this.divETHEventPool.getPrice(blockNumber, amountIn),
-    // );
-    //
-    // return [
-    //   {
-    //     prices: amountsOut,
-    //     unit: unitOut,
-    //     data: {},
-    //     exchange: this.dexKey,
-    //     poolIdentifier: this.getPoolIdentifierKey(),
-    //     gasCost: 120_000,
-    //     poolAddresses: [this.swETHAddress],
-    //   },
-    // ];
+    return [
+      {
+        prices: amountsOut,
+        unit: unitOut,
+        data: {},
+        exchange: this.dexKey,
+        poolIdentifier: `${ETHER_ADDRESS}_${destToken.address}`.toLowerCase(),
+        gasCost: 120_000,
+        poolAddresses: [destToken.address],
+      },
+    ];
   }
 
   getAdapterParam(
@@ -168,7 +158,7 @@ export class Diva
     this.assertEligibility(srcToken, destToken, side);
 
     return {
-      targetExchange: this.divETHAddress, // not used contract side
+      targetExchange: NULL_ADDRESS,
       payload: '0x',
       networkFee: '0',
     };
@@ -189,7 +179,7 @@ export class Diva
     const values = [];
 
     if (this.isWETH(srcToken)) {
-      // note: apparently ERC20 ABI contains wETH fns (deposit() and withdraw())
+      // note: ERC20 ABI contains wETH functions
       const wethUnwrapData = this.erc20Interface.encodeFunctionData(
         WethFunctions.withdraw,
         [srcAmount],
@@ -200,7 +190,7 @@ export class Diva
     }
 
     const swapData = this.divETHInterface.encodeFunctionData(
-      swETHFunctions.deposit,
+      'deposit',
       [],
     );
 
