@@ -7,18 +7,19 @@ import { Executors, Flag, SpecialDex } from './types';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { Network } from '../constants';
 
-export const isSingleWrapRoute = (priceRoute: OptimalRate): boolean => {
-  const wrappedExchanges = Object.keys(WethConfig);
+const SUPPORTED_NETWORKS = [
+  Network.MAINNET,
+  Network.AVALANCHE,
+  Network.BSC,
+  Network.BASE,
+  Network.POLYGON,
+  Network.OPTIMISM,
+  Network.ZKEVM,
+];
+const SUPPORTED_EXCHANGES = Object.keys(WethConfig);
 
+export const isSingleWrapRoute = (priceRoute: OptimalRate): boolean => {
   //note: FANTOM and ARBITRUM doesnt support fallback deposit case
-  const supportedNetwork = [
-    Network.MAINNET,
-    Network.AVALANCHE,
-    Network.BSC,
-    Network.BASE,
-    Network.POLYGON,
-    Network.OPTIMISM,
-  ].includes(priceRoute.network);
 
   const isSingleSwap =
     priceRoute.bestRoute.length === 1 &&
@@ -26,7 +27,10 @@ export const isSingleWrapRoute = (priceRoute: OptimalRate): boolean => {
     priceRoute.bestRoute[0].swaps[0].swapExchanges.length === 1;
 
   const { exchange } = priceRoute.bestRoute[0].swaps[0].swapExchanges[0];
-  const isWethExchange = wrappedExchanges.includes(exchange);
+
+  const isWethExchange = SUPPORTED_EXCHANGES.includes(exchange);
+  const supportedNetwork = SUPPORTED_NETWORKS.includes(priceRoute.network);
+
   const isWrap = isETHAddress(priceRoute.srcToken);
 
   return supportedNetwork && isSingleSwap && isWethExchange && isWrap;

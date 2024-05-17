@@ -18,6 +18,7 @@ const NETWORKS = [
   Network.OPTIMISM,
   Network.FANTOM,
   Network.ARBITRUM,
+  Network.ZKEVM,
 ];
 
 const nativeAmount = '10000000000000000';
