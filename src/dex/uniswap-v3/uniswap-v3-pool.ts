@@ -72,15 +72,14 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     logger: Logger,
     mapKey: string = '',
     readonly poolInitCodeHash: string,
+    public readonly tickSpacing?: bigint,
   ) {
-    super(
-      parentName,
-      `${token0}_${token1}_${feeCode}`,
-      dexHelper,
-      logger,
-      true,
-      mapKey,
-    );
+    let poolKey = `${token0}_${token1}_${feeCode}`;
+    if (tickSpacing !== undefined) {
+      poolKey = `${poolKey}_${tickSpacing}`;
+    }
+
+    super(parentName, poolKey, dexHelper, logger, true, mapKey);
     this.feeCodeAsString = feeCode.toString();
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();
@@ -129,6 +128,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       token0: this.token0,
       token1: this.token1,
       fee: this.feeCode,
+      tickSpacing: this.tickSpacing,
     };
   }
 

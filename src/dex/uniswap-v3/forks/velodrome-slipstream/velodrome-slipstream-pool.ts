@@ -5,13 +5,10 @@ import VelodromeSlipstreamFactoryABI from '../../../../abi/velodrome-slipstream/
 import { MultiCallParams } from '../../../../lib/multi-wrapper';
 import {
   DecodedStateMultiCallResultWithRelativeBitmaps,
-  DecodeStateMultiCallFunc,
   PoolState,
 } from '../../types';
 import { uint24ToBigInt, uint256ToBigInt } from '../../../../lib/decoders';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
-import { IDexHelper } from '../../../../dex-helper';
-import { Contract } from 'web3-eth-contract';
 import { Address, Logger } from '../../../../types';
 import { assert } from 'ts-essentials';
 import { _reduceTickBitmap, _reduceTicks } from '../../contract-math/utils';
@@ -22,39 +19,6 @@ import { ethers } from 'ethers';
 export class VelodromeSlipstreamEventPool extends UniswapV3EventPool {
   public readonly poolIface = new Interface(VelodromeSlipstreamPoolABI);
   public readonly factoryIface = new Interface(VelodromeSlipstreamFactoryABI);
-
-  constructor(
-    readonly dexHelper: IDexHelper,
-    parentName: string,
-    readonly stateMultiContract: Contract,
-    readonly decodeStateMultiCallResultWithRelativeBitmaps:
-      | DecodeStateMultiCallFunc
-      | undefined,
-    readonly erc20Interface: Interface,
-    protected readonly factoryAddress: Address,
-    public feeCode: bigint,
-    token0: Address,
-    token1: Address,
-    logger: Logger,
-    mapKey: string = '',
-    readonly poolInitCodeHash: string,
-    public readonly tickSpacing?: bigint,
-  ) {
-    super(
-      dexHelper,
-      parentName,
-      stateMultiContract,
-      decodeStateMultiCallResultWithRelativeBitmaps,
-      erc20Interface,
-      factoryAddress,
-      feeCode,
-      token0,
-      token1,
-      logger,
-      mapKey,
-      poolInitCodeHash,
-    );
-  }
 
   protected _getStateRequestCallData() {
     if (!this._stateRequestCallData) {

@@ -1032,6 +1032,14 @@ export const Tokens: {
       address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
       decimals: 6,
     },
+    GRAI: {
+      address: '0x894134a25a5fac1c2c26f1d8fbf05111a3cb9487',
+      decimals: 18,
+    },
+    LUSD: {
+      address: '0xc40f949f8a4e094d1b49a23ea9241d289b7b2819',
+      decimals: 18,
+    },
     POPS: {
       address: '0x3D51a9fB5dCc87F7B237B04975559b920a9a56Ff',
       decimals: 18,
@@ -1437,6 +1445,8 @@ export const Holders: {
     USDA: '0xC18dAC166eDa9538933258d21A272C1775C19c73',
     stUSD: '0xC98b0729695A25152B8D5b6B95709070605A7F60',
     crvUSD: '0xD1A992417a0ABFFa632Cbde4DA9F5DcF85CAa858',
+    LUSD: '0xf0a9abb11958a071e168f2ee5bcbacf1abbde9cf',
+    GRAI: '0x92b051204816DC4fbA7AC1A68a2cf319A9a387CB',
   },
   [Network.ZKEVM]: {
     ETH: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',

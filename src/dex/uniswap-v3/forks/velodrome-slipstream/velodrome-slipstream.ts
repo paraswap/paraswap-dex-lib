@@ -16,6 +16,7 @@ import { pack } from '@ethersproject/solidity';
 import { PoolState } from '../../types';
 import { VelodromeSlipstreamEventPool } from './velodrome-slipstream-pool';
 import { UniswapV3EventPool } from '../../uniswap-v3-pool';
+import { OnPoolCreatedCallback } from '../../uniswap-v3-factory';
 
 type VelodromeSlipstreamData = {
   path: {
@@ -80,40 +81,48 @@ export class VelodromeSlipstream extends UniswapV3 {
     }
   }
 
-  async getPoolIdentifiers(
-    srcToken: Token,
-    destToken: Token,
-    side: SwapSide,
+  async getPoolsForIdentifiers(
+    srcAddress: string,
+    destAddress: string,
     blockNumber: number,
-  ): Promise<string[]> {
-    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
-    const _destToken = this.dexHelper.config.wrapETH(destToken);
-
-    const [_srcAddress, _destAddress] = this._getLoweredAddresses(
-      _srcToken,
-      _destToken,
-    );
-
-    if (_srcAddress === _destAddress) return [];
-
-    const pools = (
-      await Promise.all(
-        this.config.tickSpacings!.map(async tickSpacing =>
-          this.getPool(
-            _srcAddress,
-            _destAddress,
-            this.config.tickSpacingsToFees![tickSpacing.toString()],
-            blockNumber,
-            tickSpacing,
-          ),
+  ): Promise<(UniswapV3EventPool | null)[]> {
+    return Promise.all(
+      this.config.tickSpacings!.map(async tickSpacing =>
+        this.getPool(
+          srcAddress,
+          destAddress,
+          this.config.tickSpacingsToFees![tickSpacing.toString()],
+          blockNumber,
+          tickSpacing,
         ),
-      )
-    ).filter(pool => pool);
+      ),
+    );
+  }
 
-    if (pools.length === 0) return [];
+  protected async getSelectedPools(
+    srcAddress: string,
+    destAddress: string,
+    blockNumber: number,
+  ): Promise<(UniswapV3EventPool | null)[]> {
+    return Promise.all(
+      this.config.tickSpacings!.map(async tickSpacing => {
+        const fee = this.config.tickSpacingsToFees![tickSpacing.toString()];
+        const locallyFoundPool =
+          this.eventPools[
+            this.getPoolIdentifier(srcAddress, destAddress, fee, tickSpacing)
+          ];
 
-    return pools.map(pool =>
-      this.getPoolIdentifier(_srcAddress, _destAddress, pool!.feeCode),
+        if (locallyFoundPool) return locallyFoundPool;
+
+        const newlyFetchedPool = await this.getPool(
+          srcAddress,
+          destAddress,
+          fee,
+          blockNumber,
+          tickSpacing,
+        );
+        return newlyFetchedPool;
+      }),
     );
   }
 
@@ -178,26 +187,46 @@ export class VelodromeSlipstream extends UniswapV3 {
     };
   }
 
-  protected getPoolInstance(
-    token0: string,
-    token1: string,
-    fee: bigint,
-    tickSpacing?: bigint,
-  ) {
-    return new VelodromeSlipstreamEventPool(
-      this.dexHelper,
-      this.dexKey,
-      this.stateMultiContract,
-      this.config.decodeStateMultiCallResultWithRelativeBitmaps,
-      this.erc20Interface,
-      this.config.factory,
-      fee,
-      token0,
-      token1,
-      this.logger,
-      this.cacheStateKey,
-      this.config.initHash,
-      tickSpacing!,
-    );
-  }
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+    fee, // actually this is a tickSpacing in this case
+  }) => {
+    const tickSpacing = fee;
+    const actualFee = this.config.tickSpacingsToFees![tickSpacing.toString()];
+
+    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
+    const [_token0, _token1] = this._sortTokens(token0, token1);
+    const poolKey = `${_token0}_${_token1}_${actualFee}_${tickSpacing}`;
+
+    // consider doing it only from master pool for less calls to distant cache
+
+    // delete entry locally to let local instance discover the pool
+    delete this.eventPools[
+      this.getPoolIdentifier(_token0, _token1, actualFee, tickSpacing)
+    ];
+
+    try {
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+      );
+      // delete pool record from set
+      const result = await this.dexHelper.cache.zrem(
+        this.notExistingPoolSetKey,
+        [poolKey],
+      );
+      this.logger.info(
+        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+        error,
+      );
+    }
+  };
 }

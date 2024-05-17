@@ -4,7 +4,7 @@ import { Address } from '../../types';
 import { AbiItem } from 'web3-utils';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { UniswapV3EventPool } from './uniswap-v3-pool';
-import { VelodromeSlipstreamEventPool } from './forks/velodrome-slipstream/velodrome-slipstream-pool';
+import { UniswapV3Factory } from './uniswap-v3-factory';
 
 export type OracleObservation = {
   blockTimestamp: bigint;
@@ -86,9 +86,8 @@ export type DexParams = {
   subgraphURL?: string;
   initHash: string;
   stateMultiCallAbi?: AbiItem[];
-  eventPoolImplementation?:
-    | typeof UniswapV3EventPool
-    | typeof VelodromeSlipstreamEventPool;
+  eventPoolImplementation?: typeof UniswapV3EventPool;
+  factoryImplementation?: typeof UniswapV3Factory;
   decodeStateMultiCallResultWithRelativeBitmaps?: DecodeStateMultiCallFunc;
 };
 

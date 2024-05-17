@@ -70,6 +70,7 @@ type PoolPairsInfo = {
   token0: Address;
   token1: Address;
   fee: string;
+  tickSpacing?: string;
 };
 
 export const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
@@ -149,7 +150,12 @@ export class UniswapV3
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
-    this.factory = new UniswapV3Factory(
+    const factoryImplementation =
+      this.config.factoryImplementation !== undefined
+        ? this.config.factoryImplementation
+        : UniswapV3Factory;
+
+    this.factory = new factoryImplementation(
       dexHelper,
       dexKey,
       this.config.factory,
@@ -166,8 +172,18 @@ export class UniswapV3
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  getPoolIdentifier(srcAddress: Address, destAddress: Address, fee: bigint) {
+  getPoolIdentifier(
+    srcAddress: Address,
+    destAddress: Address,
+    fee: bigint,
+    tickSpacing?: bigint,
+  ) {
     const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
+
+    if (tickSpacing) {
+      return `${this.dexKey}_${tokenAddresses}_${fee}_${tickSpacing}`;
+    }
+
     return `${this.dexKey}_${tokenAddresses}_${fee}`;
   }
 
@@ -251,7 +267,7 @@ export class UniswapV3
     tickSpacing?: bigint,
   ): Promise<UniswapV3EventPool | null> {
     let pool = this.eventPools[
-      this.getPoolIdentifier(srcAddress, destAddress, fee)
+      this.getPoolIdentifier(srcAddress, destAddress, fee, tickSpacing)
     ] as UniswapV3EventPool | null | undefined;
 
     if (pool === null) return null;
@@ -284,8 +300,9 @@ export class UniswapV3
       const poolDoesNotExist = notExistingPoolScore !== null;
 
       if (poolDoesNotExist) {
-        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-          null;
+        this.eventPools[
+          this.getPoolIdentifier(srcAddress, destAddress, fee, tickSpacing)
+        ] = null;
         return null;
       }
     }
@@ -346,8 +363,9 @@ export class UniswapV3
       );
     }
 
-    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-      pool;
+    this.eventPools[
+      this.getPoolIdentifier(srcAddress, destAddress, fee, tickSpacing)
+    ] = pool;
     return pool;
   }
 
@@ -375,6 +393,7 @@ export class UniswapV3
       this.logger,
       this.cacheStateKey,
       this.config.initHash,
+      tickSpacing,
     );
   }
 
@@ -397,6 +416,9 @@ export class UniswapV3
       poolInfo.token1,
       BigInt(poolInfo.fee),
       blockNumber,
+      poolInfo.tickSpacing !== undefined
+        ? BigInt(poolInfo.tickSpacing)
+        : undefined,
     );
 
     if (!pool) {
@@ -423,17 +445,30 @@ export class UniswapV3
     if (_srcAddress === _destAddress) return [];
 
     const pools = (
-      await Promise.all(
-        this.supportedFees.map(async fee =>
-          this.getPool(_srcAddress, _destAddress, fee, blockNumber),
-        ),
-      )
+      await this.getPoolsForIdentifiers(_srcAddress, _destAddress, blockNumber)
     ).filter(pool => pool);
 
     if (pools.length === 0) return [];
 
     return pools.map(pool =>
-      this.getPoolIdentifier(_srcAddress, _destAddress, pool!.feeCode),
+      this.getPoolIdentifier(
+        _srcAddress,
+        _destAddress,
+        pool!.feeCode,
+        pool!.tickSpacing,
+      ),
+    );
+  }
+
+  protected async getPoolsForIdentifiers(
+    srcAddress: string,
+    destAddress: string,
+    blockNumber: number,
+  ): Promise<(UniswapV3EventPool | null)[]> {
+    return Promise.all(
+      this.supportedFees.map(async fee =>
+        this.getPool(srcAddress, destAddress, fee, blockNumber),
+      ),
     );
   }
 
@@ -570,6 +605,7 @@ export class UniswapV3
           pool.token0,
           pool.token1,
           pool.feeCode,
+          pool.tickSpacing,
         ),
         exchange: this.dexKey,
         gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
@@ -578,6 +614,29 @@ export class UniswapV3
     });
 
     return result;
+  }
+
+  protected async getSelectedPools(
+    srcAddress: string,
+    destAddress: string,
+    blockNumber: number,
+  ): Promise<(UniswapV3EventPool | null)[]> {
+    return Promise.all(
+      this.supportedFees.map(async fee => {
+        const locallyFoundPool =
+          this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
+
+        if (locallyFoundPool) return locallyFoundPool;
+
+        const newlyFetchedPool = await this.getPool(
+          srcAddress,
+          destAddress,
+          fee,
+          blockNumber,
+        );
+        return newlyFetchedPool;
+      }),
+    );
   }
 
   async getPricesVolume(
@@ -603,23 +662,7 @@ export class UniswapV3
 
       if (!limitPools) {
         selectedPools = (
-          await Promise.all(
-            this.supportedFees.map(async fee => {
-              const locallyFoundPool =
-                this.eventPools[
-                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
-                ];
-              if (locallyFoundPool) return locallyFoundPool;
-
-              const newlyFetchedPool = await this.getPool(
-                _srcAddress,
-                _destAddress,
-                fee,
-                blockNumber,
-              );
-              return newlyFetchedPool;
-            }),
-          )
+          await this.getSelectedPools(_srcAddress, _destAddress, blockNumber)
         ).filter(isTruthy);
       } else {
         const pairIdentifierWithoutFee = this.getPoolIdentifier(
@@ -639,12 +682,14 @@ export class UniswapV3
               let locallyFoundPool = this.eventPools[identifier];
               if (locallyFoundPool) return locallyFoundPool;
 
-              const [, srcAddress, destAddress, fee] = identifier.split('_');
+              const [, srcAddress, destAddress, fee, tickSpacing] =
+                identifier.split('_');
               const newlyFetchedPool = await this.getPool(
                 srcAddress,
                 destAddress,
                 BigInt(fee),
                 blockNumber,
+                tickSpacing !== undefined ? BigInt(tickSpacing) : undefined,
               );
               return newlyFetchedPool;
             }),
@@ -756,6 +801,7 @@ export class UniswapV3
               pool.token0,
               pool.token1,
               pool.feeCode,
+              pool.tickSpacing,
             ),
             exchange: this.dexKey,
             gasCost: gasCost,

@@ -9,6 +9,7 @@ import { decodeStateMultiCallResultWithRelativeBitmaps as decodeStateMultiCallRe
 import { decodeStateMultiCallResultWithRelativeBitmaps as decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream } from './forks/velodrome-slipstream/utils';
 import { RamsesV2EventPool } from './forks/ramses-v2/ramses-v2-pool';
 import { VelodromeSlipstreamEventPool } from './forks/velodrome-slipstream/velodrome-slipstream-pool';
+import { VelodromeSlipstreamFactory } from './forks/velodrome-slipstream/velodrome-slipstream-factory';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
 const RAMSES_FORKS_FEES = [...SUPPORTED_FEES, 50n, 250n];
@@ -376,6 +377,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0xc055b23319b3a140D4De2d0001bd0A885B3d7DbB',
       stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
       eventPoolImplementation: VelodromeSlipstreamEventPool,
+      factoryImplementation: VelodromeSlipstreamFactory,
       decodeStateMultiCallResultWithRelativeBitmaps:
         decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
@@ -401,6 +403,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       stateMulticall: '0x736518161516c1cfBD5bf5e7049FCBDC9b933987',
       stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
       eventPoolImplementation: VelodromeSlipstreamEventPool,
+      factoryImplementation: VelodromeSlipstreamFactory,
       decodeStateMultiCallResultWithRelativeBitmaps:
         decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
       uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
