@@ -10,16 +10,7 @@ import { InfusionFinance } from './infusion-finance';
 import { Tokens } from '../../../tests/constants-e2e';
 import { Interface, Result } from '@ethersproject/abi';
 import infusionPairABI from '../../abi/infusion-finance/InfusionFinancePair.json';
-import { SpiritSwapV2 } from './forks-override/spiritSwapV2';
-import { Cone } from './forks-override/cone';
-import { Chronos } from './forks-override/chronos';
-import { Ramses } from './forks-override/ramses';
 import * as util from 'util';
-import { VelodromeV2 } from './forks-override/velodromeV2';
-import { Equalizer } from './forks-override/equalizer';
-import { Velocimeter } from './forks-override/velocimeter';
-import { Usdfi } from './forks-override/usdfi';
-import { PharaohV1 } from './forks-override/pharaohV1';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
 const amounts6 = [0n, BI_POWS[6], 2000000n];
@@ -51,7 +42,7 @@ function decodeReaderResult(
 const constructCheckOnChainPricing =
   (dexHelper: DummyDexHelper) =>
   async (
-    infusion: InfusionFinance,
+    solidly: InfusionFinance,
     funcName: string,
     blockNumber: number,
     prices: bigint[],
@@ -91,21 +82,21 @@ describe('InfusionFinance integration tests', () => {
     const dexHelper = new DummyDexHelper(network);
     const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
 
-    describe('InfusionFinance', () => {
+    describe('InfusionFinance', function () {
       const dexKey = 'InfusionFinance';
-      const equalizer = new Equalizer(network, dexKey, dexHelper);
+      const solidly = new InfusionFinance(network, dexKey, dexHelper);
 
       describe('UniswapV2 like pool', function () {
-        const TokenASymbol = 'USDbC';
+        const TokenASymbol = 'WETH';
         const tokenA = Tokens[network][TokenASymbol];
-        const TokenBSymbol = 'ETH';
+        const TokenBSymbol = 'USDC';
         const tokenB = Tokens[network][TokenBSymbol];
 
         const amounts = amounts18;
 
         it('getPoolIdentifiers and getPricesVolume', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await equalizer.getPoolIdentifiers(
+          const pools = await solidly.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -118,7 +109,7 @@ describe('InfusionFinance integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await equalizer.getPricesVolume(
+          const poolPrices = await solidly.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -138,7 +129,7 @@ describe('InfusionFinance integration tests', () => {
 
           for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              equalizer,
+              solidly,
               'getAmountOut',
               blocknumber,
               poolPrice.prices,
@@ -147,6 +138,80 @@ describe('InfusionFinance integration tests', () => {
               amounts,
             );
           }
+        });
+
+        it('getTopPoolsForToken', async function () {
+          const poolLiquidity = await solidly.getTopPoolsForToken(
+            tokenA.address,
+            10,
+          );
+          console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+          checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+        });
+      });
+
+      describe('Curve like stable pool', function () {
+        const TokenASymbol = 'USDbC';
+        const tokenA = Tokens[network][TokenASymbol];
+        const TokenBSymbol = 'USDC';
+        const tokenB = Tokens[network][TokenBSymbol];
+
+        const amounts = amounts18; // amounts6;
+
+        it('getPoolIdentifiers and getPricesVolume', async function () {
+          const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          const pools = await solidly.getPoolIdentifiers(
+            tokenA,
+            tokenB,
+            SwapSide.SELL,
+            blocknumber,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+            pools,
+          );
+
+          expect(pools.length).toBeGreaterThan(0);
+
+          const poolPrices = await solidly.getPricesVolume(
+            tokenA,
+            tokenB,
+            amounts,
+            SwapSide.SELL,
+            blocknumber,
+            pools,
+          );
+          console.log(
+            `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+            poolPrices,
+          );
+
+          expect(poolPrices).not.toBeNull();
+          checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+          // Check if onchain pricing equals to calculated ones
+          for (const poolPrice of poolPrices || []) {
+            await checkOnChainPricing(
+              solidly,
+              'getAmountOut',
+              blocknumber,
+              poolPrice.prices,
+              poolPrice.poolAddresses![0],
+              tokenA.address,
+              amounts,
+            );
+          }
+        });
+
+        it('getTopPoolsForToken', async function () {
+          const poolLiquidity = await solidly.getTopPoolsForToken(
+            tokenA.address,
+            10,
+          );
+          console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+          checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
         });
       });
     });

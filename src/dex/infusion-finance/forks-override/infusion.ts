@@ -1,4 +1,4 @@
-import { Solidly } from '../infusion-finance';
+import { InfusionFinance } from '../infusion-finance';
 import { InfusionFinancePair } from '../types';
 import { Network } from '../../../constants';
 import { IDexHelper } from '../../../dex-helper';
@@ -19,9 +19,9 @@ const VelodromeFactoryABI = [
 
 const velodromeFactoryIface = new Interface(VelodromeFactoryABI);
 
-export class Velodrome extends Solidly {
+export class Infusion extends InfusionFinance {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(InfusionFinanceConfig, ['Velodrome']));
+    getDexKeysWithNetwork(_.pick(InfusionFinanceConfig, ['InfusionFinance']));
 
   constructor(
     protected network: Network,
