@@ -154,14 +154,61 @@ export class EtherFi
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    recipient: Address,
-    data: EtherFiData,
-    side: SwapSide,
-    _: Context,
-    bytecodeBuilderAddress: Address,
   ): DexExchangeParam {
-    throw new Error('TODO: Implement');
+    const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
+      Interface,
+      Address,
+      EtherFiFunctions,
+      EtherFiParam,
+    ] => {
+      if (this.is_weETH(destToken)) {
+        assert(this.is_eETH(srcToken), 'srcToken should be eETH');
+        return [
+          this.weETHInterface,
+          this.weETH,
+          EtherFiFunctions.wrap,
+          [srcAmount],
+        ];
+      }
+
+      if (this.is_weETH(srcToken)) {
+        assert(this.is_eETH(destToken), 'destToken should be eETH');
+        return [
+          this.weETHInterface,
+          this.weETH,
+          EtherFiFunctions.unwrap,
+          [srcAmount],
+        ];
+      }
+
+      if (this.is_eETH(destToken)) {
+        assert(
+          this.isWETH(srcToken) || isETHAddress(srcToken),
+          'srcToken should be (w)eth',
+        );
+        return [
+          this.eETHPoolInterface,
+          this.eETHPool,
+          EtherFiFunctions.deposit,
+          [],
+        ];
+      }
+
+      throw new Error('LOGIC ERROR');
+    })();
+
+    const swapData = Interface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: swapCallee,
+      spender: swapCallee,
+    };
   }
 
   getAdapterParam(
