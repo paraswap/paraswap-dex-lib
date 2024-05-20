@@ -39,5 +39,4 @@ export enum RouteExecutionType {
   VERTICAL_BRANCH = 3, // simpleSwap with N DEXs on a path
   VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 4, // multiSwap, megaSwap
   NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE = 5, // megaSwap
-  WRAP = 6, // special case for single wrap/unwrap operation
 }
