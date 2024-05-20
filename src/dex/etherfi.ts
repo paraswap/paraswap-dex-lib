@@ -7,7 +7,7 @@ import {
   NumberAsString,
   SimpleExchangeParam,
 } from '../types';
-import { Context, IDexTxBuilder } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import eETHPoolABI from '../abi/etherfi/eETHPool.json';
 import weETHABI from '../abi/etherfi/weETH.json';
@@ -155,6 +155,9 @@ export class EtherFi
     destToken: Address,
     srcAmount: NumberAsString,
   ): DexExchangeParam {
+    const is_eETH_dest = this.is_eETH(destToken);
+    const isWETH_src = this.isWETH(srcToken);
+
     const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,
@@ -172,7 +175,7 @@ export class EtherFi
       }
 
       if (this.is_weETH(srcToken)) {
-        assert(this.is_eETH(destToken), 'destToken should be eETH');
+        assert(is_eETH_dest, 'destToken should be eETH');
         return [
           this.weETHInterface,
           this.weETH,
@@ -181,9 +184,9 @@ export class EtherFi
         ];
       }
 
-      if (this.is_eETH(destToken)) {
+      if (is_eETH_dest) {
         assert(
-          this.isWETH(srcToken) || isETHAddress(srcToken),
+          isWETH_src || isETHAddress(srcToken),
           'srcToken should be (w)eth',
         );
         return [
@@ -208,6 +211,12 @@ export class EtherFi
       exchangeData: swapData,
       targetExchange: swapCallee,
       spender: swapCallee,
+      swappedAmountNotPresentInExchangeData: is_eETH_dest && isWETH_src,
+      preSwapUnwrapCalldata: isWETH_src
+        ? this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+            srcAmount,
+          ])
+        : undefined,
     };
   }
 
