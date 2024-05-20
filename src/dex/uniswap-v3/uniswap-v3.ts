@@ -150,18 +150,7 @@ export class UniswapV3
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
-    const factoryImplementation =
-      this.config.factoryImplementation !== undefined
-        ? this.config.factoryImplementation
-        : UniswapV3Factory;
-
-    this.factory = new factoryImplementation(
-      dexHelper,
-      dexKey,
-      this.config.factory,
-      this.logger,
-      this.onPoolCreatedDeleteFromNonExistingSet,
-    );
+    this.factory = this.getFactoryInstance();
   }
 
   get supportedFees() {
@@ -398,6 +387,21 @@ export class UniswapV3
       this.cacheStateKey,
       this.config.initHash,
       tickSpacing,
+    );
+  }
+
+  protected getFactoryInstance(): UniswapV3Factory {
+    const factoryImplementation =
+      this.config.factoryImplementation !== undefined
+        ? this.config.factoryImplementation
+        : UniswapV3Factory;
+
+    return new factoryImplementation(
+      this.dexHelper,
+      this.dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet.bind(this),
     );
   }
 
