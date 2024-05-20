@@ -1200,6 +1200,7 @@ export class UniswapV3
       subgraphURL: this.config.subgraphURL,
       stateMultiCallAbi: this.config.stateMultiCallAbi,
       eventPoolImplementation: this.config.eventPoolImplementation,
+      factoryImplementation: this.config.factoryImplementation,
       decodeStateMultiCallResultWithRelativeBitmaps:
         this.config.decodeStateMultiCallResultWithRelativeBitmaps,
     };
