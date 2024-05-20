@@ -1142,9 +1142,9 @@ export class BalancerV2
             sender = recipient = augustusV6
         else (so generic swaps)
           if sell
-            if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future) 
+            if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future)
                   sender = executor and recipient = augustusV6 (skip 1 extra transfer)
-              else 
+              else
                   sender = recipient = executor
               # note: we pass sender=null then the address of the executor is inferred contract side
           else (so buy)
@@ -1544,17 +1544,34 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
     context: Context,
+    executor: Address,
   ): DexExchangeParam {
-    const params = this.getBalancerV2BatchSwapParam(
+    const swapArgs: Parameters<typeof this.getBalancerV2SwapParam> = [
       srcToken,
       destToken,
       data,
       side,
       recipient,
-      side === SwapSide.BUY
-        ? this.dexHelper.config.data.executorsAddresses![Executors.THREE]
-        : NULL_ADDRESS,
-    );
+      executor,
+    ];
+
+    if (data.swaps.length === 1) {
+      const params = this.getBalancerV2SwapParam(...swapArgs);
+      const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+        'swap',
+        params,
+      );
+
+      return {
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: true,
+        exchangeData,
+        specialDexFlag: SpecialDex.DEFAULT,
+        targetExchange: this.vaultAddress,
+      };
+    }
+
+    const params = this.getBalancerV2BatchSwapParam(...swapArgs);
 
     let exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',
@@ -1562,7 +1579,7 @@ export class BalancerV2
     );
     let specialDexFlag = SpecialDex.DEFAULT;
 
-    if (side === SwapSide.SELL) {
+    if (side === SwapSide.SELL && !context.isGlobalSrcToken) {
       const swaps = params[1];
       const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
         return acc.add(swap.amount);
