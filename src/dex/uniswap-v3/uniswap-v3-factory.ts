@@ -35,7 +35,7 @@ export class UniswapV3Factory extends StatefulEventSubscriber<FactoryState> {
     parentName: string,
     protected readonly factoryAddress: Address,
     logger: Logger,
-    public readonly onPoolCreated: OnPoolCreatedCallback,
+    protected readonly onPoolCreated: OnPoolCreatedCallback,
     mapKey: string = '',
   ) {
     super(

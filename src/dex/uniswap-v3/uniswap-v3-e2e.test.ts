@@ -34,19 +34,19 @@ function testForNetwork(
       SwapSide.SELL,
       [
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-        // ContractMethod.directUniV3Swap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+        ContractMethod.directUniV3Swap,
       ],
     ],
-    // [
-    //   SwapSide.BUY,
-    //   [
-    //     ContractMethod.simpleBuy,
-    //     ContractMethod.buy,
-    //     ContractMethod.directUniV3Buy,
-    //   ],
-    // ],
+    [
+      SwapSide.BUY,
+      [
+        ContractMethod.simpleBuy,
+        ContractMethod.buy,
+        ContractMethod.directUniV3Buy,
+      ],
+    ],
   ]);
 
   describe(`${network}`, () => {
@@ -71,40 +71,40 @@ function testForNetwork(
                 slippage,
               );
             });
-            // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenASymbol],
-            //     tokens[nativeTokenSymbol],
-            //     holders[tokenASymbol],
-            //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //     undefined,
-            //     undefined,
-            //     undefined,
-            //     slippage,
-            //   );
-            // });
-            // it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenASymbol],
-            //     tokens[tokenBSymbol],
-            //     holders[tokenASymbol],
-            //     side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //     undefined,
-            //     undefined,
-            //     undefined,
-            //     slippage,
-            //   );
-            // });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+              );
+            });
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                slippage,
+              );
+            });
           });
         });
       }),
