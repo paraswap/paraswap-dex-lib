@@ -289,7 +289,11 @@ export class UniswapV3
 
     const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
-    const key = `${token0}_${token1}_${fee}`.toLowerCase();
+    let key = `${token0}_${token1}_${fee}`.toLowerCase();
+
+    if (tickSpacing) {
+      key = `${key}_${tickSpacing}`;
+    }
 
     if (!pool) {
       const notExistingPoolScore = await this.dexHelper.cache.zscore(
