@@ -214,39 +214,37 @@ export class UniswapV3
    * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
    * Once the pool is created, it gets immediately flagged
    */
-  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
-    token0,
-    token1,
-    fee,
-  }) => {
-    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
-    const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${_token0}_${_token1}_${fee}`;
+  protected onPoolCreatedDeleteFromNonExistingSet(): OnPoolCreatedCallback {
+    return async ({ token0, token1, fee }) => {
+      const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
+      const [_token0, _token1] = this._sortTokens(token0, token1);
+      const poolKey = `${_token0}_${_token1}_${fee}`;
 
-    // consider doing it only from master pool for less calls to distant cache
+      // consider doing it only from master pool for less calls to distant cache
 
-    // delete entry locally to let local instance discover the pool
-    delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];
+      // delete entry locally to let local instance discover the pool
+      delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];
 
-    try {
-      this.logger.info(
-        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
-      );
-      // delete pool record from set
-      const result = await this.dexHelper.cache.zrem(
-        this.notExistingPoolSetKey,
-        [poolKey],
-      );
-      this.logger.info(
-        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
-        error,
-      );
-    }
-  };
+      try {
+        this.logger.info(
+          `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+        );
+        // delete pool record from set
+        const result = await this.dexHelper.cache.zrem(
+          this.notExistingPoolSetKey,
+          [poolKey],
+        );
+        this.logger.info(
+          `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+          error,
+        );
+      }
+    };
+  }
 
   async getPool(
     srcAddress: Address,
@@ -401,7 +399,7 @@ export class UniswapV3
       this.dexKey,
       this.config.factory,
       this.logger,
-      this.onPoolCreatedDeleteFromNonExistingSet.bind(this),
+      this.onPoolCreatedDeleteFromNonExistingSet().bind(this),
     );
   }
 

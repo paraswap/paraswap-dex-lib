@@ -190,62 +190,48 @@ export class VelodromeSlipstream extends UniswapV3 {
     };
   }
 
-  // need to overload getFactoryInstance, in other case onPoolCreatedDeleteFromNonExistingSet is not getting overloaded
-  protected getFactoryInstance(): UniswapV3Factory {
-    const factoryImplementation =
-      this.config.factoryImplementation !== undefined
-        ? this.config.factoryImplementation
-        : UniswapV3Factory;
-
-    return new factoryImplementation(
-      this.dexHelper,
-      this.dexKey,
-      this.config.factory,
-      this.logger,
-      this.onPoolCreatedDeleteFromNonExistingSet.bind(this),
-    );
-  }
-
   /*
    * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
    * Once the pool is created, it gets immediately flagged
    */
-  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
-    token0,
-    token1,
-    fee, // actually this is a tickSpacing in this case
-  }) => {
-    const tickSpacing = fee;
-    const actualFee = this.config.tickSpacingsToFees![tickSpacing.toString()];
+  protected onPoolCreatedDeleteFromNonExistingSet(): OnPoolCreatedCallback {
+    return async ({
+      token0,
+      token1,
+      fee, // actually this is a tickSpacing in this case
+    }) => {
+      const tickSpacing = fee;
+      const actualFee = this.config.tickSpacingsToFees![tickSpacing.toString()];
 
-    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
-    const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${_token0}_${_token1}_${actualFee}_${tickSpacing}`;
+      const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
+      const [_token0, _token1] = this._sortTokens(token0, token1);
+      const poolKey = `${_token0}_${_token1}_${actualFee}_${tickSpacing}`;
 
-    // consider doing it only from master pool for less calls to distant cache
+      // consider doing it only from master pool for less calls to distant cache
 
-    // delete entry locally to let local instance discover the pool
-    delete this.eventPools[
-      this.getPoolIdentifier(_token0, _token1, actualFee, tickSpacing)
-    ];
+      // delete entry locally to let local instance discover the pool
+      delete this.eventPools[
+        this.getPoolIdentifier(_token0, _token1, actualFee, tickSpacing)
+      ];
 
-    try {
-      this.logger.info(
-        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
-      );
-      // delete pool record from set
-      const result = await this.dexHelper.cache.zrem(
-        this.notExistingPoolSetKey,
-        [poolKey],
-      );
-      this.logger.info(
-        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
-        error,
-      );
-    }
-  };
+      try {
+        this.logger.info(
+          `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+        );
+        // delete pool record from set
+        const result = await this.dexHelper.cache.zrem(
+          this.notExistingPoolSetKey,
+          [poolKey],
+        );
+        this.logger.info(
+          `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+          error,
+        );
+      }
+    };
+  }
 }
