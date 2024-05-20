@@ -13,18 +13,20 @@ import {
 } from '../../types';
 import { IDex } from '../idex';
 import SWETH_ABI from '../../abi/swETH.json';
-import { ETHER_ADDRESS, Network } from '../../constants';
+import RSWETH_ABI from '../../abi/rswETH.json';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { SimpleExchange } from '../simple-exchange';
 import { BI_POWS } from '../../bigint-constants';
 import { AsyncOrSync } from 'ts-essentials';
-import { getOnChainState } from './utils';
 import { SwethPool } from './sweth-pool';
 import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { WethFunctions } from '../weth/types';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import _ from 'lodash';
 import { SwellConfig, Adapters } from './config';
+import { RswethPool } from './rsweth-pool';
+import { ethers } from 'ethers';
 
 export enum swETHFunctions {
   deposit = 'deposit',
@@ -39,10 +41,13 @@ export class Swell
 {
   static dexKeys = ['Swell'];
   swETHInterface: Interface;
+  rswETHInterface: Interface;
   needWrapNative = false;
   hasConstantPriceLargeAmounts: boolean = true;
   swETHAddress: string;
-  eventPool: SwethPool;
+  rswETHAddress: string;
+  swethPool: SwethPool;
+  rswethPool: RswethPool;
   logger: Logger;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -59,32 +64,62 @@ export class Swell
 
     this.network = dexHelper.config.data.network;
     this.swETHInterface = new Interface(SWETH_ABI as JsonFragment[]);
+    this.rswETHInterface = new Interface(RSWETH_ABI as JsonFragment[]);
     this.swETHAddress = this.config.swETH.toLowerCase();
+    this.rswETHAddress = this.config.rswETH.toLowerCase();
     this.logger = dexHelper.getLogger(this.dexKey);
-    this.eventPool = new SwethPool(
+    this.swethPool = new SwethPool(
       this.dexKey,
       dexHelper,
       this.swETHAddress,
       this.swETHInterface,
       this.logger,
     );
+    this.rswethPool = new RswethPool(
+      this.dexKey,
+      dexHelper,
+      this.rswETHAddress,
+      this.rswETHInterface,
+      this.logger,
+    );
   }
 
   async initializePricing(blockNumber: number) {
-    const poolState = await getOnChainState(
-      this.dexHelper.multiContract,
-      this.swETHAddress,
-      this.swETHInterface,
-      blockNumber,
+    const data: { returnData: any[] } =
+      await this.dexHelper.multiContract.methods
+        .aggregate([
+          {
+            target: this.swETHAddress,
+            callData: this.swETHInterface.encodeFunctionData(
+              'swETHToETHRate',
+              [],
+            ),
+          },
+          {
+            target: this.rswETHAddress,
+            callData: this.rswETHInterface.encodeFunctionData(
+              'rswETHToETHRate',
+              [],
+            ),
+          },
+        ])
+        .call({}, blockNumber);
+
+    const decodedData = data.returnData.map(d =>
+      ethers.utils.defaultAbiCoder.decode(['uint256'], d),
+    );
+    const [swETHToETHRateFixed, rswETHToETHRateFixed] = decodedData.map(d =>
+      BigInt(d[0].toString()),
     );
 
-    await this.eventPool.initialize(blockNumber, {
-      state: poolState,
-    });
-  }
-
-  getPoolIdentifierKey(): string {
-    return `${ETHER_ADDRESS}_${this.swETHAddress}`.toLowerCase();
+    await Promise.all([
+      this.swethPool.initialize(blockNumber, {
+        state: { swETHToETHRateFixed },
+      }),
+      this.rswethPool.initialize(blockNumber, {
+        state: { rswETHToETHRateFixed },
+      }),
+    ]);
   }
 
   isEligibleSwap(
@@ -103,7 +138,8 @@ export class Swell
 
     return (
       (isETHAddress(srcTokenAddress) || this.isWETH(srcTokenAddress)) &&
-      destTokenAddress === this.swETHAddress
+      (destTokenAddress === this.swETHAddress ||
+        destTokenAddress === this.rswETHAddress)
     );
   }
 
@@ -113,7 +149,9 @@ export class Swell
     side: SwapSide,
   ) {
     if (!this.isEligibleSwap(srcToken, destToken, side)) {
-      throw new Error('Only eth/weth -> swETH swaps are supported');
+      throw new Error(
+        'Only eth/weth -> swETH or eth/weth -> rswETH swaps are supported',
+      );
     }
   }
 
@@ -123,9 +161,9 @@ export class Swell
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    return this.isEligibleSwap(srcToken, destToken, side)
-      ? [this.getPoolIdentifierKey()]
-      : [];
+    if (!this.isEligibleSwap(srcToken, destToken, side)) return [];
+
+    return [`${ETHER_ADDRESS}_${destToken.address}`.toLowerCase()];
   }
 
   async getPricesVolume(
@@ -139,12 +177,18 @@ export class Swell
     isFirstSwap?: boolean | undefined,
   ): Promise<ExchangePrices<SwellData> | null> {
     if (!this.isEligibleSwap(srcToken, destToken, side)) return null;
-    if (this.eventPool.getState(blockNumber) === null) return null;
+
+    const pool =
+      destToken.address === this.swETHAddress
+        ? this.swethPool
+        : this.rswethPool;
+
+    if (!pool.getState(blockNumber)) return null;
 
     const unitIn = BI_POWS[18];
-    const unitOut = this.eventPool.getPrice(blockNumber, unitIn);
+    const unitOut = pool.getPrice(blockNumber, unitIn);
     const amountsOut = amountsIn.map(amountIn =>
-      this.eventPool.getPrice(blockNumber, amountIn),
+      pool.getPrice(blockNumber, amountIn),
     );
 
     return [
@@ -153,9 +197,9 @@ export class Swell
         unit: unitOut,
         data: {},
         exchange: this.dexKey,
-        poolIdentifier: this.getPoolIdentifierKey(),
+        poolIdentifier: `${ETHER_ADDRESS}_${destToken.address}`.toLowerCase(),
         gasCost: 120_000,
-        poolAddresses: [this.swETHAddress],
+        poolAddresses: [destToken.address],
       },
     ];
   }
@@ -171,7 +215,7 @@ export class Swell
     this.assertEligibility(srcToken, destToken, side);
 
     return {
-      targetExchange: this.swETHAddress, // not used contract side
+      targetExchange: NULL_ADDRESS,
       payload: '0x',
       networkFee: '0',
     };
@@ -202,13 +246,13 @@ export class Swell
       values.push('0');
     }
 
-    const swapData = this.swETHInterface.encodeFunctionData(
-      swETHFunctions.deposit,
-      [],
+    callees.push(destToken);
+    calldata.push(
+      this.swETHInterface.encodeFunctionData(
+        swETHFunctions.deposit, // rswETH has the same interface
+        [],
+      ),
     );
-
-    callees.push(this.swETHAddress);
-    calldata.push(swapData);
     values.push(srcAmount);
 
     return {
@@ -222,9 +266,11 @@ export class Swell
   getCalldataGasCost(poolPrices: PoolPrices<SwellData>): number | number[] {
     return CALLDATA_GAS_COST.DEX_OVERHEAD + CALLDATA_GAS_COST.LENGTH_SMALL;
   }
+
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters?.[side] || null;
   }
+
   getTopPoolsForToken(
     tokenAddress: string,
     limit: number,
