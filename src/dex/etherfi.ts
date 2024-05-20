@@ -211,7 +211,7 @@ export class EtherFi
       exchangeData: swapData,
       targetExchange: swapCallee,
       spender: swapCallee,
-      swappedAmountNotPresentInExchangeData: is_eETH_dest && isWETH_src,
+      swappedAmountNotPresentInExchangeData: is_eETH_dest,
       preSwapUnwrapCalldata: isWETH_src
         ? this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
             srcAmount,
