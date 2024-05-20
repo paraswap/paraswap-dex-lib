@@ -16,7 +16,10 @@ import { pack } from '@ethersproject/solidity';
 import { PoolState } from '../../types';
 import { VelodromeSlipstreamEventPool } from './velodrome-slipstream-pool';
 import { UniswapV3EventPool } from '../../uniswap-v3-pool';
-import { OnPoolCreatedCallback } from '../../uniswap-v3-factory';
+import {
+  OnPoolCreatedCallback,
+  UniswapV3Factory,
+} from '../../uniswap-v3-factory';
 
 type VelodromeSlipstreamData = {
   path: {
@@ -185,6 +188,22 @@ export class VelodromeSlipstream extends UniswapV3 {
         },
       ],
     };
+  }
+
+  // need to overload getFactoryInstance, in other case onPoolCreatedDeleteFromNonExistingSet is not getting overloaded
+  protected getFactoryInstance(): UniswapV3Factory {
+    const factoryImplementation =
+      this.config.factoryImplementation !== undefined
+        ? this.config.factoryImplementation
+        : UniswapV3Factory;
+
+    return new factoryImplementation(
+      this.dexHelper,
+      this.dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet.bind(this),
+    );
   }
 
   /*
