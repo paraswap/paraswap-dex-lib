@@ -5,7 +5,11 @@ import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
 import { BYTES_64_LENGTH } from './constants';
-import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
+import {
+  DexCallDataParams,
+  ExecutorBytecodeBuilder,
+  SingleSwapCallDataParams,
+} from './ExecutorBytecodeBuilder';
 import { assert } from 'ts-essentials';
 
 const {
@@ -192,28 +196,24 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     };
   }
 
-  protected buildSingleSwapCallData(
-    priceRoute: OptimalRate,
-    exchangeParams: DexExchangeBuildParam[],
-    index: number,
-    flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
-    sender: string,
-    maybeWethCallData?: DepositWithdrawReturn,
-  ): string {
+  buildSingleSwapCallData(params: SingleSwapCallDataParams): string {
+    const { priceRoute, index, exchangeParams, flags, maybeWethCallData } =
+      params;
+
     let swapCallData = '';
     const swap = priceRoute.bestRoute[0].swaps[index];
     const curExchangeParam = exchangeParams[index];
 
-    const dexCallData = this.buildDexCallData(
+    const dexCallData = this.buildDexCallData({
       priceRoute,
-      0,
-      index,
-      0,
+      routeIndex: 0,
+      swapIndex: index,
+      swapExchangeIndex: 0,
       exchangeParams,
-      index,
-      index === priceRoute.bestRoute[0].swaps.length - 1,
-      flags.dexes[index],
-    );
+      exchangeParamIndex: index,
+      isLastSwap: index === priceRoute.bestRoute[0].swaps.length - 1,
+      flag: flags.dexes[index],
+    });
 
     swapCallData = hexConcat([dexCallData]);
 
@@ -300,16 +300,16 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     return swapCallData;
   }
 
-  protected buildDexCallData(
-    priceRoute: OptimalRate,
-    routeIndex: number,
-    swapIndex: number,
-    swapExchangeIndex: number,
-    exchangeParams: DexExchangeBuildParam[],
-    exchangeParamIndex: number,
-    isLastSwap: boolean,
-    flag: Flag,
-  ): string {
+  protected buildDexCallData(params: DexCallDataParams): string {
+    const {
+      priceRoute,
+      exchangeParamIndex,
+      exchangeParams,
+      routeIndex,
+      swapIndex,
+      flag,
+    } = params;
+
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
     const insertFromAmount = flag % 4 === 3 || flag % 4 === 2;
@@ -382,14 +382,18 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       (acc, ep, index) =>
         hexConcat([
           acc,
-          this.buildSingleSwapCallData(
+          this.buildSingleSwapCallData({
             priceRoute,
             exchangeParams,
             index,
             flags,
             sender,
             maybeWethCallData,
-          ),
+            routeIndex: 0,
+            swapIndex: 0,
+            wrapToSwapMap: {},
+            wrapToSwapExchangeMap: {},
+          }),
         ]),
       '0x',
     );
