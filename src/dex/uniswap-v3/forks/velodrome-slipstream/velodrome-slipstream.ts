@@ -196,6 +196,9 @@ export class VelodromeSlipstream extends UniswapV3 {
     token1,
     fee, // actually this is a tickSpacing in this case
   }) => {
+    this.logger.info(
+      `onPoolCreatedDeleteFromNonExistingSet: token0: ${token0}, token1:${token1}, tickSpacing: ${fee}`,
+    );
     const tickSpacing = fee;
     const actualFee = this.config.tickSpacingsToFees![tickSpacing.toString()];
 

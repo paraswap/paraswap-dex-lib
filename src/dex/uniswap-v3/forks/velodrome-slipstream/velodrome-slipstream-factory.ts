@@ -7,6 +7,7 @@ export class VelodromeSlipstreamFactory extends UniswapV3Factory {
   public readonly factoryIface = new Interface(FactoryABI);
 
   async handleNewPool(event: LogDescription) {
+    this.logger.info(`handle new pool event ${JSON.stringify(event)}`);
     const token0 = event.args.token0.toLowerCase();
     const token1 = event.args.token1.toLowerCase();
     const tickSpacing = event.args.tickSpacing;
