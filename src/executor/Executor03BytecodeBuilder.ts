@@ -1,6 +1,11 @@
 import { ethers } from 'ethers';
 import { DexExchangeBuildParam } from '../types';
-import { Address, OptimalRate, OptimalSwap } from '@paraswap/core';
+import {
+  Address,
+  OptimalRate,
+  OptimalSwap,
+  OptimalSwapExchange,
+} from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
@@ -20,7 +25,10 @@ export type Executor03SingleSwapCallDataParams = {
   swap: OptimalSwap;
 };
 
-export type Executor03DexCallDataParams = {};
+export type Executor03DexCallDataParams = {
+  swapExchange?: OptimalSwapExchange<any>;
+  maybeWethCallData?: DepositWithdrawReturn;
+};
 
 /**
  * Class to build bytecode for Executor03 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)

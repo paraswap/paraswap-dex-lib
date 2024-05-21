@@ -37,7 +37,6 @@ export type SingleSwapCallDataParams<T> = {
   flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag };
   sender: string;
   maybeWethCallData?: DepositWithdrawReturn;
-  swap?: OptimalSwap;
 } & T;
 
 export type DexCallDataParams<T> = {
@@ -49,8 +48,6 @@ export type DexCallDataParams<T> = {
   exchangeParamIndex: number;
   isLastSwap: boolean;
   flag: Flag;
-  swapExchange?: OptimalSwapExchange<any>;
-  maybeWethCallData?: DepositWithdrawReturn;
 } & T;
 
 export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
