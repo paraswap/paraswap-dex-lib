@@ -567,7 +567,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     }
 
     if (
-      !isETHAddress(swap!.srcToken) &&
+      !isETHAddress(swap.srcToken) &&
       !curExchangeParam.transferSrcTokenBeforeSwap &&
       curExchangeParam.approveData
     ) {
@@ -581,7 +581,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     }
 
     if (curExchangeParam.needWrapNative) {
-      if (isETHAddress(swap!.srcToken)) {
+      if (isETHAddress(swap.srcToken)) {
         let approveWethCalldata = '0x';
         if (
           curExchangeParam.approveData &&
@@ -984,7 +984,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         flag = Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
       }
     } else {
-      const isEthDest = isETHAddress(swap!.destToken);
+      const isEthDest = isETHAddress(swap.destToken);
 
       if (isEthDest) {
         if (
@@ -1027,14 +1027,14 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     const applyVerticalBranching = this.doesSwapNeedToApplyVerticalBranching(
       priceRoute,
       routeIndex,
-      swap!,
+      swap,
     );
 
     const anyDexOnSwapDoesntNeedWrapNative =
-      this.anyDexOnSwapDoesntNeedWrapNative(priceRoute, swap!, exchangeParams);
+      this.anyDexOnSwapDoesntNeedWrapNative(priceRoute, swap, exchangeParams);
 
     const needToAppendWrapCallData =
-      isETHAddress(swap!.destToken) &&
+      isETHAddress(swap.destToken) &&
       anyDexOnSwapDoesntNeedWrapNative &&
       !isLastSwap &&
       maybeWethCallData?.deposit;
@@ -1077,11 +1077,11 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         priceRoute,
         routeIndex,
         exchangeParams,
-        swap!,
+        swap,
         swapCallData,
         this.buildVerticalBranchingFlag(
           priceRoute,
-          swap!,
+          swap,
           exchangeParams,
           routeIndex,
           swapIndex,
