@@ -1546,16 +1546,17 @@ export class BalancerV2
     context: Context,
     executor: Address,
   ): DexExchangeParam {
+    const isSingleSwap = data.swaps.length === 1;
     const swapArgs: Parameters<typeof this.getBalancerV2SwapParam> = [
       srcToken,
       destToken,
       data,
       side,
       recipient,
-      executor,
+      !isSingleSwap && side === SwapSide.SELL ? NULL_ADDRESS : executor, // executor inferred contract side in batch sell
     ];
 
-    if (data.swaps.length === 1) {
+    if (isSingleSwap) {
       const params = this.getBalancerV2SwapParam(...swapArgs);
       const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
         'swap',
