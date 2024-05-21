@@ -1579,7 +1579,7 @@ export class BalancerV2
     );
     let specialDexFlag = SpecialDex.DEFAULT;
 
-    if (side === SwapSide.SELL && !context.isGlobalSrcToken) {
+    if (side === SwapSide.SELL) {
       const swaps = params[1];
       const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
         return acc.add(swap.amount);
