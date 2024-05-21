@@ -16,10 +16,16 @@ const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
 } = ethers;
 
+export type Executor01SingleSwapCallDataParams = {};
+export type Executor01DexCallDataParams = {};
+
 /**
  * Class to build bytecode for Executor01 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
  */
-export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
+export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
+  Executor01SingleSwapCallDataParams,
+  Executor01DexCallDataParams
+> {
   type = Executors.ONE;
   /**
    * Executor01 Flags:
@@ -196,7 +202,9 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     };
   }
 
-  buildSingleSwapCallData(params: SingleSwapCallDataParams): string {
+  protected buildSingleSwapCallData(
+    params: SingleSwapCallDataParams<Executor01SingleSwapCallDataParams>,
+  ): string {
     const { priceRoute, index, exchangeParams, flags, maybeWethCallData } =
       params;
 
@@ -300,7 +308,9 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     return swapCallData;
   }
 
-  protected buildDexCallData(params: DexCallDataParams): string {
+  protected buildDexCallData(
+    params: DexCallDataParams<Executor01DexCallDataParams>,
+  ): string {
     const {
       priceRoute,
       exchangeParamIndex,
@@ -389,10 +399,6 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
             flags,
             sender,
             maybeWethCallData,
-            routeIndex: 0,
-            swapIndex: 0,
-            wrapToSwapMap: {},
-            wrapToSwapExchangeMap: {},
           }),
         ]),
       '0x',

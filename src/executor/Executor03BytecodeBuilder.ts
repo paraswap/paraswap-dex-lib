@@ -1,15 +1,10 @@
 import { ethers } from 'ethers';
 import { DexExchangeBuildParam } from '../types';
-import {
-  Address,
-  OptimalRate,
-  OptimalSwap,
-  OptimalSwapExchange,
-} from '@paraswap/core';
+import { Address, OptimalRate, OptimalSwap } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
-import { BYTES_96_LENGTH, ZEROS_28_BYTES } from './constants';
+import { BYTES_96_LENGTH } from './constants';
 import {
   DexCallDataParams,
   ExecutorBytecodeBuilder,
@@ -21,10 +16,19 @@ const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
 } = ethers;
 
+export type Executor03SingleSwapCallDataParams = {
+  swap: OptimalSwap;
+};
+
+export type Executor03DexCallDataParams = {};
+
 /**
  * Class to build bytecode for Executor03 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
  */
-export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
+export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
+  Executor03SingleSwapCallDataParams,
+  Executor03DexCallDataParams
+> {
   type = Executors.THREE;
   /**
    * Executor03 Flags:
@@ -101,7 +105,9 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     };
   }
 
-  buildSingleSwapCallData(params: SingleSwapCallDataParams): string {
+  protected buildSingleSwapCallData(
+    params: SingleSwapCallDataParams<Executor03SingleSwapCallDataParams>,
+  ): string {
     const {
       priceRoute,
       exchangeParams,
@@ -224,15 +230,15 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     );
   }
 
-  protected buildDexCallData(params: DexCallDataParams): string {
+  protected buildDexCallData(
+    params: DexCallDataParams<Executor03DexCallDataParams>,
+  ): string {
     const {
       priceRoute,
       routeIndex,
       swapIndex,
-      swapExchangeIndex,
       exchangeParams,
       exchangeParamIndex,
-      isLastSwap,
       flag,
       maybeWethCallData,
     } = params;
@@ -363,10 +369,6 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
             priceRoute,
             exchangeParams,
             index,
-            routeIndex: index,
-            swapIndex: index,
-            wrapToSwapExchangeMap: {},
-            wrapToSwapMap: {},
             flags,
             sender,
             maybeWethCallData,

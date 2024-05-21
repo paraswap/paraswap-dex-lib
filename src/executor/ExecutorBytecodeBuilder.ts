@@ -30,21 +30,17 @@ const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
 } = ethers;
 
-export type SingleSwapCallDataParams = {
+export type SingleSwapCallDataParams<T> = {
   priceRoute: OptimalRate;
   exchangeParams: DexExchangeBuildParam[];
   index: number;
-  routeIndex: number;
-  swapIndex: number;
-  wrapToSwapMap: { [key: number]: boolean };
-  wrapToSwapExchangeMap: { [key: string]: boolean };
   flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag };
   sender: string;
   maybeWethCallData?: DepositWithdrawReturn;
   swap?: OptimalSwap;
-};
+} & T;
 
-export type DexCallDataParams = {
+export type DexCallDataParams<T> = {
   priceRoute: OptimalRate;
   routeIndex: number;
   swapIndex: number;
@@ -55,9 +51,9 @@ export type DexCallDataParams = {
   flag: Flag;
   swapExchange?: OptimalSwapExchange<any>;
   maybeWethCallData?: DepositWithdrawReturn;
-};
+} & T;
 
-export abstract class ExecutorBytecodeBuilder {
+export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
   type!: Executors;
   erc20Interface: Interface;
 
@@ -112,11 +108,13 @@ export abstract class ExecutorBytecodeBuilder {
 
   public abstract getAddress(): string;
 
-  buildSingleSwapCallData(params: SingleSwapCallDataParams): string {
+  protected buildSingleSwapCallData(
+    params: SingleSwapCallDataParams<S>,
+  ): string {
     return '0x';
   }
 
-  protected buildDexCallData(params: DexCallDataParams): string {
+  protected buildDexCallData(params: DexCallDataParams<D>): string {
     return '0x';
   }
 
