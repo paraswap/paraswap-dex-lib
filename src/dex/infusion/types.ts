@@ -13,18 +13,15 @@ export type PoolState = {
 };
 
 // to calculate prices for stable pool, we need decimals of the stable tokens
-export interface InfusionFinancePoolOrderedParams
-  extends UniswapV2PoolOrderedParams {
+export interface InfusionPoolOrderedParams extends UniswapV2PoolOrderedParams {
   decimalsIn: number;
   decimalsOut: number;
   stable: boolean;
 }
 
-export type InfusionFinanceData = UniswapV2Data & {
-  isFeeTokenInRoute: boolean;
-};
+export type InfusionData = UniswapV2Data & { isFeeTokenInRoute: boolean };
 
-export type InfusionFinancePool = UniswapPool;
+export type InfusionPool = UniswapPool;
 
 export interface DexParams extends Omit<UniswapV2DexParams, 'feeCode'> {
   feeCode: number;
@@ -33,6 +30,6 @@ export interface DexParams extends Omit<UniswapV2DexParams, 'feeCode'> {
   feeFactor?: number;
 }
 
-export interface InfusionFinancePair extends UniswapV2Pair {
+export interface InfusionPair extends UniswapV2Pair {
   stable: boolean;
 }

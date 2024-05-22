@@ -1,6 +1,6 @@
 import { BI_POWS } from '../../bigint-constants';
 import { RESERVE_LIMIT } from '../uniswap-v2/uniswap-v2';
-import { InfusionFinancePoolOrderedParams } from './types';
+import { InfusionPoolOrderedParams } from './types';
 
 const e18 = BI_POWS[18];
 
@@ -60,9 +60,9 @@ function _closeTo(a: bigint, b: bigint, target: bigint) {
   return false;
 }
 
-export class InfusionFinanceStablePool {
+export class InfusionStablePool {
   static async getSellPrice(
-    priceParams: InfusionFinancePoolOrderedParams,
+    priceParams: InfusionPoolOrderedParams,
     srcAmount: bigint,
     feeFactor: number,
   ): Promise<bigint> {

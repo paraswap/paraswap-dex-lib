@@ -1,10 +1,10 @@
-import { InfusionFinance } from '../infusion-finance';
-import { InfusionFinancePair } from '../types';
+import { Infusion } from '../infusion';
+import { InfusionPair } from '../types';
 import { Network } from '../../../constants';
 import { IDexHelper } from '../../../dex-helper';
 import { Interface } from '@ethersproject/abi';
 import { getDexKeysWithNetwork } from '../../../utils';
-import { InfusionFinanceConfig } from '../config';
+import { InfusionConfig } from '../config';
 import _ from 'lodash';
 
 const VelodromeFactoryABI = [
@@ -19,9 +19,9 @@ const VelodromeFactoryABI = [
 
 const velodromeFactoryIface = new Interface(VelodromeFactoryABI);
 
-export class Infusion extends InfusionFinance {
+export class Velodrome extends Infusion {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(InfusionFinanceConfig, ['InfusionFinance']));
+    getDexKeysWithNetwork(_.pick(InfusionConfig, ['InfusionVelodrome']));
 
   constructor(
     protected network: Network,
@@ -36,7 +36,7 @@ export class Infusion extends InfusionFinance {
     );
   }
 
-  protected getFeesMultiCallData(pair: InfusionFinancePair) {
+  protected getFeesMultiCallData(pair: InfusionPair) {
     const callEntry = {
       target: this.factoryAddress,
       callData: velodromeFactoryIface.encodeFunctionData('getFee', [

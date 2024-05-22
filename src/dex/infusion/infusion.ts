@@ -19,21 +19,21 @@ import { IDexHelper } from '../../dex-helper';
 import erc20ABI from '../../abi/erc20.json';
 import { UniswapData, UniswapV2Data } from '../uniswap-v2/types';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
-import infusionFactoryABI from '../../abi/infusion-finance/InfusionFinanceFactory.json';
-import infusionPair from '../../abi/infusion-finance/InfusionFinancePair.json';
+import infusionFactoryABI from '../../abi/infusion/InfusionFactory.json';
+import infusionPair from '../../abi/infusion/InfusionPair.json';
 import _ from 'lodash';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Interface, AbiCoder } from '@ethersproject/abi';
-import { InfusionFinanceStablePool } from './infusion-finance-stable-pool';
+import { InfusionStablePool } from './infusion-stable-pool';
 import { Uniswapv2ConstantProductPool } from '../uniswap-v2/uniswap-v2-constant-product-pool';
 import {
   PoolState,
-  InfusionFinanceData,
-  InfusionFinancePair,
-  InfusionFinancePool,
-  InfusionFinancePoolOrderedParams,
+  InfusionData,
+  InfusionPair,
+  InfusionPool,
+  InfusionPoolOrderedParams,
 } from './types';
-import { InfusionFinanceConfig, Adapters } from './config';
+import { InfusionConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 const erc20Iface = new Interface(erc20ABI);
@@ -41,7 +41,7 @@ const infusionPairIface = new Interface(infusionPair);
 const defaultAbiCoder = new AbiCoder();
 
 function encodePools(
-  pools: InfusionFinancePool[],
+  pools: InfusionPool[],
   feeFactor: number,
 ): NumberAsString[] {
   return pools.map(({ fee, direction, address }) => {
@@ -53,8 +53,8 @@ function encodePools(
   });
 }
 
-export class InfusionFinance extends UniswapV2 {
-  pairs: { [key: string]: InfusionFinancePair } = {};
+export class Infusion extends UniswapV2 {
+  pairs: { [key: string]: InfusionPair } = {};
   stableFee?: number;
   volatileFee?: number;
 
@@ -63,24 +63,7 @@ export class InfusionFinance extends UniswapV2 {
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(
-      _.omit(InfusionFinanceConfig, [
-        'Velodrome',
-        'VelodromeV2',
-        'Aerodrome',
-        'SpiritSwapV2',
-        'Cone',
-        'SolidlyV2',
-        'Thena',
-        'SoliSnek',
-        'Chronos',
-        'Ramses',
-        'Equalizer',
-        'Velocimeter',
-        'Usdfi',
-        'PharaohV1',
-      ]),
-    );
+    getDexKeysWithNetwork(_.omit(InfusionConfig, ['InfusionVelodrome']));
 
   constructor(
     protected network: Network,
@@ -101,45 +84,43 @@ export class InfusionFinance extends UniswapV2 {
       isDynamicFees,
       factoryAddress !== undefined
         ? factoryAddress
-        : InfusionFinanceConfig[dexKey][network].factoryAddress,
+        : InfusionConfig[dexKey][network].factoryAddress,
       subgraphURL === ''
         ? undefined
         : subgraphURL !== undefined
         ? subgraphURL
-        : InfusionFinanceConfig[dexKey][network].subgraphURL,
+        : InfusionConfig[dexKey][network].subgraphURL,
       initCode !== undefined
         ? initCode
-        : InfusionFinanceConfig[dexKey][network].initCode,
-      feeCode !== undefined
-        ? feeCode
-        : InfusionFinanceConfig[dexKey][network].feeCode,
+        : InfusionConfig[dexKey][network].initCode,
+      feeCode !== undefined ? feeCode : InfusionConfig[dexKey][network].feeCode,
       poolGasCost !== undefined
         ? poolGasCost
-        : InfusionFinanceConfig[dexKey][network].poolGasCost,
+        : InfusionConfig[dexKey][network].poolGasCost,
       infusionPairIface,
       Adapters[network] || undefined,
     );
 
-    this.stableFee = InfusionFinanceConfig[dexKey][network].stableFee;
-    this.volatileFee = InfusionFinanceConfig[dexKey][network].volatileFee;
+    this.stableFee = InfusionConfig[dexKey][network].stableFee;
+    this.volatileFee = InfusionConfig[dexKey][network].volatileFee;
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
       infusionFactoryABI as any,
       factoryAddress !== undefined
         ? factoryAddress
-        : InfusionFinanceConfig[dexKey][network].factoryAddress,
+        : InfusionConfig[dexKey][network].factoryAddress,
     );
 
     this.router =
       routerAddress !== undefined
         ? routerAddress
-        : InfusionFinanceConfig[dexKey][network].router || '';
+        : InfusionConfig[dexKey][network].router || '';
 
     this.feeFactor =
-      InfusionFinanceConfig[dexKey][network].feeFactor || this.feeFactor;
+      InfusionConfig[dexKey][network].feeFactor || this.feeFactor;
   }
 
-  async findInfusionFinancePair(from: Token, to: Token, stable: boolean) {
+  async findInfusionPair(from: Token, to: Token, stable: boolean) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
@@ -152,7 +133,7 @@ export class InfusionFinance extends UniswapV2 {
     if (pair) return pair;
 
     let exchange = await this.factory.methods
-      // Solidly has additional boolean parameter "StablePool"
+      // Infusion has additional boolean parameter "StablePool"
       // At first we look for uniswap-like volatile pool
       .getPair(token0.address, token1.address, stable)
       .call();
@@ -168,14 +149,10 @@ export class InfusionFinance extends UniswapV2 {
 
   async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
     if (!blockNumber) return;
-    const pairsToFetch: InfusionFinancePair[] = [];
+    const pairsToFetch: InfusionPair[] = [];
     for (const _pair of pairs) {
       for (const stable of [false, true]) {
-        const pair = await this.findInfusionFinancePair(
-          _pair[0],
-          _pair[1],
-          stable,
-        );
+        const pair = await this.findInfusionPair(_pair[0], _pair[1], stable);
         if (!(pair && pair.exchange)) continue;
         if (!pair.pool) {
           pairsToFetch.push(pair);
@@ -211,7 +188,7 @@ export class InfusionFinance extends UniswapV2 {
   }
 
   async getManyPoolReserves(
-    pairs: InfusionFinancePair[],
+    pairs: InfusionPair[],
     blockNumber: number,
   ): Promise<PoolState[]> {
     try {
@@ -267,15 +244,11 @@ export class InfusionFinance extends UniswapV2 {
   }
 
   async getSellPrice(
-    priceParams: InfusionFinancePoolOrderedParams,
+    priceParams: InfusionPoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
     return priceParams.stable
-      ? InfusionFinanceStablePool.getSellPrice(
-          priceParams,
-          srcAmount,
-          this.feeFactor,
-        )
+      ? InfusionStablePool.getSellPrice(priceParams, srcAmount, this.feeFactor)
       : Uniswapv2ConstantProductPool.getSellPrice(
           priceParams,
           srcAmount,
@@ -284,7 +257,7 @@ export class InfusionFinance extends UniswapV2 {
   }
 
   async getBuyPrice(
-    priceParams: InfusionFinancePoolOrderedParams,
+    priceParams: InfusionPoolOrderedParams,
     srcAmount: bigint,
   ): Promise<bigint> {
     if (priceParams.stable) throw new Error(`Buy not supported`);
@@ -344,7 +317,7 @@ export class InfusionFinance extends UniswapV2 {
           return null;
 
         const isSell = side === SwapSide.SELL;
-        const pairParam = await this.getInfusionFinancePairOrderedParams(
+        const pairParam = await this.getInfusionPairOrderedParams(
           from,
           to,
           blockNumber,
@@ -448,9 +421,9 @@ export class InfusionFinance extends UniswapV2 {
 
     let stableFieldKey = '';
 
-    if (this.dexKey.toLowerCase() === 'solidly') {
+    if (this.dexKey.toLowerCase() === 'infusion') {
       stableFieldKey = 'stable';
-    } else if (this.dexKey.toLowerCase() !== 'solidlyv2') {
+    } else if (this.dexKey.toLowerCase() !== 'infusionv2') {
       stableFieldKey = 'isStable';
     }
 
@@ -528,14 +501,14 @@ export class InfusionFinance extends UniswapV2 {
   }
 
   // Same as at uniswap-v2-pool.json, but extended with decimals and stable
-  async getInfusionFinancePairOrderedParams(
+  async getInfusionPairOrderedParams(
     from: Token,
     to: Token,
     blockNumber: number,
     stable: boolean,
     tokenDexTransferFee: number,
-  ): Promise<InfusionFinancePoolOrderedParams | null> {
-    const pair = await this.findInfusionFinancePair(from, to, stable);
+  ): Promise<InfusionPoolOrderedParams | null> {
+    const pair = await this.findInfusionPair(from, to, stable);
     if (!(pair && pair.pool && pair.exchange)) return null;
     const pairState = pair.pool.getState(blockNumber);
 
@@ -625,7 +598,7 @@ export class InfusionFinance extends UniswapV2 {
     destToken: Address,
     srcAmount: NumberAsString,
     toAmount: NumberAsString, // required for buy case
-    data: InfusionFinanceData,
+    data: InfusionData,
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
