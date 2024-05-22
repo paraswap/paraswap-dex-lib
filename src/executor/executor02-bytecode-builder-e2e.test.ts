@@ -482,6 +482,41 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
           );
         });
       });
+
+      describe('etherfi: USDT -> WETH -> eETH via Hashflow and etherfi', () => {
+        const dexKeys = ['UniswapV2', 'EtherFi'];
+
+        const tokenASymbol: string = 'USDT';
+        const tokenBSymbol: string = 'eETH';
+        const tokenAAmount: string = `${1e18}00`;
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x53a8BdFAC7e1e5B033cB006A9f3b2d5F33d55D91',
+              '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+              '0x35fa164735182de50811e8e2e824cfb9b6118ac2',
+            ],
+          );
+        });
+      });
     });
 
     describe('MegaSwap', () => {

@@ -33,6 +33,16 @@ const testForNetwork = (
         amount: '100000000000000000000',
       },
     ],
+    [
+      {
+        symbol: 'WETH',
+        amount: '100000000000000000000',
+      },
+      {
+        symbol: 'STETH',
+        amount: '100000000000000000000',
+      },
+    ],
   ];
 
   swapMap.forEach((contractMethods, side) =>

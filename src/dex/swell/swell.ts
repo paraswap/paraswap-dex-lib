@@ -103,7 +103,8 @@ export class Swell
     ).toLowerCase();
 
     return (
-      isETHAddress(srcTokenAddress) && destTokenAddress === this.swETHAddress
+      (isETHAddress(srcTokenAddress) || this.isWETH(srcTokenAddress)) &&
+      destTokenAddress === this.swETHAddress
     );
   }
 
@@ -219,7 +220,6 @@ export class Swell
     };
   }
 
-  // FIXME: Add WETH -> swWETH support
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -241,6 +241,12 @@ export class Swell
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.swETHAddress,
+      swappedAmountNotPresentInExchangeData: true,
+      preSwapUnwrapCalldata: this.isWETH(srcToken)
+        ? this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+            srcAmount,
+          ])
+        : undefined,
     };
   }
 
