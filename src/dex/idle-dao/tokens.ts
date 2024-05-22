@@ -11,6 +11,8 @@ const poolsByTokenAddress: { [address: string]: IdleToken[] } = {};
 const TokensByAddress: { [network: number]: { [address: string]: IdleToken } } =
   {};
 
+const TokensByCDO: { [address: string]: IdleToken[] } = {};
+
 export const getPoolsByTokenAddress = (address: string): IdleToken[] => {
   return poolsByTokenAddress[address] || [];
 };
@@ -74,6 +76,16 @@ export function getIdleTokenByAddress(
   return TokensByAddress[network]?.[address];
 }
 
+export function getTokensByNetwork(network: Network): IdleToken[] | undefined {
+  return Object.values(Tokens[network]);
+}
+
+export function getTokensByCdoAddress(
+  cdoAddress: string,
+): IdleToken[] | undefined {
+  return TokensByCDO[cdoAddress];
+}
+
 export function setTokensOnNetwork(network: Network, tokens: IdleToken[]): any {
   for (let token of tokens) {
     token.address = token.address.toLowerCase();
@@ -90,7 +102,12 @@ export function setTokensOnNetwork(network: Network, tokens: IdleToken[]): any {
       poolsByTokenAddress[token.address] = [];
     }
 
+    if (TokensByCDO[token.cdoAddress] === undefined) {
+      TokensByCDO[token.cdoAddress] = [];
+    }
+
     Tokens[network][token.idleSymbol] = token;
+    TokensByCDO[token.cdoAddress].push(token);
     TokensByAddress[network][token.idleAddress] = token;
     TokensByAddress[network][token.address] = token;
     poolsByTokenAddress[token.address].push(token);

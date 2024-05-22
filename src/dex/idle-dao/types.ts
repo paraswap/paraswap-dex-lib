@@ -1,8 +1,11 @@
 import { Address } from '@paraswap/core';
+import BigNumber from 'bignumber.js';
 
 export type PoolState = {
-  tokenPrice: bigint;
+  tokenPrice: BigInt;
 };
+
+export type PoolsState = Record<string, PoolState>;
 
 export type DexParams = {
   fromBlock: number;

@@ -205,7 +205,7 @@ export const fetchTokenList = async (
   for (const result of results) {
     if (result.tokenType) {
       const idleToken: IdleToken = {
-        decimals: 18, // idleTokenDecimals[cdosUnderlying[result.cdoAddress]],
+        decimals: 18,
         cdoAddress: result.cdoAddress,
         idleAddress: result.idleAddress,
         blockNumber: cdoBlocks[result.cdoAddress],
