@@ -76,19 +76,21 @@ type PoolPairsInfo = {
   token0: Address;
   token1: Address;
   fee: string;
+  tickSpacing?: string;
 };
 
-const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
+export const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
 
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
-const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
-const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
+export const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+export const UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS =
+  24 * 60 * 60 * 1000; // Once in a day
+export const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
   extends SimpleExchange
   implements IDex<UniswapV3Data, UniswapV3Param | UniswapV3ParamsDirect>
 {
-  private readonly factory: UniswapV3Factory;
+  protected readonly factory: UniswapV3Factory;
   readonly isFeeOnTransferSupported: boolean = false;
   readonly eventPools: Record<string, UniswapV3EventPool | null> = {};
 
@@ -118,9 +120,9 @@ export class UniswapV3
   logger: Logger;
 
   private uniswapMulti: Contract;
-  private stateMultiContract: Contract;
+  protected stateMultiContract: Contract;
 
-  private notExistingPoolSetKey: string;
+  protected notExistingPoolSetKey: string;
 
   constructor(
     protected network: Network,
@@ -154,13 +156,7 @@ export class UniswapV3
     this.notExistingPoolSetKey =
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
-    this.factory = new UniswapV3Factory(
-      dexHelper,
-      dexKey,
-      this.config.factory,
-      this.logger,
-      this.onPoolCreatedDeleteFromNonExistingSet,
-    );
+    this.factory = this.getFactoryInstance();
   }
 
   get supportedFees() {
@@ -171,8 +167,18 @@ export class UniswapV3
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  getPoolIdentifier(srcAddress: Address, destAddress: Address, fee: bigint) {
+  getPoolIdentifier(
+    srcAddress: Address,
+    destAddress: Address,
+    fee: bigint,
+    tickSpacing?: bigint,
+  ) {
     const tokenAddresses = this._sortTokens(srcAddress, destAddress).join('_');
+
+    if (tickSpacing) {
+      return `${this.dexKey}_${tokenAddresses}_${fee}_${tickSpacing}`;
+    }
+
     return `${this.dexKey}_${tokenAddresses}_${fee}`;
   }
 
@@ -214,48 +220,47 @@ export class UniswapV3
    * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
    * Once the pool is created, it gets immediately flagged
    */
-  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
-    token0,
-    token1,
-    fee,
-  }) => {
-    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
-    const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${_token0}_${_token1}_${fee}`;
+  protected onPoolCreatedDeleteFromNonExistingSet(): OnPoolCreatedCallback {
+    return async ({ token0, token1, fee }) => {
+      const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
+      const [_token0, _token1] = this._sortTokens(token0, token1);
+      const poolKey = `${_token0}_${_token1}_${fee}`;
 
-    // consider doing it only from master pool for less calls to distant cache
+      // consider doing it only from master pool for less calls to distant cache
 
-    // delete entry locally to let local instance discover the pool
-    delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];
+      // delete entry locally to let local instance discover the pool
+      delete this.eventPools[this.getPoolIdentifier(_token0, _token1, fee)];
 
-    try {
-      this.logger.info(
-        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
-      );
-      // delete pool record from set
-      const result = await this.dexHelper.cache.zrem(
-        this.notExistingPoolSetKey,
-        [poolKey],
-      );
-      this.logger.info(
-        `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
-        error,
-      );
-    }
-  };
+      try {
+        this.logger.info(
+          `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+        );
+        // delete pool record from set
+        const result = await this.dexHelper.cache.zrem(
+          this.notExistingPoolSetKey,
+          [poolKey],
+        );
+        this.logger.info(
+          `${logPrefix} delete pool from not existing set=${this.notExistingPoolSetKey}; key=${poolKey}; result: ${result}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `${logPrefix} ERROR: failed to delete pool from set: set=${this.notExistingPoolSetKey}; key=${poolKey}`,
+          error,
+        );
+      }
+    };
+  }
 
   async getPool(
     srcAddress: Address,
     destAddress: Address,
     fee: bigint,
     blockNumber: number,
+    tickSpacing?: bigint,
   ): Promise<UniswapV3EventPool | null> {
     let pool = this.eventPools[
-      this.getPoolIdentifier(srcAddress, destAddress, fee)
+      this.getPoolIdentifier(srcAddress, destAddress, fee, tickSpacing)
     ] as UniswapV3EventPool | null | undefined;
 
     if (pool === null) return null;
@@ -277,7 +282,11 @@ export class UniswapV3
 
     const [token0, token1] = this._sortTokens(srcAddress, destAddress);
 
-    const key = `${token0}_${token1}_${fee}`.toLowerCase();
+    let key = `${token0}_${token1}_${fee}`.toLowerCase();
+
+    if (tickSpacing) {
+      key = `${key}_${tickSpacing}`;
+    }
 
     if (!pool) {
       const notExistingPoolScore = await this.dexHelper.cache.zscore(
@@ -288,33 +297,15 @@ export class UniswapV3
       const poolDoesNotExist = notExistingPoolScore !== null;
 
       if (poolDoesNotExist) {
-        this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-          null;
+        this.eventPools[
+          this.getPoolIdentifier(srcAddress, destAddress, fee, tickSpacing)
+        ] = null;
         return null;
       }
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
-    const poolImplementation =
-      this.config.eventPoolImplementation !== undefined
-        ? this.config.eventPoolImplementation
-        : UniswapV3EventPool;
-    pool =
-      pool ||
-      new poolImplementation(
-        this.dexHelper,
-        this.dexKey,
-        this.stateMultiContract,
-        this.config.decodeStateMultiCallResultWithRelativeBitmaps,
-        this.erc20Interface,
-        this.config.factory,
-        fee,
-        token0,
-        token1,
-        this.logger,
-        this.cacheStateKey,
-        this.config.initHash,
-      );
+    pool = pool || this.getPoolInstance(token0, token1, fee, tickSpacing);
 
     try {
       await pool.initialize(blockNumber, {
@@ -369,9 +360,53 @@ export class UniswapV3
       );
     }
 
-    this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)] =
-      pool;
+    this.eventPools[
+      this.getPoolIdentifier(srcAddress, destAddress, fee, tickSpacing)
+    ] = pool;
     return pool;
+  }
+
+  protected getPoolInstance(
+    token0: string,
+    token1: string,
+    fee: bigint,
+    tickSpacing?: bigint,
+  ) {
+    const poolImplementation =
+      this.config.eventPoolImplementation !== undefined
+        ? this.config.eventPoolImplementation
+        : UniswapV3EventPool;
+
+    return new poolImplementation(
+      this.dexHelper,
+      this.dexKey,
+      this.stateMultiContract,
+      this.config.decodeStateMultiCallResultWithRelativeBitmaps,
+      this.erc20Interface,
+      this.config.factory,
+      fee,
+      token0,
+      token1,
+      this.logger,
+      this.cacheStateKey,
+      this.config.initHash,
+      tickSpacing,
+    );
+  }
+
+  protected getFactoryInstance(): UniswapV3Factory {
+    const factoryImplementation =
+      this.config.factoryImplementation !== undefined
+        ? this.config.factoryImplementation
+        : UniswapV3Factory;
+
+    return new factoryImplementation(
+      this.dexHelper,
+      this.dexKey,
+      this.config.factory,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet().bind(this),
+    );
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
@@ -393,6 +428,9 @@ export class UniswapV3
       poolInfo.token1,
       BigInt(poolInfo.fee),
       blockNumber,
+      poolInfo.tickSpacing !== undefined
+        ? BigInt(poolInfo.tickSpacing)
+        : undefined,
     );
 
     if (!pool) {
@@ -419,17 +457,30 @@ export class UniswapV3
     if (_srcAddress === _destAddress) return [];
 
     const pools = (
-      await Promise.all(
-        this.supportedFees.map(async fee =>
-          this.getPool(_srcAddress, _destAddress, fee, blockNumber),
-        ),
-      )
+      await this.getPoolsForIdentifiers(_srcAddress, _destAddress, blockNumber)
     ).filter(pool => pool);
 
     if (pools.length === 0) return [];
 
     return pools.map(pool =>
-      this.getPoolIdentifier(_srcAddress, _destAddress, pool!.feeCode),
+      this.getPoolIdentifier(
+        _srcAddress,
+        _destAddress,
+        pool!.feeCode,
+        pool!.tickSpacing,
+      ),
+    );
+  }
+
+  protected async getPoolsForIdentifiers(
+    srcAddress: string,
+    destAddress: string,
+    blockNumber: number,
+  ): Promise<(UniswapV3EventPool | null)[]> {
+    return Promise.all(
+      this.supportedFees.map(async fee =>
+        this.getPool(srcAddress, destAddress, fee, blockNumber),
+      ),
     );
   }
 
@@ -566,6 +617,7 @@ export class UniswapV3
           pool.token0,
           pool.token1,
           pool.feeCode,
+          pool.tickSpacing,
         ),
         exchange: this.dexKey,
         gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
@@ -574,6 +626,29 @@ export class UniswapV3
     });
 
     return result;
+  }
+
+  protected async getSelectedPools(
+    srcAddress: string,
+    destAddress: string,
+    blockNumber: number,
+  ): Promise<(UniswapV3EventPool | null)[]> {
+    return Promise.all(
+      this.supportedFees.map(async fee => {
+        const locallyFoundPool =
+          this.eventPools[this.getPoolIdentifier(srcAddress, destAddress, fee)];
+
+        if (locallyFoundPool) return locallyFoundPool;
+
+        const newlyFetchedPool = await this.getPool(
+          srcAddress,
+          destAddress,
+          fee,
+          blockNumber,
+        );
+        return newlyFetchedPool;
+      }),
+    );
   }
 
   async getPricesVolume(
@@ -599,23 +674,7 @@ export class UniswapV3
 
       if (!limitPools) {
         selectedPools = (
-          await Promise.all(
-            this.supportedFees.map(async fee => {
-              const locallyFoundPool =
-                this.eventPools[
-                  this.getPoolIdentifier(_srcAddress, _destAddress, fee)
-                ];
-              if (locallyFoundPool) return locallyFoundPool;
-
-              const newlyFetchedPool = await this.getPool(
-                _srcAddress,
-                _destAddress,
-                fee,
-                blockNumber,
-              );
-              return newlyFetchedPool;
-            }),
-          )
+          await this.getSelectedPools(_srcAddress, _destAddress, blockNumber)
         ).filter(isTruthy);
       } else {
         const pairIdentifierWithoutFee = this.getPoolIdentifier(
@@ -635,12 +694,14 @@ export class UniswapV3
               let locallyFoundPool = this.eventPools[identifier];
               if (locallyFoundPool) return locallyFoundPool;
 
-              const [, srcAddress, destAddress, fee] = identifier.split('_');
+              const [, srcAddress, destAddress, fee, tickSpacing] =
+                identifier.split('_');
               const newlyFetchedPool = await this.getPool(
                 srcAddress,
                 destAddress,
                 BigInt(fee),
                 blockNumber,
+                tickSpacing !== undefined ? BigInt(tickSpacing) : undefined,
               );
               return newlyFetchedPool;
             }),
@@ -747,20 +808,12 @@ export class UniswapV3
           return {
             unit: unitResult.outputs[0],
             prices,
-            data: {
-              path: [
-                {
-                  tokenIn: _srcAddress,
-                  tokenOut: _destAddress,
-                  fee: pool.feeCode.toString(),
-                  currentFee: state.fee.toString(),
-                },
-              ],
-            },
+            data: this.prepareData(_srcAddress, _destAddress, pool, state),
             poolIdentifier: this.getPoolIdentifier(
               pool.token0,
               pool.token1,
               pool.feeCode,
+              pool.tickSpacing,
             ),
             exchange: this.dexKey,
             gasCost: gasCost,
@@ -792,6 +845,24 @@ export class UniswapV3
       );
       return null;
     }
+  }
+
+  protected prepareData(
+    srcAddress: string,
+    destAddress: string,
+    pool: UniswapV3EventPool,
+    state: PoolState,
+  ): UniswapV3Data {
+    return {
+      path: [
+        {
+          tokenIn: srcAddress,
+          tokenOut: destAddress,
+          fee: pool.feeCode.toString(),
+          currentFee: state.fee.toString(),
+        },
+      ],
+    };
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<UniswapV3Data>): number | number[] {
@@ -1121,6 +1192,8 @@ export class UniswapV3
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.config.subgraphURL) return [];
+
     const _tokenAddress = tokenAddress.toLowerCase();
 
     const res = await this._querySubgraph(
@@ -1210,11 +1283,11 @@ export class UniswapV3
     return pools.filter(pool => pool) as UniswapV3EventPool[];
   }
 
-  private _getLoweredAddresses(srcToken: Token, destToken: Token) {
+  protected _getLoweredAddresses(srcToken: Token, destToken: Token) {
     return [srcToken.address.toLowerCase(), destToken.address.toLowerCase()];
   }
 
-  private _sortTokens(srcAddress: Address, destAddress: Address) {
+  protected _sortTokens(srcAddress: Address, destAddress: Address) {
     return [srcAddress, destAddress].sort((a, b) => (a < b ? -1 : 1));
   }
 
@@ -1234,13 +1307,14 @@ export class UniswapV3
       subgraphURL: this.config.subgraphURL,
       stateMultiCallAbi: this.config.stateMultiCallAbi,
       eventPoolImplementation: this.config.eventPoolImplementation,
+      factoryImplementation: this.config.factoryImplementation,
       decodeStateMultiCallResultWithRelativeBitmaps:
         this.config.decodeStateMultiCallResultWithRelativeBitmaps,
     };
     return newConfig;
   }
 
-  private _getOutputs(
+  protected _getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
@@ -1297,6 +1371,8 @@ export class UniswapV3
     variables: Object,
     timeout = 30000,
   ) {
+    if (!this.config.subgraphURL) return [];
+
     try {
       const res = await this.dexHelper.httpRequest.post(
         this.config.subgraphURL,

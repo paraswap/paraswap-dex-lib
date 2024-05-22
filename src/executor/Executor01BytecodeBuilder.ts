@@ -61,6 +61,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       specialDexFlag,
       specialDexSupportsInsertFromAmount,
       swappedAmountNotPresentInExchangeData,
+      preSwapUnwrapCalldata,
     } = exchangeParam;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
@@ -90,6 +91,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       dexFlag = forcePreventInsertFromAmount
         ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP
         : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8 or 11
+    }
+
+    // Actual srcToken is eth, because we'll unwrap weth before swap.
+    // Need to check balance, some dexes don't have 1:1 ETH -> custom_ETH rate
+    if (preSwapUnwrapCalldata) {
+      dexFlag =
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
     }
 
     return {
@@ -132,6 +140,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       specialDexSupportsInsertFromAmount,
       swappedAmountNotPresentInExchangeData,
       sendEthButSupportsInsertFromAmount,
+      preSwapUnwrapCalldata,
     } = exchangeParam;
 
     const isLastSwap =
@@ -196,6 +205,13 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
           : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
     }
 
+    // Actual srcToken is eth, because we'll unwrap weth before swap.
+    // Need to check balance, some dexes don't have 1:1 ETH -> custom_ETH rate
+    if (preSwapUnwrapCalldata) {
+      dexFlag =
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
+    }
+
     return {
       dexFlag,
       approveFlag,
@@ -223,7 +239,15 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       flag: flags.dexes[index],
     });
 
-    swapCallData = hexConcat([dexCallData]);
+    if (curExchangeParam.preSwapUnwrapCalldata) {
+      const withdrawCallData = this.buildUnwrapEthCallData(
+        this.getWETHAddress(curExchangeParam),
+        curExchangeParam.preSwapUnwrapCalldata,
+      );
+      swapCallData = hexConcat([withdrawCallData, dexCallData]);
+    } else {
+      swapCallData = hexConcat([dexCallData]);
+    }
 
     if (curExchangeParam.transferSrcTokenBeforeSwap) {
       const transferCallData = this.buildTransferCallData(

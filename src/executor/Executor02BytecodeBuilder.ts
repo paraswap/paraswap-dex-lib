@@ -83,6 +83,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       specialDexFlag,
       specialDexSupportsInsertFromAmount,
       swappedAmountNotPresentInExchangeData,
+      preSwapUnwrapCalldata,
     } = exchangeParam;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
@@ -112,6 +113,13 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       dexFlag = forcePreventInsertFromAmount
         ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP
         : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8 or 11
+    }
+
+    // Actual srcToken is eth, because we'll unwrap weth before swap.
+    // Need to check balance, some dexes don't have 1:1 ETH -> custom_ETH rate
+    if (preSwapUnwrapCalldata) {
+      dexFlag =
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
     }
 
     return {
@@ -166,6 +174,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       swappedAmountNotPresentInExchangeData,
       wethAddress,
       sendEthButSupportsInsertFromAmount,
+      preSwapUnwrapCalldata,
     } = exchangeParam;
 
     const isEthSrc = isETHAddress(srcToken);
@@ -234,6 +243,13 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
           : forcePreventInsertFromAmount
           ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
           : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
+    }
+
+    // Actual srcToken is eth, because we'll unwrap weth before swap.
+    // Need to check balance, some dexes don't have 1:1 ETH -> custom_ETH rate
+    if (preSwapUnwrapCalldata) {
+      dexFlag =
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
     }
 
     return {
@@ -543,7 +559,15 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       swapExchange,
     });
 
-    swapExchangeCallData = hexConcat([dexCallData]);
+    if (curExchangeParam.preSwapUnwrapCalldata) {
+      const withdrawCallData = this.buildUnwrapEthCallData(
+        this.getWETHAddress(curExchangeParam),
+        curExchangeParam.preSwapUnwrapCalldata,
+      );
+      swapExchangeCallData = hexConcat([withdrawCallData, dexCallData]);
+    } else {
+      swapExchangeCallData = hexConcat([dexCallData]);
+    }
 
     const isLastSwap =
       swapIndex === priceRoute.bestRoute[routeIndex].swaps.length - 1;

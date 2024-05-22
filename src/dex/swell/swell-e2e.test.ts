@@ -17,38 +17,40 @@ describe('Swell', () => {
   );
   const dexKey = 'Swell';
 
-  [
-    // ContractMethod.simpleSwap,
-    // ContractMethod.multiSwap,
-    // ContractMethod.megaSwap,
-    ContractMethod.swapExactAmountIn,
-  ].forEach(contractMethod => {
-    it(`${contractMethod} - ETH -> SWETH`, async () => {
-      await testE2E(
-        tokens.ETH,
-        tokens.SWETH,
-        holders.ETH,
-        '1000000000000000000',
-        SwapSide.SELL,
-        dexKey,
-        contractMethod,
-        network,
-        provider,
-      );
-    });
+  ['SWETH', 'rswETH'].forEach(token => {
+    [
+      // ContractMethod.simpleSwap,
+      // ContractMethod.multiSwap,
+      // ContractMethod.megaSwap,
+      ContractMethod.swapExactAmountIn,
+    ].forEach(contractMethod => {
+      it(`${contractMethod} - ETH -> ${token}`, async () => {
+        await testE2E(
+          tokens.ETH,
+          tokens[token],
+          holders.ETH,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
 
-    it(`${contractMethod} - WETH -> SWETH`, async () => {
-      await testE2E(
-        tokens.WETH,
-        tokens.SWETH,
-        holders.WETH,
-        '1000000000000000000',
-        SwapSide.SELL,
-        dexKey,
-        contractMethod,
-        network,
-        provider,
-      );
+      it(`${contractMethod} - WETH -> ${token}`, async () => {
+        await testE2E(
+          tokens.WETH,
+          tokens[token],
+          holders.WETH,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+        );
+      });
     });
   });
 });
