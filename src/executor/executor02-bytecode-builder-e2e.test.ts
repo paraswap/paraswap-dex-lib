@@ -483,12 +483,12 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
         });
       });
 
-      describe('etherfi: USDT -> WETH -> eETH via Hashflow and etherfi', () => {
-        const dexKeys = ['UniswapV2', 'EtherFi'];
+      describe('DAI -> WETH -> eETH via UniswapV2, UniswapV3 and EtherFi', () => {
+        const dexKeys = ['UniswapV2', 'UniswapV3', 'EtherFi'];
 
-        const tokenASymbol: string = 'USDT';
+        const tokenASymbol: string = 'DAI';
         const tokenBSymbol: string = 'eETH';
-        const tokenAAmount: string = `${1e18}00`;
+        const tokenAAmount: string = `${1e18}00000`;
 
         const side = SwapSide.SELL;
 
@@ -510,7 +510,7 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
             2000,
             false,
             [
-              '0x53a8BdFAC7e1e5B033cB006A9f3b2d5F33d55D91',
+              '0x6B175474E89094C44Da98b954EedeAC495271d0F',
               '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
               '0x35fa164735182de50811e8e2e824cfb9b6118ac2',
             ],
