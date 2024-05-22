@@ -284,7 +284,7 @@ export class Swell
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
       exchangeData: swapData,
-      targetExchange: this.swETHAddress,
+      targetExchange: destToken,
       swappedAmountNotPresentInExchangeData: true,
       preSwapUnwrapCalldata: this.isWETH(srcToken)
         ? this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
