@@ -83,10 +83,11 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
         : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8 or 11
     }
 
-    // actual srcToken is eth, because we'll unwrap weth before swap
+    // Actual srcToken is eth, because we'll unwrap weth before swap.
+    // Need to check balance, some dexes don't have 1:1 ETH -> custom_ETH rate
     if (preSwapUnwrapCalldata) {
       dexFlag =
-        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP;
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
     }
 
     return {
@@ -194,15 +195,11 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
           : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 3
     }
 
-    // actual srcToken is eth, because we'll unwrap weth before swap
+    // Actual srcToken is eth, because we'll unwrap weth before swap.
+    // Need to check balance, some dexes don't have 1:1 ETH -> custom_ETH rate
     if (preSwapUnwrapCalldata) {
-      if (isLastSwap) {
-        dexFlag =
-          Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP;
-      } else {
-        dexFlag =
-          Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
-      }
+      dexFlag =
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP;
     }
 
     return {
