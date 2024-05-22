@@ -27,6 +27,7 @@ export enum SpecialDex {
 }
 
 export enum Executors {
+  WETH = 'WETH',
   ONE = 'Executor01',
   TWO = 'Executor02',
   THREE = 'Executor03',

@@ -118,11 +118,6 @@
   },
   {
     "inputs": [],
-    "name": "InvalidSelector",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "InvalidToAmount",
     "type": "error"
   },
@@ -838,12 +833,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "toAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "quotedAmount",
+            "name": "toAmount",
             "type": "uint256"
           },
           {
@@ -919,12 +914,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "toAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "quotedAmount",
+            "name": "toAmount",
             "type": "uint256"
           },
           {
@@ -1167,12 +1162,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "toAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "quotedAmount",
+            "name": "toAmount",
             "type": "uint256"
           },
           {
@@ -1253,12 +1248,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "toAmount",
+            "name": "quotedAmount",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "quotedAmount",
+            "name": "toAmount",
             "type": "uint256"
           },
           {
