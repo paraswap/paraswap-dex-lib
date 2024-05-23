@@ -140,7 +140,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     );
 
     if (!poolPrices || poolPrices.length == 0)
-      throw new Error('Fail to get price for ' + this.dexKeys);
+      throw new Error('Fail to get price for ' + this.dexKeys.join(', '));
 
     const finalPrice = poolPrices[0];
     const quoteAmount = finalPrice.prices[chunks];

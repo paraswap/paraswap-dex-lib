@@ -7,7 +7,7 @@ import {
   NumberAsString,
   SimpleExchangeParam,
 } from '../types';
-import { Context, IDexTxBuilder } from './idex';
+import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import eETHPoolABI from '../abi/etherfi/eETHPool.json';
 import weETHABI from '../abi/etherfi/weETH.json';
@@ -154,14 +154,70 @@ export class EtherFi
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    recipient: Address,
-    data: EtherFiData,
-    side: SwapSide,
-    _: Context,
-    bytecodeBuilderAddress: Address,
   ): DexExchangeParam {
-    throw new Error('TODO: Implement');
+    const is_eETH_dest = this.is_eETH(destToken);
+    const isWETH_src = this.isWETH(srcToken);
+
+    const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
+      Interface,
+      Address,
+      EtherFiFunctions,
+      EtherFiParam,
+    ] => {
+      if (this.is_weETH(destToken)) {
+        assert(this.is_eETH(srcToken), 'srcToken should be eETH');
+        return [
+          this.weETHInterface,
+          this.weETH,
+          EtherFiFunctions.wrap,
+          [srcAmount],
+        ];
+      }
+
+      if (this.is_weETH(srcToken)) {
+        assert(is_eETH_dest, 'destToken should be eETH');
+        return [
+          this.weETHInterface,
+          this.weETH,
+          EtherFiFunctions.unwrap,
+          [srcAmount],
+        ];
+      }
+
+      if (is_eETH_dest) {
+        assert(
+          isWETH_src || isETHAddress(srcToken),
+          'srcToken should be (w)eth',
+        );
+        return [
+          this.eETHPoolInterface,
+          this.eETHPool,
+          EtherFiFunctions.deposit,
+          [],
+        ];
+      }
+
+      throw new Error('LOGIC ERROR');
+    })();
+
+    const swapData = Interface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: swapCallee,
+      spender: swapCallee,
+      swappedAmountNotPresentInExchangeData: is_eETH_dest,
+      preSwapUnwrapCalldata: isWETH_src
+        ? this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+            srcAmount,
+          ])
+        : undefined,
+    };
   }
 
   getAdapterParam(
