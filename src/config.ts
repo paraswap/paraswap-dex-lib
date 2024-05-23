@@ -55,8 +55,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
       Adapter04: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       Adapter05: '0x3329dfa55A40B450952FBE0203167Ae6908E656d',
+      Adapter06: '0xe9166234DFB6d3ec05C82404109C02Ca82b16c22',
       BuyAdapter: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
-      BuyAdapter02: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
+      BuyAdapter02: '0xF73335b89e6EeACD4d7D8e397ACCd9F93E723952',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -169,8 +170,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
-      BscAdapter02: '0x9A92D2649C38415860FA59ba8B9a9960cd2839Db',
-      BscBuyAdapter: '0xd32C191e0febaa6Cc93A29Cb676474c72486E00b',
+      BscAdapter02: '0x7A8f0436981B893349514655a00Ca974A6e9fd93',
+      BscBuyAdapter: '0x2389726B55948d8D8944b0145204761215AaEc71',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
     rpcPollingBlocksBackToTriggerUpdate: 1,
@@ -198,8 +199,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
-      PolygonAdapter02: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
-      PolygonBuyAdapter: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
+      PolygonAdapter02: '0xE7d4CC1589311BD7Bb58739269748a20DAAD755D',
+      PolygonBuyAdapter: '0x8643Aa3E63dF7742223A713C7525677df336183f',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -322,7 +323,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
     adapterAddresses: {
       OptimismAdapter01: '0x5dcf544b0c9689fa67dcb713fd2656d217e25a59',
-      OptimismBuyAdapter: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
+      OptimismAdapter02: '0x4483Ae378897eB9FbF7f15Df98Bf07233ffFEe8b',
+      OptimismBuyAdapter: '0xe9166234DFB6d3ec05C82404109C02Ca82b16c22',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
@@ -379,8 +381,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs: [],
     adapterAddresses: {
-      BaseAdapter01: '0xf531fC01aFa26dAa71f581e1e18AA3B37Ee515A6',
-      BaseBuyAdapter: '0x2B99cefbfeE6f134D68aBB291386588ADe3808F8',
+      BaseAdapter01: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
+      BaseBuyAdapter: '0xe07678E5Fd104cbabb239049148b8a4E9dA5d07E',
     },
     uniswapV2ExchangeRouterAddress:
       '0x75d199EfB540e47D27D52c62Da3E7daC2B9e834F',
