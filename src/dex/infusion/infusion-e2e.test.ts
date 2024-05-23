@@ -51,88 +51,6 @@ import { generateConfig } from '../../config';
   (This comment should be removed from the final implementation)
 */
 
-function testForNetwork(
-  network: Network,
-  dexKey: string,
-  tokenASymbol: string,
-  tokenBSymbol: string,
-  tokenAAmount: string,
-  tokenBAmount: string,
-  nativeTokenAmount: string,
-) {
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
-  const tokens = Tokens[network];
-  const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
-
-  // TODO: Add any direct swap contractMethod name if it exists
-  const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-      ],
-    ],
-    // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-  ]);
-
-  describe(`${network}`, () => {
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
-          describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-          });
-        });
-      }),
-    );
-  });
-}
-
 describe('Infusion E2E', () => {
   describe('Base', () => {
     const network = Network.BASE;
@@ -143,8 +61,8 @@ describe('Infusion E2E', () => {
       network,
     );
 
-    describe('Velodrome', () => {
-      const dexKey = 'InfusionVelodrome';
+    describe('Infusion', () => {
+      const dexKey = 'Infusion';
 
       describe('simpleSwap', () => {
         it('NATIVE -> TOKEN', async () => {
@@ -182,6 +100,20 @@ describe('Infusion E2E', () => {
             SwapSide.SELL,
             dexKey,
             ContractMethod.simpleSwap,
+
+            network,
+            provider,
+          );
+        });
+        it('STABLE -> STABLE', async () => {
+          await testE2E(
+            tokens.USDbC,
+            tokens.USDC,
+            holders.USDbC,
+            '9900000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
             network,
             provider,
           );
@@ -197,6 +129,7 @@ describe('Infusion E2E', () => {
             SwapSide.SELL,
             dexKey,
             ContractMethod.multiSwap,
+
             network,
             provider,
           );
@@ -220,6 +153,19 @@ describe('Infusion E2E', () => {
             tokens.USDC,
             holders.WETH,
             '3000000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.multiSwap,
+            network,
+            provider,
+          );
+        });
+        it('STABLE -> STABLE', async () => {
+          await testE2E(
+            tokens.USDbC,
+            tokens.USDC,
+            holders.USDbC,
+            '9900000000',
             SwapSide.SELL,
             dexKey,
             ContractMethod.multiSwap,

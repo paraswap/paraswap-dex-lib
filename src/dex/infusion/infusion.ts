@@ -18,9 +18,10 @@ import {
 import { IDexHelper } from '../../dex-helper';
 import erc20ABI from '../../abi/erc20.json';
 import { UniswapData, UniswapV2Data } from '../uniswap-v2/types';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import infusionFactoryABI from '../../abi/infusion/InfusionFactory.json';
-import infusionPair from '../../abi/infusion/InfusionPair.json';
+import infusionPairABI from '../../abi/infusion/InfusionPair.json';
+import infusionRouterABI from '../../abi/infusion/InfusionRouter.json';
 import _ from 'lodash';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { Interface, AbiCoder } from '@ethersproject/abi';
@@ -32,12 +33,36 @@ import {
   InfusionPair,
   InfusionPool,
   InfusionPoolOrderedParams,
+  InfusionParam,
 } from './types';
 import { InfusionConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { isStablePair } from './utils/isStablePair';
 
+export enum InfusionRouterFunctions {
+  sellExactEth = 'swapExactETHForTokens',
+  sellExactToken = 'swapExactTokensForETH',
+  swapExactIn = 'swapExactTokensForTokens',
+}
+
+export interface SmardexData extends Omit<UniswapV2Data, 'feeFactor'> {
+  deadline: number;
+  receiver: Address;
+}
+
+const VelodromeFactoryABI = [
+  {
+    inputs: [{ internalType: 'bool', name: '_stable', type: 'bool' }],
+    name: 'getFee',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];
+
+const velodromeFactoryIface = new Interface(VelodromeFactoryABI);
 const erc20Iface = new Interface(erc20ABI);
-const infusionPairIface = new Interface(infusionPair);
+const infusionPairIface = new Interface(infusionPairABI);
 const defaultAbiCoder = new AbiCoder();
 
 function encodePools(
@@ -63,13 +88,13 @@ export class Infusion extends UniswapV2 {
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.omit(InfusionConfig, ['InfusionVelodrome']));
+    getDexKeysWithNetwork(_.pick(InfusionConfig, ['Infusion']));
 
   constructor(
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
-    isDynamicFees = false,
+    isDynamicFees = true,
     factoryAddress?: Address,
     subgraphURL?: string,
     initCode?: string,
@@ -118,6 +143,8 @@ export class Infusion extends UniswapV2 {
 
     this.feeFactor =
       InfusionConfig[dexKey][network].feeFactor || this.feeFactor;
+
+    // this.exchangeRouterInterface = new Interface(infusionRouterABI);
   }
 
   async findInfusionPair(from: Token, to: Token, stable: boolean) {
@@ -578,7 +605,7 @@ export class Infusion extends UniswapV2 {
   }
 
   poolPostfix(stable: boolean) {
-    return stable ? 'S' : 'U';
+    return stable ? 'S' : 'V';
   }
 
   async getSimpleParam(
@@ -590,7 +617,53 @@ export class Infusion extends UniswapV2 {
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    return super.getSimpleParam(src, dest, srcAmount, destAmount, data, side);
+
+    let routerMethod: any;
+    let routerArgs: InfusionParam;
+    const stable = isStablePair(this.network, src, dest);
+
+    const from = isETHAddress(src)
+      ? this.dexHelper.config.data.wrappedNativeTokenAddress
+      : src;
+    const to = isETHAddress(dest)
+      ? this.dexHelper.config.data.wrappedNativeTokenAddress
+      : dest;
+
+    routerMethod = isETHAddress(src)
+      ? InfusionRouterFunctions.sellExactEth
+      : InfusionRouterFunctions.swapExactIn;
+    routerMethod = isETHAddress(dest)
+      ? InfusionRouterFunctions.sellExactToken
+      : routerMethod;
+
+    routerArgs = isETHAddress(src)
+      ? [
+          destAmount,
+          [{ from, to, stable }],
+          this.augustusAddress,
+          Math.floor(new Date().getTime()) + 120,
+        ]
+      : [
+          srcAmount,
+          destAmount,
+          [{ from, to, stable }],
+          this.augustusAddress,
+          Math.floor(new Date().getTime()) + 120,
+        ];
+
+    // console.log('routerMethod', routerMethod, 'routerArgs', routerArgs);
+    const swapData = new Interface(infusionRouterABI).encodeFunctionData(
+      routerMethod,
+      routerArgs as InfusionParam,
+    );
+    return this.buildSimpleParamWithoutWETHConversion(
+      src,
+      srcAmount,
+      dest,
+      destAmount,
+      swapData,
+      data.router,
+    );
   }
 
   getAdapterParam(
@@ -618,6 +691,26 @@ export class Infusion extends UniswapV2 {
       targetExchange: data.router,
       payload,
       networkFee: '0',
+    };
+  }
+
+  protected getFeesMultiCallData(pair: InfusionPair) {
+    const callEntry = {
+      target: this.factoryAddress,
+      callData: velodromeFactoryIface.encodeFunctionData('getFee', [
+        pair.stable,
+      ]),
+    };
+    const callDecoder = (values: any[]) =>
+      parseInt(
+        velodromeFactoryIface
+          .decodeFunctionResult('getFee', values)[0]
+          .toString(),
+      );
+
+    return {
+      callEntry,
+      callDecoder,
     };
   }
 }

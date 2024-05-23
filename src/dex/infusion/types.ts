@@ -33,3 +33,28 @@ export interface DexParams extends Omit<UniswapV2DexParams, 'feeCode'> {
 export interface InfusionPair extends UniswapV2Pair {
   stable: boolean;
 }
+
+export type InfusionParam = SellOnInfusionParam | SellETHOnInfusionParam;
+
+export type SellOnInfusionParam = [
+  amountIn: string,
+  amountOutMin: string,
+  routes: {
+    from: string;
+    to: string;
+    stable: boolean;
+  }[],
+  to: string,
+  deadline: number,
+];
+
+export type SellETHOnInfusionParam = [
+  amountOutMin: string,
+  routes: {
+    from: string;
+    to: string;
+    stable: boolean;
+  }[],
+  to: string,
+  deadline: number,
+];
