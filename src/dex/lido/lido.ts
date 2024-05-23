@@ -12,6 +12,7 @@ import { NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { LidoData, stETHFunctions } from './types';
 import { stETH } from './config';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Lido implements IDexTxBuilder<LidoData, any> {
   static dexKeys = ['lido'];
@@ -82,6 +83,14 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: stETH[this.network],
+      returnAmountPos:
+        _side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.stETHInterface,
+              stETHFunctions.submit,
+              '', // no output name
+            )
+          : undefined,
     };
   }
 }

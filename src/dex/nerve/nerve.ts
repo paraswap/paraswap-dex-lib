@@ -33,6 +33,7 @@ import { NerveConfig, Adapters, NERVE_GAS_COST } from './config';
 import { NerveEventPool } from './nerve-pool';
 import _ from 'lodash';
 import { bigIntify } from './utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Nerve
   extends SimpleExchange
@@ -382,6 +383,14 @@ export class Nerve
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.nervePoolIface,
+              NervePoolFunctions.swap,
+              '', // no output name
+            )
+          : undefined,
     };
   }
 

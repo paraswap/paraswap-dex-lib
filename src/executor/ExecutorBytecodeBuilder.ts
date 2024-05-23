@@ -193,6 +193,7 @@ export abstract class ExecutorBytecodeBuilder {
     specialDexFlag: SpecialDex,
     flag: Flag,
     toAmountPos = 0,
+    returnAmountPos = DEFAULT_RETURN_AMOUNT_POS,
   ): string {
     const builder =
       this.type !== Executors.THREE
@@ -207,6 +208,7 @@ export abstract class ExecutorBytecodeBuilder {
       specialDexFlag,
       flag,
       toAmountPos,
+      returnAmountPos,
     );
   }
 
@@ -217,13 +219,15 @@ export abstract class ExecutorBytecodeBuilder {
     destTokenPos: number,
     specialDexFlag: SpecialDex,
     flag: Flag,
+    toAmountPos = 0, // not used for Executor01 and Executor02, just to follow the same interface
+    returnAmountPos = DEFAULT_RETURN_AMOUNT_POS,
   ) {
     return solidityPack(EXECUTOR_01_02_FUNCTION_CALL_DATA_TYPES, [
       tokenAddress, // token address
       hexZeroPad(hexlify(hexDataLength(calldata) + BYTES_28_LENGTH), 4), // calldata length + bytes28(0)
       hexZeroPad(hexlify(fromAmountPos), 2), // fromAmountPos
       hexZeroPad(hexlify(destTokenPos), 2), // destTokenPos
-      hexZeroPad(hexlify(DEFAULT_RETURN_AMOUNT_POS), 1), // TODO: Fix returnAmount Pos
+      hexZeroPad(hexlify(returnAmountPos), 1), // returnAmountPos
       hexZeroPad(hexlify(specialDexFlag), 1), // special
       hexZeroPad(hexlify(flag), 2), // flag
       ZEROS_28_BYTES, // bytes28(0)
@@ -239,6 +243,7 @@ export abstract class ExecutorBytecodeBuilder {
     specialDexFlag: SpecialDex,
     flag: Flag,
     toAmountPos = 0,
+    returnAmountPos = DEFAULT_RETURN_AMOUNT_POS, // not used for Executor03 calldata, just to follow the same interface
   ) {
     return solidityPack(EXECUTOR_03_FUNCTION_CALL_DATA_TYPES, [
       tokenAddress, // token address

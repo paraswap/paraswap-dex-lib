@@ -41,6 +41,7 @@ import {
 import { SwaapV1Pool } from './swaap-v1-pool';
 import PoolABI from '../../abi/swaap-v1/pool.json';
 import { PoolQuotations } from './libraries/PoolQuotations';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
   static readonly poolInterface = new Interface(PoolABI);
@@ -286,6 +287,14 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: data.pool,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              SwaapV1.poolInterface,
+              functionName,
+              'tokenAmountOut',
+            )
+          : undefined,
     };
   }
 

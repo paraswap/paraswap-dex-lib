@@ -12,6 +12,7 @@ import { SimpleExchange } from '../simple-exchange';
 import BProtocolABI from '../../abi/BProtocol.json';
 import { IDexHelper } from '../../dex-helper';
 import { BProtocolData, BProtocolFunctions, BProtocolParam } from './types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class BProtocol
   extends SimpleExchange
@@ -95,6 +96,14 @@ export class BProtocol
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: data.exchange,
+      returnAmountPos:
+        _side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              swapFunction,
+              '', // no output name
+            )
+          : undefined,
     };
   }
 }

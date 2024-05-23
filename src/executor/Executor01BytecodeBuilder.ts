@@ -4,7 +4,7 @@ import { OptimalRate } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
-import { BYTES_64_LENGTH } from './constants';
+import { BYTES_64_LENGTH, DEFAULT_RETURN_AMOUNT_POS } from './constants';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { assert } from 'ts-essentials';
 
@@ -316,6 +316,10 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
     const exchangeParam = exchangeParams[exchangeParamIndex];
     const swap = priceRoute.bestRoute[routeIndex].swaps[swapIndex];
     let { exchangeData, specialDexFlag } = exchangeParam;
+    const returnAmountPos =
+      exchangeParam.returnAmountPos !== undefined
+        ? exchangeParam.returnAmountPos
+        : DEFAULT_RETURN_AMOUNT_POS;
 
     let destTokenPos = 0;
     if (checkDestTokenBalanceAfterSwap && !dontCheckBalanceAfterSwap) {
@@ -359,6 +363,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder {
       destTokenPos,
       specialDexFlag || SpecialDex.DEFAULT,
       flag,
+      undefined,
+      returnAmountPos,
     );
   }
 

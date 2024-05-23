@@ -12,7 +12,7 @@ import type {
   NumberAsString,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, type Network } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import type { Context, IDex } from '../../dex/idex';

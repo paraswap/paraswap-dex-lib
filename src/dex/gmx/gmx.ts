@@ -22,6 +22,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { GMXConfig, Adapters } from './config';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const GMXGasCost = 300 * 1000;
 
@@ -231,6 +232,14 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       swappedAmountNotPresentInExchangeData: true,
       exchangeData,
       targetExchange: this.params.vault,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              Vault.interface,
+              'swap',
+              '', // no output name
+            )
+          : undefined,
     };
   }
 

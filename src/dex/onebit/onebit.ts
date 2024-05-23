@@ -13,6 +13,7 @@ import { SimpleExchange } from '../simple-exchange';
 import OnebitABI from '../../abi/Onebit.json';
 import { IDexHelper } from '../../dex-helper';
 import { OnebitData, OnebitFunctions, OnebitParam } from './types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Onebit
   extends SimpleExchange
@@ -100,6 +101,14 @@ export class Onebit
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: data.router,
+      returnAmountPos:
+        _side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              swapFunction,
+              '', // no output name
+            )
+          : undefined,
     };
   }
 }

@@ -50,6 +50,7 @@ import { AbiItem } from 'web3-utils';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { TickMath } from './contract-math/TickMath';
 import { OnPoolCreatedCallback, SolidlyV3Factory } from './solidly-v3-factory';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -725,6 +726,10 @@ export class SolidlyV3
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: data.poolAddress,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(this.poolIface, swapFunction, 'amount0')
+          : undefined,
     };
   }
 

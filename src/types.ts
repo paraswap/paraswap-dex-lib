@@ -169,6 +169,7 @@ export type DexExchangeParam = {
   sendEthButSupportsInsertFromAmount?: boolean;
   specialDexSupportsInsertFromAmount?: boolean;
   swappedAmountNotPresentInExchangeData?: boolean;
+  returnAmountPos?: number;
 };
 
 export type DexExchangeBuildParam = DexExchangeParam & {
