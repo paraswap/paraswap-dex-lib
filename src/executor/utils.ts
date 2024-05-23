@@ -11,8 +11,7 @@ export const extractReturnAmountPosition = (
       ? iface.getFunction(functionName)
       : functionName;
   const outputs = func.outputs || [];
-
-  const index = outputs.findIndex(({ name }) => name === outputName);
+  const index = outputs.findIndex(({ name }) => name === outputName || outputName === '' && name === null);
 
   if (index < 0) {
     throw new Error(
