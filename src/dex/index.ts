@@ -70,7 +70,6 @@ import { WstETH } from './wsteth/wsteth';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { Infusion } from './infusion/infusion';
-// import { Velodrome as InfusionVelodrome } from './infusion/forks-override/velodrome';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
@@ -165,7 +164,6 @@ const Dexes = [
   WstETH,
   Hashflow,
   Infusion,
-  // InfusionVelodrome,
   MaverickV1,
   Camelot,
   SwaapV2,
