@@ -577,17 +577,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
-  SakeSwap: {
-    [Network.MAINNET]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/therealsakeswap/sakeswap-subgraph-v2',
-      factoryAddress: '0x75e48C954594d64ef9613AeEF97Ad85370F13807',
-      initCode:
-        '0xb2b53dca60cae1d1f93f64d80703b888689f28b63c483459183f2f4271fa0308',
-      poolGasCost: 100 * 1000,
-      feeCode: 30,
-    },
-  },
   SafeSwap: {
     [Network.POLYGON]: {
       subgraphURL:
