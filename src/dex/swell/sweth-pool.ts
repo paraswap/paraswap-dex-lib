@@ -4,7 +4,7 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, Log, Logger } from '../../types';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { SWETHPoolState } from './type';
-import { getOnChainState } from './utils';
+import { getOnChainStateSwETH } from './utils';
 import { BI_POWS } from '../../bigint-constants';
 
 export class SwethPool extends StatefulEventSubscriber<SWETHPoolState> {
@@ -37,7 +37,7 @@ export class SwethPool extends StatefulEventSubscriber<SWETHPoolState> {
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<SWETHPoolState>> {
-    const state = await getOnChainState(
+    const state = await getOnChainStateSwETH(
       this.dexHelper.multiContract,
       this.poolAddress,
       this.poolInterface,

@@ -87,7 +87,13 @@ export class PancakeswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(PancakeswapV3Config, ['PancakeswapV3']));
+    getDexKeysWithNetwork(
+      _.pick(PancakeswapV3Config, [
+        'PancakeswapV3',
+        'DackieSwapV3',
+        'SwapBasedV3',
+      ]),
+    );
 
   logger: Logger;
 
@@ -849,6 +855,8 @@ export class PancakeswapV3
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.config.subgraphURL) return [];
+
     const _tokenAddress = tokenAddress.toLowerCase();
 
     const res = await this._querySubgraph(
@@ -1021,6 +1029,8 @@ export class PancakeswapV3
     variables: Object,
     timeout = 30000,
   ) {
+    if (!this.config.subgraphURL) return [];
+
     try {
       const res = await this.dexHelper.httpRequest.post(
         this.config.subgraphURL,

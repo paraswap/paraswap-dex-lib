@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2';
-import { IDexTxBuilder, DexContructor, IDex, IRouteOptimizer } from './idex';
+import { IDexTxBuilder, DexConstructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool';
@@ -80,6 +80,7 @@ import { SpiritSwapV3 } from './quickswap/spiritswap-v3';
 import { TraderJoeV21 } from './trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
@@ -88,6 +89,8 @@ import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
+import { Spark } from './spark/spark';
+import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 
 const LegacyDexes = [
   CurveV2,
@@ -125,6 +128,7 @@ const Dexes = [
   UniswapV3,
   Algebra,
   PancakeswapV3,
+  VelodromeSlipstream,
   BiSwap,
   MDEX,
   Dfyn,
@@ -165,6 +169,7 @@ const Dexes = [
   MaverickV1,
   Camelot,
   SwaapV2,
+  AngleStakedStable,
   QuickPerps,
   NomiswapV2,
   SolidlyV3,
@@ -172,6 +177,7 @@ const Dexes = [
   Wombat,
   Swell,
   PharaohV1,
+  Spark,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
@@ -185,7 +191,7 @@ interface IGetDirectFunctionName {
 
 export class DexAdapterService {
   dexToKeyMap: {
-    [key: string]: LegacyDexConstructor | DexContructor<any, any, any>;
+    [key: string]: LegacyDexConstructor | DexConstructor<any, any, any>;
   } = {};
   directFunctionsNames: string[];
   dexInstances: {
