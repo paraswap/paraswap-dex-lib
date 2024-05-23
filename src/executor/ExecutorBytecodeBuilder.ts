@@ -278,7 +278,6 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
     specialDexFlag: SpecialDex,
     flag: Flag,
     toAmountPos = 0,
-    returnAmountPos = DEFAULT_RETURN_AMOUNT_POS, // not used for Executor03 calldata, just to follow the same interface
   ) {
     return solidityPack(EXECUTOR_03_FUNCTION_CALL_DATA_TYPES, [
       tokenAddress, // token address
