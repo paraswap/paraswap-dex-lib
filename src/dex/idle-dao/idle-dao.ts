@@ -31,9 +31,12 @@ import {
   setTokensOnNetwork,
   getPoolsByTokenAddress,
   getTokenFromIdleToken,
+  getTokensByNetwork,
 } from './tokens';
 import FACTORY_ABI from '../../abi/idle-dao/idle-cdo-factory.json';
 import CDO_ABI from '../../abi/idle-dao/idle-cdo.json';
+import { IdleDaoPollingPool } from './idle-dao-pooling-pool';
+import { ObjWithUpdateInfo } from '../../lib/stateful-rpc-poller/types';
 
 export const TOKEN_LIST_CACHE_KEY = 'token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60;
@@ -56,6 +59,10 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   private cdo: Interface;
   private factory: Interface;
 
+  private tokenList: IdleToken[] = [];
+
+  protected pollingPool?: IdleDaoPollingPool;
+
   constructor(
     readonly network: Network,
     readonly dexKey: string,
@@ -73,6 +80,16 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     return this.eventPools[idleAddress] || null;
   }
 
+  setEventPoolStateBlock(
+    idleAddress: string,
+    blockNumber: number,
+    state: PoolState,
+  ): void {
+    const eventPool = this.getEventPool(idleAddress);
+    if (!eventPool) return;
+    return eventPool.setBlockState(blockNumber, state);
+  }
+
   async setupEventPool(
     idleToken: IdleToken,
     blockNumber: number,
@@ -83,6 +100,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       this.dexHelper,
       this.logger,
       idleToken,
+      this,
     );
 
     // this.logger.debug("idleDaoEventPool registered ", idleToken.idleAddress)
@@ -95,17 +113,19 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   }
 
   async getTokensList(blockNumber: number): Promise<Record<string, IdleToken>> {
-    const tokenList = await fetchTokenList(
-      this.dexHelper.web3Provider,
-      blockNumber,
-      this.config.fromBlock,
-      this.config.factoryAddress,
-      this.cdo,
-      this.erc20Interface,
-      this.dexHelper.multiWrapper,
-    );
+    if (!this.tokenList) {
+      this.tokenList = await fetchTokenList(
+        this.dexHelper.web3Provider,
+        blockNumber,
+        this.config.fromBlock,
+        this.config.factoryAddress,
+        this.cdo,
+        this.erc20Interface,
+        this.dexHelper.multiWrapper,
+      );
+    }
 
-    return tokenList.reduce(
+    return this.tokenList.reduce(
       (acc: Record<string, IdleToken>, idleToken: IdleToken) => {
         return {
           ...acc,
@@ -136,10 +156,13 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
           this.setupEventPool(idleToken, blockNumber),
         ),
       );
+
+      this.tokenList = tokens;
+
       return;
     }
 
-    const tokenList = await fetchTokenList(
+    this.tokenList = await fetchTokenList(
       this.dexHelper.web3Provider,
       blockNumber,
       this.config.fromBlock,
@@ -154,22 +177,35 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       this.network,
       TOKEN_LIST_CACHE_KEY,
       TOKEN_LIST_TTL_SECONDS,
-      JSON.stringify(tokenList),
+      JSON.stringify(this.tokenList),
     );
 
-    const networkTokens = setTokensOnNetwork(this.network, tokenList);
+    const networkTokens = setTokensOnNetwork(this.network, this.tokenList);
 
     await Promise.all(
-      tokenList.map((idleToken: IdleToken) =>
+      this.tokenList.map((idleToken: IdleToken) =>
         this.setupEventPool(idleToken, blockNumber),
       ),
     );
+
+    // Initialize polling pool
+    this._initializePollingPool(this.tokenList);
   }
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
+  }
+
+  private _initializePollingPool(idleTokens: IdleToken[]) {
+    this.pollingPool = new IdleDaoPollingPool(
+      this.dexKey,
+      this.dexKey,
+      this.dexHelper,
+      idleTokens,
+      this.logger,
+    );
   }
 
   private _getPoolIdentifier(srcToken: Token, destToken: Token): string {
@@ -236,12 +272,12 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
         this.eventPools[idleToken.idleAddress];
       const eventPoolState: PoolState | null = eventPool.getState(blockNumber);
 
-      this.logger.debug(
-        'eventPoolState',
-        blockNumber,
-        idleToken.idleAddress,
-        eventPoolState,
-      );
+      // this.logger.debug(
+      //   'eventPoolState',
+      //   blockNumber,
+      //   idleToken.idleAddress,
+      //   eventPoolState,
+      // );
 
       if (!eventPoolState) {
         // console.log('eventPoolState is NULL -', blockNumber, idleToken.idleAddress, eventPoolState)
@@ -306,106 +342,6 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
         },
       ];
     } catch (e) {
-      if (blockNumber === 0)
-        this.logger.error(
-          `Error_getPricesVolume: Aurelius block manager not yet instantiated`,
-        );
-      this.logger.error(`Error_getPrices:`, e);
-      return null;
-    }
-  }
-
-  async getPricesVolume_old(
-    srcToken: Token,
-    destToken: Token,
-    amounts: bigint[],
-    side: SwapSide,
-    blockNumber: number,
-    limitPools?: string[],
-  ): Promise<null | ExchangePrices<IdleDaoData>> {
-    try {
-      const _src = this.dexHelper.config.wrapETH(srcToken);
-      const _dst = this.dexHelper.config.wrapETH(destToken);
-
-      // Look for idleToken
-      const idleToken = getIdleTokenIfIdleDaoPair(this.network, _src, _dst);
-      if (!idleToken) {
-        // console.log('IdleToken NOT FOUND -', blockNumber, this.network, _src, _dst)
-        return null;
-      }
-
-      const fromIdleToken =
-        idleToken.idleAddress.toLowerCase() == _src.address.toLowerCase();
-
-      const eventPool: IdleDaoEventPool =
-        this.eventPools[idleToken.idleAddress];
-      const eventPoolState: PoolState | null = eventPool.getState(blockNumber);
-
-      this.logger.debug(
-        'eventPoolState',
-        blockNumber,
-        idleToken.idleAddress,
-        eventPoolState,
-      );
-
-      if (!eventPoolState) {
-        // console.log('eventPoolState is NULL -', blockNumber, idleToken.idleAddress, eventPoolState)
-        return null;
-      }
-
-      const prices = amounts.map((amount: bigint) => {
-        let tokenPrice = null;
-        if (fromIdleToken) {
-          tokenPrice = eventPoolState.tokenPrice;
-        } else {
-          tokenPrice = BigInt(
-            Math.round(
-              (parseFloat(`1e${srcToken.decimals}`) /
-                parseFloat('' + eventPoolState.tokenPrice)) *
-                parseFloat(`1e${srcToken.decimals}`),
-            ),
-          );
-        }
-
-        const destAmount = Math.round(
-          (parseFloat('' + tokenPrice) * parseFloat('' + amount)) /
-            parseFloat(`1e${srcToken.decimals}`),
-        );
-
-        const decimalsDiff = destToken.decimals - srcToken.decimals;
-        let destAmountBigInt = BigInt(0);
-        if (decimalsDiff > 0) {
-          destAmountBigInt = BigInt(
-            Math.round(destAmount * parseFloat(`1e${decimalsDiff}`)),
-          );
-          // } else if (decimalsDiff<0){
-          //   destAmountBigInt = BigInt(Math.round(destAmount/parseFloat(`1e${Math.abs(decimalsDiff)}`)))
-        } else {
-          destAmountBigInt = BigInt(destAmount);
-        }
-        // const destAmountBigInt = BigInt(destAmount)
-
-        // console.log('getPricesVolume', srcToken, destToken, fromIdleToken, ''+amount, ''+tokenPrice, destAmount, ''+destAmountBigInt)
-        return destAmountBigInt;
-      });
-
-      return [
-        {
-          prices,
-          unit: getBigIntPow(
-            (side === SwapSide.SELL ? destToken : srcToken).decimals,
-          ),
-          gasCost: this.config.lendingGasCost,
-          exchange: this.dexKey,
-          data: {
-            idleToken,
-            fromIdleToken,
-          },
-          poolAddresses: [fromIdleToken ? srcToken.address : destToken.address],
-        },
-      ];
-    } catch (e) {
-      // console.log('getPricesVolume - ERROR', srcToken, destToken, e);
       if (blockNumber === 0)
         this.logger.error(
           `Error_getPricesVolume: Aurelius block manager not yet instantiated`,
@@ -497,7 +433,37 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   }
 
   async updatePoolState(): Promise<void> {
-    return Promise.resolve();
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+
+    let idleTokens = getTokensByNetwork(this.network);
+    if (!idleTokens) {
+      await this.initializePricing(blockNumber);
+    }
+    idleTokens = getTokensByNetwork(this.network);
+
+    if (this.pollingPool === undefined) {
+      this._initializePollingPool(idleTokens!);
+    }
+
+    const state = await this.pollingPool!.getState();
+
+    // this.logger.debug('updatePoolState', blockNumber, state)
+
+    if (!state) {
+      this.logger.error(`Failed to updatePoolState. State is null.`);
+      return;
+    }
+
+    Object.entries(state).forEach((state: any) => {
+      const idleAddress = state[0];
+      const poolState: ObjWithUpdateInfo<PoolState> = state[1];
+      const eventPool: IdleDaoEventPool = this.eventPools[idleAddress];
+      // this.logger.debug('Get eventPool', state, idleAddress, eventPool)
+      if (eventPool) {
+        // this.logger.debug('Set pool state', idleAddress, poolState.blockNumber, poolState.value)
+        eventPool.setBlockState(poolState.blockNumber, poolState.value);
+      }
+    });
   }
 
   async getTopPoolsForToken(

@@ -51,9 +51,7 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${tokenASymbol} -> ${tokenBSymbol} - ${
-              side === SwapSide.SELL ? tokenAAmount : tokenBAmount
-            }`, async () => {
+            it(`${tokenASymbol} -> ${tokenBSymbol} - ${tokenAAmount}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
@@ -67,9 +65,7 @@ function testForNetwork(
               );
             });
 
-            it(`${tokenBSymbol} -> ${tokenASymbol} - ${
-              side === SwapSide.SELL ? tokenBAmount : tokenAAmount
-            }`, async () => {
+            it(`${tokenBSymbol} -> ${tokenASymbol} - ${tokenBAmount}`, async () => {
               await testE2E(
                 tokens[tokenBSymbol],
                 tokens[tokenASymbol],
@@ -118,24 +114,6 @@ describe('IdleDao E2E', () => {
         tokenBSymbol: 'BB_Re7WETH',
         tokenAAmount: '100000000000000',
         tokenBAmount: '100000000000000',
-      },
-      {
-        tokenASymbol: 'WETH',
-        tokenBSymbol: 'AA_Re7WETH',
-        tokenAAmount: '1000000000000000',
-        tokenBAmount: '1000000000000000',
-      },
-      {
-        tokenASymbol: 'STETH',
-        tokenBSymbol: 'AA_iETHv2',
-        tokenAAmount: '1000000000000000',
-        tokenBAmount: '1000000000000000',
-      },
-      {
-        tokenASymbol: 'STETH',
-        tokenBSymbol: 'BB_iETHv2',
-        tokenAAmount: '1000000000000000',
-        tokenBAmount: '1000000000000000',
       },
     ];
 

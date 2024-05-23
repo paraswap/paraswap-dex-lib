@@ -5,11 +5,11 @@ dotenv.config();
 import { IdleDao } from './idle-dao';
 import { IdleDaoEventPool } from './idle-dao-pool';
 import { Network } from '../../constants';
-import { Address } from '../../types';
+import { Address, Logger } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState, IdleToken } from './types';
-import { getIdleTokenByAddress } from './tokens';
+import { getIdleTokenByAddress, getTokensByNetwork } from './tokens';
 
 jest.setTimeout(50 * 1000);
 
@@ -17,14 +17,18 @@ async function fetchPoolState(
   idleDaoPool: IdleDaoEventPool,
   blockNumber: number,
   poolAddress: string,
+  logger: Logger,
 ): Promise<PoolState> {
-  return await idleDaoPool.generateState(blockNumber);
+  const state = await idleDaoPool.generateState(blockNumber);
+  // logger.debug('fetchPoolState', blockNumber, poolAddress, state);
+  return state;
 }
 
 type EventMappings = Record<string, number[]>;
 
 describe('IdleDao EventPool Mainnet', function () {
   const dexKey = 'IdleDao';
+  let latestBlockNumber: number;
   const network = Network.MAINNET;
   let tokensList: Record<string, IdleToken>;
   const dexHelper = new DummyDexHelper(network);
@@ -32,8 +36,9 @@ describe('IdleDao EventPool Mainnet', function () {
   const idleDao: IdleDao = new IdleDao(network, dexKey, dexHelper);
 
   beforeAll(async () => {
-    const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    tokensList = await idleDao.getTokensList(blockNumber);
+    latestBlockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    await idleDao.initializePricing(latestBlockNumber);
+    tokensList = await idleDao.getTokensList(latestBlockNumber);
   });
 
   // poolAddress -> EventMappings
@@ -41,28 +46,45 @@ describe('IdleDao EventPool Mainnet', function () {
     Address,
     { blockNumber: number; events: EventMappings }
   > = {
+    // AA_clearpool_wincent_USDC
     '0x00b51fc6384a120eac68bea38b889ea92524ab93': {
-      blockNumber: 18019399,
+      blockNumber: 18019404,
       events: {
-        Transfer: Object.keys(Array.from('0'.repeat(5))).map(
-          index => 18019399 + +index * 10,
-        ),
+        Transfer: [
+          18019404, // DepositBB
+          18111961, // WithdrawAA
+          18858447, // Harvest
+          18940884, // WithdrawBB
+          19674873, // WithdrawBB
+          19924419,
+        ],
       },
     },
+    // BB_clearpool_fasanara_USDT
     '0x3eb6318b8d9f362a0e1d99f6032edb1c4c602500': {
-      blockNumber: 16947910,
+      blockNumber: 18341913,
       events: {
-        Transfer: Object.keys(Array.from('0'.repeat(5))).map(
-          index => 16947910 + +index * 10,
-        ),
+        Transfer: [
+          18341913, // DepositBB
+          18357425, // WithdrawBB
+          18646128, // DepositBB
+          18804244, // WithdrawAA
+          18908679, // Harvest
+          19924419,
+        ],
       },
     },
     '0x4d9d9aa17c3fcea05f20a87fc1991a045561167d': {
-      blockNumber: 15076447,
+      blockNumber: 16023362,
       events: {
-        Transfer: Object.keys(Array.from('0'.repeat(5))).map(
-          index => 15076447 + +index * 10,
-        ),
+        Transfer: [
+          16023362, // DepositBB
+          16024979, // WithdrawBB
+          16025083, // Harvest
+          16027838, // WithdrawAA
+          16040809, // DepositAA
+          19924419,
+        ],
       },
     },
   };
@@ -92,7 +114,12 @@ describe('IdleDao EventPool Mainnet', function () {
                     idleDaoPool!,
                     idleDaoPool!.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(idleDaoPool!, _blockNumber, poolAddress),
+                      fetchPoolState(
+                        idleDaoPool!,
+                        _blockNumber,
+                        poolAddress,
+                        logger,
+                      ),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
