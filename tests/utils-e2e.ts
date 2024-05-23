@@ -167,6 +167,8 @@ class APIParaswapSDK implements IParaSwapSDK {
 
     let priceRoute;
     if (forceRoute && forceRoute.length > 0) {
+      console.log('from: ', from);
+      console.log('to: ', to);
       const options = {
         route: forceRoute,
         amount: amount.toString(),

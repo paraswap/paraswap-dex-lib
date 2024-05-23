@@ -15,6 +15,7 @@ import { IDexHelper } from '../dex-helper';
 import { isETHAddress } from '../utils';
 import { assert } from 'ts-essentials';
 import { WethFunctions } from './weth/types';
+import { extractReturnAmountPosition } from '../executor/utils';
 
 type EtherFiData = void;
 
@@ -217,6 +218,11 @@ export class EtherFi
             srcAmount,
           ])
         : undefined,
+      returnAmountPos: extractReturnAmountPosition(
+          Interface,
+          swapFunction,
+          '', // not output name
+          )
     };
   }
 
