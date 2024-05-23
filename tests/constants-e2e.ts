@@ -181,6 +181,10 @@ export const Tokens: {
       address: '0x030ba81f1c18d280636f32af80b9aad02cf0854e',
       decimals: 18,
     },
+    aEthWETH: {
+      address: '0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8',
+      decimals: 18,
+    },
     ALPHA: {
       address: '0xa1faa113cbe53436df28ff0aee54275c13b40975',
       decimals: 18,
@@ -1249,7 +1253,7 @@ export const Holders: {
     alETH: '0x500a4f1280a0b63f47862d658b6c335cc939aaed',
     SHIBA: '0x73af3bcf944a6559933396c1577b257e2054d935',
     aEthUSDC: '0x3178490d60B5cceaA5a79FD4D9050C7405Bab80c',
-    aEthWETH: '0x645C4c0c95C1Aa6EF25d12f4a25038cA9b0C6Cc7',
+    aEthWETH: '0x931433324E6B0b5B04E3460ef3fb3f78dda3c721',
     dUSDC: '0x2FC2F705110A7F46Ce85F701d7217EF1018f01A3',
     PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
     EURA: '0xa116f421ff82a9704428259fd8cc63347127b777',

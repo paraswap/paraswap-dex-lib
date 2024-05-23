@@ -362,7 +362,7 @@ export async function testE2E(
     ? new APIParaswapSDK(network, dexKey)
     : new LocalParaswapSDK(network, dexKey, '', limitOrderProvider);
 
-  if (paraswap.initializePricing) await paraswap.initializePricing();
+  await paraswap.initializePricing?.();
 
   if (sleepMs) {
     await sleep(sleepMs);
