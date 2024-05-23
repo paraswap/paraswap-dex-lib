@@ -10,9 +10,6 @@ export const WethConfig: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       poolGasCost: WethGasCost,
     },
-    [Network.ROPSTEN]: {
-      poolGasCost: WethGasCost,
-    },
     [Network.RINKEBY]: {
       poolGasCost: WethGasCost,
     },

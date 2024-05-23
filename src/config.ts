@@ -124,34 +124,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     forceRpcFallbackDexs: [],
   },
-  [Network.ROPSTEN]: {
-    network: Network.ROPSTEN,
-    networkName: 'Ethereum Ropsten Testnet',
-    isTestnet: true,
-    mainnetNetwork: Network.MAINNET,
-    nativeTokenName: 'Ether',
-    nativeTokenSymbol: 'ETH',
-    wrappedNativeTokenAddress: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
-    hasEIP1559: true,
-    augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusRFQAddress: '0x34268C38fcbC798814b058656bC0156C7511c0E4',
-    tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
-    multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
-    privateHttpProvider: process.env.HTTP_PROVIDER_3,
-    hashFlowDisabledMMs:
-      process.env[`HASHFLOW_DISABLED_MMS_3`]?.split(',') || [],
-
-    adapterAddresses: {
-      RopstenAdapter01: '0x59b7F6258e78C3E5234bb651656EDd0e08868cd5',
-      RopstenBuyAdapter: '0x63e908A4C793a33e40254362ED1A5997a234D85C',
-    },
-    uniswapV2ExchangeRouterAddress:
-      '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-    rfqConfigs: {},
-    rpcPollingMaxAllowedStateDelayInBlocks: 5,
-    rpcPollingBlocksBackToTriggerUpdate: 3,
-    forceRpcFallbackDexs: [],
-  },
   [Network.BSC]: {
     network: Network.BSC,
     networkName: 'Binance Smart Chain Mainnet',

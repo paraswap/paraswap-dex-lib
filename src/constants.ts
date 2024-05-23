@@ -29,7 +29,6 @@ export const STATEFUL_EVENT_SUBSCRIBER_LOG_BATCH_PERIOD = 60 * 1000;
 
 export enum Network {
   MAINNET = 1,
-  ROPSTEN = 3,
   RINKEBY = 4,
   BSC = 56,
   POLYGON = 137,

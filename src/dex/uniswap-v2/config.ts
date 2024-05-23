@@ -19,20 +19,6 @@ export const Adapters: {
       },
     ],
   },
-  [Network.ROPSTEN]: {
-    [SwapSide.SELL]: [
-      {
-        name: 'RopstenAdapter01',
-        index: 0,
-      },
-    ],
-    [SwapSide.BUY]: [
-      {
-        name: 'RopstenBuyAdapter',
-        index: 1,
-      },
-    ],
-  },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
@@ -137,13 +123,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   UniswapV2: {
     [Network.MAINNET]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
-      factoryAddress: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-      initCode:
-        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
-      poolGasCost: 80 * 1000,
-      feeCode: 30,
-    },
-    [Network.ROPSTEN]: {
       factoryAddress: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
       initCode:
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
