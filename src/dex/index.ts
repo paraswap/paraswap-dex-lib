@@ -23,7 +23,6 @@ import { MStable } from './mStable';
 import { Shell } from './shell';
 import { Onebit } from './onebit';
 import { Compound } from './compound';
-import { AaveV1 } from './aave-v1/aave-v1';
 import { AaveV2 } from './aave-v2/aave-v2';
 import { AaveV3 } from './aave-v3/aave-v3';
 import { OneInchLp } from './OneInchLp';
@@ -132,7 +131,6 @@ const Dexes = [
   MDEX,
   Dfyn,
   Excalibur,
-  AaveV1,
   AaveV2,
   AaveV3,
   KyberDmm,
