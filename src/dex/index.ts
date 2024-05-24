@@ -52,7 +52,6 @@ import { VelodromeV2 } from './solidly/forks-override/velodromeV2';
 import { Aerodrome } from './solidly/forks-override/aerodrome';
 import { SpiritSwapV2 } from './solidly/forks-override/spiritSwapV2';
 import { Synthetix } from './synthetix/synthetix';
-import { Cone } from './solidly/forks-override/cone';
 import { SoliSnek } from './solidly/forks-override/solisnek';
 import { Usdfi } from './solidly/forks-override/usdfi';
 import { Equalizer } from './solidly/forks-override/equalizer';
@@ -151,7 +150,6 @@ const Dexes = [
   Velodrome,
   VelodromeV2,
   Aerodrome,
-  Cone,
   SoliSnek,
   Equalizer,
   Velocimeter,

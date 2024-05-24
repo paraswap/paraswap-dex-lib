@@ -69,7 +69,6 @@ export class Solidly extends UniswapV2 {
         'VelodromeV2',
         'Aerodrome',
         'SpiritSwapV2',
-        'Cone',
         'SolidlyV2',
         'Thena',
         'SoliSnek',
