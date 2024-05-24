@@ -120,7 +120,7 @@ export class EtherFi
 
     // if src token is WETH, we need to withdraw from weth and pass eth value on call. For other cases, we need to approve and perform call
     const isSrcTokenWeth = this.isWETH(srcToken);
-    const skipApproval = false;
+    const skipApproval = this.is_weETH(srcToken) && this.is_eETH(destToken);
 
     return this.buildSimpleParamWithoutWETHConversion(
       isSrcTokenWeth ? ETHER_ADDRESS : srcToken,

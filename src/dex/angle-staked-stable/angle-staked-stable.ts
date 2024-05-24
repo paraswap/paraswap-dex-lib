@@ -217,7 +217,7 @@ export class AngleStakedStable
               this.augustusAddress,
             ],
           );
-
+    const skipApproval = srcToken.toLowerCase() !== this.config.agToken;
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
       srcAmount,
@@ -225,6 +225,10 @@ export class AngleStakedStable
       destAmount,
       swapData,
       exchange,
+      undefined,
+      undefined,
+      undefined,
+      skipApproval,
     );
   }
 
