@@ -277,7 +277,6 @@ export type Config = {
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
-  smardexSubgraphAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 
