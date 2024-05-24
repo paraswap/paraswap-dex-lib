@@ -309,26 +309,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
-  JetSwap: {
-    [Network.BSC]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/smartcookie0501/jetswap-subgraph',
-      factoryAddress: '0x0eb58e5c8aa63314ff5547289185cc4583dfcbd5',
-      initCode:
-        '0x3125d0a15fa7af49ce234ba1cf5f931bad0504242e0e1ee9fcd7d1d7aa88c651',
-      poolGasCost: 200 * 1000,
-      feeCode: 30,
-    },
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/smartcookie0501/jetswap-subgraph-polygon',
-      factoryAddress: '0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7',
-      initCode:
-        '0x505c843b83f01afef714149e8b174427d552e1aca4834b4f9b4b525f426ff3c6',
-      poolGasCost: 200 * 1000,
-      feeCode: 10,
-    },
-  },
   KnightSwap: {
     [Network.FANTOM]: {
       subgraphURL:
