@@ -498,16 +498,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
-  StreetSwap: {
-    [Network.BSC]: {
-      // subgraphURL:
-      //   'https://subgraph.thugswap.vip/subgraphs/name/theothug/swap-subgraph',
-      factoryAddress: '0xaC653cE27E04C6ac565FD87F18128aD33ca03Ba2',
-      initCode:
-        '0x0b3961eeccfbf746d2d5c59ee3c8ae3a5dcf8dc9b0dfb6f89e1e8ca0b32b544b',
-      feeCode: 40,
-    },
-  },
   SpookySwap: {
     [Network.FANTOM]: {
       subgraphURL:

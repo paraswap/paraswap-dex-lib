@@ -309,42 +309,6 @@ describe('UniswapV2 E2E BSC', () => {
     });
   });
 
-  describe('Street Swap', () => {
-    const dexKey = 'StreetSwap';
-
-    describe('Simpleswap', () => {
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.WBNB,
-          holders.DAI,
-          '70000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('Multiswap', () => {
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.WBNB,
-          holders.DAI,
-          '70000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
-  });
-
   describe('PantherSwap', () => {
     const dexKey = 'PantherSwap';
 
