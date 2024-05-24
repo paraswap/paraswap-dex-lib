@@ -35,6 +35,14 @@ export const Tokens: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
     },
+    eETH: {
+      address: '0x35fA164735182de50811E8e2E824cFb9B6118ac2',
+      decimals: 18,
+    },
+    weETH: {
+      address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
+      decimals: 18,
+    },
     AMPL: {
       address: '0xd46ba6d942050d489dbd938a2c909a5d5039a161',
       decimals: 9,
@@ -1268,6 +1276,8 @@ export const Holders: {
     SDEX: '0xB0470cF15B22a6A32c49a7C20E3821B944A76058',
     frxETH: '0x9df2322bdAEC46627100C999E6dDdD27837fec6e',
     USDe: '0x74e6c48e667d698a4cf90665b6960a5bae39e603',
+    weETH: '0x267ed5f71ee47d3e45bb1569aa37889a2d10f91e',
+    eETH: '0x1de713F78aA5f29874bBcc95e125721F002Da7f2',
   },
   [Network.ROPSTEN]: {
     ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',

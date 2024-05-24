@@ -204,6 +204,10 @@ export class Spark
       destAmount,
       swapData,
       exchange,
+      undefined,
+      undefined,
+      undefined,
+      isSell && this.isDai(destToken),
     );
   }
 

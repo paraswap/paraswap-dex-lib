@@ -1,14 +1,18 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
-import { IDexTxBuilder } from './idex';
-import { SimpleExchange } from './simple-exchange';
-import eETHPoolABI from '../abi/etherfi/eETHPool.json';
-import weETHABI from '../abi/etherfi/weETH.json';
-import { IDexHelper } from '../dex-helper';
-import { isETHAddress } from '../utils';
+import { ETHER_ADDRESS, NULL_ADDRESS, SwapSide } from '../../constants';
+import {
+  AdapterExchangeParam,
+  Address,
+  SimpleExchangeParam,
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import { SimpleExchange } from '../simple-exchange';
+import eETHPoolABI from '../../abi/etherfi/eETHPool.json';
+import weETHABI from '../../abi/etherfi/weETH.json';
+import { IDexHelper } from '../../dex-helper';
+import { isETHAddress } from '../../utils';
 import { assert } from 'ts-essentials';
-import { WethFunctions } from './weth/types';
+import { WethFunctions } from '../weth/types';
 
 type EtherFiData = void;
 
@@ -120,7 +124,6 @@ export class EtherFi
 
     // if src token is WETH, we need to withdraw from weth and pass eth value on call. For other cases, we need to approve and perform call
     const isSrcTokenWeth = this.isWETH(srcToken);
-    const skipApproval = false;
 
     return this.buildSimpleParamWithoutWETHConversion(
       isSrcTokenWeth ? ETHER_ADDRESS : srcToken,
@@ -142,7 +145,6 @@ export class EtherFi
             values: ['0'],
           }
         : undefined,
-      skipApproval,
     );
   }
 

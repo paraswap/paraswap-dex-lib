@@ -79,6 +79,10 @@ export class Compound
       destAmount,
       swapData,
       cToken,
+      undefined,
+      undefined,
+      undefined,
+      data.fromCToken,
     );
   }
 }
