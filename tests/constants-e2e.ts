@@ -347,8 +347,6 @@ export const Tokens: {
       address: '0x2F123cF3F37CE3328CC9B5b8415f9EC5109b45e7',
       decimals: 18,
       symbol: 'bC3M',
-      address: '0x1a7e4e63778b4f12a199c062f3efdd288afcbce8',
-      decimals: 18,
     },
     stEUR: {
       address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
