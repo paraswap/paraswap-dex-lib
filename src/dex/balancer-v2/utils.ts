@@ -189,7 +189,7 @@ function isLinearPool(poolType: string) {
   );
 }
 
-function isPhantomStablePool(poolType: string) {
+export function isPhantomStablePool(poolType: string) {
   return (
     poolType === BalancerPoolTypes.StablePhantom ||
     poolType === BalancerPoolTypes.ComposableStable

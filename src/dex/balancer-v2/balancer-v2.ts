@@ -67,6 +67,7 @@ import {
 import { Adapters, BalancerConfig } from './config';
 import {
   getAllPoolsUsedInPaths,
+  isPhantomStablePool,
   isSameAddress,
   poolGetMainTokens,
   poolGetPathForTokenInOut,
@@ -1546,7 +1547,10 @@ export class BalancerV2
     context: Context,
     executor: Address,
   ): DexExchangeParam {
-    const isSingleSwap = data.swaps.length === 1;
+    const isSingleSwap =
+      data.swaps.length === 1 &&
+      !isPhantomStablePool(this.poolIdMap[data.swaps[0].poolId].poolType);
+
     const swapArgs: Parameters<typeof this.getBalancerV2SwapParam> = [
       srcToken,
       destToken,
