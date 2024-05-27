@@ -183,6 +183,45 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
             provider,
           );
         });
+
+        it('simpleSwap USDC -> ETH', async () => {
+          await testE2E(
+            tokens['USDC'],
+            tokens['ETH'],
+            holders['USDC'],
+            '100000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+      });
+
+      describe('Etherfi', () => {
+        const dexKey = 'EtherFi';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+
+        it('simpleSwap eETH -> weETH', async () => {
+          await testE2E(
+            tokens['eETH'],
+            tokens['weETH'],
+            holders['eETH'],
+            '100000000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
       });
 
       describe('BalancerV2', () => {

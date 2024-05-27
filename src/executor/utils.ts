@@ -27,6 +27,7 @@ export const extractReturnAmountPosition = (
   let curIndex = 0;
   while (curIndex < index) {
     position += RETURN_AMOUNT_POS_32;
+    curIndex ++;
   }
 
   return position;
