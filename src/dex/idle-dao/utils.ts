@@ -1,4 +1,4 @@
-import { CustomCdos } from './config';
+import { CustomCdos, AUTH_TOKEN_ENCODED, endpoints } from './config';
 import { BytesLike } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { defaultAbiCoder, Interface } from '@ethersproject/abi';
@@ -16,6 +16,8 @@ import {
 import Web3 from 'web3';
 import { IdleToken, TrancheToken } from './types';
 import FACTORY_ABI from '../../abi/idle-dao/idle-cdo-factory.json';
+import axios from 'axios';
+import { Network } from '../../constants';
 
 export const BNify = (s: any): BigNumber =>
   new BigNumber(typeof s === 'object' ? s : String(s));
@@ -80,7 +82,143 @@ async function _getIdleTokenDecimals(
   }, {});
 }
 
-export const fetchTokenList = async (
+const getDataWithAuth = async (
+  endpoint: string,
+  token: string,
+  error_callback?: Function,
+) => {
+  const config = {
+    headers: { Authorization: `Bearer ${token}` },
+  };
+
+  const data = await axios.post(endpoint, {}, config).catch(err => {
+    if (typeof error_callback === 'function') {
+      error_callback(err);
+    }
+  });
+  return data?.data;
+};
+
+export const fetchTokenList_api = async (
+  network: Network,
+  web3Provider: Web3,
+  blockNumber: number,
+  fromBlock: number,
+  factoryAddress: string,
+  cdoInterface: Interface,
+  erc20Interface: Interface,
+  multiWrapper: MultiWrapper,
+): Promise<IdleToken[]> => {
+  const AUTH_TOKEN_DECODED = atob(AUTH_TOKEN_ENCODED);
+  const data = await getDataWithAuth(endpoints[network], AUTH_TOKEN_DECODED);
+  if (!data) return [];
+
+  const deployedContract = data
+    .filter((d: any) => !!d.cdoAddress)
+    .map((d: any) => d.cdoAddress);
+
+  const calls = deployedContract.reduce(
+    (calls: MultiCallParams<any>[], cdoAddress: string) => {
+      calls.push({
+        target: cdoAddress,
+        callData: cdoInterface.encodeFunctionData('AATranche', []),
+        decodeFunction: (
+          result: MultiResult<BytesLike> | BytesLike,
+        ): TrancheToken => {
+          return {
+            cdoAddress,
+            tokenType: 'AA',
+            idleAddress: addressDecode(result),
+          };
+        },
+      });
+
+      calls.push({
+        target: cdoAddress,
+        callData: cdoInterface.encodeFunctionData('BBTranche', []),
+        decodeFunction: (
+          result: MultiResult<BytesLike> | BytesLike,
+        ): TrancheToken => {
+          return {
+            cdoAddress,
+            tokenType: 'BB',
+            idleAddress: addressDecode(result),
+          };
+        },
+      });
+
+      calls.push({
+        target: cdoAddress,
+        callData: cdoInterface.encodeFunctionData('token', []),
+        decodeFunction: (result: MultiResult<BytesLike> | BytesLike): any => {
+          return {
+            cdoAddress,
+            address: addressDecode(result),
+          };
+        },
+      });
+
+      return calls;
+    },
+    [],
+  );
+
+  const results = await multiWrapper.aggregate<Record<string, string>>(
+    calls,
+    blockNumber,
+  );
+
+  const cdosUnderlying: Record<string, string> = results.reduce(
+    (cdosUnderlying, result: any) => {
+      if (!result.address) return cdosUnderlying;
+      return {
+        ...cdosUnderlying,
+        [result.cdoAddress]: result.address,
+      };
+    },
+    {},
+  );
+
+  const idleTokenSymbolsList = await _getIdleTokenSymbols(
+    blockNumber,
+    results
+      .filter(result => !!result.tokenType)
+      .map(result => result.idleAddress),
+    erc20Interface,
+    multiWrapper,
+  );
+
+  const idleTokenDecimals = await _getIdleTokenDecimals(
+    blockNumber,
+    results.filter(result => !result.tokenType).map(result => result.address),
+    erc20Interface,
+    multiWrapper,
+  );
+
+  // console.log('idleTokenDecimals', idleTokenDecimals)
+  // console.log('cdosUnderlying', cdosUnderlying)
+
+  const output: IdleToken[] = [];
+  for (const result of results) {
+    if (result.tokenType) {
+      const idleToken: IdleToken = {
+        decimals: 18,
+        blockNumber: 0,
+        cdoAddress: result.cdoAddress,
+        idleAddress: result.idleAddress,
+        address: cdosUnderlying[result.cdoAddress],
+        idleSymbol: idleTokenSymbolsList[result.idleAddress],
+        tokenType: result.tokenType as IdleToken['tokenType'],
+      };
+      output.push(idleToken);
+    }
+  }
+
+  // console.log('tokenList', output)
+  return output;
+};
+
+export const fetchTokenList_chain = async (
   web3Provider: Web3,
   blockNumber: number,
   fromBlock: number,
@@ -104,11 +242,6 @@ export const fetchTokenList = async (
       ],
     },
   });
-
-  // console.log('deployedContracts', deployedContracts);
-  // const cdos: string[] = deployedContracts.map(
-  //   (deployedContract: any) => deployedContract.returnValues.proxy,
-  // );
 
   const cdoBlocks: Record<string, number> = deployedContracts.reduce(
     (cdoBlocks, deployedContract: any) => {

@@ -22,3 +22,13 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.BUY]: [{ name: '', index: 0 }],
   },
 };
+
+export const endpoints: Record<number, string> = {
+  [Network.MAINNET]: 'https://api.idle.finance/pools',
+  [Network.POLYGON]: 'https://api-polygon.idle.finance/pools',
+  [Network.OPTIMISM]: 'https://api-optimism.idle.finance/pools',
+  [Network.ZKEVM]: 'https://api-zkevm.idle.finance/pools',
+};
+
+export const AUTH_TOKEN_ENCODED =
+  'ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SmpiR2xsYm5SSlpDSTZJa0Z3Y0RZaUxDSnBZWFFpT2pFMk56QXlNemMxTWpkOS5rbnNtekVOSm40Yk5Ea0ZCM3h2eWZyaDBwVlFLTHY0NW9JanJQNHdRTU5N';

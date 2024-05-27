@@ -25,7 +25,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { Config, Adapters } from './config';
 import { IdleDaoEventPool } from './idle-dao-pool';
-import { fetchTokenList } from './utils';
+import { fetchTokenList_api } from './utils';
 import {
   getIdleTokenIfIdleDaoPair,
   setTokensOnNetwork,
@@ -114,7 +114,8 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
 
   async getTokensList(blockNumber: number): Promise<Record<string, IdleToken>> {
     if (!this.tokenList) {
-      this.tokenList = await fetchTokenList(
+      this.tokenList = await fetchTokenList_api(
+        this.network,
         this.dexHelper.web3Provider,
         blockNumber,
         this.config.fromBlock,
@@ -162,7 +163,8 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       return;
     }
 
-    this.tokenList = await fetchTokenList(
+    this.tokenList = await fetchTokenList_api(
+      this.network,
       this.dexHelper.web3Provider,
       blockNumber,
       this.config.fromBlock,
