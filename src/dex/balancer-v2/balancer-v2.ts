@@ -1410,7 +1410,7 @@ export class BalancerV2
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
-    const isSingleSwap = data.swaps.length === 1 && this.network === 137; // FIXME: release cond when all chains redeployed
+    const isSingleSwap = data.swaps.length === 1;
 
     const balancerParams = isSingleSwap
       ? this.getBalancerV2SwapParam(
