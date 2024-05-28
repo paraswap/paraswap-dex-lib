@@ -58,5 +58,8 @@ export const DISABLED_MAX_UNIT_APPROVAL_TOKENS: Partial<
   Record<Network, string[]>
 > = {
   // USDT don't allow approve for MAX_UINT if current approval is not 0
-  [Network.MAINNET]: ['0xdac17f958d2ee523a2206206994597c13d831ec7'],
+  [Network.MAINNET]: [
+    '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    '0xd101dcc414f310268c37eeb4cd376ccfa507f571',
+  ],
 };
