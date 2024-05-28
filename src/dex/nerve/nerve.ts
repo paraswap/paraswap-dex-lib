@@ -388,7 +388,6 @@ export class Nerve
           ? extractReturnAmountPosition(
               this.nervePoolIface,
               NervePoolFunctions.swap,
-              '', // no output name
             )
           : undefined,
     };

@@ -121,7 +121,6 @@ export class Bancor
           ? extractReturnAmountPosition(
               this.exchangeRouterInterface,
               swapMethod,
-              '', // no output name
             )
           : undefined,
     };

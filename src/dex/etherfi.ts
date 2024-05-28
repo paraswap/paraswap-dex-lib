@@ -218,11 +218,7 @@ export class EtherFi
             srcAmount,
           ])
         : undefined,
-      returnAmountPos: extractReturnAmountPosition(
-          Interface,
-          swapFunction,
-          '', // not output name
-          )
+      returnAmountPos: extractReturnAmountPosition(Interface, swapFunction)
     };
   }
 

@@ -4,7 +4,7 @@ import { RETURN_AMOUNT_POS_0, RETURN_AMOUNT_POS_32 } from './constants';
 export const extractReturnAmountPosition = (
   iface: Interface,
   functionName: string | FunctionFragment,
-  outputName: string,
+  outputName = '',
 ): number => {
   const func =
     typeof functionName === 'string'

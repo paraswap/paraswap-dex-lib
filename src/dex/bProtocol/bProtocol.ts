@@ -101,7 +101,6 @@ export class BProtocol
           ? extractReturnAmountPosition(
               this.exchangeRouterInterface,
               swapFunction,
-              '', // no output name
             )
           : undefined,
     };

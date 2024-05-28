@@ -106,7 +106,6 @@ export class Onebit
           ? extractReturnAmountPosition(
               this.exchangeRouterInterface,
               swapFunction,
-              '', // no output name
             )
           : undefined,
     };

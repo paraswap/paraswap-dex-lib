@@ -129,7 +129,6 @@ export class StablePool
           ? extractReturnAmountPosition(
               this.exchangeRouterInterface,
               StablePoolFunctions.swap,
-              '', // no output name
             )
           : undefined,
     };

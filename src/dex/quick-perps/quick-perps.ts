@@ -249,7 +249,6 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
           ? extractReturnAmountPosition(
               iface,
               functionName,
-              '', // no output name
             )
           : undefined,
     };

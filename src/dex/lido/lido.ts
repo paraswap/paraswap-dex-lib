@@ -103,7 +103,6 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
           ? extractReturnAmountPosition(
               this.stETHInterface,
               stETHFunctions.submit,
-              '', // no output name
             )
           : undefined,
     };

@@ -237,7 +237,6 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
           ? extractReturnAmountPosition(
               Vault.interface,
               'swap',
-              '', // no output name
             )
           : undefined,
     };

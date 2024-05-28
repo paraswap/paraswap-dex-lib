@@ -269,7 +269,6 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
           ? extractReturnAmountPosition(
               WstETH.wstETHIface,
               swapFunction,
-              '', // no output name
             )
           : undefined,
     };
