@@ -74,15 +74,14 @@ describe('IdleDao EventPool Mainnet', function () {
         ],
       },
     },
-    '0x4d9d9aa17c3fcea05f20a87fc1991a045561167d': {
-      blockNumber: 16023362,
+    '0x7b713b1cb6eafd4061064581579ffccf7df21545': {
+      blockNumber: 18985108,
       events: {
         Transfer: [
-          16023362, // DepositBB
-          16024979, // WithdrawBB
-          16025083, // Harvest
-          16027838, // WithdrawAA
-          16040809, // DepositAA
+          18985108, // DepositBB
+          18997082, // WithdrawBB
+          19013537, // Harvest
+          19346397, // DepositAA
           19924419,
         ],
       },
