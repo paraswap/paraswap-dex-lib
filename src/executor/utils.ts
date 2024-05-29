@@ -11,7 +11,9 @@ export const extractReturnAmountPosition = (
       ? iface.getFunction(functionName)
       : functionName;
   const outputs = func.outputs || [];
-  const index = outputs.findIndex(({ name }) => name === outputName || outputName === '' && name === null);
+  const index = outputs.findIndex(
+    ({ name }) => name === outputName || (outputName === '' && name === null),
+  );
 
   if (index < 0) {
     throw new Error(
@@ -26,8 +28,16 @@ export const extractReturnAmountPosition = (
   let position = RETURN_AMOUNT_POS_0;
   let curIndex = 0;
   while (curIndex < index) {
+    const output = outputs[curIndex];
+
+    if (output.type.includes('[]') || output.type.includes('struct')) {
+      throw new Error(
+        `extractReturnAmountPosition doesn't support outputs of type array or struct. Please define returnAmountPos manually for this case.`,
+      );
+    }
+
     position += RETURN_AMOUNT_POS_32;
-    curIndex ++;
+    curIndex++;
   }
 
   return position;
