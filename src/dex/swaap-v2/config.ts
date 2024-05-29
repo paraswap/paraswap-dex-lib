@@ -8,6 +8,8 @@ export const SwaapV2Config: DexConfigMap<DexParams> = {
     [Network.POLYGON]: {},
     [Network.ARBITRUM]: {},
     [Network.BASE]: {},
+    [Network.OPTIMISM]: {},
+    [Network.BSC]: {},
   },
 };
 
@@ -25,4 +27,6 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 8 }],
   },
   [Network.BASE]: {},
+  [Network.OPTIMISM]: {},
+  [Network.BSC]: {},
 };
