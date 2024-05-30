@@ -217,6 +217,10 @@ getDexParam(
           exchangeData: swapData,
           targetExchange: this.config.wooPPV2Address,
           transferSrcTokenBeforeSwap: this.config.wooPPV2Address,
+          returnAmountPos:
+            side === SwapSide.SELL
+              ? extractReturnAmountPosition(ifaces.PPV2, 'swap', 'realToAmount')
+              : undefined,
         };
     }
 
