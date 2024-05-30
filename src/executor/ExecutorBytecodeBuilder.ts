@@ -30,7 +30,27 @@ const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
 } = ethers;
 
-export abstract class ExecutorBytecodeBuilder {
+export type SingleSwapCallDataParams<T> = {
+  priceRoute: OptimalRate;
+  exchangeParams: DexExchangeBuildParam[];
+  index: number;
+  flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag };
+  sender: string;
+  maybeWethCallData?: DepositWithdrawReturn;
+} & T;
+
+export type DexCallDataParams<T> = {
+  priceRoute: OptimalRate;
+  routeIndex: number;
+  swapIndex: number;
+  swapExchangeIndex: number;
+  exchangeParams: DexExchangeBuildParam[];
+  exchangeParamIndex: number;
+  isLastSwap: boolean;
+  flag: Flag;
+} & T;
+
+export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
   type!: Executors;
   erc20Interface: Interface;
 
@@ -38,7 +58,7 @@ export abstract class ExecutorBytecodeBuilder {
     this.erc20Interface = new Interface(ERC20ABI);
   }
 
-  protected abstract buildSimpleSwapFlags(
+  protected buildSimpleSwapFlags(
     priceRoute: OptimalRate,
     exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
@@ -46,9 +66,18 @@ export abstract class ExecutorBytecodeBuilder {
     swapExchangeIndex: number,
     exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
-  ): { dexFlag: Flag; approveFlag: Flag };
+  ): {
+    dexFlag: Flag;
+    approveFlag: Flag;
+  } {
+    return {
+      dexFlag:
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP,
+      approveFlag: 0,
+    };
+  }
 
-  protected abstract buildMultiMegaSwapFlags(
+  protected buildMultiMegaSwapFlags(
     priceRoute: OptimalRate,
     exchangeParams: DexExchangeBuildParam[],
     routeIndex: number,
@@ -56,7 +85,16 @@ export abstract class ExecutorBytecodeBuilder {
     swapExchangeIndex: number,
     exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
-  ): { dexFlag: Flag; approveFlag: Flag };
+  ): {
+    dexFlag: Flag;
+    approveFlag: Flag;
+  } {
+    return {
+      dexFlag:
+        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP,
+      approveFlag: 0,
+    };
+  }
 
   public abstract buildByteCode(
     priceRoute: OptimalRate,
@@ -67,18 +105,15 @@ export abstract class ExecutorBytecodeBuilder {
 
   public abstract getAddress(): string;
 
-  protected abstract buildDexCallData(
-    priceRoute: OptimalRate,
-    routeIndex: number,
-    swapIndex: number,
-    swapExchangeIndex: number,
-    exchangeParams: DexExchangeBuildParam[],
-    exchangeParamIndex: number,
-    isLastSwap: boolean,
-    flag: Flag,
-    swapExchange?: OptimalSwapExchange<any>,
-    maybeWethCallData?: DepositWithdrawReturn,
-  ): string;
+  protected buildSingleSwapCallData(
+    params: SingleSwapCallDataParams<S>,
+  ): string {
+    return '0x';
+  }
+
+  protected buildDexCallData(params: DexCallDataParams<D>): string {
+    return '0x';
+  }
 
   protected buildApproveCallData(
     spender: string,

@@ -5,11 +5,13 @@ import { Executor01BytecodeBuilder } from './Executor01BytecodeBuilder';
 import { Executor02BytecodeBuilder } from './Executor02BytecodeBuilder';
 import { Executors, RouteExecutionType } from './types';
 import { Executor03BytecodeBuilder } from './Executor03BytecodeBuilder';
+import { WETHBytecodeBuilder, isSingleWrapRoute } from './WETHBytecodeBuilder';
 
 export class ExecutorDetector {
   private executor01BytecodeBuilder: ExecutorBytecodeBuilder;
   private executor02BytecodeBuilder: ExecutorBytecodeBuilder;
   private executor03BytecodeBuilder: ExecutorBytecodeBuilder;
+  private wethBytecodeBuilder: ExecutorBytecodeBuilder;
 
   protected routeExecutionTypeToExecutorMap: Record<
     SwapSide,
@@ -40,6 +42,8 @@ export class ExecutorDetector {
     this.executor03BytecodeBuilder = new Executor03BytecodeBuilder(
       this.dexHelper,
     );
+
+    this.wethBytecodeBuilder = new WETHBytecodeBuilder(this.dexHelper);
   }
 
   protected getRouteExecutionType(priceRoute: OptimalRate): RouteExecutionType {
@@ -81,8 +85,15 @@ export class ExecutorDetector {
 
     throw new Error('Route type is not supported yet');
   }
+  detectSpecialExecutor(priceRoute: OptimalRate): Executors | null {
+    if (isSingleWrapRoute(priceRoute)) return Executors.WETH;
+    return null;
+  }
 
   getExecutorByPriceRoute(priceRoute: OptimalRate): Executors {
+    const specialExecutor = this.detectSpecialExecutor(priceRoute);
+    if (specialExecutor) return specialExecutor;
+
     const routeExecutionType = this.getRouteExecutionType(priceRoute);
     const executorName =
       this.routeExecutionTypeToExecutorMap[priceRoute.side][routeExecutionType];
@@ -110,6 +121,8 @@ export class ExecutorDetector {
         return this.executor02BytecodeBuilder;
       case Executors.THREE:
         return this.executor03BytecodeBuilder;
+      case Executors.WETH:
+        return this.wethBytecodeBuilder;
       default:
         throw new Error(`${executorName} is not supported`);
     }

@@ -9,18 +9,34 @@ import {
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { Executors, Flag, SpecialDex } from './types';
-import { BYTES_96_LENGTH, ZEROS_28_BYTES } from './constants';
-import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
+import { BYTES_96_LENGTH } from './constants';
+import {
+  DexCallDataParams,
+  ExecutorBytecodeBuilder,
+  SingleSwapCallDataParams,
+} from './ExecutorBytecodeBuilder';
 import { assert } from 'ts-essentials';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
 } = ethers;
 
+export type Executor03SingleSwapCallDataParams = {
+  swap: OptimalSwap;
+};
+
+export type Executor03DexCallDataParams = {
+  swapExchange?: OptimalSwapExchange<any>;
+  maybeWethCallData?: DepositWithdrawReturn;
+};
+
 /**
  * Class to build bytecode for Executor03 - simpleSwap (SINGLE_STEP) with 100% on a path and multiSwap with 100% amounts on each path (HORIZONTAL_SEQUENCE)
  */
-export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
+export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
+  Executor03SingleSwapCallDataParams,
+  Executor03DexCallDataParams
+> {
   type = Executors.THREE;
   /**
    * Executor03 Flags:
@@ -98,30 +114,33 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
   }
 
   protected buildSingleSwapCallData(
-    priceRoute: OptimalRate,
-    exchangeParams: DexExchangeBuildParam[],
-    index: number,
-    flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag },
-    sender: string,
-    maybeWethCallData: DepositWithdrawReturn | undefined,
-    swap: OptimalSwap,
+    params: SingleSwapCallDataParams<Executor03SingleSwapCallDataParams>,
   ): string {
+    const {
+      priceRoute,
+      exchangeParams,
+      index,
+      flags,
+      maybeWethCallData,
+      swap,
+    } = params;
+    if (!swap) throw new Error('Swap is not provided for single swap calldata');
+
     let swapCallData = '';
 
     const curExchangeParam = exchangeParams[index];
 
-    const dexCallData = this.buildDexCallData(
+    const dexCallData = this.buildDexCallData({
       priceRoute,
-      0,
-      0,
-      index,
+      routeIndex: 0,
+      swapIndex: 0,
+      swapExchangeIndex: index,
       exchangeParams,
-      index,
-      true,
-      flags.dexes[index],
-      undefined,
+      exchangeParamIndex: index,
+      isLastSwap: true,
+      flag: flags.dexes[index],
       maybeWethCallData,
-    );
+    });
 
     swapCallData = hexConcat([dexCallData]);
 
@@ -220,17 +239,17 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
   }
 
   protected buildDexCallData(
-    priceRoute: OptimalRate,
-    routeIndex: number,
-    swapIndex: number,
-    swapExchangeIndex: number,
-    exchangeParams: DexExchangeBuildParam[],
-    exchangeParamIndex: number,
-    isLastSwap: boolean,
-    flag: Flag,
-    _?: OptimalSwapExchange<any>,
-    maybeWethCalldata?: DepositWithdrawReturn,
+    params: DexCallDataParams<Executor03DexCallDataParams>,
   ): string {
+    const {
+      priceRoute,
+      routeIndex,
+      swapIndex,
+      exchangeParams,
+      exchangeParamIndex,
+      flag,
+      maybeWethCallData,
+    } = params;
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
 
@@ -254,7 +273,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
     if (
       isETHAddress(swap.destToken) &&
       exchangeParam.needWrapNative &&
-      maybeWethCalldata?.withdraw
+      maybeWethCallData?.withdraw
     ) {
       exchangeData = this.addTokenAddressToCallData(
         exchangeData,
@@ -354,15 +373,15 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder {
       (acc, ep, index) =>
         hexConcat([
           acc,
-          this.buildSingleSwapCallData(
+          this.buildSingleSwapCallData({
             priceRoute,
             exchangeParams,
             index,
             flags,
             sender,
             maybeWethCallData,
-            swapWithOrderedExchanges,
-          ),
+            swap: swapWithOrderedExchanges,
+          }),
         ]),
       '0x',
     );

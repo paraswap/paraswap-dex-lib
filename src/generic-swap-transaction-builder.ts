@@ -216,6 +216,9 @@ export class GenericSwapTransactionBuilder {
   ) {
     const executorName =
       this.executorDetector.getExecutorByPriceRoute(priceRoute);
+    const executionContractAddress =
+      this.getExecutionContractAddress(priceRoute);
+
     const bytecodeBuilder =
       this.executorDetector.getBytecodeBuilder(executorName);
     const bytecode = await this.buildCalls(
@@ -238,7 +241,7 @@ export class GenericSwapTransactionBuilder {
     });
 
     const swapParams = [
-      bytecodeBuilder.getAddress(),
+      executionContractAddress,
       [
         priceRoute.srcToken,
         priceRoute.destToken,

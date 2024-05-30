@@ -482,6 +482,41 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
           );
         });
       });
+
+      describe('DAI -> WETH -> eETH via UniswapV2, UniswapV3 and EtherFi', () => {
+        const dexKeys = ['UniswapV2', 'UniswapV3', 'EtherFi'];
+
+        const tokenASymbol: string = 'DAI';
+        const tokenBSymbol: string = 'eETH';
+        const tokenAAmount: string = `${1e18}00000`;
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            slippage,
+            2000,
+            false,
+            [
+              '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+              '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+              '0x35fa164735182de50811e8e2e824cfb9b6118ac2',
+            ],
+          );
+        });
+      });
     });
 
     describe('MegaSwap', () => {

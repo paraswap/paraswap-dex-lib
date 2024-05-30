@@ -1411,7 +1411,19 @@ export class BalancerV2
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
-    const isSingleSwap = data.swaps.length === 1 && this.network === 137; // FIXME: release cond when all chains redeployed
+    const balancerBatchSwapParam = this.getBalancerV2BatchSwapParam(
+      srcToken,
+      destToken,
+      data,
+      side,
+      this.dexHelper.config.data.augustusV6Address!,
+      this.dexHelper.config.data.augustusV6Address!,
+      side === SwapSide.BUY,
+    );
+
+    // after getBalancerV2BatchSwapParam runs we may get more swaps so we can't decide on single vs batch before resolving it
+    const [, swaps] = balancerBatchSwapParam;
+    const isSingleSwap = swaps.length === 1;
 
     const balancerParams = isSingleSwap
       ? this.getBalancerV2SwapParam(
@@ -1422,15 +1434,7 @@ export class BalancerV2
           this.dexHelper.config.data.augustusV6Address!,
           this.dexHelper.config.data.augustusV6Address!,
         )
-      : this.getBalancerV2BatchSwapParam(
-          srcToken,
-          destToken,
-          data,
-          side,
-          this.dexHelper.config.data.augustusV6Address!,
-          this.dexHelper.config.data.augustusV6Address!,
-          side === SwapSide.BUY,
-        );
+      : balancerBatchSwapParam;
 
     const swapParams: BalancerV2DirectParamV6 = [
       fromAmount,
