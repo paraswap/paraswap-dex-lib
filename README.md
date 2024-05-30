@@ -239,6 +239,7 @@ In order to ensure correctness of encoding please make use of these parameters:
 - `targetExchange`: the contract against which we swap
 - `spender`: a contract that we need to approve in order to swap against `targetExchange`. If not set, then the spender will be `targetExchange`
 - `returnAmountPos`: the offset position inside the return values from an external call to a dex where we expect our swap return value (output amount) to be.
+  There is a helper function `extractReturnAmountPosition` which could be used to automatically calculate return amount position.
   If the DEX swap function doesn't support outputs then `undefined` should be passed.
   For example:
     1. swap(uint256,uint256) returns (uint256 returnAmount) -> return amount pos will be 0
