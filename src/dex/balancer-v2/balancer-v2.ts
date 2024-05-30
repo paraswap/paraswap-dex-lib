@@ -1551,24 +1551,31 @@ export class BalancerV2
     context: Context,
     executor: Address,
   ): DexExchangeParam {
-    const isSingleSwap =
-      data.swaps.length === 1 &&
-      !isPhantomStablePool(this.poolIdMap[data.swaps[0].poolId].poolType);
-
-    const swapArgs: Parameters<typeof this.getBalancerV2SwapParam> = [
+    const balancerBatchSwapParam = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
       side,
       recipient,
-      !isSingleSwap && side === SwapSide.SELL ? NULL_ADDRESS : executor, // executor inferred contract side in batch sell
-    ];
+      side === SwapSide.SELL ? NULL_ADDRESS : executor,
+    );
+
+    const [, swaps] = balancerBatchSwapParam;
+    const isSingleSwap = swaps.length === 1;
 
     if (isSingleSwap) {
-      const params = this.getBalancerV2SwapParam(...swapArgs);
+      const balancerSwapParam = this.getBalancerV2SwapParam(
+        srcToken,
+        destToken,
+        data,
+        side,
+        recipient,
+        executor,
+      );
+
       const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
         'swap',
-        params,
+        balancerSwapParam,
       );
 
       return {
@@ -1580,16 +1587,13 @@ export class BalancerV2
       };
     }
 
-    const params = this.getBalancerV2BatchSwapParam(...swapArgs);
-
     let exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',
-      params,
+      balancerBatchSwapParam,
     );
     let specialDexFlag = SpecialDex.DEFAULT;
 
     if (side === SwapSide.SELL) {
-      const swaps = params[1];
       const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
         return acc.add(swap.amount);
       }, BigNumber.from(0));
