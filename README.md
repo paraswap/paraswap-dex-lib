@@ -238,7 +238,8 @@ In order to ensure correctness of encoding please make use of these parameters:
   If the DEX swap function doesn't support outputs then `undefined` should be passed.
   For example:
     1. swap(uint256,uint256) returns (uint256 returnAmount) -> return amount pos will be 0
-    2. swap2(uint256,uint256) return (uint256 timestamp, uint256 returnAmount) -> return amount pos will be 32
+    2. swap2(uint256,uint256) returns (uint256 timestamp, uint256 returnAmount) -> return amount pos will be 32
+    3. swap3(uint256,uint256) -> return amount pos will be undefined
 
 To verify the validity of the encoding, we recommend looking at [this link](#writing-testing) and using Tenderly to validate transactions. If the encoding is done incorrectly at the Interface level, you will see errors in your testing logs.
 
