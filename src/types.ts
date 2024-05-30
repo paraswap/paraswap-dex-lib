@@ -285,6 +285,7 @@ export type Config = {
   wrappedNativeTokenSymbol: string;
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
+  uncompressorAddress?: Address;
   augustusAddress: Address;
   augustusV6Address?: Address;
   augustusRFQAddress: Address;
