@@ -263,6 +263,7 @@ export class AngleStakedStable
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos: undefined,
     };
   }
 

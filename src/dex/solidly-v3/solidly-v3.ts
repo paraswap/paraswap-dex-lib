@@ -724,6 +724,7 @@ export class SolidlyV3
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: data.poolAddress,
+      returnAmountPos: undefined,
     };
   }
 

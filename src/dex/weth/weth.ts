@@ -170,6 +170,7 @@ export class Weth
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.address,
+      returnAmountPos: undefined,
     };
   }
 

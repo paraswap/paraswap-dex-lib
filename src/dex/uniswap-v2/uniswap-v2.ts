@@ -914,6 +914,7 @@ export class UniswapV2
       targetExchange,
       specialDexFlag,
       transferSrcTokenBeforeSwap,
+      returnAmountPos: undefined,
     };
   }
 

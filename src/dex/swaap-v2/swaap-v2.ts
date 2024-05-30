@@ -476,6 +476,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       exchangeData: callData,
       specialDexFlag: SpecialDex.SWAP_ON_SWAAP_V2_SINGLE,
       targetExchange: router,
+      returnAmountPos: undefined,
     };
   }
 
