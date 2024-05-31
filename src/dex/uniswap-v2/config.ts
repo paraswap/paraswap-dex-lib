@@ -349,17 +349,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 20,
     },
   },
-  Polycat: {
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/polycatfi/polycat-finance-amm',
-      factoryAddress: '0x477Ce834Ae6b7aB003cCe4BC4d8697763FF456FA',
-      initCode:
-        '0x3cad6f9e70e13835b4f07e5dd475f25a109450b22811d0437da51e66c161255a',
-      poolGasCost: 100 * 1000,
-      feeCode: 240,
-    },
-  },
   PantherSwap: {
     [Network.BSC]: {
       subgraphURL:
