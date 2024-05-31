@@ -518,16 +518,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
-  SafeSwap: {
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/yfdaifinance/safeswapmatic',
-      factoryAddress: '0x5be44d6C5634161CdaDcC2bc35389325aa493e83',
-      initCode:
-        '0x58fc9539cd75d0d89841441f8663accbd9ad1135045be3b3d9028441eb1f20c4',
-      feeCode: 30,
-    },
-  },
   ZeroSwap: {
     [Network.AVALANCHE]: {
       subgraphURL:
