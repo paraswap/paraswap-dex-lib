@@ -135,7 +135,7 @@ export abstract class SimpleRouterBase<RouterParam>
             }
           }
 
-          const simpleParams = await dex.getSimpleParam(
+          const simpleParams = await dex.getSimpleParam?.(
             _src,
             _dest,
             _srcAmount,
@@ -157,15 +157,18 @@ export abstract class SimpleRouterBase<RouterParam>
       simpleExchangeDataList,
       srcAmountWethToDeposit,
       destAmountWethToWithdraw,
-    } = await rawSimpleParams.reduce<{
+    } = rawSimpleParams.reduce<{
       simpleExchangeDataList: SimpleExchangeParam[];
       srcAmountWethToDeposit: bigint;
       destAmountWethToWithdraw: bigint;
     }>(
       (acc, se) => {
-        acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
-        acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
-        acc.simpleExchangeDataList.push(se.simpleParams);
+        if (se.simpleParams) {
+          acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
+          acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
+          acc.simpleExchangeDataList.push(se.simpleParams);
+        }
+
         return acc;
       },
       {
