@@ -9,7 +9,6 @@ import { Address, Logger } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState, IdleToken } from './types';
-import { getIdleTokenByAddress, getTokensByNetwork } from './tokens';
 
 jest.setTimeout(50 * 1000);
 
@@ -20,7 +19,6 @@ async function fetchPoolState(
   logger: Logger,
 ): Promise<PoolState> {
   const state = await idleDaoPool.generateState(blockNumber);
-  // logger.debug('fetchPoolState', blockNumber, poolAddress, state);
   return state;
 }
 

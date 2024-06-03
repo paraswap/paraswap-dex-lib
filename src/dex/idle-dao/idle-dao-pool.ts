@@ -170,12 +170,6 @@ export class IdleDaoEventPool extends StatefulEventSubscriber<PoolState> {
 
     // Update pools with the new state
     if (poolsState) {
-      // this.logger.debug(
-      //   'Get pools state for CDO pools',
-      //   blockNumber,
-      //   this.idleToken.cdoAddress,
-      //   poolsState,
-      // );
       Object.keys(poolsState.value as PoolsState).forEach(
         (idleAddress: string) => {
           const poolState = poolsState?.value?.[idleAddress];

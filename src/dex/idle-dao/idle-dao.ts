@@ -1,4 +1,4 @@
-import { AsyncOrSync } from 'ts-essentials';
+import { assert } from 'ts-essentials';
 import { Interface } from '@ethersproject/abi';
 import {
   Token,
@@ -61,6 +61,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   private factory: Interface;
 
   private tokenList: IdleToken[] = [];
+  private idleDaoAuthToken: string;
 
   protected pollingPool?: IdleDaoPollingPool;
 
@@ -78,6 +79,14 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     this.cdo = new Interface(CDO_ABI);
     this.factory = new Interface(FACTORY_ABI);
     this.pollingManager = StatePollingManager.getInstance(dexHelper);
+
+    const idleDaoAuthToken = dexHelper.config.data.idleDaoAuthToken;
+    assert(
+      idleDaoAuthToken !== undefined,
+      'idleDaoAuthToken auth token is not specified with env variable',
+    );
+
+    this.idleDaoAuthToken = idleDaoAuthToken;
   }
 
   getEventPool(idleAddress: string): IdleDaoEventPool | null {
@@ -125,6 +134,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
         this.cdo,
         this.erc20Interface,
         this.dexHelper.multiWrapper,
+        this.idleDaoAuthToken,
       );
     }
 
@@ -150,9 +160,10 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       TOKEN_LIST_CACHE_KEY,
       TOKEN_LIST_LOCAL_TTL_SECONDS,
     );
+
     if (cachedTokenList !== null) {
       const tokens: IdleToken[] = JSON.parse(cachedTokenList);
-      const networkTokens = setTokensOnNetwork(this.network, tokens);
+      setTokensOnNetwork(this.network, tokens);
 
       await Promise.all(
         tokens.map((idleToken: IdleToken) =>
@@ -172,6 +183,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       this.cdo,
       this.erc20Interface,
       this.dexHelper.multiWrapper,
+      this.idleDaoAuthToken,
     );
 
     await this.dexHelper.cache.setex(
@@ -182,7 +194,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       JSON.stringify(this.tokenList),
     );
 
-    const networkTokens = setTokensOnNetwork(this.network, this.tokenList);
+    setTokensOnNetwork(this.network, this.tokenList);
 
     await Promise.all(
       this.tokenList.map((idleToken: IdleToken) =>
@@ -191,7 +203,6 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     );
 
     // Initialize polling pool
-    // this.logger.debug('_initializePollingPool', this.pollingPool);
     if (this.pollingPool === undefined) {
       this._initializePollingPool(this.tokenList);
     }
