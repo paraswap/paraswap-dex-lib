@@ -36,7 +36,7 @@ export class StablePool
   extends SimpleExchange
   implements IDexTxBuilder<StablePoolData, StablePoolParam>
 {
-  static dexKeys = ['nerve', 'ironv2', 'snowball', 'axial', 'zyberswapstable'];
+  static dexKeys = ['nerve', 'ironv2', 'snowball', 'axial'];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
