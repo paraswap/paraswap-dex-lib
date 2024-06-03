@@ -332,17 +332,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 20,
     },
   },
-  Olive: {
-    [Network.AVALANCHE]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/olive-rose/olivecash',
-      factoryAddress: '0x4Fe4D8b01A56706Bc6CaD26E8C59D0C7169976b3',
-      initCode:
-        '0xb7145948956af92afd2ae97eff039ada60998237282c1687ca23ce1ad5e1d282',
-      poolGasCost: 80 * 1000,
-      feeCode: 20,
-    },
-  },
   PantherSwap: {
     [Network.BSC]: {
       subgraphURL:
