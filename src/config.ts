@@ -29,6 +29,7 @@ type BaseConfig = {
   rpcPollingBlocksBackToTriggerUpdate: number;
   hashFlowAuthToken?: string;
   hashFlowDisabledMMs: string[];
+  idleDaoAuthToken?: string;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
   smardexSubgraphAuthToken?: string;
@@ -66,6 +67,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
+    idleDaoAuthToken: process.env.API_KEY_IDLEDAO_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
     uniswapV3EventLoggingSampleRate: 0,
@@ -433,6 +435,7 @@ export function generateConfig(network: number): Config {
       baseConfig.rpcPollingBlocksBackToTriggerUpdate,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
     smardexSubgraphAuthToken: baseConfig.smardexSubgraphAuthToken,
+    idleDaoAuthToken: baseConfig.idleDaoAuthToken,
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
     dexalotAuthToken: baseConfig.dexalotAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
