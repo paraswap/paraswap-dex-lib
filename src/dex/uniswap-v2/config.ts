@@ -553,15 +553,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
-  Thorus: {
-    [Network.AVALANCHE]: {
-      factoryAddress: '0xa98ea6356A316b44Bf710D5f9b6b4eA0081409Ef',
-      initCode:
-        '0xc6b4cc64699496d0514c783d6aca5142c3b61e327524db01cabfa4248e430e49',
-      poolGasCost: 120 * 1000,
-      feeCode: 10,
-    },
-  },
   Verse: {
     [Network.MAINNET]: {
       subgraphURL:
