@@ -227,7 +227,6 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       this.logger,
     );
 
-    // this.logger.debug('IDLEDAO - initializeAllPendingPools');
     this.pollingManager.initializeAllPendingPools();
   }
 
