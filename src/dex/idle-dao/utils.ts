@@ -1,4 +1,4 @@
-import { CustomCdos, AUTH_TOKEN_ENCODED, endpoints } from './config';
+import { CustomCdos, endpoints } from './config';
 import { BytesLike } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { defaultAbiCoder, Interface } from '@ethersproject/abi';
@@ -18,6 +18,7 @@ import { IdleToken, TrancheToken } from './types';
 import FACTORY_ABI from '../../abi/idle-dao/idle-cdo-factory.json';
 import axios from 'axios';
 import { Network } from '../../constants';
+import { IDexHelper } from '../../dex-helper';
 
 export const BNify = (s: any): BigNumber =>
   new BigNumber(typeof s === 'object' ? s : String(s));
@@ -101,15 +102,14 @@ const getDataWithAuth = async (
 
 export const fetchTokenList_api = async (
   network: Network,
-  web3Provider: Web3,
+  dexHelper: IDexHelper,
   blockNumber: number,
-  fromBlock: number,
-  factoryAddress: string,
   cdoInterface: Interface,
   erc20Interface: Interface,
   multiWrapper: MultiWrapper,
 ): Promise<IdleToken[]> => {
-  const AUTH_TOKEN_DECODED = atob(AUTH_TOKEN_ENCODED);
+  const idleDaoAuthToken = dexHelper.config.data.idleDaoAuthToken;
+  const AUTH_TOKEN_DECODED = atob(idleDaoAuthToken!);
   const data = await getDataWithAuth(endpoints[network], AUTH_TOKEN_DECODED);
   if (!data) return [];
 
