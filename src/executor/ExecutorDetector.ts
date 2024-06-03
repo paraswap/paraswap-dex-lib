@@ -85,6 +85,7 @@ export class ExecutorDetector {
 
     throw new Error('Route type is not supported yet');
   }
+
   detectSpecialExecutor(priceRoute: OptimalRate): Executors | null {
     if (isSingleWrapRoute(priceRoute)) return Executors.WETH;
     return null;
