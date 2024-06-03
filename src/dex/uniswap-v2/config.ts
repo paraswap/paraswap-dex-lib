@@ -292,12 +292,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       poolGasCost: 80 * 1000,
       feeCode: 30,
     },
-    [Network.BASE]: {
-      factoryAddress: '0xfbb4E52FEcc90924c79F980eb24a9794ae4aFFA4',
-      initCode: '0x', // deprecated
-      poolGasCost: 80 * 1000,
-      feeCode: 30,
-    },
   },
   JulSwap: {
     [Network.BSC]: {
