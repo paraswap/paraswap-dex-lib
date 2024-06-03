@@ -37,6 +37,7 @@ import FACTORY_ABI from '../../abi/idle-dao/idle-cdo-factory.json';
 import CDO_ABI from '../../abi/idle-dao/idle-cdo.json';
 import { IdleDaoPollingPool } from './idle-dao-pooling-pool';
 import { ObjWithUpdateInfo } from '../../lib/stateful-rpc-poller/types';
+import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
 
 export const TOKEN_LIST_CACHE_KEY = 'token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60;
@@ -63,6 +64,8 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
 
   protected pollingPool?: IdleDaoPollingPool;
 
+  protected pollingManager: StatePollingManager;
+
   constructor(
     readonly network: Network,
     readonly dexKey: string,
@@ -74,6 +77,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     this.logger = dexHelper.getLogger(dexKey);
     this.cdo = new Interface(CDO_ABI);
     this.factory = new Interface(FACTORY_ABI);
+    this.pollingManager = StatePollingManager.getInstance(dexHelper);
   }
 
   getEventPool(idleAddress: string): IdleDaoEventPool | null {
@@ -116,10 +120,8 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     if (!this.tokenList) {
       this.tokenList = await fetchTokenList_api(
         this.network,
-        this.dexHelper.web3Provider,
+        this.dexHelper,
         blockNumber,
-        this.config.fromBlock,
-        this.config.factoryAddress,
         this.cdo,
         this.erc20Interface,
         this.dexHelper.multiWrapper,
@@ -165,10 +167,8 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
 
     this.tokenList = await fetchTokenList_api(
       this.network,
-      this.dexHelper.web3Provider,
+      this.dexHelper,
       blockNumber,
-      this.config.fromBlock,
-      this.config.factoryAddress,
       this.cdo,
       this.erc20Interface,
       this.dexHelper.multiWrapper,
@@ -191,7 +191,10 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     );
 
     // Initialize polling pool
-    this._initializePollingPool(this.tokenList);
+    // this.logger.debug('_initializePollingPool', this.pollingPool);
+    if (this.pollingPool === undefined) {
+      this._initializePollingPool(this.tokenList);
+    }
   }
 
   // Returns the list of contract adapters (name and index)
@@ -200,14 +203,21 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
+  getIdentifier() {
+    return `${this.dexKey}_idledaov1`;
+  }
+
   private _initializePollingPool(idleTokens: IdleToken[]) {
     this.pollingPool = new IdleDaoPollingPool(
       this.dexKey,
-      this.dexKey,
+      this.getIdentifier(),
       this.dexHelper,
       idleTokens,
       this.logger,
     );
+
+    // this.logger.debug('IDLEDAO - initializeAllPendingPools');
+    this.pollingManager.initializeAllPendingPools();
   }
 
   private _getPoolIdentifier(srcToken: Token, destToken: Token): string {
@@ -442,10 +452,6 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       await this.initializePricing(blockNumber);
     }
     idleTokens = getTokensByNetwork(this.network);
-
-    if (this.pollingPool === undefined) {
-      this._initializePollingPool(idleTokens!);
-    }
 
     const state = await this.pollingPool!.getState();
 
