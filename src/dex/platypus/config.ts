@@ -51,6 +51,26 @@ export const PlatypusConfig: DexConfigMap<DexParams> = {
           name: 'Factory Pool TSD',
           oracleType: PlatypusOracleType.None,
         },
+        {
+          address: '0x8B4A45da5B0705Ae4f47EBeFC180C099345cF57e',
+          name: 'Alt Pool yyAVAX',
+          oracleType: PlatypusOracleType.None,
+        },
+        {
+          address: '0xDeD29DF6b2193B885F45B5F5027ed405291A96C1',
+          name: 'Alt Pool ankrAVAX',
+          oracleType: PlatypusOracleType.None,
+        },
+        {
+          address: '0xb3393f4e609c504da770ebc968540784cc4e016c',
+          name: 'Alt Pool ankrETH',
+          oracleType: PlatypusOracleType.None,
+        },
+        {
+          address: '0x81E63d0EEBA2D85609A6b206737e98e39B888F4C',
+          name: 'Alt Pool axlUSDC',
+          oracleType: PlatypusOracleType.None,
+        },
       ],
     },
   },
