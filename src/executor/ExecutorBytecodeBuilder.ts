@@ -25,6 +25,7 @@ import {
 import { Executors, Flag, SpecialDex } from './types';
 import { MAX_UINT, Network } from '../constants';
 import { DexExchangeBuildParam, DexExchangeParam } from '../types';
+import { ExecutorDetector } from './ExecutorDetector';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -54,7 +55,10 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
   type!: Executors;
   erc20Interface: Interface;
 
-  constructor(protected dexHelper: IDexHelper) {
+  constructor(
+    protected dexHelper: IDexHelper,
+    protected executorDetector: ExecutorDetector,
+  ) {
     this.erc20Interface = new Interface(ERC20ABI);
   }
 

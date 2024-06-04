@@ -35,18 +35,21 @@ export class ExecutorDetector {
   constructor(protected dexHelper: IDexHelper) {
     this.executor01BytecodeBuilder = new Executor01BytecodeBuilder(
       this.dexHelper,
+      this,
     );
     this.executor02BytecodeBuilder = new Executor02BytecodeBuilder(
       this.dexHelper,
+      this,
     );
     this.executor03BytecodeBuilder = new Executor03BytecodeBuilder(
       this.dexHelper,
+      this,
     );
 
-    this.wethBytecodeBuilder = new WETHBytecodeBuilder(this.dexHelper);
+    this.wethBytecodeBuilder = new WETHBytecodeBuilder(this.dexHelper, this);
   }
 
-  protected getRouteExecutionType(priceRoute: OptimalRate): RouteExecutionType {
+  public getRouteExecutionType(priceRoute: OptimalRate): RouteExecutionType {
     if (
       priceRoute.bestRoute.length === 1 &&
       priceRoute.bestRoute[0].percent === 100 &&
