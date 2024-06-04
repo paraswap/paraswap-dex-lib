@@ -9,7 +9,7 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
 import { DeepReadonly } from 'ts-essentials';
-import { configEUR } from './constants';
+import { configEUR, configUSD } from './constants';
 
 jest.setTimeout(50 * 1000);
 
@@ -29,7 +29,8 @@ describe('AngleTransmuter EventPool Mainnet', () => {
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let angleTransmuterPool: AngleTransmuterEventPool;
+  let angleTransmuterPoolEUR: AngleTransmuterEventPool;
+  let angleTransmuterPoolUSD: AngleTransmuterEventPool;
 
   // poolAddress -> EventMappings
 
@@ -81,31 +82,20 @@ describe('AngleTransmuter EventPool Mainnet', () => {
   const eventsToTestUSD: Record<Address, EventMappings> = {
     //Transmuter Events
     '0x222222fD79264BBE280b4986F6FEfBC3524d0137': {
-      FeesSet: [19539192, 19539193, 19539198, 19539199],
+      FeesSet: [19539198, 19539199],
       RedemptionCurveParamsSet: [],
-      OracleSet: [19539189, 19539191, 19539197],
+      OracleSet: [],
       Swap: [
-        19609442, 19609442, 19612088, 19612720, 19612970, 19613233, 19613417,
-        19613466, 19614093, 19615163, 19615653, 19616187, 19616247, 19616257,
-        19616459, 19616597, 19616723, 19616850, 19616966, 19616990, 19617295,
-        19617327, 19617327, 19617335, 19617394, 19617406, 19617508, 19617521,
-        19617543, 19618077, 19618185, 19618395, 19619660, 19619853, 19620424,
-        19620631, 19620917, 19620950, 19621140, 19621187, 19621308, 19622224,
-        19622628, 19622951, 19622974, 19623084, 19623835, 19624153, 19624153,
-        19624236, 19624376, 19624955, 19625166, 19625524, 19625679, 19627173,
-        19627831, 19628073, 19628437, 19629497, 19630262, 19630452, 19630453,
-        19630569, 19630846, 19630998, 19631045, 19631072, 19631089, 19631246,
-        19631277, 19631526, 19631561, 19631603, 19631653, 19631772, 19631838,
-        19632250, 19633153, 19633215, 19633259, 19633531, 19633556, 19633605,
-        19634664, 19634767, 19635043, 19635866, 19636522, 19636596, 19637181,
-        19637803, 19637913, 19638541, 19639245, 19639420, 19639420, 19639995,
-        19640181, 19640895,
+        19628073, 19628437, 19629497, 19630262, 19630452, 19630569, 19630846,
+        19630998, 19631045, 19631072, 19631526, 19631561, 19631603, 19631653,
+        19632250, 19633153, 19633531, 19633556, 19633605, 19634664, 19635866,
+        19636522, 19636596, 19637181, 19637803, 19637913, 19638541, 19640895,
       ],
       Redeemed: [],
       ReservesAdjusted: [],
-      CollateralAdded: [19539190, 19539196],
+      CollateralAdded: [],
       CollateralRevoked: [],
-      CollateralWhitelistStatusUpdated: [19539202],
+      CollateralWhitelistStatusUpdated: [],
       WhitelistStatusToggled: [],
     },
     // Chainlink
@@ -127,16 +117,6 @@ describe('AngleTransmuter EventPool Mainnet', () => {
     // Morpho
     '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB': {
       UpdateLastTotalAssets: [
-        19581667, 19582915, 19585628, 19587407, 19588157, 19588208, 19590069,
-        19590733, 19590797, 19592697, 19593362, 19593473, 19594011, 19595306,
-        19596519, 19597364, 19599063, 19599206, 19602087, 19602936, 19603096,
-        19603429, 19608399, 19608426, 19610964, 19612913, 19617893, 19618624,
-        19619754, 19620051, 19621535, 19623267, 19624153, 19624164, 19629126,
-        19630421, 19630643, 19630671, 19631025, 19633145, 19637639, 19638537,
-        19638655, 19639050, 19639147, 19639164, 19639420, 19641771, 19642216,
-        19643013, 19644465, 19646888, 19648977, 19649555, 19649742, 19651107,
-        19651169, 19651577, 19652313, 19652647, 19657982, 19660275, 19662862,
-        19667407, 19669210, 19669302, 19670406, 19674048, 19676127, 19677576,
         19680251, 19680544, 19681017, 19682815, 19689659, 19689880, 19692533,
         19697311, 19697903, 19698704, 19698867, 19701099, 19701428, 19702068,
         19703302, 19703569, 19704999, 19705931, 19705954, 19706402, 19706567,
@@ -144,20 +124,12 @@ describe('AngleTransmuter EventPool Mainnet', () => {
         19720560, 19722127,
       ],
       Deposit: [
-        19582915, 19587407, 19588157, 19588208, 19590797, 19592697, 19593362,
-        19594011, 19599063, 19602087, 19603096, 19610964, 19612913, 19618624,
-        19620051, 19624153, 19629126, 19630421, 19630643, 19630671, 19633145,
-        19638537, 19638655, 19639050, 19639147, 19639420, 19652647, 19657982,
-        19660275, 19670406, 19674048, 19677576, 19689880, 19692533, 19697311,
         19697903, 19698704, 19698867, 19701099, 19701428, 19702068, 19703302,
         19703569, 19705931, 19705954, 19706402, 19706567, 19708213, 19708713,
         19708727, 19713229, 19714392, 19720091, 19720560, 19722127, 19723842,
         19724873, 19724886, 19727258, 19727832, 19727836, 19727900,
       ],
       Withdraw: [
-        19581667, 19585628, 19590069, 19590733, 19593473, 19595306, 19596519,
-        19597364, 19599206, 19602936, 19603429, 19608399, 19608426, 19617893,
-        19619754, 19621535, 19623267, 19624164, 19631025, 19637639, 19639164,
         19641771, 19642216, 19643013, 19644465, 19646888, 19648977, 19649555,
         19649742, 19651107, 19651169, 19651577, 19652313, 19662862, 19667407,
         19669210, 19669302, 19676127, 19680251, 19680544, 19681017, 19682815,
@@ -167,12 +139,19 @@ describe('AngleTransmuter EventPool Mainnet', () => {
   };
 
   beforeEach(async () => {
-    angleTransmuterPool = new AngleTransmuterEventPool(
-      dexKey,
+    angleTransmuterPoolEUR = new AngleTransmuterEventPool(
+      `${dexKey}_EUR`,
       network,
       dexHelper,
       logger,
       configEUR,
+    );
+    angleTransmuterPoolUSD = new AngleTransmuterEventPool(
+      `${dexKey}_EUR`,
+      network,
+      dexHelper,
+      logger,
+      configUSD,
     );
   });
 
@@ -185,11 +164,11 @@ describe('AngleTransmuter EventPool Mainnet', () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async () => {
                   await testEventSubscriber(
-                    angleTransmuterPool,
-                    angleTransmuterPool.addressesSubscribed,
+                    angleTransmuterPoolEUR,
+                    angleTransmuterPoolEUR.addressesSubscribed,
                     (_blockNumber: number) =>
                       fetchPoolState(
-                        angleTransmuterPool,
+                        angleTransmuterPoolEUR,
                         _blockNumber,
                         poolAddress,
                       ),
@@ -215,11 +194,11 @@ describe('AngleTransmuter EventPool Mainnet', () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async () => {
                   await testEventSubscriber(
-                    angleTransmuterPool,
-                    angleTransmuterPool.addressesSubscribed,
+                    angleTransmuterPoolUSD,
+                    angleTransmuterPoolUSD.addressesSubscribed,
                     (_blockNumber: number) =>
                       fetchPoolState(
-                        angleTransmuterPool,
+                        angleTransmuterPoolUSD,
                         _blockNumber,
                         poolAddress,
                       ),

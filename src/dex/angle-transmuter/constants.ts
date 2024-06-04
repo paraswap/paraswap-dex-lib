@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { bigIntify } from '../../utils';
+import { ChainlinkConfig, PoolConfig, PythConfig } from './types';
 
 export const CBETH = '0xBe9895146f7AF43049ca1c1AE358B0541Ea49704';
 export const RETH = '0xae78736Cd615f374D3085123A210448E74Fc6393';
@@ -7,7 +8,7 @@ export const STETH = '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84';
 export const SFRXETH = '0xac3E018457B222d93114458476f3E3416Abbe38F';
 export const BLOCK_UPGRADE_ORACLE = 19567142;
 
-export const configEUR = {
+export const configEUR: PoolConfig = {
   stablecoin: {
     address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',
     decimals: 18,
@@ -50,7 +51,7 @@ export const configEUR = {
   },
 };
 
-export const configUSD = {
+export const configUSD: PoolConfig = {
   stablecoin: {
     address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
     decimals: 18,
@@ -62,6 +63,7 @@ export const configUSD = {
     '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
   ],
   oracles: {
+    backed: {} as ChainlinkConfig,
     chainlink: {
       '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6': {
         proxy: '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6',
@@ -74,7 +76,7 @@ export const configUSD = {
         decimals: 8,
       },
     },
-    redstone: {},
+    redstone: {} as ChainlinkConfig,
     morpho: {
       '0x025106374196586E8BC91eE8818dD7B0Efd2B78B': {
         baseVault: '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB',
@@ -88,6 +90,6 @@ export const configUSD = {
         scaleFactor: bigIntify('1000000000000000000'),
       },
     },
-    pyth: {},
+    pyth: {} as PythConfig,
   },
 };

@@ -45,6 +45,7 @@ import { BLOCK_UPGRADE_ORACLE } from './constants';
 import { MorphoOracleEventPool } from './morphoOracle';
 import { bigIntify } from '../../utils';
 import { MorphoVaultSubscriber } from './morphoVault';
+import _ from 'lodash';
 
 export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
   public transmuter: Contract;
@@ -138,12 +139,15 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       {},
     );
 
-    const pythListener = new PythSubscriber<PoolState>(
-      config.oracles.pyth.proxy,
-      config.oracles.pyth.ids,
-      lens<DeepReadonly<PoolState>>().oracles.pyth,
-      dexHelper.getLogger(`Pyth for ${parentName}-${network}`),
-    );
+    let pythListener: PythSubscriber<PoolState>[] = [];
+    if (!_.isEmpty(config.oracles.pyth)) {
+      pythListener[0] = new PythSubscriber<PoolState>(
+        config.oracles.pyth.proxy,
+        config.oracles.pyth.ids,
+        lens<DeepReadonly<PoolState>>().oracles.pyth,
+        dexHelper.getLogger(`Pyth for ${parentName}-${network}`),
+      );
+    }
 
     const transmuterListener = new TransmuterSubscriber(
       config.stablecoin.address,
@@ -164,7 +168,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         ...Object.values(redstoneMap),
         ...Object.values(morphoMap),
         transmuterListener,
-        pythListener,
+        ...pythListener,
       ],
       {
         stablecoin: config.stablecoin,
