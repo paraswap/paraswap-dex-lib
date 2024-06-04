@@ -1,3 +1,5 @@
+import { AxiosResponse } from 'axios';
+
 export type Method =
   | 'get'
   | 'GET'
@@ -55,4 +57,10 @@ export interface IRequestWrapper {
   ): Promise<T>;
 
   request<T = any, R = Response<T>>(config: RequestConfig): Promise<R>;
+
+  querySubgraph<T = any>(
+    subgraphId: string,
+    data: any,
+    timeout?: number,
+  ): Promise<AxiosResponse<T>>;
 }

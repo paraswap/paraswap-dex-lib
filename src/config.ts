@@ -494,6 +494,7 @@ export function generateConfig(network: number): Config {
     dexalotAuthToken: baseConfig.dexalotAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
+    apiKeyTheGraph: process.env.API_KEY_THE_GRAPH || '',
   };
 }
 

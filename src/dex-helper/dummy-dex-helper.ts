@@ -5,7 +5,7 @@ import {
   EventSubscriber,
   IRequestWrapper,
 } from './index';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Address, LoggerConstructor, Token } from '../types';
 // import { Contract } from '@ethersproject/contracts';
 import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
@@ -191,6 +191,14 @@ class DummyCache implements ICache {
 }
 
 export class DummyRequestWrapper implements IRequestWrapper {
+  private apiKeyTheGraph?: string;
+
+  constructor(apiKeyTheGraph?: string) {
+    if (apiKeyTheGraph) {
+      this.apiKeyTheGraph = apiKeyTheGraph;
+    }
+  }
+
   async get(
     url: string,
     timeout?: number,
@@ -229,6 +237,22 @@ export class DummyRequestWrapper implements IRequestWrapper {
 
   request<T = any, R = Response<T>>(config: RequestConfig<any>): Promise<R> {
     return axios.request(config);
+  }
+
+  async querySubgraph<T>(
+    subgraphId: string,
+    data: { query: string; variables?: Record<string, any> },
+    timeout = 30000,
+  ): Promise<AxiosResponse<T>> {
+    if (!subgraphId || !data.query || !this.apiKeyTheGraph)
+      throw new Error('Invalid TheGraph params');
+
+    const response = await axios.post<T>(
+      `https://gateway-arbitrum.network.thegraph.com/api/${this.apiKeyTheGraph}/subgraphs/id/${subgraphId}`,
+      data,
+      { timeout },
+    );
+    return response;
   }
 }
 
@@ -275,7 +299,7 @@ export class DummyDexHelper implements IDexHelper {
   constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
-    this.httpRequest = new DummyRequestWrapper();
+    this.httpRequest = new DummyRequestWrapper(this.config.data.apiKeyTheGraph);
     this.provider = new StaticJsonRpcProvider(
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
       network,
