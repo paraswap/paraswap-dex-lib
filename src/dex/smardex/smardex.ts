@@ -725,14 +725,15 @@ export class Smardex
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    // going to be deprecated
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), limit },
       },
       SUBGRAPH_TIMEOUT,
-      { 'x-api-key': this.dexHelper.config.data.smardexSubgraphAuthToken! },
+      // { 'x-api-key': this.dexHelper.config.data.smardexSubgraphAuthToken! },
     );
 
     if (!(data && data.pools0 && data.pools1))

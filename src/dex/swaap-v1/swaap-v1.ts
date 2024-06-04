@@ -353,7 +353,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
@@ -416,7 +416,7 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
     const variables = {
       count: MAX_POOL_CNT,
     };
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: SUBGRAPH_FETCH_ALL_POOOLS_RQ, variables },
       SUBGRAPH_TIMEOUT,

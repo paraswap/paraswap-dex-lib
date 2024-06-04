@@ -97,7 +97,7 @@ export class Ramses extends Solidly {
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
@@ -124,7 +124,7 @@ export class Ramses extends Solidly {
         }
       }`;
 
-    const { data: tokensData } = await this.dexHelper.httpRequest.post(
+    const { data: tokensData } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query: tokensQuery,

@@ -110,8 +110,8 @@ export class BalancerV1
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(_blockNumber: number) {
-    const { data } = await this.dexHelper.httpRequest.post<{
-      data: { pools: PoolInfo[] };
+    const { data } = await this.dexHelper.httpRequest.querySubgraph<{
+      pools: PoolInfo[];
     }>(
       this.config.subgraphURL,
       { query: fetchAllPoolsQuery },
@@ -538,17 +538,15 @@ export class BalancerV1
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post<{
-      data: {
-        pools: {
-          id: Address;
-          liquidity: FractionAsString;
-          tokens: {
-            address: Address;
-            decimals: number;
-          }[];
+    const { data } = await this.dexHelper.httpRequest.querySubgraph<{
+      pools: {
+        id: Address;
+        liquidity: FractionAsString;
+        tokens: {
+          address: Address;
+          decimals: number;
         }[];
-      };
+      }[];
     }>(this.config.subgraphURL, { query, variables }, SUBGRAPH_TIMEOUT);
 
     if (!(data && data.pools))

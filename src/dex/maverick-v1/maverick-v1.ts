@@ -138,7 +138,7 @@ export class MaverickV1
     this.logger.info(
       `Fetching ${this.dexKey}_${this.network} Pools from subgraph`,
     );
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchAllPools, count: MAX_POOL_CNT },
       SUBGRAPH_TIMEOUT,
@@ -471,11 +471,10 @@ export class MaverickV1
     timeout = 30000,
   ) {
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        timeout,
       );
       return res.data;
     } catch (e) {

@@ -141,7 +141,7 @@ export class KyberDmm
       }
     `;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.config.subgraphURL,
       {
         query,
