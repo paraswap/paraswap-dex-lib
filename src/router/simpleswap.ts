@@ -163,9 +163,10 @@ export abstract class SimpleRouterBase<RouterParam>
       destAmountWethToWithdraw: bigint;
     }>(
       (acc, se) => {
+        acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
+        acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
+        // V6 doesn't have simpleParams
         if (se.simpleParams) {
-          acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
-          acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
           acc.simpleExchangeDataList.push(se.simpleParams);
         }
 
