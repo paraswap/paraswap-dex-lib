@@ -21,7 +21,7 @@ export class ExecutorDetector {
       [RouteExecutionType.SINGLE_STEP]: Executors.ONE, // simpleSwap via Executor01
       [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE, // multiSwap via Executor01
       [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO, // simpleSwap with percentage on a path via Executor02
-      [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with pecentages on paths via Executor02
+      [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with percentages on paths via Executor02
       // megaSwap via Executor02
       [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]:
         Executors.TWO,
@@ -35,18 +35,15 @@ export class ExecutorDetector {
   constructor(protected dexHelper: IDexHelper) {
     this.executor01BytecodeBuilder = new Executor01BytecodeBuilder(
       this.dexHelper,
-      this,
     );
     this.executor02BytecodeBuilder = new Executor02BytecodeBuilder(
       this.dexHelper,
-      this,
     );
     this.executor03BytecodeBuilder = new Executor03BytecodeBuilder(
       this.dexHelper,
-      this,
     );
 
-    this.wethBytecodeBuilder = new WETHBytecodeBuilder(this.dexHelper, this);
+    this.wethBytecodeBuilder = new WETHBytecodeBuilder(this.dexHelper);
   }
 
   public getRouteExecutionType(priceRoute: OptimalRate): RouteExecutionType {

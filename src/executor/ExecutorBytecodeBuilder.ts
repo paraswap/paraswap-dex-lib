@@ -55,10 +55,7 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
   type!: Executors;
   erc20Interface: Interface;
 
-  constructor(
-    protected dexHelper: IDexHelper,
-    protected executorDetector: ExecutorDetector,
-  ) {
+  constructor(protected dexHelper: IDexHelper) {
     this.erc20Interface = new Interface(ERC20ABI);
   }
 
