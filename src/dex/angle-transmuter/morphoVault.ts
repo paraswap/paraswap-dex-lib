@@ -40,6 +40,8 @@ export class MorphoVaultSubscriber<State> extends PartialEventSubscriber<
       switch (parsed.name) {
         case 'UpdateLastTotalAssets':
           return this.handleUpdateLastTotalAssets(parsed, _state);
+        case 'AccrueInterest':
+          return this.handleAccrueFee(parsed, _state);
         case 'Deposit':
           return this.handleDeposit(parsed, _state);
         case 'Withdraw':
@@ -101,6 +103,14 @@ export class MorphoVaultSubscriber<State> extends PartialEventSubscriber<
     state: MorphoVaultState,
   ): DeepReadonly<MorphoVaultState> | null {
     state.totalAssets = bigIntify(event.args.updatedTotalAssets);
+    return state;
+  }
+
+  handleAccrueFee(
+    event: ethers.utils.LogDescription,
+    state: MorphoVaultState,
+  ): DeepReadonly<MorphoVaultState> | null {
+    state.totalSupply += bigIntify(event.args.feeShares);
     return state;
   }
 
