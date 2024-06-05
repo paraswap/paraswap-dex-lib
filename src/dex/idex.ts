@@ -3,6 +3,7 @@ import {
   Address,
   SimpleExchangeParam,
   AdapterExchangeParam,
+  DexExchangeParam,
   TxInfo,
   NumberAsString,
   Token,
@@ -17,6 +18,11 @@ import {
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
+
+export type Context = {
+  isGlobalSrcToken: boolean;
+  isGlobalDestToken: boolean;
+};
 
 export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   needWrapNative: boolean;
@@ -68,6 +74,18 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     side: SwapSide,
   ): AsyncOrSync<SimpleExchangeParam>;
 
+  getDexParam?(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: ExchangeData,
+    side: SwapSide,
+    context: Context,
+    executorAddress: Address,
+  ): AsyncOrSync<DexExchangeParam>;
+
   // Returns params required by direct swap method.
   // Only Dexes which have a direct method should implement this
   // Used if there is a possibility for direct swap (Eg. UniswapV2,
@@ -86,6 +104,23 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
+    contractMethod?: string,
+  ): TxInfo<DirectParam>;
+
+  // Same as above but for V6
+  getDirectParamV6?(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
     contractMethod?: string,
   ): TxInfo<DirectParam>;
 }

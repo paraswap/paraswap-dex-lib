@@ -1,6 +1,4 @@
-import {
-  UniswapV3Factory,
-} from '../../uniswap-v3-factory';
+import { UniswapV3Factory } from '../../uniswap-v3-factory';
 import { LogDescription } from 'ethers/lib/utils';
 import { Interface } from '@ethersproject/abi';
 import FactoryABI from '../../../../abi/velodrome-slipstream/VelodromeSlipstreamFactory.abi.json';

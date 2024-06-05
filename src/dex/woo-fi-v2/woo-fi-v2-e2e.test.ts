@@ -27,9 +27,10 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
   ]);
@@ -130,7 +131,7 @@ describe('WooFiV2 E2E', () => {
     );
   });
 
-  describe('Polygon', () => {
+  describe('Polygon_V6', () => {
     const network = Network.POLYGON;
 
     const baseATokenSymbol = 'WMATIC';

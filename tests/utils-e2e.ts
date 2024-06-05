@@ -20,6 +20,7 @@ import {
   MAX_UINT,
   Network,
   ContractMethod,
+  NULL_ADDRESS,
 } from '../src/constants';
 import {
   OptimalRate,
@@ -32,14 +33,31 @@ import {
 import Erc20ABI from '../src/abi/erc20.json';
 import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
-import { DummyDexHelper, DummyLimitOrderProvider } from '../src/dex-helper';
-import { constructSimpleSDK, SimpleFetchSDK } from '@paraswap/sdk';
+import {
+  DummyDexHelper,
+  DummyLimitOrderProvider,
+  IDexHelper,
+} from '../src/dex-helper';
+import {
+  AddressOrSymbol,
+  constructSimpleSDK,
+  SimpleFetchSDK,
+} from '@paraswap/sdk';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
-import { GIFTER_ADDRESS, Holders, Tokens } from './constants-e2e';
+import {
+  GIFTER_ADDRESS,
+  Holders,
+  NativeTokenSymbols,
+  Tokens,
+  WrappedNativeTokenSymbols,
+} from './constants-e2e';
 import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
+import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
+import { DexAdapterService, PricingHelper } from '../src';
+import { v4 as uuid } from 'uuid';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -96,13 +114,41 @@ const MULTISIG: { [nid: number]: string } = {
 
 class APIParaswapSDK implements IParaSwapSDK {
   paraSwap: SimpleFetchSDK;
+  dexKeys: string[];
+  dexHelper: IDexHelper;
+  pricingHelper: PricingHelper;
+  transactionBuilder: GenericSwapTransactionBuilder;
+  dexAdapterService: DexAdapterService;
 
-  constructor(protected network: number, protected dexKey: string) {
+  constructor(
+    protected network: number,
+    dexKeys: string | string[],
+    rpcUrl: string,
+  ) {
+    this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.paraSwap = constructSimpleSDK({
       chainId: network,
       axios,
       apiURL: testingEndpoint,
     });
+    this.dexHelper = new DummyDexHelper(this.network, rpcUrl);
+
+    this.dexAdapterService = new DexAdapterService(
+      this.dexHelper,
+      this.network,
+    );
+    this.transactionBuilder = new GenericSwapTransactionBuilder(
+      this.dexAdapterService,
+    );
+    this.pricingHelper = new PricingHelper(
+      this.dexAdapterService,
+      this.dexHelper.getLogger,
+    );
+  }
+
+  async initializePricing() {
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    await this.pricingHelper.initialize(blockNumber, this.dexKeys);
   }
 
   async getPrices(
@@ -110,26 +156,51 @@ class APIParaswapSDK implements IParaSwapSDK {
     to: Token,
     amount: bigint,
     side: SwapSide,
-    contractMethod: ContractMethod,
-    _poolIdentifiers?: string[],
+    // contractMethod: ContractMethod,
+    contractMethod: any,
+    _poolIdentifiers?: { [key: string]: string[] | null } | null,
+    transferFees?: TransferFeeParams,
+    forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate> {
     if (_poolIdentifiers)
       throw new Error('PoolIdentifiers is not supported by the API');
 
-    const priceRoute = await this.paraSwap.swap.getRate({
-      srcToken: from.address,
-      destToken: to.address,
-      side,
-      amount: amount.toString(),
-      options: {
-        includeDEXS: [this.dexKey],
-        // TODO: Improve typing
-        includeContractMethods: [contractMethod as any],
-        partner: 'any',
-      },
-      srcDecimals: from.decimals,
-      destDecimals: to.decimals,
-    });
+    let priceRoute;
+    if (forceRoute && forceRoute.length > 0) {
+      const options = {
+        route: forceRoute,
+        amount: amount.toString(),
+        side,
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+        ...transferFees,
+      };
+      priceRoute = await this.paraSwap.swap.getRateByRoute(options);
+    } else {
+      const options = {
+        srcToken: from.address,
+        destToken: to.address,
+        side,
+        amount: amount.toString(),
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+        ...transferFees,
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+      };
+      priceRoute = await this.paraSwap.swap.getRate(options);
+    }
+
     return priceRoute as OptimalRate;
   }
 
@@ -139,30 +210,64 @@ class APIParaswapSDK implements IParaSwapSDK {
     userAddress: Address,
   ): Promise<TxObject> {
     const minMaxAmount = _minMaxAmount.toString();
-    const swapParams = await this.paraSwap.swap.buildTx(
-      {
-        srcToken: priceRoute.srcToken,
-        srcDecimals: priceRoute.srcDecimals,
-        destDecimals: priceRoute.destDecimals,
-        destToken: priceRoute.destToken,
-        srcAmount:
-          priceRoute.side === SwapSide.SELL
-            ? priceRoute.srcAmount
-            : minMaxAmount,
-        destAmount:
-          priceRoute.side === SwapSide.SELL
-            ? minMaxAmount
-            : priceRoute.destAmount,
-        priceRoute,
-        userAddress,
-        partner: 'paraswap.io',
-      },
-      {
-        ignoreChecks: true,
-      },
-    );
-    return swapParams as TxObject;
+    let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
+
+    return await this.transactionBuilder.build({
+      priceRoute,
+      minMaxAmount: minMaxAmount.toString(),
+      userAddress,
+      partnerAddress: NULL_ADDRESS,
+      partnerFeePercent: '0',
+      deadline: deadline.toString(),
+      uuid: uuid(),
+    });
   }
+}
+
+function send1WeiTo(token: Address, to: Address, network: Network) {
+  const tokens = Tokens[network];
+
+  const tokenSymbol = Object.keys(tokens).find(tokenSymbol => {
+    const curToken = tokens[tokenSymbol];
+    return curToken.address === token;
+  });
+
+  const holders = Holders[network];
+  const holder = holders[tokenSymbol!];
+
+  return {
+    from: holder,
+    to: token,
+    data: erc20Interface.encodeFunctionData('transfer', [to, '1']),
+    value: '0',
+  };
+}
+
+function checkBalanceOf(token: Address, holder: Address) {
+  return {
+    from: NULL_ADDRESS,
+    to: token,
+    data: erc20Interface.encodeFunctionData('balanceOf', [holder]),
+    value: '0',
+  };
+}
+
+function allowAugustusV6(
+  tokenAddress: Address,
+  holderAddress: Address,
+  network: Network,
+) {
+  const augustusV6Address = generateConfig(network).augustusV6Address;
+
+  return {
+    from: holderAddress,
+    to: tokenAddress,
+    data: erc20Interface.encodeFunctionData('approve', [
+      augustusV6Address,
+      MAX_UINT,
+    ]),
+    value: '0',
+  };
 }
 
 function allowTokenTransferProxyParams(
@@ -269,17 +374,18 @@ export async function testE2E(
   senderAddress: Address,
   _amount: string,
   swapSide = SwapSide.SELL,
-  dexKey: string,
+  dexKeys: string | string[],
   contractMethod: ContractMethod,
   network: Network = Network.MAINNET,
   _0: Provider,
-  poolIdentifiers?: string[],
+  poolIdentifiers?: { [key: string]: string[] | null } | null,
   limitOrderProvider?: DummyLimitOrderProvider,
   transferFees?: TransferFeeParams,
   // Specified in BPS: part of 10000
   slippage?: number,
   sleepMs?: number,
   replaceTenderlyWithEstimateGas?: boolean,
+  forceRoute?: AddressOrSymbol[],
 ) {
   const amount = BigInt(_amount);
 
@@ -292,8 +398,13 @@ export async function testE2E(
     const allowanceTx = await ts.simulate(
       allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
     );
+    const augustusV6Allowance = await ts.simulate(
+      allowAugustusV6(srcToken.address, senderAddress, network),
+    );
     if (!allowanceTx.success) console.log(allowanceTx.url);
+    if (!augustusV6Allowance.success) console.log(augustusV6Allowance.url);
     expect(allowanceTx!.success).toEqual(true);
+    expect(augustusV6Allowance!.success).toEqual(true);
   }
 
   if (deployedTestContractAddress) {
@@ -359,8 +470,8 @@ export async function testE2E(
   const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = useAPI
-    ? new APIParaswapSDK(network, dexKey)
-    : new LocalParaswapSDK(network, dexKey, '', limitOrderProvider);
+    ? new APIParaswapSDK(network, dexKeys, '')
+    : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
@@ -383,9 +494,65 @@ export async function testE2E(
       contractMethod,
       poolIdentifiers,
       transferFees,
+      forceRoute,
     );
 
+    console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
+
+    // send 1 wei of src token to AugustusV6 and Executors
+    // const config = generateConfig(network);
+    // const augustusV6Address = config.augustusV6Address!;
+    // const executorsAddresses = Object.values(config.executorsAddresses!);
+    // const addresses = [...executorsAddresses, augustusV6Address];
+
+    // for await (const a of addresses) {
+    //   const src =
+    //     srcToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : srcToken.address.toLowerCase();
+    //   const dest =
+    //     destToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : destToken.address.toLowerCase();
+    //
+    //   if (priceRoute.bestRoute[0].swaps.length > 0) {
+    //     const intermediateToken =
+    //       priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
+    //       ETHER_ADDRESS
+    //         ? config.wrappedNativeTokenAddress
+    //         : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
+    //
+    //     await ts.simulate(send1WeiTo(intermediateToken, a, network));
+    //   }
+    //
+    //   await ts.simulate(send1WeiTo(src, a, network));
+    //   await ts.simulate(send1WeiTo(dest, a, network));
+    // }
+    //
+    // for await (const a of addresses) {
+    //   const src =
+    //     srcToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : srcToken.address.toLowerCase();
+    //   const dest =
+    //     destToken.address.toLowerCase() === ETHER_ADDRESS
+    //       ? config.wrappedNativeTokenAddress
+    //       : destToken.address.toLowerCase();
+    //
+    //   if (priceRoute.bestRoute[0].swaps.length > 0) {
+    //     const intermediateToken =
+    //       priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
+    //       ETHER_ADDRESS
+    //         ? config.wrappedNativeTokenAddress
+    //         : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
+    //
+    //     await ts.simulate(checkBalanceOf(intermediateToken, a));
+    //   }
+    //
+    //   await ts.simulate(checkBalanceOf(src, a));
+    //   await ts.simulate(checkBalanceOf(dest, a));
+    // }
 
     // Calculate slippage. Default is 1%
     const _slippage = slippage || 100;
@@ -409,7 +576,11 @@ export async function testE2E(
         }, Difference: ${parseInt(priceRoute.gasCost) - parseInt(gasUsed)}`,
       );
     }
-    console.log(`Tenderly URL: ${swapTx!.url}`);
+    console.log(
+      `${swapSide}: ${srcToken.address} -> ${destToken.address} (${
+        priceRoute.contractMethod
+      })\nTenderly URL: ${swapTx!.url}`,
+    );
     expect(swapTx!.success).toEqual(true);
   } finally {
     if (paraswap.releaseResources) {
@@ -426,10 +597,10 @@ export type TestParamE2E = {
   thirdPartyAddress?: Address;
   _amount: string;
   swapSide: SwapSide;
-  dexKey: string;
+  dexKeys: string | string[];
   contractMethod: ContractMethod;
   network: Network;
-  poolIdentifiers?: string[];
+  poolIdentifiers?: { [key: string]: string[] | null } | null;
   limitOrderProvider?: DummyLimitOrderProvider;
   transferFees?: TransferFeeParams;
   srcTokenBalanceOverrides?: Record<Address, string>;
@@ -464,7 +635,7 @@ export async function newTestE2E({
   thirdPartyAddress,
   _amount,
   swapSide,
-  dexKey,
+  dexKeys,
   contractMethod,
   network,
   poolIdentifiers,
@@ -541,7 +712,7 @@ export async function newTestE2E({
   // The API currently doesn't allow for specifying poolIdentifiers
   const paraswap: IParaSwapSDK = new LocalParaswapSDK(
     network,
-    dexKey,
+    dexKeys,
     '',
     limitOrderProvider,
   );
@@ -621,7 +792,7 @@ export async function newTestE2E({
       destToken.applyOverrides(stateOverrides);
 
       const swapTx = await ts.simulate(swapParams, stateOverrides);
-      console.log(`${srcToken.address}_${destToken.address}_${dexKey!}`);
+      console.log(`${srcToken.address}_${destToken.address}_${dexKeys!}`);
       // Only log gas estimate if testing against API
       if (useAPI)
         console.log(
@@ -652,6 +823,126 @@ export const getEnv = (envName: string, optional: boolean = false): string => {
   return process.env[envName]!;
 };
 
+// poolIdentifiers?: { [key: string]: string[] | null } | null,
+// limitOrderProvider?: DummyLimitOrderProvider,
+// transferFees?: TransferFeeParams,
+// // Specified in BPS: part of 10000
+// slippage?: number,
+// sleepMs?: number,
+// replaceTenderlyWithEstimateGas?: boolean,
+// forceRoute?: AddressOrSymbol[],
+export function testE2E_V6(
+  network: Network,
+  dexKey: string,
+  tokenASymbol: string,
+  tokenBSymbol: string,
+  tokenAAmount: string,
+  tokenBAmount: string,
+  nativeTokenAmount: string,
+  forceRoute: AddressOrSymbol[],
+) {
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
+  const tokens = Tokens[network];
+  const holders = Holders[network];
+  const nativeTokenSymbol = NativeTokenSymbols[network];
+  const wrappedNativeTokenSymbol = WrappedNativeTokenSymbols[network];
+
+  const sideToContractMethods = new Map([
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+  ]);
+
+  describe(`${network}`, () => {
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[nativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[nativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${wrappedNativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[wrappedNativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[wrappedNativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${wrappedNativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[wrappedNativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        });
+      }),
+    );
+  });
+}
 /// EXPERIMENTAL MEANT TO BE ADJUSTED OVERTIME
 
 type Pairs = { name: string; sellAmount: string; buyAmount: string }[][];

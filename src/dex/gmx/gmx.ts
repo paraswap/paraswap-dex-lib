@@ -8,6 +8,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -204,6 +206,31 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       ],
       values: ['0', '0'],
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: GMXData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const exchangeData = Vault.interface.encodeFunctionData('swap', [
+      srcToken,
+      destToken,
+      recipient,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      transferSrcTokenBeforeSwap: this.params.vault,
+      swappedAmountNotPresentInExchangeData: true,
+      exchangeData,
+      targetExchange: this.params.vault,
     };
   }
 

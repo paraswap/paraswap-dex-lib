@@ -215,6 +215,114 @@ describe('MaverickV1 E2E', () => {
     });
   });
 
+  describe('MAINNET_V6', () => {
+    const network = Network.MAINNET;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    it('swapExactAmountOut USDT -> USDC', async () => {
+      await testE2E(
+        tokens['USDT'],
+        tokens['USDC'],
+        holders['USDT'],
+        '1000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.swapExactAmountOut,
+        network,
+        provider,
+      );
+    });
+
+    it('swapExactAmountOut WETH -> USDC', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['USDC'],
+        holders['WETH'],
+        '1700000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.swapExactAmountOut,
+        network,
+        provider,
+      );
+    });
+
+    it('swapExactAmountOut WETH -> USDC', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['USDC'],
+        holders['WETH'],
+        '100000000',
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.swapExactAmountOut,
+        network,
+        provider,
+      );
+    });
+
+    it('swapExactAmountIn USDC -> USDT', async () => {
+      await testE2E(
+        tokens['USDC'],
+        tokens['USDT'],
+        holders['USDC'],
+        '1000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapExactAmountIn,
+        network,
+        provider,
+      );
+    });
+
+    it('swapExactAmountIn WETH -> USDC', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['USDC'],
+        holders['WETH'],
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapExactAmountIn,
+        network,
+        provider,
+      );
+    });
+
+    it('swapExactAmountIn WETH -> USDC', async () => {
+      await testE2E(
+        tokens['WETH'],
+        tokens['USDC'],
+        holders['WETH'],
+        '1000000000000000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapExactAmountIn,
+        network,
+        provider,
+      );
+    });
+
+    it('swapExactAmountIn USDT -> ETH', async () => {
+      await testE2E(
+        tokens['USDT'],
+        tokens['USDC'],
+        holders['USDT'],
+        '100000000',
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.swapExactAmountIn,
+        network,
+        provider,
+      );
+    });
+  });
+
   describe('BASE', () => {
     const network = Network.BASE;
 

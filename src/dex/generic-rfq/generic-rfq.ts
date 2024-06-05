@@ -7,6 +7,7 @@ import {
   Config,
   PoolLiquidity,
   Address,
+  DexExchangeParam,
 } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
@@ -18,10 +19,20 @@ import { RateFetcher } from './rate-fetcher';
 import {
   PriceAndAmountBigNumber,
   RFQConfig,
+  RFQDirectPayload,
+  RFQParams,
   SlippageCheckError,
 } from './types';
-import { OptimalSwapExchange } from '@paraswap/core';
+import {
+  ContractMethodV6,
+  NumberAsString,
+  OptimalSwapExchange,
+  ParaSwapVersion,
+} from '@paraswap/core';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { SpecialDex } from '../../executor/types';
+import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
+import { isETHAddress, uuidToBytes16 } from '../../utils';
 
 export const OVERORDER_BPS = 100;
 export const BPS_MAX_VALUE = 10000n;
@@ -193,6 +204,107 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     ];
   }
 
+  static getDirectFunctionNameV6(): string[] {
+    return [ContractMethodV6.swapOnAugustusRFQTryBatchFill];
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: ParaSwapLimitOrdersData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod?: string,
+  ) {
+    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+    if (!GenericRFQ.getDirectFunctionNameV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    if (data.orderInfos === null) {
+      throw new Error(
+        `Error_${this.dexKey}_getDirectParamV6 payload is not received. It may be because of` +
+          `not calling preProcessTransaction before`,
+      );
+    }
+
+    // 2 if dest is ETH, 1 if src is ETH, 0 if none
+    const wrap = isETHAddress(destToken) ? 2 : isETHAddress(srcToken) ? 1 : 0;
+
+    // 1 if need approve, 0 if not
+    const approve = data.isApproved ? 0 : 1;
+
+    // 0 for SELL, 1 for BUY
+    const direction = side === SwapSide.SELL ? 0 : 1;
+
+    const wrapApproveDirection = (direction << 3) | (approve << 2) | wrap;
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const params: RFQParams = [
+      fromAmount,
+      toAmount,
+      wrapApproveDirection.toString(),
+      metadata,
+      beneficiary,
+    ];
+
+    const payload: RFQDirectPayload = [params, data.orderInfos, permit];
+
+    const encoder = (...params: (string | RFQDirectPayload)[]) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        ContractMethodV6.swapOnAugustusRFQTryBatchFill,
+        [...params],
+      );
+    };
+
+    return { params: payload, encoder, networkFee: '0' };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: ParaSwapLimitOrdersData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { orderInfos } = data;
+
+    if (orderInfos === null) {
+      throw new Error(
+        `Error_${this.dexKey}_getDexParam payload is not received. It may be because of` +
+          `not calling preProcessTransaction before`,
+      );
+    }
+
+    const isSell = side === SwapSide.SELL;
+
+    const specialDexExchangeData = this.rfqIface.encodeFunctionData(
+      isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
+      [orderInfos, isSell ? srcAmount : destAmount, recipient],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: specialDexExchangeData,
+      specialDexFlag: SpecialDex.SWAP_ON_AUGUSTUS_RFQ,
+      targetExchange: this.augustusRFQAddress,
+      specialDexSupportsInsertFromAmount: true,
+    };
+  }
+
   async preProcessTransaction?(
     optimalSwapExchange: OptimalSwapExchange<ParaSwapLimitOrdersData>,
     srcToken: Token,
@@ -209,7 +321,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         ? overOrder(optimalSwapExchange.srcAmount, OVERORDER_BPS)
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
-      this.augustusAddress,
+      options.executionContractAddress,
       options.txOrigin,
       options.partner,
       options.special,
@@ -262,16 +374,22 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       }
     }
 
+    let isApproved = false;
+
+    // isApproved is only used in direct method and available only for v6, then no need to check approve for v5
+    // because it's either done in getSimpleParam or approve call in the adapter smart contract
+    if (options.version === ParaSwapVersion.V6 && options.isDirectMethod) {
+      isApproved = await this.dexHelper.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        // ETH always need to be wrapped for RFQ
+        this.dexHelper.config.wrapETH(srcToken).address,
+        this.augustusRFQAddress,
+      );
+    }
+
     return [
-      {
-        ...optimalSwapExchange,
-        data: {
-          orderInfos: [order],
-        },
-      },
-      {
-        deadline: minDeadline,
-      },
+      { ...optimalSwapExchange, data: { orderInfos: [order], isApproved } },
+      { deadline: minDeadline },
     ];
   }
 

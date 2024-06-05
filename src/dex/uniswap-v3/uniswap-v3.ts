@@ -4,6 +4,7 @@ import { pack } from '@ethersproject/solidity';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   ExchangeTxInfo,
   Logger,
@@ -21,6 +22,7 @@ import {
   getBigIntPow,
   getDexKeysWithNetwork,
   interpolate,
+  isETHAddress,
   isTruthy,
   uuidToBytes16,
 } from '../../utils';
@@ -33,6 +35,8 @@ import {
   UniswapV3Data,
   UniswapV3Functions,
   UniswapV3Param,
+  UniswapV3ParamsDirect,
+  UniswapV3ParamsDirectBase,
   UniswapV3SimpleSwapParams,
 } from './types';
 import {
@@ -48,6 +52,7 @@ import DirectSwapABI from '../../abi/DirectSwap.json';
 import UniswapV3StateMulticallABI from '../../abi/uniswap-v3/UniswapV3StateMulticall.abi.json';
 import {
   DirectMethods,
+  DirectMethodsV6,
   UNISWAPV3_EFFICIENCY_FACTOR,
   UNISWAPV3_POOL_SEARCH_OVERHEAD,
   UNISWAPV3_TICK_BASE_OVERHEAD,
@@ -65,6 +70,7 @@ import {
 } from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
+import { hexConcat, hexlify, hexZeroPad, hexValue } from 'ethers/lib/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -82,7 +88,7 @@ export const UNISWAPV3_QUOTE_GASLIMIT = 200_000;
 
 export class UniswapV3
   extends SimpleExchange
-  implements IDex<UniswapV3Data, UniswapV3Param>
+  implements IDex<UniswapV3Data, UniswapV3Param | UniswapV3ParamsDirect>
 {
   protected readonly factory: UniswapV3Factory;
   readonly isFeeOnTransferSupported: boolean = false;
@@ -859,37 +865,6 @@ export class UniswapV3
     };
   }
 
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: UniswapV3Data,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    const { path: rawPath } = data;
-    const path = this._encodePath(rawPath, side);
-
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          path: 'bytes',
-          deadline: 'uint256',
-        },
-      },
-      {
-        path,
-        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
-      },
-    );
-
-    return {
-      targetExchange: this.config.router,
-      payload,
-      networkFee: '0',
-    };
-  }
-
   getCalldataGasCost(poolPrices: PoolPrices<UniswapV3Data>): number | number[] {
     const gasCost =
       CALLDATA_GAS_COST.DEX_OVERHEAD +
@@ -944,13 +919,11 @@ export class UniswapV3
     let isApproved: boolean | undefined;
 
     try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, this.config.router)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      isApproved = await this.dexHelper.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        this.dexHelper.config.wrapETH(srcToken).address,
+        this.config.router,
+      );
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,
@@ -988,10 +961,7 @@ export class UniswapV3
     beneficiary: string,
     contractMethod?: string,
   ): TxInfo<UniswapV3Param> {
-    if (
-      contractMethod !== DirectMethods.directSell &&
-      contractMethod !== DirectMethods.directBuy
-    ) {
+    if (!UniswapV3.getDirectFunctionName().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
@@ -1037,6 +1007,141 @@ export class UniswapV3
 
   static getDirectFunctionName(): string[] {
     return [DirectMethods.directSell, DirectMethods.directBuy];
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: UniswapV3Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod?: string,
+  ) {
+    if (!UniswapV3.getDirectFunctionNameV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    const path = this._encodePathV6(data.path, side);
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+    const uniData: UniswapV3ParamsDirectBase = [
+      srcToken,
+      destToken,
+      fromAmount,
+      toAmount,
+      quotedAmount,
+      metadata,
+      // uuidToBytes16(uuid),
+      beneficiary,
+      path,
+    ];
+
+    const swapParams: UniswapV3ParamsDirect = [uniData, partnerAndFee, permit];
+
+    const encoder = (...params: (string | UniswapV3ParamsDirect)[]) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethodsV6.directSell
+          : DirectMethodsV6.directBuy,
+        [...params],
+      );
+    };
+
+    return {
+      params: swapParams,
+      encoder,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DirectMethodsV6.directSell, DirectMethodsV6.directBuy];
+  }
+
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: UniswapV3Data,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    const { path: rawPath } = data;
+    const path = this._encodePath(rawPath, side);
+
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          path: 'bytes',
+          deadline: 'uint256',
+        },
+      },
+      {
+        path,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+      },
+    );
+
+    return {
+      targetExchange: this.config.router,
+      payload,
+      networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: UniswapV3Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction =
+      side === SwapSide.SELL
+        ? UniswapV3Functions.exactInput
+        : UniswapV3Functions.exactOutput;
+
+    const path = this._encodePath(data.path, side);
+
+    const swapFunctionParams: UniswapV3SimpleSwapParams =
+      side === SwapSide.SELL
+        ? {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountIn: srcAmount,
+            amountOutMinimum: destAmount,
+            path,
+          }
+        : {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountOut: destAmount,
+            amountInMaximum: srcAmount,
+            path,
+          };
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.router,
+    };
   }
 
   async getSimpleParam(
@@ -1321,6 +1426,61 @@ export class UniswapV3
     return side === SwapSide.BUY
       ? pack(types.reverse(), _path.reverse())
       : pack(types, _path);
+  }
+
+  private _encodePathV6(
+    path: {
+      tokenIn: Address;
+      tokenOut: Address;
+      fee: NumberAsString;
+    }[],
+    side: SwapSide,
+  ) {
+    let result = '0x';
+    if (path.length === 0) {
+      this.logger.error(
+        `${this.dexKey}: Received invalid path=${path} for side=${side} to encode`,
+      );
+      return result;
+    }
+
+    if (side === SwapSide.SELL) {
+      for (const p of path) {
+        const poolEncoded = this._encodePool(p.tokenIn, p.tokenOut, p.fee);
+        result += poolEncoded;
+      }
+    } else {
+      // For buy order of pools should be reversed
+      for (let i = path.length - 1; i >= 0; i--) {
+        const p = path[i];
+        const poolEncoded = this._encodePool(p.tokenIn, p.tokenOut, p.fee);
+        result += poolEncoded;
+      }
+    }
+
+    return result;
+  }
+
+  private _encodePool(t0: Address, t1: Address, fee: NumberAsString) {
+    // v6 expects weth for eth in pools
+    if (isETHAddress(t0)) {
+      t0 = this.dexHelper.config.data.wrappedNativeTokenAddress;
+    }
+
+    if (isETHAddress(t1)) {
+      t1 = this.dexHelper.config.data.wrappedNativeTokenAddress;
+    }
+
+    // contract expects tokens to be sorted, and direction switched in case sorting changes src/dest order
+    const [tokenInSorted, tokenOutSorted] =
+      BigInt(t0) > BigInt(t1) ? [t1, t0] : [t0, t1];
+
+    const directionEncoded = (tokenInSorted === t0 ? '8' : '0').padEnd(24, '0');
+    const token0Encoded = tokenInSorted.slice(2).padEnd(64, '0');
+    const token1Encoded = tokenOutSorted.slice(2).padEnd(64, '0');
+    const feeEncoded = hexZeroPad(hexValue(parseInt(fee)), 20).slice(2);
+
+    return directionEncoded + token0Encoded + token1Encoded + feeEncoded;
   }
 
   releaseResources() {
