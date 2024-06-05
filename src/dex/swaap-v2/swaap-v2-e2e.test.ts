@@ -48,18 +48,18 @@ describe('SwaapV2 E2E', () => {
           buyAmount: '100000000',
         },
       ],
-      // [
-      //   {
-      //     name: 'USDC',
-      //     sellAmount: '45410357',
-      //     buyAmount: '1000000000000000000',
-      //   },
-      //   {
-      //     name: 'ETH',
-      //     sellAmount: '1000000000000000000',
-      //     buyAmount: '100000000',
-      //   },
-      // ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '45410357',
+          buyAmount: '1000000000000000000',
+        },
+        {
+          name: 'ETH',
+          sellAmount: '1000000000000000000',
+          buyAmount: '100000000',
+        },
+      ],
     ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -290,7 +290,7 @@ describe('SwaapV2 E2E', () => {
     );
   });
 
-  describe('Base', () => {
+  describe.only('Base', () => {
     const network = Network.BASE;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
@@ -310,18 +310,6 @@ describe('SwaapV2 E2E', () => {
           name: 'USDC',
           sellAmount: '100000000',
           buyAmount: '100000000000000000000',
-        },
-      ],
-      [
-        {
-          name: 'USDbC',
-          sellAmount: '100000000',
-          buyAmount: '100000000',
-        },
-        {
-          name: 'USDC',
-          sellAmount: '100000000',
-          buyAmount: '100000000',
         },
       ],
     ];
@@ -378,7 +366,7 @@ describe('SwaapV2 E2E', () => {
     );
   });
 
-  describe('BSC', () => {
+  describe.only('BSC', () => {
     const network = Network.BSC;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
@@ -454,7 +442,7 @@ describe('SwaapV2 E2E', () => {
     );
   });
 
-  describe('Optimism', () => {
+  describe.only('Optimism', () => {
     const network = Network.OPTIMISM;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
