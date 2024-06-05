@@ -1,7 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { pack } from '@ethersproject/solidity';
 import { Network, SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -178,5 +183,51 @@ export class UniswapV3
       swapData,
       this.routerAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: UniswapV3Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction =
+      side === SwapSide.SELL
+        ? UniswapV3Functions.exactInput
+        : UniswapV3Functions.exactOutput;
+
+    const path = this.encodePath(data.path, side);
+
+    const swapFunctionParams: UniswapV3Param =
+      side === SwapSide.SELL
+        ? {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountIn: srcAmount,
+            amountOutMinimum: destAmount,
+            path,
+          }
+        : {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountOut: destAmount,
+            amountInMaximum: srcAmount,
+            path,
+          };
+
+    const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+      swapFunction,
+      [swapFunctionParams],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.routerAddress,
+    };
   }
 }

@@ -8,6 +8,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -239,6 +241,28 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
         networkFee: '0',
       };
     }
+  }
+
+  async getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: WstETHData,
+    side: SwapSide,
+  ): Promise<DexExchangeParam> {
+    const exchangeData = WstETH.wstETHIface.encodeFunctionData(
+      srcToken.toLowerCase() === this.config.stETHAddress ? 'wrap' : 'unwrap',
+      [srcAmount],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData,
+      targetExchange: this.config.wstETHAddress,
+    };
   }
 
   // Returns list of top pools based on liquidity. Max

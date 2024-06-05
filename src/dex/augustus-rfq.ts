@@ -7,7 +7,6 @@ import { SimpleExchange } from './simple-exchange';
 import AugustusRFQABI from '../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
 import PermitABI from '../abi/permit/IERC20Permit.json';
 import PermitLegacyABI from '../abi/permit/IERC20PermitLegacy.json';
-import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 
 const PERMIT_SIGHASH = new Interface(PermitABI).getSighash('permit');

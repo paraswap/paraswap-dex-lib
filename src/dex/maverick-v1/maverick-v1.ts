@@ -9,6 +9,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow, isTruthy } from '../../utils';
@@ -39,6 +40,7 @@ import {
 } from './subgraph-queries';
 import { SUBGRAPH_TIMEOUT } from '../../constants';
 import RouterABI from '../../abi/maverick-v1/router.json';
+import { NumberAsString } from '@paraswap/core';
 
 const MAX_POOL_CNT = 1000;
 
@@ -351,6 +353,55 @@ export class MaverickV1
       targetExchange: this.routerAddress,
       payload,
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: MaverickV1Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction =
+      side === SwapSide.SELL
+        ? MaverickV1Functions.exactInputSingle
+        : MaverickV1Functions.exactOutputSingle;
+
+    const swapFunctionParams: MaverickV1Param =
+      side === SwapSide.SELL
+        ? {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountIn: srcAmount,
+            amountOutMinimum: destAmount,
+            tokenIn: srcToken,
+            tokenOut: destToken,
+            pool: data.pool,
+            sqrtPriceLimitD18: '0',
+          }
+        : {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountOut: destAmount,
+            amountInMaximum: srcAmount,
+            tokenIn: srcToken,
+            tokenOut: destToken,
+            pool: data.pool,
+            sqrtPriceLimitD18: '0',
+          };
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.routerAddress,
     };
   }
 

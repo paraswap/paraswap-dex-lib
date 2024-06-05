@@ -8,6 +8,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -283,6 +285,108 @@ export class AaveV2
       swapData,
       swapCallee,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AaveV2Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const amount = side === SwapSide.SELL ? srcAmount : destAmount;
+    const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
+      Interface,
+      Address,
+      AaveV2PoolAndWethFunctions,
+      AaveV2Param,
+    ] => {
+      if (isETHAddress(srcToken)) {
+        switch (this.network) {
+          case Network.MAINNET:
+            return [
+              this.wethGateway,
+              WETH_GATEWAY[this.network],
+              AaveV2PoolAndWethFunctions.depositETH,
+              [recipient, REF_CODE],
+            ];
+          case Network.POLYGON:
+            return [
+              this.wethGateway,
+              WETH_GATEWAY[this.network],
+              AaveV2PoolAndWethFunctions.depositETH,
+              [aaveLendingPool[this.network], recipient, REF_CODE],
+            ];
+          case Network.AVALANCHE:
+            return [
+              this.wethGateway,
+              WETH_GATEWAY[this.network],
+              AaveV2PoolAndWethFunctions.depositETH,
+              [aaveLendingPool[this.network], recipient, REF_CODE],
+            ];
+          default:
+            throw new Error(`Network ${this.network} not supported`);
+        }
+      }
+
+      if (isETHAddress(destToken)) {
+        switch (this.network) {
+          case Network.MAINNET:
+            return [
+              this.wethGateway,
+              WETH_GATEWAY[this.network],
+              AaveV2PoolAndWethFunctions.withdrawETH,
+              [amount, recipient],
+            ];
+          case Network.POLYGON:
+            return [
+              this.wethGateway,
+              WETH_GATEWAY[this.network],
+              AaveV2PoolAndWethFunctions.withdrawETH,
+              [aaveLendingPool[this.network], amount, recipient],
+            ];
+          case Network.AVALANCHE:
+            return [
+              this.wethGateway,
+              WETH_GATEWAY[this.network],
+              AaveV2PoolAndWethFunctions.withdrawETH,
+              [aaveLendingPool[this.network], amount, recipient],
+            ];
+          default:
+            throw new Error(`Network ${this.network} not supported`);
+        }
+      }
+
+      if (data.fromAToken) {
+        return [
+          this.aavePool,
+          aaveLendingPool[this.network],
+          AaveV2PoolAndWethFunctions.withdraw,
+          [destToken, amount, recipient],
+        ];
+      }
+
+      return [
+        this.aavePool,
+        aaveLendingPool[this.network],
+        AaveV2PoolAndWethFunctions.deposit,
+        [srcToken, amount, recipient, REF_CODE],
+      ];
+    })();
+
+    const exchangeData = Interface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: swapCallee,
+    };
   }
 
   // This is called once before getTopPoolsForToken is
