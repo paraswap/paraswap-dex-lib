@@ -19,6 +19,7 @@ import {
   getQuoteResponseValidator,
   getTokensResponseValidator,
   notifyResponseValidator,
+  getQuoteResponseWithRecipientValidator,
 } from './validators';
 import { normalizeTokenAddress } from './utils';
 import {
@@ -156,7 +157,8 @@ export class RateFetcher {
     srcAmount: string,
     side: SwaapV2OrderType,
     userAddress: Address,
-    aggregatorRecipient: Address,
+    sender: Address,
+    recipient: Address,
     tolerance: number,
     requestParameters: RequestConfig,
   ): Promise<SwaapV2QuoteResponse> {
@@ -170,8 +172,8 @@ export class RateFetcher {
     const _payload: SwaapV2QuoteRequest = {
       network_id: networkId,
       origin: userAddress,
-      sender: aggregatorRecipient,
-      recipient: aggregatorRecipient,
+      sender,
+      recipient,
       timestamp: Math.round(Date.now() / 1000),
       order_type: side,
       token_in: srcToken.address,
@@ -200,7 +202,7 @@ export class RateFetcher {
       );
       const quoteResp = validateAndCast<SwaapV2QuoteResponse>(
         data,
-        getQuoteResponseValidator,
+        getQuoteResponseWithRecipientValidator(recipient),
       );
 
       return {

@@ -19,6 +19,7 @@ import {
   encodeFeePercentForReferrer,
   encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
+import { ParaSwapVersion } from '@paraswap/core';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -244,6 +245,7 @@ export abstract class SimpleRouterBase<RouterParam>
       srcAmountWeth.toString(),
       destAmountWeth.toString(),
       this.side,
+      ParaSwapVersion.V5,
     );
   }
 }

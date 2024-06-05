@@ -39,3 +39,8 @@ export enum DirectMethods {
   directSell = 'directUniV3Swap',
   directBuy = 'directUniV3Buy',
 }
+
+export enum DirectMethodsV6 {
+  directSell = 'swapExactAmountInOnUniswapV3',
+  directBuy = 'swapExactAmountOutOnUniswapV3',
+}

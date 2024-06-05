@@ -13,3 +13,8 @@ export enum DirectMethods {
   directSell = 'directBalancerV2GivenInSwap',
   directBuy = 'directBalancerV2GivenOutSwap',
 }
+
+export enum DirectMethodsV6 {
+  directSell = 'swapExactAmountInOnBalancerV2',
+  directBuy = 'swapExactAmountOutOnBalancerV2',
+}

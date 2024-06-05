@@ -2,43 +2,51 @@ import _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
 import {
-  Token,
-  Address,
-  ExchangePrices,
-  PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
+  Address,
+  DexExchangeParam,
+  ExchangePrices,
   Logger,
+  PoolLiquidity,
+  PoolPrices,
+  SimpleExchangeParam,
+  Token,
 } from '../../types';
-import { SwapSide, Network, SUBGRAPH_TIMEOUT } from '../../constants';
+import { Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork, getBigIntPow, isETHAddress } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  BalancerV1Data,
-  OptimizedBalancerV1Data,
-  DexParams,
-  PoolsInfo,
-  PoolInfo,
-  FractionAsString,
-  BalancerParam,
   BalancerFunctions,
+  BalancerParam,
+  BalancerV1Data,
+  DexParams,
+  FractionAsString,
+  OptimizedBalancerV1Data,
+  PoolInfo,
+  PoolsInfo,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import {
-  MIN_USD_LIQUIDITY_TO_FETCH,
-  BalancerV1Config,
   Adapters,
-  MAX_POOLS_FOR_PRICING,
   BALANCER_SWAP_GAS_COST,
+  BalancerV1Config,
   MAX_POOL_CNT,
+  MAX_POOLS_FOR_PRICING,
+  MIN_USD_LIQUIDITY_TO_FETCH,
 } from './config';
 import { BalancerV1EventPool } from './balancer-v1-pool';
 import { generatePoolStates } from './utils';
 import BalancerV1ExchangeProxyABI from '../../abi/BalancerV1ExchangeProxy.json';
 import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
+import { NumberAsString, SwapSide } from '@paraswap/core';
+import { BigNumber, ethers } from 'ethers';
+import { SpecialDex } from '../../executor/types';
+
+const {
+  utils: { hexlify, hexZeroPad, solidityPack },
+} = ethers;
 
 const fetchAllPoolsQuery = `query {
     pools(first: ${MAX_POOL_CNT.toString()} 
@@ -314,6 +322,100 @@ export class BalancerV1
       targetExchange: this.config.exchangeProxy,
       payload,
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: OptimizedBalancerV1Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { swaps } = data;
+
+    if (side === SwapSide.BUY) {
+      // Need to adjust the swap input params to match the adjusted srcAmount
+      const _srcAmount = BigInt(srcAmount);
+      const totalInParam = swaps.reduce(
+        (acc, swap) => acc + BigInt(swap.tokenInParam),
+        0n,
+      );
+      swaps.forEach(swap => {
+        swap.tokenInParam = (
+          (BigInt(swap.tokenInParam) * _srcAmount) /
+          totalInParam
+        ).toString();
+      });
+    }
+
+    const [swapFunction, swapFunctionParam] = ((): [
+      swapFunction: BalancerFunctions,
+      swapFunctionParam: BalancerParam,
+    ] => {
+      if (side === SwapSide.SELL) {
+        if (isETHAddress(srcToken))
+          return [
+            BalancerFunctions.batchEthInSwapExactIn,
+            [swaps, destToken, destAmount],
+          ];
+        if (isETHAddress(destToken))
+          return [
+            BalancerFunctions.batchEthOutSwapExactIn,
+            [swaps, srcToken, srcAmount, destAmount],
+          ];
+        return [
+          BalancerFunctions.batchSwapExactIn,
+          [swaps, srcToken, destToken, srcAmount, destAmount],
+        ];
+      } else {
+        if (isETHAddress(srcToken))
+          return [BalancerFunctions.batchEthInSwapExactOut, [swaps, destToken]];
+        if (isETHAddress(destToken))
+          return [
+            BalancerFunctions.batchEthOutSwapExactOut,
+            [swaps, srcToken, srcAmount],
+          ];
+        return [
+          BalancerFunctions.batchSwapExactOut,
+          [swaps, srcToken, destToken, srcAmount],
+        ];
+      }
+    })();
+
+    let exchangeData = BalancerV1.proxyIface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParam,
+    );
+    let specialDexFlag = SpecialDex.DEFAULT;
+
+    if (side === SwapSide.SELL) {
+      const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+        return acc.add(swap.tokenInParam);
+      }, BigNumber.from(0));
+
+      exchangeData = solidityPack(
+        ['bytes32', 'bytes32', 'bytes'],
+        [
+          hexZeroPad(hexlify(swaps.length), 32),
+          hexZeroPad(hexlify(totalAmount), 32),
+          exchangeData,
+        ],
+      );
+      specialDexFlag = SpecialDex.SWAP_ON_BALANCER_V1;
+    }
+
+    return {
+      needWrapNative:
+        swapFunction === BalancerFunctions.batchSwapExactIn
+          ? true
+          : this.needWrapNative,
+      specialDexFlag,
+      dexFuncHasRecipient: false,
+      exchangeData: exchangeData,
+      targetExchange: this.config.exchangeProxy,
     };
   }
 

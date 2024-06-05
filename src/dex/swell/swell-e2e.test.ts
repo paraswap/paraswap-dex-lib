@@ -19,9 +19,10 @@ describe('Swell', () => {
 
   ['SWETH', 'rswETH'].forEach(token => {
     [
-      ContractMethod.simpleSwap,
-      ContractMethod.multiSwap,
-      ContractMethod.megaSwap,
+      // ContractMethod.simpleSwap,
+      // ContractMethod.multiSwap,
+      // ContractMethod.megaSwap,
+      ContractMethod.swapExactAmountIn,
     ].forEach(contractMethod => {
       it(`${contractMethod} - ETH -> ${token}`, async () => {
         await testE2E(

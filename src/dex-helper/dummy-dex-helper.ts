@@ -19,12 +19,14 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 import { Response, RequestConfig } from './irequest-wrapper';
 import { BlockHeader } from 'web3-eth';
 import { PromiseScheduler } from '../lib/promise-scheduler';
+import { AugustusApprovals } from '../dex/augustus-approvals';
 
 const logger = getLogger('DummyDexHelper');
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
   private storage: Record<string, string> = {};
+  private hashStorage: Record<string, Record<string, string>> = {};
 
   private setMap: Record<string, Set<string>> = {};
 
@@ -137,11 +139,29 @@ class DummyCache implements ICache {
   }
 
   async hset(mapKey: string, key: string, value: string): Promise<void> {
+    if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
+    this.hashStorage[mapKey][key] = value;
     return;
   }
 
   async hget(mapKey: string, key: string): Promise<string | null> {
-    return null;
+    return this.hashStorage[mapKey][key];
+  }
+
+  async hmget(mapKey: string, keys: string[]): Promise<(string | null)[]> {
+    return keys.map(key => this.hashStorage?.[mapKey]?.[key] ?? null);
+  }
+
+  // even though native hmset is deprecated in redis, use it to prevent changing implemented hset
+  async hmset(mapKey: string, mappings: Record<string, string>): Promise<void> {
+    if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
+
+    this.hashStorage[mapKey] = {
+      ...this.hashStorage[mapKey],
+      ...mappings,
+    };
+
+    return;
   }
 
   async hgetAll(mapKey: string): Promise<Record<string, string>> {
@@ -245,6 +265,7 @@ export class DummyDexHelper implements IDexHelper {
   provider: Provider;
   multiContract: Contract;
   multiWrapper: MultiWrapper;
+  augustusApprovals: AugustusApprovals;
   promiseScheduler: PromiseScheduler;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
@@ -284,6 +305,12 @@ export class DummyDexHelper implements IDexHelper {
       100,
       5,
       this.getLogger(`PromiseScheduler-${network}`),
+    );
+
+    this.augustusApprovals = new AugustusApprovals(
+      this.config,
+      this.cache,
+      this.multiWrapper,
     );
   }
 

@@ -11,6 +11,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -24,6 +26,9 @@ import { MakerPsmConfig, Adapters } from './config';
 import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
 import { BI_POWS } from '../../bigint-constants';
+import { SpecialDex } from '../../executor/types';
+import { hexConcat, hexZeroPad, hexlify } from '@ethersproject/bytes';
+import { ZEROS_12_BYTES } from '../../executor/constants';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
@@ -491,6 +496,53 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
     );
   }
 
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: MakerPsmData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { isGemSell, gemAmount } = this.getPsmParams(
+      srcToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+
+    let exchangeData = psmInterface.encodeFunctionData(
+      isGemSell ? 'sellGem' : 'buyGem',
+      [recipient, gemAmount],
+    );
+
+    // append toll and to18ConversionFactor & set specialDexFlag = SWAP_ON_MAKER_PSM to
+    // - `buyGem` on Ex1 & Ex2
+    // - `sellGem` on Ex3
+    let specialDexFlag = SpecialDex.DEFAULT;
+    if (
+      (side === SwapSide.SELL && !isGemSell) ||
+      (side === SwapSide.BUY && isGemSell)
+    ) {
+      exchangeData = hexConcat([
+        exchangeData,
+        hexZeroPad(hexlify(BigInt(data.toll)), 32),
+        hexZeroPad(hexlify(getBigIntPow(18 - data.gemDecimals)), 32),
+      ]);
+      specialDexFlag = SpecialDex.SWAP_ON_MAKER_PSM;
+    }
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: data.psmAddress,
+      specialDexFlag,
+      spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
+    };
+  }
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(

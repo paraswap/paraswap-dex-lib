@@ -1,6 +1,12 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { NULL_ADDRESS, SwapSide } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  NumberAsString,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import JarvisABI from '../abi/Jarvis.json';
@@ -177,5 +183,66 @@ export class Jarvis
       swapData,
       data.pools[0],
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: JarvisData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction = data.method;
+    const timestamp = (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0);
+    let swapFunctionParams: JarvisParam;
+    switch (swapFunction) {
+      case JarvisFunctions.mint:
+        swapFunctionParams = [
+          data.derivatives,
+          destAmount,
+          srcAmount,
+          data.fee,
+          timestamp,
+          recipient,
+        ];
+        break;
+      case JarvisFunctions.redeem:
+        swapFunctionParams = [
+          data.derivatives,
+          srcAmount,
+          destAmount,
+          data.fee,
+          timestamp,
+          recipient,
+        ];
+        break;
+      case JarvisFunctions.exchange:
+        swapFunctionParams = [
+          data.derivatives,
+          data.pools[1],
+          data.destDerivatives!,
+          srcAmount,
+          destAmount,
+          data.fee,
+          timestamp,
+          recipient,
+        ];
+        break;
+      default:
+        throw new Error(`Unknown function ${swapFunction}`);
+    }
+
+    const swapData = this.poolInterface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: data.pools[0],
+    };
   }
 }
