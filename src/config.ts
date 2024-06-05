@@ -166,12 +166,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
-      BscAdapter02: '0x9A92D2649C38415860FA59ba8B9a9960cd2839Db',
-      BscBuyAdapter: '0xd32C191e0febaa6Cc93A29Cb676474c72486E00b',
+      BscAdapter02: '0xb9768a1C6e4917E30927beeC4b2874d45fD333Cf',
+      BscBuyAdapter: '0x06158216cFf091ADc7340441717edd8Ebd7A54d7',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
     rpcPollingBlocksBackToTriggerUpdate: 1,
@@ -319,11 +320,13 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_10,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
     adapterAddresses: {
       OptimismAdapter01: '0x5dcf544b0c9689fa67dcb713fd2656d217e25a59',
-      OptimismBuyAdapter: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
+      OptimismAdapter02: '0x7b4B828a461063F2F47558c3544dA74964c7393D',
+      OptimismBuyAdapter: '0x18a495DD563753DB872D6b18650Cf4446f3b758b',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
@@ -382,7 +385,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs: [],
     adapterAddresses: {
       BaseAdapter01: '0xf531fC01aFa26dAa71f581e1e18AA3B37Ee515A6',
-      BaseBuyAdapter: '0x2B99cefbfeE6f134D68aBB291386588ADe3808F8',
+      BaseAdapter02: '0x97bdD2B98D9802b0e387FefdB2882C1b2dc2c344',
+      BaseBuyAdapter: '0x005213c48d4aafFcA0b6D1CbA8710F4D035C18f9',
     },
     uniswapV2ExchangeRouterAddress:
       '0x75d199EfB540e47D27D52c62Da3E7daC2B9e834F',
