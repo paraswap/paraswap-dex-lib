@@ -439,7 +439,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Executor03: '0xBa0200000D0903dC0c1000801B0573090078E09E',
     },
     adapterAddresses: {
-      BaseAdapter01: '0xf531fC01aFa26dAa71f581e1e18AA3B37Ee515A6',
+      BaseAdapter01: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
       BaseAdapter02: '0x97bdD2B98D9802b0e387FefdB2882C1b2dc2c344',
       BaseBuyAdapter: '0x005213c48d4aafFcA0b6D1CbA8710F4D035C18f9',
     },
