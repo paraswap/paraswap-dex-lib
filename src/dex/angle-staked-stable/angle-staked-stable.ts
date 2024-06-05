@@ -187,44 +187,45 @@ export class AngleStakedStable
     };
   }
 
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: AngleStakedStableData,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const { exchange } = data;
+  // TODO: Uncomment after testing
+  // async getSimpleParam(
+  //   srcToken: string,
+  //   destToken: string,
+  //   srcAmount: string,
+  //   destAmount: string,
+  //   data: AngleStakedStableData,
+  //   side: SwapSide,
+  // ): Promise<SimpleExchangeParam> {
+  //   const { exchange } = data;
 
-    // Encode here the transaction arguments
-    const swapData =
-      srcToken.toLowerCase() === this.config.agToken
-        ? AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
-            side === SwapSide.SELL ? 'deposit' : 'mint',
-            [
-              side === SwapSide.SELL ? srcAmount : destAmount,
-              this.augustusAddress,
-            ],
-          )
-        : AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
-            side === SwapSide.SELL ? 'redeem' : 'withdraw',
-            [
-              side === SwapSide.SELL ? srcAmount : destAmount,
-              this.augustusAddress,
-              this.augustusAddress,
-            ],
-          );
+  //   // Encode here the transaction arguments
+  //   const swapData =
+  //     srcToken.toLowerCase() === this.config.agToken
+  //       ? AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
+  //           side === SwapSide.SELL ? 'deposit' : 'mint',
+  //           [
+  //             side === SwapSide.SELL ? srcAmount : destAmount,
+  //             this.augustusAddress,
+  //           ],
+  //         )
+  //       : AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
+  //           side === SwapSide.SELL ? 'redeem' : 'withdraw',
+  //           [
+  //             side === SwapSide.SELL ? srcAmount : destAmount,
+  //             this.augustusAddress,
+  //             this.augustusAddress,
+  //           ],
+  //         );
 
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      exchange,
-    );
-  }
+  //   return this.buildSimpleParamWithoutWETHConversion(
+  //     srcToken,
+  //     srcAmount,
+  //     destToken,
+  //     destAmount,
+  //     swapData,
+  //     exchange,
+  //   );
+  // }
 
   getDexParam(
     srcToken: Address,
