@@ -455,9 +455,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       SUBGRAPH_TIMEOUT,
     );
 
-    console.log('fetchAllPools: ', fetchAllPools);
-    console.log('variables: ', variables);
-
     if (!(data && data.pools))
       throw new Error('Unable to fetch pools from the subgraph');
 
@@ -1189,9 +1186,9 @@ export class BalancerV2
             sender = recipient = augustusV6
         else (so generic swaps)
           if sell
-            if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future) 
+            if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future)
                   sender = executor and recipient = augustusV6 (skip 1 extra transfer)
-              else 
+              else
                   sender = recipient = executor
               # note: we pass sender=null then the address of the executor is inferred contract side
           else (so buy)
