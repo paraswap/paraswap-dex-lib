@@ -1448,12 +1448,17 @@ describe('BalancerV2 E2E', () => {
           [
             SwapSide.SELL,
             [
-              ContractMethod.simpleSwap,
-              ContractMethod.multiSwap,
-              ContractMethod.megaSwap,
+              ContractMethod.swapExactAmountIn,
+              ContractMethod.swapExactAmountInOnBalancerV2,
             ],
           ],
-          [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+          [
+            SwapSide.BUY,
+            [
+              ContractMethod.swapExactAmountOut,
+              ContractMethod.swapExactAmountOutOnBalancerV2,
+            ],
+          ],
         ]);
 
         describe(`${network}`, () => {
@@ -1524,12 +1529,17 @@ describe('BalancerV2 E2E', () => {
           [
             SwapSide.SELL,
             [
-              ContractMethod.simpleSwap,
-              ContractMethod.multiSwap,
-              ContractMethod.megaSwap,
+              ContractMethod.swapExactAmountIn,
+              ContractMethod.swapExactAmountInOnBalancerV2,
             ],
           ],
-          [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+          [
+            SwapSide.BUY,
+            [
+              ContractMethod.swapExactAmountOut,
+              ContractMethod.swapExactAmountOutOnBalancerV2,
+            ],
+          ],
         ]);
 
         describe(`${network}`, () => {
@@ -1596,12 +1606,17 @@ describe('BalancerV2 E2E', () => {
           [
             SwapSide.SELL,
             [
-              ContractMethod.simpleSwap,
-              ContractMethod.multiSwap,
-              ContractMethod.megaSwap,
+              ContractMethod.swapExactAmountIn,
+              ContractMethod.swapExactAmountInOnBalancerV2,
             ],
           ],
-          [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+          [
+            SwapSide.BUY,
+            [
+              ContractMethod.swapExactAmountOut,
+              ContractMethod.swapExactAmountOutOnBalancerV2,
+            ],
+          ],
         ]);
 
         describe(`${network}`, () => {
@@ -1672,12 +1687,17 @@ describe('BalancerV2 E2E', () => {
           [
             SwapSide.SELL,
             [
-              ContractMethod.simpleSwap,
-              ContractMethod.multiSwap,
-              ContractMethod.megaSwap,
+              ContractMethod.swapExactAmountIn,
+              ContractMethod.swapExactAmountInOnBalancerV2,
             ],
           ],
-          [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+          [
+            SwapSide.BUY,
+            [
+              ContractMethod.swapExactAmountOut,
+              ContractMethod.swapExactAmountOutOnBalancerV2,
+            ],
+          ],
         ]);
 
         describe(`${network}`, () => {
@@ -1748,12 +1768,17 @@ describe('BalancerV2 E2E', () => {
           [
             SwapSide.SELL,
             [
-              ContractMethod.simpleSwap,
-              ContractMethod.multiSwap,
-              ContractMethod.megaSwap,
+              ContractMethod.swapExactAmountIn,
+              ContractMethod.swapExactAmountInOnBalancerV2,
             ],
           ],
-          [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+          [
+            SwapSide.BUY,
+            [
+              ContractMethod.swapExactAmountOut,
+              ContractMethod.swapExactAmountOutOnBalancerV2,
+            ],
+          ],
         ]);
 
         describe(`${network}`, () => {
@@ -1825,12 +1850,17 @@ describe('BalancerV2 E2E', () => {
           [
             SwapSide.SELL,
             [
-              ContractMethod.simpleSwap,
-              ContractMethod.multiSwap,
-              ContractMethod.megaSwap,
+              ContractMethod.swapExactAmountIn,
+              ContractMethod.swapExactAmountInOnBalancerV2,
             ],
           ],
-          [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+          [
+            SwapSide.BUY,
+            [
+              ContractMethod.swapExactAmountOut,
+              ContractMethod.swapExactAmountOutOnBalancerV2,
+            ],
+          ],
         ]);
 
         describe(`${network}`, () => {
@@ -1897,12 +1927,17 @@ describe('BalancerV2 E2E', () => {
           [
             SwapSide.SELL,
             [
-              ContractMethod.simpleSwap,
-              ContractMethod.multiSwap,
-              ContractMethod.megaSwap,
+              ContractMethod.swapExactAmountIn,
+              ContractMethod.swapExactAmountInOnBalancerV2,
             ],
           ],
-          [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+          [
+            SwapSide.BUY,
+            [
+              ContractMethod.swapExactAmountOut,
+              ContractMethod.swapExactAmountOutOnBalancerV2,
+            ],
+          ],
         ]);
 
         describe(`${network}`, () => {
