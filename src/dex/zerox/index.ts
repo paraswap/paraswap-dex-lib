@@ -14,85 +14,26 @@ import type { IDexTxBuilder } from '../idex';
 import type {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   NumberAsString,
   SimpleExchangeParam,
   TxInfo,
 } from '../../types';
-import type {
-  ZeroXSignedOrder,
-  ZeroXSignedOrderV2,
-  ZeroXSignedOrderV4,
+import {
+  ZeroXFunctions,
+  type ZeroXData,
+  type ZeroXParam,
+  type ZeroXSignedOrderV2,
+  type ZeroXSignedOrderV4,
 } from './types';
-import Web3 from 'web3';
 import { IDexHelper } from '../../dex-helper';
-
-const ZRX_EXCHANGE: any = {
-  1: {
-    2: '0x080bf510fcbf18b91105470639e9561022937712',
-    3: '0x61935CbDd02287B511119DDb11Aeb42F1593b7Ef',
-    4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
-  },
-  56: {
-    2: '0x3F93C3D9304a70c9104642AB8cD37b1E2a7c203A',
-    4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
-  },
-  137: {
-    4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
-  },
-};
+import { ZRX_EXCHANGE, ZRX_EXCHANGE_ERC20PROXY } from './config';
 
 const ZRX_ABI: any = {
   2: ZRX_V2_ABI,
   3: ZRX_V3_ABI,
   4: ZRX_V4_ABI,
 };
-
-const ZRX_EXCHANGE_ERC20PROXY: any = {
-  1: {
-    1: '0x95E6F48254609A6ee006F7D493c8e5fB97094ceF',
-    2: '0x95E6F48254609A6ee006F7D493c8e5fB97094ceF',
-    4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
-  },
-  56: {
-    2: '0xCF21d4b7a265FF779accBA55Ace0F56C8cE6e379',
-    4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
-  },
-  137: {
-    4: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
-  },
-};
-
-enum ZeroXFunctions {
-  swapOnZeroXv2 = 'swapOnZeroXv2',
-  swapOnZeroXv4 = 'swapOnZeroXv4',
-  swapOnZeroXv2WithPermit = 'swapOnZeroXv2WithPermit',
-  swapOnZeroXv4WithPermit = 'swapOnZeroXv4WithPermit',
-}
-
-type ZeroXData = {
-  version: number;
-  order: ZeroXSignedOrder;
-};
-
-type SwapOnZeroXParam = [
-  srcToken: Address,
-  destToken: Address,
-  srcAmount: NumberAsString,
-  destAmount: NumberAsString,
-  exchange: Address,
-  payload: string,
-];
-type SwapOnZeroXWithPermitParam = [
-  srcToken: Address,
-  destToken: Address,
-  srcAmount: NumberAsString,
-  destAmount: NumberAsString,
-  exchange: Address,
-  payload: string,
-  permit: string,
-];
-
-type ZeroXParam = SwapOnZeroXParam | SwapOnZeroXWithPermitParam;
 
 export class ZeroX
   extends SimpleExchange
@@ -262,6 +203,61 @@ export class ZeroX
       ZRX_EXCHANGE_ERC20PROXY[this.network][data.version],
       networkFees,
     );
+  }
+
+  getDexParam(
+    _srcToken: Address,
+    _destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    _recipient: Address,
+    data: ZeroXData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) {
+      // Adjust the srcAmount according to the exact order price (rounding up)
+      if (data.version === 4) {
+        const order = data.order as ZeroXSignedOrderV4;
+        if (BigInt(destAmount) > BigInt(order.makerAmount)) {
+          throw new Error(
+            `ZeroX destAmount ${destAmount} > makerAmount ${order.makerAmount}`,
+          );
+        }
+        const calc =
+          (BigInt(destAmount) * BigInt(order.takerAmount) +
+            BigInt(order.makerAmount) -
+            1n) /
+          BigInt(order.makerAmount);
+        if (calc > BigInt(srcAmount)) {
+          throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
+        }
+        srcAmount = calc.toString();
+      } else {
+        const order = data.order as ZeroXSignedOrderV2;
+        if (BigInt(destAmount) > BigInt(order.makerAssetAmount)) {
+          throw new Error(
+            `ZeroX destAmount ${destAmount} > makerAmount ${order.makerAssetAmount}`,
+          );
+        }
+        const calc =
+          (BigInt(destAmount) * BigInt(order.takerAssetAmount) +
+            BigInt(order.makerAssetAmount) -
+            1n) /
+          BigInt(order.makerAssetAmount);
+        if (calc > BigInt(srcAmount)) {
+          throw new Error(`ZeroX calc ${calc} > srcAmount ${srcAmount}`);
+        }
+        srcAmount = calc.toString();
+      }
+    }
+    const swapData = this.buildSimpleSwapData(data, srcAmount);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: this.getExchange(data),
+    };
   }
 
   getDirectParam(

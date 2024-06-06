@@ -9,6 +9,7 @@ import { Token } from '../types';
 import { ConfigHelper } from '../config';
 import { MultiWrapper } from '../lib/multi-wrapper';
 import { PromiseScheduler } from '../lib/promise-scheduler';
+import { AugustusApprovals } from '../dex/augustus-approvals';
 
 export interface IDexHelper {
   config: ConfigHelper;
@@ -16,6 +17,7 @@ export interface IDexHelper {
   httpRequest: IRequestWrapper;
   multiContract: Contract;
   multiWrapper: MultiWrapper;
+  augustusApprovals: AugustusApprovals;
   promiseScheduler: PromiseScheduler;
   provider: Provider;
   web3Provider: Web3;
