@@ -1632,17 +1632,19 @@ export class BalancerV2
 
     const query = `query ($poolIds: [String!]!, $count: Int) {
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
-           where: {id_in: $poolIds,
-                   swapEnabled: true,
-                   totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}}) {
-        address
-        totalLiquidity
-        tokens {
+           where: {
+              id_in: $poolIds,
+              swapEnabled: true
+            }) {
           address
-          decimals
+          totalLiquidity
+          tokens {
+            address
+            decimals
         }
       }
     }`;
+
     const { data } = await this.dexHelper.httpRequest.post<{
       data: {
         pools: {
