@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { bigIntify } from '../../utils';
-import { ChainlinkConfig, PoolConfig, PythConfig } from './types';
+import { ChainlinkConfig, MorphoConfig, PoolConfig, PythConfig } from './types';
 
 export const CBETH = '0xBe9895146f7AF43049ca1c1AE358B0541Ea49704';
 export const RETH = '0xae78736Cd615f374D3085123A210448E74Fc6393';
@@ -90,6 +90,50 @@ export const configUSD: PoolConfig = {
         scaleFactor: bigIntify('1000000000000000000'),
       },
     },
+    pyth: {} as PythConfig,
+  },
+};
+
+export const configUSDBase: PoolConfig = {
+  stablecoin: {
+    address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
+    decimals: 18,
+  },
+  transmuter: '0x222222880e079445Df703c0604706E71a538Fd4f',
+  collaterals: ['0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'],
+  oracles: {
+    backed: {} as ChainlinkConfig,
+    chainlink: {
+      '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B': {
+        proxy: '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B',
+        aggregator: '0x0Ee7145e1370653533e2F2E824424bE2AA95A4Aa',
+        decimals: 8,
+      },
+    },
+    redstone: {} as ChainlinkConfig,
+    morpho: {} as MorphoConfig,
+    pyth: {} as PythConfig,
+  },
+};
+
+export const configUSDArbitrum: PoolConfig = {
+  stablecoin: {
+    address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
+    decimals: 18,
+  },
+  transmuter: '0xD253b62108d1831aEd298Fc2434A5A8e4E418053',
+  collaterals: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831'],
+  oracles: {
+    backed: {} as ChainlinkConfig,
+    chainlink: {
+      '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3': {
+        proxy: '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3',
+        aggregator: '0x2946220288DbBF77dF0030fCecc2a8348CbBE32C',
+        decimals: 8,
+      },
+    },
+    redstone: {} as ChainlinkConfig,
+    morpho: {} as MorphoConfig,
     pyth: {} as PythConfig,
   },
 };

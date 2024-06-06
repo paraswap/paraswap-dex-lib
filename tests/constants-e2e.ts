@@ -540,6 +540,7 @@ export const Tokens: {
     EURA: {
       address: '0xe0b52e49357fd4daf2c15e02058dce6bc0057db4',
       decimals: 18,
+      symbol: 'EURA',
     },
     stEUR: {
       address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
@@ -548,6 +549,7 @@ export const Tokens: {
     USDA: {
       address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
       decimals: 18,
+      symbol: 'USDA',
     },
     stUSD: {
       address: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',
@@ -754,10 +756,12 @@ export const Tokens: {
     EURA: {
       address: '0x12f31B73D812C6Bb0d735a218c086d44D5fe5f89',
       decimals: 18,
+      symbol: 'EURA',
     },
     USDA: {
       address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
       decimals: 18,
+      symbol: 'USDA',
     },
     stUSD: {
       address: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',
@@ -948,8 +952,9 @@ export const Tokens: {
       decimals: 6,
     },
     USDC: {
-      address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+      address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       decimals: 6,
+      symbol: 'USDC',
     },
     crvUSD: {
       address: '0x498bf2b1e120fed3ad3d42ea2165e9b73f99c1e5',
@@ -1016,6 +1021,7 @@ export const Tokens: {
     EURA: {
       address: '0xfa5ed56a203466cbbc2430a43c66b9d8723528e7',
       decimals: 18,
+      symbol: 'EURA',
     },
     stEUR: {
       address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
@@ -1024,6 +1030,7 @@ export const Tokens: {
     USDA: {
       address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
       decimals: 18,
+      symbol: 'USDA',
     },
     stUSD: {
       address: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',
@@ -1111,6 +1118,7 @@ export const Tokens: {
     EURA: {
       address: '0x9485aca5bbbe1667ad97c7fe7c4531a624c8b1ed',
       decimals: 18,
+      symbol: 'EURA',
     },
     stEUR: {
       address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
@@ -1119,6 +1127,7 @@ export const Tokens: {
     USDA: {
       address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
       decimals: 18,
+      symbol: 'USDA',
     },
     stUSD: {
       address: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',
@@ -1165,7 +1174,8 @@ export const Tokens: {
       decimals: 18,
     },
     USDC: {
-      address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+      address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      symbol: 'USDC',
       decimals: 6,
     },
     USDbC: {
@@ -1203,10 +1213,12 @@ export const Tokens: {
     EURA: {
       address: '0xA61BeB4A3d02decb01039e378237032B351125B4',
       decimals: 18,
+      symbol: 'EURA',
     },
     USDA: {
       address: '0x0000206329b97DB379d5E1Bf586BbDB969C63274',
       decimals: 18,
+      symbol: 'USDA',
     },
     stUSD: {
       address: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',

@@ -12,6 +12,7 @@ import { BLOCK_UPGRADE_ORACLE, CBETH, RETH, SFRXETH, STETH } from './constants';
 import { Lens } from '../../lens';
 import { Interface } from '@ethersproject/abi';
 import TransmuterABI from '../../abi/angle-transmuter/Transmuter.json';
+import TransmuterSidechainABI from '../../abi/angle-transmuter/TransmuterSidechain.json';
 import {
   DecodedOracleConfig,
   Chainlink,
@@ -29,21 +30,27 @@ import _ from 'lodash';
 import { BigNumber, ethers } from 'ethers';
 import { formatEther, formatUnits } from 'ethers/lib/utils';
 import { filterDictionaryOnly } from './utils';
+import { Network } from '../../constants';
 
 export class TransmuterSubscriber<State> extends PartialEventSubscriber<
   State,
   TransmuterState
 > {
-  static readonly interface = new Interface(TransmuterABI);
+  static readonly transmuterCrosschainInterface = new Interface(TransmuterABI);
+  public readonly interface;
 
   constructor(
     private EURA: Address,
     private transmuter: Address,
     private collaterals: Address[],
+    protected network: number,
     lens: Lens<DeepReadonly<State>, DeepReadonly<TransmuterState>>,
     logger: Logger,
   ) {
     super([transmuter], lens, logger);
+    if (network === Network.MAINNET)
+      this.interface = new Interface(TransmuterABI);
+    else this.interface = new Interface(TransmuterSidechainABI);
   }
 
   public processLog(
@@ -52,7 +59,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<TransmuterState> | null {
     try {
-      const parsed = TransmuterSubscriber.interface.parseLog(log);
+      const parsed = this.interface.parseLog(log);
       const _state: TransmuterState = _.cloneDeep(state) as TransmuterState;
       switch (parsed.name) {
         case 'FeesSet':
@@ -75,6 +82,8 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
           return this._handleSetWhitelistedStatus(parsed, _state);
         case 'WhitelistStatusToggled':
           return this._handleIsWhitelistedForType(parsed, _state);
+        case 'StablecoinCapSet':
+          return this._handleStablecoinCapSet(parsed, _state);
         default:
           return null;
       }
@@ -85,62 +94,66 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
   }
 
   public getGenerateStateMultiCallInputs(): MultiCallInput[] {
-    return [
+    const multicallInput = [
       ...this.collaterals.map(collat => ({
         target: this.transmuter,
-        callData: TransmuterSubscriber.interface.encodeFunctionData(
-          'getIssuedByCollateral',
-          [collat],
-        ),
+        callData: this.interface.encodeFunctionData('getIssuedByCollateral', [
+          collat,
+        ]),
       })),
       ...this.collaterals.map(collat => ({
         target: this.transmuter,
-        callData: TransmuterSubscriber.interface.encodeFunctionData(
-          'getOracle',
-          [collat],
-        ),
+        callData: this.interface.encodeFunctionData('getOracle', [collat]),
       })),
       ...this.collaterals.map(collat => ({
         target: this.transmuter,
-        callData: TransmuterSubscriber.interface.encodeFunctionData(
-          'getCollateralMintFees',
-          [collat],
-        ),
+        callData: this.interface.encodeFunctionData('getCollateralMintFees', [
+          collat,
+        ]),
       })),
       ...this.collaterals.map(collat => ({
         target: this.transmuter,
-        callData: TransmuterSubscriber.interface.encodeFunctionData(
-          'getCollateralBurnFees',
-          [collat],
-        ),
+        callData: this.interface.encodeFunctionData('getCollateralBurnFees', [
+          collat,
+        ]),
       })),
       ...this.collaterals.map(collat => ({
         target: this.transmuter,
-        callData: TransmuterSubscriber.interface.encodeFunctionData(
-          'isWhitelistedCollateral',
-          [collat],
-        ),
+        callData: this.interface.encodeFunctionData('isWhitelistedCollateral', [
+          collat,
+        ]),
       })),
       ...this.collaterals.map(collat => ({
         target: this.transmuter,
-        callData: TransmuterSubscriber.interface.encodeFunctionData(
+        callData: this.interface.encodeFunctionData(
           'getCollateralWhitelistData',
           [collat],
         ),
       })),
-      {
-        target: this.transmuter,
-        callData:
-          TransmuterSubscriber.interface.encodeFunctionData(
-            'getRedemptionFees',
-          ),
-      },
-      {
-        target: this.transmuter,
-        callData:
-          TransmuterSubscriber.interface.encodeFunctionData('getTotalIssued'),
-      },
     ];
+    if (this.network !== Network.MAINNET) {
+      multicallInput.push(
+        ...this.collaterals.map(collat => ({
+          target: this.transmuter,
+          callData: this.interface.encodeFunctionData('getStablecoinCap', [
+            collat,
+          ]),
+        })),
+      );
+    }
+    multicallInput.push(
+      ...[
+        {
+          target: this.transmuter,
+          callData: this.interface.encodeFunctionData('getRedemptionFees'),
+        },
+        {
+          target: this.transmuter,
+          callData: this.interface.encodeFunctionData('getTotalIssued'),
+        },
+      ],
+    );
+    return multicallInput;
   }
 
   public generateState(
@@ -166,6 +179,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const indexBurnFees = 3;
     const indexWhitelistStatus = 4;
     const indexWhitelistData = 5;
+    const indexStablecoinCap = 6;
 
     this.collaterals.forEach(
       (collat: Address, i: number) =>
@@ -173,25 +187,25 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
         (transmuterState.collaterals[collat] = {
           fees: {
             xFeeMint: (
-              TransmuterSubscriber.interface.decodeFunctionResult(
+              this.interface.decodeFunctionResult(
                 'getCollateralMintFees',
                 multicallOutputs[indexMintFees * nbrCollaterals + i],
               )[0] as BigNumber[]
             ).map(f => Number.parseFloat(formatUnits(f, 9))),
             yFeeMint: (
-              TransmuterSubscriber.interface.decodeFunctionResult(
+              this.interface.decodeFunctionResult(
                 'getCollateralMintFees',
                 multicallOutputs[indexMintFees * nbrCollaterals + i],
               )[1] as BigNumber[]
             ).map(f => Number.parseFloat(formatUnits(f, 9))),
             xFeeBurn: (
-              TransmuterSubscriber.interface.decodeFunctionResult(
+              this.interface.decodeFunctionResult(
                 'getCollateralBurnFees',
                 multicallOutputs[indexBurnFees * nbrCollaterals + i],
               )[0] as BigNumber[]
             ).map(f => Number.parseFloat(formatUnits(f, 9))),
             yFeeBurn: (
-              TransmuterSubscriber.interface.decodeFunctionResult(
+              this.interface.decodeFunctionResult(
                 'getCollateralBurnFees',
                 multicallOutputs[indexBurnFees * nbrCollaterals + i],
               )[1] as BigNumber[]
@@ -199,13 +213,25 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
           } as Fees,
           stablecoinsIssued: Number.parseFloat(
             formatUnits(
-              TransmuterSubscriber.interface.decodeFunctionResult(
+              this.interface.decodeFunctionResult(
                 'getIssuedByCollateral',
                 multicallOutputs[indexStableIssued * nbrCollaterals + i],
               )[0],
               18,
             ),
           ),
+          stablecoinCap:
+            this.network === Network.MAINNET
+              ? -1
+              : Number.parseFloat(
+                  formatUnits(
+                    this.interface.decodeFunctionResult(
+                      'getStablecoinCap',
+                      multicallOutputs[indexStablecoinCap * nbrCollaterals + i],
+                    )[0],
+                    18,
+                  ),
+                ),
           config: this._setOracleConfig(
             multicallOutputs[indexOracleFees * nbrCollaterals + i],
             blockNumber === undefined || blockNumber === 'latest'
@@ -213,11 +239,11 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
               : blockNumber,
           ),
           whitelist: {
-            status: TransmuterSubscriber.interface.decodeFunctionResult(
+            status: this.interface.decodeFunctionResult(
               'isWhitelistedCollateral',
               multicallOutputs[indexWhitelistStatus * nbrCollaterals + i],
             )[0] as boolean,
-            data: TransmuterSubscriber.interface.decodeFunctionResult(
+            data: this.interface.decodeFunctionResult(
               'getCollateralWhitelistData',
               multicallOutputs[indexWhitelistData * nbrCollaterals + i],
             )[0] as string,
@@ -225,20 +251,20 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
         }),
     );
     transmuterState.xRedemptionCurve = (
-      TransmuterSubscriber.interface.decodeFunctionResult(
+      this.interface.decodeFunctionResult(
         'getRedemptionFees',
         multicallOutputs[multicallOutputs.length - 2],
       )[0] as BigNumber[]
     ).map(f => Number.parseFloat(formatUnits(f, 9)));
     transmuterState.yRedemptionCurve = (
-      TransmuterSubscriber.interface.decodeFunctionResult(
+      this.interface.decodeFunctionResult(
         'getRedemptionFees',
         multicallOutputs[multicallOutputs.length - 2],
       )[1] as BigNumber[]
     ).map(f => Number.parseFloat(formatUnits(f, 9)));
     transmuterState.totalStablecoinIssued = Number.parseFloat(
       formatUnits(
-        TransmuterSubscriber.interface.decodeFunctionResult(
+        this.interface.decodeFunctionResult(
           'getTotalIssued',
           multicallOutputs[multicallOutputs.length - 1],
         )[0],
@@ -404,6 +430,16 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
       state.isWhitelisted[whitelistType].delete(who);
     else if (status !== 0 && !state.isWhitelisted[whitelistType].has(who))
       state.isWhitelisted[whitelistType].add(who);
+    return state;
+  }
+
+  _handleStablecoinCapSet(
+    event: ethers.utils.LogDescription,
+    state: TransmuterState,
+  ): Readonly<TransmuterState> | null {
+    const capAmount: number = event.args.stablecoinCap;
+    const collateral: string = event.args.collateral;
+    state.collaterals[collateral].stablecoinCap = capAmount;
     return state;
   }
 

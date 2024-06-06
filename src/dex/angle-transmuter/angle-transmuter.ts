@@ -65,7 +65,7 @@ export class AngleTransmuter
     });
     this.stablecoinList.forEach(stablecoin => {
       this.supportedTokensMap[stablecoin][
-        params[stablecoin as keyof DexParams].stablecoin.address.toLowerCase()
+        params[stablecoin as keyof DexParams]!.stablecoin.address.toLowerCase()
       ] = true;
     });
   }
@@ -77,7 +77,7 @@ export class AngleTransmuter
   async initializePricing(blockNumber: number) {
     for (const stablecoin of this.stablecoinList) {
       const config = await AngleTransmuterEventPool.getConfig(
-        this.params[stablecoin as keyof DexParams],
+        this.params[stablecoin as keyof DexParams]!,
         blockNumber,
         this.dexHelper.multiContract,
       );
@@ -172,8 +172,8 @@ export class AngleTransmuter
         unit: pricesBigInt[0],
         gasCost: TransmuterGasCost,
         exchange: this.dexKey,
-        data: { exchange: this.params[fiat].transmuter },
-        poolAddresses: [this.params[fiat].transmuter],
+        data: { exchange: this.params[fiat]!.transmuter },
+        poolAddresses: [this.params[fiat]!.transmuter],
       },
     ];
   }
@@ -223,17 +223,18 @@ export class AngleTransmuter
     const { exchange } = data;
 
     // Encode here the transaction arguments
-    const swapData = TransmuterSubscriber.interface.encodeFunctionData(
-      side === SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
-      [
-        side === SwapSide.SELL ? srcAmount : destAmount,
-        side === SwapSide.SELL ? destAmount : srcAmount,
-        srcToken,
-        destToken,
-        this.augustusAddress,
-        0, // TODO no deadline?
-      ],
-    );
+    const swapData =
+      TransmuterSubscriber.transmuterCrosschainInterface.encodeFunctionData(
+        side === SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
+        [
+          side === SwapSide.SELL ? srcAmount : destAmount,
+          side === SwapSide.SELL ? destAmount : srcAmount,
+          srcToken,
+          destToken,
+          this.augustusAddress,
+          0, // TODO no deadline?
+        ],
+      );
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
@@ -253,7 +254,7 @@ export class AngleTransmuter
   async updatePoolState(): Promise<void> {
     for (const stablecoin of this.stablecoinList) {
       const fiat = stablecoin as keyof DexParams;
-      const paramFiat = this.params[fiat];
+      const paramFiat = this.params[fiat]!;
 
       if (!this.supportedTokens.length) {
         let tokenAddresses = await AngleTransmuterEventPool.getCollateralsList(
@@ -331,7 +332,7 @@ export class AngleTransmuter
   ): Promise<PoolLiquidity[]> {
     for (const stablecoin of this.stablecoinList) {
       const fiat = stablecoin as keyof DexParams;
-      const paramFiat = this.params[fiat];
+      const paramFiat = this.params[fiat]!;
 
       // If not this stable let's check another one
       if (
@@ -383,17 +384,18 @@ export class AngleTransmuter
 
     for (const stablecoin of this.stablecoinList) {
       const fiat = stablecoin as keyof DexParams;
+      const paramFiat = this.params[fiat]!;
       if (
         srcAddress !== destAddress &&
         this.supportedTokensMap[stablecoin][srcAddress] &&
         this.supportedTokensMap[stablecoin][destAddress] &&
         // check that at least one of the tokens is EURA
-        (srcAddress === this.params[fiat].stablecoin.address.toLowerCase() ||
-          destAddress === this.params[fiat].stablecoin.address.toLowerCase())
+        (srcAddress === paramFiat.stablecoin.address.toLowerCase() ||
+          destAddress === paramFiat.stablecoin.address.toLowerCase())
       ) {
         return {
           known: true,
-          agToken: this.params[fiat].stablecoin.address.toLowerCase(),
+          agToken: paramFiat.stablecoin.address.toLowerCase(),
           fiatName: stablecoin,
         };
       }
