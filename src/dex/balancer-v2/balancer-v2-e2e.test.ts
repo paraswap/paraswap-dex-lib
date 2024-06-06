@@ -1592,8 +1592,8 @@ describe('BalancerV2 E2E', () => {
         const tokenASymbol: string = 'paUSD';
         const tokenBSymbol: string = 'stataPolUSDCn';
 
-        const tokenAAmount: string = '10000000000000000000';
-        const tokenBAmount: string = '110000';
+        const tokenAAmount: string = '500000000000000000';
+        const tokenBAmount: string = '572802';
 
         const provider = new StaticJsonRpcProvider(
           generateConfig(network).privateHttpProvider,
@@ -1755,7 +1755,7 @@ describe('BalancerV2 E2E', () => {
         const tokenBSymbol: string = 'GYD';
 
         const tokenAAmount: string = '100000';
-        const tokenBAmount: string = '86858000000000000';
+        const tokenBAmount: string = '8685800000000000';
 
         const provider = new StaticJsonRpcProvider(
           generateConfig(network).privateHttpProvider,

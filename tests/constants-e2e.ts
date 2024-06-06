@@ -1606,7 +1606,7 @@ export const Holders: {
     stUSD: '0xa9ddd91249dfdd450e81e1c56ab60e1a62651701',
     crvUSD: '0x171c53d55b1bcb725f660677d9e8bad7fd084282',
     stataArbUSDCn: '0x99afd53f807766a8b98400b0c785e500c041f32b',
-    stataArbUSDT: '0xb165a74407fe1e519d6bcbdec1ed3202b35a4140',
+    stataArbUSDT: '0x4ffad6ac852c0af0aa301376f4c5dea3a928b120',
     GYD: '0x5d82fa4f29fb22a9ed9e64e1c9c36873ee4d93ba',
   },
   [Network.OPTIMISM]: {
