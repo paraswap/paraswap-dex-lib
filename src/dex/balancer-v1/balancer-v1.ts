@@ -43,6 +43,7 @@ import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { BigNumber, ethers } from 'ethers';
 import { SpecialDex } from '../../executor/types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const {
   utils: { hexlify, hexZeroPad, solidityPack },
@@ -416,6 +417,14 @@ export class BalancerV1
       dexFuncHasRecipient: false,
       exchangeData: exchangeData,
       targetExchange: this.config.exchangeProxy,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              BalancerV1.proxyIface,
+              swapFunction,
+              'totalAmountOut',
+            )
+          : undefined,
     };
   }
 

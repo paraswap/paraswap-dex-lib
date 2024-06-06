@@ -47,7 +47,6 @@ import { assert, DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-import { OptimalSwapExchange } from '@paraswap/core';
 import { TickMath } from './contract-math/TickMath';
 import { OnPoolCreatedCallback, SolidlyV3Factory } from './solidly-v3-factory';
 
@@ -725,6 +724,7 @@ export class SolidlyV3
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: data.poolAddress,
+      returnAmountPos: undefined,
     };
   }
 

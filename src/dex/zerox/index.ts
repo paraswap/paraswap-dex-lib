@@ -257,6 +257,7 @@ export class ZeroX
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.getExchange(data),
+      returnAmountPos: undefined,
     };
   }
 

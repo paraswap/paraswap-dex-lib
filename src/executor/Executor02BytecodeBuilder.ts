@@ -22,6 +22,7 @@ import {
   ZEROS_20_BYTES,
   ZEROS_28_BYTES,
   ZEROS_4_BYTES,
+  DEFAULT_RETURN_AMOUNT_POS,
 } from './constants';
 import { assert } from 'ts-essentials';
 
@@ -276,6 +277,16 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     let { exchangeData, specialDexFlag, targetExchange, needWrapNative } =
       exchangeParam;
 
+    const routeNeedsRootUnwrapEth = this.doesRouteNeedsRootUnwrapEth(
+      priceRoute,
+      exchangeParams,
+    );
+
+    const returnAmountPos =
+      exchangeParam.returnAmountPos !== undefined && !routeNeedsRootUnwrapEth // prevent returnAmoutPos optimisation if route needs root unwrap eth
+        ? exchangeParam.returnAmountPos
+        : DEFAULT_RETURN_AMOUNT_POS;
+
     const applyVerticalBranching = this.doesSwapNeedToApplyVerticalBranching(
       priceRoute,
       routeIndex,
@@ -343,6 +354,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       destTokenPos,
       specialDexFlag || SpecialDex.DEFAULT,
       flag,
+      undefined,
+      returnAmountPos,
     );
   }
 

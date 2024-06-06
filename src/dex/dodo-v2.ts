@@ -13,6 +13,7 @@ import { NumberAsString } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
+import { extractReturnAmountPosition } from '../executor/utils';
 
 const DODOAproveAddress: { [network: number]: Address } = {
   [Network.MAINNET]: '0xCB859eA579b28e02B87A1FDE08d087ab9dbE5149',
@@ -252,6 +253,14 @@ export class DodoV2
       exchangeData: swapData,
       targetExchange: data.dodoProxy,
       spender: maybeSpender,
+      returnAmountPos:
+        _side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              swapFunction,
+              'returnAmount',
+            )
+          : undefined,
     };
   }
 }

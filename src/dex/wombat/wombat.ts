@@ -32,6 +32,7 @@ import { WombatBmw } from './wombat-bmw';
 import { fromWad } from './utils';
 import { WombatPool } from './wombat-pool';
 import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Wombat extends SimpleExchange implements IDex<WombatData> {
   // contract interfaces
@@ -339,6 +340,14 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              Wombat.poolInterface,
+              'swap',
+              'actualToAmount',
+            )
+          : undefined,
     };
   }
 

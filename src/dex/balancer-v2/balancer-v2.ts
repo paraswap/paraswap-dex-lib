@@ -1609,6 +1609,7 @@ export class BalancerV2
       exchangeData,
       specialDexFlag,
       targetExchange: this.vaultAddress,
+      returnAmountPos: undefined,
     };
   }
 
