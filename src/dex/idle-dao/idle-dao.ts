@@ -9,11 +9,13 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, isETHAddress, getBigIntPow } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   IdleDaoData,
@@ -186,6 +188,8 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       this.idleDaoAuthToken,
     );
 
+    // console.log('api_tokenList', this.tokenList);
+
     await this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
@@ -280,7 +284,13 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       // Look for idleToken
       const idleToken = getIdleTokenIfIdleDaoPair(this.network, _src, _dst);
       if (!idleToken) {
-        // console.log('IdleToken NOT FOUND -', blockNumber, this.network, _src, _dst)
+        // console.log(
+        //   'IdleToken NOT FOUND -',
+        //   blockNumber,
+        //   this.network,
+        //   _src,
+        //   _dst,
+        // );
         return null;
       }
 
@@ -408,14 +418,17 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     };
   }
 
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
     data: IdleDaoData,
     side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
     const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,
@@ -435,23 +448,21 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
         this.cdo,
         data.idleToken.cdoAddress,
         PoolFunctions[`deposit${data.idleToken.tokenType}`],
-        [srcAmount, this.augustusAddress],
+        [srcAmount, recipient],
       ];
     })();
 
-    const swapData = Interface.encodeFunctionData(
+    const exchangeData = Interface.encodeFunctionData(
       swapFunction,
       swapFunctionParams,
     );
 
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      swapCallee,
-    );
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData,
+      targetExchange: swapCallee,
+    };
   }
 
   async updatePoolState(): Promise<void> {

@@ -24,8 +24,8 @@ function testForNetwork(
   const holders = Holders[network];
 
   const sideToContractMethods = new Map([
-    [SwapSide.BUY, [ContractMethod.simpleBuy]],
-    [SwapSide.SELL, [ContractMethod.simpleSwap]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
