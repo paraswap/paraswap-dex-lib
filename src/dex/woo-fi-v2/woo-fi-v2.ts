@@ -7,6 +7,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -25,6 +27,7 @@ import { ethers } from 'ethers';
 import { addressDecode } from '../../lib/decoders';
 import { ifaces } from './utils';
 import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
+import { solidityPack } from 'ethers/lib/utils';
 
 export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
   readonly math: WooFiV2Math;
@@ -315,6 +318,45 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       calldata: [transferParams, swapData],
       values: ['0', '0'],
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: WooFiV2Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const _srcToken = srcToken.toLowerCase();
+    const _destToken = destToken.toLowerCase();
+
+    let rebateTo = this.rebateTo;
+    if (rebateTo === undefined) {
+      this.logger.error(`rebateTo is undefined in getDexParam`);
+      rebateTo = NULL_ADDRESS;
+    }
+
+    const swapData = ifaces.PPV2.encodeFunctionData('swap', [
+      _srcToken,
+      _destToken,
+      srcAmount,
+      MIN_CONVERSION_RATE,
+      recipient,
+      // this.augustusAddress,
+      rebateTo,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: this.config.wooPPV2Address,
+      transferSrcTokenBeforeSwap: this.config.wooPPV2Address,
     };
   }
 

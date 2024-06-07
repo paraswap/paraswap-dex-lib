@@ -10,6 +10,7 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { Contract } from 'ethers';
 
 function testForNetwork(
   network: Network,
@@ -35,12 +36,13 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.megaSwap,
-        ContractMethod.multiSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -169,7 +171,7 @@ function testForNetwork(
 describe('Dexalot E2E', () => {
   const dexKey = 'Dexalot';
 
-  describe('Avalanche', () => {
+  describe('Avalanche_V6', () => {
     const network = Network.AVALANCHE;
 
     const tokenASymbol: string = 'USDC';
@@ -190,7 +192,7 @@ describe('Dexalot E2E', () => {
     );
   });
 
-  describe('BTC.b -> USDC', () => {
+  describe('BTC.b -> USDC V6', () => {
     const network = Network.AVALANCHE;
 
     const tokenASymbol: string = 'BTCb';

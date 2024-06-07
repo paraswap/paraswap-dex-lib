@@ -105,7 +105,8 @@ export class __DexName__
   }
 
   // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
+  // V5: Used for multiSwap, buy & megaSwap
+  // V6: Not used, can be left blank
   // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
@@ -126,34 +127,6 @@ export class __DexName__
       payload,
       networkFee: '0',
     };
-  }
-
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: __DexName__Data,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { exchange } = data;
-
-    // Encode here the transaction arguments
-    const swapData = '';
-
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      exchange,
-    );
   }
 
   // This is called once before getTopPoolsForToken is

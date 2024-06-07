@@ -1,13 +1,23 @@
-import { OptimalRate, Address, Adapters } from './types';
+import {
+  OptimalRate,
+  Address,
+  Adapters,
+  OptimalSwap,
+  OptimalSwapExchange,
+} from './types';
 import { ETHER_ADDRESS, SwapSide } from './constants';
 import { RouterService } from './router';
 import { DexAdapterService } from './dex';
+import { IDexTxBuilder } from './dex/idex';
 
 export class TransactionBuilder {
   routerService: RouterService;
+  augustusAddress: Address;
 
   constructor(protected dexAdapterService: DexAdapterService) {
     this.routerService = new RouterService(this.dexAdapterService);
+    this.augustusAddress =
+      this.dexAdapterService.dexHelper.config.data.augustusAddress;
   }
 
   public async build({
@@ -80,6 +90,40 @@ export class TransactionBuilder {
       gasPrice,
       maxFeePerGas,
       maxPriorityFeePerGas,
+    };
+  }
+
+  public getExecutionContractAddress(): Address {
+    return this.augustusAddress;
+  }
+
+  public getDexCallsParams(
+    priceRoute: OptimalRate,
+    routeIndex: number,
+    swap: OptimalSwap,
+    swapIndex: number,
+    se: OptimalSwapExchange<any>,
+    minMaxAmount: string,
+    dex: IDexTxBuilder<any, any>,
+    executionContractAddress: string,
+  ): {
+    srcToken: Address;
+    destToken: Address;
+    recipient: Address;
+    srcAmount: string;
+    destAmount: string;
+    wethDeposit: bigint;
+    wethWithdraw: bigint;
+  } {
+    // for v5 only recipient param is used
+    return {
+      srcToken: swap.srcToken,
+      destToken: swap.destToken,
+      recipient: this.augustusAddress,
+      srcAmount: se.srcAmount,
+      destAmount: se.destAmount,
+      wethDeposit: 0n,
+      wethWithdraw: 0n,
     };
   }
 }

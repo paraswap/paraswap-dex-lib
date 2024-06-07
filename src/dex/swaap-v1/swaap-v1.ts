@@ -9,6 +9,8 @@ import {
   PoolLiquidity,
   Logger,
   MultiCallInput,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -255,6 +257,36 @@ export class SwaapV1 extends SimpleExchange implements IDex<SwaapV1Data> {
       swapData,
       data.pool,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SwaapV1Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const [params, functionName] = this.getSwaapV1Param(
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+    const swapData = SwaapV1.poolInterface.encodeFunctionData(
+      functionName,
+      params,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: data.pool,
+    };
   }
 
   // // Returns list of top pools based on liquidity. Max

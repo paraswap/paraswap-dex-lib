@@ -10,7 +10,7 @@ import { generateConfig } from '../../config';
 describe('SwaapV1 E2E', () => {
   const dexKey = 'SwaapV1';
 
-  describe('SwaapV1 POLYGON', () => {
+  describe('SwaapV1 POLYGON_V6', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -29,12 +29,14 @@ describe('SwaapV1 E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>

@@ -1,10 +1,11 @@
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { Interface } from '@ethersproject/abi';
-import { SwapSide } from '@paraswap/core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Logger,
   PoolLiquidity,
@@ -309,6 +310,36 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: WombatData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    const { exchange } = data;
+
+    // Encode here the transaction arguments
+    const swapData = Wombat.poolInterface.encodeFunctionData('swap', [
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      recipient,
+      getLocalDeadlineAsFriendlyPlaceholder(),
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+    };
   }
 
   // This is called once before getTopPoolsForToken is

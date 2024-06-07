@@ -26,12 +26,14 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -75,7 +77,7 @@ function testForNetwork(
 describe('PolygonMigrator E2E', () => {
   const dexKey = 'PolygonMigrator';
 
-  describe('Mainnet', () => {
+  describe('Mainnet_V6', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'POL';

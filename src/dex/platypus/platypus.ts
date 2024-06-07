@@ -9,6 +9,8 @@ import {
   PoolLiquidity,
   Logger,
   MultiCallInput,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -484,6 +486,47 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
           ]),
       data.pool,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: PlatypusData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapData = isETHAddress(srcToken)
+      ? Platypus.avaxPoolInterface.encodeFunctionData('swapFromETH', [
+          destToken,
+          1,
+          recipient,
+          getLocalDeadlineAsFriendlyPlaceholder(),
+        ])
+      : isETHAddress(destToken)
+      ? Platypus.avaxPoolInterface.encodeFunctionData('swapToETH', [
+          srcToken,
+          srcAmount,
+          1,
+          recipient,
+          getLocalDeadlineAsFriendlyPlaceholder(),
+        ])
+      : Platypus.poolInterface.encodeFunctionData('swap', [
+          srcToken,
+          destToken,
+          srcAmount,
+          1,
+          recipient,
+          getLocalDeadlineAsFriendlyPlaceholder(),
+        ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: data.pool,
+    };
   }
 
   // This is called once before getTopPoolsForToken is

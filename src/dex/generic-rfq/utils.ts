@@ -16,15 +16,9 @@ export const checkOrder = async (
   network: Network,
   augustusRFQAddress: Address,
   multiWrapper: MultiWrapper,
-  takerAddress: Address,
   order: AugustusOrderWithStringAndSignature,
   verifierContract?: ERC1271Contract,
 ) => {
-  if (order.taker.toLowerCase() !== takerAddress.toLowerCase()) {
-    throw new Error(
-      `Taker mismatch, expected ${takerAddress} but signed order got ${order.taker}`,
-    );
-  }
   const hash = calculateOrderHash(network, order, augustusRFQAddress);
 
   if (verifierContract) {
@@ -69,12 +63,12 @@ export const checkOrder = async (
     );
   }
 
-  const takerBalance = BigInt(
+  const makerAllowance = BigInt(
     balance.allowances[DEFAULT_ID_ERC20_AS_STRING][augustusRFQAddress],
   );
-  if (takerBalance <= makerAmountBigInt) {
+  if (makerAllowance <= makerAmountBigInt) {
     throw new Error(
-      `maker does not have enough allowance (request ${makerAmountBigInt} value ${takerBalance}`,
+      `maker does not have enough allowance (request ${makerAmountBigInt} value ${makerAllowance}`,
     );
   }
 };
