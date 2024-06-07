@@ -33,7 +33,6 @@ type BaseConfig = {
   hashFlowDisabledMMs: string[];
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
-  smardexSubgraphAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 
@@ -73,7 +72,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingBlocksBackToTriggerUpdate: 0,
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
     uniswapV3EventLoggingSampleRate: 0,
@@ -132,34 +130,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     forceRpcFallbackDexs: [],
   },
-  [Network.ROPSTEN]: {
-    network: Network.ROPSTEN,
-    networkName: 'Ethereum Ropsten Testnet',
-    isTestnet: true,
-    mainnetNetwork: Network.MAINNET,
-    nativeTokenName: 'Ether',
-    nativeTokenSymbol: 'ETH',
-    wrappedNativeTokenAddress: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
-    hasEIP1559: true,
-    augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-    augustusRFQAddress: '0x34268C38fcbC798814b058656bC0156C7511c0E4',
-    tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
-    multicallV2Address: '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696',
-    privateHttpProvider: process.env.HTTP_PROVIDER_3,
-    hashFlowDisabledMMs:
-      process.env[`HASHFLOW_DISABLED_MMS_3`]?.split(',') || [],
-
-    adapterAddresses: {
-      RopstenAdapter01: '0x59b7F6258e78C3E5234bb651656EDd0e08868cd5',
-      RopstenBuyAdapter: '0x63e908A4C793a33e40254362ED1A5997a234D85C',
-    },
-    uniswapV2ExchangeRouterAddress:
-      '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
-    rfqConfigs: {},
-    rpcPollingMaxAllowedStateDelayInBlocks: 5,
-    rpcPollingBlocksBackToTriggerUpdate: 3,
-    forceRpcFallbackDexs: [],
-  },
   [Network.BSC]: {
     network: Network.BSC,
     networkName: 'Binance Smart Chain Mainnet',
@@ -179,7 +149,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Executor03: '0xBa0200000D0903dC0c1000801B0573090078E09E',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
     adapterAddresses: {
@@ -214,7 +183,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Executor03: '0xBa0200000D0903dC0c1000801B0573090078E09E',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
     adapterAddresses: {
@@ -245,7 +213,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xd7Fc8aD069f95B6e2835f4DEff03eF84241cF0E1',
     privateHttpProvider: process.env.HTTP_PROVIDER_43114,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
@@ -281,7 +248,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_250`]?.split(',') || [],
     augustusV6Address: '0x000dB803A70511E09dA650D4C0506d0000100000',
@@ -316,7 +282,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0x7eCfBaa8742fDf5756DAC92fbc8b90a19b8815bF',
     privateHttpProvider: process.env.HTTP_PROVIDER_42161,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
@@ -361,7 +326,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Executor03: '0xBa0200000D0903dC0c1000801B0573090078E09E',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
     adapterAddresses: {
@@ -404,7 +368,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
     uniswapV3EventLoggingSampleRate: 0,
@@ -427,7 +390,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xeDF6D2a16e8081F777eB623EeB4411466556aF3d',
     privateHttpProvider: process.env.HTTP_PROVIDER_8453,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
     hashFlowDisabledMMs: [],
     augustusV6Address: '0x000dB803A70511E09dA650D4C0506d0000100000',
     executorsAddresses: {
@@ -489,7 +451,6 @@ export function generateConfig(network: number): Config {
     rpcPollingBlocksBackToTriggerUpdate:
       baseConfig.rpcPollingBlocksBackToTriggerUpdate,
     hashFlowAuthToken: baseConfig.hashFlowAuthToken,
-    smardexSubgraphAuthToken: baseConfig.smardexSubgraphAuthToken,
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
     dexalotAuthToken: baseConfig.dexalotAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,

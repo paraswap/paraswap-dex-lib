@@ -266,10 +266,7 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
       targetExchange: this.config.wstETHAddress,
       returnAmountPos:
         side === SwapSide.SELL
-          ? extractReturnAmountPosition(
-              WstETH.wstETHIface,
-              swapFunction,
-            )
+          ? extractReturnAmountPosition(WstETH.wstETHIface, swapFunction)
           : undefined,
     };
   }

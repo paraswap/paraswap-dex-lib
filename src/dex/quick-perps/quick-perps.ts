@@ -246,10 +246,7 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
       transferSrcTokenBeforeSwap: this.params.vault,
       returnAmountPos:
         side === SwapSide.SELL
-          ? extractReturnAmountPosition(
-              iface,
-              functionName,
-            )
+          ? extractReturnAmountPosition(iface, functionName)
           : undefined,
     };
   }
