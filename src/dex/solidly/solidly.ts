@@ -9,6 +9,7 @@ import {
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   PoolLiquidity,
   SimpleExchangeParam,
@@ -35,6 +36,15 @@ import {
 } from './types';
 import { SolidlyConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import {
+  hexDataLength,
+  hexZeroPad,
+  hexlify,
+  id,
+  solidityPack,
+} from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
+import { Flag, SpecialDex } from '../../executor/types';
 
 const erc20Iface = new Interface(erc20ABI);
 const solidlyPairIface = new Interface(solidlyPair);
@@ -632,6 +642,45 @@ export class Solidly extends UniswapV2 {
       targetExchange: data.router,
       payload,
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SolidlyData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    let exchangeDataTypes = ['bytes4', 'bytes32'];
+
+    let exchangeDataToPack = [
+      hexZeroPad(hexlify(0), 4),
+      hexZeroPad(hexlify(data.pools.length), 32),
+    ];
+
+    const pools = encodePools(data.pools, this.feeFactor);
+    pools.forEach(pool => {
+      exchangeDataTypes.push('bytes32');
+      exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
+    });
+
+    const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: recipient,
+      specialDexFlag: data.isFeeTokenInRoute
+        ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
+        : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
+      transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
+        ? undefined
+        : data.pools[0].address,
     };
   }
 }

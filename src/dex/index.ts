@@ -1,10 +1,10 @@
 import _ from 'lodash';
 import { UnoptimizedRate } from '../types';
-import { CurveV2 } from './curve-v2';
+import { CurveV2 } from './curve-v2/curve-v2';
 import { IDexTxBuilder, DexConstructor, IDex, IRouteOptimizer } from './idex';
 import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
-import { StablePool } from './stable-pool';
+import { StablePool } from './stable-pool/stable-pool';
 import { Weth } from './weth/weth';
 import { PolygonMigrator } from './polygon-migrator/polygon-migrator';
 import { ZeroX } from './zerox';
@@ -17,23 +17,23 @@ import { uniswapMerge } from './uniswap-v2/optimizer';
 import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
 import { Dfyn } from './uniswap-v2/dfyn';
-import { Bancor } from './bancor';
-import { BProtocol } from './bProtocol';
+import { Bancor } from './bancor/bancor';
+import { BProtocol } from './bProtocol/bProtocol';
 import { MStable } from './mStable';
 import { Shell } from './shell';
-import { Onebit } from './onebit';
-import { Compound } from './compound';
+import { Onebit } from './onebit/onebit';
+import { Compound } from './compound/compound';
 import { AaveV2 } from './aave-v2/aave-v2';
 import { AaveV3 } from './aave-v3/aave-v3';
 import { OneInchLp } from './OneInchLp';
-import { DodoV1 } from './dodo-v1';
+import { DodoV1 } from './dodo-v1/dodo-v1';
 import { DodoV2 } from './dodo-v2';
-import { Smoothy } from './smoothy';
+import { Smoothy } from './smoothy/smoothy';
 import { Nerve } from './nerve/nerve';
 import { IDexHelper } from '../dex-helper';
 import { SwapSide } from '../constants';
 import { Adapters } from '../types';
-import { Lido } from './lido';
+import { Lido } from './lido/lido';
 import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
@@ -70,7 +70,7 @@ import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
 import { TraderJoeV2 } from './trader-joe-v2';
 import { SwaapV2 } from './swaap-v2/swaap-v2';
-import { TraderJoeV21 } from './trader-joe-v2.1';
+import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
 import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
@@ -171,6 +171,7 @@ export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
 
 interface IGetDirectFunctionName {
   getDirectFunctionName?(): string[];
+  getDirectFunctionNameV6?(): string[];
 }
 
 export class DexAdapterService {
@@ -178,6 +179,7 @@ export class DexAdapterService {
     [key: string]: LegacyDexConstructor | DexConstructor<any, any, any>;
   } = {};
   directFunctionsNames: string[];
+  directFunctionsNamesV6: string[];
   dexInstances: {
     [key: string]: IDexTxBuilder<any, any> | IDex<any, any, any>;
   } = {};
@@ -262,6 +264,17 @@ export class DexAdapterService {
       .filter(x => !!x)
       .map(v => v.toLowerCase());
 
+    // include GenericRFQ, because it has direct method for v6
+    this.directFunctionsNamesV6 = [...LegacyDexes, ...Dexes, GenericRFQ]
+      .flatMap(dexAdapter => {
+        const _dexAdapter = dexAdapter as IGetDirectFunctionName;
+        return _dexAdapter.getDirectFunctionNameV6
+          ? _dexAdapter.getDirectFunctionNameV6()
+          : [];
+      })
+      .filter(x => !!x)
+      .map(v => v.toLowerCase());
+
     this.uniswapV2Alias =
       this.network in UniswapV2Alias
         ? UniswapV2Alias[this.network].toLowerCase()
@@ -288,6 +301,10 @@ export class DexAdapterService {
 
   isDirectFunctionName(functionName: string): boolean {
     return this.directFunctionsNames.includes(functionName.toLowerCase());
+  }
+
+  isDirectFunctionNameV6(functionName: string): boolean {
+    return this.directFunctionsNamesV6.includes(functionName.toLowerCase());
   }
 
   getAllDexKeys() {

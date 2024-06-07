@@ -13,6 +13,7 @@ import {
   PoolPrices,
   PreprocessTransactionOptions,
   ExchangeTxInfo,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -648,58 +649,6 @@ export class SolidlyV3
     return { address, decimals: 0 };
   }
 
-  async preProcessTransaction(
-    optimalSwapExchange: OptimalSwapExchange<SolidlyV3Data>,
-    srcToken: Token,
-    _0: Token,
-    _1: SwapSide,
-    options: PreprocessTransactionOptions,
-  ): Promise<[OptimalSwapExchange<SolidlyV3Data>, ExchangeTxInfo]> {
-    if (!options.isDirectMethod) {
-      return [
-        optimalSwapExchange,
-        {
-          deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
-        },
-      ];
-    }
-
-    assert(
-      optimalSwapExchange.data !== undefined,
-      `preProcessTransaction: data field is missing`,
-    );
-
-    let isApproved: boolean | undefined;
-
-    try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, optimalSwapExchange.exchange)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
-    } catch (e) {
-      this.logger.error(
-        `preProcessTransaction failed to retrieve allowance info: `,
-        e,
-      );
-    }
-
-    return [
-      {
-        ...optimalSwapExchange,
-        data: {
-          ...optimalSwapExchange.data,
-          isApproved,
-        },
-      },
-      {
-        deadline: BigInt(getLocalDeadlineAsFriendlyPlaceholder()),
-      },
-    ];
-  }
-
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -738,6 +687,45 @@ export class SolidlyV3
       swapData,
       data.poolAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SolidlyV3Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction = this.poolIface.getFunction(
+      'swap(address,bool,int256,uint160)',
+    );
+
+    const swapFunctionParams: SolidlyV3SimpleSwapParams = {
+      recipient,
+      zeroForOne: data.zeroForOne,
+      amountSpecified:
+        side === SwapSide.SELL
+          ? srcAmount.toString()
+          : (-destAmount).toString(),
+      sqrtPriceLimitX96: data.zeroForOne
+        ? (TickMath.MIN_SQRT_RATIO + BigInt(1)).toString()
+        : (TickMath.MAX_SQRT_RATIO - BigInt(1)).toString(),
+    };
+    const swapData = this.poolIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams.recipient,
+      swapFunctionParams.zeroForOne,
+      swapFunctionParams.amountSpecified,
+      swapFunctionParams.sqrtPriceLimitX96,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: data.poolAddress,
+    };
   }
 
   async getTopPoolsForToken(

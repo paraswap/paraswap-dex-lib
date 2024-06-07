@@ -1,3 +1,4 @@
+import { Address } from '@paraswap/sdk';
 import { NumberAsString } from '../../types';
 
 export enum OrderStatus {
@@ -46,3 +47,36 @@ export interface ZeroXSignedOrderV4 {
 }
 
 export type ZeroXSignedOrder = ZeroXSignedOrderV2 | ZeroXSignedOrderV4;
+
+export enum ZeroXFunctions {
+  swapOnZeroXv2 = 'swapOnZeroXv2',
+  swapOnZeroXv4 = 'swapOnZeroXv4',
+  swapOnZeroXv2WithPermit = 'swapOnZeroXv2WithPermit',
+  swapOnZeroXv4WithPermit = 'swapOnZeroXv4WithPermit',
+}
+
+export type ZeroXData = {
+  version: number;
+  order: ZeroXSignedOrder;
+};
+
+export type SwapOnZeroXParam = [
+  srcToken: Address,
+  destToken: Address,
+  srcAmount: NumberAsString,
+  destAmount: NumberAsString,
+  exchange: Address,
+  payload: string,
+];
+
+export type SwapOnZeroXWithPermitParam = [
+  srcToken: Address,
+  destToken: Address,
+  srcAmount: NumberAsString,
+  destAmount: NumberAsString,
+  exchange: Address,
+  payload: string,
+  permit: string,
+];
+
+export type ZeroXParam = SwapOnZeroXParam | SwapOnZeroXWithPermitParam;

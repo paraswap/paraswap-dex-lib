@@ -49,7 +49,7 @@ import { generateConfig } from '../../config';
 describe('JarvisV6 E2E', () => {
   const dexKey = 'JarvisV6';
 
-  describe('JarvisV6 MAINNET', () => {
+  describe('POLYGON', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -68,9 +68,10 @@ describe('JarvisV6 E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
     ]);
