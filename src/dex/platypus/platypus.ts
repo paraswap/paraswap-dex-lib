@@ -38,6 +38,7 @@ import PoolABI from '../../abi/platypus/pool.json';
 import AvaxPoolABI from '../../abi/platypus/avax-pool.json';
 import AssetABI from '../../abi/platypus/asset.json';
 import OracleABI from '../../abi/platypus/oracle.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
   static readonly erc20Interface = new Interface(ERC20ABI);
@@ -497,22 +498,34 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
     data: PlatypusData,
     side: SwapSide,
   ): DexExchangeParam {
+    const iface = isETHAddress(srcToken)
+      ? Platypus.avaxPoolInterface
+      : isETHAddress(destToken)
+      ? Platypus.avaxPoolInterface
+      : Platypus.poolInterface;
+
+    const swapFunction = isETHAddress(srcToken)
+      ? 'swapFromETH'
+      : isETHAddress(destToken)
+      ? 'swapToETH'
+      : 'swap';
+
     const swapData = isETHAddress(srcToken)
-      ? Platypus.avaxPoolInterface.encodeFunctionData('swapFromETH', [
+      ? iface.encodeFunctionData(swapFunction, [
           destToken,
           1,
           recipient,
           getLocalDeadlineAsFriendlyPlaceholder(),
         ])
       : isETHAddress(destToken)
-      ? Platypus.avaxPoolInterface.encodeFunctionData('swapToETH', [
+      ? iface.encodeFunctionData(swapFunction, [
           srcToken,
           srcAmount,
           1,
           recipient,
           getLocalDeadlineAsFriendlyPlaceholder(),
         ])
-      : Platypus.poolInterface.encodeFunctionData('swap', [
+      : iface.encodeFunctionData(swapFunction, [
           srcToken,
           destToken,
           srcAmount,
@@ -526,6 +539,10 @@ export class Platypus extends SimpleExchange implements IDex<PlatypusData> {
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: data.pool,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(iface, swapFunction, 'actualToAmount')
+          : undefined,
     };
   }
 

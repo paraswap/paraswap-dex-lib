@@ -13,6 +13,7 @@ import { NumberAsString } from '@paraswap/core';
 import { IDexHelper } from '../../dex-helper';
 import { DodoV1Data, DodoV1Functions, DodoV1Param } from './types';
 import { DODOAproveAddress, DODOV2ProxyAddress } from './config';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class DodoV1
   extends SimpleExchange
@@ -118,6 +119,14 @@ export class DodoV1
       exchangeData: swapData,
       targetExchange: DODOV2ProxyAddress[this.network],
       spender: DODOAproveAddress[this.network],
+      returnAmountPos:
+        _side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.dodoV2Proxy,
+              swapFunction,
+              'returnAmount',
+            )
+          : undefined,
     };
   }
 }

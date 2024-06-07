@@ -41,6 +41,7 @@ import {
 import { SUBGRAPH_TIMEOUT } from '../../constants';
 import RouterABI from '../../abi/maverick-v1/router.json';
 import { NumberAsString } from '@paraswap/core';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const MAX_POOL_CNT = 1000;
 
@@ -402,6 +403,14 @@ export class MaverickV1
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.config.routerAddress,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              MaverickV1Functions.exactInputSingle,
+              'amountOut',
+            )
+          : undefined,
     };
   }
 

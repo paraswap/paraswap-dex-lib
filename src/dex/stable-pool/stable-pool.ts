@@ -12,6 +12,7 @@ import { SimpleExchange } from '../simple-exchange';
 import StablePoolABI from '../../abi/StablePool.json';
 import { IDexHelper } from '../../dex-helper';
 import { StablePoolFunctions, StablePoolData, StablePoolParam } from './types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class StablePool
   extends SimpleExchange
@@ -123,6 +124,13 @@ export class StablePool
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              StablePoolFunctions.swap,
+            )
+          : undefined,
     };
   }
 }

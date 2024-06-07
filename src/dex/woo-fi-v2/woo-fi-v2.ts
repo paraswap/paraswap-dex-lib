@@ -28,6 +28,7 @@ import { addressDecode } from '../../lib/decoders';
 import { ifaces } from './utils';
 import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
 import { solidityPack } from 'ethers/lib/utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
   readonly math: WooFiV2Math;
@@ -357,6 +358,10 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       exchangeData: swapData,
       targetExchange: this.config.wooPPV2Address,
       transferSrcTokenBeforeSwap: this.config.wooPPV2Address,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(ifaces.PPV2, 'swap', 'realToAmount')
+          : undefined,
     };
   }
 
