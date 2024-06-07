@@ -7,7 +7,7 @@ import { Network } from '../src/constants';
 import { Address } from '../src/types';
 import { generateConfig } from '../src/config';
 // TODO: Import correct ABI
-import ABI from '../src/abi/angle-transmuter/MorphoVault.json';
+import ABI from '../src/abi/angle-transmuter/ChainlinkEACAggregatorProxy.json';
 
 // This is a helper script to fetch blockNumbers where a certain
 // event was released by a certain contract
@@ -40,12 +40,12 @@ export async function getBlockNumbersForEvents(
 }
 
 // TODO: Set your values here
-const network = Network.MAINNET;
-const eventNames = ['UpdateLastTotalAssets', 'Deposit', 'Withdraw'];
-const address = '0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB';
+const network = Network.ARBITRUM;
+const eventNames = ['AnswerUpdated'];
+const address = '0x2946220288DbBF77dF0030fCecc2a8348CbBE32C';
 const provider = new StaticJsonRpcProvider(
   generateConfig(network).privateHttpProvider,
   network,
 );
 
-getBlockNumbersForEvents(address, ABI, eventNames, 0, 150000, provider);
+getBlockNumbersForEvents(address, ABI, eventNames, 0, 3000000, provider);

@@ -8,7 +8,6 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   ChainlinkConfig,
   DecodedOracleConfig,
-  DexParams,
   MorphoConfig,
   OracleFeed,
   OracleHyperparameter,
@@ -21,6 +20,7 @@ import {
   TransmuterState,
 } from './types';
 import TransmuterABI from '../../abi/angle-transmuter/Transmuter.json';
+import TransmuterSidechainABI from '../../abi/angle-transmuter/TransmuterSidechain.json';
 import { Contract } from 'web3-eth-contract';
 import { TransmuterSubscriber } from './transmuter';
 import { PythSubscriber } from './pyth';
@@ -32,14 +32,9 @@ import {
   filterDictionaryOnly,
 } from './utils';
 import { RedstoneSubscriber } from './redstone';
-import {
-  formatEther,
-  formatUnits,
-  parseEther,
-  parseUnits,
-} from 'ethers/lib/utils';
+import { formatEther, formatUnits, parseUnits } from 'ethers/lib/utils';
 import { BackedSubscriber } from './backedOracle';
-import { SwapSide } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { ethers } from 'ethers';
 import { BLOCK_UPGRADE_ORACLE } from './constants';
 import { MorphoOracleEventPool } from './morphoOracle';
@@ -49,7 +44,7 @@ import _ from 'lodash';
 
 export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
   public transmuter: Contract;
-  static angleTransmuterIface = new Interface(TransmuterABI);
+  public readonly angleTransmuterIface;
   readonly config: PoolConfig;
 
   constructor(
@@ -139,7 +134,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       {},
     );
 
-    let pythListener: PythSubscriber<PoolState>[] = [];
+    const pythListener: PythSubscriber<PoolState>[] = [];
     if (!_.isEmpty(config.oracles.pyth)) {
       pythListener[0] = new PythSubscriber<PoolState>(
         config.oracles.pyth.proxy,
@@ -153,6 +148,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       config.stablecoin.address,
       config.transmuter,
       config.collaterals,
+      network,
       lens<DeepReadonly<PoolState>>().transmuter,
       dexHelper.getLogger(`${parentName}-${network} Transmuter`),
     );
@@ -177,6 +173,10 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
       },
     );
 
+    this.angleTransmuterIface =
+      network === Network.MAINNET
+        ? new Interface(TransmuterABI)
+        : new Interface(TransmuterSidechainABI);
     this.transmuter = new this.dexHelper.web3Provider.eth.Contract(
       TransmuterABI as any,
       config.transmuter,
@@ -229,6 +229,8 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     const otherStablecoinIssued =
       state.transmuter.totalStablecoinIssued - collatStablecoinIssued;
     const fees = state.transmuter.collaterals[collateral].fees;
+    const stablecoinCap =
+      state.transmuter.collaterals[collateral].stablecoinCap;
 
     return _amounts.map(_amount => {
       if (isMint && side === SwapSide.SELL)
@@ -238,6 +240,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           fees,
           collatStablecoinIssued,
           otherStablecoinIssued,
+          stablecoinCap,
         );
       if (isMint && side === SwapSide.BUY)
         return _quoteMintExactOutput(
@@ -246,6 +249,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           fees,
           collatStablecoinIssued,
           otherStablecoinIssued,
+          stablecoinCap,
         );
       if (!isMint && side === SwapSide.SELL)
         return _quoteBurnExactInput(
@@ -278,7 +282,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
           {
             target: transmuterAddress,
             callData:
-              TransmuterSubscriber.interface.encodeFunctionData(
+              TransmuterSubscriber.transmuterCrosschainInterface.encodeFunctionData(
                 'getCollateralList',
               ),
           },
@@ -286,7 +290,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
         .call({}, blockNumber)
     ).returnData;
     const tokens: Address[] =
-      TransmuterSubscriber.interface.decodeFunctionResult(
+      TransmuterSubscriber.transmuterCrosschainInterface.decodeFunctionResult(
         'getCollateralList',
         tokensResult[0],
       )[0];
@@ -464,10 +468,11 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
   ) {
     const getOracleConfigData = collaterals.map(collat => {
       return {
-        callData: TransmuterSubscriber.interface.encodeFunctionData(
-          'getOracle',
-          [collat],
-        ),
+        callData:
+          TransmuterSubscriber.transmuterCrosschainInterface.encodeFunctionData(
+            'getOracle',
+            [collat],
+          ),
         target: transmuterAddress,
       };
     });
@@ -479,7 +484,10 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
 
     const oracleConfigs: DecodedOracleConfig[] = oracleConfigResult.map(
       (p: any) =>
-        TransmuterSubscriber.interface.decodeFunctionResult('getOracle', p),
+        TransmuterSubscriber.transmuterCrosschainInterface.decodeFunctionResult(
+          'getOracle',
+          p,
+        ),
     );
 
     let chainlinkMap: ChainlinkConfig = {} as ChainlinkConfig;

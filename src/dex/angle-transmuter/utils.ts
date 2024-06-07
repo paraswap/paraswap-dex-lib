@@ -7,15 +7,19 @@ export function _quoteMintExactInput(
   fees: Fees,
   stablecoinsIssued: number,
   otherStablecoinSupply: number,
+  stablecoinCap: number,
 ): number {
-  const amountOut = oracleValue * amountIn;
-  return _quoteFees(
+  let amountOut = oracleValue * amountIn;
+  amountOut = _quoteFees(
     fees,
     QuoteType.MintExactInput,
     amountOut,
     stablecoinsIssued,
     otherStablecoinSupply,
   );
+  if (stablecoinCap >= 0 && amountOut + stablecoinsIssued > stablecoinCap)
+    throw new Error('InvalidSwap');
+  return amountOut;
 }
 
 /// @notice Computes the `amountIn` of collateral to get during a mint of `amountOut` of stablecoins
@@ -25,7 +29,10 @@ export function _quoteMintExactOutput(
   fees: Fees,
   stablecoinsIssued: number,
   otherStablecoinSupply: number,
+  stablecoinCap: number,
 ): number {
+  if (stablecoinCap >= 0 && amountOut + stablecoinsIssued > stablecoinCap)
+    throw new Error('InvalidSwap');
   const amountIn = _quoteFees(
     fees,
     QuoteType.MintExactOutput,

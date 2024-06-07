@@ -13,6 +13,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 import { Collateral } from './angle-transmuter-integration.test';
 import { BI_POWS } from '../../bigint-constants';
+import { SmartTokenParams } from '../../../tests/smart-tokens';
 
 function testForNetwork(
   network: Network,
@@ -80,45 +81,76 @@ function testForNetwork(
 describe('AngleTransmuter E2E', () => {
   const dexKey = 'AngleTransmuter';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  const networks = [Network.MAINNET, Network.ARBITRUM, Network.BASE];
+  const stablesPerNetwork: { [network: number]: SmartTokenParams[] } = {
+    [Network.MAINNET]: [
+      Tokens[Network.MAINNET].EURA,
+      Tokens[Network.MAINNET].USDA,
+    ],
+    [Network.ARBITRUM]: [Tokens[Network.ARBITRUM].USDA],
+    [Network.BASE]: [Tokens[Network.BASE].USDA],
+  };
+  const collateralsPerNetwork: {
+    [network: number]: { [stable: string]: SmartTokenParams[] };
+  } = {
+    [Network.MAINNET]: {
+      USDA: [
+        Tokens[Network.MAINNET].bIB01,
+        Tokens[Network.MAINNET].USDC,
+        Tokens[Network.MAINNET].steakUSDC,
+      ],
+      EURA: [
+        Tokens[Network.MAINNET].EUROC,
+        Tokens[Network.MAINNET].bC3M,
+        Tokens[Network.MAINNET].bERNX,
+      ],
+    },
+    [Network.ARBITRUM]: {
+      USDA: [Tokens[Network.ARBITRUM].USDC],
+    },
+    [Network.BASE]: {
+      USDA: [Tokens[Network.BASE].USDC],
+    },
+  };
 
-    const tokens = Tokens[network];
-    const stables = [tokens.EURA, tokens.USDA];
+  networks.forEach(network =>
+    describe('Mainnet', () => {
+      const tokens = Tokens[network];
 
-    const collaterals: Collateral = {
-      USDA: [tokens.bIB01, tokens.USDC, tokens.steakUSDC],
-      EURA: [tokens.EUROC, tokens.bC3M, tokens.bERNX],
-    };
+      const stables = stablesPerNetwork[network];
+      const collaterals = collateralsPerNetwork[network];
 
-    const isKYC: { [token: string]: boolean } = {};
-    isKYC[tokens.bIB01.symbol!] = true;
-    isKYC[tokens.bC3M.symbol!] = true;
-    isKYC[tokens.bERNX.symbol!] = true;
+      const isKYC: { [token: string]: boolean } = {};
+      if (network === Network.MAINNET) {
+        isKYC[tokens.bIB01.symbol!] = true;
+        isKYC[tokens.bC3M.symbol!] = true;
+        isKYC[tokens.bERNX.symbol!] = true;
+      }
 
-    stables.forEach(stable =>
-      collaterals[stable.symbol! as keyof Collateral].forEach(collateral =>
-        describe(`${stable.symbol}/${collateral.symbol}`, () => {
-          const stableAmount: string = (
-            1n * BI_POWS[stable.decimals]
-          ).toString();
-          const collateralAmount: string = (
-            1n * BI_POWS[collateral.decimals]
-          ).toString();
-          const nativeTokenAmount = '1000000000000000000';
+      stables.forEach(stable =>
+        collaterals[stable.symbol! as keyof Collateral].forEach(collateral =>
+          describe(`${stable.symbol}/${collateral.symbol}`, () => {
+            const stableAmount: string = (
+              1n * BI_POWS[stable.decimals]
+            ).toString();
+            const collateralAmount: string = (
+              1n * BI_POWS[collateral.decimals]
+            ).toString();
+            const nativeTokenAmount = '1000000000000000000';
 
-          testForNetwork(
-            network,
-            dexKey,
-            collateral.symbol!,
-            stable.symbol!,
-            collateralAmount,
-            stableAmount,
-            nativeTokenAmount,
-            isKYC[collateral.symbol!],
-          );
-        }),
-      ),
-    );
-  });
+            testForNetwork(
+              network,
+              dexKey,
+              collateral.symbol!,
+              stable.symbol!,
+              collateralAmount,
+              stableAmount,
+              nativeTokenAmount,
+              isKYC[collateral.symbol!],
+            );
+          }),
+        ),
+      );
+    }),
+  );
 });

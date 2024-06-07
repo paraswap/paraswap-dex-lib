@@ -17,6 +17,7 @@ export type CollateralState = {
   fees: Fees;
   stablecoinsIssued: number;
   config: Oracle;
+  stablecoinCap: number;
 };
 
 export type TransmuterState = {
@@ -94,8 +95,8 @@ export type TransmuterParams = {
   pyth: Address;
 };
 export type DexParams = {
-  EUR: TransmuterParams;
-  USD: TransmuterParams;
+  EUR?: TransmuterParams;
+  USD?: TransmuterParams;
 };
 
 export enum QuoteType {

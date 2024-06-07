@@ -9,7 +9,12 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
 import { DeepReadonly } from 'ts-essentials';
-import { configEUR, configUSD } from './constants';
+import {
+  configEUR,
+  configUSD,
+  configUSDArbitrum,
+  configUSDBase,
+} from './constants';
 
 jest.setTimeout(50 * 1000);
 
@@ -42,9 +47,8 @@ describe('AngleTransmuter EventPool Mainnet', () => {
       RedemptionCurveParamsSet: [],
       OracleSet: [],
       Swap: [
-        19582703, 19583592, 19584048, 19589408, 19602964, 19607526, 19611131,
-        19614332, 19616567, 19623965, 19625332, 19631246, 19631653, 19633515,
-        19638468, 19648373, 19653214, 19656178, 19657413, 19667310, 19667763,
+        19582703, 19584048, 19589408, 19602964, 19607526, 19614332, 19623965,
+        19625332, 19631246, 19631653, 19633515, 19638468, 19667763,
       ],
       Redeemed: [],
       ReservesAdjusted: [],
@@ -147,7 +151,7 @@ describe('AngleTransmuter EventPool Mainnet', () => {
       configEUR,
     );
     angleTransmuterPoolUSD = new AngleTransmuterEventPool(
-      `${dexKey}_EUR`,
+      `${dexKey}_USD`,
       network,
       dexHelper,
       logger,
@@ -184,6 +188,150 @@ describe('AngleTransmuter EventPool Mainnet', () => {
       });
     },
   );
+
+  Object.entries(eventsToTestUSD).forEach(
+    ([poolAddress, events]: [string, EventMappings]) => {
+      describe(`Events for ${poolAddress}`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async () => {
+                  await testEventSubscriber(
+                    angleTransmuterPoolUSD,
+                    angleTransmuterPoolUSD.addressesSubscribed,
+                    (_blockNumber: number) =>
+                      fetchPoolState(
+                        angleTransmuterPoolUSD,
+                        _blockNumber,
+                        poolAddress,
+                      ),
+                    blockNumber,
+                    `${dexKey}_${poolAddress}`,
+                    dexHelper.provider,
+                  );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
+});
+
+describe('AngleTransmuter EventPool - Arbitrum', () => {
+  const dexKey = 'AngleTransmuter';
+  const network = Network.ARBITRUM;
+  const dexHelper = new DummyDexHelper(network);
+  const logger = dexHelper.getLogger(dexKey);
+  let angleTransmuterPoolUSD: AngleTransmuterEventPool;
+
+  // poolAddress -> EventMappings
+
+  const eventsToTestUSD: Record<Address, EventMappings> = {
+    //Transmuter Events
+    '0xD253b62108d1831aEd298Fc2434A5A8e4E418053': {
+      FeesSet: [],
+      RedemptionCurveParamsSet: [],
+      OracleSet: [],
+      Swap: [216524984, 216616166],
+      Redeemed: [],
+      ReservesAdjusted: [],
+      CollateralAdded: [],
+      CollateralRevoked: [],
+      CollateralWhitelistStatusUpdated: [],
+      WhitelistStatusToggled: [],
+      StablecoinCapSet: [],
+    },
+    // Chainlink
+    '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3': {
+      AnswerUpdated: [
+        216725917, 217070222, 217415479, 217760769, 218104896, 218449091,
+      ],
+    },
+  };
+
+  beforeEach(async () => {
+    angleTransmuterPoolUSD = new AngleTransmuterEventPool(
+      `${dexKey}_USD`,
+      network,
+      dexHelper,
+      logger,
+      configUSDArbitrum,
+    );
+  });
+
+  Object.entries(eventsToTestUSD).forEach(
+    ([poolAddress, events]: [string, EventMappings]) => {
+      describe(`Events for ${poolAddress}`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async () => {
+                  await testEventSubscriber(
+                    angleTransmuterPoolUSD,
+                    angleTransmuterPoolUSD.addressesSubscribed,
+                    (_blockNumber: number) =>
+                      fetchPoolState(
+                        angleTransmuterPoolUSD,
+                        _blockNumber,
+                        poolAddress,
+                      ),
+                    blockNumber,
+                    `${dexKey}_${poolAddress}`,
+                    dexHelper.provider,
+                  );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
+});
+
+describe('AngleTransmuter EventPool - Base', () => {
+  const dexKey = 'AngleTransmuter';
+  const network = Network.BASE;
+  const dexHelper = new DummyDexHelper(network);
+  const logger = dexHelper.getLogger(dexKey);
+  let angleTransmuterPoolUSD: AngleTransmuterEventPool;
+
+  // poolAddress -> EventMappings
+
+  const eventsToTestUSD: Record<Address, EventMappings> = {
+    //Transmuter Events
+    '0x222222880e079445Df703c0604706E71a538Fd4f': {
+      FeesSet: [],
+      RedemptionCurveParamsSet: [],
+      OracleSet: [],
+      Swap: [],
+      Redeemed: [],
+      ReservesAdjusted: [],
+      CollateralAdded: [],
+      CollateralRevoked: [],
+      CollateralWhitelistStatusUpdated: [],
+      WhitelistStatusToggled: [],
+      StablecoinCapSet: [],
+    },
+    // Chainlink
+    '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B': {
+      AnswerUpdated: [15401397],
+    },
+  };
+
+  beforeEach(async () => {
+    angleTransmuterPoolUSD = new AngleTransmuterEventPool(
+      `${dexKey}_USD`,
+      network,
+      dexHelper,
+      logger,
+      configUSDBase,
+    );
+  });
 
   Object.entries(eventsToTestUSD).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {

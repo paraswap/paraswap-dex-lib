@@ -13,9 +13,10 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { AngleTransmuterEventPool } from './angle-transmuter-pool';
 import { Address } from '../../types';
 import { SmartTokenParams } from '../../../tests/smart-tokens';
+import { TransmuterSubscriber } from './transmuter';
+import { AngleTransmuterConfig } from './config';
 
 export type Collateral = { [stablecoin: string]: SmartTokenParams[] };
 
@@ -68,11 +69,13 @@ function getExchangeAddress(
   srcAddress: Address,
   dstAddress: Address,
 ): Address {
-  const tokens = Tokens[network];
-  return srcAddress.toLowerCase() === tokens.EURA.address.toLowerCase() ||
-    dstAddress.toLowerCase() === tokens.EURA.address.toLowerCase()
-    ? '0x00253582b2a3FE112feEC532221d9708c64cEFAb'
-    : '0x222222fD79264BBE280b4986F6FEfBC3524d0137';
+  const config = AngleTransmuterConfig.AngleTransmuter[network];
+  const transmuter =
+    srcAddress.toLowerCase() === config.EUR?.stablecoin.address.toLowerCase() ||
+    dstAddress.toLowerCase() === config.EUR?.stablecoin.address.toLowerCase()
+      ? config.EUR?.transmuter
+      : config.USD?.transmuter;
+  return transmuter!;
 }
 
 async function checkOnChainPricing(
@@ -86,7 +89,7 @@ async function checkOnChainPricing(
   tokenOut: Address,
 ) {
   const exchangeAddress = getExchangeAddress(network, tokenIn, tokenOut);
-  const readerIface = AngleTransmuterEventPool.angleTransmuterIface;
+  const readerIface = TransmuterSubscriber.transmuterCrosschainInterface;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
@@ -182,166 +185,200 @@ describe('AngleTransmuter', () => {
   let blockNumber: number;
   let angleTransmuter: AngleTransmuter;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-    const dexHelper = new DummyDexHelper(network);
+  // const networks  = [Network.MAINNET, Network.ARBITRUM, Network.BASE];
+  const networks = [Network.BASE];
+  const stablesPerNetwork: { [network: number]: SmartTokenParams[] } = {
+    [Network.MAINNET]: [
+      Tokens[Network.MAINNET].EURA,
+      Tokens[Network.MAINNET].USDA,
+    ],
+    [Network.ARBITRUM]: [Tokens[Network.ARBITRUM].USDA],
+    [Network.BASE]: [Tokens[Network.BASE].USDA],
+  };
+  const collateralsPerNetwork: {
+    [network: number]: { [stable: string]: SmartTokenParams[] };
+  } = {
+    [Network.MAINNET]: {
+      USDA: [
+        Tokens[Network.MAINNET].bIB01,
+        Tokens[Network.MAINNET].USDC,
+        Tokens[Network.MAINNET].steakUSDC,
+      ],
+      EURA: [
+        Tokens[Network.MAINNET].EUROC,
+        Tokens[Network.MAINNET].bC3M,
+        Tokens[Network.MAINNET].bERNX,
+      ],
+    },
+    [Network.ARBITRUM]: {
+      USDA: [Tokens[Network.ARBITRUM].USDC],
+    },
+    [Network.BASE]: {
+      USDA: [Tokens[Network.BASE].USDC],
+    },
+  };
 
-    const tokens = Tokens[network];
+  networks.forEach(network =>
+    describe(`${Network[network]}`, () => {
+      const dexHelper = new DummyDexHelper(network);
 
-    const stables = [tokens.EURA, tokens.USDA];
+      const tokens = Tokens[network];
 
-    const collaterals: Collateral = {
-      USDA: [tokens.bIB01, tokens.USDC, tokens.steakUSDC],
-      EURA: [tokens.EUROC, tokens.bC3M, tokens.bERNX],
-    };
+      const stables = stablesPerNetwork[network];
+      const collaterals = collateralsPerNetwork[network];
 
-    const isKYC: { [token: string]: boolean } = {};
-    isKYC[tokens.bIB01.symbol!] = true;
-    isKYC[tokens.bC3M.symbol!] = true;
-    isKYC[tokens.bERNX.symbol!] = true;
-
-    const amounts = [
-      0n,
-      1n * BI_POWS[tokens.USDA.decimals],
-      2n * BI_POWS[tokens.USDA.decimals],
-      3n * BI_POWS[tokens.USDA.decimals],
-      4n * BI_POWS[tokens.USDA.decimals],
-      5n * BI_POWS[tokens.USDA.decimals],
-      6n * BI_POWS[tokens.USDA.decimals],
-      7n * BI_POWS[tokens.USDA.decimals],
-      8n * BI_POWS[tokens.USDA.decimals],
-      9n * BI_POWS[tokens.USDA.decimals],
-      10n * BI_POWS[tokens.USDA.decimals],
-    ];
-
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      angleTransmuter = new AngleTransmuter(network, dexKey, dexHelper);
-      if (angleTransmuter.initializePricing) {
-        await angleTransmuter.initializePricing(blockNumber);
+      const isKYC: { [token: string]: boolean } = {};
+      if (network === Network.MAINNET) {
+        isKYC[tokens.bIB01.symbol!] = true;
+        isKYC[tokens.bC3M.symbol!] = true;
+        isKYC[tokens.bERNX.symbol!] = true;
       }
-    });
 
-    stables.forEach(stable =>
-      collaterals[stable.symbol! as keyof Collateral].forEach(collateral =>
-        describe(`${stable.symbol}/${collateral.symbol}`, () => {
-          const amountsCollateral = [
-            0n,
-            1n * BI_POWS[collateral.decimals],
-            2n * BI_POWS[collateral.decimals],
-            3n * BI_POWS[collateral.decimals],
-            4n * BI_POWS[collateral.decimals],
-            5n * BI_POWS[collateral.decimals],
-            6n * BI_POWS[collateral.decimals],
-            7n * BI_POWS[collateral.decimals],
-            8n * BI_POWS[collateral.decimals],
-            9n * BI_POWS[collateral.decimals],
-            10n * BI_POWS[collateral.decimals],
-          ];
+      const amounts = [
+        0n,
+        1n * BI_POWS[tokens.USDA.decimals],
+        2n * BI_POWS[tokens.USDA.decimals],
+        3n * BI_POWS[tokens.USDA.decimals],
+        4n * BI_POWS[tokens.USDA.decimals],
+        5n * BI_POWS[tokens.USDA.decimals],
+        6n * BI_POWS[tokens.USDA.decimals],
+        7n * BI_POWS[tokens.USDA.decimals],
+        8n * BI_POWS[tokens.USDA.decimals],
+        9n * BI_POWS[tokens.USDA.decimals],
+        10n * BI_POWS[tokens.USDA.decimals],
+      ];
 
-          it('getTopPoolsForToken - collateral', async () => {
-            // We have to check without calling initializePricing, because
-            // pool-tracker is not calling that function
-            const newAngleTransmuter = new AngleTransmuter(
-              network,
-              dexKey,
-              dexHelper,
-            );
-            if (newAngleTransmuter.updatePoolState) {
-              await newAngleTransmuter.updatePoolState();
-            }
-            const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
-              collateral.address,
-              10,
-            );
-            console.log(`${collateral.symbol} Top Pools:`, poolLiquidity);
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        angleTransmuter = new AngleTransmuter(network, dexKey, dexHelper);
+        if (angleTransmuter.initializePricing) {
+          await angleTransmuter.initializePricing(blockNumber);
+        }
+      });
 
-            if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
-              checkPoolsLiquidity(poolLiquidity, collateral.address, dexKey);
-            }
-          });
+      stables.forEach(stable =>
+        collaterals[stable.symbol! as keyof Collateral].forEach(collateral =>
+          describe(`${stable.symbol}/${collateral.symbol}`, () => {
+            const amountsCollateral = [
+              0n,
+              1n * BI_POWS[collateral.decimals],
+              2n * BI_POWS[collateral.decimals],
+              3n * BI_POWS[collateral.decimals],
+              4n * BI_POWS[collateral.decimals],
+              5n * BI_POWS[collateral.decimals],
+              6n * BI_POWS[collateral.decimals],
+              7n * BI_POWS[collateral.decimals],
+              8n * BI_POWS[collateral.decimals],
+              9n * BI_POWS[collateral.decimals],
+              10n * BI_POWS[collateral.decimals],
+            ];
 
-          it('getTopPoolsForToken - stablecoin', async () => {
-            // We have to check without calling initializePricing, because
-            // pool-tracker is not calling that function
-            const newAngleTransmuter = new AngleTransmuter(
-              network,
-              dexKey,
-              dexHelper,
-            );
-            if (newAngleTransmuter.updatePoolState) {
-              await newAngleTransmuter.updatePoolState();
-            }
-            const poolLiquidity = await newAngleTransmuter.getTopPoolsForToken(
-              stable.address,
-              10,
-            );
-            console.log(`${stable.symbol} Top Pools:`, poolLiquidity);
+            it('getTopPoolsForToken - collateral', async () => {
+              // We have to check without calling initializePricing, because
+              // pool-tracker is not calling that function
+              const newAngleTransmuter = new AngleTransmuter(
+                network,
+                dexKey,
+                dexHelper,
+              );
+              if (newAngleTransmuter.updatePoolState) {
+                await newAngleTransmuter.updatePoolState();
+              }
+              const poolLiquidity =
+                await newAngleTransmuter.getTopPoolsForToken(
+                  collateral.address,
+                  10,
+                );
+              console.log(`${collateral.symbol} Top Pools:`, poolLiquidity);
 
-            if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
-              checkPoolsLiquidity(poolLiquidity, stable.address, dexKey);
-            }
-          });
+              if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
+                checkPoolsLiquidity(poolLiquidity, collateral.address, dexKey);
+              }
+            });
 
-          it('getPoolIdentifiers and getPricesVolume SELL - collateral', async () => {
-            await testPricingOnNetwork(
-              angleTransmuter,
-              network,
-              dexKey,
-              blockNumber,
-              collateral.symbol!,
-              stable.symbol!,
-              SwapSide.SELL,
-              amountsCollateral,
-              'quoteIn',
-            );
-          });
+            it('getTopPoolsForToken - stablecoin', async () => {
+              // We have to check without calling initializePricing, because
+              // pool-tracker is not calling that function
+              const newAngleTransmuter = new AngleTransmuter(
+                network,
+                dexKey,
+                dexHelper,
+              );
+              if (newAngleTransmuter.updatePoolState) {
+                await newAngleTransmuter.updatePoolState();
+              }
+              const poolLiquidity =
+                await newAngleTransmuter.getTopPoolsForToken(
+                  stable.address,
+                  10,
+                );
+              console.log(`${stable.symbol} Top Pools:`, poolLiquidity);
 
-          it('getPoolIdentifiers and getPricesVolume BUY - stablecoin', async () => {
-            await testPricingOnNetwork(
-              angleTransmuter,
-              network,
-              dexKey,
-              blockNumber,
-              stable.symbol!,
-              collateral.symbol!,
-              SwapSide.BUY,
-              amountsCollateral,
-              'quoteOut',
-            );
-          });
+              if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
+                checkPoolsLiquidity(poolLiquidity, stable.address, dexKey);
+              }
+            });
 
-          if (!isKYC[collateral.symbol!]) {
-            it('getPoolIdentifiers and getPricesVolume SELL - stablecoin', async () => {
+            it('getPoolIdentifiers and getPricesVolume SELL - collateral', async () => {
               await testPricingOnNetwork(
                 angleTransmuter,
                 network,
                 dexKey,
                 blockNumber,
-                stable.symbol!,
                 collateral.symbol!,
+                stable.symbol!,
                 SwapSide.SELL,
-                amounts,
+                amountsCollateral,
                 'quoteIn',
               );
             });
 
-            it('getPoolIdentifiers and getPricesVolume BUY - collateral', async () => {
+            it('getPoolIdentifiers and getPricesVolume BUY - stablecoin', async () => {
               await testPricingOnNetwork(
                 angleTransmuter,
                 network,
                 dexKey,
                 blockNumber,
-                collateral.symbol!,
                 stable.symbol!,
+                collateral.symbol!,
                 SwapSide.BUY,
-                amounts,
+                amountsCollateral,
                 'quoteOut',
               );
             });
-          }
-        }),
-      ),
-    );
-  });
+
+            if (!isKYC[collateral.symbol!]) {
+              it('getPoolIdentifiers and getPricesVolume SELL - stablecoin', async () => {
+                await testPricingOnNetwork(
+                  angleTransmuter,
+                  network,
+                  dexKey,
+                  blockNumber,
+                  stable.symbol!,
+                  collateral.symbol!,
+                  SwapSide.SELL,
+                  amounts,
+                  'quoteIn',
+                );
+              });
+
+              it('getPoolIdentifiers and getPricesVolume BUY - collateral', async () => {
+                await testPricingOnNetwork(
+                  angleTransmuter,
+                  network,
+                  dexKey,
+                  blockNumber,
+                  collateral.symbol!,
+                  stable.symbol!,
+                  SwapSide.BUY,
+                  amounts,
+                  'quoteOut',
+                );
+              });
+            }
+          }),
+        ),
+      );
+    }),
+  );
 });
