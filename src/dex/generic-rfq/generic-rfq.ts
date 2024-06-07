@@ -302,6 +302,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       specialDexFlag: SpecialDex.SWAP_ON_AUGUSTUS_RFQ,
       targetExchange: this.augustusRFQAddress,
       specialDexSupportsInsertFromAmount: true,
+      returnAmountPos: undefined,
     };
   }
 

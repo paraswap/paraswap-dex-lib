@@ -13,6 +13,7 @@ import BancorABI from '../../abi/Bancor.json';
 import { IDexHelper } from '../../dex-helper';
 import { BancorData, BancorFunctions, BancorParam } from './types';
 import { BANCOR_NETWORK, BancorRegistry } from './config';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Bancor
   extends SimpleExchange
@@ -115,6 +116,13 @@ export class Bancor
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: data.bancorNetwork || BANCOR_NETWORK[this.network],
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              swapMethod,
+            )
+          : undefined,
     };
   }
 }

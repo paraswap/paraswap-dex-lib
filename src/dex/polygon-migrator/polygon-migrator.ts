@@ -181,6 +181,7 @@ export class PolygonMigrator
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.migratorAddress,
+      returnAmountPos: undefined,
     };
   }
 

@@ -291,6 +291,7 @@ export class Swell
             srcAmount,
           ])
         : undefined,
+      returnAmountPos: undefined,
     };
   }
 

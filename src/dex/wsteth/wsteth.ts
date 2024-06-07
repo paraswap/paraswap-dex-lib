@@ -23,6 +23,7 @@ import { uint256ToBigInt } from '../../lib/decoders';
 import { Utils } from '../../utils';
 import WSTETH_ABI from '../../abi/wstETH.json';
 import STETH_ABI from '../../abi/stETH.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class WstETH extends SimpleExchange implements IDex<WstETHData> {
   static readonly wstETHIface = new Interface(WSTETH_ABI);
@@ -252,16 +253,21 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
     data: WstETHData,
     side: SwapSide,
   ): Promise<DexExchangeParam> {
-    const exchangeData = WstETH.wstETHIface.encodeFunctionData(
-      srcToken.toLowerCase() === this.config.stETHAddress ? 'wrap' : 'unwrap',
-      [srcAmount],
-    );
+    const swapFunction =
+      srcToken.toLowerCase() === this.config.stETHAddress ? 'wrap' : 'unwrap';
+    const exchangeData = WstETH.wstETHIface.encodeFunctionData(swapFunction, [
+      srcAmount,
+    ]);
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
       exchangeData,
       targetExchange: this.config.wstETHAddress,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(WstETH.wstETHIface, swapFunction)
+          : undefined,
     };
   }
 

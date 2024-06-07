@@ -15,6 +15,7 @@ import {
 import UniswapV3RouterABI from '../abi/UniswapV3Router.json';
 import { NumberAsString } from '@paraswap/core';
 import { IDexHelper } from '../dex-helper';
+import { extractReturnAmountPosition } from '../executor/utils';
 
 const UNISWAP_V3_ROUTER_ADDRESSES: { [network: number]: Address } = {
   [Network.MAINNET]: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
@@ -228,6 +229,14 @@ export class UniswapV3
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.routerAddress,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
     };
   }
 }

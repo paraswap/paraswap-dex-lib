@@ -12,6 +12,7 @@ import { SimpleExchange } from './simple-exchange';
 import JarvisABI from '../abi/Jarvis.json';
 import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
+import { extractReturnAmountPosition } from '../executor/utils';
 
 const THIRTY_MINUTES = 60 * 30;
 
@@ -197,6 +198,8 @@ export class Jarvis
     const swapFunction = data.method;
     const timestamp = (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0);
     let swapFunctionParams: JarvisParam;
+    let outputName: string;
+
     switch (swapFunction) {
       case JarvisFunctions.mint:
         swapFunctionParams = [
@@ -207,6 +210,7 @@ export class Jarvis
           timestamp,
           recipient,
         ];
+        outputName = 'syntheticTokensMinted';
         break;
       case JarvisFunctions.redeem:
         swapFunctionParams = [
@@ -217,6 +221,7 @@ export class Jarvis
           timestamp,
           recipient,
         ];
+        outputName = 'collateralRedeemed';
         break;
       case JarvisFunctions.exchange:
         swapFunctionParams = [
@@ -229,6 +234,7 @@ export class Jarvis
           timestamp,
           recipient,
         ];
+        outputName = 'destNumTokensMinted';
         break;
       default:
         throw new Error(`Unknown function ${swapFunction}`);
@@ -243,6 +249,14 @@ export class Jarvis
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: data.pools[0],
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.poolInterface,
+              swapFunction,
+              outputName,
+            )
+          : undefined,
     };
   }
 }

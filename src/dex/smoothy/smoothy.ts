@@ -104,6 +104,7 @@ export class Smoothy
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos: undefined,
     };
   }
 }

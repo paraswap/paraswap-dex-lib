@@ -681,6 +681,7 @@ export class Solidly extends UniswapV2 {
       transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
         ? undefined
         : data.pools[0].address,
+      returnAmountPos: undefined,
     };
   }
 }
