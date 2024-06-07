@@ -83,6 +83,7 @@ import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import { BigNumber } from 'ethers';
 import { SpecialDex } from '../../executor/types';
 import { S } from '@bgd-labs/aave-address-book/dist/AaveV2Ethereum-timF4kft';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -1580,8 +1581,15 @@ export class BalancerV2
         needWrapNative: this.needWrapNative,
         dexFuncHasRecipient: true,
         exchangeData,
-        specialDexFlag: SpecialDex.DEFAULT,
         targetExchange: this.vaultAddress,
+        returnAmountPos:
+          side === SwapSide.SELL
+            ? extractReturnAmountPosition(
+                this.balancerVaultInterface,
+                'swap',
+                'amountCalculated',
+              )
+            : undefined,
       };
     }
 
