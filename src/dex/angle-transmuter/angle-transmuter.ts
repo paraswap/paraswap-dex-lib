@@ -8,11 +8,13 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AngleTransmuterData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -244,6 +246,41 @@ export class AngleTransmuter
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AngleTransmuterData,
+    side: SwapSide,
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
+    const { exchange } = data;
+
+    // Encode here the transaction arguments
+    const swapData =
+      TransmuterSubscriber.transmuterCrosschainInterface.encodeFunctionData(
+        side === SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
+        [
+          side === SwapSide.SELL ? srcAmount : destAmount,
+          side === SwapSide.SELL ? destAmount : srcAmount,
+          srcToken,
+          destToken,
+          recipient,
+          0,
+        ],
+      );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+    };
   }
 
   // This is called once before getTopPoolsForToken is
