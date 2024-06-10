@@ -900,7 +900,7 @@ export class PancakeswapV3
           ? extractReturnAmountPosition(
               this.routerIface,
               swapFunction,
-              'exactInput',
+              'amountOut',
             )
           : undefined,
     };

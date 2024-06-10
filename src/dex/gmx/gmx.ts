@@ -234,10 +234,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       targetExchange: this.params.vault,
       returnAmountPos:
         side === SwapSide.SELL
-          ? extractReturnAmountPosition(
-              Vault.interface,
-              'swap',
-            )
+          ? extractReturnAmountPosition(Vault.interface, 'swap')
           : undefined,
     };
   }

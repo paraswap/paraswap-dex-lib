@@ -61,5 +61,6 @@ export const DISABLED_MAX_UNIT_APPROVAL_TOKENS: Partial<
   [Network.MAINNET]: [
     '0xdac17f958d2ee523a2206206994597c13d831ec7',
     '0xd101dcc414f310268c37eeb4cd376ccfa507f571',
+    '0x0f5d2fb29fb7d3cfee444a200298f468908cc942',
   ],
 };

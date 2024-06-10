@@ -25,6 +25,7 @@ import {
 import { Executors, Flag, SpecialDex } from './types';
 import { MAX_UINT, Network } from '../constants';
 import { DexExchangeBuildParam, DexExchangeParam } from '../types';
+import { ExecutorDetector } from './ExecutorDetector';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },

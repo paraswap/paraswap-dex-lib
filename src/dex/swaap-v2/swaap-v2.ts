@@ -77,6 +77,7 @@ import {
 } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -476,7 +477,14 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       exchangeData: callData,
       specialDexFlag: SpecialDex.SWAP_ON_SWAAP_V2_SINGLE,
       targetExchange: router,
-      returnAmountPos: undefined,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerInterface,
+              'swap',
+              'amountCalculated',
+            )
+          : undefined,
     };
   }
 

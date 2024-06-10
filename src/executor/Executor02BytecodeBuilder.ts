@@ -277,10 +277,16 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     let { exchangeData, specialDexFlag, targetExchange, needWrapNative } =
       exchangeParam;
 
+    const routeNeedsRootUnwrapEth = this.doesRouteNeedsRootUnwrapEth(
+      priceRoute,
+      exchangeParams,
+    );
+
     const returnAmountPos =
-      exchangeParam.returnAmountPos !== undefined
+      exchangeParam.returnAmountPos !== undefined && !routeNeedsRootUnwrapEth // prevent returnAmoutPos optimisation if route needs root unwrap eth
         ? exchangeParam.returnAmountPos
         : DEFAULT_RETURN_AMOUNT_POS;
+
     const applyVerticalBranching = this.doesSwapNeedToApplyVerticalBranching(
       priceRoute,
       routeIndex,
