@@ -124,6 +124,8 @@ export class CurveV1Factory
 
   readonly directSwapIface = new Interface(DirectSwapABI);
 
+  protected buySideSupported = false;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
 
@@ -703,7 +705,7 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) {
+    if (!this.buySideSupported && side === SwapSide.BUY) {
       return [];
     }
 
@@ -739,7 +741,7 @@ export class CurveV1Factory
     },
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     try {
-      if (side === SwapSide.BUY) {
+      if (!this.buySideSupported && side === SwapSide.BUY) {
         return null;
       }
 
@@ -842,6 +844,7 @@ export class CurveV1Factory
             let outputs: bigint[] = this.poolManager
               .getPriceHandler(pool.implementationAddress)
               .getOutputs(
+                side,
                 state,
                 amountsWithUnitAndFee,
                 poolData.i,
@@ -908,7 +911,8 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
 
     const { i, j, underlyingSwap } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -1122,7 +1126,8 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
     const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
@@ -1158,7 +1163,8 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): DexExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
     const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
