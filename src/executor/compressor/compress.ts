@@ -25,6 +25,10 @@ interface CompressOutput {
   finalCost: number;
 }
 
+const trimHex = (hex: string) => {
+  return hex.startsWith('0x') ? hex.slice(2) : hex;
+};
+
 const compress = function ({
   initialCallData,
   savedAddresses,
@@ -59,12 +63,8 @@ const compress = function ({
 
   const initialCost = computeCost(initialCallData);
 
-  let callData: string;
-  if (initialCallData.startsWith('0x')) {
-    callData = initialCallData.slice(2);
-  } else {
-    callData = initialCallData;
-  }
+  initialCallData = trimHex(initialCallData);
+  let callData = initialCallData;
 
   // SAVED ADDRESSES SUBSTITUTIONS
   if (!options.skipAddressSubstitution) {
@@ -107,7 +107,7 @@ const compress = function ({
   // An idea could be to have another address prefix to handle this case (one with both sides having 00 by default), but it doesn't optimize that much
   let { compressedCallData, bufferOfOccurences } = byteSubstitution({
     byte: zeroByte,
-    callData: callData.substring(8),
+    callData,
     addressPrefix: 'RR',
     newAddressPrefix: 'TT',
   });
@@ -211,14 +211,7 @@ const compress = function ({
   }
 
   // INDEX OF METHOD SUBSTITUTION
-  const indexOfMethods = savedMethods
-    .map(sm => (sm.startsWith('0x') ? sm.slice(2) : sm))
-    .indexOf(callData.substring(0, 8));
-  if (indexOfMethods > -1) {
-    compressedCallData = intToByte(indexOfMethods) + compressedCallData;
-  } else {
-    compressedCallData = ffByte + callData.substring(0, 8) + compressedCallData;
-  }
+  compressedCallData = ffByte + '00000000' + trimHex(compressedCallData);
 
   const newAddressesString = options.skipNewAddressSubstitution
     ? '00'
@@ -228,13 +221,10 @@ const compress = function ({
   const prefixCallData = addressPrefix + newAddressesString;
 
   // SUBSTITUTING FF
-  const firstBytes =
-    indexOfMethods > -1
-      ? compressedCallData.substring(0, 2)
-      : compressedCallData.substring(0, 10);
+  const firstBytes = compressedCallData.substring(0, 10);
   const compressedFFSubstituted = byteSubstitution({
     byte: ffByte,
-    callData: compressedCallData.substring(indexOfMethods > -1 ? 2 : 10),
+    callData: compressedCallData.substring(10),
     compressedCallData: firstBytes,
     addressPrefix: options.skipAddressSubstitution ? 'RR' : addressPrefix,
     newAddressPrefix: options.skipNewAddressSubstitution
@@ -245,9 +235,7 @@ const compress = function ({
 
   // FINDING LONGEST RECURRENT STRINGS TO COMPRESS
   let { newCompressedData, nbOfDuplicatedStrings } = findLongestAndSubstitute({
-    compressedCallData: compressedCallData.substring(
-      indexOfMethods > -1 ? 2 : 10,
-    ),
+    compressedCallData: compressedCallData.substring(10),
     markers: duplicatedStringMarkers,
   });
   if (newCompressedData) compressedCallData = firstBytes + newCompressedData;

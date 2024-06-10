@@ -65,7 +65,7 @@ export class Compressor {
     addressesMapping = await this.addOnChainSavedAddress(addressesMapping);
 
     return compress({
-      initialCallData: '0x' + bytecode,
+      initialCallData: bytecode,
       savedAddresses: this.filterKeys(addressesMapping, true),
       newAddresses: this.filterKeys(addressesMapping, false),
       // savedAddresses: [],
