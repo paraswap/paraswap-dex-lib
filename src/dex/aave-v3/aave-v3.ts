@@ -246,6 +246,7 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
       exchangeData,
       targetExchange: swapCallee,
       returnAmountPos: undefined,
+      skipApproval: data.fromAToken,
     };
   }
 

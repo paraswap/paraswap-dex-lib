@@ -208,6 +208,8 @@ export class EtherFi
       swapFunctionParams,
     );
 
+    const skipApproval = this.is_weETH(srcToken) && this.is_eETH(destToken);
+
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
@@ -221,6 +223,7 @@ export class EtherFi
           ])
         : undefined,
       returnAmountPos: extractReturnAmountPosition(Interface, swapFunction),
+      skipApproval,
     };
   }
 

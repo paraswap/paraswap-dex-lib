@@ -106,6 +106,7 @@ export class Compound
       exchangeData: swapData,
       targetExchange: cToken,
       returnAmountPos: undefined,
+      skipApproval: data.fromCToken,
     };
   }
 }

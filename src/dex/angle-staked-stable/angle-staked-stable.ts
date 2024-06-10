@@ -216,6 +216,7 @@ export class AngleStakedStable
             ],
           );
     const skipApproval = srcToken.toLowerCase() !== this.config.agToken;
+
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
       srcAmount,
@@ -258,12 +259,15 @@ export class AngleStakedStable
             ],
           );
 
+    const skipApproval = srcToken.toLowerCase() !== this.config.agToken;
+
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
       returnAmountPos: undefined,
+      skipApproval,
     };
   }
 
