@@ -5,6 +5,7 @@ export const extractReturnAmountPosition = (
   iface: Interface,
   functionName: string | FunctionFragment,
   outputName = '',
+  outputIndex = 0, // for the cases when the only output is an array with static type
 ): number => {
   const func =
     typeof functionName === 'string'
@@ -22,6 +23,23 @@ export const extractReturnAmountPosition = (
   }
 
   if (index === 0) {
+    if (
+      outputs[0].baseType === 'array' &&
+      !outputs[0].arrayChildren.baseType.includes('[]') && // only static internalType
+      outputs.length === 1 // if array is the only output
+    ) {
+      return (
+        RETURN_AMOUNT_POS_32 +
+        RETURN_AMOUNT_POS_32 +
+        outputIndex * RETURN_AMOUNT_POS_32
+      ); // dynamic calldata (offset + length + position of the element in the array)
+    }
+    if (outputs[0].baseType === 'tuple' || outputs[0].baseType === 'struct') {
+      throw new Error(
+        `extractReturnAmountPosition doesn't support outputs of type struct or tuple for the only output.`,
+      );
+    }
+
     return RETURN_AMOUNT_POS_0;
   }
 

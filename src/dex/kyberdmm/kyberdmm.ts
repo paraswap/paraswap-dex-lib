@@ -269,6 +269,7 @@ export class KyberDmm
               this.exchangeRouterInterface,
               KyberDMMFunctions.swapExactTokensForTokens,
               'amounts',
+              data.path.length - 1, // last element is amount out
             )
           : undefined,
     };
