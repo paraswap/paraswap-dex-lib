@@ -1176,6 +1176,7 @@ export class CurveV1Factory
       sendEthButSupportsInsertFromAmount: true,
       dexFuncHasRecipient: false,
       targetExchange: exchange,
+      returnAmountPos: undefined,
     };
   }
 

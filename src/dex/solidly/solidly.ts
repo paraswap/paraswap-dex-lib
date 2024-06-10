@@ -79,10 +79,8 @@ export class Solidly extends UniswapV2 {
         'VelodromeV2',
         'Aerodrome',
         'SpiritSwapV2',
-        'Cone',
         'SolidlyV2',
         'Thena',
-        'SoliSnek',
         'Chronos',
         'Ramses',
         'Equalizer',
@@ -683,6 +681,7 @@ export class Solidly extends UniswapV2 {
       transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
         ? undefined
         : data.pools[0].address,
+      returnAmountPos: undefined,
     };
   }
 }

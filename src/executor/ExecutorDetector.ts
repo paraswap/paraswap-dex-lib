@@ -21,7 +21,7 @@ export class ExecutorDetector {
       [RouteExecutionType.SINGLE_STEP]: Executors.ONE, // simpleSwap via Executor01
       [RouteExecutionType.HORIZONTAL_SEQUENCE]: Executors.ONE, // multiSwap via Executor01
       [RouteExecutionType.VERTICAL_BRANCH]: Executors.TWO, // simpleSwap with percentage on a path via Executor02
-      [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with pecentages on paths via Executor02
+      [RouteExecutionType.VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]: Executors.TWO, // multiSwap with percentages on paths via Executor02
       // megaSwap via Executor02
       [RouteExecutionType.NESTED_VERTICAL_BRANCH_HORIZONTAL_SEQUENCE]:
         Executors.TWO,
@@ -46,7 +46,7 @@ export class ExecutorDetector {
     this.wethBytecodeBuilder = new WETHBytecodeBuilder(this.dexHelper);
   }
 
-  protected getRouteExecutionType(priceRoute: OptimalRate): RouteExecutionType {
+  public getRouteExecutionType(priceRoute: OptimalRate): RouteExecutionType {
     if (
       priceRoute.bestRoute.length === 1 &&
       priceRoute.bestRoute[0].percent === 100 &&
@@ -85,6 +85,7 @@ export class ExecutorDetector {
 
     throw new Error('Route type is not supported yet');
   }
+
   detectSpecialExecutor(priceRoute: OptimalRate): Executors | null {
     if (isSingleWrapRoute(priceRoute)) return Executors.WETH;
     return null;

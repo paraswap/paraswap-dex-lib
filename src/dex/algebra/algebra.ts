@@ -52,6 +52,7 @@ import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { AlgebraEventPoolV1_9_bidirectional_fee } from './algebra-pool-v1_9_bidirectional_fee';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -942,6 +943,14 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.config.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
     };
   }
 

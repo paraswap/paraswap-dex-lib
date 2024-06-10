@@ -12,7 +12,7 @@ import type {
   NumberAsString,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, type Network } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import type { Context, IDex } from '../../dex/idex';
@@ -187,10 +187,6 @@ export class AngleStakedStable
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -263,6 +259,7 @@ export class AngleStakedStable
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos: undefined,
     };
   }
 

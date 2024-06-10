@@ -170,6 +170,7 @@ export type DexExchangeParam = {
   specialDexSupportsInsertFromAmount?: boolean;
   swappedAmountNotPresentInExchangeData?: boolean;
   preSwapUnwrapCalldata?: string;
+  returnAmountPos: number | undefined;
 };
 
 export type DexExchangeBuildParam = DexExchangeParam & {
@@ -302,7 +303,6 @@ export type Config = {
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
-  smardexSubgraphAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 

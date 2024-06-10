@@ -24,6 +24,7 @@ import { QuickPerpsConfig, Adapters } from './config';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
 import { solidityPack } from 'ethers/lib/utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const QuickPerpsGasCost = 300 * 1000;
 
@@ -228,7 +229,9 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
     data: QuickPerpsData,
     side: SwapSide,
   ): DexExchangeParam {
-    const swapData = Vault.interface.encodeFunctionData('swap', [
+    const iface = Vault.interface;
+    const functionName = 'swap';
+    const swapData = iface.encodeFunctionData(functionName, [
       srcToken,
       destToken,
       recipient,
@@ -241,6 +244,10 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
       targetExchange: this.params.vault,
       swappedAmountNotPresentInExchangeData: true,
       transferSrcTokenBeforeSwap: this.params.vault,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(iface, functionName)
+          : undefined,
     };
   }
 

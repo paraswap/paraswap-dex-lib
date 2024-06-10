@@ -867,6 +867,7 @@ export class Camelot
       transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
         ? undefined
         : data.pools[0].address,
+      returnAmountPos: undefined,
     };
   }
 }
