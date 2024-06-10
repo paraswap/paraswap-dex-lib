@@ -14,7 +14,6 @@ interface CompressInput {
   initialCallData: string;
   savedAddresses?: string[];
   newAddresses?: string[];
-  savedMethods?: string[];
   options?: any;
   network?: string;
 }
@@ -33,7 +32,6 @@ const compress = function ({
   initialCallData,
   savedAddresses,
   newAddresses,
-  savedMethods,
   options,
   network,
 }: CompressInput): CompressOutput {
@@ -51,7 +49,6 @@ const compress = function ({
   //     console.log(err);
   //   }
   // }
-  if (storedMethods) savedMethods = storedMethods;
 
   if (initialCallData.length % 2 !== 0)
     throw new Error('Initial data of odd length');
@@ -59,12 +56,19 @@ const compress = function ({
   if (!options) options = {};
   if (!savedAddresses) savedAddresses = [];
   if (!newAddresses) newAddresses = [];
-  if (!savedMethods) savedMethods = [];
 
   const initialCost = computeCost(initialCallData);
 
   initialCallData = trimHex(initialCallData);
-  let callData = initialCallData;
+
+  //@note The compressor expects the calldata to be in the regular format "0x{selector}{calldata}"
+  // but we only need to compress executor's calldata, which dont have any selectors inside
+  // to make this work, we use first 4 bytes of calldata as fake selector and pass it in method substitution
+  //
+  // This works fine, but can lead to worse compression (e.g. if 4 calldata's bytes are related to address)
+  // We have to fully remove/skip part of method substituion in Uncompressor Contracts to make this work perfectly
+  let fakeSelector = initialCallData.slice(0, 8);
+  let callData = initialCallData.slice(8);
 
   // SAVED ADDRESSES SUBSTITUTIONS
   if (!options.skipAddressSubstitution) {
@@ -174,7 +178,6 @@ const compress = function ({
       initialCallData: initialCallData,
       savedAddresses,
       newAddresses,
-      savedMethods,
       options: {
         skipAddressSubstitution: true,
         skipNewAddressSubstitution: true,
@@ -202,7 +205,6 @@ const compress = function ({
       initialCallData: initialCallData,
       savedAddresses,
       newAddresses,
-      savedMethods,
       options: {
         skipNewAddressSubstitution: true,
       },
@@ -211,7 +213,8 @@ const compress = function ({
   }
 
   // INDEX OF METHOD SUBSTITUTION
-  compressedCallData = ffByte + '00000000' + trimHex(compressedCallData);
+  //@note fake selector is always 4 bytes of initial calldata, check note above
+  compressedCallData = ffByte + fakeSelector + trimHex(compressedCallData);
 
   const newAddressesString = options.skipNewAddressSubstitution
     ? '00'
