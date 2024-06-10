@@ -1,10 +1,11 @@
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { Interface } from '@ethersproject/abi';
-import { SwapSide } from '@paraswap/core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Logger,
   PoolLiquidity,
@@ -31,6 +32,7 @@ import { WombatBmw } from './wombat-bmw';
 import { fromWad } from './utils';
 import { WombatPool } from './wombat-pool';
 import { StatePollingManager } from '../../lib/stateful-rpc-poller/state-polling-manager';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Wombat extends SimpleExchange implements IDex<WombatData> {
   // contract interfaces
@@ -309,6 +311,44 @@ export class Wombat extends SimpleExchange implements IDex<WombatData> {
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: WombatData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    const { exchange } = data;
+
+    // Encode here the transaction arguments
+    const swapData = Wombat.poolInterface.encodeFunctionData('swap', [
+      srcToken,
+      destToken,
+      srcAmount,
+      destAmount,
+      recipient,
+      getLocalDeadlineAsFriendlyPlaceholder(),
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              Wombat.poolInterface,
+              'swap',
+              'actualToAmount',
+            )
+          : undefined,
+    };
   }
 
   // This is called once before getTopPoolsForToken is

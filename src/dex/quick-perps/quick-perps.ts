@@ -9,6 +9,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -21,6 +23,8 @@ import { SimpleExchange } from '../simple-exchange';
 import { QuickPerpsConfig, Adapters } from './config';
 import { Vault } from './vault';
 import ERC20ABI from '../../abi/erc20.json';
+import { solidityPack } from 'ethers/lib/utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const QuickPerpsGasCost = 300 * 1000;
 
@@ -213,6 +217,37 @@ export class QuickPerps extends SimpleExchange implements IDex<QuickPerpsData> {
       ],
       values: ['0', '0'],
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: QuickPerpsData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const iface = Vault.interface;
+    const functionName = 'swap';
+    const swapData = iface.encodeFunctionData(functionName, [
+      srcToken,
+      destToken,
+      recipient,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: this.params.vault,
+      swappedAmountNotPresentInExchangeData: true,
+      transferSrcTokenBeforeSwap: this.params.vault,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(iface, functionName)
+          : undefined,
     };
   }
 

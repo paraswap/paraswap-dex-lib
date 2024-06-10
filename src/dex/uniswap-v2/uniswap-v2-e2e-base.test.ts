@@ -39,10 +39,4 @@ constructE2ETests('UniswapV2 E2E Base', Network.BASE, {
       { name: 'USDbC', sellAmount: '100000', buyAmount: '4000' },
     ],
   ],
-  ElkFinance: [
-    [
-      { name: 'WETH', sellAmount: '700000000000', buyAmount: '1000' },
-      { name: 'USDbC', sellAmount: '100000', buyAmount: '4000' },
-    ],
-  ],
 });

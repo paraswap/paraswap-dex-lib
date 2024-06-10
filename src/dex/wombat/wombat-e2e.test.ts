@@ -26,9 +26,10 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
   ]);
@@ -116,7 +117,7 @@ describe('Wombat E2E', () => {
     testForNetwork(network, dexKey, pairs);
   });
 
-  describe('Arbitrum', () => {
+  describe('Arbitrum_V6', () => {
     const network = Network.ARBITRUM;
 
     const pairs: Pairs = [

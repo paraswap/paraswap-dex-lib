@@ -1,5 +1,5 @@
 import { SimpleExchange } from '../simple-exchange';
-import { IDex } from '../idex';
+import { Context, IDex } from '../idex';
 import { SparkParams, SparkData, SparkSDaiFunctions } from './types';
 import { Network, SwapSide } from '../../constants';
 import { getDexKeysWithNetwork } from '../../utils';
@@ -7,8 +7,10 @@ import { Adapters, SDaiConfig } from './config';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Logger,
+  NumberAsString,
   PoolLiquidity,
   PoolPrices,
   SimpleExchangeParam,
@@ -22,6 +24,7 @@ import { Interface } from 'ethers/lib/utils';
 import { SparkSDaiEventPool } from './spark-sdai-pool';
 import { BI_POWS } from '../../bigint-constants';
 import { SDAI_DEPOSIT_GAS_COST, SDAI_REDEEM_GAS_COST } from './constants';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Spark
   extends SimpleExchange
@@ -209,6 +212,50 @@ export class Spark
       undefined,
       isSell && this.isDai(destToken),
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SparkData,
+    side: SwapSide,
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
+    const isSell = side === SwapSide.SELL;
+    const { exchange } = data;
+
+    let swapData: string;
+    if (this.isDai(srcToken)) {
+      swapData = this.sdaiInterface.encodeFunctionData(
+        isSell ? SparkSDaiFunctions.deposit : SparkSDaiFunctions.mint,
+        [isSell ? srcAmount : destAmount, recipient],
+      );
+    } else {
+      swapData = this.sdaiInterface.encodeFunctionData(
+        isSell ? SparkSDaiFunctions.redeem : SparkSDaiFunctions.withdraw,
+        [isSell ? srcAmount : destAmount, recipient, executorAddress],
+      );
+    }
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+      returnAmountPos: isSell
+        ? extractReturnAmountPosition(
+            this.sdaiInterface,
+            this.isDai(srcToken)
+              ? SparkSDaiFunctions.deposit
+              : SparkSDaiFunctions.redeem,
+            this.isDai(srcToken) ? 'shares' : 'assets',
+          )
+        : undefined,
+    };
   }
 
   getAdapterParam(

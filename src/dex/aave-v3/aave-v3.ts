@@ -8,6 +8,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -22,6 +23,7 @@ import { getATokenIfAaveV3Pair, setTokensOnNetwork } from './tokens';
 import WETH_GATEWAY_ABI from '../../abi/aave-v3-weth-gateway.json';
 import POOL_ABI from '../../abi/AaveV3_lending_pool.json';
 import { fetchTokenList } from './utils';
+import { NumberAsString } from '@paraswap/core';
 
 const REF_CODE = 1;
 export const TOKEN_LIST_CACHE_KEY = 'token-list';
@@ -182,6 +184,68 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
       targetExchange: NULL_ADDRESS,
       payload,
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const amount = side === SwapSide.SELL ? srcAmount : destAmount;
+    const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
+      Interface,
+      Address,
+      PoolAndWethFunctions,
+      Param,
+    ] => {
+      if (isETHAddress(srcToken))
+        return [
+          this.wethGateway,
+          this.config.wethGatewayAddress,
+          PoolAndWethFunctions.depositETH,
+          [this.config.poolAddress, recipient, REF_CODE],
+        ];
+
+      if (isETHAddress(destToken))
+        return [
+          this.wethGateway,
+          this.config.wethGatewayAddress,
+          PoolAndWethFunctions.withdrawETH,
+          [this.config.poolAddress, amount, recipient],
+        ];
+
+      if (data.fromAToken)
+        return [
+          this.pool,
+          this.config.poolAddress,
+          PoolAndWethFunctions.withdraw,
+          [destToken, amount, recipient],
+        ];
+
+      return [
+        this.pool,
+        this.config.poolAddress,
+        PoolAndWethFunctions.supply,
+        [srcToken, amount, recipient, REF_CODE],
+      ];
+    })();
+
+    const exchangeData = Interface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: swapCallee,
+      returnAmountPos: undefined,
     };
   }
 

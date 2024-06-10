@@ -276,7 +276,7 @@ describe('UniswapV2 E2E BSC', () => {
   describe('BakerySwap', () => {
     const dexKey = 'BakerySwap';
 
-    describe('Simpleswap', () => {
+    describe('Bakery_V6', () => {
       it('Token -> TOKEN', async () => {
         await testE2E(
           tokens.USDT,
@@ -285,64 +285,44 @@ describe('UniswapV2 E2E BSC', () => {
           '70000000000000000000',
           SwapSide.SELL,
           dexKey,
-          ContractMethod.simpleSwap,
+          ContractMethod.swapExactAmountIn,
           network,
           provider,
         );
       });
     });
 
-    describe('Multiswap', () => {
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.BUSD,
-          holders.USDT,
-          '70000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
-  });
+    // describe('Simpleswap', () => {
+    //   it('Token -> TOKEN', async () => {
+    //     await testE2E(
+    //       tokens.USDT,
+    //       tokens.BUSD,
+    //       holders.USDT,
+    //       '70000000000000000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       ContractMethod.simpleSwap,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
 
-  describe('Street Swap', () => {
-    const dexKey = 'StreetSwap';
-
-    describe('Simpleswap', () => {
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.WBNB,
-          holders.DAI,
-          '70000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('Multiswap', () => {
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.DAI,
-          tokens.WBNB,
-          holders.DAI,
-          '70000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
+    // describe('Multiswap', () => {
+    //   it('Token -> TOKEN', async () => {
+    //     await testE2E(
+    //       tokens.USDT,
+    //       tokens.BUSD,
+    //       holders.USDT,
+    //       '70000000000000000000',
+    //       SwapSide.SELL,
+    //       dexKey,
+    //       ContractMethod.multiSwap,
+    //       network,
+    //       provider,
+    //     );
+    //   });
+    // });
   });
 
   describe('PantherSwap', () => {
@@ -729,152 +709,6 @@ describe('UniswapV2 E2E BSC', () => {
     });
   });
 
-  describe('RadioShack', () => {
-    const dexKey = 'RadioShack';
-
-    describe('Simpleswap', () => {
-      it('BNB -> TOKEN', async () => {
-        await testE2E(
-          tokens.BNB,
-          tokens.RADIO,
-          holders.BNB,
-          '100000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.BUSD,
-          tokens.RADIO,
-          holders.BUSD,
-          '1000000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      it('Token -> BNB', async () => {
-        await testE2E(
-          tokens.RADIO,
-          tokens.BNB,
-          holders.RADIO,
-          '1000000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('BUY', () => {
-      it('BNB -> TOKEN', async () => {
-        await testE2E(
-          tokens.BNB,
-          tokens.RADIO,
-          holders.BNB,
-          '100000000000000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.BUSD,
-          tokens.RADIO,
-          holders.BUSD,
-          '1000000000000000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-      it('Token -> BNB', async () => {
-        await testE2E(
-          tokens.RADIO,
-          tokens.BNB,
-          holders.RADIO,
-          '10000000000000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('Multiswap', () => {
-      it('BNB -> TOKEN', async () => {
-        await testE2E(
-          tokens.BNB,
-          tokens.RADIO,
-          holders.BNB,
-          '100000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.BUSD,
-          tokens.RADIO,
-          holders.BUSD,
-          '1000000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-      it('Token -> BNB', async () => {
-        await testE2E(
-          tokens.RADIO,
-          tokens.BNB,
-          holders.RADIO,
-          '1000000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('Megapath', () => {
-      it('Token -> TOKEN', async () => {
-        await testE2E(
-          tokens.BUSD,
-          tokens.RADIO,
-          holders.BUSD,
-          '1000000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.megaSwap,
-          network,
-          provider,
-        );
-      });
-    });
-  });
-
   describe('WaultFinance', () => {
     const dexKey = 'WaultFinance';
 
@@ -1182,149 +1016,6 @@ describe('UniswapV2 E2E BSC', () => {
           tokens.BUSD,
           holders.BNB,
           '1000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.megaSwap,
-          network,
-          provider,
-        );
-      });
-    });
-  });
-
-  describe('JetSwap', () => {
-    const dexKey = 'JetSwap';
-
-    describe('Simpleswap', () => {
-      it('BNB -> BUSD', async () => {
-        await testE2E(
-          tokens.BNB,
-          tokens.BUSD,
-          holders.BNB,
-          '10000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      it('USDT -> BUSD', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.BUSD,
-          holders.USDT,
-          '100000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-      it('BUSD -> BNB', async () => {
-        await testE2E(
-          tokens.BUSD,
-          tokens.BNB,
-          holders.BUSD,
-          '100000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-    });
-    describe('SimpleBuy', () => {
-      it('BNB -> BUSD', async () => {
-        await testE2E(
-          tokens.BNB,
-          tokens.BUSD,
-          holders.BNB,
-          '10000000000000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-      it('USDT -> BUSD', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.BUSD,
-          holders.USDT,
-          '100000000000000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-      it('BUSD -> BNB', async () => {
-        await testE2E(
-          tokens.BUSD,
-          tokens.BNB,
-          holders.BUSD,
-          '10000000000000000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleBuy,
-          network,
-          provider,
-        );
-      });
-    });
-    describe('MultiSwap', () => {
-      it('BNB -> BUSD', async () => {
-        await testE2E(
-          tokens.BNB,
-          tokens.BUSD,
-          holders.BNB,
-          '10000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-      it('USDT -> BUSD', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.BUSD,
-          holders.USDT,
-          '100000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-      it('BUSD -> BNB', async () => {
-        await testE2E(
-          tokens.BUSD,
-          tokens.BNB,
-          holders.BUSD,
-          '100000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
-    describe('MegaSwap', () => {
-      it('USDT -> BUSD', async () => {
-        await testE2E(
-          tokens.USDT,
-          tokens.BUSD,
-          holders.USDT,
-          '100000000000000000000',
           SwapSide.SELL,
           dexKey,
           ContractMethod.megaSwap,

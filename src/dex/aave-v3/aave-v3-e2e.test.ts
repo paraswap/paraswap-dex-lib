@@ -54,7 +54,7 @@ describe('AaveV3 E2E', () => {
     await Promise.all(results);
   });
 
-  describe('AaveV3 POLYGON', () => {
+  describe('AaveV3 POLYGON_V6', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -85,12 +85,14 @@ describe('AaveV3 E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      // [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     pairs.forEach(pair => {
