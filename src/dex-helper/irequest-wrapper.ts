@@ -59,7 +59,8 @@ export interface IRequestWrapper {
   request<T = any, R = Response<T>>(config: RequestConfig): Promise<R>;
 
   querySubgraph<T = any>(
-    subgraphId: string,
+    // subgraphId on decentralized network or (legacy support) subgraphURL on thegraph studio
+    subgraph: string,
     data: any,
     timeout?: number,
   ): Promise<AxiosResponse<T>>;

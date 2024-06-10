@@ -240,18 +240,19 @@ export class DummyRequestWrapper implements IRequestWrapper {
   }
 
   async querySubgraph<T>(
-    subgraphId: string,
+    subgraph: string,
     data: { query: string; variables?: Record<string, any> },
     timeout = 30000,
   ): Promise<AxiosResponse<T>> {
-    if (!subgraphId || !data.query || !this.apiKeyTheGraph)
+    if (!subgraph || !data.query || !this.apiKeyTheGraph)
       throw new Error('Invalid TheGraph params');
 
-    const response = await axios.post<T>(
-      `https://gateway-arbitrum.network.thegraph.com/api/${this.apiKeyTheGraph}/subgraphs/id/${subgraphId}`,
-      data,
-      { timeout },
-    );
+    // support for the subgraphs that are on the studio and were not migrated yet to decentralized network
+    const url = subgraph.includes('studio.thegraph.com')
+      ? subgraph
+      : `https://gateway-arbitrum.network.thegraph.com/api/${this.apiKeyTheGraph}/subgraphs/id/${subgraph}`;
+
+    const response = await axios.post<T>(url, data, { timeout });
     return response;
   }
 }
