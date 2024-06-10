@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "3.4.2-swaap-v2-op-base-bsc.0",
+  "version": "3.4.2-swaap-v2-op-base-bsc.1",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
