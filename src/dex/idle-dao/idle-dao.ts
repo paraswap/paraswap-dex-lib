@@ -117,13 +117,8 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       idleToken,
       this,
     );
-
-    // this.logger.debug("idleDaoEventPool registered ", idleToken.idleAddress)
-
-    this.eventPools[idleToken.idleAddress] = idleDaoEventPool;
-
-    // Generate first state for the blockNumber and subscribe to logs
     await idleDaoEventPool.initialize(blockNumber);
+    this.eventPools[idleToken.idleAddress] = idleDaoEventPool;
     return idleDaoEventPool;
   }
 

@@ -44,17 +44,17 @@ describe('IdleDao EventPool Mainnet', function () {
     Address,
     { blockNumber: number; events: EventMappings }
   > = {
-    // AA_clearpool_wincent_USDC
-    '0x00b51fc6384a120eac68bea38b889ea92524ab93': {
-      blockNumber: 18019404,
+    // BB_dUSDCV3
+    '0x2a84a042db06222c486bcb815e961f26599d0df6': {
+      blockNumber: 19676846,
       events: {
         Transfer: [
-          18019404, // DepositBB
-          18111961, // WithdrawAA
-          18858447, // Harvest
-          18940884, // WithdrawBB
-          19674873, // WithdrawBB
-          19924419,
+          19676846, // DepositAA
+          19676851, // DepositBB
+          19681374, // Harvest
+          19681547, // WithdrawBB
+          20031918, // Harvest
+          20036646,
         ],
       },
     },
@@ -68,7 +68,7 @@ describe('IdleDao EventPool Mainnet', function () {
           18646128, // DepositBB
           18804244, // WithdrawAA
           18908679, // Harvest
-          19924419,
+          20036646,
         ],
       },
     },
@@ -80,7 +80,7 @@ describe('IdleDao EventPool Mainnet', function () {
           18997082, // WithdrawBB
           19013537, // Harvest
           19346397, // DepositAA
-          19924419,
+          20036646,
         ],
       },
     },
@@ -99,6 +99,7 @@ describe('IdleDao EventPool Mainnet', function () {
             tokensList[poolAddress],
             blockNumber,
           );
+
           expect(idleDaoPool).not.toBeNull();
         });
 

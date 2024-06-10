@@ -1,4 +1,4 @@
-import { endpoints } from './config';
+import { endpoints, TOKEN_LISTS } from './config';
 import { BytesLike } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { Interface } from '@ethersproject/abi';
@@ -105,7 +105,11 @@ export const fetchTokenList_api = async (
   // const AUTH_TOKEN_DECODED = atob(idleDaoAuthToken!);
   const data = await getDataWithAuth(endpoints[network], token);
   // console.log('api_response_data', data);
-  if (!data) return [];
+
+  // Fetch tokenslist from static file
+  if (!data) {
+    return TOKEN_LISTS;
+  }
 
   const deployedContract = data
     .filter((d: any) => !!d.cdoAddress)
@@ -208,6 +212,5 @@ export const fetchTokenList_api = async (
     }
   }
 
-  // console.log('tokenList', output)
   return output;
 };

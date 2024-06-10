@@ -47,6 +47,10 @@ export const Tokens: {
       decimals: 18,
       address: '0x20aa3cd83044d2903181f7ef5c2b498a017d1c4a',
     },
+    BB_dUSDCV3: {
+      decimals: 18,
+      address: '0x2a84a042db06222c486bcb815e961f26599d0df6',
+    },
     AA_sUSDe: {
       decimals: 18,
       address: '0xf3188697bd35df73e4293d04a07ebaaf1ffc4018',
@@ -1352,6 +1356,7 @@ export const Holders: {
     BB_steakUSDC: '0x442Aea0Fd2AFbd3391DAE768F7046f132F0a6300',
     AA_Re7WETH: '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb',
     BB_Re7WETH: '0x442Aea0Fd2AFbd3391DAE768F7046f132F0a6300',
+    BB_dUSDCV3: '0xFb3bD022D5DAcF95eE28a6B07825D4Ff9C5b3814',
     AA_sUSDe: '0xaFeb95DEF3B2A3D532D74DaBd51E62048d6c07A4',
     BB_sUSDe: '0xaFeb95DEF3B2A3D532D74DaBd51E62048d6c07A4',
     AA_iETHv2: '0xA118aD79E2152b9a3c7Df8B8791887762b0f1D49',
