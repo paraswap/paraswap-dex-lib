@@ -24,10 +24,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x4f8846ae9380b90d2e71d5e3d042dff3e7ebb40d',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
-        {
-          address: '0x6A8cbed756804B16E05E741eDaBd5cB544AE21bf', // factory stable ng
-          isStableNg: true,
-        },
       ],
       stateUpdatePeriodMs: 5 * 1000,
       disabledPools: new Set([
@@ -169,30 +165,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           name: ImplementationNames.FACTORY_PLAIN_2_CRV_EMA,
           address: '0x67fe41A94e779CcFa22cff02cc2957DC9C0e4286',
           liquidityApiSlug: '/factory-crvusd',
-        },
-        '0xdcc91f930b42619377c200ba05b7513f2958b202': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xdcc91f930b42619377c200ba05b7513f2958b202',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0x933f4769dcc27fc7345d9d5975ae48ec4d0f829c': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0x933f4769dcc27fc7345d9d5975ae48ec4d0f829c',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0xede71f77d7c900dca5892720e76316c6e575f0f7': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xede71f77d7c900dca5892720e76316c6e575f0f7',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0xdd7ebb1c49780519dd9755b8b1a23a6f42ce099e': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xdd7ebb1c49780519dd9755b8b1a23a6f42ce099e',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
         },
       },
       customPools: {
@@ -336,18 +308,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xD8336532f6ED7b94282fAF724fe41d6145E07Cfc',
           basePoolAddress: '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67',
         },
-        '0xe265fc390e9129b7e337da23cd42e00c34da2ce3': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xe265fc390e9129b7e337da23cd42e00c34da2ce3',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0xa7ba18eefcd9513230987ec2fab6711af5abd9c2': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xa7ba18eefcd9513230987ec2fab6711af5abd9c2',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
       },
       customPools: {
         '0x445FE580eF8d70FF569aB36e80c647af338db351': {
@@ -375,10 +335,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         {
           address: '0x686d67265703D1f124c45E33d47d794c566889Ba',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
-        },
-        {
-          address: '0xe61Fb97Ef6eBFBa12B36Ffd7be785c1F5A2DE66b', // factory stable ng
-          isStableNg: true,
         },
       ],
       stateUpdatePeriodMs: 2 * 1000,
@@ -462,12 +418,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           name: ImplementationNames.FACTORY_META_USD_BALANCES,
           address: '0xf82162bb68ad5a168345bb7efb2faa0edcca5177',
           basePoolAddress: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
-        },
-        '0x5702bdb1ec244704e3cbbaae11a0275ae5b07499': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0x5702bdb1ec244704e3cbbaae11a0275ae5b07499',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
         },
       },
       customPools: {
@@ -573,15 +523,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xc50c05ca1f8c2346664bd0d4a1eb6ac1da38414f',
           basePoolAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
         },
-        // Commented because these pools basics are not verified and looks very abandoned
-        // '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320': {
-        //   name: ImplementationNames.FACTORY_META_BTC,
-        //   address: '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320',
-        // },
-        // '0x505C34ED8dBE96d2D5C7D83158aA844887770970': {
-        //   name: ImplementationNames.FACTORY_META_BTC_BALANCES,
-        //   address: '0x505C34ED8dBE96d2D5C7D83158aA844887770970',
-        // },
       },
       customPools: {
         '0x7f90122BF0700F9E7e1F688fe926940E8839F353': {
@@ -593,14 +534,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           balancesInputType: 'uint256',
           useForPricing: false,
         },
-        // This contract is not verified. I think it is just abandoned. I am commenting both related
-        // btc meta pools
-        // ['']: {
-        //   name: '',
-        //   address: '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320',
-        //   lpTokenAddress: '',
-        //   liquidityApiSlug: '',
-        // },
       },
     },
     [Network.ARBITRUM]: {
@@ -608,10 +541,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         {
           address: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
-        },
-        {
-          address: '0x9AF14D26075f142eb3F292D5065EB3faa646167b', // factory stable ng
-          isStableNg: true,
         },
       ],
       stateUpdatePeriodMs: 2 * 1000,
@@ -707,18 +636,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           customGasCost: 130_000,
           isStoreRateSupported: true,
         },
-        '0xf6841c27fe35ed7069189afd5b81513578afd7ff': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xf6841c27fe35ed7069189afd5b81513578afd7ff',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0xff02cbd91f57a778bab7218da562594a680b8b61': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xff02cbd91f57a778bab7218da562594a680b8b61',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
       },
       customPools: {
         '0x7f90122BF0700F9E7e1F688fe926940E8839F353': {
@@ -755,10 +672,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         {
           address: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
-        },
-        {
-          address: '0x5eeE3091f747E60a045a2E715a4c71e600e31F6E', // factory stable ng
-          isStableNg: true,
         },
       ],
       stateUpdatePeriodMs: 2 * 1000,
@@ -842,12 +755,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           name: ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2,
           address: '0x6f9fb833501f46cbe6f6a4b6cf32c834e5a5e8c5',
           customGasCost: 130_000,
-          isStoreRateSupported: true,
-        },
-        '0x635742dcc8313dcf8c904206037d962c042eafbd': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0x635742dcc8313dcf8c904206037d962c042eafbd',
-          liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
         },
       },
@@ -937,7 +844,7 @@ export const Adapters: Record<number, AdapterMappings> = {
 
 // This become quite ugly :(
 // I just wanted to make sure that every address is lowercased and it is not missed it config changes at some point
-const configAddressesNormalizer = (
+export const configAddressesNormalizer = (
   config: DexConfigMap<DexParams>,
 ): DexConfigMap<DexParams> => {
   for (const dexKey of Object.keys(config)) {

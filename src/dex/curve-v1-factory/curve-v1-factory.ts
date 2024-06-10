@@ -84,7 +84,7 @@ import { encodeCurveAssets } from '../curve-v1/packer';
 
 import { DIRECT_METHOD_NAME_V6 } from './constants';
 
-const DefaultCoinsABI: AbiItem = {
+export const DefaultCoinsABI: AbiItem = {
   type: 'function',
   name: 'coins',
   inputs: [
@@ -136,7 +136,7 @@ export class CurveV1Factory
     protected adapters = Adapters[network] || {},
     protected config = CurveV1FactoryConfig[dexKey][network],
     // This type is used to support different encoding for uint128 and uint256 args
-    private coinsTypeTemplate: AbiItem = DefaultCoinsABI,
+    protected coinsTypeTemplate: AbiItem = DefaultCoinsABI,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(`${this.dexKey}-${this.network}`);
