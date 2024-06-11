@@ -71,6 +71,7 @@ import {
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 import { hexConcat, hexlify, hexZeroPad, hexValue } from 'ethers/lib/utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -1141,6 +1142,14 @@ export class UniswapV3
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.config.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
     };
   }
 

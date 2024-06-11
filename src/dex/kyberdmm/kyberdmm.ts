@@ -38,6 +38,7 @@ import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
 
@@ -262,6 +263,15 @@ export class KyberDmm
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: data.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              KyberDMMFunctions.swapExactTokensForTokens,
+              'amounts',
+              data.path.length - 1, // last element is amount out
+            )
+          : undefined,
     };
   }
 

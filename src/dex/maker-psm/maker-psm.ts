@@ -541,6 +541,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       targetExchange: data.psmAddress,
       specialDexFlag,
       spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
+      returnAmountPos: undefined,
     };
   }
   // Returns list of top pools based on liquidity. Max

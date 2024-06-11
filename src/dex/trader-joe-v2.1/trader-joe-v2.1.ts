@@ -21,6 +21,7 @@ import {
   TraderJoeV2RouterParam,
 } from './types';
 import { TRADERJOE_V2_1_ROUTER_ADDRESS } from './config';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class TraderJoeV21
   extends SimpleExchange
@@ -166,6 +167,14 @@ export class TraderJoeV21
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: this.routerAddress,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
     };
   }
 }

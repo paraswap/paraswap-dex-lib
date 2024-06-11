@@ -457,6 +457,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       dexFuncHasRecipient: false,
       exchangeData,
       targetExchange: swapCallee,
+      returnAmountPos: undefined,
     };
   }
 

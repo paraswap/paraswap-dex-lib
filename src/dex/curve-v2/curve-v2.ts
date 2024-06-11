@@ -434,6 +434,7 @@ export class CurveV2
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos: undefined,
     };
   }
 }
