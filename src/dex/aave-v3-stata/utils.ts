@@ -1,7 +1,7 @@
-import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
-// slimmed down version of @bgd-labs/aave-address-book
-// required as version of web3-utils used is buggy
-import IStaticATokenFactory_ABI from '../../abi/aave-v3-stata/StaticATokenFactory.json';
+import {
+  IStaticATokenFactory_ABI,
+  IStaticATokenLM_ABI,
+} from '@bgd-labs/aave-address-book';
 import { Interface } from '@ethersproject/abi';
 import Web3 from 'web3';
 import { MultiCallParams, MultiWrapper } from '../../lib/multi-wrapper';

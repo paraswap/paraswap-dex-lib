@@ -7,12 +7,21 @@ export type PoolState = {
   // pool prices. Complete me!
 };
 
+export enum TokenType {
+  UNDERLYING,
+  A_TOKEN,
+  STATA_TOKEN,
+  UNKNOWN,
+}
+
 export type AaveV3StataData = {
   // TODO: AaveV3StataData is the dex data that is
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
   // Complete me!
   exchange: Address;
+  srcType: TokenType;
+  destType: TokenType;
 };
 
 export type DexParams = {
@@ -48,6 +57,8 @@ export type RedeemParams = [
 export type Param = DepositParams | RedeemParams;
 
 export enum StataFunctions {
-  'deposit',
-  'redeem',
+  deposit = 'deposit',
+  redeem = 'redeem',
+  mint = 'mint',
+  withdraw = 'withdraw',
 }

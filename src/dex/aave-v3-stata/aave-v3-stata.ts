@@ -11,18 +11,19 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AaveV3StataData } from './types';
+import { AaveV3StataData, StataFunctions, TokenType } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveV3StataConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import { fetchTokenList } from './utils';
-import { setTokensOnNetwork } from './tokens';
+import { getTokenType, setTokensOnNetwork } from './tokens';
+import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
 // slimmed down version of @bgd-labs/aave-address-book
 // required as version of web3-utils used is buggy
-import IStaticATokenFactory_ABI from '../../abi/aave-v3-stata/StaticATokenFactory.json';
+//import IStaticATokenFactory_ABI from '../../abi/aave-v3-stata/StaticATokenFactory.json';
 
 export const TOKEN_LIST_CACHE_KEY = 'stata-token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60; // 1 day
@@ -41,7 +42,7 @@ export class AaveV3Stata
 
   logger: Logger;
 
-  private factory: Interface;
+  private stata: Interface;
 
   constructor(
     readonly network: Network,
@@ -52,7 +53,7 @@ export class AaveV3Stata
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.factory = new Interface(IStaticATokenFactory_ABI);
+    this.stata = new Interface(IStaticATokenLM_ABI);
   }
 
   // Initialize pricing is called once in the start of
@@ -129,8 +130,36 @@ export class AaveV3Stata
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AaveV3StataData>> {
-    // TODO: complete me!
-    return null;
+    const src = getTokenType(this.network, srcToken.address);
+    const dest = getTokenType(this.network, destToken.address);
+
+    // the token itself can only swap from/to underlying and aToken, so
+    // - at least one must be stata
+    // - maximum one can be stata
+    if (
+      ![src, dest].includes(TokenType.STATA_TOKEN) ||
+      (src === TokenType.STATA_TOKEN && dest === TokenType.STATA_TOKEN)
+    )
+      return null;
+    // on the buy side (mint, withdraw) we only support the underlying<->stata conversion, not the aUnderlying
+    if (side === SwapSide.BUY && ![src, dest].includes(TokenType.UNDERLYING))
+      return null;
+
+    return [
+      {
+        prices: amounts, // TODO: is probably wrong - i guess here exchangeRate must apply?
+        unit: getBigIntPow(
+          (side === SwapSide.SELL ? destToken : srcToken).decimals,
+        ),
+        gasCost: 400_000, // 250_000 from underlying, far less from aToken
+        exchange: this.dexKey,
+        data: {
+          srcType: src,
+          destType: dest,
+          exchange: destToken.address,
+        },
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -153,10 +182,16 @@ export class AaveV3Stata
     side: SwapSide,
   ): AdapterExchangeParam {
     // TODO: complete me!
-    const { exchange } = data;
-
-    // Encode here the payload for adapter
-    const payload = '';
+    const { exchange, srcType, destType } = data;
+    const stataToken = srcType === TokenType.STATA_TOKEN ? srcToken : destToken;
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          stataToken: 'address',
+        },
+      },
+      { stataToken: stataToken },
+    );
 
     return {
       targetExchange: exchange,
@@ -177,11 +212,43 @@ export class AaveV3Stata
     data: AaveV3StataData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    // TODO: complete me!
-    const { exchange } = data;
+    const { exchange, srcType, destType } = data;
+    let swapData;
 
-    // Encode here the transaction arguments
-    const swapData = '';
+    if (side === SwapSide.SELL) {
+      if (srcType === TokenType.STATA_TOKEN) {
+        // e.g. sell srcAmount 100 srcToken stataUSDC for destToken USDC
+        swapData = this.stata.encodeFunctionData(StataFunctions.redeem, [
+          srcAmount,
+          this.augustusAddress, // receiver
+          this.augustusAddress, // owner
+          destType === TokenType.UNDERLYING, // withdraw from aToken
+        ]);
+      } else {
+        // sell srcAmount 100 srcToken USDC for destToken stataUSDC
+        swapData = this.stata.encodeFunctionData(StataFunctions.deposit, [
+          srcAmount,
+          this.augustusAddress, // receiver
+          0, // referrer (noop)
+          srcType === TokenType.UNDERLYING, // deposit to aave
+        ]);
+      }
+    } else {
+      if (srcType === TokenType.STATA_TOKEN) {
+        // e.g. buy destAmount 100 destToken USDC for srcToken stataUSDC
+        swapData = this.stata.encodeFunctionData(StataFunctions.withdraw, [
+          destAmount,
+          this.augustusAddress, // receiver
+          this.augustusAddress, // owner
+        ]);
+      } else {
+        // e.g. buy destAmount 100 destToken stataUSDC for srcToken USDC
+        swapData = this.stata.encodeFunctionData(StataFunctions.mint, [
+          destAmount,
+          this.augustusAddress,
+        ]);
+      }
+    }
 
     return this.buildSimpleParamWithoutWETHConversion(
       srcToken,
