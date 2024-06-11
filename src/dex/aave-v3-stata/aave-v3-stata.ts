@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { Utils, getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AaveV3StataData, StataFunctions, TokenType } from './types';
@@ -21,6 +21,7 @@ import { Interface } from '@ethersproject/abi';
 import { fetchTokenList } from './utils';
 import { getTokenType, setTokensOnNetwork } from './tokens';
 import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
+import { uint256ToBigInt } from '../../lib/decoders';
 // slimmed down version of @bgd-labs/aave-address-book
 // required as version of web3-utils used is buggy
 //import IStaticATokenFactory_ABI from '../../abi/aave-v3-stata/StaticATokenFactory.json';
@@ -28,6 +29,7 @@ import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
 export const TOKEN_LIST_CACHE_KEY = 'stata-token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60; // 1 day
 const TOKEN_LIST_LOCAL_TTL_SECONDS = 3 * 60 * 60; // 3h
+const RAY = BigInt(1e27);
 
 export class AaveV3Stata
   extends SimpleExchange
@@ -43,6 +45,8 @@ export class AaveV3Stata
   logger: Logger;
 
   private stata: Interface;
+
+  private state: Record<string, { blockNumber: number; rate: bigint }> = {};
 
   constructor(
     readonly network: Network,
@@ -145,9 +149,50 @@ export class AaveV3Stata
     if (side === SwapSide.BUY && ![src, dest].includes(TokenType.UNDERLYING))
       return null;
 
+    const stata = src === TokenType.STATA_TOKEN ? srcToken : destToken;
+
+    // following what is done on wstETH
+    if (blockNumber > this.state[stata.address].blockNumber) {
+      const cached = await this.dexHelper.cache.get(
+        this.dexKey,
+        this.network,
+        `state_${stata.address}`,
+      );
+      if (cached) {
+        this.state[stata.address] = Utils.Parse(cached);
+      } else {
+        const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+          true,
+          [
+            {
+              target: stata.address,
+              callData: this.stata.encodeFunctionData('rate'),
+              decodeFunction: uint256ToBigInt,
+            },
+          ],
+          blockNumber,
+        );
+        this.state[stata.address] = {
+          blockNumber,
+          rate: results[0].returnData,
+        };
+        this.dexHelper.cache.setex(
+          this.dexKey,
+          this.network,
+          'state',
+          60,
+          Utils.Serialize(this.state[stata.address]),
+        );
+      }
+    }
+
     return [
       {
-        prices: amounts, // TODO: is probably wrong - i guess here exchangeRate must apply?
+        prices: amounts.map(amount =>
+          src === TokenType.STATA_TOKEN
+            ? (amount * RAY) / this.state[stata.address].rate
+            : (amount * this.state[stata.address].rate) / RAY,
+        ),
         unit: getBigIntPow(
           (side === SwapSide.SELL ? destToken : srcToken).decimals,
         ),
