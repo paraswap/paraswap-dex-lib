@@ -1,6 +1,7 @@
 import { ImplementationNames, PoolState } from '../../types';
 import { get_dx, IPoolContext } from '../types';
-import { throwNotExist } from './utils';
+import { requireValue, throwNotExist } from './utils';
+import _ from 'lodash';
 
 const stableNg: get_dx = (
   self: IPoolContext,
@@ -9,7 +10,38 @@ const stableNg: get_dx = (
   j: number,
   dy: bigint,
 ) => {
-  return 0n;
+  const rates = requireValue(self, state, 'storedRates', 'stableNg');
+  const N_COINS = requireValue(self, state, 'n_coins', 'stableNg');
+  const A = requireValue(self, state, 'A', 'stableNg');
+  const stateFee = requireValue(self, state, 'fee', 'stableNg');
+  const offpeg_fee_multiplier = requireValue(
+    self,
+    state,
+    'offpeg_fee_multiplier',
+    'stableNg',
+  );
+
+  const { FEE_DENOMINATOR, PRECISION } = self.constants;
+  const xp: bigint[] = [];
+  const { balances } = state;
+
+  for (const idx of _.range(N_COINS)) {
+    xp.push((rates[idx] * balances[idx]) / PRECISION);
+  }
+
+  const amp = A;
+  const D = self.get_D(self, xp, amp, N_COINS);
+
+  const base_fee = stateFee;
+  const dy_with_fee = (dy * rates[j]) / PRECISION + 1n;
+
+  const fee_multiplier = offpeg_fee_multiplier;
+  const fee = self._dynamic_fee(self, xp[i], xp[j], base_fee, fee_multiplier);
+
+  const y = xp[j] - (dy_with_fee * FEE_DENOMINATOR) / (FEE_DENOMINATOR - fee);
+  const x = self.get_y(self, state, j, i, y, xp, amp, D);
+
+  return ((x - xp[i]) * PRECISION) / rates[i];
 };
 
 const notExist: get_dx = (

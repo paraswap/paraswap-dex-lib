@@ -1,7 +1,9 @@
 import dotenv from 'dotenv';
-dotenv.config();
-import { Network } from '../../constants';
+import { ContractMethod, Network } from '../../constants';
 import { testForNetwork } from '../curve-v1-factory/curve-v1-factory-e2e.test';
+import { SwapSide } from '@paraswap/core';
+
+dotenv.config();
 
 describe('CurveV1StableNG E2E', () => {
   const dexKey = 'CurveV1StableNg';
@@ -22,6 +24,13 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
+      new Map([
+        [
+          SwapSide.SELL,
+          [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+        ],
+        [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+      ]),
     );
   });
 

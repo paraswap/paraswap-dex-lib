@@ -14,6 +14,9 @@ export function testForNetwork(
   tokenBSymbol: string,
   tokenAAmount: string,
   tokenBAmount: string,
+  sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+  ]),
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -22,18 +25,7 @@ export function testForNetwork(
   const tokens = Tokens[network];
   const holders = Holders[network];
 
-  const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        // ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-        // ContractMethod.directCurveV1Swap,
-        ContractMethod.swapExactAmountIn,
-      ],
-    ],
-  ]);
+  // const sideToContractMethods = ;
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
