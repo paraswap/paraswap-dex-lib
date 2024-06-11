@@ -43,8 +43,6 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   SpiritSwapV2: {
     [Network.FANTOM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/layer3org/spiritswap-v2',
       factoryAddress: '0x9d3591719038752db0c8bEEe2040FfcC3B2c6B9c',
       router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
       initCode:
@@ -129,8 +127,6 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   PharaohV1: {
     [Network.AVALANCHE]: {
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/66247/pharaoh-legacy/version/latest',
       factoryAddress: '0xAAA16c016BF556fcD620328f0759252E29b1AB57',
       router: '0x609AcD8Fc955Dd7E744c7DFFc9930a7A6654DE43',
       initCode:

@@ -174,8 +174,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   ApeSwap: {
     [Network.BSC]: {
-      subgraphURL:
-        'https://graph.apeswap.finance/subgraphs/name/ape-swap/apeswap-subgraph',
       factoryAddress: '0x0841bd0b734e4f5853f0dd8d7ea041c241fb0da6',
       initCode:
         '0xf4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b',
@@ -203,7 +201,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   BakerySwap: {
     [Network.BSC]: {
-      subgraphURL: 'https://api.bscgraph.org/subgraphs/name/bakeryswap',
       factoryAddress: '0x01bF7C66c6BD861915CdaaE475042d3c4BaE16A7',
       initCode:
         '0xe2e87433120e32c4738a7d8f3271f3d872cbe16241d67537139158d90bac61d3',
@@ -250,8 +247,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   ComethSwap: {
     [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/cometh-game/comethswap',
       factoryAddress: '0x800b052609c355ca8103e06f022aa30647ead60a',
       initCode:
         '0x499154cad90a3563f914a25c3710ed01b9a43b8471a35ba8a66a056f37638542',
@@ -317,7 +312,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   LydiaFinance: {
     [Network.AVALANCHE]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/lydiacoder/lydia',
       factoryAddress: '0xe0C1bb6DF4851feEEdc3E14Bd509FEAF428f7655',
       initCode:
         '0x47cc4f3a5e7a237c464e09c6758ac645084f198b8f64eedc923317ac4481a10c',
@@ -327,8 +321,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   PantherSwap: {
     [Network.BSC]: {
-      subgraphURL:
-        'https://api.bscgraph.org/subgraphs/name/pantherswap/exchange',
       factoryAddress: '0x670f55c6284c629c23bae99f585e3f17e8b9fc31',
       initCode:
         '0x867d1354ae93986b4c49f35d8d7884f174264895ad8501d50d2cd365933d4aa5',
@@ -465,8 +457,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   SpiritSwap: {
     [Network.FANTOM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/layer3org/spiritswap-analytics',
       factoryAddress: '0xEF45d134b73241eDa7703fa787148D9C9F4950b0',
       initCode:
         '0xe242e798f6cee26a9cb0bbf24653bf066e5356ffeac160907fe2cc108e238617',
@@ -535,8 +525,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   Verse: {
     [Network.MAINNET]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/arnkthr/ethv1/graphql',
       factoryAddress: '0xee3E9E46E34a27dC755a63e2849C9913Ee1A06E2',
       initCode:
         '0x34768b85d02b77066b16acc7f0875ed59566bb3c32ba4fb0438750e872fddf9e',
@@ -593,8 +581,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       initCode: '0x', // deprecated
       poolGasCost: 90 * 1000,
       feeCode: 30,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/chimpydev/swapbase/graphql',
     },
   },
   SharkSwap: {

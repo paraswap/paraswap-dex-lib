@@ -231,8 +231,6 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash:
         '0x09c178be473df44d1de6970978a4fdedce1ce52a23b2b979754547f6b43a19a5',
-      subgraphURL:
-        'https://subgraph.chronos.exchange/subgraphs/name/chronos-v3',
     },
   },
   RamsesV2: {
