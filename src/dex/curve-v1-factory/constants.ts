@@ -36,3 +36,4 @@ export const FACTORY_MAX_PLAIN_COINS = 4;
 export const FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN = 10;
 
 export const DIRECT_METHOD_NAME = 'directCurveV1Swap';
+export const DIRECT_METHOD_NAME_V6 = 'swapExactAmountInOnCurveV1';

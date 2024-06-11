@@ -1,6 +1,11 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { SwapSide, MAX_UINT, Network } from '../constants';
-import { AdapterExchangeParam, Address, SimpleExchangeParam } from '../types';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  SimpleExchangeParam,
+} from '../types';
 import { IDexTxBuilder } from './idex';
 import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
@@ -8,6 +13,7 @@ import { NumberAsString } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
+import { extractReturnAmountPosition } from '../executor/utils';
 
 const DODOAproveAddress: { [network: number]: Address } = {
   [Network.MAINNET]: '0xCB859eA579b28e02B87A1FDE08d087ab9dbE5149',
@@ -65,6 +71,8 @@ export class DodoV2
 {
   static dexKeys = ['dodov2'];
   exchangeRouterInterface: Interface;
+
+  needWrapNative = true; // temporary
 
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'dodov2');
@@ -172,5 +180,87 @@ export class DodoV2
       data.dodoProxy,
       maybeSpender,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    _recipient: Address,
+    data: DodoV2Data,
+    _side: SwapSide,
+  ): DexExchangeParam {
+    const [swapFunction, swapFunctionParams, maybeSpender] = ((): [
+      DodoV2Functions,
+      DodoV2Param,
+      Address?,
+    ] => {
+      if (isETHAddress(srcToken)) {
+        return [
+          DodoV2Functions.dodoSwapV2ETHToToken,
+          [
+            destToken,
+            destAmount,
+            data.dodoPairs,
+            data.directions,
+            false,
+            MAX_UINT,
+          ],
+        ];
+      }
+
+      if (isETHAddress(destToken)) {
+        return [
+          DodoV2Functions.dodoSwapV2TokenToETH,
+          [
+            srcToken,
+            srcAmount,
+            destAmount,
+            data.dodoPairs,
+            data.directions,
+            false,
+            MAX_UINT,
+          ],
+          DODOAproveAddress[this.network],
+        ];
+      }
+
+      return [
+        DodoV2Functions.dodoSwapV2TokenToToken,
+        [
+          srcToken,
+          destToken,
+          srcAmount,
+          destAmount,
+          data.dodoPairs,
+          data.directions,
+          false,
+          MAX_UINT,
+        ],
+        DODOAproveAddress[this.network],
+      ];
+    })();
+
+    const swapData = this.exchangeRouterInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: data.dodoProxy,
+      spender: maybeSpender,
+      returnAmountPos:
+        _side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              swapFunction,
+              'returnAmount',
+            )
+          : undefined,
+    };
   }
 }

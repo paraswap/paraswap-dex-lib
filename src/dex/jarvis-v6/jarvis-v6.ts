@@ -7,6 +7,8 @@ import {
   PoolLiquidity,
   Logger,
   PoolPrices,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
@@ -447,6 +449,42 @@ export class JarvisV6
       swapData,
       data.poolAddress.toLowerCase(),
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: JarvisV6Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { swapFunction } = data;
+    const timestamp = (Date.now() / 1000 + THIRTY_MINUTES).toFixed(0);
+
+    let swapFunctionParams: JarvisV6Params;
+    switch (swapFunction) {
+      case JarvisSwapFunctions.MINT:
+        swapFunctionParams = ['1', srcAmount, timestamp, recipient];
+        break;
+      case JarvisSwapFunctions.REDEEM:
+        swapFunctionParams = [srcAmount, '1', timestamp, recipient];
+        break;
+      default:
+        throw new Error(`Unknown function ${swapFunction}`);
+    }
+    const exchangeData = this.poolInterface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: data.poolAddress.toLowerCase(),
+      returnAmountPos: undefined,
+    };
   }
 
   // Returns list of top pools based on liquidity. Max

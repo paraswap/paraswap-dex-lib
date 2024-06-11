@@ -72,7 +72,7 @@ describe('Swaap V2', function () {
     const tokens = Tokens[network];
 
     const srcTokenSymbol = 'WETH';
-    const destTokenSymbol = 'USDC';
+    const destTokenSymbol = 'USDCe';
 
     const amountsForSell = [
       0n,

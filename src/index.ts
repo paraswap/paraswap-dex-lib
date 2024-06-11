@@ -1,4 +1,5 @@
 export { TransactionBuilder } from './transaction-builder';
+export { GenericSwapTransactionBuilder } from './generic-swap-transaction-builder';
 
 export { PricingHelper } from './pricing-helper';
 export { PoolsHelper } from './pools-helper';

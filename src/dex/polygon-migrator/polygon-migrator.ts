@@ -11,8 +11,10 @@ import { Adapters, PolygonMigratorConfig } from './config';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Logger,
+  NumberAsString,
   PoolLiquidity,
   PoolPrices,
   SimpleExchangeParam,
@@ -156,6 +158,31 @@ export class PolygonMigrator
       swapData,
       this.migratorAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: PolygonMigrationData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapData = this.migratorInterface.encodeFunctionData(
+      this.isMatic(srcToken)
+        ? PolygonMigratorFunctions.migrate
+        : PolygonMigratorFunctions.unmigrate,
+      [srcAmount],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: this.migratorAddress,
+      returnAmountPos: undefined,
+    };
   }
 
   async getTopPoolsForToken(

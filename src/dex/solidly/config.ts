@@ -94,20 +94,6 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       feeCode: 0,
     },
   },
-  Cone: {
-    [Network.BSC]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/cone-exchange/cone',
-      factoryAddress: '0x0EFc2D2D054383462F2cD72eA2526Ef7687E1016',
-      router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
-      initCode:
-        '04b89f6ddaef769d145acd66e1700a76b1b7c369dfe9558e67ed6495b3b93fe4',
-      // Variable fees. Defaults:
-      // Stable: 10000 (0,01%) ('1' in uniswap)
-      // Volatile: 2000 (0,05%) ('5' in uniswap)
-      poolGasCost: 180 * 1000,
-      feeCode: 0, // variable
-    },
-  },
   Thena: {
     [Network.BSC]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/thenaursa/thena-v1',
@@ -119,21 +105,6 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       volatileFee: 20, // 10000 / 500 = 20 in BPS
       poolGasCost: 180 * 1000,
       feeCode: 1,
-    },
-  },
-  SoliSnek: {
-    [Network.AVALANCHE]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/solisnek-finance/solisnek-avalanche',
-      factoryAddress: '0xeeee1F1c93836B2CAf8B9E929cb978c35d46657E',
-      router: '0x609AcD8Fc955Dd7E744c7DFFc9930a7A6654DE43',
-      initCode:
-        '0x79cda3bba5402e92f13ed1967c06033e6b7a1bc8d2e1d013b29fa0c4d0a4aa0f',
-      // updatable fees on the factory without event
-      stableFee: 2,
-      volatileFee: 20,
-      poolGasCost: 180 * 1000,
-      feeCode: 2,
     },
   },
   Chronos: {
@@ -243,7 +214,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'Adapter04', index: 1 }], // solidly
   },
   [Network.AVALANCHE]: {
-    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 3 }], // solisnek
+    [SwapSide.SELL]: [{ name: 'AvalancheAdapter02', index: 3 }], // solisnek (deprecated)
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter02', index: 1 }], // chronos, ramses

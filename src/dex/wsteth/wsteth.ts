@@ -8,6 +8,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -21,6 +23,7 @@ import { uint256ToBigInt } from '../../lib/decoders';
 import { Utils } from '../../utils';
 import WSTETH_ABI from '../../abi/wstETH.json';
 import STETH_ABI from '../../abi/stETH.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class WstETH extends SimpleExchange implements IDex<WstETHData> {
   static readonly wstETHIface = new Interface(WSTETH_ABI);
@@ -239,6 +242,33 @@ export class WstETH extends SimpleExchange implements IDex<WstETHData> {
         networkFee: '0',
       };
     }
+  }
+
+  async getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: WstETHData,
+    side: SwapSide,
+  ): Promise<DexExchangeParam> {
+    const swapFunction =
+      srcToken.toLowerCase() === this.config.stETHAddress ? 'wrap' : 'unwrap';
+    const exchangeData = WstETH.wstETHIface.encodeFunctionData(swapFunction, [
+      srcAmount,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData,
+      targetExchange: this.config.wstETHAddress,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(WstETH.wstETHIface, swapFunction)
+          : undefined,
+    };
   }
 
   // Returns list of top pools based on liquidity. Max

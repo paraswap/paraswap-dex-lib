@@ -19,20 +19,6 @@ export const Adapters: {
       },
     ],
   },
-  [Network.ROPSTEN]: {
-    [SwapSide.SELL]: [
-      {
-        name: 'RopstenAdapter01',
-        index: 0,
-      },
-    ],
-    [SwapSide.BUY]: [
-      {
-        name: 'RopstenBuyAdapter',
-        index: 1,
-      },
-    ],
-  },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
@@ -137,13 +123,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   UniswapV2: {
     [Network.MAINNET]: {
       subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
-      factoryAddress: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-      initCode:
-        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
-      poolGasCost: 80 * 1000,
-      feeCode: 30,
-    },
-    [Network.ROPSTEN]: {
       factoryAddress: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
       initCode:
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
@@ -313,12 +292,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       poolGasCost: 80 * 1000,
       feeCode: 30,
     },
-    [Network.BASE]: {
-      factoryAddress: '0xfbb4E52FEcc90924c79F980eb24a9794ae4aFFA4',
-      initCode: '0x', // deprecated
-      poolGasCost: 80 * 1000,
-      feeCode: 30,
-    },
   },
   JulSwap: {
     [Network.BSC]: {
@@ -328,26 +301,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       initCode:
         '0xb1e98e21a5335633815a8cfb3b580071c2e4561c50afd57a8746def9ed890b18',
       feeCode: 30,
-    },
-  },
-  JetSwap: {
-    [Network.BSC]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/smartcookie0501/jetswap-subgraph',
-      factoryAddress: '0x0eb58e5c8aa63314ff5547289185cc4583dfcbd5',
-      initCode:
-        '0x3125d0a15fa7af49ce234ba1cf5f931bad0504242e0e1ee9fcd7d1d7aa88c651',
-      poolGasCost: 200 * 1000,
-      feeCode: 30,
-    },
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/smartcookie0501/jetswap-subgraph-polygon',
-      factoryAddress: '0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7',
-      initCode:
-        '0x505c843b83f01afef714149e8b174427d552e1aca4834b4f9b4b525f426ff3c6',
-      poolGasCost: 200 * 1000,
-      feeCode: 10,
     },
   },
   KnightSwap: {
@@ -377,28 +330,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x47cc4f3a5e7a237c464e09c6758ac645084f198b8f64eedc923317ac4481a10c',
       poolGasCost: 80 * 1000,
       feeCode: 20,
-    },
-  },
-  Olive: {
-    [Network.AVALANCHE]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/olive-rose/olivecash',
-      factoryAddress: '0x4Fe4D8b01A56706Bc6CaD26E8C59D0C7169976b3',
-      initCode:
-        '0xb7145948956af92afd2ae97eff039ada60998237282c1687ca23ce1ad5e1d282',
-      poolGasCost: 80 * 1000,
-      feeCode: 20,
-    },
-  },
-  Polycat: {
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/polycatfi/polycat-finance-amm',
-      factoryAddress: '0x477Ce834Ae6b7aB003cCe4BC4d8697763FF456FA',
-      initCode:
-        '0x3cad6f9e70e13835b4f07e5dd475f25a109450b22811d0437da51e66c161255a',
-      poolGasCost: 100 * 1000,
-      feeCode: 240,
     },
   },
   PantherSwap: {
@@ -529,64 +460,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 25,
     },
   },
-  Swapsicle: {
-    [Network.AVALANCHE]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-avalanche',
-      factoryAddress: '0x9C60C867cE07a3c403E2598388673C10259EC768',
-      initCode:
-        '0x9e43ee37212e3296c7f6087d3e0a37b48a4e4e413538dac0fd18cfe2f80666c1',
-      feeCode: 30,
-    },
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-polygon',
-      factoryAddress: '0x735ab9808d792B5c8B54e31196c011c26C08b4ce',
-      initCode:
-        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
-      feeCode: 30,
-    },
-    [Network.BSC]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-bnb',
-      factoryAddress: '0xEe673452BD981966d4799c865a96e0b92A8d0E45',
-      initCode:
-        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
-      feeCode: 30,
-    },
-    [Network.FANTOM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-fantom',
-      factoryAddress: '0x98F23162E3a7FE610aC89C88E4217a599A15858F',
-      initCode:
-        '0xcb64282d14f9033fbb6a3a827bd515fff027bb6994a0d33ac0424e7e3037dad3',
-      feeCode: 30,
-    },
-    [Network.ARBITRUM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-arbitrum',
-      factoryAddress: '0x2f0c7c98462651bb2102f6cd05acdad333e031b0',
-      initCode:
-        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
-      feeCode: 30,
-    },
-    [Network.MAINNET]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-ethereum',
-      factoryAddress: '0x2F0C7C98462651BB2102F6Cd05acDAd333E031b0',
-      initCode:
-        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
-      feeCode: 30,
-    },
-    [Network.OPTIMISM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/swapsicledex/swapsicle-exchange-optimism',
-      factoryAddress: '0x2f0c7c98462651bb2102f6cd05acdad333e031b0',
-      initCode:
-        '0x2ed0c8714ca80192f88764ee4b4c8c8cb6dfc01859a02b25ce67f304e499d48e',
-      feeCode: 30,
-    },
-  },
   QuickSwap: {
     [Network.POLYGON]: {
       subgraphURL:
@@ -595,34 +468,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       initCode:
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
       feeCode: 30,
-    },
-  },
-  RadioShack: {
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/radioshackcreator/radioshack-polygon',
-      factoryAddress: '0xB581D0A3b7Ea5cDc029260e989f768Ae167Ef39B',
-      initCode:
-        '0x3eef69365a159891ca18b545ccaf0d6aca9b22c988b8deb7a3e4fa2fc2418596',
-      feeCode: 10,
-    },
-    [Network.BSC]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/radioshackcreator/radioshack-bsc',
-      factoryAddress: '0x98957ab49b8bc9f7ddbCfD8BcC83728085ecb238',
-      initCode:
-        '0x3eef69365a159891ca18b545ccaf0d6aca9b22c988b8deb7a3e4fa2fc2418596',
-      feeCode: 10,
-    },
-  },
-  StreetSwap: {
-    [Network.BSC]: {
-      // subgraphURL:
-      //   'https://subgraph.thugswap.vip/subgraphs/name/theothug/swap-subgraph',
-      factoryAddress: '0xaC653cE27E04C6ac565FD87F18128aD33ca03Ba2',
-      initCode:
-        '0x0b3961eeccfbf746d2d5c59ee3c8ae3a5dcf8dc9b0dfb6f89e1e8ca0b32b544b',
-      feeCode: 40,
     },
   },
   SpookySwap: {
@@ -652,27 +497,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       initCode:
         '0x65d1a3b1e46c6e4f1be1ad5f99ef14dc488ae0549dc97db9b30afe2241ce1c7a',
       poolGasCost: 100 * 1000,
-      feeCode: 30,
-    },
-  },
-  SakeSwap: {
-    [Network.MAINNET]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/therealsakeswap/sakeswap-subgraph-v2',
-      factoryAddress: '0x75e48C954594d64ef9613AeEF97Ad85370F13807',
-      initCode:
-        '0xb2b53dca60cae1d1f93f64d80703b888689f28b63c483459183f2f4271fa0308',
-      poolGasCost: 100 * 1000,
-      feeCode: 30,
-    },
-  },
-  SafeSwap: {
-    [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/yfdaifinance/safeswapmatic',
-      factoryAddress: '0x5be44d6C5634161CdaDcC2bc35389325aa493e83',
-      initCode:
-        '0x58fc9539cd75d0d89841441f8663accbd9ad1135045be3b3d9028441eb1f20c4',
       feeCode: 30,
     },
   },
@@ -726,15 +550,6 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x0bbca9af0511ad1a1da383135cf3a8d2ac620e549ef9f6ae3a4c33c2fed0af91',
       poolGasCost: 120 * 1000,
       feeCode: 30,
-    },
-  },
-  Thorus: {
-    [Network.AVALANCHE]: {
-      factoryAddress: '0xa98ea6356A316b44Bf710D5f9b6b4eA0081409Ef',
-      initCode:
-        '0xc6b4cc64699496d0514c783d6aca5142c3b61e327524db01cabfa4248e430e49',
-      poolGasCost: 120 * 1000,
-      feeCode: 10,
     },
   },
   Verse: {
