@@ -1,4 +1,4 @@
-import { NumberAsString, SwapSide } from '@paraswap/core';
+import { NumberAsString, ParaSwapVersion, SwapSide } from '@paraswap/core';
 import { Address } from '../../types';
 
 export type WethData = null;
@@ -29,5 +29,6 @@ export interface IWethDepositorWithdrawer {
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     side: SwapSide,
+    version: ParaSwapVersion,
   ): DepositWithdrawReturn;
 }

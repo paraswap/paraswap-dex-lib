@@ -9,11 +9,13 @@ import type {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
-import { SwapSide, type Network } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
-import type { IDex } from '../../dex/idex';
+import type { Context, IDex } from '../../dex/idex';
 import type { IDexHelper } from '../../dex-helper/idex-helper';
 import type { AngleStakedStableData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -185,10 +187,6 @@ export class AngleStakedStable
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -226,6 +224,43 @@ export class AngleStakedStable
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AngleStakedStableData,
+    side: SwapSide,
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
+    const { exchange } = data;
+
+    const swapData =
+      srcToken.toLowerCase() === this.config.agToken
+        ? AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
+            side === SwapSide.SELL ? 'deposit' : 'mint',
+            [side === SwapSide.SELL ? srcAmount : destAmount, recipient],
+          )
+        : AngleStakedStableEventPool.angleStakedStableIface.encodeFunctionData(
+            side === SwapSide.SELL ? 'redeem' : 'withdraw',
+            [
+              side === SwapSide.SELL ? srcAmount : destAmount,
+              recipient,
+              executorAddress,
+            ],
+          );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+      returnAmountPos: undefined,
+    };
   }
 
   // This is called once before getTopPoolsForToken is

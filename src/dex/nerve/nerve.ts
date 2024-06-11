@@ -9,6 +9,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
@@ -31,6 +33,7 @@ import { NerveConfig, Adapters, NERVE_GAS_COST } from './config';
 import { NerveEventPool } from './nerve-pool';
 import _ from 'lodash';
 import { bigIntify } from './utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Nerve
   extends SimpleExchange
@@ -347,6 +350,47 @@ export class Nerve
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: OptimizedNerveData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, i, j, deadline } = data;
+
+    const swapFunctionParam: NervePoolSwapParams = [
+      i,
+      j,
+      srcAmount,
+      this.minConversionRate,
+      deadline,
+    ];
+
+    const swapData = this.nervePoolIface.encodeFunctionData(
+      NervePoolFunctions.swap,
+      swapFunctionParam,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: exchange,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.nervePoolIface,
+              NervePoolFunctions.swap,
+            )
+          : undefined,
+    };
   }
 
   async getTopPoolsForToken(

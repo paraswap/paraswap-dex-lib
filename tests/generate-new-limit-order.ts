@@ -7,7 +7,7 @@ import { Network, NULL_ADDRESS } from '../src/constants';
 import { ParaSwapLimitOrdersConfig } from '../src/dex/paraswap-limit-orders/config';
 import { generateConfig } from '../src/config';
 
-const network = Network.ROPSTEN;
+const network = Network.MAINNET;
 const provider = ethers.getDefaultProvider(
   generateConfig(network).privateHttpProvider,
 );
