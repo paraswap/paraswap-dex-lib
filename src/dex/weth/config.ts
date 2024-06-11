@@ -70,4 +70,7 @@ export const Adapters: {
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 1 }],
   },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter02', index: 2 }],
+  },
 };
