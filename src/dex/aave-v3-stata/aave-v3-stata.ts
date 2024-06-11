@@ -18,9 +18,11 @@ import { AaveV3StataData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveV3StataConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
-import { IStaticATokenFactory_ABI } from '@bgd-labs/aave-address-book';
 import { fetchTokenList } from './utils';
 import { setTokensOnNetwork } from './tokens';
+// slimmed down version of @bgd-labs/aave-address-book
+// required as version of web3-utils used is buggy
+import IStaticATokenFactory_ABI from '../../abi/aave-v3-stata/StaticATokenFactory.json';
 
 export const TOKEN_LIST_CACHE_KEY = 'stata-token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60; // 1 day

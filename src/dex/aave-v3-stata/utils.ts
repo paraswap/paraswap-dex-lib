@@ -1,7 +1,7 @@
-import {
-  IStaticATokenFactory_ABI,
-  IStaticATokenLM_ABI,
-} from '@bgd-labs/aave-address-book';
+import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
+// slimmed down version of @bgd-labs/aave-address-book
+// required as version of web3-utils used is buggy
+import IStaticATokenFactory_ABI from '../../abi/aave-v3-stata/StaticATokenFactory.json';
 import { Interface } from '@ethersproject/abi';
 import Web3 from 'web3';
 import { MultiCallParams, MultiWrapper } from '../../lib/multi-wrapper';
@@ -48,7 +48,7 @@ async function getTokenMetaData(
   );
 
   let tokenList: StataToken[] = [];
-  for (let i = 0; i < results.length; i += 4) {
+  for (let i = 0; i < stataTokens.length; i += 4) {
     tokenList.push({
       address: stataTokens[i],
       stataSymbol: results[i] as string,

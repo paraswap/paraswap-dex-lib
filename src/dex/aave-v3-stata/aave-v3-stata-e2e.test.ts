@@ -136,15 +136,14 @@ function testForNetwork(
 describe('AaveV3Stata E2E', () => {
   const dexKey = 'AaveV3Stata';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'stataUSDCn';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

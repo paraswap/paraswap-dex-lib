@@ -151,16 +151,14 @@ describe('AaveV3Stata', function () {
   let blockNumber: number;
   let aaveV3Stata: AaveV3Stata;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'stataUSDCn';
 
     const amountsForSell = [
       0n,

@@ -1,0 +1,15 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function",
+    "name": "getStaticATokens",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ]
+  }
+]

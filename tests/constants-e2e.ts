@@ -435,6 +435,10 @@ export const Tokens: {
       address: '0x576Cf361711cd940CD9C397BB98C4C896cBd38De',
       decimals: 6,
     },
+    stataUSDCn: {
+      address: '0x2dCa80061632f3F87c9cA28364d1d0c30cD79a19',
+      decimals: 6,
+    },
     POPS: {
       address: '0xa92A1576D11dB45c53be71d59245ac97ce0d8147',
       decimals: 18,
