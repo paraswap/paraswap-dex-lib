@@ -50,8 +50,9 @@ export async function checkOnChainPricing(
   amounts: bigint[],
   i: number,
   j: number,
+  readerIface: Interface,
 ) {
-  const readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]);
+  // const readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
@@ -84,6 +85,8 @@ export async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
+  poolContractMethod = 'get_dy',
+  readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]),
 ) {
   const networkTokens = Tokens[network];
 
@@ -124,12 +127,15 @@ export async function testPricingOnNetwork(
   await checkOnChainPricing(
     curveV1Factory,
     poolPrices![0].data.exchange,
-    poolPrices![0].data.underlyingSwap ? 'get_dy_underlying' : 'get_dy',
+    poolPrices![0].data.underlyingSwap
+      ? 'get_dy_underlying'
+      : poolContractMethod,
     blockNumber,
     poolPrices![0].prices,
     amounts,
     poolPrices![0].data.i,
     poolPrices![0].data.j,
+    readerIface,
   );
 }
 

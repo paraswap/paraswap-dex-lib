@@ -4,25 +4,25 @@ import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { assert, AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
-  Token,
-  Address,
-  ExchangePrices,
-  PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
+  Address,
+  DexExchangeParam,
+  ExchangePrices,
+  ExchangeTxInfo,
   Logger,
+  PoolLiquidity,
+  PoolPrices,
+  PreprocessTransactionOptions,
+  SimpleExchangeParam,
+  Token,
   TransferFeeParams,
   TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
-  DexExchangeParam,
 } from '../../types';
 import {
-  SwapSide,
   Network,
-  SRC_TOKEN_PARASWAP_TRANSFERS,
   NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
+  SwapSide,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
@@ -37,22 +37,23 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CurveSwapFunctions,
   CurveV1FactoryData,
+  CurveV1FactoryDirectSwap,
   CurveV1FactoryIfaces,
   CurveV1SwapType,
   CustomImplementationNames,
+  DirectCurveV1FactoryParamV6,
+  DirectCurveV1Param,
   ImplementationNames,
   PoolConstants,
-  DirectCurveV1Param,
-  CurveV1FactoryDirectSwap,
-  DirectCurveV1FactoryParamV6,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { CurveV1FactoryConfig, Adapters } from './config';
+import { Adapters, CurveV1FactoryConfig } from './config';
 import {
   DIRECT_METHOD_NAME,
+  DIRECT_METHOD_NAME_V6,
   FACTORY_MAX_PLAIN_COINS,
   FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN,
   MIN_AMOUNT_TO_RECEIVE,
@@ -78,11 +79,9 @@ import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-poll
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { PriceHandler } from './price-handlers/price-handler';
-import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
+import { hexConcat, hexlify, hexZeroPad } from 'ethers/lib/utils';
 import { packCurveData } from '../../lib/curve/encoder';
 import { encodeCurveAssets } from '../curve-v1/packer';
-
-import { DIRECT_METHOD_NAME_V6 } from './constants';
 
 export const DefaultCoinsABI: AbiItem = {
   type: 'function',
@@ -861,7 +860,7 @@ export class CurveV1Factory
 
             return {
               prices: [0n, ...outputs.slice(1)],
-              unit: outputs[0],
+              unit: side === SwapSide.SELL ? outputs[0] : 0n,
               data: poolData,
               exchange: this.dexKey,
               poolIdentifier: pool.poolIdentifier,

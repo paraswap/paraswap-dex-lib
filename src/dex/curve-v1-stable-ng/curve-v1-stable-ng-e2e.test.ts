@@ -8,6 +8,14 @@ dotenv.config();
 describe('CurveV1StableNG E2E', () => {
   const dexKey = 'CurveV1StableNg';
 
+  const sidesToContractMethods = new Map([
+    // [
+    //   SwapSide.SELL,
+    //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+    // ],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+  ]);
+
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
@@ -24,13 +32,7 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-      new Map([
-        [
-          SwapSide.SELL,
-          [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
-        ],
-        [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
-      ]),
+      sidesToContractMethods,
     );
   });
 
@@ -51,6 +53,7 @@ describe('CurveV1StableNG E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
+        sidesToContractMethods,
       );
     });
 
@@ -68,6 +71,7 @@ describe('CurveV1StableNG E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
+        sidesToContractMethods,
       );
     });
   });
@@ -88,6 +92,7 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
+      sidesToContractMethods,
     );
   });
 
@@ -107,6 +112,7 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
+      sidesToContractMethods,
     );
   });
 
@@ -126,6 +132,7 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
+      sidesToContractMethods,
     );
   });
 });

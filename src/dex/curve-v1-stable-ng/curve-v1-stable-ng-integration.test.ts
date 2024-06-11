@@ -7,9 +7,13 @@ import { BI_POWS } from '../../bigint-constants';
 import { checkPoolsLiquidity } from '../../../tests/utils';
 import { CurveV1StableNg } from './curve-v1-stable-ng';
 import { testPricingOnNetwork } from '../curve-v1-factory/curve-v1-factory-integration.test';
+import CurveV1StableNgPoolAbi from '../../abi/curve-v1/CurveV1StableNg.json';
+import { Interface, JsonFragment } from '@ethersproject/abi';
 
 describe('CurveV1StableNG integration', function () {
   const dexKey = 'CurveV1StableNg';
+
+  const readerIface = new Interface(CurveV1StableNgPoolAbi as JsonFragment[]);
 
   let blockNumber: number;
   let curveV1StableNg: CurveV1StableNg;
@@ -51,6 +55,20 @@ describe('CurveV1StableNG integration', function () {
         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
       ];
 
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           curveV1StableNg,
@@ -61,6 +79,23 @@ describe('CurveV1StableNG integration', function () {
           destTokenSymbol,
           SwapSide.SELL,
           amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          curveV1StableNg,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
         );
       });
 
@@ -129,6 +164,20 @@ describe('CurveV1StableNG integration', function () {
         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
       ];
 
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           curveV1StableNg,
@@ -139,6 +188,23 @@ describe('CurveV1StableNG integration', function () {
           destTokenSymbol,
           SwapSide.SELL,
           amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          curveV1StableNg,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
         );
       });
 
@@ -207,6 +273,20 @@ describe('CurveV1StableNG integration', function () {
         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
       ];
 
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           curveV1StableNg,
@@ -217,6 +297,23 @@ describe('CurveV1StableNG integration', function () {
           destTokenSymbol,
           SwapSide.SELL,
           amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          curveV1StableNg,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
         );
       });
 
@@ -285,6 +382,20 @@ describe('CurveV1StableNG integration', function () {
         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
       ];
 
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           curveV1StableNg,
@@ -295,6 +406,23 @@ describe('CurveV1StableNG integration', function () {
           destTokenSymbol,
           SwapSide.SELL,
           amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          curveV1StableNg,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
         );
       });
 
@@ -363,6 +491,20 @@ describe('CurveV1StableNG integration', function () {
         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
       ];
 
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           curveV1StableNg,
@@ -373,6 +515,25 @@ describe('CurveV1StableNG integration', function () {
           destTokenSymbol,
           SwapSide.SELL,
           amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        console.log('amountsForBuy: ', amountsForBuy);
+
+        await testPricingOnNetwork(
+          curveV1StableNg,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
         );
       });
 
