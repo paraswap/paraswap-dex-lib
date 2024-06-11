@@ -19,7 +19,6 @@ import {
 import {
   ETHER_ADDRESS,
   MAX_INT,
-  MAX_UINT,
   Network,
   NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
@@ -81,9 +80,10 @@ import {
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
-import { BigNumber, utils } from 'ethers';
-import { Executors, SpecialDex } from '../../executor/types';
+import { BigNumber } from 'ethers';
+import { SpecialDex } from '../../executor/types';
 import { S } from '@bgd-labs/aave-address-book/dist/AaveV2Ethereum-timF4kft';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -1548,26 +1548,58 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
     context: Context,
+    executor: Address,
   ): DexExchangeParam {
-    const params = this.getBalancerV2BatchSwapParam(
+    const balancerBatchSwapParam = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
       side,
       recipient,
-      side === SwapSide.BUY
-        ? this.dexHelper.config.data.executorsAddresses![Executors.THREE]
-        : NULL_ADDRESS,
+      side === SwapSide.SELL ? NULL_ADDRESS : executor,
     );
+
+    const [, swaps] = balancerBatchSwapParam;
+    const isSingleSwap = swaps.length === 1;
+
+    if (isSingleSwap) {
+      const balancerSwapParam = this.getBalancerV2SwapParam(
+        srcToken,
+        destToken,
+        data,
+        side,
+        recipient,
+        executor,
+      );
+
+      const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+        'swap',
+        balancerSwapParam,
+      );
+
+      return {
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: true,
+        exchangeData,
+        targetExchange: this.vaultAddress,
+        returnAmountPos:
+          side === SwapSide.SELL
+            ? extractReturnAmountPosition(
+                this.balancerVaultInterface,
+                'swap',
+                'amountCalculated',
+              )
+            : undefined,
+      };
+    }
 
     let exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',
-      params,
+      balancerBatchSwapParam,
     );
     let specialDexFlag = SpecialDex.DEFAULT;
 
     if (side === SwapSide.SELL) {
-      const swaps = params[1];
       const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
         return acc.add(swap.amount);
       }, BigNumber.from(0));
