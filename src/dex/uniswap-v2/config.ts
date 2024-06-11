@@ -465,8 +465,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   ShibaSwap: {
     [Network.MAINNET]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/shibaswaparmy/exchange',
+      subgraphURL: 'FvP7tK71rX51wsb663j5GRx2YTtDRa1Adq8QSCi5akLS',
       factoryAddress: '0x115934131916C8b277DD010Ee02de363c09d037c',
       initCode:
         '0x65d1a3b1e46c6e4f1be1ad5f99ef14dc488ae0549dc97db9b30afe2241ce1c7a',
