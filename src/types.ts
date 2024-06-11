@@ -304,6 +304,7 @@ export type Config = {
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
   forceRpcFallbackDexs: string[];
+  spookySwapSubgraphAuthToken?: string;
 };
 
 export type BigIntAsString = string;

@@ -34,6 +34,7 @@ type BaseConfig = {
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
   forceRpcFallbackDexs: string[];
+  spookySwapSubgraphAuthToken?: string;
 };
 
 const baseConfigs: { [network: number]: BaseConfig } = {
@@ -249,6 +250,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xdC6E2b14260F972ad4e5a31c68294Fba7E720701',
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
+    smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
+    spookySwapSubgraphAuthToken: process.env.API_KEY_SPOOKY_SWAP_SUBGRAPH || '',
+
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_250`]?.split(',') || [],
     augustusV6Address: '0x000dB803A70511E09dA650D4C0506d0000100000',
@@ -459,6 +463,7 @@ export function generateConfig(network: number): Config {
     dexalotAuthToken: baseConfig.dexalotAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
+    spookySwapSubgraphAuthToken: baseConfig.spookySwapSubgraphAuthToken,
   };
 }
 

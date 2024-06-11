@@ -472,8 +472,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   SpookySwap: {
     [Network.FANTOM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/eerieeight/spookyswap',
+      subgraphURL: 'https://gateway-arbitrum.network.thegraph.com/api/',
       factoryAddress: '0x152ee697f2e276fa89e96742e9bb9ab1f2e61be3',
       initCode:
         '0xcdf2deca40a0bd56de8e3ce5c7df6727e5b1bf2ac96f283fa9c4b3e6b42ea9d2',

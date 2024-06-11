@@ -1,7 +1,7 @@
 import { AbiCoder, Interface } from '@ethersproject/abi';
 import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
-import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly, assert } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
@@ -269,6 +269,17 @@ export class UniswapV2
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
+    if (dexKey === 'SpookySwap' && network === Network.FANTOM) {
+      const token = dexHelper.config.data.spookySwapSubgraphAuthToken;
+      assert(
+        token !== undefined,
+        'Spooky subgraph token is not specified with env variable',
+      );
+      this.subgraphURL =
+        this.subgraphURL +
+        token +
+        '/subgraphs/id/HyhMfT7gehNHMBmFiExqeg3pDtop9UikjvBPfAXT3b21';
+    }
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
       uniswapV2factoryABI as any,

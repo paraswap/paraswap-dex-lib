@@ -315,7 +315,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initHash:
         '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54',
       subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/0xalucard/ftm-spooky-v3',
+        `https://gateway-arbitrum.network.thegraph.com/api/` + process.env.API_KEY_SPOOKY_SWAP_SUBGRAPH + `/subgraphs/id/6WBxx3gYia4oCLsYMFTZs6HLEnEqVMdpeZDCABnM1tj2`,
     },
   },
   Retro: {
