@@ -304,7 +304,6 @@ export type Config = {
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
   idleDaoAuthToken?: string;
-  smardexSubgraphAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
 
