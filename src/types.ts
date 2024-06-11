@@ -279,6 +279,7 @@ export type Config = {
   dexalotAuthToken?: string;
   smardexSubgraphAuthToken?: string;
   forceRpcFallbackDexs: string[];
+  spookySwapSubgraphAuthToken?: string;
 };
 
 export type BigIntAsString = string;

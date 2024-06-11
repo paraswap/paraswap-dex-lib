@@ -33,6 +33,7 @@ type BaseConfig = {
   dexalotAuthToken?: string;
   smardexSubgraphAuthToken?: string;
   forceRpcFallbackDexs: string[];
+  spookySwapSubgraphAuthToken?: string;
 };
 
 const baseConfigs: { [network: number]: BaseConfig } = {
@@ -256,6 +257,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_250,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     smardexSubgraphAuthToken: process.env.API_KEY_SMARDEX_SUBGRAPH || '',
+    spookySwapSubgraphAuthToken: process.env.API_KEY_SPOOKY_SWAP_SUBGRAPH || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_250`]?.split(',') || [],
 
@@ -437,6 +439,7 @@ export function generateConfig(network: number): Config {
     dexalotAuthToken: baseConfig.dexalotAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
+    spookySwapSubgraphAuthToken: baseConfig.spookySwapSubgraphAuthToken,
   };
 }
 
