@@ -103,7 +103,7 @@ export class Ramses extends Solidly {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -130,7 +130,7 @@ export class Ramses extends Solidly {
         query: tokensQuery,
         variables: { tokenIds },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     const pools0 = await this.prepareSubgraphPools(

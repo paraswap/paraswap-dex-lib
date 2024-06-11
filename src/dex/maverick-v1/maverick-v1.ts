@@ -140,8 +140,8 @@ export class MaverickV1
     );
     const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
-      { query: fetchAllPools, count: MAX_POOL_CNT },
-      SUBGRAPH_TIMEOUT,
+      { query: fetchAllPools, variables: { count: MAX_POOL_CNT } },
+      { timeout: SUBGRAPH_TIMEOUT },
     );
     return data.pools;
   }
@@ -474,7 +474,7 @@ export class MaverickV1
       const res = await this.dexHelper.httpRequest.querySubgraph(
         this.subgraphURL,
         { query, variables },
-        timeout,
+        { timeout },
       );
       return res.data;
     } catch (e) {

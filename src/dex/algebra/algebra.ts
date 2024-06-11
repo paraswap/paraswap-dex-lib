@@ -1124,7 +1124,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        timeout,
+        { timeout },
       );
       return res.data;
     } catch (e) {

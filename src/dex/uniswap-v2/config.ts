@@ -514,8 +514,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   TraderJoe: {
     [Network.AVALANCHE]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange',
+      subgraphType: 'deployments',
+      subgraphURL: 'QmWJU3wdTo34YphxMh4Nf7NBdVjmH82EC5Zj75L8yrXSHG',
       factoryAddress: '0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10',
       initCode:
         '0x0bbca9af0511ad1a1da383135cf3a8d2ac620e549ef9f6ae3a4c33c2fed0af91',

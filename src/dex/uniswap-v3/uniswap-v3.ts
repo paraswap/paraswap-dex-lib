@@ -1386,7 +1386,7 @@ export class UniswapV3
       const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        timeout,
+        { timeout },
       );
       return res?.data ?? {};
     } catch (e) {

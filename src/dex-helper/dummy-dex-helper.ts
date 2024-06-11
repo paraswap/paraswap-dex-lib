@@ -20,6 +20,7 @@ import { Response, RequestConfig } from './irequest-wrapper';
 import { BlockHeader } from 'web3-eth';
 import { PromiseScheduler } from '../lib/promise-scheduler';
 import { AugustusApprovals } from '../dex/augustus-approvals';
+import { SUBGRAPH_TIMEOUT } from '../constants';
 
 const logger = getLogger('DummyDexHelper');
 
@@ -242,15 +243,17 @@ export class DummyRequestWrapper implements IRequestWrapper {
   async querySubgraph<T>(
     subgraph: string,
     data: { query: string; variables?: Record<string, any> },
-    timeout = 30000,
+    { timeout = SUBGRAPH_TIMEOUT, type = 'subgraphs' },
   ): Promise<AxiosResponse<T>> {
     if (!subgraph || !data.query || !this.apiKeyTheGraph)
       throw new Error('Invalid TheGraph params');
 
-    // support for the subgraphs that are on the studio and were not migrated yet to decentralized network
-    const url = subgraph.includes('studio.thegraph.com')
-      ? subgraph
-      : `https://gateway-arbitrum.network.thegraph.com/api/${this.apiKeyTheGraph}/subgraphs/id/${subgraph}`;
+    let url = `https://gateway-arbitrum.network.thegraph.com/api/${this.apiKeyTheGraph}/${type}/id/${subgraph}`;
+
+    // support for the subgraphs that are on the studio and were not migrated to decentralized network yet (base and zkEVM)
+    if (subgraph.includes('studio.thegraph.com')) {
+      url = subgraph;
+    }
 
     const response = await axios.post<T>(url, data, { timeout });
     return response;
@@ -300,6 +303,7 @@ export class DummyDexHelper implements IDexHelper {
   constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
+    // @ts-ignore
     this.httpRequest = new DummyRequestWrapper(this.config.data.apiKeyTheGraph);
     this.provider = new StaticJsonRpcProvider(
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,

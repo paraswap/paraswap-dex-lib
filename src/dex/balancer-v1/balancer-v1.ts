@@ -115,7 +115,7 @@ export class BalancerV1
     }>(
       this.config.subgraphURL,
       { query: fetchAllPoolsQuery },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools))
@@ -547,7 +547,11 @@ export class BalancerV1
           decimals: number;
         }[];
       }[];
-    }>(this.config.subgraphURL, { query, variables }, SUBGRAPH_TIMEOUT);
+    }>(
+      this.config.subgraphURL,
+      { query, variables },
+      { timeout: SUBGRAPH_TIMEOUT },
+    );
 
     if (!(data && data.pools))
       throw new Error(
