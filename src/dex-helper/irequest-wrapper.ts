@@ -63,5 +63,5 @@ export interface IRequestWrapper {
     subgraph: string,
     data: { query: string; variables?: Record<string, any> },
     options: { timeout?: number; type?: 'subgraphs' | 'deployments' },
-  ): Promise<AxiosResponse<T>>;
+  ): Promise<T>;
 }

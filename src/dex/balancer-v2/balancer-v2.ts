@@ -1622,11 +1622,13 @@ export class BalancerV2
       }
     }`;
     const { data } = await this.dexHelper.httpRequest.querySubgraph<{
-      pools: {
-        address: string;
-        totalLiquidity: string;
-        tokens: { address: string; decimals: number }[];
-      }[];
+      data: {
+        pools: {
+          address: string;
+          totalLiquidity: string;
+          tokens: { address: string; decimals: number }[];
+        }[];
+      };
     }>(
       this.subgraphURL,
       {

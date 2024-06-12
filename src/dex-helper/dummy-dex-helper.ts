@@ -244,7 +244,7 @@ export class DummyRequestWrapper implements IRequestWrapper {
     subgraph: string,
     data: { query: string; variables?: Record<string, any> },
     { timeout = SUBGRAPH_TIMEOUT, type = 'subgraphs' },
-  ): Promise<AxiosResponse<T>> {
+  ): Promise<T> {
     if (!subgraph || !data.query || !this.apiKeyTheGraph)
       throw new Error('Invalid TheGraph params');
 
@@ -256,7 +256,7 @@ export class DummyRequestWrapper implements IRequestWrapper {
     }
 
     const response = await axios.post<T>(url, data, { timeout });
-    return response;
+    return response.data;
   }
 }
 

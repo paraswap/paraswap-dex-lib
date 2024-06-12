@@ -111,7 +111,9 @@ export class BalancerV1
   // implement this function
   async initializePricing(_blockNumber: number) {
     const { data } = await this.dexHelper.httpRequest.querySubgraph<{
-      pools: PoolInfo[];
+      data: {
+        pools: PoolInfo[];
+      };
     }>(
       this.config.subgraphURL,
       { query: fetchAllPoolsQuery },
@@ -539,14 +541,16 @@ export class BalancerV1
       }
     }`;
     const { data } = await this.dexHelper.httpRequest.querySubgraph<{
-      pools: {
-        id: Address;
-        liquidity: FractionAsString;
-        tokens: {
-          address: Address;
-          decimals: number;
+      data: {
+        pools: {
+          id: Address;
+          liquidity: FractionAsString;
+          tokens: {
+            address: Address;
+            decimals: number;
+          }[];
         }[];
-      }[];
+      };
     }>(
       this.config.subgraphURL,
       { query, variables },
