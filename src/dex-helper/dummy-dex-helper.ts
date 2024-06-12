@@ -303,7 +303,6 @@ export class DummyDexHelper implements IDexHelper {
   constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
-    // @ts-ignore
     this.httpRequest = new DummyRequestWrapper(this.config.data.apiKeyTheGraph);
     this.provider = new StaticJsonRpcProvider(
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
