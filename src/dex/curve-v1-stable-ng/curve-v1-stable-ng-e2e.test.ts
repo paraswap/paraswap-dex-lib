@@ -9,10 +9,10 @@ describe('CurveV1StableNG E2E', () => {
   const dexKey = 'CurveV1StableNg';
 
   const sidesToContractMethods = new Map([
-    // [
-    //   SwapSide.SELL,
-    //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
-    // ],
+    [
+      SwapSide.SELL,
+      [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+    ],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 

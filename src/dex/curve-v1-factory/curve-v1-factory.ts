@@ -1167,6 +1167,7 @@ export class CurveV1Factory
 
     const { exchange, i, j, underlyingSwap } = data;
     const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
+
     const swapMethod = underlyingSwap
       ? CurveSwapFunctions.exchange_underlying
       : CurveSwapFunctions.exchange;

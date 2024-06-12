@@ -1,11 +1,12 @@
 import dotenv from 'dotenv';
-dotenv.config();
-
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { Holders, Tokens } from '../../../tests/constants-e2e';
+import { ContractMethod, Network } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { SwapSide } from '@paraswap/core';
+
+dotenv.config();
 
 export function testForNetwork(
   network: Network,
@@ -37,7 +38,7 @@ export function testForNetwork(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
-                tokenAAmount,
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -55,7 +56,7 @@ export function testForNetwork(
                 tokens[tokenBSymbol],
                 tokens[tokenASymbol],
                 holders[tokenBSymbol],
-                tokenBAmount,
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
                 side,
                 dexKey,
                 contractMethod,
