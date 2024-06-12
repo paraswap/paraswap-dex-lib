@@ -402,7 +402,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     adapterAddresses: {
       BaseAdapter01: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
-      BaseAdapter02: '0x97bdD2B98D9802b0e387FefdB2882C1b2dc2c344',
+      BaseAdapter02: '0x440973e9d2eb55A89d6505452E917512Ee3C1596',
       BaseBuyAdapter: '0x005213c48d4aafFcA0b6D1CbA8710F4D035C18f9',
     },
     uniswapV2ExchangeRouterAddress:
