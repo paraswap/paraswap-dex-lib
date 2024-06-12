@@ -1237,6 +1237,10 @@ export const Tokens: {
       address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
       decimals: 6,
     },
+    USDM: {
+      address: '0x59d9356e565ab3a36dd77763fc0d87feaf85508c',
+      decimals: 18,
+    },
     USDbC: {
       address: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA',
       decimals: 6,
@@ -1593,6 +1597,7 @@ export const Holders: {
     AERO: '0x807877258b55bfefabdd469da1c72731c5070839',
     tBTC: '0x9f1920d0cbb63ed03376a1e09fd2851d601234c8',
     DOG: '0xbe3ab8a87730684ef1e476064c2e43c3e982f8e8',
+    USDM: '0x492EC4591c55962C5739A8dC98F0B401897Db038',
   },
 };
 

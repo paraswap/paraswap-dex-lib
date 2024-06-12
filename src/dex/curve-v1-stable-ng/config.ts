@@ -154,6 +154,26 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
       },
       customPools: {},
     },
+    [Network.BASE]: {
+      factories: [
+        {
+          address: '0xd2002373543Ce3527023C75e7518C274A51ce712',
+          isStableNg: true,
+        },
+      ],
+      stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([]),
+      disabledImplementations: new Set([]),
+      factoryPoolImplementations: {
+        '0xf3A6aa40cf048a3960E9664847E9a7be025a390a': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0xf3A6aa40cf048a3960E9664847E9a7be025a390a',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
+      },
+      customPools: {},
+    },
   },
 };
 
@@ -165,12 +185,24 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 3,
       },
     ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BuyAdapter02',
+        index: 5,
+      },
+    ],
   },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
         name: 'PolygonAdapter01',
         index: 3,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'PolygonBuyAdapter',
+        index: 10,
       },
     ],
   },
@@ -181,6 +213,12 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 3,
       },
     ],
+    [SwapSide.BUY]: [
+      {
+        name: 'FantomBuyAdapter',
+        index: 6,
+      },
+    ],
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [
@@ -189,12 +227,38 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 6,
       },
     ],
+    [SwapSide.BUY]: [
+      {
+        name: 'ArbitrumBuyAdapter',
+        index: 12,
+      },
+    ],
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [
       {
         name: 'OptimismAdapter01',
         index: 5,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'OptimismBuyAdapter',
+        index: 8,
+      },
+    ],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter02',
+        index: 3,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BaseBuyAdapter',
+        index: 9,
       },
     ],
   },
