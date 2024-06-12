@@ -68,18 +68,9 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-      ],
-    ],
-    // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -139,7 +130,7 @@ describe('AaveV3Stata E2E', () => {
   describe('Polygon', () => {
     const network = Network.POLYGON;
 
-    const tokenASymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDCn';
     const tokenBSymbol: string = 'stataUSDCn';
 
     const tokenAAmount: string = '10000000';
