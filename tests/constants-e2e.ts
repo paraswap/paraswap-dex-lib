@@ -421,6 +421,7 @@ export const Tokens: {
       address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
       decimals: 18,
     },
+    // native bridged wormhole
     USDCe: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
       decimals: 6,
@@ -431,10 +432,12 @@ export const Tokens: {
       address: '0xdf7837de1f2fa4631d716cf2502f8b230f1dcc32',
       decimals: 2,
     },
+    // wormhole
     USDC: {
       address: '0x576Cf361711cd940CD9C397BB98C4C896cBd38De',
       decimals: 6,
     },
+    // circle issued usdc
     USDCn: {
       address: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
       decimals: 6,
