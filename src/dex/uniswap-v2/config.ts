@@ -348,7 +348,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   PancakeSwapV2: {
     [Network.BSC]: {
-      subgraphURL: 'AD7yfts4Uzeav8eXQ6yxZ64VXjzDrJ1b76Gvka2VSnhd',
+      // subgraphURL: 'AD7yfts4Uzeav8eXQ6yxZ64VXjzDrJ1b76Gvka2VSnhd',
       factoryAddress: '0xca143ce32fe78f1f7019d7d551a6402fc5350c73',
       initCode:
         '0xa0e5696e64d8512d41c1887d32c208c1f427abd6a077148d760fc07ccbe12470',
@@ -374,8 +374,8 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   PaintSwap: {
     [Network.FANTOM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/paint-swap-finance/exchange',
+      // subgraphURL:
+      //   'https://api.thegraph.com/subgraphs/name/paint-swap-finance/exchange',
       factoryAddress: '0x733a9d1585f2d14c77b49d39bc7d7dd14cda4aa5',
       initCode:
         '0x52178a9131f5551c2e56bf7cbf02aed8be8130e6493915a6b0c7602ac2125e54',
@@ -465,7 +465,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
   },
   ShibaSwap: {
     [Network.MAINNET]: {
-      subgraphURL: 'FvP7tK71rX51wsb663j5GRx2YTtDRa1Adq8QSCi5akLS',
+      // subgraphURL: 'FvP7tK71rX51wsb663j5GRx2YTtDRa1Adq8QSCi5akLS',
       factoryAddress: '0x115934131916C8b277DD010Ee02de363c09d037c',
       initCode:
         '0x65d1a3b1e46c6e4f1be1ad5f99ef14dc488ae0549dc97db9b30afe2241ce1c7a',
