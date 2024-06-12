@@ -44,7 +44,7 @@ export class AaveV3Stata
 
   logger: Logger;
 
-  private stata: Interface;
+  static readonly stata = new Interface(IStaticATokenLM_ABI);
 
   private state: Record<string, { blockNumber: number; rate: bigint }> = {};
 
@@ -57,7 +57,6 @@ export class AaveV3Stata
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.stata = new Interface(IStaticATokenLM_ABI);
   }
 
   // Initialize pricing is called once in the start of
@@ -166,7 +165,7 @@ export class AaveV3Stata
           [
             {
               target: stata.address,
-              callData: this.stata.encodeFunctionData('rate'),
+              callData: AaveV3Stata.stata.encodeFunctionData('rate'),
               decodeFunction: uint256ToBigInt,
             },
           ],
@@ -263,7 +262,7 @@ export class AaveV3Stata
     if (side === SwapSide.SELL) {
       if (srcType === TokenType.STATA_TOKEN) {
         // e.g. sell srcAmount 100 srcToken stataUSDC for destToken USDC
-        swapData = this.stata.encodeFunctionData(StataFunctions.redeem, [
+        swapData = AaveV3Stata.stata.encodeFunctionData(StataFunctions.redeem, [
           srcAmount,
           this.augustusAddress, // receiver
           this.augustusAddress, // owner
@@ -271,24 +270,30 @@ export class AaveV3Stata
         ]);
       } else {
         // sell srcAmount 100 srcToken USDC for destToken stataUSDC
-        swapData = this.stata.encodeFunctionData(StataFunctions.deposit, [
-          srcAmount,
-          this.augustusAddress, // receiver
-          0, // referrer (noop)
-          srcType === TokenType.UNDERLYING, // deposit to aave
-        ]);
+        swapData = AaveV3Stata.stata.encodeFunctionData(
+          StataFunctions.deposit,
+          [
+            srcAmount,
+            this.augustusAddress, // receiver
+            0, // referrer (noop)
+            srcType === TokenType.UNDERLYING, // deposit to aave
+          ],
+        );
       }
     } else {
       if (srcType === TokenType.STATA_TOKEN) {
         // e.g. buy destAmount 100 destToken USDC for srcToken stataUSDC
-        swapData = this.stata.encodeFunctionData(StataFunctions.withdraw, [
-          destAmount,
-          this.augustusAddress, // receiver
-          this.augustusAddress, // owner
-        ]);
+        swapData = AaveV3Stata.stata.encodeFunctionData(
+          StataFunctions.withdraw,
+          [
+            destAmount,
+            this.augustusAddress, // receiver
+            this.augustusAddress, // owner
+          ],
+        );
       } else {
         // e.g. buy destAmount 100 destToken stataUSDC for srcToken USDC
-        swapData = this.stata.encodeFunctionData(StataFunctions.mint, [
+        swapData = AaveV3Stata.stata.encodeFunctionData(StataFunctions.mint, [
           destAmount,
           this.augustusAddress,
         ]);
