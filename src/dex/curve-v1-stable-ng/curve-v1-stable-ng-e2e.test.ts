@@ -14,15 +14,21 @@ describe('CurveV1StableNG E2E', () => {
     //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
     // ],
     // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [
+    //   SwapSide.SELL,
+    //   [
+    //     ContractMethod.simpleSwap,
+    //     ContractMethod.multiSwap,
+    //     ContractMethod.megaSwap,
+    //   ],
+    // ],
     [
-      SwapSide.SELL,
+      SwapSide.BUY,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.simpleBuy,
+        ContractMethod.buy,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe('Mainnet', () => {

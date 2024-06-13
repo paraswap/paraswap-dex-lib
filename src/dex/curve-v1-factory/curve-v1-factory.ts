@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { AbiItem } from 'web3-utils';
-import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import { NumberAsString, OptimalSwapExchange, SwapSide } from '@paraswap/core';
 import { assert, AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
@@ -22,7 +22,6 @@ import {
   Network,
   NULL_ADDRESS,
   SRC_TOKEN_PARASWAP_TRANSFERS,
-  SwapSide,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
@@ -1166,7 +1165,10 @@ export class CurveV1Factory
       throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
-    const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
+
+    const minAmountToReceive =
+      side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE : destAmount;
+    const defaultArgs = [i, j, srcAmount, minAmountToReceive];
 
     const swapMethod = underlyingSwap
       ? CurveSwapFunctions.exchange_underlying
