@@ -16,7 +16,7 @@ import { NumberAsString } from '@paraswap/core';
 export const DfynConfig: DexConfigMap<DexParams> = {
   Dfyn: {
     [Network.POLYGON]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/ss-sonic/dfyn-v4',
+      subgraphURL: 'Dizc6HBJZWB276wcyycYMxN8FMKeKb7RpSvwu83F4gTc',
       factoryAddress: '0xE7Fb3e833eFE5F9c441105EB65Ef8b261266423B',
       initCode:
         '0xf187ed688403aa4f7acfada758d8d53698753b998a3071b06f1b777f4330eaf3',

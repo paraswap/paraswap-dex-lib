@@ -405,10 +405,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const variables = {
       count: MAX_POOL_CNT,
     };
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchAllPools, variables },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools))
@@ -701,10 +701,10 @@ export class BalancerV2
       timestampPast: timeNow - POOL_EVENT_REENABLE_DELAY,
       timestampFuture: timeNow + POOL_EVENT_DISABLED_TTL,
     };
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchWeightUpdating, variables },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.gradualWeightUpdates)) {
@@ -1653,7 +1653,7 @@ export class BalancerV2
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post<{
+    const { data } = await this.dexHelper.httpRequest.querySubgraph<{
       data: {
         pools: {
           address: string;
@@ -1667,7 +1667,7 @@ export class BalancerV2
         query,
         variables,
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools))
