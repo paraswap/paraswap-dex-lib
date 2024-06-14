@@ -318,19 +318,18 @@ describe('CurveV1Factory E2E', () => {
     const network = Network.BASE;
 
     const sideToContractMethods = new Map([
-      // [
-      //   SwapSide.SELL,
-      //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
-      // ],
-      // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
       [
         SwapSide.SELL,
-        [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
-        ],
+        [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
       ],
+      // [
+      //   SwapSide.SELL,
+      //   [
+      //     ContractMethod.simpleSwap,
+      //     ContractMethod.multiSwap,
+      //     ContractMethod.megaSwap,
+      //   ],
+      // ],
     ]);
 
     describe('USDC -> crvUSD', () => {
