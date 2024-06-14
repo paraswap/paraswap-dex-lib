@@ -314,4 +314,41 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const sideToContractMethods = new Map([
+      // [
+      //   SwapSide.SELL,
+      //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+      // ],
+      // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+    ]);
+
+    describe('USDC -> crvUSD', () => {
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '10000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        sideToContractMethods,
+      );
+    });
+  });
 });

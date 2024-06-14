@@ -1233,6 +1233,10 @@ export const Tokens: {
       address: '0x64b88c73A5DfA78D1713fE1b4c69a22d7E0faAa7',
       decimals: 18,
     },
+    crvUSD: {
+      address: '0x417ac0e078398c154edfadd9ef675d30be60af93',
+      decimals: 18,
+    },
     USDC: {
       address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
       decimals: 6,
@@ -1247,6 +1251,10 @@ export const Tokens: {
     },
     DOG: {
       address: '0xAfb89a09D82FBDE58f18Ac6437B3fC81724e4dF6',
+      decimals: 18,
+    },
+    cbETH: {
+      address: '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22',
       decimals: 18,
     },
     tBTC: {
@@ -1598,6 +1606,8 @@ export const Holders: {
     tBTC: '0x9f1920d0cbb63ed03376a1e09fd2851d601234c8',
     DOG: '0xbe3ab8a87730684ef1e476064c2e43c3e982f8e8',
     USDM: '0x492EC4591c55962C5739A8dC98F0B401897Db038',
+    crvUSD: '0xBbAbDB1385deA5285113581A7024d6DC04131101',
+    cbETH: '0x50e011dD1e2b4906F1534623cD134B30422bb11E',
   },
 };
 

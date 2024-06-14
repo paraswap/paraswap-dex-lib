@@ -779,6 +779,40 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         },
       },
     },
+    [Network.BASE]: {
+      factories: [
+        {
+          address: '0x3093f9B57A428F3EB6285a589cb35bEA6e78c336',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+      ],
+      stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([]),
+      disabledImplementations: new Set([]),
+      factoryPoolImplementations: {
+        '0xD166EEdf272B860E991d331B71041799379185D5': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
+          address: '0xD166EEdf272B860E991d331B71041799379185D5',
+        },
+        '0x5C627d6925e448Ae418BC8a45d56B31fe5009Bea': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BALANCES,
+          address: '0x5C627d6925e448Ae418BC8a45d56B31fe5009Bea',
+        },
+        '0x0Cc51c9786f3777a6d50961CEBb2BB6E69ec5e07': {
+          name: ImplementationNames.FACTORY_PLAIN_3_BALANCES,
+          address: '0x0Cc51c9786f3777a6d50961CEBb2BB6E69ec5e07',
+        },
+        '0x22d710931f01c1681ca1570ff016ed42eb7b7c2a': {
+          name: ImplementationNames.FACTORY_PLAIN_2_ETH,
+          address: '0x22d710931f01c1681ca1570ff016ed42eb7b7c2a',
+        },
+        '0x1621E58d36EB5Ef26F9768Ebe9DB77181b1f5a02': {
+          name: ImplementationNames.FACTORY_PLAIN_4_BASIC,
+          address: '0x1621E58d36EB5Ef26F9768Ebe9DB77181b1f5a02',
+        },
+      },
+      customPools: {},
+    },
   },
 };
 
@@ -837,6 +871,14 @@ export const Adapters: Record<number, AdapterMappings> = {
       {
         name: 'OptimismAdapter01',
         index: 5,
+      },
+    ],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter02',
+        index: 3,
       },
     ],
   },
