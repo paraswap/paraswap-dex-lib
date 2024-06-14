@@ -1383,13 +1383,12 @@ export class UniswapV3
     if (!this.config.subgraphURL) return [];
 
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
-      return res.data;
+      return res?.data ?? {};
     } catch (e) {
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
       return {};

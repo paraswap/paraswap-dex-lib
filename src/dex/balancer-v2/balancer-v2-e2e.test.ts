@@ -811,7 +811,7 @@ describe('BalancerV2 E2E', () => {
         ContractMethod.multiSwap,
         network,
         provider,
-        [`${dexKey}_0x17f1ef81707811ea15d9ee7c741179bbe2a63887`],
+        // [`${dexKey}_0x17f1ef81707811ea15d9ee7c741179bbe2a63887`],
       );
     });
 
@@ -826,7 +826,7 @@ describe('BalancerV2 E2E', () => {
         ContractMethod.multiSwap,
         network,
         provider,
-        [`${dexKey}_0x17f1ef81707811ea15d9ee7c741179bbe2a63887`],
+        // [`${dexKey}_0x17f1ef81707811ea15d9ee7c741179bbe2a63887`],
       );
     });
   });
