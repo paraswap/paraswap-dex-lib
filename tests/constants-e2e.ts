@@ -403,20 +403,12 @@ export const Tokens: {
       address: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6',
       decimals: 19,
     },
-    GYD: {
-      address: '0xe07f9d810a48ab5c3c914ba3ca53af14e4491e8a',
-      decimals: 18,
-    },
     LUSD: {
       address: '0x5f98805a4e8be255a32880fdec7f6728c6568ba0',
       decimals: 18,
     },
     BNT: {
       address: '0x1f573d6fb3f13d689ff844b4ce37794d79a7ff1c',
-      decimals: 18,
-    },
-    sDAI: {
-      address: '0x83f20f44975d03b1b09e64809b757c47f942beea',
       decimals: 18,
     },
     eETH: {
@@ -426,11 +418,6 @@ export const Tokens: {
     weETH: {
       address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
       decimals: 18,
-    },
-    ETH: { address: ETHER_ADDRESS, decimals: 18 },
-    USDC: {
-      address: '0x2ecf57cfaf2faedf1575d2372398ee34c428d6c3',
-      decimals: 6,
     },
   },
   [Network.POLYGON]: {
@@ -1440,12 +1427,6 @@ export const Holders: {
     stataEthUSDT: '0xb8d9b1ec1c1f8bea7fb10450198c0b47d50c96b7',
     GYD: '0xd0817d3383035B00efF5b582bd624640e4c2E9bE',
     weETH: '0xfB4cB868727D9622258bf2B26A8CFc95f6742669',
-  },
-  [Network.ROPSTEN]: {
-    ETH: '0x43262A12d8610AA70C15DbaeAC321d51613c9071',
-    DAI: '0xbe13517a2b520b2449068D2ec45280992B04047B',
-    WETH: '0xdA87Da8C599E8A8993f3CBCD0aA5A1316A559A6D',
-    USDC: '0xb2dafb6fc7f66526e72027ade0f044beda0ba11e',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
