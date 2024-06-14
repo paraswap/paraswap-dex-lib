@@ -25,24 +25,25 @@ describe('MakerPsm E2E', () => {
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAI';
-    const nativeTokenSymbol = 'ETH';
 
     const tokenAAmount: string = '10000000';
     const tokenBAmount: string = '10000000000000000';
-    const nativeTokenAmount: string = '10000000000000000';
 
     const sideToContractMethods = new Map([
       [
         SwapSide.SELL,
         [
           ContractMethod.swapExactAmountIn,
-          // ContractMethod.simpleSwap,
-          // ContractMethod.multiSwap,
-          // ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountInOutOnMakerPSM,
         ],
       ],
-      // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+      [
+        SwapSide.BUY,
+        [
+          ContractMethod.swapExactAmountOut,
+          ContractMethod.swapExactAmountInOutOnMakerPSM,
+        ],
+      ],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -75,32 +76,6 @@ describe('MakerPsm E2E', () => {
               provider,
             );
           });
-          // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-          //   await testE2E(
-          //     tokens[nativeTokenSymbol],
-          //     tokens[tokenASymbol],
-          //     holders[nativeTokenSymbol],
-          //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-          //     side,
-          //     dexKey,
-          //     contractMethod,
-          //     network,
-          //     provider,
-          //   );
-          // });
-          // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-          //   await testE2E(
-          //     tokens[tokenASymbol],
-          //     tokens[nativeTokenSymbol],
-          //     holders[tokenASymbol],
-          //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-          //     side,
-          //     dexKey,
-          //     contractMethod,
-          //     network,
-          //     provider,
-          //   );
-          // });
         });
       }),
     );
