@@ -886,7 +886,7 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.BSC]: {
     [SwapSide.SELL]: [
-      // use for beltfi
+      // use for beltfi (deprecated)
       {
         name: 'BscAdapter01',
         index: 2,

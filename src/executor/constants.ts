@@ -47,7 +47,10 @@ export const EXECUTOR_03_FUNCTION_CALL_DATA_TYPES: string[] = [
 
 export const APPROVE_CALLDATA_DEST_TOKEN_POS = 68;
 export const WRAP_UNWRAP_FROM_AMOUNT_POS = 4;
-export const DEFAULT_RETURN_AMOUNT_POS = '0xff';
+export const DEFAULT_RETURN_AMOUNT_POS = 255;
+
+export const RETURN_AMOUNT_POS_0 = 0;
+export const RETURN_AMOUNT_POS_32 = 32;
 
 // TODO-v6?: can it be removed  after approval/cache task, because we are going to give approvals only once,
 // therefore for any case initial allowance would be 0
