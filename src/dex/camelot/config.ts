@@ -5,8 +5,7 @@ import { Network, SwapSide } from '../../constants';
 export const CamelotConfig: DexConfigMap<DexParams> = {
   Camelot: {
     [Network.ARBITRUM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/camelotlabs/camelot-amm-2',
+      subgraphURL: 'CnzVKhPQizzxSpysSveSLt1XZqkBRSprFtFJv3RaBQPv',
       factoryAddress: '0x6EcCab422D763aC031210895C81787E87B43A652',
       router: '0x1Be46c7A40906c19d91d07B3AE69Ef5893268F25',
       initCode:

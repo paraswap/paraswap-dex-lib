@@ -1,3 +1,5 @@
+import { AxiosResponse } from 'axios';
+
 export type Method =
   | 'get'
   | 'GET'
@@ -55,4 +57,11 @@ export interface IRequestWrapper {
   ): Promise<T>;
 
   request<T = any, R = Response<T>>(config: RequestConfig): Promise<R>;
+
+  querySubgraph<T = any>(
+    // subgraphId on decentralized network or (legacy support) subgraphURL on thegraph studio
+    subgraph: string,
+    data: { query: string; variables?: Record<string, any> },
+    options: { timeout?: number; type?: 'subgraphs' | 'deployments' },
+  ): Promise<T>;
 }

@@ -721,7 +721,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       ];
     } catch (e) {
       if (isAxiosError(e) && e.response && e.response.data) {
-        const errorData: RFQResponseError = e.response.data;
+        const errorData = e.response.data as RFQResponseError;
         if (errorData.ReasonCode === 'FQ-009') {
           this.logger.warn(
             `${this.dexKey}-${this.network}: Encountered rate limited user=${options.txOrigin}. Adding to local rate limit cache`,
