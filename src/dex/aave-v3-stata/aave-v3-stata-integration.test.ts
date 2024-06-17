@@ -34,14 +34,10 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [amount]),
   }));
 }
 
@@ -50,7 +46,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -64,12 +59,9 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = '0x1017F4a86Fc3A3c824346d0b8C5e96A5029bDAf9'; // stataUSDCn
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from aaveV3Stata.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = AaveV3Stata.stata;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
@@ -151,16 +143,14 @@ describe('AaveV3Stata', function () {
   let blockNumber: number;
   let aaveV3Stata: AaveV3Stata;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'stataUSDCn';
 
     const amountsForSell = [
       0n,
@@ -198,7 +188,7 @@ describe('AaveV3Stata', function () {
       }
     });
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    it('getPoolIdentifiers and getPricesVolume SELL USDC for stataUSDCn', async function () {
       await testPricingOnNetwork(
         aaveV3Stata,
         network,
@@ -208,11 +198,11 @@ describe('AaveV3Stata', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'previewDeposit',
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    it('getPoolIdentifiers and getPricesVolume BUY stataUSDCn via USDC', async function () {
       await testPricingOnNetwork(
         aaveV3Stata,
         network,
@@ -222,7 +212,7 @@ describe('AaveV3Stata', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        'previewWithdraw',
       );
     });
 

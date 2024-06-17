@@ -83,7 +83,6 @@ import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import { BigNumber, utils } from 'ethers';
 import { Executors, SpecialDex } from '../../executor/types';
-import { S } from '@bgd-labs/aave-address-book/dist/AaveV2Ethereum-timF4kft';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [

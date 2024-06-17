@@ -1,5 +1,5 @@
 import { Network } from '../../constants';
-import { StataToken } from './types';
+import { StataToken, TokenType } from './types';
 
 export const Tokens: { [network: number]: { [symbol: string]: StataToken } } =
   {};
@@ -25,4 +25,12 @@ export function setTokensOnNetwork(network: Network, tokens: StataToken[]) {
     TokensByAddress[network][token.underlying] = token;
     TokensByAddress[network][token.underlyingAToken] = token;
   }
+}
+
+export function getTokenType(network: Network, address: string): TokenType {
+  const token = TokensByAddress[network]?.[address];
+  if (!token) return TokenType.UNKNOWN;
+  if (token.address === address) return TokenType.STATA_TOKEN;
+  if (token.underlying === address) return TokenType.UNDERLYING;
+  return TokenType.A_TOKEN;
 }

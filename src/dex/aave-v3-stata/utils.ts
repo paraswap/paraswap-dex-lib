@@ -48,7 +48,7 @@ async function getTokenMetaData(
   );
 
   let tokenList: StataToken[] = [];
-  for (let i = 0; i < results.length; i += 4) {
+  for (let i = 0; i < stataTokens.length; i += 4) {
     tokenList.push({
       address: stataTokens[i],
       stataSymbol: results[i] as string,
