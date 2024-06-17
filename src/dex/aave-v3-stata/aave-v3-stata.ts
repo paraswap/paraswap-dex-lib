@@ -8,11 +8,13 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Utils, getBigIntPow, getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AaveV3StataData, StataFunctions, TokenType } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -248,14 +250,79 @@ export class AaveV3Stata
   // Used for simpleSwap & simpleBuy
   // Hint: this.buildSimpleParamWithoutWETHConversion
   // could be useful
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
+  // async getSimpleParam(
+  //   srcToken: string,
+  //   destToken: string,
+  //   srcAmount: string,
+  //   destAmount: string,
+  //   data: AaveV3StataData,
+  //   side: SwapSide,
+  // ): Promise<SimpleExchangeParam> {
+  //   const { exchange, srcType, destType } = data;
+  //   let swapData;
+  //
+  //   if (side === SwapSide.SELL) {
+  //     if (srcType === TokenType.STATA_TOKEN) {
+  //       // e.g. sell srcAmount 100 srcToken stataUSDC for destToken USDC
+  //       swapData = AaveV3Stata.stata.encodeFunctionData(StataFunctions.redeem, [
+  //         srcAmount,
+  //         this.augustusAddress, // receiver
+  //         this.augustusAddress, // owner
+  //         destType === TokenType.UNDERLYING, // withdraw from aToken
+  //       ]);
+  //     } else {
+  //       // sell srcAmount 100 srcToken USDC for destToken stataUSDC
+  //       swapData = AaveV3Stata.stata.encodeFunctionData(
+  //         StataFunctions.deposit,
+  //         [
+  //           srcAmount,
+  //           this.augustusAddress, // receiver
+  //           0, // referrer (noop)
+  //           srcType === TokenType.UNDERLYING, // deposit to aave
+  //         ],
+  //       );
+  //     }
+  //   } else {
+  //     if (srcType === TokenType.STATA_TOKEN) {
+  //       // e.g. buy destAmount 100 destToken USDC for srcToken stataUSDC
+  //       swapData = AaveV3Stata.stata.encodeFunctionData(
+  //         StataFunctions.withdraw,
+  //         [
+  //           destAmount,
+  //           this.augustusAddress, // receiver
+  //           this.augustusAddress, // owner
+  //         ],
+  //       );
+  //     } else {
+  //       // e.g. buy destAmount 100 destToken stataUSDC for srcToken USDC
+  //       swapData = AaveV3Stata.stata.encodeFunctionData(StataFunctions.mint, [
+  //         destAmount,
+  //         this.augustusAddress,
+  //       ]);
+  //     }
+  //   }
+  //
+  //   return this.buildSimpleParamWithoutWETHConversion(
+  //     srcToken,
+  //     srcAmount,
+  //     destToken,
+  //     destAmount,
+  //     swapData,
+  //     exchange,
+  //   );
+  // }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
     data: AaveV3StataData,
     side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
     const { exchange, srcType, destType } = data;
     let swapData;
 
@@ -264,8 +331,8 @@ export class AaveV3Stata
         // e.g. sell srcAmount 100 srcToken stataUSDC for destToken USDC
         swapData = AaveV3Stata.stata.encodeFunctionData(StataFunctions.redeem, [
           srcAmount,
-          this.augustusAddress, // receiver
-          this.augustusAddress, // owner
+          recipient, // receiver
+          executorAddress, // owner
           destType === TokenType.UNDERLYING, // withdraw from aToken
         ]);
       } else {
@@ -274,7 +341,7 @@ export class AaveV3Stata
           StataFunctions.deposit,
           [
             srcAmount,
-            this.augustusAddress, // receiver
+            recipient, // receiver
             0, // referrer (noop)
             srcType === TokenType.UNDERLYING, // deposit to aave
           ],
@@ -287,27 +354,26 @@ export class AaveV3Stata
           StataFunctions.withdraw,
           [
             destAmount,
-            this.augustusAddress, // receiver
-            this.augustusAddress, // owner
+            recipient, // receiver
+            executorAddress, // owner
           ],
         );
       } else {
         // e.g. buy destAmount 100 destToken stataUSDC for srcToken USDC
         swapData = AaveV3Stata.stata.encodeFunctionData(StataFunctions.mint, [
           destAmount,
-          this.augustusAddress,
+          recipient,
         ]);
       }
     }
 
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      exchange,
-    );
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+      returnAmountPos: undefined,
+    };
   }
 
   // This is called once before getTopPoolsForToken is
