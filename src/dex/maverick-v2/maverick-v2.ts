@@ -9,13 +9,20 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { MaverickV2Data, PoolAPIResponse, SubgraphPoolBase } from './types';
+import {
+  DexParams,
+  MaverickV2Data,
+  PoolAPIResponse,
+  SubgraphPoolBase,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import {
   MaverickV2Config,
@@ -28,6 +35,7 @@ import { SUBGRAPH_TIMEOUT } from '../../constants';
 import { Interface } from '@ethersproject/abi';
 import MaverickV2PoolABI from '../../abi/maverick-v2/MaverickV2Pool.json';
 import ERC20ABI from '../../abi/erc20.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 const EFFICIENCY_FACTOR = 3;
 
 export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
@@ -341,6 +349,50 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       calldata: [transferData, swapData],
       values: ['0', '0'],
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: MaverickV2Data,
+    side: SwapSide,
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
+    const { pool } = data;
+
+    const exchangeData = this.maverickV2Iface.encodeFunctionData('swap', [
+      executorAddress,
+      {
+        amount: side === SwapSide.SELL ? srcAmount : destAmount,
+        tokenAIn: data.tokenA.toLowerCase() === srcToken.toLowerCase(),
+        exactOutput: side === SwapSide.BUY,
+        tickLimit:
+          data.tokenA.toLowerCase() === srcToken.toLowerCase()
+            ? data.activeTick + 100n
+            : data.activeTick - 100n,
+      },
+      '0x',
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      transferSrcTokenBeforeSwap: pool,
+      targetExchange: pool,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.maverickV2Iface,
+              'swap',
+              'amountOut',
+            )
+          : undefined,
     };
   }
 
