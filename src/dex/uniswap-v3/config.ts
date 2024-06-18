@@ -349,7 +349,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
   VelodromeSlipstream: {
     [Network.OPTIMISM]: {
       factory: '0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F',
-      quoter: '0xA2DEcF05c16537C702779083Fe067e308463CE45',
+      quoter: '0x89D8218ed5fF1e46d8dcd33fb0bbeE3be1621466',
       router: '0x49e94895A26e697602c8270e437688514b291a81',
       supportedFees: SUPPORTED_FEES,
       tickSpacings: [1n, 50n, 100n, 200n, 2000n],
