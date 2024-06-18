@@ -6,7 +6,6 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   NumberAsString,
@@ -308,46 +307,6 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     return {
       targetExchange: data.pool,
       payload,
-      networkFee: '0',
-    };
-  }
-
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: MaverickV2Data,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const { pool } = data;
-    const transferData = MaverickV2.erc20Interface.encodeFunctionData(
-      'transfer',
-      [pool, srcAmount],
-    );
-
-    const swapData = this.maverickV2Iface.encodeFunctionData('swap', [
-      this.augustusAddress,
-      {
-        amount: side === SwapSide.SELL ? srcAmount : destAmount,
-        tokenAIn: data.tokenA.toLowerCase() === srcToken.toLowerCase(),
-        exactOutput: side === SwapSide.BUY,
-        tickLimit:
-          data.tokenA.toLowerCase() === srcToken.toLowerCase()
-            ? data.activeTick + 100n
-            : data.activeTick - 100n,
-      },
-      '0x',
-    ]);
-
-    return {
-      callees: [srcToken, pool],
-      calldata: [transferData, swapData],
-      values: ['0', '0'],
       networkFee: '0',
     };
   }
