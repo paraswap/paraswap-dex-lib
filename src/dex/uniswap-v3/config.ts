@@ -350,7 +350,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
     [Network.OPTIMISM]: {
       factory: '0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F',
       quoter: '0xA2DEcF05c16537C702779083Fe067e308463CE45',
-      router: '0x93A3b44C38A8557E935B3e2549B2809a582c28EE',
+      router: '0x49e94895A26e697602c8270e437688514b291a81',
       supportedFees: SUPPORTED_FEES,
       tickSpacings: [1n, 50n, 100n, 200n, 2000n],
       tickSpacingsToFees: {
@@ -369,7 +369,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
-      initHash: '0xE0A596c403E854FFb9C828aB4f07eEae04A05D37', // pool implementation address from factory contract is used instead of initHash here
+      initHash: '0xc28ad28853a547556780bebf7847628501a3bcbb', // pool implementation address from factory contract is used instead of initHash here
     },
   },
   AerodromeSlipstream: {
