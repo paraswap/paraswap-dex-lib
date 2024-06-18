@@ -25,7 +25,6 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import {
   MaverickV2Config,
-  Adapters,
   MAV_V2_BASE_GAS_COST,
   MAV_V2_TICK_GAS_COST,
 } from './config';
@@ -55,9 +54,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = {}, 
     protected config = MaverickV2Config[dexKey][network],
-    protected maverickV2Iface = new Interface(MaverickV2PoolABI), // TODO: add any additional params required for event subscriber
+    protected maverickV2Iface = new Interface(MaverickV2PoolABI),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
