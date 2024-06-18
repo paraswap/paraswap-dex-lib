@@ -221,7 +221,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (!GenericRFQ.getDirectFunctionNameV6().includes(contractMethod!)) {
