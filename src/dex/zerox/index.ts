@@ -275,7 +275,7 @@ export class ZeroX
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod: string,
+    contractMethod?: string,
   ): TxInfo<ZeroXParam> {
     const usePermit = permit !== '0x';
     const encoder = (...params: ZeroXParam) => {
