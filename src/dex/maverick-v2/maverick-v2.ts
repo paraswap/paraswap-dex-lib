@@ -317,8 +317,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         exactOutput: side === SwapSide.BUY,
         tickLimit:
           data.tokenA.toLowerCase() === srcToken.toLowerCase()
-            ? data.activeTick + 100n
-            : data.activeTick - 100n,
+            ? BigInt(data.activeTick) + 100n
+            : BigInt(data.activeTick) - 100n,
       },
       '0x',
     ]);
