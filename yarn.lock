@@ -1571,10 +1571,10 @@
   resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-2.0.0.tgz#be62161abec67db3cef22498a1631b12aa2d81e1"
   integrity sha512-zhXSjX2dbYaRxYZt9LhzOCW/qeP0CLyvaFU7e8MkWahu/IAhyvKc/45/STDgNgTjPw1MHjNHbmi5a5pVqXyXBg==
 
-"@paraswap/core@2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-2.2.0.tgz#848175c7729f1064e715019269b1c193a23a5be8"
-  integrity sha512-aENl5zjS0y4ag7PLEq/hHgaAH4XpN5M4Zc7Igt/03D+W6t6tgScG9on2gXKkEUErcgnZ79qnvzKhaU6QgzoBAQ==
+"@paraswap/core@2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-2.3.0.tgz#3882f0f4be7f34d24cfb60bfe57ee753ab61a969"
+  integrity sha512-WeRDmnGoenkSQ8b4Q/fFcyWAlmnyQq6bzRjYPRW3VQSjOU10d5QAcspH9Ex7zeN22n7ZZjmi9Q/xn8tpxTOSMQ==
 
 "@paraswap/sdk@6.6.0":
   version "6.6.0"
