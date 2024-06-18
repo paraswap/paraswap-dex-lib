@@ -11,7 +11,7 @@ import {
   NumberAsString,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
@@ -289,21 +289,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     data: MaverickV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { pool } = data;
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          pool: 'address',
-        },
-      },
-      {
-        pool,
-      },
-    );
-
     return {
-      targetExchange: data.pool,
-      payload,
+      targetExchange: NULL_ADDRESS,
+      payload: '0x',
       networkFee: '0',
     };
   }
