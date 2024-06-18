@@ -54,7 +54,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = {}, 
+    protected adapters = {},
     protected config = MaverickV2Config[dexKey][network],
     protected maverickV2Iface = new Interface(MaverickV2PoolABI),
   ) {
@@ -109,10 +109,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     );
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
 
   async getPoolIdentifiers(
