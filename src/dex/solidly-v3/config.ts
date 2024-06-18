@@ -49,8 +49,7 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe9b68c5f77858eecac2e651646e208175e9b1359d68d0e14fc69f8c54e5010bf`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/solidlylabs/solidly-v3',
+      subgraphURL: '7StqFFqbxi3jcN5C9YxhRiTxQM8HA8XEHopsynqqxw3t',
     },
     [Network.FANTOM]: {
       factory: '0x70Fe4a44EA505cFa3A57b95cF2862D4fd5F0f687',
@@ -60,8 +59,7 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash:
         '0xe9b68c5f77858eecac2e651646e208175e9b1359d68d0e14fc69f8c54e5010bf',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/solidlylabs/solidly-v3-fantom',
+      subgraphURL: 'HDNu25S2uqr13BHrQdPv2PfTpwxJgPB7QEnC8fsgKcM9',
     },
   },
 };

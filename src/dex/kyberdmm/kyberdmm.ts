@@ -141,13 +141,13 @@ export class KyberDmm
       }
     `;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.config.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))

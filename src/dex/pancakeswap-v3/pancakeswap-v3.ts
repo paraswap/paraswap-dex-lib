@@ -1087,11 +1087,10 @@ export class PancakeswapV3
     if (!this.config.subgraphURL) return [];
 
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {
