@@ -325,7 +325,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     const { pool } = data;
 
     const exchangeData = this.maverickV2Iface.encodeFunctionData('swap', [
-      executorAddress,
+      recipient,
       {
         amount: side === SwapSide.SELL ? srcAmount : destAmount,
         tokenAIn: data.tokenA.toLowerCase() === srcToken.toLowerCase(),
@@ -341,6 +341,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     return {
       needWrapNative: this.needWrapNative,
       transferSrcTokenBeforeSwap: pool,
+      // skipApproval: true,
       targetExchange: pool,
       dexFuncHasRecipient: true,
       exchangeData,
