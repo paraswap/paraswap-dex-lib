@@ -651,10 +651,11 @@ export class MakerPsm
 
     const params: MakerPsmParams = [
       srcToken,
-      // dest token is not used on the contract
-      NULL_ADDRESS,
+      // not used on the contract, but used for analytics
+      destToken,
       fromAmount,
-      toAmount,
+      // as there's no slippage, use instead of toAmount
+      quotedAmount,
       data.toll,
       to18ConversionFactor.toString(),
       data.psmAddress,
