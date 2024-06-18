@@ -9,17 +9,19 @@ const TokensByAddress: {
 } = {};
 
 export function setTokensOnNetwork(network: Network, tokens: StataToken[]) {
+  if (Tokens[network] === undefined) {
+    Tokens[network] = {};
+  }
+
+  if (TokensByAddress[network] === undefined) {
+    TokensByAddress[network] = {};
+  }
+
   for (let token of tokens) {
     token.address = token.address.toLowerCase();
     token.underlying = token.underlying.toLowerCase();
     token.underlyingAToken = token.underlyingAToken.toLowerCase();
 
-    if (Tokens[network] === undefined) {
-      Tokens[network] = {};
-    }
-    if (TokensByAddress[network] === undefined) {
-      TokensByAddress[network] = {};
-    }
     Tokens[network][token.stataSymbol] = token;
     TokensByAddress[network][token.address] = token;
     TokensByAddress[network][token.underlying] = token;
