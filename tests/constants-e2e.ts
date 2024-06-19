@@ -1220,6 +1220,28 @@ export const Tokens: {
       decimals: 6,
     },
   },
+  [Network.X_LAYER]: {
+    OKB: {
+      address: ETHER_ADDRESS,
+      decimals: 18,
+    },
+    WETH: {
+      address: '0x5a77f1443d16ee5761d310e38b62f77f726bc71c',
+      decimals: 18,
+    },
+    WBTC: {
+      address: '0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1',
+      decimals: 8,
+    },
+    USDC: {
+      address: '0x74b7f16337b8972027f6196a17a631ac6de26d22',
+      decimals: 6,
+    },
+    USDT: {
+      address: '0x1e4a5963abfd975d8c9021ce480b42188849d41d',
+      decimals: 6,
+    },
+  },
   [Network.BASE]: {
     PRIME: {
       address: '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b',
@@ -1572,6 +1594,13 @@ export const Holders: {
     MATIC: '0x8f2a1450c040b3c19efe9676165d8f30d8280019',
     WBTC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
+  },
+  [Network.X_LAYER]: {
+    OKB: '0x5a77f1443d16ee5761d310e38b62f77f726bc71c',
+    WOKB: '0x5a77f1443d16ee5761d310e38b62f77f726bc71c',
+    USDT: '0x1e4a5963abfd975d8c9021ce480b42188849d41d',
+    WBTC: '0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1',
+    USDC: '0x74b7f16337b8972027f6196a17a631ac6de26d22',
   },
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
