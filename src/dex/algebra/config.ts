@@ -34,6 +34,24 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       version: 'v1.1',
       forceManualStateGenerate: true,
     },
+    [Network.X_LAYER]: {
+      factory: '0xd2480162Aa7F02Ead7BF4C127465446150D58452',
+      router: '0x4B9f4d2435Ef65559567e5DbFC1BbB37abC43B57',
+      quoter: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+      initHash:
+        '0xbce37a54eab2fcd71913a0d40723e04238970e7fc1159bfd58ad5b79531697e7',
+      // TODO-X
+      chunksCount: 3,
+      // TODO-X
+      initRetryFrequency: 30,
+      algebraStateMulticall: '0x6a34523Cb05BdfD39F01016358A8dF717Dbd5aca',
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/72680/quickswapv3-x-layer/v0.0.7',
+      uniswapMulticall: '0xc7efb32470dEE601959B15f1f923e017C6A918cA',
+      deployer: '0x56c2162254b0E4417288786eE402c2B41d4e181e',
+      version: 'v1.9-bidirectional-fee',
+      forceManualStateGenerate: true,
+    },
   },
   ZyberSwapV3: {
     [Network.ARBITRUM]: {
