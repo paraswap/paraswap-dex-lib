@@ -16,12 +16,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import {
-  DexParams,
-  MaverickV2Data,
-  PoolAPIResponse,
-  SubgraphPoolBase,
-} from './types';
+import { MaverickV2Data, PoolAPIResponse } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import {
   MaverickV2Config,

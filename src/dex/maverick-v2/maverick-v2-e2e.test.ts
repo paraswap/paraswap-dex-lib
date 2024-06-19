@@ -149,28 +149,50 @@ function testForNetwork(
 describe('MaverickV2 E2E', () => {
   const dexKey = 'MaverickV2';
 
-  describe('Mainnet', () => {
-    const network = Network.BASE;
+  const testCases = [
+    {
+      network: Network.BASE,
+      tokenASymbol: 'MAV',
+      tokenBSymbol: 'PRIME',
+      tokenAAmount: '1000000000000000',
+      tokenBAmount: '1000000000000000',
+    },
+    {
+      network: Network.ARBITRUM,
+      tokenASymbol: 'USDC',
+      tokenBSymbol: 'USDT',
+      tokenAAmount: '100000000',
+      tokenBAmount: '100000000',
+    },
+    {
+      network: Network.BSC,
+      tokenASymbol: 'USDC',
+      tokenBSymbol: 'USDT',
+      tokenAAmount: '100000000',
+      tokenBAmount: '100000000',
+    },
+    {
+      network: Network.MAINNET,
+      tokenASymbol: 'USDC',
+      tokenBSymbol: 'USDT',
+      tokenAAmount: '100000000',
+      tokenBAmount: '100000000',
+    },
+  ];
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'MAV';
-    const tokenBSymbol: string = 'PRIME';
+  testCases.forEach(
+    ({ network, tokenAAmount, tokenBAmount, tokenASymbol, tokenBSymbol }) => {
+      const nativeTokenAmount = '100000000000000';
 
-    const tokenAAmount: string = '100000000000000';
-    const tokenBAmount: string = '1000000000000000';
-
-    const nativeTokenAmount = '100000000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-
-    // TODO: Add any additional test cases required to test MaverickV2
-  });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    },
+  );
 });
