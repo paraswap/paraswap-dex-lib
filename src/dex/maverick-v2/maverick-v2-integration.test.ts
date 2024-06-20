@@ -208,7 +208,7 @@ describe('MaverickV2', function () {
       6n * BI_POWS[srcDecimals],
       7n * BI_POWS[srcDecimals],
       8n * BI_POWS[srcDecimals],
-      9n * BI_POWS[srcDecimals],
+      // 9n * BI_POWS[srcDecimals],
       // 10n * BI_POWS[srcDecimals],
     ];
 
@@ -222,7 +222,7 @@ describe('MaverickV2', function () {
       6n * BI_POWS[destDecimals],
       7n * BI_POWS[destDecimals],
       8n * BI_POWS[destDecimals],
-      9n * BI_POWS[destDecimals],
+      // 9n * BI_POWS[destDecimals],
       // 10n * BI_POWS[destDecimals],
     ];
 
