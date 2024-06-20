@@ -121,19 +121,17 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     }
 
     const pools = await this.getPools(from, to);
-    return pools.map(
-      (pool: any) => `${this.dexKey}_${pool.address.toLowerCase()}`,
-    );
+    return pools.map(pool => pool.name);
   }
 
   async getPools(srcToken: Token, destToken: Token) {
     return Object.values(this.pools).filter((pool: MaverickV2EventPool) => {
       return (
-        (pool.tokenA.address.toLowerCase() == srcToken.address.toLowerCase() ||
+        (pool.tokenA.address.toLowerCase() === srcToken.address.toLowerCase() ||
           pool.tokenA.address.toLowerCase() ==
             destToken.address.toLowerCase()) &&
-        (pool.tokenB.address.toLowerCase() == srcToken.address.toLowerCase() ||
-          pool.tokenB.address.toLowerCase() == destToken.address.toLowerCase())
+        (pool.tokenB.address.toLowerCase() === srcToken.address.toLowerCase() ||
+          pool.tokenB.address.toLowerCase() === destToken.address.toLowerCase())
       );
     });
   }
@@ -157,94 +155,65 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       const allPools = await this.getPools(from, to);
 
       const allowedPools = limitPools
-        ? allPools.filter(pool =>
-            limitPools.includes(`${this.dexKey}_${pool.address.toLowerCase()}`),
-          )
+        ? allPools.filter(pool => limitPools.includes(pool.name))
         : allPools;
 
       if (!allowedPools.length) return null;
 
       const unitAmount = getBigIntPow(
-        side == SwapSide.BUY ? to.decimals : from.decimals,
+        side === SwapSide.BUY ? to.decimals : from.decimals,
       );
 
-      return (
-        await Promise.all(
-          allowedPools.map(async (pool: MaverickV2EventPool) => {
-            try {
-              let state = pool.getState(blockNumber);
-              if (state === null) {
-                state = await pool.generateState(blockNumber);
-                pool.setState(state, blockNumber);
-              }
-              if (state === null) {
-                this.logger.debug(
-                  `Received null state for pool ${pool.address}`,
-                );
-                return null;
-              }
+      const tasks = allowedPools.map(async (pool: MaverickV2EventPool) => {
+        try {
+          const state = pool.getState(blockNumber);
+          if (!state) {
+            this.logger.debug(`Received null state for pool ${pool.address}`);
+            return null;
+          }
 
-              const [unit] = pool.swap(
-                unitAmount,
-                from,
-                to,
-                side == SwapSide.BUY,
-              );
-              // We stop iterating if it becomes 0n at some point
-              let lastOutput = 1n;
-              let dataList: [bigint, number][] = await Promise.all(
-                amounts.map(amount => {
-                  if (amount === 0n) {
-                    return [0n, 0];
-                  }
-                  // We don't want to proceed with calculations if lower amount was not fillable
-                  if (lastOutput === 0n) {
-                    return [0n, 0];
-                  }
-                  const output = pool.swap(
-                    amount,
-                    from,
-                    to,
-                    side == SwapSide.BUY,
-                  );
-                  lastOutput = output[0];
-                  return output;
-                }),
-              );
+          const [unit] = pool.swap(unitAmount, from, to, side === SwapSide.BUY);
+          let lastOutput = 1n;
 
-              let prices = dataList.map(d => d[0]);
-
-              let gasCosts: number[] = dataList.map(
-                ([d, t]: [BigInt, number]) => {
-                  if (d == 0n) return 0;
-                  return MAV_V2_BASE_GAS_COST + MAV_V2_TICK_GAS_COST * t;
-                },
-              );
-
-              return {
-                prices: prices,
-                unit: BigInt(unit),
-                data: {
-                  pool: pool.address,
-                  tokenA: pool.tokenA.address,
-                  tokenB: pool.tokenB.address,
-                  activeTick: state.activeTick,
-                },
-                exchange: this.dexKey,
-                poolIdentifier: pool.name,
-                gasCost: gasCosts,
-                poolAddresses: [pool.address],
-              };
-            } catch (e) {
-              this.logger.debug(
-                `Failed to get prices for pool ${pool.address}, from=${from.address}, to=${to.address}`,
-                e,
-              );
-              return null;
+          const dataList: [bigint, bigint][] = amounts.map(amount => {
+            if (amount === 0n || lastOutput === 0n) {
+              return [0n, 0n];
             }
-          }),
-        )
-      ).filter(isTruthy);
+
+            const output = pool.swap(amount, from, to, side === SwapSide.BUY);
+            lastOutput = output[0];
+            return output;
+          });
+
+          const gasCosts: number[] = dataList.map(([d, t]) => {
+            if (d === 0n) return 0;
+            return MAV_V2_BASE_GAS_COST + MAV_V2_TICK_GAS_COST * Number(t);
+          });
+
+          return {
+            prices: dataList.map(d => d[0]),
+            unit: BigInt(unit),
+            data: {
+              pool: pool.address,
+              tokenA: pool.tokenA.address,
+              tokenB: pool.tokenB.address,
+              activeTick: state.activeTick,
+            },
+            exchange: this.dexKey,
+            poolIdentifier: pool.name,
+            gasCost: gasCosts,
+            poolAddresses: [pool.address],
+          };
+        } catch (e) {
+          this.logger.debug(
+            `Failed to get prices for pool ${pool.address}, from=${from.address}, to=${to.address}`,
+            e,
+          );
+          return null;
+        }
+      });
+
+      return Promise.all(tasks).then(tasks => tasks.filter(isTruthy));
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -256,26 +225,14 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     }
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(
     poolPrices: PoolPrices<MaverickV2Data>,
   ): number | number[] {
-    const gasCost = CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
-
-    const arr = new Array(poolPrices.prices.length);
-    poolPrices.prices.forEach((p, index) => {
-      if (p == 0n) {
-        arr[index] = 0;
-      } else {
-        arr[index] = gasCost;
-      }
-    });
-    return arr;
+    return poolPrices.prices.map(p =>
+      p !== 0n ? CALLDATA_GAS_COST.DEX_NO_PAYLOAD : 0,
+    );
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -351,7 +308,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const _tokenAddress = tokenAddress.toLowerCase();
+    const _tokenAddress = this.dexHelper.config.wrapETH(tokenAddress);
 
     const res: PoolAPIResponse | null = await this._queryPoolsAPI(
       SUBGRAPH_TIMEOUT,
