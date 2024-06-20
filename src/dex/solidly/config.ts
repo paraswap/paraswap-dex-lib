@@ -5,8 +5,7 @@ import { Network, SwapSide } from '../../constants';
 export const SolidlyConfig: DexConfigMap<DexParams> = {
   Solidly: {
     [Network.FANTOM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/deusfinance/solidly',
+      subgraphURL: '3fCME6o1i4p15Dk8d7Sz3rcWPg9NAh6Umi8nbtd8Avix',
       factoryAddress: '0x3faab499b519fdc5819e3d7ed0c26111904cbc28',
       router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
       initCode:
@@ -20,7 +19,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       factoryAddress: '0x777de5Fe8117cAAA7B44f396E93a401Cf5c9D4d6',
       router: '0x5b39e7A1C706464F5B3956b21CD22a43F0dB0eAC',
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/0xc30/solidly',
+      subgraphURL: '4GX8RE9TzEWormbkayeGj4NQmmhYE46izVVUvXv8WPDh',
       initCode:
         '0x413d36e4ab9e83cf39b8064a3b5c98253a9e46a6cf02c8efd185314c866d656b',
       stableFee: 200, // This is not fixed
@@ -32,8 +31,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Dystopia: {
     [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/dystopia-exchange/dystopia-v2',
+      subgraphURL: '89e9ZAHs7mJvpckEaSmpTtRXUsYcc1mesE7Czp1Hrqxa',
       factoryAddress: '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9',
       router: '0xc8DB3501281c192fFE9697A1b905b161ca0cd64d',
       initCode:
@@ -45,8 +43,6 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   SpiritSwapV2: {
     [Network.FANTOM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/layer3org/spiritswap-v2',
       factoryAddress: '0x9d3591719038752db0c8bEEe2040FfcC3B2c6B9c',
       router: '0x93d2611EB8b85bE4FDEa9D94Ce9913D90072eC0f',
       initCode:
@@ -60,7 +56,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Velodrome: {
     [Network.OPTIMISM]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/dmihal/velodrome',
+      subgraphURL: '2bam2XEb91cFqABFPSKj3RiSjpop9HvDt1MnYq5cDX5E',
       factoryAddress: '0x25cbddb98b35ab1ff77413456b31ec81a6b6b746',
       router: '0xa2f581b012E0f2dcCDe86fCbfb529f4aC5dD4983',
       initCode:
@@ -96,7 +92,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Thena: {
     [Network.BSC]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/thenaursa/thena-v1',
+      subgraphURL: 'FKEt2N5VmSdEYcz7fYLPvvnyEUkReQ7rvmXzs6tiKCz1',
       factoryAddress: '0xAFD89d21BdB66d00817d4153E055830B1c2B3970',
       router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
       initCode:
@@ -109,7 +105,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Chronos: {
     [Network.ARBITRUM]: {
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/xliee/chronos',
+      subgraphURL: 'BCCAQ3VvF4jLqCpr966QRRnAK8xpvv4MFJYHYCTv224r',
       factoryAddress: '0xce9240869391928253ed9cc9bcb8cb98cb5b0722',
       router: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
       initCode:
@@ -120,8 +116,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Ramses: {
     [Network.ARBITRUM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/ramsesexchange/api-subgraph',
+      subgraphURL: 'GdqerXoyuwHLq4DfTHomHJURu193L83ZeiynB4wbDfbW',
       factoryAddress: '0xAAA20D08e59F6561f242b08513D36266C5A29415',
       router: '0xb2634B3CBc1E401AB3C2743DB44d459C5c9aA662',
       initCode:
@@ -132,8 +127,6 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   PharaohV1: {
     [Network.AVALANCHE]: {
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/66247/pharaoh-legacy/version/latest',
       factoryAddress: '0xAAA16c016BF556fcD620328f0759252E29b1AB57',
       router: '0x609AcD8Fc955Dd7E744c7DFFc9930a7A6654DE43',
       initCode:
@@ -185,8 +178,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Usdfi: {
     [Network.BSC]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/tbotteam/usdfi-dexv2',
+      subgraphURL: 'EvFsjvtmZpMJ4Y5RdJCx9TD5AkQjXCKpWaTYUvZ2DpWM',
       factoryAddress: '0xB3863573d9f25e6a84895d4685a408db7a488416',
       router: '0xc2b5a8082D2E1867A9CBBF41b625E3ae9dF81f8b',
       initCode:

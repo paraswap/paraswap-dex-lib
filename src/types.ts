@@ -305,6 +305,7 @@ export type Config = {
   dexalotAuthToken?: string;
   idleDaoAuthToken?: string;
   forceRpcFallbackDexs: string[];
+  apiKeyTheGraph: string;
 };
 
 export type BigIntAsString = string;

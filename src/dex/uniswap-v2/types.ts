@@ -143,6 +143,7 @@ export type UniswapV2Data = {
 };
 
 export interface DexParams {
+  subgraphType?: 'subgraphs' | 'deployments';
   subgraphURL?: string;
   factoryAddress: Address;
   initCode: string; // deprecated
