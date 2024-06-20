@@ -31,7 +31,8 @@ import TokenABI from '../../abi/aavev3stata/Token.json';
 export const TOKEN_LIST_CACHE_KEY = 'stata-token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60; // 1 day
 const TOKEN_LIST_LOCAL_TTL_SECONDS = 3 * 60 * 60; // 3h
-const RAY = BigInt(1e27);
+// const RAY = BigInt(1e27);
+const RAY = BigInt(`1${'0'.repeat(27)}`);
 
 export class AaveV3Stata
   extends SimpleExchange
@@ -153,8 +154,10 @@ export class AaveV3Stata
     if (
       ![src, dest].includes(TokenType.STATA_TOKEN) ||
       (src === TokenType.STATA_TOKEN && dest === TokenType.STATA_TOKEN)
-    )
+    ) {
       return null;
+    }
+
     // on the buy side (mint, withdraw) we only support the underlying<->stata conversion, not the aUnderlying
     if (side === SwapSide.BUY && ![src, dest].includes(TokenType.UNDERLYING))
       return null;
