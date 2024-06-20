@@ -148,7 +148,7 @@ class APIParaswapSDK implements IParaSwapSDK {
 
   async initializePricing() {
     const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
-    await this.pricingHelper.initialize(Number(blockNumber), this.dexKeys);
+    await this.pricingHelper.initialize(blockNumber, this.dexKeys);
   }
 
   async getPrices(
