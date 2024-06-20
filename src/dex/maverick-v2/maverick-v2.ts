@@ -125,6 +125,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   }
 
   async getPools(srcToken: Token, destToken: Token) {
+    srcToken = this.dexHelper.config.wrapETH(srcToken);
+    destToken = this.dexHelper.config.wrapETH(destToken);
+
     return Object.values(this.pools).filter((pool: MaverickV2EventPool) => {
       return (
         (pool.tokenA.address.toLowerCase() === srcToken.address.toLowerCase() ||
@@ -260,6 +263,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     executorAddress: Address,
   ): DexExchangeParam {
     const { pool } = data;
+
+    srcToken = this.dexHelper.config.wrapETH(srcToken);
+    destToken = this.dexHelper.config.wrapETH(destToken);
 
     const exchangeData = this.maverickV2Iface.encodeFunctionData('swap', [
       recipient,
