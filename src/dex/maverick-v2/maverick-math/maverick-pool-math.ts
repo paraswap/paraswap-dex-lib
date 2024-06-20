@@ -301,8 +301,8 @@ export class MaverickPoolMath {
     this.getMovementBinsInRange(moveData);
 
     if (
-      moveData.firstBinId == 0n ||
-      (moveData.counter == 1n && moveData.tickLimit == moveData.firstBinTick)
+      moveData.firstBinId === 0n ||
+      (moveData.counter === 1n && moveData.tickLimit === moveData.firstBinTick)
     ) {
       return;
     }
@@ -326,12 +326,12 @@ export class MaverickPoolMath {
       tick <= moveData.tickSearchEnd;
       tick++
     ) {
-      if (moveData.counter == 3n) return;
+      if (moveData.counter === 3n) return;
       let binId = this.binIdByTickKind(tick, moveData.kind);
-      if (binId == 0n) continue;
+      if (binId === 0n) continue;
       moveData.mergeBins[moveData.counter.toString()] = binId;
       moveData.counter++;
-      if (moveData.firstBinId == 0n || binId < moveData.firstBinId) {
+      if (moveData.firstBinId === 0n || binId < moveData.firstBinId) {
         moveData.firstBinId = binId;
         moveData.firstBinTick = tick;
       }
@@ -368,7 +368,7 @@ export class MaverickPoolMath {
       firstBin.tickBalance,
     );
     startingTickState.binIdsByTick[moveData.kind.toString()] = 0n;
-    if (this.state.ticks[firstBin.tick.toString()].totalSupply == 0n) {
+    if (this.state.ticks[firstBin.tick.toString()].totalSupply === 0n) {
       delete this.state.ticks[firstBin.tick.toString()];
     }
     endingTickState.binIdsByTick[moveData.kind.toString()] =
@@ -400,7 +400,7 @@ export class MaverickPoolMath {
 
     for (let i = 0; i < moveData.counter; i++) {
       let binId = moveData.mergeBins[i];
-      if (binId == moveData.firstBinId) continue;
+      if (binId === moveData.firstBinId) continue;
       mergeOccured = true;
 
       let [binA, binB, mergeBinBalance] = this.mergeAndDecommissionBin(
@@ -493,7 +493,7 @@ export class MaverickPoolMath {
     let binId = this.binIdByTickKind(tick, kind);
 
     let bin;
-    if (binId == 0n) {
+    if (binId === 0n) {
       this.state.binCounter++;
       binId = this.state.binCounter;
       bin = {
@@ -531,7 +531,7 @@ export class MaverickPoolMath {
     let value = this.state.activeTick * BI_POWS[8] + 5n * BI_POWS[7];
     this.state = state;
 
-    if (this.state.lastTimestamp == 0n) {
+    if (this.state.lastTimestamp === 0n) {
       this.state.activeTick = activeTick;
       this.state.lastTwaD8 = value;
       this.state.lastLogPriceD8 = value;
@@ -570,7 +570,7 @@ export class MaverickPoolMath {
         addLiquidityInfo,
       );
 
-      if (addLiquidityInfo.deltaA == 0n && addLiquidityInfo.deltaB == 0n) {
+      if (addLiquidityInfo.deltaA === 0n && addLiquidityInfo.deltaB === 0n) {
         throw 'zero liquidity added';
       }
 
@@ -623,8 +623,8 @@ export class MaverickPoolMath {
     }
 
     while (
-      (this.state.ticks[activeTick.toString()]?.reserveA || 0n) == 0n &&
-      (this.state.ticks[activeTick.toString()]?.reserveB || 0n) == 0n
+      (this.state.ticks[activeTick.toString()]?.reserveA || 0n) === 0n &&
+      (this.state.ticks[activeTick.toString()]?.reserveB || 0n) === 0n
     ) {
       activeTick += delta.tokenAIn ? 1n : -1n;
 
@@ -661,7 +661,7 @@ export class MaverickPoolMath {
           this.protocolFeeRatioD3,
         );
 
-    if (newDelta.excess == 0n) {
+    if (newDelta.excess === 0n) {
       MaverickSwapMath.computeEndPrice(delta, newDelta, tickData);
     }
 

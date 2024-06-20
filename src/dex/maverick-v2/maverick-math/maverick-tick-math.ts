@@ -36,10 +36,10 @@ export class MaverickTickMath {
     sqrtUpperTickPrice: bigint,
     liquidity: bigint,
   ): bigint {
-    if (reserveA == 0n) {
+    if (reserveA === 0n) {
       return sqrtLowerTickPrice;
     }
-    if (reserveB == 0n) {
+    if (reserveB === 0n) {
       return sqrtUpperTickPrice;
     }
 
@@ -65,7 +65,7 @@ export class MaverickTickMath {
   ): bigint {
     let precisionBump = 0n;
 
-    if (reserveA >> 78n == 0n && reserveB >> 78n == 0n) {
+    if (reserveA >> 78n === 0n && reserveB >> 78n === 0n) {
       precisionBump = 57n;
       reserveA <<= precisionBump;
       reserveB <<= precisionBump;
@@ -77,7 +77,7 @@ export class MaverickTickMath {
       MaverickBasicMath.mulDown(reserveB, sqrtLowerTickPrice);
     diff = sqrtUpperTickPrice - sqrtLowerTickPrice;
 
-    if (reserveA == 0n || reserveB == 0n)
+    if (reserveA === 0n || reserveB === 0n)
       return (
         MaverickBasicMath.mulDivDown(b, sqrtUpperTickPrice, diff) >>
         precisionBump

@@ -4,7 +4,7 @@ export class MaverickMath {
     scaleFactor: bigint,
     ceil: boolean,
   ): bigint {
-    if (scaleFactor == 1n || amount == 0n) {
+    if (scaleFactor === 1n || amount === 0n) {
       return amount;
     } else {
       if (!ceil) return amount / scaleFactor;
@@ -13,7 +13,7 @@ export class MaverickMath {
   }
 
   static tokenScaleToAmmScale(amount: bigint, scaleFactor: bigint): bigint {
-    if (scaleFactor == 1n) {
+    if (scaleFactor === 1n) {
       return amount;
     } else {
       return amount * scaleFactor;
@@ -21,7 +21,7 @@ export class MaverickMath {
   }
 
   static scale(decimals: bigint): bigint {
-    if (decimals == 18n) {
+    if (decimals === 18n) {
       return 1n;
     } else {
       return 10n ** (18n - decimals);

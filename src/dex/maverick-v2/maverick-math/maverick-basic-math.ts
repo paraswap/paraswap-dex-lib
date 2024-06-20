@@ -102,11 +102,11 @@ export class MaverickBasicMath {
   static mulDivDown(x: bigint, y: bigint, denominator: bigint): bigint {
     let z = x * y;
 
-    if (denominator == 0n) {
+    if (denominator === 0n) {
       denominator = 1n;
     }
 
-    if (denominator == 0n && !(y == 0n || x <= BI_MAX_UINT256 / y)) {
+    if (denominator === 0n && !(y === 0n || x <= BI_MAX_UINT256 / y)) {
       throw new Error('MATH: MUL_DIV_DOWN_OVERFLOW');
     }
 
@@ -137,7 +137,7 @@ export class MaverickBasicMath {
   static mulDivUp(x: bigint, y: bigint, denominator: bigint): bigint {
     let z = x * y;
 
-    if (z == 0n) {
+    if (z === 0n) {
       return 0n;
     }
 

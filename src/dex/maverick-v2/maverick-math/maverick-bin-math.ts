@@ -108,7 +108,7 @@ export class MaverickBinMath {
       );
     }
 
-    return tick.totalSupply == 0n
+    return tick.totalSupply === 0n
       ? deltaLpBalance
       : MaverickBasicMath.mulDivDown(
           deltaLpBalance,
@@ -149,7 +149,7 @@ export class MaverickBinMath {
     deltaTickBalance: bigint,
   ) {
     let totalSupply = self.totalSupply;
-    if (totalSupply == 0n) {
+    if (totalSupply === 0n) {
       if (deltaLpBalance < MINIMUM_LIQUIDITY) {
         throw 'insufficient liquidity';
       }
@@ -253,11 +253,11 @@ export class MaverickBinMath {
     bins: { [id: string]: Bin },
     maxRecursion: bigint,
   ): void {
-    if (self.mergeId == 0n) return;
+    if (self.mergeId === 0n) return;
 
     let nextBin = bins[self.mergeId.toString()];
 
-    if (nextBin.mergeId == 0n) return;
+    if (nextBin.mergeId === 0n) return;
 
     self.mergeId = nextBin.mergeId;
 

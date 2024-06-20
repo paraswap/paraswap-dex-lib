@@ -10,7 +10,7 @@ export class TwaMath {
     lookback: bigint,
     timestamp: bigint,
   ) {
-    if (timestamp == self.lastTimestamp) return;
+    if (timestamp === self.lastTimestamp) return;
     self.lastTwaD8 = this.getTwa(self, lookback, timestamp);
     self.lastTimestamp = timestamp;
     self.lastLogPriceD8 = value;
@@ -23,14 +23,14 @@ export class TwaMath {
   static getTwa(self: PoolState, lookback: bigint, timestamp: bigint): bigint {
     let timeDiff = timestamp - self.lastTimestamp;
     timeDiff = MaverickBasicMath.min(lookback, timeDiff);
-    if (timeDiff == 0n) return self.lastTwaD8;
+    if (timeDiff === 0n) return self.lastTwaD8;
 
     let absValueDeviation = MaverickBasicMath.min(
       BI_POWS[8],
       MaverickBasicMath.abs(self.lastLogPriceD8 - self.lastTwaD8),
     );
 
-    if (absValueDeviation == 0n) return self.lastTwaD8;
+    if (absValueDeviation === 0n) return self.lastTwaD8;
     let twaDeviation = MaverickBasicMath.mulDivDown(
       absValueDeviation,
       timeDiff,

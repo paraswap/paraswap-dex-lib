@@ -25,7 +25,7 @@ export class MaverickSwapMath {
     tokenAIn: boolean,
   ): bigint {
     let outOverL =
-      binLiquidity == 0n ? 0n : MaverickBasicMath.divUp(output, binLiquidity);
+      binLiquidity === 0n ? 0n : MaverickBasicMath.divUp(output, binLiquidity);
 
     if (tokenAIn) {
       return MaverickBasicMath.mulDivUp(
