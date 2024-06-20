@@ -5,7 +5,6 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   NumberAsString,
@@ -22,8 +21,9 @@ import { AaveV3StataConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import { fetchTokenList } from './utils';
 import { getTokenType, setTokensOnNetwork } from './tokens';
-import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
 import { uint256ToBigInt } from '../../lib/decoders';
+import TokenABI from '../../abi/aavev3stata/Token.json';
+// import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
 // slimmed down version of @bgd-labs/aave-address-book
 // required as version of web3-utils used is buggy
 //import IStaticATokenFactory_ABI from '../../abi/aave-v3-stata/StaticATokenFactory.json';
@@ -46,7 +46,8 @@ export class AaveV3Stata
 
   logger: Logger;
 
-  static readonly stata = new Interface(IStaticATokenLM_ABI);
+  // static readonly stata = new Interface(IStaticATokenLM_ABI);
+  static readonly stata = new Interface(TokenABI);
 
   private state: Record<string, { blockNumber: number; rate: bigint }> = {};
 
@@ -93,6 +94,14 @@ export class AaveV3Stata
     );
 
     setTokensOnNetwork(this.network, tokenList);
+
+    // init state for all tokens as empty
+    tokenList.forEach(token => {
+      this.state[token.address] = {
+        blockNumber: 0,
+        rate: 0n,
+      };
+    });
   }
 
   // Returns the list of contract adapters (name and index)
@@ -151,16 +160,17 @@ export class AaveV3Stata
       return null;
 
     const stata = src === TokenType.STATA_TOKEN ? srcToken : destToken;
+    const stataAddressLower = stata.address.toLowerCase();
 
     // following what is done on wstETH
-    if (blockNumber > this.state[stata.address].blockNumber) {
+    if (blockNumber > this.state[stataAddressLower].blockNumber) {
       const cached = await this.dexHelper.cache.get(
         this.dexKey,
         this.network,
-        `state_${stata.address}`,
+        `state_${stataAddressLower}`,
       );
       if (cached) {
-        this.state[stata.address] = Utils.Parse(cached);
+        this.state[stataAddressLower] = Utils.Parse(cached);
       } else {
         const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
           true,
@@ -173,7 +183,7 @@ export class AaveV3Stata
           ],
           blockNumber,
         );
-        this.state[stata.address] = {
+        this.state[stataAddressLower] = {
           blockNumber,
           rate: results[0].returnData,
         };
@@ -182,7 +192,7 @@ export class AaveV3Stata
           this.network,
           'state',
           60,
-          Utils.Serialize(this.state[stata.address]),
+          Utils.Serialize(this.state[stataAddressLower]),
         );
       }
     }
@@ -191,8 +201,8 @@ export class AaveV3Stata
       {
         prices: amounts.map(amount =>
           src === TokenType.STATA_TOKEN
-            ? (amount * RAY) / this.state[stata.address].rate
-            : (amount * this.state[stata.address].rate) / RAY,
+            ? (amount * RAY) / this.state[stataAddressLower].rate
+            : (amount * this.state[stataAddressLower].rate) / RAY,
         ),
         unit: getBigIntPow(
           (side === SwapSide.SELL ? destToken : srcToken).decimals,
@@ -204,6 +214,7 @@ export class AaveV3Stata
           destType: dest,
           exchange: destToken.address,
         },
+        poolAddresses: [stataAddressLower],
       },
     ];
   }
@@ -216,32 +227,11 @@ export class AaveV3Stata
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: AaveV3StataData,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange, srcType, destType } = data;
-    const stataToken = srcType === TokenType.STATA_TOKEN ? srcToken : destToken;
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          stataToken: 'address',
-        },
-      },
-      { stataToken: stataToken },
-    );
-
+  // Not used for V6
+  getAdapterParam(): AdapterExchangeParam {
     return {
-      targetExchange: exchange,
-      payload,
+      targetExchange: '0x',
+      payload: '0x',
       networkFee: '0',
     };
   }

@@ -18,9 +18,9 @@ export function setTokensOnNetwork(network: Network, tokens: StataToken[]) {
   }
 
   for (let token of tokens) {
-    token.address = token.address.toLowerCase();
-    token.underlying = token.underlying.toLowerCase();
-    token.underlyingAToken = token.underlyingAToken.toLowerCase();
+    // token.address = token.address.toLowerCase();
+    // token.underlying = token.underlying.toLowerCase();
+    // token.underlyingAToken = token.underlyingAToken.toLowerCase();
 
     Tokens[network][token.stataSymbol] = token;
     TokensByAddress[network][token.address] = token;
@@ -30,9 +30,11 @@ export function setTokensOnNetwork(network: Network, tokens: StataToken[]) {
 }
 
 export function getTokenType(network: Network, address: string): TokenType {
-  const token = TokensByAddress[network]?.[address];
+  const addressLower = address.toLowerCase();
+  const token = TokensByAddress[network]?.[addressLower];
+
   if (!token) return TokenType.UNKNOWN;
-  if (token.address === address) return TokenType.STATA_TOKEN;
-  if (token.underlying === address) return TokenType.UNDERLYING;
+  if (token.address === addressLower) return TokenType.STATA_TOKEN;
+  if (token.underlying === addressLower) return TokenType.UNDERLYING;
   return TokenType.A_TOKEN;
 }

@@ -1,14 +1,18 @@
-import {
-  IStaticATokenFactory_ABI,
-  IStaticATokenLM_ABI,
-} from '@bgd-labs/aave-address-book';
+// import {
+//   IStaticATokenFactory_ABI,
+//   IStaticATokenLM_ABI,
+// } from '@bgd-labs/aave-address-book';
 import { Interface } from '@ethersproject/abi';
 import Web3 from 'web3';
 import { MultiCallParams, MultiWrapper } from '../../lib/multi-wrapper';
 import { stringDecode, uint8ToNumber, addressDecode } from '../../lib/decoders';
 import { StataToken } from './types';
+import FactoryABI from '../../abi/aavev3stata/Factory.json';
+import TokenABI from '../../abi/aavev3stata/Token.json';
+import { AbiItem } from 'web3-utils';
 
-const stataInterface = new Interface(IStaticATokenLM_ABI);
+// const stataInterface = new Interface(IStaticATokenLM_ABI);
+const stataInterface = new Interface(TokenABI);
 
 async function getTokenMetaData(
   blockNumber: number,
@@ -48,13 +52,13 @@ async function getTokenMetaData(
   );
 
   let tokenList: StataToken[] = [];
-  for (let i = 0; i < stataTokens.length; i += 4) {
+  for (let i = 0, x = 0; i < stataTokens.length; ++i, x += 4) {
     tokenList.push({
-      address: stataTokens[i],
-      stataSymbol: results[i] as string,
-      decimals: results[i + 1] as number,
-      underlying: results[i + 2] as string,
-      underlyingAToken: results[i + 3] as string,
+      address: stataTokens[i].toLowerCase(),
+      stataSymbol: results[x] as string,
+      decimals: results[x + 1] as number,
+      underlying: (results[x + 2] as string).toLowerCase(),
+      underlyingAToken: (results[x + 3] as string).toLowerCase(),
     });
   }
   return tokenList;
@@ -65,12 +69,16 @@ export const fetchTokenList = async (
   blockNumber: number,
   factoryAddress: string,
   multiWrapper: MultiWrapper,
-): Promise<any> => {
+): Promise<StataToken[]> => {
   let factoryContract = new web3Provider.eth.Contract(
-    IStaticATokenFactory_ABI as any,
+    FactoryABI as AbiItem[],
+    // IStaticATokenFactory_ABI as any,
     factoryAddress,
   );
-  let stataList = await factoryContract.methods.getStaticATokens().call();
+
+  let stataList: string[] = await factoryContract.methods
+    .getStaticATokens()
+    .call();
 
   return getTokenMetaData(blockNumber, stataList, multiWrapper);
 };

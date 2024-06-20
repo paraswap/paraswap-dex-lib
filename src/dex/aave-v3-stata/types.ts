@@ -57,8 +57,8 @@ export type RedeemParams = [
 export type Param = DepositParams | RedeemParams;
 
 export enum StataFunctions {
-  deposit = 'deposit',
-  redeem = 'redeem',
+  deposit = 'deposit(uint256,address,uint16,bool)',
+  redeem = 'redeem(uint256,address,address,bool)',
   mint = 'mint',
   withdraw = 'withdraw',
 }
