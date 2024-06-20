@@ -119,27 +119,30 @@ export class RateFetcher {
       return;
     }
 
-    const levels = Object.keys(resp.levels)
-      .map(pairName => {
-        const pair = resp.levels[pairName];
-        if (!pair) {
-          return;
-        }
-        const levels = resp.levels[pairName];
+    const levels = Object.keys(resp.levels).reduce<
+      Record<string, SwaapV2PriceLevels>
+    >((memo, pairName) => {
+      const pair = resp.levels[pairName];
+      if (!pair) {
+        return memo;
+      }
+      const levels = resp.levels[pairName];
 
-        if (!levels.asks || !levels.bids) {
-          return;
-        }
+      if (!levels.asks || !levels.bids) {
+        return memo;
+      }
 
-        const pairSplit = pairName.split('/');
+      const pairSplit = pairName.split('/');
 
-        const baseAddress = pairSplit[0];
-        const quoteAddress = pairSplit[1];
-        pair.base = normalizeTokenAddress(baseAddress);
-        pair.quote = normalizeTokenAddress(quoteAddress);
-        return pair;
-      })
-      .filter((p: SwaapV2PriceLevels | undefined) => p !== null);
+      const baseAddress = pairSplit[0];
+      const quoteAddress = pairSplit[1];
+      pair.base = normalizeTokenAddress(baseAddress);
+      pair.quote = normalizeTokenAddress(quoteAddress);
+
+      memo[pairName] = pair;
+
+      return memo;
+    }, {});
 
     this.dexHelper.cache.setex(
       this.dexKey,
