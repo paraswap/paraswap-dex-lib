@@ -11,7 +11,7 @@ import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
 import { MaverickPoolMath } from './maverick-math/maverick-pool-math';
 import _ from 'lodash';
-``;
+
 export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
@@ -46,9 +46,12 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
     public activeTick: number,
     public address: Address,
     public poolLensAddress: Address,
-    protected maverickV2Iface = new Interface(MaverickV2PoolABI), // TODO: add any additional params required for event subscriber
+    protected maverickV2Iface = new Interface(MaverickV2PoolABI),
   ) {
-    const name = `${parentName}-${tokenA.symbol}-${tokenB.symbol}-${feeAIn}-${feeBIn}-${tickSpacing}-${protocolFeeRatio}-${lookback}-${activeTick}`;
+    const name = `${parentName.toLowerCase()}-${tokenA.symbol}-${
+      tokenB.symbol
+    }-${address.toLowerCase()}`;
+
     super(parentName, name, dexHelper, logger);
 
     // TODO: make logDecoder decode logs that
@@ -143,7 +146,7 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
         ](this.address, i * 5000n, (i + 1n) * 5000n).call({}, blockNumber);
 
         poolLensState.binStateMapping.forEach((bin: any, i: number) => {
-          if (i == 0) return;
+          if (i === 0) return;
           const tick = poolLensState.tickStateMapping[i];
           poolState.bins[i.toString()] = {
             mergeBinBalance: BigInt(bin.mergeBinBalance),
@@ -235,7 +238,7 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
     from: Token,
     to: Token,
     side: boolean,
-  ): [bigint, number] {
+  ): [bigint, bigint] {
     try {
       const tempState = _.cloneDeep(this.state!);
 
@@ -244,18 +247,18 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
       const output = this.poolMath.estimateSwap(
         tempState,
         amount,
-        from.address.toLowerCase() == this.tokenA.address.toLowerCase(),
+        from.address.toLowerCase() === this.tokenA.address.toLowerCase(),
         side,
-        from.address.toLowerCase() == this.tokenA.address.toLowerCase()
-          ? tempState.activeTick + 20n
-          : tempState.activeTick - 20n,
+        from.address.toLowerCase() === this.tokenA.address.toLowerCase()
+          ? tempState.activeTick + 100n
+          : tempState.activeTick - 100n,
       );
 
-      if (output[0] == 0n && output[1] == 0n) {
+      if (output[0] === 0n && output[1] === 0n) {
         this.logger.trace(
           `Reached max swap iteration calculation for address=${this.address} amount=${amount}, from=${from.address}, to=${to.address}, side=${side}`,
         );
-        return [0n, 0];
+        return [0n, 0n];
       }
 
       const postActiveTick = tempState.activeTick;
@@ -264,13 +267,13 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
       return [
         side ? output[0] : output[1],
         // Tick calculation must be started from 1 to account at least one tick
-        tickDiff + 1,
+        BigInt(tickDiff + 1),
       ];
     } catch (e) {
       this.logger.debug(
         `Failed to calculate swap for address=${this.address} amount=${amount}, from=${from.address}, to=${to.address}, side=${side} math: ${e}`,
       );
-      return [0n, 0];
+      return [0n, 0n];
     }
   }
 }

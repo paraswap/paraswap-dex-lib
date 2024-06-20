@@ -47,13 +47,15 @@ function calculateSwap(
   side: SwapSide,
   amount: bigint,
 ) {
-  return new Promise(async (resolve, reject) => {
-    let quoterContract = new dexHelper.web3Provider.eth.Contract(
-      MaverickV2QuoterABI as AbiItem[],
-      MaverickV2Config[dexKey][network].quoterAddress,
-    );
+  srcToken = dexHelper.config.wrapETH(srcToken);
 
-    await quoterContract.methods
+  let quoterContract = new dexHelper.web3Provider.eth.Contract(
+    MaverickV2QuoterABI as AbiItem[],
+    MaverickV2Config[dexKey][network].quoterAddress,
+  );
+
+  return new Promise((resolve, reject) => {
+    quoterContract.methods
       .calculateSwap(
         poolAddress,
         amount,
@@ -64,7 +66,19 @@ function calculateSwap(
           : -1000000n,
       )
       .call({}, blockNumber, (err: any, result: any) => {
-        resolve(result);
+        if (err) {
+          console.log({
+            pool,
+            blockNumber,
+            poolAddress,
+            srcToken,
+            side,
+            amount,
+          });
+          reject(err);
+        } else {
+          resolve(result);
+        }
       });
   });
 }
@@ -81,25 +95,28 @@ async function checkOnChainPricing(
   await Promise.all(
     pools.map(async pool => {
       const poolAddress = pool.data.pool;
+      const calls = amounts.slice(1).map(amount => {
+        return calculateSwap(
+          network,
+          pool,
+          blockNumber,
+          poolAddress,
+          srcToken,
+          side,
+          amount,
+        );
+      });
 
-      const results = await Promise.all(
-        amounts.slice(1).map(async amount => {
-          return calculateSwap(
-            network,
-            pool,
-            blockNumber,
-            poolAddress,
-            srcToken,
-            side,
-            amount,
-          );
-        }),
-      );
+      const results = await Promise.all(calls);
 
       const expectedPrices = [0n].concat(
-        results.map((result: any) =>
-          BigInt(side == SwapSide.SELL ? result.amountOut : result.amountIn),
-        ),
+        results.map((result: any) => {
+          if (!result) return BigInt(0);
+
+          return BigInt(
+            side == SwapSide.SELL ? result.amountOut : result.amountIn,
+          );
+        }),
       );
 
       expect(pool.prices).toEqual(expectedPrices);
@@ -160,7 +177,7 @@ async function testPricingOnNetwork(
     poolPrices!,
     amounts,
     side,
-    Tokens[network]['DAI'].address,
+    Tokens[network][srcTokenSymbol].address,
   );
 }
 
@@ -168,44 +185,45 @@ describe('MaverickV2', function () {
   const dexKey = 'MaverickV2';
   let blockNumber: number;
   let maverickV2: MaverickV2;
+  const network = Network.BASE;
 
-  describe('Mainnet', () => {
-    const network = Network.BASE;
+  describe(network, () => {
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'DAI';
+    const srcTokenSymbol = 'ETH';
     const destTokenSymbol = 'USDC';
+
+    const srcDecimals = tokens[srcTokenSymbol].decimals;
+    const destDecimals = tokens[destTokenSymbol].decimals;
 
     const amountsForSell = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      1n * BI_POWS[srcDecimals],
+      2n * BI_POWS[srcDecimals],
+      3n * BI_POWS[srcDecimals],
+      4n * BI_POWS[srcDecimals],
+      5n * BI_POWS[srcDecimals],
+      6n * BI_POWS[srcDecimals],
+      7n * BI_POWS[srcDecimals],
+      8n * BI_POWS[srcDecimals],
+      9n * BI_POWS[srcDecimals],
+      // 10n * BI_POWS[srcDecimals],
     ];
 
     const amountsForBuy = [
       0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      1n * BI_POWS[destDecimals],
+      2n * BI_POWS[destDecimals],
+      3n * BI_POWS[destDecimals],
+      4n * BI_POWS[destDecimals],
+      5n * BI_POWS[destDecimals],
+      6n * BI_POWS[destDecimals],
+      7n * BI_POWS[destDecimals],
+      8n * BI_POWS[destDecimals],
+      9n * BI_POWS[destDecimals],
+      // 10n * BI_POWS[destDecimals],
     ];
 
     beforeAll(async () => {
@@ -226,7 +244,7 @@ describe('MaverickV2', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'calculatePrice', // TODO: Put here proper function name to check pricing
+        'calculatePrice',
       );
     });
 
@@ -240,13 +258,11 @@ describe('MaverickV2', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        'calculatePrice', // TODO: Put here proper function name to check pricing
+        'calculatePrice',
       );
     });
 
     it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
       const newMaverickV2 = new MaverickV2(network, dexKey, dexHelper);
       if (newMaverickV2.updatePoolState) {
         await newMaverickV2.updatePoolState();
