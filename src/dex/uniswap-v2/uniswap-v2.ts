@@ -938,7 +938,7 @@ export class UniswapV2
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<UniswapParam> {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (permit !== '0x') contractMethod += 'WithPermit';
@@ -1014,7 +1014,7 @@ export class UniswapV2
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (!UniswapV2.getDirectFunctionNameV6().includes(contractMethod!)) {
