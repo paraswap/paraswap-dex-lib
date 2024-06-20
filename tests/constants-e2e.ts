@@ -411,6 +411,54 @@ export const Tokens: {
       address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
       decimals: 18,
     },
+    instETH: {
+      address: '0x7FA768E035F956c41d6aeaa3Bd857e7E5141CAd5',
+      decimals: 18,
+    },
+    inrETH: {
+      address: '0x80d69e79258FE9D056c822461c4eb0B4ca8802E2',
+      decimals: 18,
+    },
+    inoETH: {
+      address: '0x9181f633e9b9f15a32d5e37094f4c93b333e0e92',
+      decimals: 18,
+    },
+    inosETH: {
+      address: '0xfD07fD5EBEa6F24888a397997E262179Bf494336',
+      decimals: 18,
+    },
+    inankrETH: {
+      address: '0xfa2629B9cF3998D52726994E0FcdB750224D8B9D',
+      decimals: 18,
+    },
+    incbETH: {
+      address: '0xbf19eead55a6b100667f04f8fbc5371e03e8ab2e',
+      decimals: 18,
+    },
+    inwbETH: {
+      address: '0xda9b11cd701e10c2ec1a284f80820edd128c5246',
+      decimals: 18,
+    },
+    inswETH: {
+      address: '0xc3ade5ace1bbb033ccae8177c12ecbfa16bd6a9d',
+      decimals: 18,
+    },
+    inETHx: {
+      address: '0x57a5a0567187ff4a8dcc1a9bba86155e355878f2',
+      decimals: 18,
+    },
+    insfrxETH: {
+      address: '0x668308d77be3533c909a692302cb4d135bf8041c',
+      decimals: 18,
+    },
+    inmETH: {
+      address: '0xeCf3672A6d2147E2A77f07069Fb48d8Cf6F6Fbf9',
+      decimals: 18,
+    },
+    inlsETH: {
+      address: '0x94b888e11a9e960a9c3b3528eb6ac807b27ca62e',
+      decimals: 18,
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
