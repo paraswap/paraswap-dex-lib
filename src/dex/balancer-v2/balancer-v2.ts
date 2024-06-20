@@ -1349,7 +1349,7 @@ export class BalancerV2
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<BalancerV2DirectParam> {
     if (
       contractMethod !== DirectMethods.directSell &&
@@ -1420,7 +1420,7 @@ export class BalancerV2
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
 
