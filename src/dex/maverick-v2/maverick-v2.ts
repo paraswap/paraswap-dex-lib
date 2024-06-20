@@ -22,6 +22,7 @@ import {
   MaverickV2Config,
   MAV_V2_BASE_GAS_COST,
   MAV_V2_TICK_GAS_COST,
+  MAVERICK_API_URL,
 } from './config';
 import { MaverickV2EventPool } from './maverick-v2-pool';
 import { SUBGRAPH_TIMEOUT } from '../../constants';
@@ -370,7 +371,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   private async _queryPoolsAPI(timeout = 30000) {
     try {
       const res = await this.dexHelper.httpRequest.get<PoolAPIResponse>(
-        `${this.config.apiURL}/api/v5/poolsNoBins/${this.network}`,
+        `${MAVERICK_API_URL}/api/v5/poolsNoBins/${this.network}`,
         timeout,
       );
       return res;

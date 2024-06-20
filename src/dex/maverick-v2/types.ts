@@ -122,7 +122,6 @@ export type MaverickV2Param = {
 export type DexParams = {
   quoterAddress: string;
   poolLensAddress: string;
-  apiURL: string;
 };
 
 export type PoolAPIResponse = {
