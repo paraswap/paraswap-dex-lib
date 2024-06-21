@@ -142,21 +142,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       maybeWethCallData,
     });
 
-    if (curExchangeParam.transferSrcTokenBeforeSwap) {
-      const transferCallData = this.buildTransferCallData(
-        this.erc20Interface.encodeFunctionData('transfer', [
-          curExchangeParam.transferSrcTokenBeforeSwap,
-          swap.swapExchanges[0].srcAmount,
-        ]),
-        isETHAddress(swap.srcToken)
-          ? this.getWETHAddress(curExchangeParam)
-          : swap.srcToken.toLowerCase(),
-      );
-
-      swapCallData = hexConcat([transferCallData, dexCallData]);
-    } else {
-      swapCallData = hexConcat([dexCallData]);
-    }
+    swapCallData = hexConcat([dexCallData]);
 
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
