@@ -115,8 +115,12 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    // TODO:
+    if (side === SwapSide.BUY) return [];
+
     const from = this.dexHelper.config.wrapETH(srcToken);
     const to = this.dexHelper.config.wrapETH(destToken);
+
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [];
     }
@@ -156,6 +160,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         return null;
       }
 
+      // TODO:
+      if (side === SwapSide.BUY) return null;
+
       const allPools = await this.getPools(from, to);
 
       const allowedPools = limitPools
@@ -164,9 +171,11 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
 
       if (!allowedPools.length) return null;
 
-      const unitAmount = getBigIntPow(
-        side === SwapSide.BUY ? to.decimals : from.decimals,
-      );
+      // const unitAmount = getBigIntPow(
+      //   side === SwapSide.BUY ? to.decimals : from.decimals,
+      // );
+
+      const unitAmount = getBigIntPow(from.decimals);
 
       const tasks = allowedPools.map(async (pool: MaverickV2EventPool) => {
         try {
@@ -176,7 +185,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
             return null;
           }
 
-          const [unit] = pool.swap(unitAmount, from, to, side === SwapSide.BUY);
+          // const [unit] = pool.swap(unitAmount, from, to, side === SwapSide.BUY);
+          const [unit] = pool.swap(unitAmount, from, to, false);
           let lastOutput = 1n;
 
           const dataList: [bigint, bigint][] = amounts.map(amount => {
@@ -184,7 +194,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
               return [0n, 0n];
             }
 
-            const output = pool.swap(amount, from, to, side === SwapSide.BUY);
+            // const output = pool.swap(amount, from, to, side === SwapSide.BUY);
+            const output = pool.swap(amount, from, to, false);
             lastOutput = output[0];
             return output;
           });
@@ -263,6 +274,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     _: Context,
     executorAddress: Address,
   ): DexExchangeParam {
+    // TODO:
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
     const { pool } = data;
 
     srcToken = this.dexHelper.config.wrapETH(srcToken);
@@ -273,7 +287,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       {
         amount: side === SwapSide.SELL ? srcAmount : destAmount,
         tokenAIn: data.tokenA.toLowerCase() === srcToken.toLowerCase(),
-        exactOutput: side === SwapSide.BUY,
+        // exactOutput: side === SwapSide.BUY,
+        exactOutput: false,
         tickLimit:
           data.tokenA.toLowerCase() === srcToken.toLowerCase()
             ? BigInt(data.activeTick) + 100n
