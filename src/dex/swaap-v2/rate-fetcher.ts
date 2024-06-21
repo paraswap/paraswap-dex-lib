@@ -126,14 +126,12 @@ export class RateFetcher {
       if (!pair) {
         return memo;
       }
-      const levels = resp.levels[pairName];
 
-      if (!levels.asks || !levels.bids) {
+      if (!pair.asks || !pair.bids) {
         return memo;
       }
 
       const pairSplit = pairName.split('/');
-
       const baseAddress = pairSplit[0];
       const quoteAddress = pairSplit[1];
       pair.base = normalizeTokenAddress(baseAddress);
