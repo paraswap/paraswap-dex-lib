@@ -11,6 +11,7 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { ContractMethodV6 } from '@paraswap/sdk';
 
 /*
   README
@@ -68,18 +69,12 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [
       SwapSide.SELL,
-      [
-        ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-      ],
+      [ContractMethod.simpleSwap, ContractMethod.swapExactAmountIn],
     ],
-    // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy]],
   ]);
 
   describe(`${network}`, () => {
