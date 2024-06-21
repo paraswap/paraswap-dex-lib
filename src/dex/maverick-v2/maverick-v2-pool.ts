@@ -119,12 +119,12 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['PoolSwap'] = this.handleSwapEvent.bind(this);
 
     this.poolMath = new MaverickPoolMath(
-      feeAIn,
-      feeBIn,
-      lookback,
-      tickSpacing,
-      protocolFeeRatio,
-      activeTick,
+      BigInt(feeAIn),
+      BigInt(feeBIn),
+      BigInt(lookback),
+      BigInt(tickSpacing),
+      BigInt(protocolFeeRatio),
+      BigInt(activeTick),
       BigInt(tokenA.decimals),
       BigInt(tokenB.decimals),
     );
@@ -302,7 +302,7 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
       BigInt(event.args.params.amount),
       event.args.params.tokenAIn,
       event.args.params.exactOutput,
-      event.args.params.tickLimit,
+      BigInt(event.args.params.tickLimit),
     );
     return state;
   }
