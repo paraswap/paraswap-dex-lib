@@ -66,7 +66,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     const pools = (await this._queryPoolsAPI(SUBGRAPH_TIMEOUT))?.pools;
 
     await Promise.all(
-      pools?.map(async (pool: any) => {
+      pools?.map(async pool => {
         const eventPool = new MaverickV2EventPool(
           this.dexKey,
           this.network,
@@ -332,9 +332,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   ): Promise<PoolLiquidity[]> {
     const _tokenAddress = this.dexHelper.config.wrapETH(tokenAddress);
 
-    const res: PoolAPIResponse | null = await this._queryPoolsAPI(
-      SUBGRAPH_TIMEOUT,
-    );
+    const res = await this._queryPoolsAPI(SUBGRAPH_TIMEOUT);
 
     if (!(res && res.pools)) {
       this.logger.error(
@@ -377,7 +375,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     return pools;
   }
 
-  private async _queryPoolsAPI(timeout = 30000) {
+  private async _queryPoolsAPI(
+    timeout = 30000,
+  ): Promise<PoolAPIResponse | null> {
     try {
       const res = await this.dexHelper.httpRequest.get<PoolAPIResponse>(
         `${MAVERICK_API_URL}/api/v5/poolsNoBins/${this.network}`,
