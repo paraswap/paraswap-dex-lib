@@ -1,4 +1,4 @@
-import { Interface } from '@ethersproject/abi';
+import { Interface, defaultAbiCoder } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Address, BlockHeader, Log, Logger, Token } from '../../types';
 import { catchParseLogError } from '../../utils';
@@ -11,6 +11,59 @@ import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
 import { MaverickPoolMath } from './maverick-math/maverick-pool-math';
 import _ from 'lodash';
+import { MultiResult } from '../../lib/multi-wrapper';
+import { BytesLike } from 'ethers';
+import { extractSuccessAndValue } from '../../lib/decoders';
+
+export const decodeMaverickFullState = (
+  result: MultiResult<BytesLike> | BytesLike,
+) => {
+  const [isSuccess, toDecode] = extractSuccessAndValue(result);
+
+  if (!isSuccess || toDecode === '0x') {
+    throw new Error('Could not extract value from struct TODO.');
+  }
+
+  const decoded = defaultAbiCoder.decode(
+    [
+      `
+      tuple(
+        tuple(
+          uint128 reserveA,
+          uint128 reserveB,
+          uint128 totalSupply,
+          uint32[4] binIdsByTick
+        )[] tickStateMapping,
+        tuple(
+          uint128 mergeBinBalance,
+          uint128 tickBalance,
+          uint128 totalSupply,
+          uint8 kind,
+          int32 tick,
+          uint32 mergeId
+        )[] binStateMapping,
+        tuple(
+          uint128[4] values
+        )[] binIdByTickKindMapping,
+        tuple(
+          uint128 reserveA,
+          uint128 reserveB,
+          int64 lastTwaD8,
+          int64 lastLogPriceD8,
+          uint40 lastTimestamp,
+          int32 activeTick,
+          bool isLocked,
+          uint32 binCounter,
+          uint8 protocolFeeRatioD3
+        ) state,
+        tuple(uint256 amountA, uint256 amountB) protocolFees
+      ) poolState
+    `,
+    ],
+    toDecode,
+  );
+  return decoded[0];
+};
 
 export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -47,6 +100,7 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
     public address: Address,
     public poolLensAddress: Address,
     protected maverickV2Iface = new Interface(MaverickV2PoolABI),
+    protected maverickV2LensIface = new Interface(MaverickV2PoolLensABI),
   ) {
     const name = `${parentName.toLowerCase()}-${tokenA.symbol}-${
       tokenB.symbol
@@ -140,14 +194,31 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
         ticks: {},
       };
 
-      for (let i = 0n; i < poolState.binCounter / 5000n + 1n; i++) {
-        const poolLensState = await this.poolLensContract.methods[
-          'getFullPoolState'
-        ](this.address, i * 5000n, (i + 1n) * 5000n).call({}, blockNumber);
+      const calls = [];
 
+      for (let i = 0n; i < poolState.binCounter / 5000n + 1n; i++) {
+        calls.push({
+          target: this.poolLensAddress,
+          callData: this.maverickV2LensIface.encodeFunctionData(
+            'getFullPoolState',
+            [this.address, i * 5000n, (i + 1n) * 5000n],
+          ),
+          decodeFunction: (data: any) => data.toString(),
+        });
+      }
+
+      const poolLensStates = await this.dexHelper.multiWrapper
+        .aggregate<string>(calls, blockNumber)
+        .then(data => {
+          return data.map(item => decodeMaverickFullState(item));
+        });
+
+      poolLensStates.forEach(poolLensState => {
         poolLensState.binStateMapping.forEach((bin: any, i: number) => {
           if (i === 0) return;
+
           const tick = poolLensState.tickStateMapping[i];
+
           poolState.bins[i.toString()] = {
             mergeBinBalance: BigInt(bin.mergeBinBalance),
             mergeId: BigInt(bin.mergeId),
@@ -156,12 +227,14 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
             tick: BigInt(bin.tick),
             tickBalance: BigInt(bin.tickBalance),
           };
+
           poolState.ticks[bin.tick.toString()] = {
             reserveA: BigInt(tick.reserveA),
             reserveB: BigInt(tick.reserveB),
             totalSupply: BigInt(tick.totalSupply),
             binIdsByTick: {},
           };
+
           tick.binIdsByTick.forEach((id: any, i: number) => {
             if (id != 0n) {
               poolState.ticks[bin.tick.toString()].binIdsByTick[i.toString()] =
@@ -169,7 +242,8 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
             }
           });
         });
-      }
+      });
+
       return poolState;
     } catch {
       return {
