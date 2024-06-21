@@ -76,8 +76,6 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
   } = {};
 
   poolContract: Contract;
-  poolLensContract: Contract;
-
   logDecoder: (log: Log) => any;
 
   addressesSubscribed: string[];
@@ -132,11 +130,6 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
     this.poolContract = new this.dexHelper.web3Provider.eth.Contract(
       MaverickV2PoolABI as AbiItem[],
       this.address,
-    );
-
-    this.poolLensContract = new this.dexHelper.web3Provider.eth.Contract(
-      MaverickV2PoolLensABI as AbiItem[],
-      this.poolLensAddress,
     );
   }
 
