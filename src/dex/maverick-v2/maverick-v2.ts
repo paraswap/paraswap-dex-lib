@@ -136,7 +136,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     return Object.values(this.pools).filter((pool: MaverickV2EventPool) => {
       return (
         (pool.tokenA.address.toLowerCase() === srcToken.address.toLowerCase() ||
-          pool.tokenA.address.toLowerCase() ==
+          pool.tokenA.address.toLowerCase() ===
             destToken.address.toLowerCase()) &&
         (pool.tokenB.address.toLowerCase() === srcToken.address.toLowerCase() ||
           pool.tokenB.address.toLowerCase() === destToken.address.toLowerCase())

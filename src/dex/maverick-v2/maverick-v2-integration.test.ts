@@ -59,9 +59,9 @@ function calculateSwap(
       .calculateSwap(
         poolAddress,
         amount,
-        pool.data.tokenA.toLowerCase() == srcToken.toLowerCase(),
-        side == SwapSide.BUY,
-        pool.data.tokenA.toLowerCase() == srcToken.toLowerCase()
+        pool.data.tokenA.toLowerCase() === srcToken.toLowerCase(),
+        side === SwapSide.BUY,
+        pool.data.tokenA.toLowerCase() === srcToken.toLowerCase()
           ? 1000000n
           : -1000000n,
       )
@@ -114,7 +114,7 @@ async function checkOnChainPricing(
           if (!result) return BigInt(0);
 
           return BigInt(
-            side == SwapSide.SELL ? result.amountOut : result.amountIn,
+            side === SwapSide.SELL ? result.amountOut : result.amountIn,
           );
         }),
       );
