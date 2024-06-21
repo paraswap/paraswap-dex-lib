@@ -1023,7 +1023,7 @@ export class UniswapV3
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!UniswapV3.getDirectFunctionNameV6().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);

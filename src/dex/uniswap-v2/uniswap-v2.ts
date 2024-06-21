@@ -1014,7 +1014,7 @@ export class UniswapV2
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (!UniswapV2.getDirectFunctionNameV6().includes(contractMethod!)) {
