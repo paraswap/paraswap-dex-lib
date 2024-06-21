@@ -377,12 +377,6 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     return pools;
   }
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
-  }
-
   private async _queryPoolsAPI(timeout = 30000) {
     try {
       const res = await this.dexHelper.httpRequest.get<PoolAPIResponse>(
