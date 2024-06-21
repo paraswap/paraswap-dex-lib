@@ -4,7 +4,8 @@ import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState } from './types';
+import { PoolState, PoolConfig } from './types';
+import { getOnChainState } from './aave-gsm';
 
 export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -24,18 +25,17 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
+    public poolConfig: PoolConfig,
     protected aaveGsmIface = new Interface(
       '' /* TODO: Import and put here AaveGsm ABI */,
     ), // TODO: add any additional params required for event subscriber
   ) {
     // TODO: Add pool name
-    super(parentName, 'POOL_NAME', dexHelper, logger);
+    super(parentName, poolConfig.identifier, dexHelper, logger);
 
     // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.aaveGsmIface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
+    this.addressesSubscribed = [poolConfig.gsmAddress];
 
     // Add handlers
     this.handlers['myEvent'] = this.handleMyEvent.bind(this);
@@ -76,8 +76,13 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // TODO: complete me!
-    return {};
+    return (
+      await getOnChainState(
+        this.dexHelper.multiContract,
+        [this.poolConfig],
+        blockNumber,
+      )
+    )[0];
   }
 
   // Its just a dummy example

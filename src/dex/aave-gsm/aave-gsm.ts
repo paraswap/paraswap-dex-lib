@@ -9,21 +9,121 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
+import { Contract } from 'web3-eth-contract';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AaveGsmData } from './types';
+import { AaveGsmData, PoolState, PoolConfig } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveGsmConfig, Adapters } from './config';
 import { AaveGsmEventPool } from './aave-gsm-pool';
+import { Interface } from '@ethersproject/abi';
+import GsmABI from '../../abi/aave-gsm/gsm.json';
+
+const bigIntify = (b: any) => BigInt(b.toString());
+const gsmInterface = new Interface(GsmABI);
+
+export async function getOnChainState(
+  multiContract: Contract,
+  poolConfigs: PoolConfig[],
+  blockNumber: number | 'latest',
+): Promise<PoolState[]> {
+  const callData = poolConfigs
+    .map(c => [
+      {
+        target: c.gsmAddress,
+        callData: gsmInterface.encodeFunctionData('canSwap', []),
+      },
+      {
+        target: c.gsmAddress,
+        callData: gsmInterface.encodeFunctionData('getIsFrozen', []),
+      },
+      {
+        target: c.gsmAddress,
+        callData: gsmInterface.encodeFunctionData('getIsSeized', []),
+      },
+      {
+        target: c.gsmAddress,
+        callData: gsmInterface.encodeFunctionData('getAccruedFees', []),
+      },
+      {
+        target: c.gsmAddress,
+        callData: gsmInterface.encodeFunctionData('getAvailableLiquidity', []),
+      },
+      {
+        target: c.gsmAddress,
+        callData: gsmInterface.encodeFunctionData(
+          'getAvailableUnderlyingExposure',
+          [],
+        ),
+      },
+      {
+        target: c.gsmAddress,
+        callData: gsmInterface.encodeFunctionData('getExposureCap', []),
+      },
+    ])
+    .flat();
+
+  const res = await multiContract.methods
+    .aggregate(callData)
+    .call({}, blockNumber);
+
+  let i = 0;
+  return poolConfigs.map(c => {
+    const canSwap = gsmInterface.decodeFunctionResult(
+      'canSwap',
+      res.returnData[i++],
+    )[0];
+    const isFrozen = gsmInterface.decodeFunctionResult(
+      'getIsFrozen',
+      res.returnData[i++],
+    )[0];
+    const isSeized = gsmInterface.decodeFunctionResult(
+      'getIsSeized',
+      res.returnData[i++],
+    )[0];
+    const accruedFees = bigIntify(
+      gsmInterface.decodeFunctionResult(
+        'getAccruedFees',
+        res.returnData[i++],
+      )[0],
+    );
+    const availableUnderlyingLiquidity = bigIntify(
+      gsmInterface.decodeFunctionResult(
+        'getAvailableLiquidity',
+        res.returnData[i++],
+      )[0],
+    );
+    const availableUnderlyingExposure = bigIntify(
+      gsmInterface.decodeFunctionResult(
+        'getAvailableUnderlyingExposure',
+        res.returnData[i++],
+      )[0],
+    );
+    const exposureCapUnderlying = bigIntify(
+      gsmInterface.decodeFunctionResult(
+        'getExposureCap',
+        res.returnData[i++],
+      )[0],
+    );
+    return {
+      canSwap,
+      isFrozen,
+      isSeized,
+      accruedFees,
+      availableUnderlyingLiquidity,
+      availableUnderlyingExposure,
+      exposureCapUnderlying,
+    };
+  });
+}
 
 export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
-  protected eventPools: AaveGsmEventPool;
+  protected eventPools: { [underlyingAddress: string]: AaveGsmEventPool };
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
@@ -38,14 +138,15 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected poolConfigs: PoolConfig[] = AaveGsmConfig[dexKey][network].pools,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new AaveGsmEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
+    this.eventPools = {};
+    poolConfigs.forEach(
+      p =>
+        (this.eventPools[p.underlyingAddress.toLowerCase()] =
+          new AaveGsmEventPool(dexKey, network, dexHelper, this.logger, p)),
     );
   }
 
@@ -55,6 +156,19 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   // implement this function
   async initializePricing(blockNumber: number) {
     // TODO: complete me!
+    const poolStates = await getOnChainState(
+      this.dexHelper.multiContract,
+      this.poolConfigs,
+      blockNumber,
+    );
+    await Promise.all(
+      this.poolConfigs.map(async (p, i) => {
+        const eventPool = this.eventPools[p.gem.address.toLowerCase()];
+        await eventPool.initialize(blockNumber, {
+          state: poolStates[i],
+        });
+      }),
+    );
   }
 
   // Returns the list of contract adapters (name and index)

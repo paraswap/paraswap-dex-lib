@@ -1,10 +1,26 @@
-import { Address } from '../../types';
+import { Address, Token } from '../../types';
 
 export type PoolState = {
   // TODO: poolState is the state of event
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // pool prices. Complete me!
+  canSwap: boolean;
+  isFrozen: boolean;
+  isSeized: boolean;
+  accruedFees: bigint;
+  availableUnderlyingLiquidity: bigint;
+  availableUnderlyingExposure: bigint;
+  exposureCapUnderlying: bigint;
+};
+
+// TODO: Define appropriate pool config types
+export type PoolConfig = {
+  gem: Token;
+  gemJoinAddress: Address;
+  underlyingAddress: Address;
+  gsmAddress: Address;
+  identifier: string; // bytes32 of pool identifier (Eg. bytes32("PSM-USDC-A"))
 };
 
 export type AaveGsmData = {
@@ -15,8 +31,8 @@ export type AaveGsmData = {
   exchange: Address;
 };
 
+// TODO: Make these types match what we need for Aave GSM
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  underlying: Token;
+  pools: PoolConfig[];
 };
