@@ -960,7 +960,7 @@ export class UniswapV3
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<UniswapV3Param> {
     if (!UniswapV3.getDirectFunctionName().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);

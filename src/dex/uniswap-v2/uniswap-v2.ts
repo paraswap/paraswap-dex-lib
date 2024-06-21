@@ -938,7 +938,7 @@ export class UniswapV2
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<UniswapParam> {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (permit !== '0x') contractMethod += 'WithPermit';
