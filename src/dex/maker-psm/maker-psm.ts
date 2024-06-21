@@ -629,9 +629,8 @@ export class MakerPsm
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
-    const beneficiaryParam = BigNumber.from(
-      '0x96a18a51d8e8320cba1e4ae45c69fbec0146a14f',
-    );
+    const beneficiaryParam = BigNumber.from(beneficiary);
+
     const approveParam = !data.isApproved
       ? BigNumber.from(1).shl(255)
       : BigNumber.from(0);
