@@ -6,14 +6,14 @@ const coder = new AbiCoder();
 
 export async function getOnChainRatio(
   multiContract: Contract,
-  poolAddress: string,
+  vaultAddress: string,
   poolInterface: Interface,
   blockNumber: number | 'latest',
 ): Promise<PoolState> {
   const data: { returnData: any[] } = await multiContract.methods
     .aggregate([
       {
-        target: poolAddress,
+        target: vaultAddress,
         callData: poolInterface.encodeFunctionData('ratio', []),
       },
     ])

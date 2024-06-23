@@ -7,7 +7,7 @@ import { Holders, Tokens } from '../../../tests/constants-e2e';
 import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
-import { InceptionConfig } from './config';
+import { InceptionConfig, InceptionNativeConfig } from './config';
 import { DexParams } from './types';
 
 function testForNetwork(
@@ -26,8 +26,7 @@ function testForNetwork(
   const holders = Holders[network];
 
   const sideToContractMethods = new Map([
-    // TBD: SwapSide,Sell
-    [SwapSide.BUY, ['deposit' as ContractMethod]],
+    [SwapSide.SELL, ['deposit' as ContractMethod]],
   ]);
 
   describe(`${inceptionSlug} on ${network}`, () => {
@@ -39,8 +38,7 @@ function testForNetwork(
               await testE2E(
                 tokens[baseSlug],
                 tokens[inceptionSlug],
-                // holders[baseSlug],
-                '0x43594da5d6A03b2137a04DF5685805C676dEf7cB', // holders[baseSlug] holder unfortunately has withdrawed the number of tokens I needed
+                holders[baseSlug],
                 '1000000000',
                 side,
                 inceptionSlug,
@@ -63,6 +61,12 @@ describe('Inception E2E', () => {
     const network = Network.MAINNET;
 
     Object.entries(InceptionConfig).forEach(
+      ([inceptionSymbol, chainConfig]) => {
+        testForNetwork(network, dexKey, inceptionSymbol, chainConfig[network]);
+      },
+    );
+
+    Object.entries(InceptionNativeConfig).forEach(
       ([inceptionSymbol, chainConfig]) => {
         testForNetwork(network, dexKey, inceptionSymbol, chainConfig[network]);
       },

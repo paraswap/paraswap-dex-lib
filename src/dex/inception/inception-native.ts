@@ -11,7 +11,8 @@ import {
   PoolPrices,
   Token,
 } from '../../types';
-import INCEPTION_ABI from '../../abi/inception/inception-vault.json';
+import INETH_ABI from '../../abi/inception/inception-ineth.json';
+import INETH_VAULT_ABI from '../../abi/inception/inception-ineth-pool.json';
 import { Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
@@ -19,22 +20,26 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { InceptionData } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { Adapters, InceptionConfig } from './config';
+import { Adapters, InceptionNativeConfig } from './config';
 import { InceptionPool } from './inception-pool';
 import { ethers } from 'ethers';
 import { BI_POWS } from '../../bigint-constants';
 
-export const depositETHFunction = 'deposit';
+export const depositETHFunction = 'stake()';
 
-export class Inception extends SimpleExchange implements IDex<InceptionData> {
+export class InceptionNative
+  extends SimpleExchange
+  implements IDex<InceptionData>
+{
   protected inceptionPool: InceptionPool;
   protected vaultInterface: Interface;
+  protected tokenInterface: Interface;
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(InceptionConfig);
+    getDexKeysWithNetwork(InceptionNativeConfig);
 
   logger: Logger;
 
@@ -42,19 +47,20 @@ export class Inception extends SimpleExchange implements IDex<InceptionData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected config = InceptionConfig[dexKey][network],
+    protected config = InceptionNativeConfig[dexKey][network],
     protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.vaultInterface = new Interface(INCEPTION_ABI as JsonFragment[]);
+    this.vaultInterface = new Interface(INETH_VAULT_ABI as JsonFragment[]);
+    this.tokenInterface = new Interface(INETH_ABI as JsonFragment[]);
     this.inceptionPool = new InceptionPool(
       this.dexKey,
       network,
       dexHelper,
       this.logger,
-      this.config.vault,
-      this.vaultInterface,
+      this.config.token!,
+      this.tokenInterface,
     );
   }
 
@@ -63,8 +69,8 @@ export class Inception extends SimpleExchange implements IDex<InceptionData> {
       await this.dexHelper.multiContract.methods
         .aggregate([
           {
-            target: this.config.vault,
-            callData: this.vaultInterface.encodeFunctionData('ratio', []),
+            target: this.config.token,
+            callData: this.tokenInterface.encodeFunctionData('ratio', []),
           },
         ])
         .call({}, blockNumber);
@@ -91,7 +97,7 @@ export class Inception extends SimpleExchange implements IDex<InceptionData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    return [`${srcToken.address}_${destToken.address}`.toLowerCase()];
+    return [`ETH_${destToken.address}`.toLowerCase()];
   }
 
   async getPricesVolume(
@@ -120,8 +126,7 @@ export class Inception extends SimpleExchange implements IDex<InceptionData> {
           ratio: unitOut,
         },
         exchange: this.dexKey,
-        poolIdentifier:
-          `${srcToken.address}_${destToken.address}`.toLowerCase(),
+        poolIdentifier: `ETH_${destToken.address}`.toLowerCase(),
         gasCost: 120_000,
         poolAddresses: [this.config.vault],
       },
@@ -158,12 +163,12 @@ export class Inception extends SimpleExchange implements IDex<InceptionData> {
   ): DexExchangeParam {
     const swapData = this.vaultInterface.encodeFunctionData(
       depositETHFunction,
-      [srcAmount, recipient],
+      [],
     );
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
+      dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.config.vault,
       swappedAmountNotPresentInExchangeData: true,

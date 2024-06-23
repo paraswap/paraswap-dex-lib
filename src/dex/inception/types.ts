@@ -8,5 +8,6 @@ export type InceptionData = {
 
 export type DexParams = {
   vault: string;
+  token?: string;
   baseTokenSlug: string;
 };

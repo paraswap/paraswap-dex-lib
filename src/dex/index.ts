@@ -84,6 +84,7 @@ import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { Inception } from './inception/inception';
+import { InceptionNative } from './inception/inception-native';
 
 const LegacyDexes = [
   CurveV2,
@@ -164,6 +165,7 @@ const Dexes = [
   PharaohV1,
   Spark,
   Inception,
+  InceptionNative,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

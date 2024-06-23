@@ -1,5 +1,3 @@
-import VaultABI from '../../abi/inception/inception-vault.json';
-
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
@@ -12,20 +10,17 @@ import { BI_POWS } from '../../bigint-constants';
 export class InceptionPool extends StatefulEventSubscriber<PoolState> {
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: string[];
-
   constructor(
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected config: DexParams,
-    protected inceptionIface = new Interface(VaultABI),
+    protected vault: string,
+    protected inceptionIface: Interface,
   ) {
     super(parentName, 'inception_pool', dexHelper, logger);
 
     this.logDecoder = (log: Log) => this.inceptionIface.parseLog(log);
-    this.addressesSubscribed = [this.config.vault];
   }
 
   protected processLog(
@@ -38,7 +33,7 @@ export class InceptionPool extends StatefulEventSubscriber<PoolState> {
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
     const state = await getOnChainRatio(
       this.dexHelper.multiContract,
-      this.config.vault,
+      this.vault,
       this.inceptionIface,
       blockNumber,
     );

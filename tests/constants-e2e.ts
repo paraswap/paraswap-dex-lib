@@ -459,6 +459,10 @@ export const Tokens: {
       address: '0x94b888e11a9e960a9c3b3528eb6ac807b27ca62e',
       decimals: 18,
     },
+    inETH: {
+      address: '0xf073bAC22DAb7FaF4a3Dd6c6189a70D54110525C',
+      decimals: 18,
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
@@ -1351,7 +1355,7 @@ export const Holders: {
     aEthUSDC: '0x42EFD1E0DB4ADa762cc5092ECBD052dE7c6e72E2',
     MAV: '0x92582aa69BB6117903a01eDdfe6EFfDDe564A69f',
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
-    STETH: '0x50b42514389F25E1f471C8F03f6f5954df0204b0',
+    STETH: '0x43594da5d6A03b2137a04DF5685805C676dEf7cB',
     SUSHI: '0x8a108e4761386c94b8d2f98A5fFe13E472cFE76a',
     wstETH: '0x5fEC2f34D80ED82370F733043B6A536d7e9D7f8d',
     WETH: '0x2fEb1512183545f48f6b9C5b4EbfCaF49CfCa6F3',
