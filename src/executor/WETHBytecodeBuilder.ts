@@ -15,6 +15,7 @@ const SUPPORTED_NETWORKS = [
   Network.POLYGON,
   Network.OPTIMISM,
   Network.ZKEVM,
+  Network.X_LAYER,
 ];
 const SUPPORTED_EXCHANGES = Object.keys(WethConfig);
 

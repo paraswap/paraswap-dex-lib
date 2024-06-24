@@ -1241,6 +1241,10 @@ export const Tokens: {
       address: '0x1e4a5963abfd975d8c9021ce480b42188849d41d',
       decimals: 6,
     },
+    WOKB: {
+      address: '0xe538905cf8410324e03a5a23c1c177a474d59b2b',
+      decimals: 18,
+    },
   },
   [Network.BASE]: {
     PRIME: {

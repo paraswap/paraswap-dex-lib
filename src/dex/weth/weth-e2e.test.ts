@@ -873,4 +873,72 @@ describe('Weth E2E', () => {
       });
     });
   });
+
+  describe('Wokb XLayer', () => {
+    const dexKey = 'Wokb';
+    const network = Network.X_LAYER;
+
+    const nativeTokenSymbol = 'OKB';
+    const wrappedTokenSymbol = 'WOKB';
+
+    const nativeAmount = '1000000000000000000';
+    const wrappedAmount = '1000000000000000000';
+
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const nativeToken = tokens[nativeTokenSymbol];
+    const wrappedToken = tokens[wrappedTokenSymbol];
+
+    const nativeHolder = holders[nativeTokenSymbol];
+    const wrappedHolder = holders[wrappedTokenSymbol];
+
+    describe('swapExactAmountIn SELL', () => {
+      const contractMethod = ContractMethod.swapExactAmountIn;
+      const side = SwapSide.SELL;
+
+      it('native -> wrapped', async () => {
+        await testE2E(
+          nativeToken,
+          wrappedToken,
+          nativeHolder,
+          nativeAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+      });
+      it('wrapped -> native', async () => {
+        await testE2E(
+          wrappedToken,
+          nativeToken,
+          wrappedHolder,
+          wrappedAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+      });
+    });
+  });
 });
