@@ -202,10 +202,11 @@ export class AaveV3Stata
 
     return [
       {
-        prices: amounts.map(amount =>
-          src === TokenType.STATA_TOKEN
-            ? (amount * RAY) / this.state[stataAddressLower].rate
-            : (amount * this.state[stataAddressLower].rate) / RAY,
+        prices: amounts.map(
+          amount =>
+            side === SwapSide.BUY
+              ? (amount * this.state[stataAddressLower].rate) / RAY // rounding up (convert to assets)
+              : (amount * RAY) / this.state[stataAddressLower].rate, // rounding down (convert to shares)
         ),
         unit: getBigIntPow(
           (side === SwapSide.SELL ? destToken : srcToken).decimals,
@@ -215,7 +216,7 @@ export class AaveV3Stata
         data: {
           srcType: src,
           destType: dest,
-          exchange: destToken.address,
+          exchange: stata.address,
         },
         poolAddresses: [stataAddressLower],
       },
