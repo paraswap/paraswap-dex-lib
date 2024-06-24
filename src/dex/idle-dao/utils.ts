@@ -104,7 +104,6 @@ export const fetchTokenList_api = async (
 ): Promise<IdleToken[]> => {
   // const AUTH_TOKEN_DECODED = atob(idleDaoAuthToken!);
   const data = await getDataWithAuth(endpoints[network], token);
-  // console.log('api_response_data', data);
 
   // Fetch tokenslist from static file
   if (!data) {

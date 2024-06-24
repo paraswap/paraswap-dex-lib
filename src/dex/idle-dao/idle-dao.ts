@@ -349,12 +349,13 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     const idleTokens: IdleToken[] = getPoolsByTokenAddress(tokenAddress);
 
     return idleTokens
-      .map((idleToken: IdleToken, i) => ({
-        // TODO: Improve
-        // liquidityUSD: 0,
-        liquidityUSD: 1e18,
+      .map((idleToken: IdleToken) => ({
+        // TODO: Re-check?
+        // liquidity is infinite, tokens are minted when swapping for idle tokens
+        liquidityUSD: 1e12,
         exchange: this.dexKey,
-        address: idleToken.idleAddress,
+        // address: idleToken.idleAddress,
+        address: idleToken.cdoAddress,
         connectorTokens: [getTokenFromIdleToken(idleToken)],
       }))
       .slice(0, limit);
