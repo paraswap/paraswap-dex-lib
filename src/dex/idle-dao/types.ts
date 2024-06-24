@@ -1,14 +1,7 @@
 import { Address } from '@paraswap/core';
-import BigNumber from 'bignumber.js';
-
-export type PoolState = {
-  tokenPrice: BigInt;
-};
-
-export type PoolsState = Record<string, PoolState>;
+import { Contract } from 'web3-eth-contract';
 
 export type DexParams = {
-  fromBlock: number;
   lendingGasCost: number;
   factoryAddress: Address;
 };
@@ -17,6 +10,7 @@ export type IdleToken = {
   idleSymbol: string;
   idleAddress: string;
   cdoAddress: string;
+  cdoContract?: Contract; // used to get virtualPrice
   tokenType: 'AA' | 'BB';
   blockNumber: number;
   address: string;
@@ -30,7 +24,7 @@ export type TrancheToken = {
 };
 
 export type IdleDaoData = {
-  idleToken: IdleToken;
+  idleToken: Pick<IdleToken, 'cdoAddress' | 'tokenType'>;
   fromIdleToken: boolean;
 };
 

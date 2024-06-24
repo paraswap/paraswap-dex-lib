@@ -37,12 +37,7 @@ async function testForIntegration(
 
       await idleDao.initializePricing(blocknumber);
 
-      const pools = await idleDao.getPoolIdentifiers(
-        TokenA,
-        TokenB,
-        SwapSide.SELL,
-        blocknumber,
-      );
+      const pools = await idleDao.getPoolIdentifiers(TokenA, TokenB);
 
       expect(pools.length).toBeGreaterThan(0);
 
@@ -66,12 +61,7 @@ async function testForIntegration(
 
       await idleDao.initializePricing(blocknumber);
 
-      const pools = await idleDao.getPoolIdentifiers(
-        TokenA,
-        TokenB,
-        SwapSide.BUY,
-        blocknumber,
-      );
+      const pools = await idleDao.getPoolIdentifiers(TokenA, TokenB);
 
       expect(pools.length).toBeGreaterThan(0);
 
@@ -102,7 +92,7 @@ async function testForIntegration(
   });
 }
 
-describe('IdleDao E2E', () => {
+describe('IdleDao Integration tests', () => {
   const dexKey = 'IdleDao';
 
   describe('Mainnet', () => {

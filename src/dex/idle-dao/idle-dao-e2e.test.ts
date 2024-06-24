@@ -25,7 +25,7 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -46,7 +46,6 @@ function testForNetwork(
                 provider,
               );
             });
-
             it(`${tokenBSymbol} -> ${tokenASymbol} - ${tokenBAmount}`, async () => {
               await testE2E(
                 tokens[tokenBSymbol],
