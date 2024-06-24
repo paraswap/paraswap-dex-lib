@@ -91,15 +91,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
           pool.id,
           this.config.poolLensAddress,
         );
-        const onChainState = await eventPool.generateState(blockNumber);
-        if (blockNumber) {
-          eventPool.setState(onChainState, blockNumber);
-          this.dexHelper.blockManager.subscribeToLogs(
-            eventPool,
-            eventPool.addressesSubscribed,
-            blockNumber,
-          );
-        }
+
+        await eventPool.initialize(blockNumber);
         this.pools[eventPool.address] = eventPool;
       }) || [],
     );
