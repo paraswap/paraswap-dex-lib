@@ -59,14 +59,10 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   }
 
   async initializePricing(blockNumber: number) {
-    await this.setupEventPools(blockNumber);
-  }
-
-  async setupEventPools(blockNumber: number) {
-    const pools = (await this._queryPoolsAPI(SUBGRAPH_TIMEOUT))?.pools;
+    const pools = await this._queryPoolsAPI(SUBGRAPH_TIMEOUT);
 
     await Promise.all(
-      pools?.map(async pool => {
+      pools.map(async pool => {
         const eventPool = new MaverickV2EventPool(
           this.dexKey,
           this.network,
@@ -94,7 +90,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
 
         await eventPool.initialize(blockNumber);
         this.pools[eventPool.address] = eventPool;
-      }) || [],
+      }),
     );
   }
 
@@ -325,16 +321,16 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   ): Promise<PoolLiquidity[]> {
     const _tokenAddress = this.dexHelper.config.wrapETH(tokenAddress);
 
-    const res = await this._queryPoolsAPI(SUBGRAPH_TIMEOUT);
+    const pools = await this._queryPoolsAPI(SUBGRAPH_TIMEOUT);
 
-    if (!(res && res.pools)) {
+    if (!pools.length) {
       this.logger.error(
         `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
       );
       return [];
     }
 
-    const filteredPools = _.filter(res.pools, pool => {
+    const filteredPools = _.filter(pools, pool => {
       return (
         pool.tokenA.address.toLowerCase() === _tokenAddress ||
         pool.tokenB.address.toLowerCase() === _tokenAddress
@@ -360,26 +356,25 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       };
     });
 
-    const pools = _.slice(
+    return _.slice(
       _.sortBy(labeledPools, [pool => -1 * pool.liquidityUSD]),
       0,
       limit,
     );
-    return pools;
   }
 
   private async _queryPoolsAPI(
     timeout = 30000,
-  ): Promise<PoolAPIResponse | null> {
+  ): Promise<PoolAPIResponse['pools'] | []> {
     try {
       const res = await this.dexHelper.httpRequest.get<PoolAPIResponse>(
         `${MAVERICK_API_URL}/api/v5/poolsNoBins/${this.network}`,
         timeout,
       );
-      return res;
+      return res.pools || [];
     } catch (e) {
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
-      return null;
+      return [];
     }
   }
 }

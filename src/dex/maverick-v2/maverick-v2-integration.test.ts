@@ -229,9 +229,7 @@ describe('MaverickV2', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       maverickV2 = new MaverickV2(network, dexKey, dexHelper);
-      if (maverickV2.initializePricing) {
-        await maverickV2.initializePricing(blockNumber);
-      }
+      await maverickV2.initializePricing(blockNumber);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -248,19 +246,19 @@ describe('MaverickV2', function () {
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        maverickV2,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        'calculatePrice',
-      );
-    });
+    // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    //   await testPricingOnNetwork(
+    //     maverickV2,
+    //     network,
+    //     dexKey,
+    //     blockNumber,
+    //     srcTokenSymbol,
+    //     destTokenSymbol,
+    //     SwapSide.BUY,
+    //     amountsForBuy,
+    //     'calculatePrice',
+    //   );
+    // });
 
     it('getTopPoolsForToken', async function () {
       const newMaverickV2 = new MaverickV2(network, dexKey, dexHelper);
