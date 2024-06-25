@@ -280,6 +280,7 @@ export class AngleTransmuter
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos: undefined,
     };
   }
 
