@@ -92,7 +92,7 @@ export type MaverickV2Data = {
   pool: Address;
   tokenA: Address;
   tokenB: Address;
-  activeTick: bigint;
+  activeTick: string;
 };
 
 export interface SubgraphPoolBase {

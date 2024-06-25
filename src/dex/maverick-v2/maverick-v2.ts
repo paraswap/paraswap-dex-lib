@@ -201,7 +201,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
               pool: pool.address,
               tokenA: pool.tokenA.address,
               tokenB: pool.tokenB.address,
-              activeTick: state.activeTick,
+              activeTick: state.activeTick.toString(),
             },
             exchange: this.dexKey,
             poolIdentifier: pool.name,
