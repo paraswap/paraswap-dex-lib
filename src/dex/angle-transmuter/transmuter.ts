@@ -183,7 +183,6 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
 
     this.collaterals.forEach(
       (collat: Address, i: number) =>
-        // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
         (transmuterState.collaterals[collat] = {
           fees: {
             xFeeMint: (
