@@ -386,6 +386,7 @@ export class AaveV2
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: swapCallee,
+      returnAmountPos: undefined,
     };
   }
 

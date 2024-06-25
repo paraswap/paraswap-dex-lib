@@ -257,6 +257,7 @@ export class ZeroX
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.getExchange(data),
+      returnAmountPos: undefined,
     };
   }
 
@@ -274,7 +275,7 @@ export class ZeroX
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<ZeroXParam> {
     const usePermit = permit !== '0x';
     const encoder = (...params: ZeroXParam) => {

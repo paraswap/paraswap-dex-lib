@@ -31,6 +31,7 @@ import { SynthetixState } from './synthetix-state';
 // There are so many ABIs, where I need only one or two functions
 // So, I decided to unite them into one combined interface
 import CombinedSynthetixABI from '../../abi/synthetix/CombinedSynthetix.abi.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -357,6 +358,16 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.combinedIface,
+              this.network === Network.OPTIMISM
+                ? 'exchange'
+                : 'exchangeAtomically',
+              'amountReceived',
+            )
+          : undefined,
     };
   }
 

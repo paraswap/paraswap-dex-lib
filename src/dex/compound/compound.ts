@@ -101,6 +101,7 @@ export class Compound
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: cToken,
+      returnAmountPos: undefined,
     };
   }
 }

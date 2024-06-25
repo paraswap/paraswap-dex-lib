@@ -32,7 +32,6 @@ export const STATEFUL_EVENT_SUBSCRIBER_LOG_BATCH_PERIOD = 60 * 1000;
 
 export enum Network {
   MAINNET = 1,
-  ROPSTEN = 3,
   RINKEBY = 4,
   BSC = 56,
   POLYGON = 137,
@@ -62,6 +61,8 @@ export const DEST_TOKEN_DEX_TRANSFERS = 1;
 export const BPS_MAX_VALUE = 10000n;
 
 export const FEE_PERCENT_IN_BASIS_POINTS_MASK = BigNumber.from('0x3FFF');
+export const IS_USER_SURPLUS_MASK = BigNumber.from('1').shl(90);
+export const IS_DIRECT_TRANSFER_MASK = BigNumber.from('1').shl(91);
 export const IS_CAP_SURPLUS_MASK = BigNumber.from('1').shl(92);
 export const IS_SKIP_BLACKLIST_MASK = BigNumber.from('1').shl(93);
 export const IS_REFERRAL_MASK = BigNumber.from('1').shl(94);

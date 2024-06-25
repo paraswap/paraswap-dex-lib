@@ -398,6 +398,7 @@ export class ParaSwapLimitOrders
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: this.augustusRFQAddress,
+      returnAmountPos: undefined,
     };
   }
 

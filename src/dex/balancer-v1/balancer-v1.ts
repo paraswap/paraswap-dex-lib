@@ -43,6 +43,7 @@ import BalancerCustomMulticallABI from '../../abi/BalancerCustomMulticall.json';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import { BigNumber, ethers } from 'ethers';
 import { SpecialDex } from '../../executor/types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const {
   utils: { hexlify, hexZeroPad, solidityPack },
@@ -109,12 +110,14 @@ export class BalancerV1
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(_blockNumber: number) {
-    const { data } = await this.dexHelper.httpRequest.post<{
-      data: { pools: PoolInfo[] };
+    const { data } = await this.dexHelper.httpRequest.querySubgraph<{
+      data: {
+        pools: PoolInfo[];
+      };
     }>(
       this.config.subgraphURL,
       { query: fetchAllPoolsQuery },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools))
@@ -416,6 +419,14 @@ export class BalancerV1
       dexFuncHasRecipient: false,
       exchangeData: exchangeData,
       targetExchange: this.config.exchangeProxy,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              BalancerV1.proxyIface,
+              swapFunction,
+              'totalAmountOut',
+            )
+          : undefined,
     };
   }
 
@@ -529,7 +540,7 @@ export class BalancerV1
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post<{
+    const { data } = await this.dexHelper.httpRequest.querySubgraph<{
       data: {
         pools: {
           id: Address;
@@ -540,7 +551,11 @@ export class BalancerV1
           }[];
         }[];
       };
-    }>(this.config.subgraphURL, { query, variables }, SUBGRAPH_TIMEOUT);
+    }>(
+      this.config.subgraphURL,
+      { query, variables },
+      { timeout: SUBGRAPH_TIMEOUT },
+    );
 
     if (!(data && data.pools))
       throw new Error(

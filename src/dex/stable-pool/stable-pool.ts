@@ -12,19 +12,13 @@ import { SimpleExchange } from '../simple-exchange';
 import StablePoolABI from '../../abi/StablePool.json';
 import { IDexHelper } from '../../dex-helper';
 import { StablePoolFunctions, StablePoolData, StablePoolParam } from './types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class StablePool
   extends SimpleExchange
   implements IDexTxBuilder<StablePoolData, StablePoolParam>
 {
-  static dexKeys = [
-    'nerve',
-    'saddle',
-    'ironv2',
-    'snowball',
-    'axial',
-    'zyberswapstable',
-  ];
+  static dexKeys = ['nerve', 'ironv2', 'snowball', 'axial'];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
@@ -123,6 +117,13 @@ export class StablePool
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              StablePoolFunctions.swap,
+            )
+          : undefined,
     };
   }
 }

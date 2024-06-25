@@ -79,10 +79,8 @@ export class Solidly extends UniswapV2 {
         'VelodromeV2',
         'Aerodrome',
         'SpiritSwapV2',
-        'Cone',
         'SolidlyV2',
         'Thena',
-        'SoliSnek',
         'Chronos',
         'Ramses',
         'Equalizer',
@@ -482,13 +480,13 @@ export class Solidly extends UniswapV2 {
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -683,6 +681,7 @@ export class Solidly extends UniswapV2 {
       transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
         ? undefined
         : data.pools[0].address,
+      returnAmountPos: undefined,
     };
   }
 }

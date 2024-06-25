@@ -4,9 +4,6 @@ import { Network, SwapSide } from '../../constants';
 
 export const ParaSwapLimitOrdersConfig: DexConfigMap<DexParams> = {
   ParaSwapLimitOrders: {
-    [Network.ROPSTEN]: {
-      rfqAddress: '0x34268C38fcbC798814b058656bC0156C7511c0E4',
-    },
     [Network.AVALANCHE]: {
       rfqAddress: '0x34302c4267d0dA0A8c65510282Cc22E9e39df51f',
     },
@@ -51,10 +48,6 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.POLYGON]: {
     [SwapSide.SELL]: [{ name: 'PolygonAdapter02', index: 2 }],
     [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 3 }],
-  },
-  [Network.ROPSTEN]: {
-    [SwapSide.SELL]: [{ name: 'RopstenAdapter01', index: 2 }],
-    [SwapSide.BUY]: [{ name: 'RopstenBuyAdapter', index: 2 }],
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 13 }],

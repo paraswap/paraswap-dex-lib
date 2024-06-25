@@ -53,7 +53,8 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   getTokenFromAddress?(address: Address): Token;
 
   // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
+  // V5: Used for multiSwap, buy & megaSwap
+  // V6: NOT used, pass a placeholder
   getAdapterParam(
     srcToken: Address,
     destToken: Address,
@@ -64,8 +65,9 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   ): AdapterExchangeParam;
 
   // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  getSimpleParam(
+  // V5: Used for simpleSwap & simpleBuy
+  // V6: NOT used, don't implement
+  getSimpleParam?(
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
@@ -104,7 +106,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectParam>;
 
   // Same as above but for V6
@@ -121,7 +123,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectParam>;
 }
 
