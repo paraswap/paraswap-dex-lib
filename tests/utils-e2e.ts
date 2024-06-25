@@ -567,7 +567,6 @@ export async function testE2E(
     );
 
     const swapTx = await ts.simulate(swapParams);
-    if (!swapTx.success) console.log('url swap: ', swapTx.url);
     // Only log gas estimate if testing against API
     if (useAPI) {
       const gasUsed = swapTx.gasUsed || '0';
