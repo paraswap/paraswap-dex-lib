@@ -12,7 +12,6 @@ import { DexParams } from './types';
 
 function testForNetwork(
   network: Network,
-  dexKey: string,
   inceptionSlug: string,
   config: DexParams,
 ) {
@@ -55,14 +54,12 @@ function testForNetwork(
 }
 
 describe('Inception E2E', () => {
-  const dexKey = 'Inception';
-
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
     Object.entries(InceptionConfig).forEach(
       ([inceptionSymbol, chainConfig]) => {
-        testForNetwork(network, dexKey, inceptionSymbol, chainConfig[network]);
+        testForNetwork(network, inceptionSymbol, chainConfig[network]);
       },
     );
 

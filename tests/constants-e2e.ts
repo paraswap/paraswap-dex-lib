@@ -1,12 +1,12 @@
 import {
-  SmartTokenParams,
-  balanceOfFn,
-  allowanceFn,
-  SmartToken,
-  balancesFn,
-  allowedFn,
-  _balancesFn,
   _allowancesFn,
+  _balancesFn,
+  allowanceFn,
+  allowedFn,
+  balanceOfFn,
+  balancesFn,
+  SmartToken,
+  SmartTokenParams,
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
@@ -461,6 +461,42 @@ export const Tokens: {
     },
     inETH: {
       address: '0xf073bAC22DAb7FaF4a3Dd6c6189a70D54110525C',
+      decimals: 18,
+    },
+    rETH: {
+      address: '0xae78736Cd615f374D3085123A210448E74Fc6393',
+      decimals: 18,
+    },
+    oETH: {
+      address: '0x856c4Efb76C1D1AE02e20CEB03A2A6a08b0b8dC3',
+      decimals: 18,
+    },
+    osETH: {
+      address: '0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38',
+      decimals: 18,
+    },
+    cbETH: {
+      address: '0xBe9895146f7AF43049ca1c1AE358B0541Ea49704',
+      decimals: 18,
+    },
+    wbETH: {
+      address: '0xa2E3356610840701BDf5611a53974510Ae27E2e1',
+      decimals: 18,
+    },
+    ETHx: {
+      address: '0xA35b1B31Ce002FBF2058D22F30f95D405200A15b',
+      decimals: 18,
+    },
+    sfrxETH: {
+      address: '0xac3E018457B222d93114458476f3E3416Abbe38F',
+      decimals: 18,
+    },
+    mETH: {
+      address: '0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa',
+      decimals: 18,
+    },
+    lsETH: {
+      address: '0x8c1BEd5b9a0928467c9B1341Da1D7BD5e10b6549',
       decimals: 18,
     },
   },
@@ -1365,7 +1401,7 @@ export const Holders: {
     sDAI: '0x4C612E3B15b96Ff9A6faED838F8d07d479a8dD4c',
     CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
-    AnkETH: '0xF7260D4ADc48fEefd5a19a9Eb23f9747CeE15C92',
+    AnkETH: '0xBB2d41AcfEA24A3A2aD4A6F95C3AcE1cC98c6ed6',
     DAI: '0x2fEb1512183545f48f6b9C5b4EbfCaF49CfCa6F3',
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
@@ -1425,6 +1461,16 @@ export const Holders: {
     USDe: '0x74e6c48e667d698a4cf90665b6960a5bae39e603',
     eETH: '0x0f1DfeF1a40557d279d0de6E49aB306891A638b8',
     weETH: '0xfB4cB868727D9622258bf2B26A8CFc95f6742669',
+    rETH: '0x9985dF20D7e9103ECBCeb16a84956434B6f06ae8',
+    oETH: '0xDcEe70654261AF21C44c093C300eD3Bb97b78192',
+    osETH: '0xe080027Bd47353b5D1639772b4a75E9Ed3658A0d',
+    cbETH: '0xEA0EFC80A900aA11B9eb7f0392fdA301054b8742',
+    wbETH: '0xc6C010287683FD3Db7865016e3e1D6468Dd73aA6',
+    ETHx: '0x4F2083f5fBede34C2714aFfb3105539775f7FE64',
+    sfrxETH: '0xC2545C68a71F6803264bdE885870fD72D361fB9E',
+    mETH: '0xc3350595eD42EbE94556277bc77D257c76065291',
+    lsETH: '0xAe60d8180437b5C34bB956822ac2710972584473',
+    SWETH: '0xc585DF3a8C9ca0c614D023A812624bE36161502B',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
