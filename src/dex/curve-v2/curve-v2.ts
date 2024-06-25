@@ -213,7 +213,7 @@ export class CurveV2
     _0: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectCurveV2Param> {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -272,7 +272,7 @@ export class CurveV2
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (contractMethod !== DIRECT_METHOD_NAME_V6) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -434,6 +434,7 @@ export class CurveV2
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos: undefined,
     };
   }
 }

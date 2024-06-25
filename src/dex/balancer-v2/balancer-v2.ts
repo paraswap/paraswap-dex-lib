@@ -19,7 +19,6 @@ import {
 import {
   ETHER_ADDRESS,
   MAX_INT,
-  MAX_UINT,
   Network,
   NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
@@ -81,9 +80,10 @@ import {
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
-import { BigNumber, utils } from 'ethers';
-import { Executors, SpecialDex } from '../../executor/types';
+import { BigNumber } from 'ethers';
+import { SpecialDex } from '../../executor/types';
 import { S } from '@bgd-labs/aave-address-book/dist/AaveV2Ethereum-timF4kft';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -405,10 +405,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const variables = {
       count: MAX_POOL_CNT,
     };
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchAllPools, variables },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools))
@@ -701,10 +701,10 @@ export class BalancerV2
       timestampPast: timeNow - POOL_EVENT_REENABLE_DELAY,
       timestampFuture: timeNow + POOL_EVENT_DISABLED_TTL,
     };
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchWeightUpdating, variables },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.gradualWeightUpdates)) {
@@ -1142,9 +1142,9 @@ export class BalancerV2
             sender = recipient = augustusV6
         else (so generic swaps)
           if sell
-            if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future) 
+            if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future)
                   sender = executor and recipient = augustusV6 (skip 1 extra transfer)
-              else 
+              else
                   sender = recipient = executor
               # note: we pass sender=null then the address of the executor is inferred contract side
           else (so buy)
@@ -1326,7 +1326,7 @@ export class BalancerV2
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<BalancerV2DirectParam> {
     if (
       contractMethod !== DirectMethods.directSell &&
@@ -1397,7 +1397,7 @@ export class BalancerV2
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
 
@@ -1548,26 +1548,58 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
     context: Context,
+    executor: Address,
   ): DexExchangeParam {
-    const params = this.getBalancerV2BatchSwapParam(
+    const balancerBatchSwapParam = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
       data,
       side,
       recipient,
-      side === SwapSide.BUY
-        ? this.dexHelper.config.data.executorsAddresses![Executors.THREE]
-        : NULL_ADDRESS,
+      side === SwapSide.SELL ? NULL_ADDRESS : executor,
     );
+
+    const [, swaps] = balancerBatchSwapParam;
+    const isSingleSwap = swaps.length === 1;
+
+    if (isSingleSwap) {
+      const balancerSwapParam = this.getBalancerV2SwapParam(
+        srcToken,
+        destToken,
+        data,
+        side,
+        recipient,
+        executor,
+      );
+
+      const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+        'swap',
+        balancerSwapParam,
+      );
+
+      return {
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: true,
+        exchangeData,
+        targetExchange: this.vaultAddress,
+        returnAmountPos:
+          side === SwapSide.SELL
+            ? extractReturnAmountPosition(
+                this.balancerVaultInterface,
+                'swap',
+                'amountCalculated',
+              )
+            : undefined,
+      };
+    }
 
     let exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
       'batchSwap',
-      params,
+      balancerBatchSwapParam,
     );
     let specialDexFlag = SpecialDex.DEFAULT;
 
     if (side === SwapSide.SELL) {
-      const swaps = params[1];
       const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
         return acc.add(swap.amount);
       }, BigNumber.from(0));
@@ -1585,6 +1617,7 @@ export class BalancerV2
       exchangeData,
       specialDexFlag,
       targetExchange: this.vaultAddress,
+      returnAmountPos: undefined,
     };
   }
 
@@ -1620,7 +1653,7 @@ export class BalancerV2
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post<{
+    const { data } = await this.dexHelper.httpRequest.querySubgraph<{
       data: {
         pools: {
           address: string;
@@ -1634,7 +1667,7 @@ export class BalancerV2
         query,
         variables,
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools))

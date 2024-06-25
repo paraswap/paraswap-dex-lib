@@ -266,6 +266,11 @@ export class UniswapV2
     protected router = (UniswapV2Config[dexKey] &&
       UniswapV2Config[dexKey][network].router) ??
       dexHelper.config.data.uniswapV2ExchangeRouterAddress,
+    protected subgraphType:
+      | 'subgraphs'
+      | 'deployments'
+      | undefined = UniswapV2Config[dexKey] &&
+      UniswapV2Config[dexKey][network].subgraphType,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -712,13 +717,13 @@ export class UniswapV2
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT, type: this.subgraphType },
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -914,6 +919,7 @@ export class UniswapV2
       targetExchange,
       specialDexFlag,
       transferSrcTokenBeforeSwap,
+      returnAmountPos: undefined,
     };
   }
 
@@ -932,7 +938,7 @@ export class UniswapV2
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<UniswapParam> {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (permit !== '0x') contractMethod += 'WithPermit';
@@ -1008,7 +1014,7 @@ export class UniswapV2
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (!UniswapV2.getDirectFunctionNameV6().includes(contractMethod!)) {

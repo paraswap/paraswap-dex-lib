@@ -221,7 +221,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (!GenericRFQ.getDirectFunctionNameV6().includes(contractMethod!)) {
@@ -302,6 +302,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
       specialDexFlag: SpecialDex.SWAP_ON_AUGUSTUS_RFQ,
       targetExchange: this.augustusRFQAddress,
       specialDexSupportsInsertFromAmount: true,
+      returnAmountPos: undefined,
     };
   }
 

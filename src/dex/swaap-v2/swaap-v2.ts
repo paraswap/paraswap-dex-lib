@@ -77,6 +77,7 @@ import {
 } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -476,6 +477,14 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       exchangeData: callData,
       specialDexFlag: SpecialDex.SWAP_ON_SWAAP_V2_SINGLE,
       targetExchange: router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerInterface,
+              'swap',
+              'amountCalculated',
+            )
+          : undefined,
     };
   }
 
@@ -971,15 +980,12 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       return [];
     }
 
-    return Object.keys(pLevels)
-      .filter(async (pair: string) => {
+    const pLevelsWithRestriction = await Promise.all(
+      Object.keys(pLevels).map(async (pair: string) => {
         const { base, quote } = pLevels[pair];
 
         const levelDoesNotIncludeToken =
           normalizedTokenAddress !== base && normalizedTokenAddress !== quote;
-        if (levelDoesNotIncludeToken) {
-          return false;
-        }
 
         const poolIdentifier: string = getPoolIdentifier(
           this.dexKey,
@@ -987,9 +993,21 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           quote,
         );
         const isRestrictedPool = await this.isRestrictedPool(poolIdentifier);
-        return !isRestrictedPool;
-      })
-      .map((pair: string) => {
+
+        return {
+          pair,
+          levelDoesNotIncludeToken,
+          isRestrictedPool,
+        };
+      }),
+    );
+
+    return pLevelsWithRestriction
+      .filter(
+        ({ levelDoesNotIncludeToken, isRestrictedPool }) =>
+          !levelDoesNotIncludeToken && !isRestrictedPool,
+      )
+      .map(({ pair }) => {
         return {
           exchange: this.dexKey,
           connectorTokens: [

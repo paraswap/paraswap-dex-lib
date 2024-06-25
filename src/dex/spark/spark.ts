@@ -24,6 +24,7 @@ import { Interface } from 'ethers/lib/utils';
 import { SparkSDaiEventPool } from './spark-sdai-pool';
 import { BI_POWS } from '../../bigint-constants';
 import { SDAI_DEPOSIT_GAS_COST, SDAI_REDEEM_GAS_COST } from './constants';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Spark
   extends SimpleExchange
@@ -241,6 +242,15 @@ export class Spark
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
+      returnAmountPos: isSell
+        ? extractReturnAmountPosition(
+            this.sdaiInterface,
+            this.isDai(srcToken)
+              ? SparkSDaiFunctions.deposit
+              : SparkSDaiFunctions.redeem,
+            this.isDai(srcToken) ? 'shares' : 'assets',
+          )
+        : undefined,
     };
   }
 

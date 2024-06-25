@@ -61,6 +61,7 @@ import {
   OnPoolCreatedCallback,
   PancakeswapV3Factory,
 } from './pancakeswap-v3-factory';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -894,6 +895,14 @@ export class PancakeswapV3
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.config.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
     };
   }
 
@@ -1078,11 +1087,10 @@ export class PancakeswapV3
     if (!this.config.subgraphURL) return [];
 
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {

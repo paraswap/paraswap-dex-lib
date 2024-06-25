@@ -41,6 +41,7 @@ import {
 import { SUBGRAPH_TIMEOUT } from '../../constants';
 import RouterABI from '../../abi/maverick-v1/router.json';
 import { NumberAsString } from '@paraswap/core';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const MAX_POOL_CNT = 1000;
 
@@ -137,10 +138,10 @@ export class MaverickV1
     this.logger.info(
       `Fetching ${this.dexKey}_${this.network} Pools from subgraph`,
     );
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
-      { query: fetchAllPools, count: MAX_POOL_CNT },
-      SUBGRAPH_TIMEOUT,
+      { query: fetchAllPools, variables: { count: MAX_POOL_CNT } },
+      { timeout: SUBGRAPH_TIMEOUT },
     );
     return data.pools;
   }
@@ -402,6 +403,14 @@ export class MaverickV1
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.config.routerAddress,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              MaverickV1Functions.exactInputSingle,
+              'amountOut',
+            )
+          : undefined,
     };
   }
 
@@ -462,11 +471,10 @@ export class MaverickV1
     timeout = 30000,
   ) {
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {

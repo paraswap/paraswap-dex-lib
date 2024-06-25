@@ -483,6 +483,7 @@ export class JarvisV6
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: data.poolAddress.toLowerCase(),
+      returnAmountPos: undefined,
     };
   }
 
