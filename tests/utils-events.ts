@@ -96,10 +96,6 @@ export async function testEventSubscriber<SubscriberState>(
   // Get the updated state of the subscriber
   const newPoolState = eventSubscriber.getState(blockNumber);
 
-  // TODO
-  delete (newPoolState as any).oracles.morphoVault;
-  delete (expectedNewPoolState as any).oracles.morphoVault;
-
   // Expect the updated state to be same as the expected state
   if (stateCompare) {
     expect(newPoolState).not.toBeNull();
