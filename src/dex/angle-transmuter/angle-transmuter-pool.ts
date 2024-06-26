@@ -36,7 +36,6 @@ import { formatEther, formatUnits, parseUnits } from 'ethers/lib/utils';
 import { BackedSubscriber } from './backedOracle';
 import { Network, SwapSide } from '../../constants';
 import { ethers } from 'ethers';
-import { BLOCK_UPGRADE_ORACLE } from './constants';
 import { MorphoOracleEventPool } from './morphoOracle';
 import { bigIntify } from '../../utils';
 import { MorphoVaultSubscriber } from './morphoVault';
@@ -683,22 +682,18 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     burnRatioDeviation: number;
   } {
     const configOracle = state.transmuter.collaterals[collateral].config;
-    let userDeviation = 0;
-    let burnRatioDeviation = 0;
-    if (BLOCK_UPGRADE_ORACLE <= blockNumber) {
-      const hyperparameters = filterDictionaryOnly(
-        ethers.utils.defaultAbiCoder.decode(
-          ['uint128 userDeviation', 'uint128 burnRatioDeviation'],
-          configOracle.hyperparameters,
-        ),
-      ) as unknown as OracleHyperparameter;
-      userDeviation = Number.parseFloat(
-        formatEther(hyperparameters.userDeviation.toString()),
-      );
-      burnRatioDeviation = Number.parseFloat(
-        formatEther(hyperparameters.burnRatioDeviation.toString()),
-      );
-    }
+    const hyperparameters = filterDictionaryOnly(
+      ethers.utils.defaultAbiCoder.decode(
+        ['uint128 userDeviation', 'uint128 burnRatioDeviation'],
+        configOracle.hyperparameters,
+      ),
+    ) as unknown as OracleHyperparameter;
+    const userDeviation = Number.parseFloat(
+      formatEther(hyperparameters.userDeviation.toString()),
+    );
+    const burnRatioDeviation = Number.parseFloat(
+      formatEther(hyperparameters.burnRatioDeviation.toString()),
+    );
     const targetPrice = this._read(
       config,
       state,

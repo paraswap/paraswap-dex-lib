@@ -185,8 +185,8 @@ describe('AngleTransmuter', () => {
   let blockNumber: number;
   let angleTransmuter: AngleTransmuter;
 
-  // const networks  = [Network.MAINNET, Network.ARBITRUM, Network.BASE];
-  const networks = [Network.BASE];
+  const networks = [Network.MAINNET, Network.ARBITRUM, Network.BASE];
+  // const networks = [Network.MAINNET];
   const stablesPerNetwork: { [network: number]: SmartTokenParams[] } = {
     [Network.MAINNET]: [
       Tokens[Network.MAINNET].EURA,
@@ -333,16 +333,16 @@ describe('AngleTransmuter', () => {
               );
             });
 
-            it('getPoolIdentifiers and getPricesVolume BUY - stablecoin', async () => {
+            it('getPoolIdentifiers and getPricesVolume BUY - collateral', async () => {
               await testPricingOnNetwork(
                 angleTransmuter,
                 network,
                 dexKey,
                 blockNumber,
-                stable.symbol!,
                 collateral.symbol!,
+                stable.symbol!,
                 SwapSide.BUY,
-                amountsCollateral,
+                amounts,
                 'quoteOut',
               );
             });
@@ -362,16 +362,16 @@ describe('AngleTransmuter', () => {
                 );
               });
 
-              it('getPoolIdentifiers and getPricesVolume BUY - collateral', async () => {
+              it('getPoolIdentifiers and getPricesVolume BUY - stablecoin', async () => {
                 await testPricingOnNetwork(
                   angleTransmuter,
                   network,
                   dexKey,
                   blockNumber,
-                  collateral.symbol!,
                   stable.symbol!,
+                  collateral.symbol!,
                   SwapSide.BUY,
-                  amounts,
+                  amountsCollateral,
                   'quoteOut',
                 );
               });
