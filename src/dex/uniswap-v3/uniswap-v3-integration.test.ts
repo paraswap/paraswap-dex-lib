@@ -2023,10 +2023,10 @@ describe('Slipstream', () => {
 
       const network = Network.OPTIMISM;
       const dexHelper = new DummyDexHelper(network);
-      const TokenASymbol = 'wstETH';
+      const TokenASymbol = 'PSTAKE';
       const TokenA = Tokens[network][TokenASymbol];
 
-      const TokenBSymbol = 'WETH';
+      const TokenBSymbol = 'USDC';
       const TokenB = Tokens[network][TokenBSymbol];
 
       beforeEach(async () => {
@@ -2076,7 +2076,7 @@ describe('Slipstream', () => {
               slipstream,
               'quoteExactInputSingle',
               blockNumber,
-              '0xA2DEcF05c16537C702779083Fe067e308463CE45',
+              '0x89D8218ed5fF1e46d8dcd33fb0bbeE3be1621466',
               price.prices,
               TokenA.address,
               TokenB.address,
@@ -2092,7 +2092,7 @@ describe('Slipstream', () => {
       });
 
       it('getPoolIdentifiers and getPricesVolume BUY', async () => {
-        const amounts = [0n, BI_POWS[18], BI_POWS[18] * 2n];
+        const amounts = [0n, BI_POWS[6], BI_POWS[6] * 2n];
 
         const pools = await slipstream.getPoolIdentifiers(
           TokenA,
@@ -2133,7 +2133,7 @@ describe('Slipstream', () => {
               slipstream,
               'quoteExactOutputSingle',
               blockNumber,
-              '0xA2DEcF05c16537C702779083Fe067e308463CE45',
+              '0x89D8218ed5fF1e46d8dcd33fb0bbeE3be1621466',
               price.prices,
               TokenA.address,
               TokenB.address,
