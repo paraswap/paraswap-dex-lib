@@ -403,12 +403,20 @@ export const Tokens: {
       address: '0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6',
       decimals: 19,
     },
+    GYD: {
+      address: '0xe07f9d810a48ab5c3c914ba3ca53af14e4491e8a',
+      decimals: 18,
+    },
     LUSD: {
       address: '0x5f98805a4e8be255a32880fdec7f6728c6568ba0',
       decimals: 18,
     },
     BNT: {
       address: '0x1f573d6fb3f13d689ff844b4ce37794d79a7ff1c',
+      decimals: 18,
+    },
+    sDAI: {
+      address: '0x83f20f44975d03b1b09e64809b757c47f942beea',
       decimals: 18,
     },
     eETH: {
@@ -1169,8 +1177,16 @@ export const Tokens: {
       address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
       decimals: 6,
     },
+    PSTAKE: {
+      address: '0x023550adde4fa2f90d63a41d9282bee0294c04cd',
+      decimals: 18,
+    },
     GRAIN: {
       address: '0xfd389dc9533717239856190f42475d3f263a270d',
+      decimals: 18,
+    },
+    tBTC: {
+      address: '0x6c84a8f1c29108f47a79964b5fe888d4f4d0de40',
       decimals: 18,
     },
     GRAI: {
@@ -1628,6 +1644,8 @@ export const Holders: {
     crvUSD: '0xD1A992417a0ABFFa632Cbde4DA9F5DcF85CAa858',
     LUSD: '0xf0a9abb11958a071e168f2ee5bcbacf1abbde9cf',
     GRAI: '0x92b051204816DC4fbA7AC1A68a2cf319A9a387CB',
+    tBTC: '0xf7b4531e52211CC44379102F719cad29411dB053',
+    PSTAKE: '0xc45398444B83183b2018e0224B3D332b42D492Af',
     sDAI: '0xec31C16F2Ec50d846580c74b0ed1645D94F0D4DA',
   },
   [Network.ZKEVM]: {
