@@ -210,44 +210,6 @@ export class AngleTransmuter
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: AngleTransmuterData,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const { exchange } = data;
-
-    // Encode here the transaction arguments
-    const swapData =
-      TransmuterSubscriber.transmuterCrosschainInterface.encodeFunctionData(
-        side === SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
-        [
-          side === SwapSide.SELL ? srcAmount : destAmount,
-          side === SwapSide.SELL ? destAmount : srcAmount,
-          srcToken,
-          destToken,
-          this.augustusAddress,
-          0, // TODO no deadline?
-        ],
-      );
-
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      exchange,
-    );
-  }
-
   getDexParam(
     srcToken: Address,
     destToken: Address,
