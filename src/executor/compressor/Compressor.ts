@@ -6,13 +6,13 @@ import { ICache } from '../../dex-helper';
 import { bytes3ToString } from '../../lib/decoders';
 import { MultiWrapper, MultiCallParams } from '../../lib/multi-wrapper';
 import UncompressorABI from '../../abi/Uncompressor.json';
-import compress from './compress';
+import compress, { AddressesMapping } from './compress';
+import { pickBy } from 'lodash';
 
 const DEFAULT_SAVED_ADDRESS_CACHE_KEY_VALUE = 'true';
 
 // key = token_uncomporessAddress_network
 // key = token
-type SavedAddressesMapping = Record<string, boolean>;
 
 export class Compressor {
   uncomporessorInterface: Interface;
@@ -44,21 +44,22 @@ export class Compressor {
     addressesToCompress.push(this.augustusV6Address);
     addressesToCompress.push(executorAddress);
 
-    let addressesMapping: Record<string, boolean> = {};
+    let addressesMapping: AddressesMapping = {};
 
     addressesToCompress.forEach(address => {
-      // todo: handle null address which is already added with 0 index
-      addressesMapping[address.toLowerCase()] = false;
+      addressesMapping[address.toLowerCase()] = { saved: false, index: -1 };
     });
 
     addressesMapping = await this.getSavedAddresses(addressesMapping);
 
-    const cachedAddresses = Object.values(addressesMapping);
-    if (cachedAddresses.every(approval => approval === true)) {
+    const allAddressesCached = Object.values(addressesMapping).every(
+      approval => approval.saved === true,
+    );
+
+    if (allAddressesCached) {
       return compress({
         initialCallData: bytecode,
-        savedAddresses: Object.keys(addressesMapping),
-        newAddresses: [],
+        addresses: addressesMapping,
       }).compressedData;
     }
 
@@ -66,10 +67,7 @@ export class Compressor {
 
     return compress({
       initialCallData: bytecode,
-      savedAddresses: this.filterKeys(addressesMapping, true),
-      newAddresses: this.filterKeys(addressesMapping, false),
-      // savedAddresses: [],
-      // newAddresses: [],
+      addresses: addressesMapping,
     }).compressedData;
   }
 
@@ -103,7 +101,7 @@ export class Compressor {
   }
 
   private async setSavedAddresses(
-    addressesMapping: SavedAddressesMapping,
+    addressesMapping: AddressesMapping,
   ): Promise<void> {
     const addresses = this.filterKeys(addressesMapping, true);
     if (addresses.length === 0) return;
@@ -111,7 +109,7 @@ export class Compressor {
     const mappings = Object.fromEntries(
       addresses.map(key => [
         this.createCacheKey(key),
-        DEFAULT_SAVED_ADDRESS_CACHE_KEY_VALUE,
+        addressesMapping[key].index.toString(),
       ]),
     );
 
@@ -119,9 +117,9 @@ export class Compressor {
   }
 
   private async getSavedAddresses(
-    addressesMapping: SavedAddressesMapping,
-  ): Promise<SavedAddressesMapping> {
-    const addresses = this.filterKeys(addressesMapping);
+    addressesMapping: AddressesMapping,
+  ): Promise<AddressesMapping> {
+    const addresses = Object.keys(addressesMapping);
     if (addresses.length === 0) return addressesMapping;
 
     const savedAddresses = await this.cache.hmget(
@@ -129,33 +127,39 @@ export class Compressor {
       addresses.map(key => this.createCacheKey(key)),
     );
 
-    savedAddresses.forEach((saved, index) => {
-      if (saved !== null) {
-        addressesMapping[addresses[index]] = true;
-      }
+    savedAddresses.forEach((index, i) => {
+      const indexNum = index !== null ? Number(index) : -1;
+
+      addressesMapping[addresses[i]] = {
+        saved: index !== null,
+        index: indexNum,
+      };
     });
 
     return addressesMapping;
   }
 
-  private async addOnChainSavedAddress(
-    addressesMapping: SavedAddressesMapping,
-  ) {
-    const addresses = this.filterKeys(addressesMapping);
-    if (addresses.length === 0) return addressesMapping;
+  private async addOnChainSavedAddress(addressesMapping: AddressesMapping) {
+    const newAddresses = this.filterKeys(addressesMapping, false);
+    if (newAddresses.length === 0) return addressesMapping;
 
     const onChainSavedAddresses = await this.getSavedAddressesOnChain(
-      addresses,
+      newAddresses,
     );
 
-    if (onChainSavedAddresses.includes(true)) {
-      const setNewAddressesInCache: Record<string, boolean> = {};
-      onChainSavedAddresses.forEach((saved, index) => {
-        if (saved) {
-          addressesMapping[addresses[index]] = true;
-          setNewAddressesInCache[addresses[index]] = true;
-        }
-      });
+    const needUpdate = !!pickBy(onChainSavedAddresses, v => v.saved);
+
+    if (needUpdate) {
+      const setNewAddressesInCache: AddressesMapping = {};
+
+      Object.entries(onChainSavedAddresses).forEach(
+        ([address, { saved, index }]) => {
+          if (saved) {
+            addressesMapping[address] = { saved, index };
+            setNewAddressesInCache[address] = { saved, index };
+          }
+        },
+      );
 
       await this.setSavedAddresses(setNewAddressesInCache);
     }
@@ -165,7 +169,7 @@ export class Compressor {
 
   private async getSavedAddressesOnChain(
     addresses: string[],
-  ): Promise<boolean[]> {
+  ): Promise<AddressesMapping> {
     const callData: MultiCallParams<string>[] = addresses.map(address => ({
       target: this.uncompressorAddress,
       callData: this.uncomporessorInterface.encodeFunctionData(
@@ -180,18 +184,32 @@ export class Compressor {
       callData,
     );
 
-    return isAddressesSaved.map(addressResult =>
-      addressResult.success ? addressResult.returnData !== '0x000000' : false,
-    );
+    const entries = isAddressesSaved.map((addressResult, i) => {
+      const savedOnchain = addressResult.success
+        ? addressResult.returnData !== '0x000000'
+        : false;
+
+      const index = savedOnchain ? parseInt(addressResult.returnData, 16) : -1;
+
+      return [
+        addresses[i],
+        {
+          saved: savedOnchain,
+          index,
+        },
+      ];
+    });
+
+    return Object.fromEntries(entries);
   }
 
   private createCacheKey(token: Address): string {
     return `${token}_${this.uncompressorAddress}_${this.network}`;
   }
 
-  private filterKeys(addressesMapping: SavedAddressesMapping, saved = false) {
+  private filterKeys(addressesMapping: AddressesMapping, saved = false) {
     return Object.entries(addressesMapping)
-      .filter(([key, app]) => app === saved)
+      .filter(([, app]) => app.saved === saved)
       .map(([key]) => key);
   }
 }
