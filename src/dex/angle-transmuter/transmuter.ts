@@ -8,7 +8,7 @@ import {
   MultiCallInput,
   MultiCallOutput,
 } from '../../types';
-import { BLOCK_UPGRADE_ORACLE, CBETH, RETH, SFRXETH, STETH } from './constants';
+import { CBETH, RETH, SFRXETH, STETH } from './constants';
 import { Lens } from '../../lens';
 import { Interface } from '@ethersproject/abi';
 import TransmuterABI from '../../abi/angle-transmuter/Transmuter.json';
@@ -233,9 +233,6 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
                 ),
           config: this._setOracleConfig(
             multicallOutputs[indexOracleFees * nbrCollaterals + i],
-            blockNumber === undefined || blockNumber === 'latest'
-              ? BLOCK_UPGRADE_ORACLE + 1
-              : blockNumber,
           ),
           whitelist: {
             status: this.interface.decodeFunctionResult(
@@ -453,22 +450,17 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     const collateral: string = event.args.collateral;
     const oracleConfig: string = event.args.oracleConfig;
 
-    state.collaterals[collateral].config = this._setOracleConfig(
-      oracleConfig,
-      blockNumber,
-    );
+    state.collaterals[collateral].config = this._setOracleConfig(oracleConfig);
     return state;
   }
 
   /**
    * Keep track of used oracles for each collaterals
    */
-  _setOracleConfig(oracleConfig: string, blockNumber: number): Oracle {
+  _setOracleConfig(oracleConfig: string): Oracle {
     const configOracle = {} as Oracle;
-    const oracleConfigDecoded = TransmuterSubscriber._decodeOracleConfig(
-      oracleConfig,
-      blockNumber,
-    );
+    const oracleConfigDecoded =
+      TransmuterSubscriber._decodeOracleConfig(oracleConfig);
 
     configOracle.oracleType = oracleConfigDecoded.oracleType;
     configOracle.targetType = oracleConfigDecoded.targetType;
@@ -492,25 +484,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     return configOracle;
   }
 
-  static _decodeOracleConfig(
-    oracleConfig: string,
-    blockNumber: number,
-  ): DecodedOracleConfig {
-    if (BLOCK_UPGRADE_ORACLE > blockNumber) {
-      const oracleConfigDecoded = filterDictionaryOnly(
-        ethers.utils.defaultAbiCoder.decode(
-          [
-            'uint8 oracleType',
-            'uint8 targetType',
-            'bytes oracleData',
-            'bytes targetData',
-          ],
-          oracleConfig,
-        ),
-      ) as unknown as DecodedOracleConfig;
-      oracleConfigDecoded.hyperparameters = '';
-      return oracleConfigDecoded;
-    }
+  static _decodeOracleConfig(oracleConfig: string): DecodedOracleConfig {
     const oracleConfigDecoded = filterDictionaryOnly(
       ethers.utils.defaultAbiCoder.decode(
         [
