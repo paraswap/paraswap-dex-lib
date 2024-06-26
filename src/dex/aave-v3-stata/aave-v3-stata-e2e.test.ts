@@ -3,11 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -19,7 +15,7 @@ function testForNetwork(
   tokenBSymbol: string,
   tokenAAmount: string,
   tokenBAmount: string,
-  nativeTokenAmount: string,
+  skipBuy: boolean = false, // BUY is not supported for aToken <-> stataToken
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -27,7 +23,6 @@ function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
@@ -38,6 +33,9 @@ function testForNetwork(
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
+          if (contractMethod === ContractMethod.swapExactAmountOut && skipBuy) {
+            return;
+          }
           describe(`${contractMethod}`, () => {
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
@@ -78,21 +76,80 @@ describe('AaveV3Stata E2E', () => {
   describe('Polygon', () => {
     const network = Network.POLYGON;
 
-    const tokenASymbol: string = 'USDCn';
-    const tokenBSymbol: string = 'stataUSDCn';
+    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+      [
+        {
+          name: 'USDCn',
+          amount: '100000',
+        },
+        {
+          name: 'stataUSDCn',
+          amount: '100000',
+        },
+      ],
+      [
+        {
+          name: 'aaveUSDCn',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'stataUSDCn',
+          amount: '100000',
+        },
+      ],
+    ];
 
-    const tokenAAmount: string = '100000';
-    const tokenBAmount: string = '100000';
-    const nativeTokenAmount = '1000000000000000000';
+    pairs.forEach(pair => {
+      testForNetwork(
+        network,
+        dexKey,
+        pair[0].name,
+        pair[1].name,
+        pair[0].amount,
+        pair[1].amount,
+        pair[0].skipBuy,
+      );
+    });
+  });
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+
+    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+      [
+        {
+          name: 'USDT',
+          amount: '100000',
+        },
+        {
+          name: 'stataUSDT',
+          amount: '100000',
+        },
+      ],
+      [
+        {
+          name: 'aaveUSDT',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'stataUSDT',
+          amount: '100000',
+        },
+      ],
+    ];
+
+    pairs.forEach(pair => {
+      testForNetwork(
+        network,
+        dexKey,
+        pair[0].name,
+        pair[1].name,
+        pair[0].amount,
+        pair[1].amount,
+        pair[0].skipBuy,
+      );
+    });
   });
 });

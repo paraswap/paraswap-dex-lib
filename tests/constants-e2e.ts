@@ -411,6 +411,14 @@ export const Tokens: {
       address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
       decimals: 18,
     },
+    stataUSDT: {
+      address: '0x862c57d48becb45583aeba3f489696d22466ca1b',
+      decimals: 6,
+    },
+    aaveUSDT: {
+      address: '0x23878914efe38d27c4d67ab83ed1b93a74d4086a',
+      decimals: 6,
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
@@ -444,6 +452,10 @@ export const Tokens: {
     },
     stataUSDCn: {
       address: '0x2dCa80061632f3F87c9cA28364d1d0c30cD79a19',
+      decimals: 6,
+    },
+    aaveUSDCn: {
+      address: '0xa4d94019934d8333ef880abffbf2fdd611c762bd',
       decimals: 6,
     },
     POPS: {
@@ -1384,6 +1396,8 @@ export const Holders: {
     USDe: '0x74e6c48e667d698a4cf90665b6960a5bae39e603',
     eETH: '0x0f1DfeF1a40557d279d0de6E49aB306891A638b8',
     weETH: '0xfB4cB868727D9622258bf2B26A8CFc95f6742669',
+    stataUSDT: '0x6803364AceD5181877abC11E865FB27cB654a426',
+    aaveUSDT: '0x32c98a981Fe7C333Bd4e8E7630E8e0CF5ce20987',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
@@ -1427,6 +1441,7 @@ export const Holders: {
     crvUSD: '0x9D3a22A71C2bddFEF006f1c207C06B0A5f42f95F',
     USDCn: '0x4B6f17856215eab57c29ebfA18B0a0F74A3627bb',
     stataUSDCn: '0xFAB1420c84fF5E058B8AD12604D24247e268f362',
+    aaveUSDCn: '0xEBA9C3C1B41A846431F970aCA5Eee10f55969B76',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
