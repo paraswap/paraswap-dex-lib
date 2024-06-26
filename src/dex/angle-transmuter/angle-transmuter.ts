@@ -150,8 +150,8 @@ export class AngleTransmuter
     );
 
     const prices = await this.eventPools[fiat]!.getAmountOut(
-      srcToken.address,
-      destToken.address,
+      srcToken.address.toLowerCase(),
+      destToken.address.toLowerCase(),
       side,
       [unitVolume, ...amountsFloat],
       blockNumber,

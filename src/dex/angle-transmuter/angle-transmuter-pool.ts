@@ -192,6 +192,30 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     return onChainState as PoolState;
   }
 
+  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
+    const state = (await super.generateState(blockNumber)) as PoolState;
+    return this.stateToLowercase(state);
+  }
+
+  private stateToLowercase(state: PoolState): PoolState {
+    return {
+      oracles: state.oracles,
+      stablecoin: {
+        ...state.stablecoin,
+        address: state.stablecoin.address.toLowerCase(),
+      },
+      transmuter: {
+        ...state.transmuter,
+        collaterals: Object.fromEntries(
+          Object.entries(state.transmuter.collaterals).map(([k, v]) => [
+            k.toLowerCase(),
+            v,
+          ]),
+        ),
+      },
+    };
+  }
+
   // Reference to the original implementation
   // https://github.com/AngleProtocol/angle-transmuter/blob/6e1f2eb1f961d6c3b1cdaefe068d967c33c41936/contracts/transmuter/facets/Swapper.sol#L177
   async getAmountOut(
@@ -576,7 +600,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     return {
       stablecoin: dexParams.stablecoin,
       transmuter: dexParams.transmuter,
-      collaterals: collaterals,
+      collaterals: collaterals.map(el => el.toLowerCase()),
       oracles: oracles,
     };
   }

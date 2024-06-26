@@ -44,7 +44,7 @@ export const Tokens: {
       decimals: 9,
     },
     USDC: {
-      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
       symbol: 'USDC',
       addBalance: balancesFn,
@@ -349,7 +349,7 @@ export const Tokens: {
       decimals: 6,
     },
     EURA: {
-      address: '0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8',
+      address: '0x1a7e4e63778b4f12a199c062f3efdd288afcbce8',
       decimals: 18,
       symbol: 'EURA',
     },
