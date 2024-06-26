@@ -36,15 +36,9 @@ const compress = function ({
   network,
 }: CompressInput): CompressOutput {
   let storedAddresses: any;
-  let storedMethods: any;
   // if (network) {
   //   try {
   //     storedAddresses = require('../data/' + network + '/savedAddresses.js');
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  //   try {
-  //     storedMethods = require('../data/' + network + '/savedMethods.js');
   //   } catch (err) {
   //     console.log(err);
   //   }
@@ -60,15 +54,7 @@ const compress = function ({
   const initialCost = computeCost(initialCallData);
 
   initialCallData = trimHex(initialCallData);
-
-  //@note The compressor expects the calldata to be in the regular format "0x{selector}{calldata}"
-  // but we only need to compress executor's calldata, which dont have any selectors inside
-  // to make this work, we use first 4 bytes of calldata as fake selector and pass it in method substitution
-  //
-  // This works fine, but can lead to worse compression (e.g. if 4 calldata's bytes are related to address)
-  // We have to fully remove/skip part of method substituion in Uncompressor Contracts to make this work perfectly
-  let fakeSelector = initialCallData.slice(0, 8);
-  let callData = initialCallData.slice(8);
+  let callData = initialCallData;
 
   // SAVED ADDRESSES SUBSTITUTIONS
   if (!options.skipAddressSubstitution) {
@@ -212,9 +198,7 @@ const compress = function ({
     });
   }
 
-  // INDEX OF METHOD SUBSTITUTION
-  //@note fake selector is always 4 bytes of initial calldata, check note above
-  compressedCallData = ffByte + fakeSelector + trimHex(compressedCallData);
+  compressedCallData = trimHex(compressedCallData);
 
   const newAddressesString = options.skipNewAddressSubstitution
     ? '00'
@@ -224,11 +208,9 @@ const compress = function ({
   const prefixCallData = addressPrefix + newAddressesString;
 
   // SUBSTITUTING FF
-  const firstBytes = compressedCallData.substring(0, 10);
   const compressedFFSubstituted = byteSubstitution({
     byte: ffByte,
-    callData: compressedCallData.substring(10),
-    compressedCallData: firstBytes,
+    callData: compressedCallData,
     addressPrefix: options.skipAddressSubstitution ? 'RR' : addressPrefix,
     newAddressPrefix: options.skipNewAddressSubstitution
       ? 'TT'
@@ -241,7 +223,7 @@ const compress = function ({
     compressedCallData: compressedCallData.substring(10),
     markers: duplicatedStringMarkers,
   });
-  if (newCompressedData) compressedCallData = firstBytes + newCompressedData;
+  if (newCompressedData) compressedCallData = newCompressedData;
 
   if (!maxByteInZeroes) maxByteInZeroes = '00';
   compressedCallData =
@@ -252,7 +234,7 @@ const compress = function ({
     compressedCallData += duplicatedStringMarkers[i];
   }
   // 0x + address prefix (1B) | nbOfNewAddresses (1B) | newAddressPrefix (0/1B) | newAddresses (n * 20B) |
-  //      maxByteInZeroes (1B) | substitution of method index (1/5B) | compressedData | 00 | duplicatedStringMarkers
+  //      maxByteInZeroes (1B) | compressedData | 00 | duplicatedStringMarkers
 
   const finalCost = computeCost(compressedCallData);
   if (compressedCallData.length % 2 !== 0)
