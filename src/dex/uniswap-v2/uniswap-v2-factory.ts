@@ -35,16 +35,8 @@ export class UniswapV2Factory extends StatefulEventSubscriber<FactoryState> {
     protected readonly factoryAddress: Address,
     logger: Logger,
     protected readonly onPoolCreated: OnPoolCreatedCallback,
-    mapKey: string = '',
   ) {
-    super(
-      parentName,
-      `${parentName} Factory`,
-      dexHelper,
-      logger,
-      false,
-      mapKey,
-    );
+    super(parentName, `${parentName} Factory`, dexHelper, logger);
 
     this.addressesSubscribed = [factoryAddress];
 
