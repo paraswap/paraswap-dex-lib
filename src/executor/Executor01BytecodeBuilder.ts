@@ -268,6 +268,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       (!isETHAddress(swap.srcToken) ||
         (isETHAddress(swap.srcToken) && index !== 0)) &&
       !curExchangeParam.transferSrcTokenBeforeSwap &&
+      !curExchangeParam.skipApproval &&
       curExchangeParam.approveData
     ) {
       const approveCallData = this.buildApproveCallData(

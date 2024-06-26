@@ -147,6 +147,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
       !isETHAddress(swap.srcToken) &&
+      !curExchangeParam.skipApproval &&
       curExchangeParam.approveData
     ) {
       // TODO: as we give approve for MAX_UINT and approve for current targetExchange was given

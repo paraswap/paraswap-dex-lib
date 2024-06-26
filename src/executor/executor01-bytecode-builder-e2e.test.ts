@@ -102,6 +102,31 @@ describe('Executor01ByteCodeBuilder e2e tests', () => {
     const network = Network.MAINNET;
 
     describe('SimpleSwap', () => {
+      describe('AngleStakedStableUSD', () => {
+        const dexKey = 'AngleStakedStableUSD';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+
+        it('SimpleSwap stUSD -> USDA', async () => {
+          await testE2E(
+            tokens['stUSD'],
+            tokens['USDA'],
+            holders['stUSD'],
+            '1000000000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.simpleSwap,
+            network,
+            provider,
+          );
+        });
+      });
+
       describe('UniswapV3', () => {
         const dexKey = 'UniswapV3';
 

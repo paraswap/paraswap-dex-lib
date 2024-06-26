@@ -142,6 +142,10 @@ export class MStable
       destAmount,
       swapData,
       data.exchange,
+      undefined,
+      undefined,
+      undefined,
+      opType === MStableFunctions.redeem,
     );
   }
 }

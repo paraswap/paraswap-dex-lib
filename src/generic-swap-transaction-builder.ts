@@ -674,6 +674,7 @@ export class GenericSwapTransactionBuilder {
     priceRoute: OptimalRate,
     dexExchangeParams: DexExchangeParam[],
     maybeWethCallData?: DepositWithdrawReturn,
+    skipApproval?: boolean,
   ): Promise<DexExchangeBuildParam[]> {
     const spender = bytecodeBuilder.getAddress();
     const tokenTargetMapping: {
@@ -715,7 +716,7 @@ export class GenericSwapTransactionBuilder {
     ];
 
     approvals.forEach((alreadyApproved, index) => {
-      if (!alreadyApproved) {
+      if (!alreadyApproved && !skipApproval) {
         const [token, target] = tokenTargetMapping[index].params;
         const exchangeParamIndex = tokenTargetMapping[index].exchangeParamIndex;
         const curExchangeParam = dexExchangeParams[exchangeParamIndex];

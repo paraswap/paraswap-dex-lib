@@ -23,6 +23,35 @@ describe('Executor02ByteCodeBuilder e2e tests', () => {
     describe('SimpleSwap', () => {
       const contractMethod = ContractMethod.simpleSwap;
 
+      describe('stUSD -> USDA via Angle Staked Stable USD', () => {
+        const dexKeys = ['AngleStakedStableUSD'];
+
+        const tokenASymbol: string = 'stUSD';
+        const tokenBSymbol: string = 'USDA';
+        const tokenAAmount: string = '60000000000000000000';
+
+        const side = SwapSide.SELL;
+
+        it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+          await testE2E(
+            tokens[tokenASymbol],
+            tokens[tokenBSymbol],
+            holders[tokenASymbol],
+            tokenAAmount,
+            side,
+            dexKeys,
+            contractMethod,
+            network,
+            provider,
+            undefined,
+            undefined,
+            undefined,
+            200,
+            2000,
+          );
+        });
+      });
+
       describe('ETH -> SUSHI via SushiSwapV3 and UniswapV3', () => {
         const dexKeys = ['SushiSwapV3', 'UniswapV3'];
 

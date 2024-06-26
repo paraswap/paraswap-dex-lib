@@ -76,6 +76,10 @@ export class Compound
       destAmount,
       swapData,
       cToken,
+      undefined,
+      undefined,
+      undefined,
+      data.fromCToken,
     );
   }
 
@@ -102,6 +106,7 @@ export class Compound
       exchangeData: swapData,
       targetExchange: cToken,
       returnAmountPos: undefined,
+      skipApproval: data.fromCToken,
     };
   }
 }

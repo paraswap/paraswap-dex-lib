@@ -127,6 +127,7 @@ export class EtherFi
 
     // if src token is WETH, we need to withdraw from weth and pass eth value on call. For other cases, we need to approve and perform call
     const isSrcTokenWeth = this.isWETH(srcToken);
+    const skipApproval = this.is_weETH(srcToken) && this.is_eETH(destToken);
 
     return this.buildSimpleParamWithoutWETHConversion(
       isSrcTokenWeth ? ETHER_ADDRESS : srcToken,
@@ -148,6 +149,7 @@ export class EtherFi
             values: ['0'],
           }
         : undefined,
+      skipApproval,
     );
   }
 
@@ -206,6 +208,8 @@ export class EtherFi
       swapFunctionParams,
     );
 
+    const skipApproval = this.is_weETH(srcToken) && this.is_eETH(destToken);
+
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
@@ -219,6 +223,7 @@ export class EtherFi
           ])
         : undefined,
       returnAmountPos: extractReturnAmountPosition(Interface, swapFunction),
+      skipApproval,
     };
   }
 

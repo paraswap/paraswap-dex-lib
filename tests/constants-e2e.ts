@@ -39,6 +39,14 @@ export const Tokens: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
     },
+    eETH: {
+      address: '0x35fA164735182de50811E8e2E824cFb9B6118ac2',
+      decimals: 18,
+    },
+    weETH: {
+      address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
+      decimals: 18,
+    },
     AMPL: {
       address: '0xd46ba6d942050d489dbd938a2c909a5d5039a161',
       decimals: 9,
@@ -401,14 +409,6 @@ export const Tokens: {
     },
     sDAI: {
       address: '0x83f20f44975d03b1b09e64809b757c47f942beea',
-      decimals: 18,
-    },
-    eETH: {
-      address: '0x35fa164735182de50811e8e2e824cfb9b6118ac2',
-      decimals: 18,
-    },
-    weETH: {
-      address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
       decimals: 18,
     },
   },
@@ -1362,7 +1362,7 @@ export const Holders: {
     USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     alETH: '0x500a4f1280a0b63f47862d658b6c335cc939aaed',
     SHIBA: '0x73af3bcf944a6559933396c1577b257e2054d935',
-    aEthWETH: '0xfEA3F5b06D41Cb1526b9cAf8be63c5b37C475f23',
+    aEthWETH: '0x931433324E6B0b5B04E3460ef3fb3f78dda3c721',
     dUSDC: '0x2FC2F705110A7F46Ce85F701d7217EF1018f01A3',
     PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
     EURA: '0xa116f421ff82a9704428259fd8cc63347127b777',
@@ -1379,8 +1379,8 @@ export const Holders: {
     LUSD: '0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA',
     BNT: '0xf727e20e081aAE428E7c6bE07b156bB21ab587a7',
     USDe: '0x74e6c48e667d698a4cf90665b6960a5bae39e603',
-    eETH: '0x0f1DfeF1a40557d279d0de6E49aB306891A638b8',
-    weETH: '0xfB4cB868727D9622258bf2B26A8CFc95f6742669',
+    weETH: '0x267ed5f71ee47d3e45bb1569aa37889a2d10f91e',
+    eETH: '0x1de713F78aA5f29874bBcc95e125721F002Da7f2',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
