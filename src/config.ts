@@ -288,11 +288,11 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     augustusV6Address: '0x9df83e1c65d4837517085e6f1c1d23a5322805e3',
-    uncompressorAddress: '0x0a511369e82a4e972449df385534091dab339fcc',
+    uncompressorAddress: '0x197703930AB4430016D29f4C4b8019d8B11eD3AC',
     executorsAddresses: {
-      Executor01: '0xfd3d1d7cb6925735a8372c1648aed07c352d4017',
-      Executor02: '0xc4446237077dd47fd9a897debea08faebbac2977',
-      Executor03: '0x1eb6798c4a4ade72b55f41c0d8f0d525481c45cb',
+      Executor01: '0x066c131aC86C697EBCAde2e3b1b0860b7f332A92',
+      Executor02: '0x44B5e87E8719Bddc3a97F733D69438453DBfA392',
+      Executor03: '0xD9E4E5e1f5A7c94baCF84a7ee24149753b8A608C',
     },
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
