@@ -46,7 +46,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       initRetryFrequency: 30,
       algebraStateMulticall: '0x6a34523Cb05BdfD39F01016358A8dF717Dbd5aca',
       subgraphURL:
-        'https://api.studio.thegraph.com/query/72680/quickswapv3-x-layer/v0.0.7',
+        'https://api.studio.thegraph.com/query/72680/quickswapv3-x-layer/v0.2',
       uniswapMulticall: '0xc7efb32470dEE601959B15f1f923e017C6A918cA',
       deployer: '0x56c2162254b0E4417288786eE402c2B41d4e181e',
       version: 'v1.9-bidirectional-fee',
