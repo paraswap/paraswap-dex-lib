@@ -1001,7 +1001,7 @@ export class CurveV1Factory
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectCurveV1Param> {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -1061,7 +1061,7 @@ export class CurveV1Factory
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (contractMethod !== DIRECT_METHOD_NAME_V6) {
       throw new Error(`Invalid contract method ${contractMethod}`);
