@@ -111,8 +111,8 @@ describe('CurveV1StableNG E2E', () => {
     const tokenASymbol: string = 'scrvUSDC_e';
     const tokenBSymbol: string = 'scrvUSDC_p';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '20232903693079';
+    const tokenBAmount: string = '40232903693079';
 
     testForNetwork(
       network,
