@@ -112,117 +112,117 @@ const MULTISIG: { [nid: number]: string } = {
   [Network.BASE]: '0x6C674c8Df1aC663b822c4B6A56B4E5e889379AE0',
 };
 
-// class APIParaswapSDK implements IParaSwapSDK {
-//   paraSwap: SimpleFetchSDK;
-//   dexKeys: string[];
-//   dexHelper: IDexHelper;
-//   pricingHelper: PricingHelper;
-//   transactionBuilder: GenericSwapTransactionBuilder;
-//   dexAdapterService: DexAdapterService;
-//
-//   constructor(
-//     protected network: number,
-//     dexKeys: string | string[],
-//     rpcUrl: string,
-//   ) {
-//     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
-//     this.paraSwap = constructSimpleSDK({
-//       chainId: network,
-//       axios,
-//       apiURL: testingEndpoint,
-//     });
-//     this.dexHelper = new DummyDexHelper(this.network, rpcUrl);
-//
-//     this.dexAdapterService = new DexAdapterService(
-//       this.dexHelper,
-//       this.network,
-//     );
-//     this.transactionBuilder = new GenericSwapTransactionBuilder(
-//       this.dexAdapterService,
-//     );
-//     this.pricingHelper = new PricingHelper(
-//       this.dexAdapterService,
-//       this.dexHelper.getLogger,
-//     );
-//   }
-//
-//   async initializePricing() {
-//     const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
-//     await this.pricingHelper.initialize(blockNumber, this.dexKeys);
-//   }
-//
-//   async getPrices(
-//     from: Token,
-//     to: Token,
-//     amount: bigint,
-//     side: SwapSide,
-//     // contractMethod: ContractMethod,
-//     contractMethod: any,
-//     _poolIdentifiers?: { [key: string]: string[] | null } | null,
-//     transferFees?: TransferFeeParams,
-//     forceRoute?: AddressOrSymbol[],
-//   ): Promise<OptimalRate> {
-//     if (_poolIdentifiers)
-//       throw new Error('PoolIdentifiers is not supported by the API');
-//
-//     let priceRoute;
-//     if (forceRoute && forceRoute.length > 0) {
-//       const options = {
-//         route: forceRoute,
-//         amount: amount.toString(),
-//         side,
-//         srcDecimals: from.decimals,
-//         destDecimals: to.decimals,
-//         options: {
-//           includeDEXS: this.dexKeys,
-//           includeContractMethods: [contractMethod],
-//           partner: 'any',
-//           maxImpact: 100,
-//         },
-//         ...transferFees,
-//       };
-//       priceRoute = await this.paraSwap.swap.getRateByRoute(options);
-//     } else {
-//       const options = {
-//         srcToken: from.address,
-//         destToken: to.address,
-//         side,
-//         amount: amount.toString(),
-//         options: {
-//           includeDEXS: this.dexKeys,
-//           includeContractMethods: [contractMethod],
-//           partner: 'any',
-//           maxImpact: 100,
-//         },
-//         ...transferFees,
-//         srcDecimals: from.decimals,
-//         destDecimals: to.decimals,
-//       };
-//       priceRoute = await this.paraSwap.swap.getRate(options);
-//     }
-//
-//     return priceRoute as OptimalRate;
-//   }
-//
-//   async buildTransaction(
-//     priceRoute: OptimalRate,
-//     _minMaxAmount: BigInt,
-//     userAddress: Address,
-//   ): Promise<TxObject> {
-//     const minMaxAmount = _minMaxAmount.toString();
-//     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
-//
-//     return await this.transactionBuilder.build({
-//       priceRoute,
-//       minMaxAmount: minMaxAmount.toString(),
-//       userAddress,
-//       partnerAddress: NULL_ADDRESS,
-//       partnerFeePercent: '0',
-//       deadline: deadline.toString(),
-//       uuid: uuid(),
-//     });
-//   }
-// }
+class APIParaswapSDK implements IParaSwapSDK {
+  paraSwap: SimpleFetchSDK;
+  dexKeys: string[];
+  dexHelper: IDexHelper;
+  pricingHelper: PricingHelper;
+  transactionBuilder: GenericSwapTransactionBuilder;
+  dexAdapterService: DexAdapterService;
+
+  constructor(
+    protected network: number,
+    dexKeys: string | string[],
+    rpcUrl: string,
+  ) {
+    this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
+    this.paraSwap = constructSimpleSDK({
+      chainId: network,
+      axios,
+      apiURL: testingEndpoint,
+    });
+    this.dexHelper = new DummyDexHelper(this.network, rpcUrl);
+
+    this.dexAdapterService = new DexAdapterService(
+      this.dexHelper,
+      this.network,
+    );
+    this.transactionBuilder = new GenericSwapTransactionBuilder(
+      this.dexAdapterService,
+    );
+    this.pricingHelper = new PricingHelper(
+      this.dexAdapterService,
+      this.dexHelper.getLogger,
+    );
+  }
+
+  async initializePricing() {
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    await this.pricingHelper.initialize(blockNumber, this.dexKeys);
+  }
+
+  async getPrices(
+    from: Token,
+    to: Token,
+    amount: bigint,
+    side: SwapSide,
+    // contractMethod: ContractMethod,
+    contractMethod: any,
+    _poolIdentifiers?: { [key: string]: string[] | null } | null,
+    transferFees?: TransferFeeParams,
+    forceRoute?: AddressOrSymbol[],
+  ): Promise<OptimalRate> {
+    if (_poolIdentifiers)
+      throw new Error('PoolIdentifiers is not supported by the API');
+
+    let priceRoute;
+    if (forceRoute && forceRoute.length > 0) {
+      const options = {
+        route: forceRoute,
+        amount: amount.toString(),
+        side,
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+        ...transferFees,
+      };
+      priceRoute = await this.paraSwap.swap.getRateByRoute(options);
+    } else {
+      const options = {
+        srcToken: from.address,
+        destToken: to.address,
+        side,
+        amount: amount.toString(),
+        options: {
+          includeDEXS: this.dexKeys,
+          includeContractMethods: [contractMethod],
+          partner: 'any',
+          maxImpact: 100,
+        },
+        ...transferFees,
+        srcDecimals: from.decimals,
+        destDecimals: to.decimals,
+      };
+      priceRoute = await this.paraSwap.swap.getRate(options);
+    }
+
+    return priceRoute as OptimalRate;
+  }
+
+  async buildTransaction(
+    priceRoute: OptimalRate,
+    _minMaxAmount: BigInt,
+    userAddress: Address,
+  ): Promise<TxObject> {
+    const minMaxAmount = _minMaxAmount.toString();
+    let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
+
+    return await this.transactionBuilder.build({
+      priceRoute,
+      minMaxAmount: minMaxAmount.toString(),
+      userAddress,
+      partnerAddress: NULL_ADDRESS,
+      partnerFeePercent: '0',
+      deadline: deadline.toString(),
+      uuid: uuid(),
+    });
+  }
+}
 
 function send1WeiTo(token: Address, to: Address, network: Network) {
   const tokens = Tokens[network];
@@ -469,11 +469,9 @@ export async function testE2E(
 
   const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
-  // const paraswap: IParaSwapSDK = useAPI
-  //   ? new APIParaswapSDK(network, dexKeys, '')
-  //   : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
-
-  const paraswap: IParaSwapSDK = new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
+  const paraswap: IParaSwapSDK = useAPI
+    ? new APIParaswapSDK(network, dexKeys, '')
+    : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
 
   if (paraswap.initializePricing) await paraswap.initializePricing();
 
