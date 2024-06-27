@@ -246,11 +246,6 @@ export class AngleTransmuter
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(): Promise<void> {
     for (const stablecoin of this.stablecoinList) {
       const fiat = stablecoin as keyof DexParams;
@@ -343,7 +338,8 @@ export class AngleTransmuter
         continue;
 
       const connectorTokens =
-        tokenAddress === paramFiat.stablecoin.address
+        tokenAddress.toLowerCase() ===
+        paramFiat.stablecoin.address.toLowerCase()
           ? this.supportedTokens[fiat].filter(
               token =>
                 token.address.toLowerCase() !==
