@@ -7,7 +7,7 @@ import { bytes3ToString } from '../../lib/decoders';
 import { MultiWrapper, MultiCallParams } from '../../lib/multi-wrapper';
 import UncompressorABI from '../../abi/Uncompressor.json';
 import compress, { AddressesMapping } from './compress';
-import { pickBy } from 'lodash';
+import { some } from 'lodash';
 
 const DEFAULT_SAVED_ADDRESS_CACHE_KEY_VALUE = 'true';
 
@@ -128,10 +128,10 @@ export class Compressor {
     );
 
     savedAddresses.forEach((index, i) => {
-      const indexNum = index !== null ? Number(index) : -1;
+      const indexNum = Number.isInteger(index) ? Number(index) : -1;
 
       addressesMapping[addresses[i]] = {
-        saved: index !== null,
+        saved: Number.isInteger(index),
         index: indexNum,
       };
     });
@@ -147,7 +147,7 @@ export class Compressor {
       newAddresses,
     );
 
-    const needUpdate = !!pickBy(onChainSavedAddresses, v => v.saved);
+    const needUpdate = some(onChainSavedAddresses, v => v.saved);
 
     if (needUpdate) {
       const setNewAddressesInCache: AddressesMapping = {};
@@ -186,7 +186,7 @@ export class Compressor {
 
     const entries = isAddressesSaved.map((addressResult, i) => {
       const savedOnchain = addressResult.success
-        ? addressResult.returnData !== '0x000000'
+        ? parseInt(addressResult.returnData, 16) > 0
         : false;
 
       const index = savedOnchain ? parseInt(addressResult.returnData, 16) : -1;
