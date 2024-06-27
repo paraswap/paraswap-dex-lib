@@ -289,7 +289,10 @@ describe('AngleTransmuter', () => {
                   collateral.address,
                   10,
                 );
-              console.log(`${collateral.symbol} Top Pools:`, poolLiquidity);
+              console.log(
+                `${collateral.symbol}: ${collateral.address} Top Pools:`,
+                JSON.stringify(poolLiquidity, null, 2),
+              );
 
               if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
                 checkPoolsLiquidity(poolLiquidity, collateral.address, dexKey);
@@ -312,7 +315,10 @@ describe('AngleTransmuter', () => {
                   stable.address,
                   10,
                 );
-              console.log(`${stable.symbol} Top Pools:`, poolLiquidity);
+              console.log(
+                `${stable.symbol}: ${stable.address} Top Pools:`,
+                JSON.stringify(poolLiquidity, null, 2),
+              );
 
               if (!newAngleTransmuter.hasConstantPriceLargeAmounts) {
                 checkPoolsLiquidity(poolLiquidity, stable.address, dexKey);
