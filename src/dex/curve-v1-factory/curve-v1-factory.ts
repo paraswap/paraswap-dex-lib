@@ -105,7 +105,7 @@ export class CurveV1Factory
     IDex<CurveV1FactoryData, DirectCurveV1Param | CurveV1FactoryDirectSwap>
 {
   readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = false;
+  readonly needWrapNative: boolean = false;
   readonly isFeeOnTransferSupported = true;
   readonly isStatePollingDex = true;
 
@@ -122,7 +122,7 @@ export class CurveV1Factory
 
   readonly directSwapIface = new Interface(DirectSwapABI);
 
-  protected buySideSupported = false;
+  protected buySideSupported: boolean = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
@@ -707,8 +707,15 @@ export class CurveV1Factory
       return [];
     }
 
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
+    const _srcToken = this.needWrapNative
+      ? this.dexHelper.config.wrapETH(srcToken)
+      : srcToken;
+    const _destToken = this.needWrapNative
+      ? this.dexHelper.config.wrapETH(destToken)
+      : destToken;
+
+    const srcTokenAddress = _srcToken.address.toLowerCase();
+    const destTokenAddress = _destToken.address.toLowerCase();
 
     if (srcTokenAddress === destTokenAddress) {
       return [];
@@ -746,8 +753,15 @@ export class CurveV1Factory
       const _isSrcTokenTransferFeeToBeExchanged =
         isSrcTokenTransferFeeToBeExchanged(transferFees);
 
-      const srcTokenAddress = srcToken.address.toLowerCase();
-      const destTokenAddress = destToken.address.toLowerCase();
+      const _srcToken = this.needWrapNative
+        ? this.dexHelper.config.wrapETH(srcToken)
+        : srcToken;
+      const _destToken = this.needWrapNative
+        ? this.dexHelper.config.wrapETH(destToken)
+        : destToken;
+
+      const srcTokenAddress = _srcToken.address.toLowerCase();
+      const destTokenAddress = _destToken.address.toLowerCase();
 
       if (srcTokenAddress === destTokenAddress) {
         return null;
@@ -787,7 +801,7 @@ export class CurveV1Factory
       }
 
       const amountsWithUnit = [
-        getBigIntPow(srcToken.decimals),
+        getBigIntPow(_srcToken.decimals),
         ...amounts.slice(1),
       ];
       const amountsWithUnitAndFee = _isSrcTokenTransferFeeToBeExchanged

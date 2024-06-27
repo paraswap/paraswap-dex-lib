@@ -28,21 +28,41 @@ describe('CurveV1StableNG E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'GHO';
-    const tokenBSymbol: string = 'USDe';
+    describe('GHO -> USDe', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'USDe';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '1000000000000000000';
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      sidesToContractMethods,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        sidesToContractMethods,
+      );
+    });
+
+    describe('weETH -> ETH', () => {
+      const tokenASymbol: string = 'weETH';
+      const tokenBSymbol: string = 'ETH';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        sidesToContractMethods,
+      );
+    });
   });
 
   describe('Polygon', () => {

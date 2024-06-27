@@ -9,7 +9,9 @@ import { AbiItem } from 'web3-utils';
 import { getDexKeysWithNetwork } from '../../utils';
 
 export class CurveV1StableNg extends CurveV1Factory {
-  protected buySideSupported = true;
+  protected buySideSupported: boolean = true;
+
+  readonly needWrapNative: boolean = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1StableNgConfig);
