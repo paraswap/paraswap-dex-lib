@@ -23,6 +23,7 @@ import { fetchTokenList } from './utils';
 import { getTokenType, setTokensOnNetwork } from './tokens';
 import { uint256ToBigInt } from '../../lib/decoders';
 import TokenABI from '../../abi/aavev3stata/Token.json';
+import { writeFileSync } from 'fs';
 // import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
 // slimmed down version of @bgd-labs/aave-address-book
 // required as version of web3-utils used is buggy
@@ -95,6 +96,12 @@ export class AaveV3Stata
     );
 
     setTokensOnNetwork(this.network, tokenList);
+
+    // TODO: Remove
+    writeFileSync(
+      `${__dirname}/tokens-${this.network}.json`,
+      JSON.stringify(tokenList, null, 2),
+    );
 
     // init state for all tokens as empty
     tokenList.forEach(token => {
