@@ -325,25 +325,24 @@ export class AngleTransmuter
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    const tokenAddressLower = tokenAddress.toLowerCase();
     for (const stablecoin of this.stablecoinList) {
       const fiat = stablecoin as keyof DexParams;
       const paramFiat = this.params[fiat]!;
+      const stableCoinLowercase = paramFiat.stablecoin.address.toLowerCase();
 
       // If not this stable let's check another one
       if (
         !this.supportedTokens[fiat].some(
-          t => t.address.toLowerCase() === tokenAddress.toLowerCase(),
+          t => t.address.toLowerCase() === tokenAddressLower,
         )
       )
         continue;
 
       const connectorTokens =
-        tokenAddress.toLowerCase() ===
-        paramFiat.stablecoin.address.toLowerCase()
+        tokenAddressLower === stableCoinLowercase
           ? this.supportedTokens[fiat].filter(
-              token =>
-                token.address.toLowerCase() !==
-                paramFiat.stablecoin.address.toLowerCase(),
+              token => token.address.toLowerCase() !== stableCoinLowercase,
             )
           : [paramFiat.stablecoin];
 
@@ -354,7 +353,7 @@ export class AngleTransmuter
           connectorTokens: connectorTokens.slice(0, limit),
           // liquidity is potentially infinite if swapping for agXXX, otherwise at most reserves value
           liquidityUSD:
-            tokenAddress === paramFiat.stablecoin.address
+            tokenAddressLower === stableCoinLowercase
               ? this.transmuterUSDLiquidity[fiat]
               : 1e9,
         },
