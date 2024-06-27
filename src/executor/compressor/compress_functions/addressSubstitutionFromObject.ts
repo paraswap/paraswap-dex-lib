@@ -27,7 +27,6 @@ const addressSubstitutionFromObject = ({
     })
     .forEach(address => {
       let index = callData.indexOf(address);
-      console.log(address, addressesObject);
       const bytes3 = intTo3Bytes(addressesObject[`0x${address}`].index);
 
       while (index !== -1) {
