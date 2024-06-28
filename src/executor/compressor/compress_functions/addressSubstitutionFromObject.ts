@@ -33,6 +33,7 @@ const addressSubstitutionFromObject = ({
         if (index % 2 === 0) {
           callData =
             callData.substring(0, index) +
+            'RR' +
             bytes3 +
             callData.substring(index + address.length);
         }
