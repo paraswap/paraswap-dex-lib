@@ -179,6 +179,7 @@ const fetchAllPools = `query ($count: Int) {
     orderBy: totalLiquidity
     orderDirection: desc
     where: {
+      isInRecoveryMode: false,
       totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
       totalShares_not_in: ["0", "0.000000000001"],
       id_not_in: [
