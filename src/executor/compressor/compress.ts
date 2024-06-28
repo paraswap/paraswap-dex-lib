@@ -217,7 +217,7 @@ const compress = function ({
     compressedCallData += duplicatedStringMarkers[i];
   }
   // 0x + address prefix (1B) | nbOfNewAddresses (1B) | newAddressPrefix (0/1B) | newAddresses (n * 20B) |
-  //      maxByteInZeroes (1B) | substitution of method index (1/5B) | compressedData | 00 | duplicatedStringMarkers
+  //      maxByteInZeroes (1B) | FF | compressedData | 00 | duplicatedStringMarkers
 
   const finalCost = computeCost(compressedCallData);
   if (compressedCallData.length % 2 !== 0)
