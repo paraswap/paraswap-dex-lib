@@ -179,7 +179,6 @@ const fetchAllPools = `query ($count: Int) {
     orderBy: totalLiquidity
     orderDirection: desc
     where: {
-      isInRecoveryMode: false,
       totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
       totalShares_not_in: ["0", "0.000000000001"],
       id_not_in: [
@@ -207,6 +206,7 @@ const fetchAllPools = `query ($count: Int) {
       address
       decimals
     }
+    isInRecoveryMode
     mainIndex
     wrappedIndex
 
@@ -416,16 +416,16 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       throw new Error('Unable to fetch pools from the subgraph');
 
     const poolsMap = keyBy(data.pools, 'address');
-    const allPools: SubgraphPoolBase[] = data.pools.map(
-      (pool: Omit<SubgraphPoolBase, 'mainTokens'>) => ({
+    const allPools: SubgraphPoolBase[] = data.pools
+      .filter((pool: SubgraphPoolBase) => !pool.isInRecoveryMode)
+      .map((pool: Omit<SubgraphPoolBase, 'mainTokens'>) => ({
         ...pool,
         mainTokens: poolGetMainTokens(pool, poolsMap),
         tokensMap: pool.tokens.reduce(
           (acc, token) => ({ ...acc, [token.address.toLowerCase()]: token }),
           {},
         ),
-      }),
-    );
+      }));
 
     this.dexHelper.cache.setex(
       this.parentName,
