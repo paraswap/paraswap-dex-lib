@@ -287,12 +287,12 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
-    augustusV6Address: '0x9df83e1c65d4837517085e6f1c1d23a5322805e3',
-    uncompressorAddress: '0x841A9B6c4Fc644797a7a7B38bFF42A6F0acE5D01',
+    augustusV6Address: '0x6A000F20005980200259B80c5102003040001068',
+    uncompressorAddress: '0x97715f34893dc77542b278Ff9830852fbE266A54',
     executorsAddresses: {
-      Executor01: '0x2E068b11E79F41E959D1d040460077289Cd475a6',
-      Executor02: '0x4e6FF39C9fBe96b27936e1b466854132CbDDEA0b',
-      Executor03: '0xCCc998ea0C286D843b6ACC163E97087136E7Cf98',
+      Executor01: '0x9A4b16fa3072766ffeb22f28F151352880a8E2f2',
+      Executor02: '0xB1d934E05F1FDAdfc033f33D52291FE6B215F093',
+      Executor03: '0x4d1e9f05a33BFB7a90f3dfbd8954d7D251a61929',
     },
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {

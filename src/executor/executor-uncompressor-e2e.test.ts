@@ -32,14 +32,14 @@ function testForNetwork(
         ContractMethod.swapExactAmountIn,
       ],
     ],
-    // [
-    //   SwapSide.BUY,
-    //   [
-    //     ContractMethod.simpleBuy,
-    //     ContractMethod.buy,
-    //     ContractMethod.swapExactAmountOut,
-    //   ],
-    // ],
+    [
+      SwapSide.BUY,
+      [
+        ContractMethod.simpleBuy,
+        ContractMethod.buy,
+        ContractMethod.swapExactAmountOut,
+      ],
+    ],
   ]);
 
   describe(`${network}`, () => {
@@ -83,12 +83,11 @@ function testForNetwork(
 describe('ExecutorUncompressor E2E', () => {
   const network = Network.ARBITRUM;
   const dexKey = 'UniswapV3';
-
   describe(dexKey, () => {
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDC';
+    const tokenASymbol: string = 'DAI';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '1000000';
+    const tokenAAmount: string = '1000000000000000000';
     const tokenBAmount: string = '1100000000';
 
     testForNetwork(
