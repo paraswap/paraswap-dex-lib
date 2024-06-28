@@ -1129,8 +1129,16 @@ export const Tokens: {
       address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
       decimals: 6,
     },
+    PSTAKE: {
+      address: '0x023550adde4fa2f90d63a41d9282bee0294c04cd',
+      decimals: 18,
+    },
     GRAIN: {
       address: '0xfd389dc9533717239856190f42475d3f263a270d',
+      decimals: 18,
+    },
+    tBTC: {
+      address: '0x6c84a8f1c29108f47a79964b5fe888d4f4d0de40',
       decimals: 18,
     },
     GRAI: {
@@ -1233,9 +1241,17 @@ export const Tokens: {
       address: '0x64b88c73A5DfA78D1713fE1b4c69a22d7E0faAa7',
       decimals: 18,
     },
+    crvUSD: {
+      address: '0x417ac0e078398c154edfadd9ef675d30be60af93',
+      decimals: 18,
+    },
     USDC: {
       address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
       decimals: 6,
+    },
+    USDM: {
+      address: '0x59d9356e565ab3a36dd77763fc0d87feaf85508c',
+      decimals: 18,
     },
     USDbC: {
       address: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA',
@@ -1243,6 +1259,10 @@ export const Tokens: {
     },
     DOG: {
       address: '0xAfb89a09D82FBDE58f18Ac6437B3fC81724e4dF6',
+      decimals: 18,
+    },
+    cbETH: {
+      address: '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22',
       decimals: 18,
     },
     tBTC: {
@@ -1306,7 +1326,7 @@ export const Holders: {
     STETH: '0x50b42514389F25E1f471C8F03f6f5954df0204b0',
     SUSHI: '0x8a108e4761386c94b8d2f98A5fFe13E472cFE76a',
     wstETH: '0x5fEC2f34D80ED82370F733043B6A536d7e9D7f8d',
-    WETH: '0x2fEb1512183545f48f6b9C5b4EbfCaF49CfCa6F3',
+    WETH: '0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44',
     USDT: '0xAf64555DDD61FcF7D094824dd9B4eBea165aFc5b',
     XAUT: '0xc4e161e8d8a4bc4ac762ab33a28bbac5474203d7',
     R: '0xBfe4c9D3235475C138a61f62e9e72FaD94A3303b',
@@ -1372,7 +1392,7 @@ export const Holders: {
     BNT: '0xf727e20e081aAE428E7c6bE07b156bB21ab587a7',
     USDe: '0x74e6c48e667d698a4cf90665b6960a5bae39e603',
     eETH: '0x0f1DfeF1a40557d279d0de6E49aB306891A638b8',
-    weETH: '0xfB4cB868727D9622258bf2B26A8CFc95f6742669',
+    weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
@@ -1413,7 +1433,8 @@ export const Holders: {
     stEUR: '0xA9DdD91249DFdd450E81E1c56Ab60E1A62651701',
     USDA: '0x741383AbD73891b40822A069f14d6fc5b5685020',
     stUSD: '0xA9DdD91249DFdd450E81E1c56Ab60E1A62651701',
-    crvUSD: '0x9D3a22A71C2bddFEF006f1c207C06B0A5f42f95F',
+    crvUSD: '0xB498de532C68dc3cd93D54187E082E5D789a9e47',
+    USDCe: '0xA67EFB69A4f58F568aAB1b9d51110102985835b0',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
@@ -1441,8 +1462,8 @@ export const Holders: {
     lzUSDC: '0x06F1C4A56357bF3971C79063f2B58E58c547BC0B',
     axlUSDC: '0xccf932cd565c21d2e516c8ff3a4f244eea27e09a',
     SOLID: '0xdF6A50d16320D9eAf0D91e0039fcE89c700F95F1',
-    scrvUSDC_e: '0x49000C4E845de46017F089EF7c175cEA6c5a94b8',
-    scrvUSDC_p: '0x45d426F005741D3BF771AB0c0EF419cCAe1BB750',
+    scrvUSDC_e: '0xb8c1dAb69724da9d3225F14bfD76Ae97bB92BFda',
+    scrvUSDC_p: '0x74796478d7755a77807fADd2389A18DF1baf9e7c',
   },
   [Network.BSC]: {
     DAI: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
@@ -1538,7 +1559,7 @@ export const Holders: {
     stEUR: '0xE588611e7A2392507879E3be80531654b85C16aA',
     USDA: '0xa86ff337db9107b54862d30d1a598f8be847b05e',
     stUSD: '0xa9ddd91249dfdd450e81e1c56ab60e1a62651701',
-    crvUSD: '0x171c53d55b1bcb725f660677d9e8bad7fd084282',
+    crvUSD: '0x9755e99bdb99495d3d31d953785d993c6df8552e',
   },
   [Network.OPTIMISM]: {
     ETH: '0xF6D4E5a7c5215F91f59a95065190CCa24bf64554',
@@ -1562,9 +1583,11 @@ export const Holders: {
     stEUR: '0xA9DdD91249DFdd450E81E1c56Ab60E1A62651701',
     USDA: '0xC18dAC166eDa9538933258d21A272C1775C19c73',
     stUSD: '0xC98b0729695A25152B8D5b6B95709070605A7F60',
-    crvUSD: '0xD1A992417a0ABFFa632Cbde4DA9F5DcF85CAa858',
+    crvUSD: '0x528e7aF33043Da06ca3DD407626a71DbBD3173D6',
     LUSD: '0xf0a9abb11958a071e168f2ee5bcbacf1abbde9cf',
     GRAI: '0x92b051204816DC4fbA7AC1A68a2cf319A9a387CB',
+    tBTC: '0xf7b4531e52211CC44379102F719cad29411dB053',
+    PSTAKE: '0xc45398444B83183b2018e0224B3D332b42D492Af',
   },
   [Network.ZKEVM]: {
     ETH: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
@@ -1592,6 +1615,9 @@ export const Holders: {
     AERO: '0x807877258b55bfefabdd469da1c72731c5070839',
     tBTC: '0x9f1920d0cbb63ed03376a1e09fd2851d601234c8',
     DOG: '0xbe3ab8a87730684ef1e476064c2e43c3e982f8e8',
+    USDM: '0x492EC4591c55962C5739A8dC98F0B401897Db038',
+    crvUSD: '0xBbAbDB1385deA5285113581A7024d6DC04131101',
+    cbETH: '0x50e011dD1e2b4906F1534623cD134B30422bb11E',
   },
 };
 
