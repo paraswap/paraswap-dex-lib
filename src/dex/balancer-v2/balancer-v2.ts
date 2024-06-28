@@ -210,7 +210,6 @@ const fetchAllPools = `query ($count: Int) {
       address
       decimals
     }
-    isInRecoveryMode
     mainIndex
     wrappedIndex
 

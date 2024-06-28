@@ -103,7 +103,6 @@ export interface SubgraphPoolBase {
   w: string;
   z: string;
   dSq: string;
-  isInRecoveryMode: boolean | null;
 }
 
 export type BalancerSwapV2 = {
