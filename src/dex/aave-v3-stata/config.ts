@@ -50,8 +50,12 @@ export const AaveV3StataConfig: DexConfigMap<DexParams> = {
 };
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
+  // TODO: add adapters for each chain for V5 support
   [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
   [Network.POLYGON]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.AVALANCHE]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.ARBITRUM]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.OPTIMISM]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.BASE]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.BSC]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
 };

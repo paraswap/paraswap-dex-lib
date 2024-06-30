@@ -97,12 +97,6 @@ export class AaveV3Stata
 
     setTokensOnNetwork(this.network, tokenList);
 
-    // TODO: Remove
-    writeFileSync(
-      `${__dirname}/tokens-${this.network}.json`,
-      JSON.stringify(tokenList, null, 2),
-    );
-
     // init state for all tokens as empty
     tokenList.forEach(token => {
       this.state[token.address] = {

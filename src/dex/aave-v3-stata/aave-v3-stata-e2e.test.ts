@@ -29,45 +29,43 @@ function testForNetwork(
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
-  describe(`${network}`, () => {
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
-          if (contractMethod === ContractMethod.swapExactAmountOut && skipBuy) {
-            return;
-          }
-          describe(`${contractMethod}`, () => {
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+  sideToContractMethods.forEach((contractMethods, side) =>
+    describe(`${side}`, () => {
+      contractMethods.forEach((contractMethod: ContractMethod) => {
+        if (contractMethod === ContractMethod.swapExactAmountOut && skipBuy) {
+          return;
+        }
+        describe(`${contractMethod}`, () => {
+          it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            await testE2E(
+              tokens[tokenASymbol],
+              tokens[tokenBSymbol],
+              holders[tokenASymbol],
+              side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
+          });
+          it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+            await testE2E(
+              tokens[tokenBSymbol],
+              tokens[tokenASymbol],
+              holders[tokenBSymbol],
+              side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+              side,
+              dexKey,
+              contractMethod,
+              network,
+              provider,
+            );
           });
         });
-      }),
-    );
-  });
+      });
+    }),
+  );
 }
 
 describe('AaveV3Stata E2E', () => {
@@ -152,4 +150,206 @@ describe('AaveV3Stata E2E', () => {
       );
     });
   });
+
+  // TODO: No holders yet
+  // describe('Avalanche', () => {
+  //   const network = Network.AVALANCHE;
+
+  //   const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+  //     [
+  //       {
+  //         name: 'USDT',
+  //         amount: '100000',
+  //       },
+  //       {
+  //         name: 'stataUSDT',
+  //         amount: '100000',
+  //       },
+  //     ],
+  //     [
+  //       {
+  //         name: 'aaveUSDT',
+  //         amount: '100000',
+  //         skipBuy: true,
+  //       },
+  //       {
+  //         name: 'stataUSDT',
+  //         amount: '100000',
+  //       },
+  //     ],
+  //   ];
+
+  //   pairs.forEach(pair => {
+  //     testForNetwork(
+  //       network,
+  //       dexKey,
+  //       pair[0].name,
+  //       pair[1].name,
+  //       pair[0].amount,
+  //       pair[1].amount,
+  //       pair[0].skipBuy,
+  //     );
+  //   });
+  // });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+      [
+        {
+          name: 'USDT',
+          amount: '100000',
+        },
+        {
+          name: 'stataUSDT',
+          amount: '100000',
+        },
+      ],
+      [
+        {
+          name: 'aaveUSDT',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'stataUSDT',
+          amount: '100000',
+        },
+      ],
+    ];
+
+    pairs.forEach(pair => {
+      testForNetwork(
+        network,
+        dexKey,
+        pair[0].name,
+        pair[1].name,
+        pair[0].amount,
+        pair[1].amount,
+        pair[0].skipBuy,
+      );
+    });
+  });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+      [
+        {
+          name: 'USDT',
+          amount: '100000',
+        },
+        {
+          name: 'stataUSDT',
+          amount: '100000',
+        },
+      ],
+      [
+        {
+          name: 'aaveUSDT',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'stataUSDT',
+          amount: '100000',
+        },
+      ],
+    ];
+
+    pairs.forEach(pair => {
+      testForNetwork(
+        network,
+        dexKey,
+        pair[0].name,
+        pair[1].name,
+        pair[0].amount,
+        pair[1].amount,
+        pair[0].skipBuy,
+      );
+    });
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+      [
+        {
+          name: 'USDC',
+          amount: '100000',
+        },
+        {
+          name: 'stataUSDC',
+          amount: '100000',
+        },
+      ],
+      [
+        {
+          name: 'aaveUSDC',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'stataUSDC',
+          amount: '100000',
+        },
+      ],
+    ];
+
+    pairs.forEach(pair => {
+      testForNetwork(
+        network,
+        dexKey,
+        pair[0].name,
+        pair[1].name,
+        pair[0].amount,
+        pair[1].amount,
+        pair[0].skipBuy,
+      );
+    });
+  });
+
+  // TODO: No holders yet
+  // describe('Bsc', () => {
+  //   const network = Network.BSC;
+
+  //   const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+  //     [
+  //       {
+  //         name: 'USDT',
+  //         amount: '100000',
+  //       },
+  //       {
+  //         name: 'stataUSDT',
+  //         amount: '100000',
+  //       },
+  //     ],
+  //     [
+  //       {
+  //         name: 'aaveUSDT',
+  //         amount: '100000',
+  //         skipBuy: true,
+  //       },
+  //       {
+  //         name: 'stataUSDT',
+  //         amount: '100000',
+  //       },
+  //     ],
+  //   ];
+
+  //   pairs.forEach(pair => {
+  //     testForNetwork(
+  //       network,
+  //       dexKey,
+  //       pair[0].name,
+  //       pair[1].name,
+  //       pair[0].amount,
+  //       pair[1].amount,
+  //       pair[0].skipBuy,
+  //     );
+  //   });
+  // });
 });

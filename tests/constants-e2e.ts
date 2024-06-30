@@ -823,6 +823,14 @@ export const Tokens: {
       address: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',
       decimals: 18,
     },
+    stataUSDT: {
+      address: '0x0471d185cc7be61e154277cab2396cd397663da6',
+      decimals: 18,
+    },
+    aaveUSDT: {
+      address: '0xa9251ca9de909cb71783723713b21e4233fbf1b1',
+      decimals: 18,
+    },
   },
   [Network.AVALANCHE]: {
     LINKe: {
@@ -986,6 +994,14 @@ export const Tokens: {
       address: '0x027dbcA046ca156De9622cD1e2D907d375e53aa7',
       decimals: 9,
     },
+    stataUSDT: {
+      address: '0x5525ee69bc1e354b356864187de486fab5ad67d7',
+      decimals: 6,
+    },
+    aaveUSDT: {
+      address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
+      decimals: 6,
+    },
   },
   [Network.ARBITRUM]: {
     SEN: {
@@ -1129,6 +1145,14 @@ export const Tokens: {
       address: '0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8',
       decimals: 18,
     },
+    stataUSDT: {
+      address: '0xb165a74407fe1e519d6bcbdec1ed3202b35a4140',
+      decimals: 6,
+    },
+    aaveUSDT: {
+      address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
+      decimals: 6,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1220,6 +1244,14 @@ export const Tokens: {
       address: '0x6806411765Af15Bddd26f8f544A34cC40cb9838B',
       decimals: 18,
     },
+    stataUSDT: {
+      address: '0x035c93db04e5aaea54e6cd0261c492a3e0638b37',
+      decimals: 6,
+    },
+    aaveUSDT: {
+      address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
+      decimals: 6,
+    },
   },
   [Network.ZKEVM]: {
     ETH: {
@@ -1308,6 +1340,14 @@ export const Tokens: {
     AERO: {
       address: '0x940181a94A35A4569E4529A3CDfB74e38FD98631',
       decimals: 18,
+    },
+    stataUSDC: {
+      address: '0x4ea71a20e655794051d1ee8b6e4a3269b13ccacc',
+      decimals: 6,
+    },
+    aaveUSDC: {
+      address: '0x4e65fe4dba92790696d040ac24aa414708f5c0ab',
+      decimals: 6,
     },
   },
 };
@@ -1494,6 +1534,8 @@ export const Holders: {
     EURA: '0x4A5362ef534FFB27510E4E4C9A215BB5436377C2',
     USDA: '0x230c1f68aBE6033Cba3Fe0D2C0D7097e9923C3bC',
     stUSD: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',
+    stataUSDT: '', // no holders yet
+    aaveUSDT: '0x5DE3c5BE52D7aDbdC3aEFe2eA061A2ECE0C7d766',
   },
   [Network.AVALANCHE]: {
     LINKe: '0x9efa0A617C0552F1558c95993aA8b8A68b3e709C',
@@ -1530,6 +1572,8 @@ export const Holders: {
     BTCb: '0x2446bEb3905CfFbd2c5eB18F1f9c2996B05257c4',
     AMPL: '0xfcaA5ea7F8eb0631BcA72C345025C0A5a6D93f0E',
     PHAR: '0x654296D56532f62B7d91d335791d3c364a9385b5',
+    stataUSDT: '', // no holders yet
+    aaveUSDT: '0xB2d3ad6e99D2A043EF77e3812461Ad2D4Ae3da8B',
   },
   [Network.ARBITRUM]: {
     SEN: '0x76d39045d856caf9bfae12ba611ca4a94449a4f1',
@@ -1567,6 +1611,8 @@ export const Holders: {
     USDA: '0xa86ff337db9107b54862d30d1a598f8be847b05e',
     stUSD: '0xa9ddd91249dfdd450e81e1c56ab60e1a62651701',
     crvUSD: '0x171c53d55b1bcb725f660677d9e8bad7fd084282',
+    stataUSDT: '0x403D37c861fb54b8F37a3A1870aBce335954840B',
+    aaveUSDT: '0xAfa788fab589fe61C23DF76905558f4734444D67',
   },
   [Network.OPTIMISM]: {
     ETH: '0xF6D4E5a7c5215F91f59a95065190CCa24bf64554',
@@ -1593,6 +1639,8 @@ export const Holders: {
     crvUSD: '0xD1A992417a0ABFFa632Cbde4DA9F5DcF85CAa858',
     LUSD: '0xf0a9abb11958a071e168f2ee5bcbacf1abbde9cf',
     GRAI: '0x92b051204816DC4fbA7AC1A68a2cf319A9a387CB',
+    stataUSDT: '0xd55263b84685Ced7e10a77607C7fFD763D495B6e',
+    aaveUSDT: '0x1Fd458C52fEb7Bb35097ebd9566DB6C269341FDD',
   },
   [Network.ZKEVM]: {
     ETH: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
@@ -1620,6 +1668,8 @@ export const Holders: {
     AERO: '0x807877258b55bfefabdd469da1c72731c5070839',
     tBTC: '0x9f1920d0cbb63ed03376a1e09fd2851d601234c8',
     DOG: '0xbe3ab8a87730684ef1e476064c2e43c3e982f8e8',
+    stataUSDC: '0x88Cac91ADDE2208039A227B373C2A692C0700547',
+    aaveUSDC: '0x5DE3c5BE52D7aDbdC3aEFe2eA061A2ECE0C7d766',
   },
 };
 
