@@ -85,7 +85,7 @@ import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
-import { FxProtocol } from './fx-protocol/fx-protocol';
+import { FxProtocol } from './fx-protocol-rusd/fx-protocol';
 
 const LegacyDexes = [
   CurveV2,

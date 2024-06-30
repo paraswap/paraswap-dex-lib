@@ -14,7 +14,7 @@ import {
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Utils, getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DexParams, FxProtocolData, PoolState } from './types';
 import { SimpleExchange } from '../simple-exchange';
