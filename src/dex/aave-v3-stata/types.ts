@@ -62,3 +62,8 @@ export enum StataFunctions {
   mint = 'mint',
   withdraw = 'withdraw',
 }
+
+export enum Rounding {
+  UP = 'UP',
+  DOWN = 'DOWN',
+}

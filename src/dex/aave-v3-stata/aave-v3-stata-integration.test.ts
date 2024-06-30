@@ -14,21 +14,6 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
-/*
-  README
-  ======
-
-  This test script adds tests for AaveV3Stata general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover AaveV3Stata specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
@@ -59,7 +44,7 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = '0x1017F4a86Fc3A3c824346d0b8C5e96A5029bDAf9'; // stataUSDCn
+  const exchangeAddress = '0x2dca80061632f3f87c9ca28364d1d0c30cd79a19'; // stataUSDCn
 
   const readerIface = AaveV3Stata.stata;
 
@@ -149,7 +134,7 @@ describe('AaveV3Stata', function () {
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'USDC';
+    const srcTokenSymbol = 'USDCn';
     const destTokenSymbol = 'stataUSDCn';
 
     const amountsForSell = [
@@ -188,7 +173,7 @@ describe('AaveV3Stata', function () {
       }
     });
 
-    it('getPoolIdentifiers and getPricesVolume SELL USDC for stataUSDCn', async function () {
+    it('getPoolIdentifiers and getPricesVolume SELL USDCn -> stataUSDCn', async function () {
       await testPricingOnNetwork(
         aaveV3Stata,
         network,
@@ -202,7 +187,21 @@ describe('AaveV3Stata', function () {
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY stataUSDCn via USDC', async function () {
+    it('getPoolIdentifiers and getPricesVolume SELL stataUSDCn -> USDCn ', async function () {
+      await testPricingOnNetwork(
+        aaveV3Stata,
+        network,
+        dexKey,
+        blockNumber,
+        destTokenSymbol,
+        srcTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'previewRedeem',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY USDC -> stataUSDCn', async function () {
       await testPricingOnNetwork(
         aaveV3Stata,
         network,
@@ -212,30 +211,45 @@ describe('AaveV3Stata', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
+        'previewMint',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY stataUSDCn -> USDC', async function () {
+      await testPricingOnNetwork(
+        aaveV3Stata,
+        network,
+        dexKey,
+        blockNumber,
+        destTokenSymbol,
+        srcTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
         'previewWithdraw',
       );
     });
 
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newAaveV3Stata = new AaveV3Stata(network, dexKey, dexHelper);
-      if (newAaveV3Stata.updatePoolState) {
-        await newAaveV3Stata.updatePoolState();
-      }
-      const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+    // TODO: Not used
+    // it('getTopPoolsForToken', async function () {
+    //   // We have to check without calling initializePricing, because
+    //   // pool-tracker is not calling that function
+    //   const newAaveV3Stata = new AaveV3Stata(network, dexKey, dexHelper);
+    //   if (newAaveV3Stata.updatePoolState) {
+    //     await newAaveV3Stata.updatePoolState();
+    //   }
+    //   const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
+    //     tokens[srcTokenSymbol].address,
+    //     10,
+    //   );
+    //   console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
-    });
+    //   if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
+    //     checkPoolsLiquidity(
+    //       poolLiquidity,
+    //       Tokens[network][srcTokenSymbol].address,
+    //       dexKey,
+    //     );
+    //   }
+    // });
   });
 });

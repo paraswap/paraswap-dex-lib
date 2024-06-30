@@ -15,7 +15,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Utils, getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AaveV3StataData, StataFunctions, TokenType } from './types';
+import { AaveV3StataData, Rounding, StataFunctions, TokenType } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveV3StataConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
@@ -39,7 +39,7 @@ export class AaveV3Stata
   extends SimpleExchange
   implements IDex<AaveV3StataData>
 {
-  readonly hasConstantPriceLargeAmounts = true;
+  readonly hasConstantPriceLargeAmounts = false;
 
   readonly isFeeOnTransferSupported = false;
 
@@ -148,13 +148,14 @@ export class AaveV3Stata
   ): Promise<null | ExchangePrices<AaveV3StataData>> {
     const src = getTokenType(this.network, srcToken.address);
     const dest = getTokenType(this.network, destToken.address);
+    const isSrcStata = src === TokenType.STATA_TOKEN;
 
     // the token itself can only swap from/to underlying and aToken, so
     // - at least one must be stata
     // - maximum one can be stata
     if (
       ![src, dest].includes(TokenType.STATA_TOKEN) ||
-      (src === TokenType.STATA_TOKEN && dest === TokenType.STATA_TOKEN)
+      (isSrcStata && dest === TokenType.STATA_TOKEN)
     ) {
       return null;
     }
@@ -163,7 +164,7 @@ export class AaveV3Stata
     if (side === SwapSide.BUY && ![src, dest].includes(TokenType.UNDERLYING))
       return null;
 
-    const stata = src === TokenType.STATA_TOKEN ? srcToken : destToken;
+    const stata = isSrcStata ? srcToken : destToken;
     const stataAddressLower = stata.address.toLowerCase();
 
     // following what is done on wstETH
@@ -203,12 +204,22 @@ export class AaveV3Stata
 
     return [
       {
-        prices: amounts.map(
-          amount =>
-            side === SwapSide.BUY
-              ? (amount * this.state[stataAddressLower].rate) / RAY // rounding up (convert to assets)
-              : (amount * RAY) / this.state[stataAddressLower].rate, // rounding down (convert to shares)
-        ),
+        prices: amounts.map(amount => {
+          const rate = this.state[stataAddressLower].rate;
+          if (side === SwapSide.SELL) {
+            if (isSrcStata) {
+              return this.previewRedeem(amount, rate);
+            } else {
+              return this.previewDeposit(amount, rate);
+            }
+          } else {
+            if (isSrcStata) {
+              return this.previewWithdraw(amount, rate);
+            } else {
+              return this.previewMint(amount, rate);
+            }
+          }
+        }),
         unit: getBigIntPow(
           (side === SwapSide.SELL ? destToken : srcToken).decimals,
         ),
@@ -394,5 +405,53 @@ export class AaveV3Stata
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     // TODO: complete me!
+  }
+
+  // TODO: Move to pool implementation when migrating to event based
+  previewRedeem(shares: bigint, rate: bigint) {
+    return this._convertToAssets(shares, rate, Rounding.DOWN);
+  }
+
+  previewMint(shares: bigint, rate: bigint) {
+    return this._convertToAssets(shares, rate, Rounding.UP);
+  }
+
+  previewWithdraw(assets: bigint, rate: bigint) {
+    return this._convertToShares(assets, rate, Rounding.UP);
+  }
+
+  previewDeposit(assets: bigint, rate: bigint) {
+    return this._convertToShares(assets, rate, Rounding.DOWN);
+  }
+
+  _convertToAssets(shares: bigint, rate: bigint, rounding: Rounding): bigint {
+    if (rounding == Rounding.UP) return this.rayMulRoundUp(shares, rate);
+    return this.rayMulRoundDown(shares, rate);
+  }
+  _convertToShares(assets: bigint, rate: bigint, rounding: Rounding): bigint {
+    if (rounding == Rounding.UP) return this.rayDivRoundUp(assets, rate);
+    return this.rayDivRoundDown(assets, rate);
+  }
+
+  rayMulRoundDown(a: bigint, b: bigint): bigint {
+    if (a === 0n || b === 0n) {
+      return 0n;
+    }
+    return (a * b) / RAY;
+  }
+
+  rayMulRoundUp(a: bigint, b: bigint) {
+    if (a === 0n || b === 0n) {
+      return 0n;
+    }
+    return (a * b + RAY - 1n) / RAY;
+  }
+
+  rayDivRoundDown(a: bigint, b: bigint) {
+    return (a * RAY) / b;
+  }
+
+  rayDivRoundUp(a: bigint, b: bigint) {
+    return (a * RAY + b - 1n) / b;
   }
 }
