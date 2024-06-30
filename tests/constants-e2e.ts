@@ -411,6 +411,10 @@ export const Tokens: {
       address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
       decimals: 18,
     },
+    rUSD: {
+      address: '0x65D72AA8DA931F047169112fcf34f52DbaAE7D18',
+      decimals: 18,
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
