@@ -235,11 +235,9 @@ export class AaveV3Stata
     ];
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(
     poolPrices: PoolPrices<AaveV3StataData>,
   ): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
