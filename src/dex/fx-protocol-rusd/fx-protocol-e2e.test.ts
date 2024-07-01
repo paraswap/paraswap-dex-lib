@@ -57,19 +57,17 @@ function testForNetwork(
   });
 }
 
-describe('FxProtocol E2E', () => {
-  const dexKey = 'FxProtocol';
+describe('FxProtocolRusd E2E', () => {
+  const dexKey = 'FxProtocolRusd';
+  const network = Network.MAINNET;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  const tokenASymbol: string = 'weETH';
+  const tokenBSymbol: string = 'rUSD';
 
-    const tokenASymbol: string = 'weETH';
-    const tokenBSymbol: string = 'rUSD';
-
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
-
+  const tokenAAmount: string = '1000000000000000000';
+  const tokenBAmount: string = '1000000000000000000';
+  const nativeTokenAmount = '1000000000000000000';
+  describe('Mainnet weETH=>rUSD', () => {
     testForNetwork(
       network,
       dexKey,
@@ -77,6 +75,18 @@ describe('FxProtocol E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Mainnet rUSD=>weETH', () => {
+    testForNetwork(
+      network,
+      dexKey,
+      tokenBSymbol,
+      tokenASymbol,
+      tokenBAmount,
+      tokenAAmount,
       nativeTokenAmount,
     );
   });

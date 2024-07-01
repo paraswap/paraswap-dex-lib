@@ -6,7 +6,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { FxProtocol } from './fx-protocol';
+import { FxProtocolRusd } from './fx-protocol-rusd';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -40,7 +40,7 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
-  fxProtocol: FxProtocol,
+  fxProtocol: FxProtocolRusd,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
@@ -51,7 +51,7 @@ async function checkOnChainPricing(
 
   // Normally you can get it from fxProtocol.Iface or from eventPool.
   // It depends on your implementation
-  const readerIface = FxProtocol.fxUSDIface;
+  const readerIface = FxProtocolRusd.fxUSDIface;
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
@@ -77,7 +77,7 @@ async function checkOnChainPricing(
 }
 
 async function testPricingOnNetwork(
-  fxProtocol: FxProtocol,
+  fxProtocol: FxProtocolRusd,
   network: Network,
   dexKey: string,
   blockNumber: number,
@@ -126,10 +126,10 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('FxProtocol', function () {
-  const dexKey = 'FxProtocol';
+describe('FxProtocolRusd', function () {
+  const dexKey = 'FxProtocolRusd';
   let blockNumber: number;
-  let fxProtocol: FxProtocol;
+  let fxProtocol: FxProtocolRusd;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -140,6 +140,9 @@ describe('FxProtocol', function () {
     // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'weETH';
     const destTokenSymbol = 'rUSD';
+
+    const srcTokenSymbol_rUSD = 'rUSD';
+    const destTokenSymbol_weETH = 'weETH';
 
     const amountsForSell = [
       0n,
@@ -157,7 +160,7 @@ describe('FxProtocol', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      fxProtocol = new FxProtocol(network, dexKey, dexHelper);
+      fxProtocol = new FxProtocolRusd(network, dexKey, dexHelper);
       // if (fxProtocol.initializePricing) {
       //   await fxProtocol.initializePricing(blockNumber);
       // }
@@ -177,10 +180,24 @@ describe('FxProtocol', function () {
       );
     });
 
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        fxProtocol,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol_rUSD,
+        destTokenSymbol_weETH,
+        SwapSide.SELL,
+        amountsForSell,
+        'nav',
+      );
+    });
+
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newFxProtocol = new FxProtocol(network, dexKey, dexHelper);
+      const newFxProtocol = new FxProtocolRusd(network, dexKey, dexHelper);
       // if (newFxProtocol.updatePoolState) {
       //   await newFxProtocol.updatePoolState();
       // }

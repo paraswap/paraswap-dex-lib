@@ -1,4 +1,4 @@
-import { AsyncOrSync } from 'ts-essentials';
+import { AsyncOrSync, assert } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -24,7 +24,10 @@ import FxUSD_ABI from '../../abi/fx-protocol/FxUSD.json';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
-export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
+export class FxProtocolRusd
+  extends SimpleExchange
+  implements IDex<FxProtocolData>
+{
   static readonly fxUSDIface = new Interface(FxUSD_ABI);
 
   protected config: DexParams;
@@ -56,10 +59,35 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     this.config = {
       rUSDAddress: config.rUSDAddress.toLowerCase(),
       weETHAddress: config.weETHAddress.toLowerCase(),
+      ezETHAddress: config.ezETHAddress.toLowerCase(),
     };
     this.logger = dexHelper.getLogger(dexKey);
   }
 
+  is_weETH(token: string) {
+    return token.toLowerCase() === this.config.weETHAddress;
+  }
+
+  is_rUSD(token: string) {
+    return token.toLowerCase() === this.config.rUSDAddress;
+  }
+
+  is_ezETH(token: string) {
+    return token.toLowerCase() === this.config.ezETHAddress;
+  }
+
+  is_rUSD_swap_token(srcToken: string, destToken: string) {
+    if (this.is_weETH(srcToken) && this.is_rUSD(destToken)) {
+      return true;
+    }
+    if (this.is_rUSD(srcToken) && this.is_weETH(destToken)) {
+      return true;
+    }
+    if (this.is_rUSD(srcToken) && this.is_ezETH(destToken)) {
+      return true;
+    }
+    return false;
+  }
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -76,24 +104,16 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) return [];
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
-    if (
-      !(
-        srcTokenAddress === this.config.weETHAddress &&
-        destTokenAddress === this.config.rUSDAddress
-      )
-    ) {
+    if (!this.is_rUSD_swap_token(srcToken.address, destToken.address)) {
       return [];
     }
     return [this.dexKey];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
+  // // Returns pool prices for amounts.
+  // // If limitPools is defined only pools in limitPools
+  // // should be used. If limitPools is undefined then
+  // // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -102,20 +122,22 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<FxProtocolData>> {
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
-    if (
-      !(
-        srcTokenAddress === this.config.weETHAddress &&
-        destTokenAddress === this.config.rUSDAddress
-      )
-    ) {
+    const is_rUSD_src = this.is_rUSD(srcToken.address);
+    const is_weETH_src = this.is_weETH(srcToken.address);
+    const is_rUSD_dest = this.is_rUSD(destToken.address);
+    const is_weETH_dest = this.is_weETH(destToken.address);
+    const is_eETH_dest = this.is_ezETH(destToken.address);
+    const isRUSDSwapToken = this.is_rUSD_swap_token(
+      srcToken.address,
+      destToken.address,
+    );
+    if (!isRUSDSwapToken) {
       return null;
     }
     const readerCallData = [
       {
         target: this.config.rUSDAddress,
-        callData: FxProtocol.fxUSDIface.encodeFunctionData('nav'),
+        callData: FxProtocolRusd.fxUSDIface.encodeFunctionData('nav'),
         decodeFunction: uint256ToBigInt,
       },
     ];
@@ -132,28 +154,14 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     );
 
     const _price = results[0].returnData;
-    this.state = {
-      blockNumber,
-      nav: results[0].returnData,
-    };
-
-    this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      'state',
-      60,
-      Utils.Serialize(this.state),
-    );
-
     return [
       {
         unit: 1000000000000000000n,
-        prices: amounts.map(item => (item * _price) / 1000000000000000000n),
+        prices: amounts,
         data: {},
         poolAddresses: [this.config.rUSDAddress],
         exchange: this.dexKey,
         gasCost: 70000,
-        poolIdentifier: `${this.dexKey}_${this.network}_${this.config.weETHAddress}`,
       },
     ];
   }
@@ -198,7 +206,13 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     data: FxProtocolData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (srcToken.toLowerCase() === this.config.weETHAddress) {
+    const is_rUSD_src = this.is_rUSD(srcToken);
+    const is_weETH_src = this.is_weETH(srcToken);
+    const is_rUSD_dest = this.is_rUSD(destToken);
+    const is_weETH_dest = this.is_weETH(destToken);
+    const is_eETH_dest = this.is_ezETH(destToken);
+
+    if (is_weETH_src && is_rUSD_dest) {
       const approveParam = await this.getApproveSimpleParam(
         this.config.weETHAddress,
         this.config.rUSDAddress,
@@ -208,7 +222,7 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
         callees: [...approveParam.callees, this.config.rUSDAddress],
         calldata: [
           ...approveParam.calldata,
-          FxProtocol.fxUSDIface.encodeFunctionData('mint', [
+          FxProtocolRusd.fxUSDIface.encodeFunctionData('mint', [
             this.config.weETHAddress,
             srcAmount,
             this.augustusAddress,
@@ -216,6 +230,22 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
           ]),
         ],
         values: [...approveParam.values, '0'],
+        networkFee: '0',
+      };
+    }
+    if (is_rUSD_src && (is_weETH_dest || is_eETH_dest)) {
+      assert(this.is_rUSD(srcToken), 'srcToken should be rUSD, redeem token');
+      return {
+        callees: [this.config.rUSDAddress],
+        calldata: [
+          FxProtocolRusd.fxUSDIface.encodeFunctionData('redeem', [
+            destToken,
+            srcAmount,
+            this.augustusAddress,
+            '0',
+          ]),
+        ],
+        values: ['0'],
         networkFee: '0',
       };
     }
@@ -231,27 +261,49 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     data: FxProtocolData,
     side: SwapSide,
   ): Promise<DexExchangeParam> {
-    const exchangeData = FxProtocol.fxUSDIface.encodeFunctionData('mint', [
-      this.config.weETHAddress,
-      srcAmount,
-      this.augustusAddress,
-      '0',
-    ]);
+    const is_rUSD_src = this.is_rUSD(srcToken);
+    const is_weETH_src = this.is_weETH(srcToken);
+    const is_rUSD_dest = this.is_rUSD(destToken);
+    const is_weETH_dest = this.is_weETH(destToken);
+    const is_eETH_dest = this.is_ezETH(destToken);
 
-    return {
-      needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
-      exchangeData,
-      targetExchange: this.config.rUSDAddress,
-      returnAmountPos:
-        side === SwapSide.SELL
-          ? extractReturnAmountPosition(
-              FxProtocol.fxUSDIface,
-              'mint',
-              '_amountOut',
-            )
-          : undefined,
-    };
+    if (is_weETH_src && is_rUSD_dest) {
+      assert(this.is_weETH(srcToken), 'srcToken should be weETH');
+      const exchangeData = FxProtocolRusd.fxUSDIface.encodeFunctionData(
+        'mint',
+        [this.config.weETHAddress, srcAmount, this.augustusAddress, '0'],
+      );
+      return {
+        needWrapNative: false,
+        dexFuncHasRecipient: false,
+        exchangeData,
+        targetExchange: this.config.rUSDAddress,
+        returnAmountPos: extractReturnAmountPosition(
+          FxProtocolRusd.fxUSDIface,
+          'mint',
+          '_amountOut',
+        ),
+      };
+    }
+    if (is_rUSD_src && (is_weETH_dest || is_eETH_dest)) {
+      assert(this.is_rUSD(srcToken), 'srcToken should be rUSD');
+      const exchangeData = FxProtocolRusd.fxUSDIface.encodeFunctionData(
+        'redeem',
+        [destToken, srcAmount, this.augustusAddress, '0'],
+      );
+      return {
+        needWrapNative: false,
+        dexFuncHasRecipient: false,
+        exchangeData,
+        targetExchange: this.config.rUSDAddress,
+        returnAmountPos: extractReturnAmountPosition(
+          FxProtocolRusd.fxUSDIface,
+          'redeem',
+          '_amountOut',
+        ),
+      };
+    }
+    throw new Error('LOGIC ERROR');
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -260,10 +312,6 @@ export class FxProtocol extends SimpleExchange implements IDex<FxProtocolData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    tokenAddress = tokenAddress.toLowerCase();
-    if (tokenAddress !== this.config.weETHAddress) {
-      return [];
-    }
     return [
       {
         exchange: this.dexKey,
