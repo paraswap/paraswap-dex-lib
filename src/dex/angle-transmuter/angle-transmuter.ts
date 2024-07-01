@@ -24,7 +24,7 @@ import { Interface, formatUnits, parseUnits } from 'ethers/lib/utils';
 import { TransmuterSubscriber } from './transmuter';
 import ERC20ABI from '../../abi/erc20.json';
 
-const TransmuterGasCost = 0;
+const TransmuterGasCost = 350000;
 
 export class AngleTransmuter
   extends SimpleExchange
