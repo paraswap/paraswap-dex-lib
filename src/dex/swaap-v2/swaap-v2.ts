@@ -980,15 +980,12 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       return [];
     }
 
-    return Object.keys(pLevels)
-      .filter(async (pair: string) => {
+    const pLevelsWithRestriction = await Promise.all(
+      Object.keys(pLevels).map(async (pair: string) => {
         const { base, quote } = pLevels[pair];
 
         const levelDoesNotIncludeToken =
           normalizedTokenAddress !== base && normalizedTokenAddress !== quote;
-        if (levelDoesNotIncludeToken) {
-          return false;
-        }
 
         const poolIdentifier: string = getPoolIdentifier(
           this.dexKey,
@@ -996,9 +993,21 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           quote,
         );
         const isRestrictedPool = await this.isRestrictedPool(poolIdentifier);
-        return !isRestrictedPool;
-      })
-      .map((pair: string) => {
+
+        return {
+          pair,
+          levelDoesNotIncludeToken,
+          isRestrictedPool,
+        };
+      }),
+    );
+
+    return pLevelsWithRestriction
+      .filter(
+        ({ levelDoesNotIncludeToken, isRestrictedPool }) =>
+          !levelDoesNotIncludeToken && !isRestrictedPool,
+      )
+      .map(({ pair }) => {
         return {
           exchange: this.dexKey,
           connectorTokens: [
