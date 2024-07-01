@@ -325,10 +325,10 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     event: ethers.utils.LogDescription,
     state: TransmuterState,
   ): Readonly<TransmuterState> | null {
-    const tokenIn: string = event.args.tokenIn;
-    const tokenOut: string = event.args.tokenOut;
+    const tokenIn: string = event.args.tokenIn.toLowerCase();
+    const tokenOut: string = event.args.tokenOut.toLowerCase();
     // in case of a burn
-    if (tokenIn.toLowerCase() === this.EURA.toLowerCase()) {
+    if (tokenIn === this.EURA.toLowerCase()) {
       const amount: number = Number.parseFloat(
         formatUnits(event.args.amountIn, 18),
       );
@@ -389,7 +389,7 @@ export class TransmuterSubscriber<State> extends PartialEventSubscriber<
     event: ethers.utils.LogDescription,
     state: TransmuterState,
   ): Readonly<TransmuterState> | null {
-    const collateral = event.args.collateral;
+    const collateral = event.args.collateral.toLowerCase();
     const isIncrease: boolean = event.args.increase;
     const amount: number =
       Number.parseFloat(formatUnits(event.args.amount, 18)) *
