@@ -41,6 +41,8 @@ import { bigIntify } from '../../utils';
 import { MorphoVaultSubscriber } from './morphoVault';
 import _ from 'lodash';
 
+const FORCE_REGENERATE_STATE_INTERVAL_MS = 1000 * 60 * 60 * 24; // 24h
+
 export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState> {
   public transmuter: Contract;
   public readonly angleTransmuterIface;
@@ -182,6 +184,14 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     );
 
     this.config = config;
+
+    // some oracles don't emit events (redstone), need to regenerate state after some period of time. 1 day should provide up-to-date info
+    setInterval(() => {
+      const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
+      this.generateState(blockNumber).then(newState =>
+        this.setState(newState, blockNumber),
+      );
+    }, FORCE_REGENERATE_STATE_INTERVAL_MS);
   }
 
   async getStateOrGenerate(blockNumber: number): Promise<Readonly<PoolState>> {

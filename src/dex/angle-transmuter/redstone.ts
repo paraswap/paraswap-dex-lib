@@ -66,16 +66,7 @@ export class RedstoneSubscriber<State> extends PartialEventSubscriber<
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<ChainLinkState> | null {
-    // if (log.topics[0] !== RedstoneSubscriber.ANSWER_UPDATED_TOPIC) return null; // Ignore other events
-    // const decoded = RedstoneSubscriber.proxyInterface.decodeEventLog(
-    //     'AnswerUpdated',
-    //     log.data,
-    //     log.topics,
-    // );
-    // return {
-    //     answer: BigInt(decoded.current.toString()),
-    //     timestamp: BigInt(decoded.updatedAt.toString()),
-    // };
+    // No events with updated info, this is placeholder
     return {
       answer: BigInt('1000000'),
       timestamp: BigInt('1000000'),
