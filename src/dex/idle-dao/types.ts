@@ -7,6 +7,7 @@ export type DexParams = {
 };
 
 export type IdleToken = {
+  idleDecimals: number;
   idleSymbol: string;
   idleAddress: string;
   cdoAddress: string;

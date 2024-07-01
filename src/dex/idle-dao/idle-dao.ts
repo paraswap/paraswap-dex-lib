@@ -198,13 +198,13 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
           if (fromIdleToken) {
             output = Math.round(
               (parseFloat('' + tokenPrice) * parseFloat('' + amount)) /
-                parseFloat(`1e${idleToken.decimals}`),
+                parseFloat(`1e${idleToken.idleDecimals}`),
             );
             // SELL underlyingToken (amount = 1000000 USDC), output = 1000000/tokenPrice*1e18
           } else {
             output = Math.round(
               (parseFloat('' + amount) / parseFloat('' + tokenPrice)) *
-                parseFloat(`1e${idleToken.decimals}`),
+                parseFloat(`1e${idleToken.idleDecimals}`),
             );
           }
         } else {
@@ -212,13 +212,13 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
           if (fromIdleToken) {
             output = Math.round(
               (parseFloat('' + amount) / parseFloat('' + tokenPrice)) *
-                parseFloat(`1e${idleToken.decimals}`),
+                parseFloat(`1e${idleToken.idleDecimals}`),
             );
             // BUY underlyingToken (amount = 1000000000000000000 AA_idle_cpPOR-USDC, output = 1000000000000000000*tokenPrice/1e18)
           } else {
             output = Math.round(
               (parseFloat('' + tokenPrice) * parseFloat('' + amount)) /
-                parseFloat(`1e${idleToken.decimals}`),
+                parseFloat(`1e${idleToken.idleDecimals}`),
             );
           }
         }
