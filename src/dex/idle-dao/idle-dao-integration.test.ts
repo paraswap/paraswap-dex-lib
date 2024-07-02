@@ -6,7 +6,6 @@ import { Network, SwapSide } from '../../constants';
 import { IdleDao } from './idle-dao';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { BI_POWS } from '../../bigint-constants';
 
 async function testForIntegration(
   network: Network,

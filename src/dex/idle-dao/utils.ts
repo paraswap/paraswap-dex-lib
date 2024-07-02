@@ -82,7 +82,7 @@ const getDataWithAuth = async (
   error_callback?: Function,
 ) => {
   const config = {
-    headers: { Authorization: `Bearer ${atob(token)}` },
+    headers: { Authorization: `Bearer ${token}` },
   };
 
   const data = await axios.post(endpoint, {}, config).catch(err => {
@@ -193,10 +193,6 @@ export const fetchTokenList_api = async (
     erc20Interface,
     multiWrapper,
   );
-
-  // console.log('results', results);
-  // console.log('idleTokenDecimals', idleTokenDecimals);
-  // console.log('cdosUnderlying', cdosUnderlying)
 
   const output: IdleToken[] = [];
   for (const result of results) {
