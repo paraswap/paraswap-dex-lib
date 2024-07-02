@@ -23,6 +23,7 @@ import { AngleTransmuterEventPool } from './angle-transmuter-pool';
 import { Interface, formatUnits, parseUnits } from 'ethers/lib/utils';
 import { TransmuterSubscriber } from './transmuter';
 import ERC20ABI from '../../abi/erc20.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const TransmuterGasCost = 350000;
 
@@ -242,7 +243,11 @@ export class AngleTransmuter
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
-      returnAmountPos: undefined,
+      returnAmountPos: extractReturnAmountPosition(
+        TransmuterSubscriber.transmuterCrosschainInterface,
+        side === SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
+        side === SwapSide.SELL ? 'amountOut' : 'amountIn',
+      ),
     };
   }
 
