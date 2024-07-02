@@ -243,11 +243,14 @@ export class AngleTransmuter
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
-      returnAmountPos: extractReturnAmountPosition(
-        TransmuterSubscriber.transmuterCrosschainInterface,
-        side === SwapSide.SELL ? 'swapExactInput' : 'swapExactOutput',
-        side === SwapSide.SELL ? 'amountOut' : 'amountIn',
-      ),
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              TransmuterSubscriber.transmuterCrosschainInterface,
+              'swapExactInput',
+              'amountOut',
+            )
+          : undefined,
     };
   }
 
