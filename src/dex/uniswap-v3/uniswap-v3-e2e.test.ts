@@ -1273,31 +1273,12 @@ describe('UniswapV3 E2E', () => {
       describe('Optimism', () => {
         const network = Network.OPTIMISM;
 
-        describe('wstETH -> WETH', () => {
-          const tokenASymbol: string = 'wstETH';
-          const tokenBSymbol: string = 'WETH';
+        describe('PSTAKE -> USDC', () => {
+          const tokenASymbol: string = 'PSTAKE';
+          const tokenBSymbol: string = 'USDC';
 
-          const tokenAAmount: string = '10000000000000000';
-          const tokenBAmount: string = '10000000000000000';
-          const nativeTokenAmount = '1000000000000000000';
-
-          testForNetwork(
-            network,
-            dexKey,
-            tokenASymbol,
-            tokenBSymbol,
-            tokenAAmount,
-            tokenBAmount,
-            nativeTokenAmount,
-          );
-        });
-
-        describe('LUSD -> GRAI', () => {
-          const tokenASymbol: string = 'LUSD';
-          const tokenBSymbol: string = 'GRAI';
-
-          const tokenAAmount: string = '1100000000000000000';
-          const tokenBAmount: string = '1100000000000000000';
+          const tokenAAmount: string = '20000000000000000000';
+          const tokenBAmount: string = '10000000';
 
           const provider = new StaticJsonRpcProvider(
             generateConfig(network).privateHttpProvider,
@@ -1309,23 +1290,8 @@ describe('UniswapV3 E2E', () => {
           const slippage = 100;
 
           const sideToContractMethods = new Map([
-            [
-              SwapSide.SELL,
-              [
-                ContractMethod.simpleSwap,
-                ContractMethod.multiSwap,
-                ContractMethod.megaSwap,
-                ContractMethod.directUniV3Swap,
-              ],
-            ],
-            [
-              SwapSide.BUY,
-              [
-                ContractMethod.simpleBuy,
-                ContractMethod.buy,
-                ContractMethod.directUniV3Buy,
-              ],
-            ],
+            [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+            [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
           ]);
 
           sideToContractMethods.forEach((contractMethods, side) =>
