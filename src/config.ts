@@ -17,6 +17,7 @@ type BaseConfig = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
+  uncompressorAddress?: Address;
   augustusV6Address?: Address;
   augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
@@ -286,11 +287,12 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
-    augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
+    augustusV6Address: '0x6A000F20005980200259B80c5102003040001068',
+    uncompressorAddress: '0x97715f34893dc77542b278Ff9830852fbE266A54',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0x9A4b16fa3072766ffeb22f28F151352880a8E2f2',
+      Executor02: '0xB1d934E05F1FDAdfc033f33D52291FE6B215F093',
+      Executor03: '0x4d1e9f05a33BFB7a90f3dfbd8954d7D251a61929',
     },
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
@@ -441,6 +443,7 @@ export function generateConfig(network: number): Config {
     hasEIP1559: baseConfig.hasEIP1559,
     augustusAddress: baseConfig.augustusAddress,
     augustusV6Address: baseConfig.augustusV6Address,
+    uncompressorAddress: baseConfig.uncompressorAddress,
     augustusRFQAddress: baseConfig.augustusRFQAddress,
     tokenTransferProxyAddress: baseConfig.tokenTransferProxyAddress,
     multicallV2Address: baseConfig.multicallV2Address,

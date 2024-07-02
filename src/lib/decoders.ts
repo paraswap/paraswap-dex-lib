@@ -166,6 +166,14 @@ export const stringDecode = (
   return generalDecoder(result, ['string'], '');
 };
 
+export const bytes3ToString = (
+  result: MultiResult<BytesLike> | BytesLike,
+): string => {
+  return generalDecoder(result, ['bytes3'], '', value =>
+    value[0].toLowerCase(),
+  );
+};
+
 export const bytes32ToString = (
   result: MultiResult<BytesLike> | BytesLike,
 ): string => {

@@ -35,6 +35,7 @@ import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 import { IDexTxBuilder } from './dex/idex';
 import { ParaSwapVersion } from '@paraswap/core';
+import { Compressor } from './executor/compressor/Compressor';
 
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
@@ -60,6 +61,7 @@ export class GenericSwapTransactionBuilder {
   abiCoder: AbiCoder;
 
   executorDetector: ExecutorDetector;
+  compressor: Compressor | null = null;
 
   constructor(
     protected dexAdapterService: DexAdapterService,
@@ -80,6 +82,20 @@ export class GenericSwapTransactionBuilder {
     this.executorDetector = new ExecutorDetector(
       this.dexAdapterService.dexHelper,
     );
+
+    const { uncompressorAddress, augustusV6Address } =
+      this.dexAdapterService.dexHelper.config.data;
+
+    this.compressor =
+      uncompressorAddress && augustusV6Address
+        ? new Compressor(
+            this.dexAdapterService.network,
+            uncompressorAddress,
+            augustusV6Address,
+            this.dexAdapterService.dexHelper.cache,
+            this.dexAdapterService.dexHelper.multiWrapper,
+          )
+        : null;
   }
 
   protected getDepositWithdrawWethCallData(
@@ -227,11 +243,18 @@ export class GenericSwapTransactionBuilder {
 
     const bytecodeBuilder =
       this.executorDetector.getBytecodeBuilder(executorName);
+
     const bytecode = await this.buildCalls(
       priceRoute,
       minMaxAmount,
       bytecodeBuilder,
       userAddress,
+    );
+
+    const compressedBytecode = await this.compress(
+      priceRoute,
+      bytecode,
+      executionContractAddress,
     );
 
     const side = priceRoute.side;
@@ -264,7 +287,7 @@ export class GenericSwapTransactionBuilder {
       ],
       partnerAndFee,
       permit,
-      bytecode,
+      compressedBytecode,
     ];
 
     const encoder = (...params: any[]) =>
@@ -727,5 +750,23 @@ export class GenericSwapTransactionBuilder {
     });
 
     return dexExchangeBuildParams;
+  }
+
+  private async compress(
+    priceRoute: OptimalRate,
+    bytecode: string,
+    executorAddress: Address,
+  ): Promise<string> {
+    if (this.compressor == null) return bytecode;
+
+    const offsetAndLength = bytecode.slice(0, 130); // 128 + prefix
+    const executorCalldata = bytecode.slice(130);
+    const compressed = await this.compressor.compress(
+      executorCalldata,
+      priceRoute,
+      executorAddress,
+    );
+
+    return offsetAndLength + compressed.slice(2);
   }
 }
