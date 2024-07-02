@@ -171,7 +171,10 @@ export class AaveV3Stata
     const stataAddressLower = stata.address.toLowerCase();
 
     // following what is done on wstETH
-    if (blockNumber > this.state[stataAddressLower].blockNumber) {
+    if (
+      !this.state[stataAddressLower]?.blockNumber ||
+      blockNumber > this.state[stataAddressLower].blockNumber
+    ) {
       const cached = await this.dexHelper.cache.get(
         this.dexKey,
         this.network,
