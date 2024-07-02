@@ -75,6 +75,7 @@ import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { AngleTransmuter } from './angle-transmuter/angle-transmuter';
 import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
@@ -158,6 +159,7 @@ const Dexes = [
   MaverickV2,
   Camelot,
   SwaapV2,
+  AngleTransmuter,
   AngleStakedStable,
   QuickPerps,
   NomiswapV2,
