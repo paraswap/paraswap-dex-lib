@@ -36,5 +36,6 @@ export function getTokenType(network: Network, address: string): TokenType {
   if (!token) return TokenType.UNKNOWN;
   if (token.address === addressLower) return TokenType.STATA_TOKEN;
   if (token.underlying === addressLower) return TokenType.UNDERLYING;
-  return TokenType.A_TOKEN;
+  if (token.underlyingAToken === addressLower) return TokenType.A_TOKEN;
+  return TokenType.UNKNOWN;
 }

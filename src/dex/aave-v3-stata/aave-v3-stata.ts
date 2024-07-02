@@ -153,9 +153,12 @@ export class AaveV3Stata
     // the token itself can only swap from/to underlying and aToken, so
     // - at least one must be stata
     // - maximum one can be stata
+    // - second one must be underlying or aUnderlying
     if (
       ![src, dest].includes(TokenType.STATA_TOKEN) ||
-      (isSrcStata && dest === TokenType.STATA_TOKEN)
+      src === dest ||
+      src === TokenType.UNKNOWN ||
+      dest === TokenType.UNKNOWN
     ) {
       return null;
     }
