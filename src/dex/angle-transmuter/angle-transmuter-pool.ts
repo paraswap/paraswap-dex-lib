@@ -47,6 +47,7 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
   public transmuter: Contract;
   public readonly angleTransmuterIface;
   readonly config: PoolConfig;
+  timer: NodeJS.Timer;
 
   constructor(
     readonly parentName: string,
@@ -186,12 +187,16 @@ export class AngleTransmuterEventPool extends ComposedEventSubscriber<PoolState>
     this.config = config;
 
     // some oracles don't emit events (redstone), need to regenerate state after some period of time. 1 day should provide up-to-date info
-    setInterval(() => {
+    this.timer = setInterval(() => {
       const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
       this.generateState(blockNumber).then(newState =>
         this.setState(newState, blockNumber),
       );
     }, FORCE_REGENERATE_STATE_INTERVAL_MS);
+  }
+
+  releaseResources(): void {
+    clearInterval(this.timer);
   }
 
   async getStateOrGenerate(blockNumber: number): Promise<Readonly<PoolState>> {

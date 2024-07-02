@@ -362,9 +362,9 @@ export class AngleTransmuter
     return [];
   }
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {}
+  releaseResources(): AsyncOrSync<void> {
+    Object.values(this.eventPools).forEach(pool => pool.releaseResources());
+  }
 
   _knownAddress(
     srcToken: Token,
