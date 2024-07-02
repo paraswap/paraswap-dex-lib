@@ -1652,9 +1652,20 @@ export class BalancerV2
 
     const query = `query ($poolIds: [String!]!, $count: Int) {
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
-           where: {id_in: $poolIds,
-                   swapEnabled: true,
-                   totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}}) {
+        where: {
+          and: [
+            { 
+              or: [
+                { isInRecoveryMode: false }
+                { isInRecoveryMode: null }
+              ]
+            },
+            {
+              id_in: $poolIds,
+              swapEnabled: true,
+              totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}
+          ]
+      }) {
         address
         totalLiquidity
         tokens {
