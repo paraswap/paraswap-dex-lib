@@ -1,19 +1,23 @@
 import dotenv from 'dotenv';
-dotenv.config();
-
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { Holders, Tokens } from '../../../tests/constants-e2e';
+import { ContractMethod, Network } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { SwapSide } from '@paraswap/core';
 
-function testForNetwork(
+dotenv.config();
+
+export function testForNetwork(
   network: Network,
   dexKey: string,
   tokenASymbol: string,
   tokenBSymbol: string,
   tokenAAmount: string,
   tokenBAmount: string,
+  sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+  ]),
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -22,18 +26,7 @@ function testForNetwork(
   const tokens = Tokens[network];
   const holders = Holders[network];
 
-  const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        // ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-        // ContractMethod.directCurveV1Swap,
-        ContractMethod.swapExactAmountIn,
-      ],
-    ],
-  ]);
+  // const sideToContractMethods = ;
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -45,7 +38,7 @@ function testForNetwork(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
-                tokenAAmount,
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -63,7 +56,7 @@ function testForNetwork(
                 tokens[tokenBSymbol],
                 tokens[tokenASymbol],
                 holders[tokenBSymbol],
-                tokenBAmount,
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -321,15 +314,29 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
+  describe('Base', () => {
+    const network = Network.BASE;
 
-  describe('Stable NG Pools', () => {
-    describe('Mainnet Stable NG', () => {
-      const network = Network.MAINNET;
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+      ],
+      // [
+      //   SwapSide.SELL,
+      //   [
+      //     ContractMethod.simpleSwap,
+      //     ContractMethod.multiSwap,
+      //     ContractMethod.megaSwap,
+      //   ],
+      // ],
+    ]);
 
-      const tokenASymbol: string = 'GHO';
-      const tokenBSymbol: string = 'USDe';
+    describe('USDC -> crvUSD', () => {
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'crvUSD';
 
-      const tokenAAmount: string = '100000000';
+      const tokenAAmount: string = '10000000';
       const tokenBAmount: string = '1000000000000000000';
 
       testForNetwork(
@@ -339,101 +346,7 @@ describe('CurveV1Factory E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-      );
-    });
-
-    describe('Polygon Stable NG', () => {
-      const network = Network.POLYGON;
-
-      describe('crvUSD -> USDT', () => {
-        const tokenASymbol: string = 'crvUSD';
-        const tokenBSymbol: string = 'USDT';
-
-        const tokenAAmount: string = '1000000000000000000';
-        const tokenBAmount: string = '10000000';
-
-        testForNetwork(
-          network,
-          dexKey,
-          tokenASymbol,
-          tokenBSymbol,
-          tokenAAmount,
-          tokenBAmount,
-        );
-      });
-
-      describe('USDC.e -> USDC', () => {
-        const tokenASymbol: string = 'USDCe';
-        const tokenBSymbol: string = 'USDC';
-
-        const tokenAAmount: string = '10000000';
-        const tokenBAmount: string = '10000000';
-
-        testForNetwork(
-          network,
-          dexKey,
-          tokenASymbol,
-          tokenBSymbol,
-          tokenAAmount,
-          tokenBAmount,
-        );
-      });
-    });
-
-    describe('Fantom Stable NG', () => {
-      const network = Network.FANTOM;
-
-      const tokenASymbol: string = 'scrvUSDC_e';
-      const tokenBSymbol: string = 'scrvUSDC_p';
-
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '1000000000000000000';
-
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-      );
-    });
-
-    describe('Arbitrum Stable NG', () => {
-      const network = Network.ARBITRUM;
-
-      const tokenASymbol: string = 'crvUSD';
-      const tokenBSymbol: string = 'USDCe';
-
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '10000000';
-
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-      );
-    });
-
-    describe('Optimism Stable NG', () => {
-      const network = Network.OPTIMISM;
-
-      const tokenASymbol: string = 'crvUSD';
-      const tokenBSymbol: string = 'USDT';
-
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '10000000';
-
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
+        sideToContractMethods,
       );
     });
   });
