@@ -1664,6 +1664,7 @@ export class BalancerV2
               id_in: $poolIds,
               swapEnabled: true,
               totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}
+            }
           ]
       }) {
         address
