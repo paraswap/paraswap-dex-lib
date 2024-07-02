@@ -82,7 +82,7 @@ const getDataWithAuth = async (
   error_callback?: Function,
 ) => {
   const config = {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${atob(token)}` },
   };
 
   const data = await axios.post(endpoint, {}, config).catch(err => {
@@ -102,7 +102,6 @@ export const fetchTokenList_api = async (
   multiWrapper: MultiWrapper,
   token: string,
 ): Promise<IdleToken[]> => {
-  // const AUTH_TOKEN_DECODED = atob(idleDaoAuthToken!);
   const data = await getDataWithAuth(endpoints[network], token);
 
   // Fetch tokenslist from static file
@@ -112,7 +111,10 @@ export const fetchTokenList_api = async (
 
   const deployedContract = data
     .filter((d: any) => !!d.cdoAddress)
-    .map((d: any) => d.cdoAddress);
+    .reduce((acc: any[], d: any) => {
+      if (acc.includes(d.cdoAddress)) return acc;
+      return [...acc, d.cdoAddress];
+    }, []);
 
   const calls = deployedContract.reduce(
     (calls: MultiCallParams<any>[], cdoAddress: string) => {
@@ -192,20 +194,22 @@ export const fetchTokenList_api = async (
     multiWrapper,
   );
 
-  // console.log('idleTokenDecimals', idleTokenDecimals)
+  // console.log('results', results);
+  // console.log('idleTokenDecimals', idleTokenDecimals);
   // console.log('cdosUnderlying', cdosUnderlying)
 
   const output: IdleToken[] = [];
   for (const result of results) {
     if (result.tokenType) {
       const idleToken: IdleToken = {
-        decimals: 18,
         blockNumber: 0,
+        idleDecimals: 18,
         cdoAddress: result.cdoAddress,
         idleAddress: result.idleAddress,
         address: cdosUnderlying[result.cdoAddress],
         idleSymbol: idleTokenSymbolsList[result.idleAddress],
         tokenType: result.tokenType as IdleToken['tokenType'],
+        decimals: idleTokenDecimals[cdosUnderlying[result.cdoAddress]],
       };
       output.push(idleToken);
     }

@@ -45,7 +45,7 @@ export function getIdleTokenIfIdleDaoPair(
 export function getTokenFromIdleToken(idleToken: IdleToken): Token {
   return {
     address: idleToken.idleAddress,
-    decimals: idleToken.decimals,
+    decimals: idleToken.idleDecimals,
     symbol: idleToken.idleSymbol,
   };
 }
