@@ -20,7 +20,11 @@ import { SimpleExchange } from '../simple-exchange';
 import { AaveV3StataConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import { fetchTokenList } from './utils';
-import { getTokenType, setTokensOnNetwork } from './tokens';
+import {
+  getTokenFromAddress,
+  getTokenType,
+  setTokensOnNetwork,
+} from './tokens';
 import { uint256ToBigInt } from '../../lib/decoders';
 import TokenABI from '../../abi/aavev3stata/Token.json';
 import { writeFileSync } from 'fs';
@@ -148,24 +152,41 @@ export class AaveV3Stata
   ): Promise<null | ExchangePrices<AaveV3StataData>> {
     const src = getTokenType(this.network, srcToken.address);
     const dest = getTokenType(this.network, destToken.address);
+
+    // one of the tokens must be stata
+    if (![src, dest].includes(TokenType.STATA_TOKEN) || src === dest) {
+      return null;
+    }
+
     const isSrcStata = src === TokenType.STATA_TOKEN;
+
+    const [stataToken, otherAddressLower] = isSrcStata
+      ? [
+          getTokenFromAddress(this.network, srcToken.address),
+          destToken.address.toLowerCase(),
+        ]
+      : [
+          getTokenFromAddress(this.network, destToken.address),
+          srcToken.address.toLowerCase(),
+        ];
 
     // the token itself can only swap from/to underlying and aToken, so
     // - at least one must be stata
     // - maximum one can be stata
     // - second one must be underlying or aUnderlying
-    if (
-      ![src, dest].includes(TokenType.STATA_TOKEN) ||
-      src === dest ||
-      src === TokenType.UNKNOWN ||
-      dest === TokenType.UNKNOWN
-    ) {
-      return null;
-    }
-
     // on the buy side (mint, withdraw) we only support the underlying<->stata conversion, not the aUnderlying
-    if (side === SwapSide.BUY && ![src, dest].includes(TokenType.UNDERLYING))
-      return null;
+    if (side === SwapSide.SELL) {
+      if (
+        otherAddressLower !== stataToken.underlying.toLowerCase() &&
+        otherAddressLower !== stataToken.underlyingAToken.toLowerCase()
+      ) {
+        return null;
+      }
+    } else {
+      if (otherAddressLower !== stataToken.underlying.toLowerCase()) {
+        return null;
+      }
+    }
 
     const stata = isSrcStata ? srcToken : destToken;
     const stataAddressLower = stata.address.toLowerCase();

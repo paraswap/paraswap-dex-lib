@@ -39,3 +39,10 @@ export function getTokenType(network: Network, address: string): TokenType {
   if (token.underlyingAToken === addressLower) return TokenType.A_TOKEN;
   return TokenType.UNKNOWN;
 }
+
+export function getTokenFromAddress(
+  network: Network,
+  address: string,
+): StataToken {
+  return TokensByAddress[network][address.toLowerCase()];
+}
