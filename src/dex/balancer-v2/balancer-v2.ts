@@ -179,22 +179,32 @@ const fetchAllPools = `query ($count: Int) {
     orderBy: totalLiquidity
     orderDirection: desc
     where: {
-      totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
-      totalShares_not_in: ["0", "0.000000000001"],
-      id_not_in: [
-        ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
-      ],
-       address_not_in: [
-        "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
-        "0x2ff1a9dbdacd55297452cfd8a4d94724bc22a5f7",
-        "0xbc0f2372008005471874e426e86ccfae7b4de79d",
-        "0xdba274b4d04097b90a72b62467d828cefd708037",
-        "0xf22ff21e17157340575158ad7394e068048dd98b",
-        "0xf71d0774b214c4cf51e33eb3d30ef98132e4dbaa",
-      ],
-      swapEnabled: true,
-      poolType_in: [
-        ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
+      and: [
+        { 
+          or: [
+            { isInRecoveryMode: false }
+            { isInRecoveryMode: null }
+          ]
+        },
+        {
+          totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
+          totalShares_not_in: ["0", "0.000000000001"],
+          id_not_in: [
+            ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
+          ],
+          address_not_in: [
+            "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
+            "0x2ff1a9dbdacd55297452cfd8a4d94724bc22a5f7",
+            "0xbc0f2372008005471874e426e86ccfae7b4de79d",
+            "0xdba274b4d04097b90a72b62467d828cefd708037",
+            "0xf22ff21e17157340575158ad7394e068048dd98b",
+            "0xf71d0774b214c4cf51e33eb3d30ef98132e4dbaa",
+          ],
+          swapEnabled: true,
+          poolType_in: [
+            ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
+          ]
+        }
       ]
     }
   ) {
@@ -1642,9 +1652,21 @@ export class BalancerV2
 
     const query = `query ($poolIds: [String!]!, $count: Int) {
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
-           where: {id_in: $poolIds,
-                   swapEnabled: true,
-                   totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}}) {
+        where: {
+          and: [
+            { 
+              or: [
+                { isInRecoveryMode: false }
+                { isInRecoveryMode: null }
+              ]
+            },
+            {
+              id_in: $poolIds,
+              swapEnabled: true,
+              totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}
+            }
+          ]
+      }) {
         address
         totalLiquidity
         tokens {
