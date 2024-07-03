@@ -133,6 +133,7 @@ export class AaveV3Stata
   private _getPoolIdentifier(srcToken: Token, destToken: Token): string {
     return (
       this.dexKey +
+      '-' +
       [srcToken.address.toLowerCase(), destToken.address.toLowerCase()]
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_')
