@@ -64,7 +64,6 @@ import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
-import { TraderJoeV2 } from './trader-joe-v2';
 import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
@@ -93,7 +92,6 @@ const LegacyDexes = [
   DodoV2,
   QuickSwapV3,
   ThenaFusion,
-  TraderJoeV2,
   TraderJoeV21,
   Lido,
   AugustusRFQOrder,
