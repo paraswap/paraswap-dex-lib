@@ -18,7 +18,6 @@ import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
 import { Dfyn } from './uniswap-v2/dfyn';
 import { Bancor } from './bancor/bancor';
-import { BProtocol } from './bProtocol/bProtocol';
 import { Shell } from './shell';
 import { Onebit } from './onebit/onebit';
 import { Compound } from './compound/compound';
@@ -88,7 +87,6 @@ const LegacyDexes = [
   Smoothy,
   ZeroX,
   Bancor,
-  BProtocol,
   Shell,
   Onebit,
   Compound,
