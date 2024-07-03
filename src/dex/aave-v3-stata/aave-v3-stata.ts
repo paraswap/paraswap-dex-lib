@@ -34,6 +34,7 @@ import {
 import { uint256ToBigInt } from '../../lib/decoders';
 import TokenABI from '../../abi/aavev3stata/Token.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { RETURN_AMOUNT_POS_32 } from '../../executor/constants';
 // import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
 // slimmed down version of @bgd-labs/aave-address-book
 // required as version of web3-utils used is buggy
@@ -41,8 +42,6 @@ import { extractReturnAmountPosition } from '../../executor/utils';
 
 export const TOKEN_LIST_CACHE_KEY = 'stata-token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60; // 1 day
-const TOKEN_LIST_LOCAL_TTL_SECONDS = 3 * 60 * 60; // 3h
-// const RAY = BigInt(1e27);
 const RAY = BigInt(`1${'0'.repeat(27)}`);
 
 export class AaveV3Stata
@@ -74,16 +73,11 @@ export class AaveV3Stata
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
-    let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
+    let cachedTokenList = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
       TOKEN_LIST_CACHE_KEY,
-      TOKEN_LIST_LOCAL_TTL_SECONDS,
     );
     if (cachedTokenList !== null) {
       const tokenListParsed = JSON.parse(cachedTokenList);
@@ -381,12 +375,7 @@ export class AaveV3Stata
           destType === TokenType.UNDERLYING, // withdraw from aToken
         ]);
 
-        returnAmountPos = extractReturnAmountPosition(
-          AaveV3Stata.stata,
-          StataFunctions.redeem,
-          '',
-          1,
-        );
+        returnAmountPos = RETURN_AMOUNT_POS_32;
       } else {
         // sell srcAmount 100 srcToken USDC for destToken stataUSDC
         swapData = AaveV3Stata.stata.encodeFunctionData(
