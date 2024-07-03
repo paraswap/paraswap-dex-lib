@@ -6,7 +6,6 @@ import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool/stable-pool';
 import { Weth } from './weth/weth';
 import { PolygonMigrator } from './polygon-migrator/polygon-migrator';
-import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
@@ -81,7 +80,6 @@ const LegacyDexes = [
   CurveV2,
   StablePool,
   Smoothy,
-  ZeroX,
   Bancor,
   Compound,
   DodoV1,
