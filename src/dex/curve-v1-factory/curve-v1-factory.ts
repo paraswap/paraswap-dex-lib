@@ -1,28 +1,27 @@
 import _ from 'lodash';
 import { AbiItem } from 'web3-utils';
-import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import { NumberAsString, OptimalSwapExchange, SwapSide } from '@paraswap/core';
 import { assert, AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
-  Token,
-  Address,
-  ExchangePrices,
-  PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
+  Address,
+  DexExchangeParam,
+  ExchangePrices,
+  ExchangeTxInfo,
   Logger,
+  PoolLiquidity,
+  PoolPrices,
+  PreprocessTransactionOptions,
+  SimpleExchangeParam,
+  Token,
   TransferFeeParams,
   TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
-  DexExchangeParam,
 } from '../../types';
 import {
-  SwapSide,
   Network,
-  SRC_TOKEN_PARASWAP_TRANSFERS,
   NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
@@ -37,22 +36,23 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CurveSwapFunctions,
   CurveV1FactoryData,
+  CurveV1FactoryDirectSwap,
   CurveV1FactoryIfaces,
   CurveV1SwapType,
   CustomImplementationNames,
+  DirectCurveV1FactoryParamV6,
+  DirectCurveV1Param,
   ImplementationNames,
   PoolConstants,
-  DirectCurveV1Param,
-  CurveV1FactoryDirectSwap,
-  DirectCurveV1FactoryParamV6,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { CurveV1FactoryConfig, Adapters } from './config';
+import { Adapters, CurveV1FactoryConfig } from './config';
 import {
   DIRECT_METHOD_NAME,
+  DIRECT_METHOD_NAME_V6,
   FACTORY_MAX_PLAIN_COINS,
   FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN,
   MIN_AMOUNT_TO_RECEIVE,
@@ -78,13 +78,11 @@ import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-poll
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { PriceHandler } from './price-handlers/price-handler';
-import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
+import { hexConcat, hexlify, hexZeroPad } from 'ethers/lib/utils';
 import { packCurveData } from '../../lib/curve/encoder';
 import { encodeCurveAssets } from '../curve-v1/packer';
 
-import { DIRECT_METHOD_NAME_V6 } from './constants';
-
-const DefaultCoinsABI: AbiItem = {
+export const DefaultCoinsABI: AbiItem = {
   type: 'function',
   name: 'coins',
   inputs: [
@@ -107,7 +105,7 @@ export class CurveV1Factory
     IDex<CurveV1FactoryData, DirectCurveV1Param | CurveV1FactoryDirectSwap>
 {
   readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = false;
+  readonly needWrapNative: boolean = false;
   readonly isFeeOnTransferSupported = true;
   readonly isStatePollingDex = true;
 
@@ -124,6 +122,8 @@ export class CurveV1Factory
 
   readonly directSwapIface = new Interface(DirectSwapABI);
 
+  protected buySideSupported: boolean = false;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
 
@@ -136,7 +136,7 @@ export class CurveV1Factory
     protected adapters = Adapters[network] || {},
     protected config = CurveV1FactoryConfig[dexKey][network],
     // This type is used to support different encoding for uint128 and uint256 args
-    private coinsTypeTemplate: AbiItem = DefaultCoinsABI,
+    protected coinsTypeTemplate: AbiItem = DefaultCoinsABI,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(`${this.dexKey}-${this.network}`);
@@ -703,12 +703,19 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) {
+    if (!this.buySideSupported && side === SwapSide.BUY) {
       return [];
     }
 
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
+    const _srcToken = this.needWrapNative
+      ? this.dexHelper.config.wrapETH(srcToken)
+      : srcToken;
+    const _destToken = this.needWrapNative
+      ? this.dexHelper.config.wrapETH(destToken)
+      : destToken;
+
+    const srcTokenAddress = _srcToken.address.toLowerCase();
+    const destTokenAddress = _destToken.address.toLowerCase();
 
     if (srcTokenAddress === destTokenAddress) {
       return [];
@@ -739,15 +746,22 @@ export class CurveV1Factory
     },
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     try {
-      if (side === SwapSide.BUY) {
+      if (!this.buySideSupported && side === SwapSide.BUY) {
         return null;
       }
 
       const _isSrcTokenTransferFeeToBeExchanged =
         isSrcTokenTransferFeeToBeExchanged(transferFees);
 
-      const srcTokenAddress = srcToken.address.toLowerCase();
-      const destTokenAddress = destToken.address.toLowerCase();
+      const _srcToken = this.needWrapNative
+        ? this.dexHelper.config.wrapETH(srcToken)
+        : srcToken;
+      const _destToken = this.needWrapNative
+        ? this.dexHelper.config.wrapETH(destToken)
+        : destToken;
+
+      const srcTokenAddress = _srcToken.address.toLowerCase();
+      const destTokenAddress = _destToken.address.toLowerCase();
 
       if (srcTokenAddress === destTokenAddress) {
         return null;
@@ -787,7 +801,7 @@ export class CurveV1Factory
       }
 
       const amountsWithUnit = [
-        getBigIntPow(srcToken.decimals),
+        getBigIntPow(_srcToken.decimals),
         ...amounts.slice(1),
       ];
       const amountsWithUnitAndFee = _isSrcTokenTransferFeeToBeExchanged
@@ -842,6 +856,7 @@ export class CurveV1Factory
             let outputs: bigint[] = this.poolManager
               .getPriceHandler(pool.implementationAddress)
               .getOutputs(
+                side,
                 state,
                 amountsWithUnitAndFee,
                 poolData.i,
@@ -858,7 +873,7 @@ export class CurveV1Factory
 
             return {
               prices: [0n, ...outputs.slice(1)],
-              unit: outputs[0],
+              unit: side === SwapSide.SELL ? outputs[0] : 0n,
               data: poolData,
               exchange: this.dexKey,
               poolIdentifier: pool.poolIdentifier,
@@ -908,7 +923,8 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
 
     const { i, j, underlyingSwap } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -999,7 +1015,7 @@ export class CurveV1Factory
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectCurveV1Param> {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -1059,7 +1075,7 @@ export class CurveV1Factory
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (contractMethod !== DIRECT_METHOD_NAME_V6) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -1122,7 +1138,8 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
     const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
@@ -1158,10 +1175,15 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): DexExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
-    const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
+
+    const minAmountToReceive =
+      side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE : destAmount;
+    const defaultArgs = [i, j, srcAmount, minAmountToReceive];
+
     const swapMethod = underlyingSwap
       ? CurveSwapFunctions.exchange_underlying
       : CurveSwapFunctions.exchange;

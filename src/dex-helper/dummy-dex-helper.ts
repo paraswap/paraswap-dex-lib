@@ -5,7 +5,7 @@ import {
   EventSubscriber,
   IRequestWrapper,
 } from './index';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Address, LoggerConstructor, Token } from '../types';
 // import { Contract } from '@ethersproject/contracts';
 import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
@@ -20,6 +20,7 @@ import { Response, RequestConfig } from './irequest-wrapper';
 import { BlockHeader } from 'web3-eth';
 import { PromiseScheduler } from '../lib/promise-scheduler';
 import { AugustusApprovals } from '../dex/augustus-approvals';
+import { SUBGRAPH_TIMEOUT } from '../constants';
 
 const logger = getLogger('DummyDexHelper');
 
@@ -145,7 +146,7 @@ class DummyCache implements ICache {
   }
 
   async hget(mapKey: string, key: string): Promise<string | null> {
-    return this.hashStorage[mapKey][key];
+    return this.hashStorage[mapKey]?.[key] ?? null;
   }
 
   async hmget(mapKey: string, keys: string[]): Promise<(string | null)[]> {
@@ -191,6 +192,14 @@ class DummyCache implements ICache {
 }
 
 export class DummyRequestWrapper implements IRequestWrapper {
+  private apiKeyTheGraph?: string;
+
+  constructor(apiKeyTheGraph?: string) {
+    if (apiKeyTheGraph) {
+      this.apiKeyTheGraph = apiKeyTheGraph;
+    }
+  }
+
   async get(
     url: string,
     timeout?: number,
@@ -229,6 +238,25 @@ export class DummyRequestWrapper implements IRequestWrapper {
 
   request<T = any, R = Response<T>>(config: RequestConfig<any>): Promise<R> {
     return axios.request(config);
+  }
+
+  async querySubgraph<T>(
+    subgraph: string,
+    data: { query: string; variables?: Record<string, any> },
+    { timeout = SUBGRAPH_TIMEOUT, type = 'subgraphs' },
+  ): Promise<T> {
+    if (!subgraph || !data.query || !this.apiKeyTheGraph)
+      throw new Error('Invalid TheGraph params');
+
+    let url = `https://gateway-arbitrum.network.thegraph.com/api/${this.apiKeyTheGraph}/${type}/id/${subgraph}`;
+
+    // support for the subgraphs that are on the studio and were not migrated to decentralized network yet (base and zkEVM)
+    if (subgraph.includes('studio.thegraph.com')) {
+      url = subgraph;
+    }
+
+    const response = await axios.post<T>(url, data, { timeout });
+    return response.data;
   }
 }
 
@@ -275,7 +303,7 @@ export class DummyDexHelper implements IDexHelper {
   constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
-    this.httpRequest = new DummyRequestWrapper();
+    this.httpRequest = new DummyRequestWrapper(this.config.data.apiKeyTheGraph);
     this.provider = new StaticJsonRpcProvider(
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
       network,

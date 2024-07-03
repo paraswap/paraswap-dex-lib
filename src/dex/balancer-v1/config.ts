@@ -13,8 +13,7 @@ export const BalancerV1Config: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       poolsURL:
         'https://storageapi.fleek.co/balancer-bucket/balancer-exchange/pools',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer',
+      subgraphURL: '93yusydMYauh7cfe9jEfoGABmwnX4GffHd7in8KJi1XB',
       exchangeProxy: '0x6317c5e82a06e1d8bf200d21f4510ac2c038ac81',
       multicallAddress: '0x514053acec7177e277b947b1ebb5c08ab4c4580e',
     },

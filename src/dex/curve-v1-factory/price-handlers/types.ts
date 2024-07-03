@@ -75,6 +75,14 @@ export type get_dy = (
   dx: bigint,
 ) => bigint;
 
+export type get_dx = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dy: bigint,
+) => bigint;
+
 export type get_y_D = (
   self: IPoolContext,
   A: bigint,
@@ -128,6 +136,7 @@ export interface IPoolContext {
   get_D: get_D;
   get_dy_underlying: get_dy_underlying;
   get_dy: get_dy;
+  get_dx: get_dx;
   get_y_D: get_y_D;
   get_y: get_y;
 }
