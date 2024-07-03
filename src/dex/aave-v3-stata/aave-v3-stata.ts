@@ -263,7 +263,7 @@ export class AaveV3Stata
         unit: getBigIntPow(
           (side === SwapSide.SELL ? destToken : srcToken).decimals,
         ),
-        gasCost: 400_000, // 250_000 from underlying, far less from aToken
+        gasCost: 270000, // 250_000 from underlying, far less from aToken
         exchange: this.dexKey,
         data: {
           srcType: src,
