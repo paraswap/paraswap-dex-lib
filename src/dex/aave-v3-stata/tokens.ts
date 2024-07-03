@@ -44,5 +44,5 @@ export function getTokenFromAddress(
   network: Network,
   address: string,
 ): StataToken {
-  return TokensByAddress[network][address.toLowerCase()];
+  return TokensByAddress[network]?.[address.toLowerCase()];
 }

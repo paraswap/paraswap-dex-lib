@@ -27,7 +27,7 @@ import {
 } from './tokens';
 import { uint256ToBigInt } from '../../lib/decoders';
 import TokenABI from '../../abi/aavev3stata/Token.json';
-import { writeFileSync } from 'fs';
+import { extractReturnAmountPosition } from '../../executor/utils';
 // import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
 // slimmed down version of @bgd-labs/aave-address-book
 // required as version of web3-utils used is buggy
@@ -188,10 +188,8 @@ export class AaveV3Stata
       }
     }
 
-    const stata = isSrcStata ? srcToken : destToken;
-    const stataAddressLower = stata.address.toLowerCase();
+    const stataAddressLower = stataToken.address.toLowerCase();
 
-    // following what is done on wstETH
     if (
       !this.state[stataAddressLower]?.blockNumber ||
       blockNumber > this.state[stataAddressLower].blockNumber
@@ -208,7 +206,7 @@ export class AaveV3Stata
           true,
           [
             {
-              target: stata.address,
+              target: stataToken.address,
               callData: AaveV3Stata.stata.encodeFunctionData('rate'),
               decodeFunction: uint256ToBigInt,
             },
@@ -222,7 +220,7 @@ export class AaveV3Stata
         this.dexHelper.cache.setex(
           this.dexKey,
           this.network,
-          'state',
+          `state_${stataAddressLower}`,
           60,
           Utils.Serialize(this.state[stataAddressLower]),
         );
@@ -255,7 +253,7 @@ export class AaveV3Stata
         data: {
           srcType: src,
           destType: dest,
-          exchange: stata.address,
+          exchange: stataToken.address,
         },
         poolAddresses: [stataAddressLower],
       },
@@ -356,6 +354,7 @@ export class AaveV3Stata
   ): DexExchangeParam {
     const { exchange, srcType, destType } = data;
     let swapData;
+    let returnAmountPos = undefined;
 
     if (side === SwapSide.SELL) {
       if (srcType === TokenType.STATA_TOKEN) {
@@ -366,6 +365,13 @@ export class AaveV3Stata
           executorAddress, // owner
           destType === TokenType.UNDERLYING, // withdraw from aToken
         ]);
+
+        returnAmountPos = extractReturnAmountPosition(
+          AaveV3Stata.stata,
+          StataFunctions.redeem,
+          '',
+          1,
+        );
       } else {
         // sell srcAmount 100 srcToken USDC for destToken stataUSDC
         swapData = AaveV3Stata.stata.encodeFunctionData(
@@ -376,6 +382,10 @@ export class AaveV3Stata
             0, // referrer (noop)
             srcType === TokenType.UNDERLYING, // deposit to aave
           ],
+        );
+        returnAmountPos = extractReturnAmountPosition(
+          AaveV3Stata.stata,
+          StataFunctions.deposit,
         );
       }
     } else {
@@ -403,7 +413,7 @@ export class AaveV3Stata
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
-      returnAmountPos: undefined,
+      returnAmountPos,
     };
   }
 
