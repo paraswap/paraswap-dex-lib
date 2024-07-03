@@ -96,11 +96,10 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   }
 
   async initializePricing(blockNumber: number) {
-    let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
+    let cachedTokenList = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
       TOKEN_LIST_CACHE_KEY,
-      TOKEN_LIST_LOCAL_TTL_SECONDS,
     );
 
     if (cachedTokenList !== null) {
@@ -271,13 +270,9 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<IdleDaoData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -346,15 +341,18 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.tokenList) {
+      const blockNumber =
+        await this.dexHelper.web3Provider.eth.getBlockNumber();
+      this.initializePricing(blockNumber);
+    }
     const idleTokens: IdleToken[] = getPoolsByTokenAddress(tokenAddress);
 
     return idleTokens
       .map((idleToken: IdleToken) => ({
-        // TODO: Re-check?
         // liquidity is infinite, tokens are minted when swapping for idle tokens
         liquidityUSD: 1e12,
         exchange: this.dexKey,
-        // address: idleToken.idleAddress,
         address: idleToken.cdoAddress,
         connectorTokens: [getTokenFromIdleToken(idleToken)],
       }))
