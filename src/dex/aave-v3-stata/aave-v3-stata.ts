@@ -15,7 +15,13 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Utils, getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AaveV3StataData, Rounding, StataFunctions, TokenType } from './types';
+import {
+  AaveV3StataData,
+  Rounding,
+  StataFunctions,
+  StataToken,
+  TokenType,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveV3StataConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
@@ -80,7 +86,15 @@ export class AaveV3Stata
       TOKEN_LIST_LOCAL_TTL_SECONDS,
     );
     if (cachedTokenList !== null) {
-      setTokensOnNetwork(this.network, JSON.parse(cachedTokenList));
+      const tokenListParsed = JSON.parse(cachedTokenList);
+      setTokensOnNetwork(this.network, tokenListParsed);
+
+      tokenListParsed.forEach((token: StataToken) => {
+        this.state[token.address] = {
+          blockNumber: 0,
+          rate: 0n,
+        };
+      });
       return;
     }
 
