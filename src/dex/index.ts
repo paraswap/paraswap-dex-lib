@@ -2,7 +2,6 @@ import _ from 'lodash';
 import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2/curve-v2';
 import { IDexTxBuilder, DexConstructor, IDex, IRouteOptimizer } from './idex';
-import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool/stable-pool';
 import { Weth } from './weth/weth';
@@ -96,7 +95,6 @@ const LegacyDexes = [
   ThenaFusion,
   TraderJoeV2,
   TraderJoeV21,
-  Jarvis,
   Lido,
   AugustusRFQOrder,
   EtherFi,
