@@ -28,6 +28,7 @@ import {
 } from './tokens';
 import FACTORY_ABI from '../../abi/idle-dao/idle-cdo-factory.json';
 import CDO_ABI from '../../abi/idle-dao/idle-cdo.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export const TOKEN_LIST_CACHE_KEY = 'token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60;
@@ -300,6 +301,8 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     _: Context,
     executorAddress: Address,
   ): DexExchangeParam {
+    let returnAmountPos = undefined;
+
     const [Interface, swapCallee, swapFunction, swapFunctionParams] = ((): [
       Interface,
       Address,
@@ -307,6 +310,10 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       Param,
     ] => {
       if (data.fromIdleToken) {
+        returnAmountPos = extractReturnAmountPosition(
+          this.cdo,
+          PoolFunctions[`withdraw${data.idleToken.tokenType}`],
+        );
         return [
           this.cdo,
           data.idleToken.cdoAddress,
@@ -315,6 +322,10 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
         ];
       }
 
+      returnAmountPos = extractReturnAmountPosition(
+        this.cdo,
+        PoolFunctions[`deposit${data.idleToken.tokenType}`],
+      );
       return [
         this.cdo,
         data.idleToken.cdoAddress,
@@ -333,7 +344,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       dexFuncHasRecipient: false,
       exchangeData,
       targetExchange: swapCallee,
-      returnAmountPos: undefined,
+      returnAmountPos: side === SwapSide.SELL ? returnAmountPos : undefined,
     };
   }
 
