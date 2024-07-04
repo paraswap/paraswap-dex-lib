@@ -74,11 +74,16 @@ export class AaveV3Stata
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  async initializePricing(blockNumber: number) {
-    let cachedTokenList = await this.dexHelper.cache.get(
+  async initializePricing(blockNumber: number): Promise<void> {
+    await this.initializeTokens(blockNumber);
+  }
+
+  async initializeTokens(blockNumber?: number) {
+    let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       TOKEN_LIST_CACHE_KEY,
+      TOKEN_LIST_TTL_SECONDS,
     );
     if (cachedTokenList !== null) {
       const tokenListParsed = JSON.parse(cachedTokenList);
@@ -95,12 +100,12 @@ export class AaveV3Stata
 
     let tokenList = await fetchTokenList(
       this.dexHelper.web3Provider,
-      blockNumber,
       this.config.factoryAddress,
       this.dexHelper.multiWrapper,
+      blockNumber,
     );
 
-    await this.dexHelper.cache.setex(
+    await this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       TOKEN_LIST_CACHE_KEY,
@@ -428,11 +433,8 @@ export class AaveV3Stata
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (Object.keys(Tokens).length === 0) {
-      const blockNumber =
-        await this.dexHelper.web3Provider.eth.getBlockNumber();
-      this.initializePricing(blockNumber);
-    }
+    await this.initializeTokens();
+
     const tokenType = getTokenType(this.network, tokenAddress);
 
     if (tokenType === TokenType.UNKNOWN) {
