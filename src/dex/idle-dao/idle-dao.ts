@@ -32,7 +32,6 @@ import { extractReturnAmountPosition } from '../../executor/utils';
 
 export const TOKEN_LIST_CACHE_KEY = 'token-list';
 const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60;
-const TOKEN_LIST_LOCAL_TTL_SECONDS = 3 * 60 * 60;
 
 export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -77,7 +76,6 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       this.tokenList = await fetchTokenList_api(
         this.network,
         this.dexHelper,
-        blockNumber,
         this.cdo,
         this.erc20Interface,
         this.dexHelper.multiWrapper,
@@ -97,10 +95,15 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   }
 
   async initializePricing(blockNumber: number) {
-    let cachedTokenList = await this.dexHelper.cache.get(
+    await this.initializeTokens(blockNumber);
+  }
+
+  async initializeTokens(blockNumber?: number) {
+    let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       TOKEN_LIST_CACHE_KEY,
+      TOKEN_LIST_TTL_SECONDS,
     );
 
     if (cachedTokenList !== null) {
@@ -114,14 +117,14 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     this.tokenList = await fetchTokenList_api(
       this.network,
       this.dexHelper,
-      blockNumber,
       this.cdo,
       this.erc20Interface,
       this.dexHelper.multiWrapper,
       this.idleDaoAuthToken,
+      blockNumber,
     );
 
-    await this.dexHelper.cache.setex(
+    await this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       TOKEN_LIST_CACHE_KEY,
@@ -133,12 +136,13 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
 
   private _getPoolIdentifier(srcToken: Token, destToken: Token): string {
     return (
       this.dexKey +
+      '_' +
       [srcToken.address.toLowerCase(), destToken.address.toLowerCase()]
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_')
@@ -352,17 +356,16 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (!this.tokenList) {
-      const blockNumber =
-        await this.dexHelper.web3Provider.eth.getBlockNumber();
-      this.initializePricing(blockNumber);
-    }
-    const idleTokens: IdleToken[] = getPoolsByTokenAddress(tokenAddress);
+    await this.initializeTokens();
+    const idleTokens: IdleToken[] = getPoolsByTokenAddress(
+      this.network,
+      tokenAddress,
+    );
 
     return idleTokens
       .map((idleToken: IdleToken) => ({
         // liquidity is infinite, tokens are minted when swapping for idle tokens
-        liquidityUSD: 1e12,
+        liquidityUSD: 1e9,
         exchange: this.dexKey,
         address: idleToken.cdoAddress,
         connectorTokens: [getTokenFromIdleToken(idleToken)],

@@ -6,13 +6,18 @@ import { IDexHelper } from '../../dex-helper';
 import CDO_ABI from '../../abi/idle-dao/idle-cdo.json';
 import { AbiItem } from 'web3-utils';
 
-const poolsByTokenAddress: { [address: string]: IdleToken[] } = {};
+const poolsByTokenAddress: {
+  [network: number]: { [address: string]: IdleToken[] };
+} = {};
 
 const TokensByAddress: { [network: number]: { [address: string]: IdleToken } } =
   {};
 
-export const getPoolsByTokenAddress = (address: string): IdleToken[] => {
-  return poolsByTokenAddress[address] || [];
+export const getPoolsByTokenAddress = (
+  network: number,
+  address: string,
+): IdleToken[] => {
+  return poolsByTokenAddress[network]?.[address] || [];
 };
 
 // return null if the pair does not exists otherwise return the idleToken
@@ -70,8 +75,12 @@ export function setTokensOnNetwork(
       TokensByAddress[network] = {};
     }
 
-    if (poolsByTokenAddress[token.address] === undefined) {
-      poolsByTokenAddress[token.address] = [];
+    if (poolsByTokenAddress[network] === undefined) {
+      poolsByTokenAddress[network] = {};
+    }
+
+    if (poolsByTokenAddress[network][token.address] === undefined) {
+      poolsByTokenAddress[network][token.address] = [];
     }
 
     const tokenWithContract: IdleToken = {
@@ -83,7 +92,7 @@ export function setTokensOnNetwork(
     };
     TokensByAddress[network][token.idleAddress] = tokenWithContract;
     TokensByAddress[network][token.address] = tokenWithContract;
-    poolsByTokenAddress[token.address].push(token);
+    poolsByTokenAddress[network][token.address].push(token);
   }
 
   return TokensByAddress[network];

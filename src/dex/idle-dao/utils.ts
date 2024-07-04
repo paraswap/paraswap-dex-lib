@@ -1,4 +1,4 @@
-import { endpoints, TOKEN_LISTS } from './config';
+import { endpoints } from './config';
 import { BytesLike } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { Interface } from '@ethersproject/abi';
@@ -12,15 +12,16 @@ import { IdleToken, TrancheToken } from './types';
 import axios from 'axios';
 import { Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
+import { TOKEN_LISTS } from './token_list';
 
 export const BNify = (s: any): BigNumber =>
   new BigNumber(typeof s === 'object' ? s : String(s));
 
 async function _getIdleTokenSymbols(
-  blockNumber: number,
   idleTokens: string[],
   erc20Interface: Interface,
   multiWrapper: MultiWrapper,
+  blockNumber?: number,
 ): Promise<any> {
   let calls: MultiCallParams<any>[] = [];
 
@@ -47,10 +48,10 @@ async function _getIdleTokenSymbols(
 }
 
 async function _getIdleTokenDecimals(
-  blockNumber: number,
   underlyingTokens: string[],
   erc20Interface: Interface,
   multiWrapper: MultiWrapper,
+  blockNumber?: number,
 ): Promise<any> {
   let calls: MultiCallParams<any>[] = [];
 
@@ -96,17 +97,17 @@ const getDataWithAuth = async (
 export const fetchTokenList_api = async (
   network: Network,
   dexHelper: IDexHelper,
-  blockNumber: number,
   cdoInterface: Interface,
   erc20Interface: Interface,
   multiWrapper: MultiWrapper,
   token: string,
+  blockNumber?: number,
 ): Promise<IdleToken[]> => {
   const data = await getDataWithAuth(endpoints[network], token);
 
   // Fetch tokenslist from static file
   if (!data) {
-    return TOKEN_LISTS;
+    return TOKEN_LISTS[network];
   }
 
   const deployedContract = data
@@ -179,19 +180,19 @@ export const fetchTokenList_api = async (
   );
 
   const idleTokenSymbolsList = await _getIdleTokenSymbols(
-    blockNumber,
     results
       .filter(result => !!result.tokenType)
       .map(result => result.idleAddress),
     erc20Interface,
     multiWrapper,
+    blockNumber,
   );
 
   const idleTokenDecimals = await _getIdleTokenDecimals(
-    blockNumber,
     results.filter(result => !result.tokenType).map(result => result.address),
     erc20Interface,
     multiWrapper,
+    blockNumber,
   );
 
   const output: IdleToken[] = [];
