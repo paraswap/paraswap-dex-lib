@@ -82,7 +82,6 @@ import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
 import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import { BigNumber } from 'ethers';
 import { SpecialDex } from '../../executor/types';
-import { S } from '@bgd-labs/aave-address-book/dist/AaveV2Ethereum-timF4kft';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
