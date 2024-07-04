@@ -25,6 +25,7 @@ import {
   setTokensOnNetwork,
   getPoolsByTokenAddress,
   getTokenFromIdleToken,
+  getIdleTokenByAddress,
 } from './tokens';
 import FACTORY_ABI from '../../abi/idle-dao/idle-cdo-factory.json';
 import CDO_ABI from '../../abi/idle-dao/idle-cdo.json';
@@ -362,14 +363,39 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       tokenAddress,
     );
 
-    return idleTokens
-      .map((idleToken: IdleToken) => ({
-        // liquidity is infinite, tokens are minted when swapping for idle tokens
-        liquidityUSD: 1e9,
-        exchange: this.dexKey,
-        address: idleToken.cdoAddress,
-        connectorTokens: [getTokenFromIdleToken(idleToken)],
-      }))
-      .slice(0, limit);
+    if (idleTokens.length > 0) {
+      return idleTokens
+        .map((idleToken: IdleToken) => ({
+          // liquidity is infinite, tokens are minted when swapping for idle tokens
+          liquidityUSD: 1e9,
+          exchange: this.dexKey,
+          address: idleToken.cdoAddress,
+          connectorTokens: [getTokenFromIdleToken(idleToken)],
+        }))
+        .slice(0, limit);
+    }
+
+    const idleToken = getIdleTokenByAddress(
+      this.network,
+      tokenAddress.toLowerCase(),
+    );
+
+    if (idleToken) {
+      return [
+        {
+          liquidityUSD: 1e9,
+          exchange: this.dexKey,
+          address: idleToken.cdoAddress,
+          connectorTokens: [
+            {
+              address: idleToken.address,
+              decimals: idleToken.decimals,
+            },
+          ],
+        },
+      ];
+    }
+
+    return [];
   }
 }
