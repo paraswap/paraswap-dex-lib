@@ -229,27 +229,54 @@ describe('AaveV3Stata', function () {
       );
     });
 
-    // TODO: Not used
-    // it('getTopPoolsForToken', async function () {
-    //   // We have to check without calling initializePricing, because
-    //   // pool-tracker is not calling that function
-    //   const newAaveV3Stata = new AaveV3Stata(network, dexKey, dexHelper);
-    //   if (newAaveV3Stata.updatePoolState) {
-    //     await newAaveV3Stata.updatePoolState();
-    //   }
-    //   const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
-    //     tokens[srcTokenSymbol].address,
-    //     10,
-    //   );
-    //   console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+    it(`getTopPoolsForToken - ${srcTokenSymbol}`, async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveV3Stata = new AaveV3Stata(network, dexKey, dexHelper);
+      if (newAaveV3Stata.updatePoolState) {
+        await newAaveV3Stata.updatePoolState();
+      }
+      const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(
+        `${srcTokenSymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
 
-    //   if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
-    //     checkPoolsLiquidity(
-    //       poolLiquidity,
-    //       Tokens[network][srcTokenSymbol].address,
-    //       dexKey,
-    //     );
-    //   }
-    // });
+      if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+
+    it(`getTopPoolsForToken - ${destTokenSymbol}`, async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveV3Stata = new AaveV3Stata(network, dexKey, dexHelper);
+      if (newAaveV3Stata.updatePoolState) {
+        await newAaveV3Stata.updatePoolState();
+      }
+      const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
+        tokens[destTokenSymbol].address,
+        10,
+      );
+      console.log(
+        `${destTokenSymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][destTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
   });
 });

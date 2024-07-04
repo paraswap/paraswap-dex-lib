@@ -18,9 +18,9 @@ export function setTokensOnNetwork(network: Network, tokens: StataToken[]) {
   }
 
   for (let token of tokens) {
-    // token.address = token.address.toLowerCase();
-    // token.underlying = token.underlying.toLowerCase();
-    // token.underlyingAToken = token.underlyingAToken.toLowerCase();
+    token.address = token.address.toLowerCase();
+    token.underlying = token.underlying.toLowerCase();
+    token.underlyingAToken = token.underlyingAToken.toLowerCase();
 
     Tokens[network][token.stataSymbol] = token;
     TokensByAddress[network][token.address] = token;

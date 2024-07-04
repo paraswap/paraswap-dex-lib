@@ -27,6 +27,7 @@ import { AaveV3StataConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import { fetchTokenList } from './utils';
 import {
+  Tokens,
   getTokenFromAddress,
   getTokenType,
   setTokensOnNetwork,
@@ -421,29 +422,49 @@ export class AaveV3Stata
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
+  async updatePoolState(): Promise<void> {}
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
-  }
+    if (Object.keys(Tokens).length === 0) {
+      const blockNumber =
+        await this.dexHelper.web3Provider.eth.getBlockNumber();
+      this.initializePricing(blockNumber);
+    }
+    const tokenType = getTokenType(this.network, tokenAddress);
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+    if (tokenType === TokenType.UNKNOWN) {
+      return [];
+    }
+
+    const stata = getTokenFromAddress(this.network, tokenAddress);
+
+    if (tokenType === TokenType.STATA_TOKEN) {
+      return [
+        {
+          liquidityUSD: 1e12,
+          exchange: this.dexKey,
+          address: stata.address,
+          connectorTokens: [
+            { address: stata.underlying, decimals: stata.decimals },
+            { address: stata.underlyingAToken, decimals: stata.decimals },
+          ],
+        },
+      ];
+    } else {
+      return [
+        {
+          liquidityUSD: 1e12,
+          exchange: this.dexKey,
+          address: stata.address,
+          connectorTokens: [
+            { address: stata.address, decimals: stata.decimals },
+          ],
+        },
+      ];
+    }
   }
 
   // TODO: Move to pool implementation when migrating to event based
