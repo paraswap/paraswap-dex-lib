@@ -446,7 +446,7 @@ export class AaveV3Stata
     if (tokenType === TokenType.STATA_TOKEN) {
       return [
         {
-          liquidityUSD: 1e12,
+          liquidityUSD: 1e11,
           exchange: this.dexKey,
           address: stata.address,
           connectorTokens: [
@@ -458,11 +458,18 @@ export class AaveV3Stata
     } else {
       return [
         {
-          liquidityUSD: 1e12,
+          liquidityUSD: 1e11,
           exchange: this.dexKey,
           address: stata.address,
           connectorTokens: [
             { address: stata.address, decimals: stata.decimals },
+            {
+              address:
+                tokenType === TokenType.UNDERLYING
+                  ? stata.underlyingAToken
+                  : stata.underlying,
+              decimals: stata.decimals,
+            },
           ],
         },
       ];
