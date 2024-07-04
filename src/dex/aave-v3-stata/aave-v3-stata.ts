@@ -79,15 +79,16 @@ export class AaveV3Stata
   }
 
   async initializeTokens(blockNumber?: number) {
-    if (Object.keys(Tokens).length !== 0) return;
-
     let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       TOKEN_LIST_CACHE_KEY,
       TOKEN_LIST_TTL_SECONDS,
     );
+
     if (cachedTokenList !== null) {
+      if (Object.keys(Tokens).length !== 0) return;
+
       const tokenListParsed = JSON.parse(cachedTokenList);
       setTokensOnNetwork(this.network, tokenListParsed);
 
