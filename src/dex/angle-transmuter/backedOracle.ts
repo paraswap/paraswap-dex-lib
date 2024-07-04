@@ -1,5 +1,5 @@
 import { DeepReadonly } from 'ts-essentials';
-import { PartialEventSubscriber } from '../composed-event-subscriber';
+import { PartialEventSubscriber } from '../../composed-event-subscriber';
 import {
   Address,
   BlockHeader,
@@ -7,23 +7,19 @@ import {
   Logger,
   MultiCallInput,
   MultiCallOutput,
-} from '../types';
-import { Lens } from '../lens';
+} from '../../types';
+import { Lens } from '../../lens';
 import { Interface } from '@ethersproject/abi';
-import ProxyABI from '../abi/chainlink.json';
+import ProxyABI from '../../abi/chainlink.json';
+import { ChainLinkState } from '../../lib/chainlink';
 
-export type ChainLinkState = {
-  answer: bigint;
-  timestamp: bigint;
-};
-
-export class ChainLinkSubscriber<State> extends PartialEventSubscriber<
+export class BackedSubscriber<State> extends PartialEventSubscriber<
   State,
   ChainLinkState
 > {
   static readonly proxyInterface = new Interface(ProxyABI);
   static readonly ANSWER_UPDATED_TOPIC =
-    ChainLinkSubscriber.proxyInterface.getEventTopic('AnswerUpdated');
+    BackedSubscriber.proxyInterface.getEventTopic('AnswerUpdated');
 
   constructor(
     private proxy: Address,
@@ -34,31 +30,15 @@ export class ChainLinkSubscriber<State> extends PartialEventSubscriber<
     super([aggregator], lens, logger);
   }
 
-  static getReadAggregatorMultiCallInput(proxy: Address): MultiCallInput {
-    return {
-      target: proxy,
-      callData:
-        ChainLinkSubscriber.proxyInterface.encodeFunctionData('aggregator'),
-    };
-  }
-
-  static readAggregator(multicallOutput: MultiCallOutput): Address {
-    return ChainLinkSubscriber.proxyInterface.decodeFunctionResult(
-      'aggregator',
-      multicallOutput,
-    )[0];
-  }
-
   static getReadDecimal(proxy: Address): MultiCallInput {
     return {
       target: proxy,
-      callData:
-        ChainLinkSubscriber.proxyInterface.encodeFunctionData('decimals'),
+      callData: BackedSubscriber.proxyInterface.encodeFunctionData('decimals'),
     };
   }
 
   static readDecimals(multicallOutput: MultiCallOutput): Address {
-    return ChainLinkSubscriber.proxyInterface.decodeFunctionResult(
+    return BackedSubscriber.proxyInterface.decodeFunctionResult(
       'decimals',
       multicallOutput,
     )[0];
@@ -69,8 +49,8 @@ export class ChainLinkSubscriber<State> extends PartialEventSubscriber<
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): DeepReadonly<ChainLinkState> | null {
-    if (log.topics[0] !== ChainLinkSubscriber.ANSWER_UPDATED_TOPIC) return null; // Ignore other events
-    const decoded = ChainLinkSubscriber.proxyInterface.decodeEventLog(
+    if (log.topics[0] !== BackedSubscriber.ANSWER_UPDATED_TOPIC) return null; // Ignore other events
+    const decoded = BackedSubscriber.proxyInterface.decodeEventLog(
       'AnswerUpdated',
       log.data,
       log.topics,
@@ -86,9 +66,7 @@ export class ChainLinkSubscriber<State> extends PartialEventSubscriber<
       {
         target: this.proxy,
         callData:
-          ChainLinkSubscriber.proxyInterface.encodeFunctionData(
-            'latestRoundData',
-          ),
+          BackedSubscriber.proxyInterface.encodeFunctionData('latestRoundData'),
       },
     ];
   }
@@ -97,7 +75,7 @@ export class ChainLinkSubscriber<State> extends PartialEventSubscriber<
     multicallOutputs: MultiCallOutput[],
     blockNumber?: number | 'latest',
   ): DeepReadonly<ChainLinkState> {
-    const decoded = ChainLinkSubscriber.proxyInterface.decodeFunctionResult(
+    const decoded = BackedSubscriber.proxyInterface.decodeFunctionResult(
       'latestRoundData',
       multicallOutputs[0],
     );
