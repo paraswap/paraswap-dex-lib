@@ -68,10 +68,14 @@ export type PoolStateWithUpdateInfo<T> = {
 };
 
 export type CurveV1FactoryData = {
-  exchange: Address;
-  i: number;
-  j: number;
-  underlyingSwap: boolean;
+  path: {
+    tokenIn: Address;
+    tokenOut: Address;
+    exchange: Address;
+    i: number;
+    j: number;
+    underlyingSwap: boolean;
+  }[];
   isApproved?: boolean;
 };
 
@@ -188,6 +192,7 @@ type DexParamFactory = {
 
 export type DexParams = {
   factories: DexParamFactory[] | null;
+  router: Address;
   stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;
@@ -204,6 +209,7 @@ export enum CurveSwapFunctions {
 
 export type CurveV1FactoryIfaces = {
   exchangeRouter: Interface;
+  curveV1Router: Interface;
   factory: Interface;
   erc20: Interface;
   threePool: Interface;

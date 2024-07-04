@@ -25,6 +25,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
       ],
+      router: '0x16C6521Dff6baB339122a0FE25a9116693265353', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 5 * 1000,
       disabledPools: new Set([
         '0x28B0Cf1baFB707F2c6826d10caf6DD901a6540C5', // It is rug pool token
@@ -226,6 +227,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([
         '0x666Dc3b4baBfd063FaF965BD020024AF0dC51B64',
@@ -337,6 +339,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -457,6 +460,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       // FIX: This must be removed when we go for full CurveV1 event based support
       disabledPools: new Set(['0x16a7da911a4dd1d83f3ff066fe28f3c792c50d90']),
@@ -543,6 +547,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
       ],
+      router: '0x2191718CD32d02B8E60BAdFFeA33E4B5DD9A0A0D', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -674,6 +679,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -786,6 +792,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
       ],
+      router: '0x4f37A9d177470499A2dD084621020b023fcffc1F', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -946,6 +953,7 @@ export const configAddressesNormalizer = (
               address: e.address.toLowerCase(),
             }))
           : _config.factories,
+        router: _config.router,
         stateUpdatePeriodMs: _config.stateUpdatePeriodMs,
         factoryPoolImplementations,
         customPools,

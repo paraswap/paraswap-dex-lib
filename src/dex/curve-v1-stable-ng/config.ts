@@ -13,6 +13,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x16C6521Dff6baB339122a0FE25a9116693265353', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 5 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -69,6 +70,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -95,6 +97,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -115,6 +118,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x2191718CD32d02B8E60BAdFFeA33E4B5DD9A0A0D', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -141,6 +145,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -161,6 +166,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x4f37A9d177470499A2dD084621020b023fcffc1F', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),

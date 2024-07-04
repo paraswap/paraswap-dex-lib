@@ -61,6 +61,7 @@ import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
 import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
+import { curveV1Merge } from './curve-v1-factory/optimizer';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
 import { Camelot } from './camelot/camelot';
@@ -197,6 +198,7 @@ export class DexAdapterService {
     balancerV1Merge,
     balancerV2Merge,
     uniswapMerge,
+    // curveV1Merge,
   ];
 
   constructor(

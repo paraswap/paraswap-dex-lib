@@ -120,10 +120,16 @@ export abstract class PoolPollingBase {
 
     if (iC !== undefined && jC !== undefined) {
       return {
-        exchange: this.address,
-        i: iC,
-        j: jC,
-        underlyingSwap: false,
+        path: [
+          {
+            tokenIn: srcAddress,
+            tokenOut: destAddress,
+            exchange: this.address,
+            i: iC,
+            j: jC,
+            underlyingSwap: false,
+          },
+        ],
       };
     }
 
@@ -140,10 +146,16 @@ export abstract class PoolPollingBase {
       // I expect them to be included in old CurveV1 implementation
       if (iU !== undefined && jU !== undefined && !(iU > 0 && jU > 0)) {
         return {
-          exchange: this.address,
-          i: iU,
-          j: jU,
-          underlyingSwap: true,
+          path: [
+            {
+              tokenIn: srcAddress,
+              tokenOut: destAddress,
+              exchange: this.address,
+              i: iU,
+              j: jU,
+              underlyingSwap: true,
+            },
+          ],
         };
       }
     }
