@@ -15,9 +15,9 @@ import { AbiItem } from 'web3-utils';
 const stataInterface = new Interface(TokenABI);
 
 async function getTokenMetaData(
-  blockNumber: number,
   stataTokens: string[],
   multiWrapper: MultiWrapper,
+  blockNumber?: number,
 ): Promise<StataToken[]> {
   const calls: MultiCallParams<any>[] = stataTokens
     .map(token => {
@@ -66,9 +66,9 @@ async function getTokenMetaData(
 
 export const fetchTokenList = async (
   web3Provider: Web3,
-  blockNumber: number,
   factoryAddress: string,
   multiWrapper: MultiWrapper,
+  blockNumber?: number,
 ): Promise<StataToken[]> => {
   let factoryContract = new web3Provider.eth.Contract(
     FactoryABI as AbiItem[],
@@ -80,5 +80,5 @@ export const fetchTokenList = async (
     .getStaticATokens()
     .call();
 
-  return getTokenMetaData(blockNumber, stataList, multiWrapper);
+  return getTokenMetaData(stataList, multiWrapper, blockNumber);
 };
