@@ -2,13 +2,20 @@ import { UnoptimizedRate } from '../../types';
 import { OptimalSwap } from '@paraswap/core';
 import _ from 'lodash';
 
+const CurveV1AndSimilar = [
+  'CurveV1Factory'.toLowerCase(),
+  'CurveV1StableNg'.toLowerCase(),
+];
+
 export function curveV1Merge(or: UnoptimizedRate): UnoptimizedRate {
   const fixRoute = (rawRate: OptimalSwap[]): OptimalSwap[] => {
     let lastExchange: false | OptimalSwap = false;
     let optimizedRate = new Array<OptimalSwap>();
-
     rawRate.forEach((s: OptimalSwap) => {
-      if (s.swapExchanges.length !== 1) {
+      if (
+        s.swapExchanges.length !== 1 ||
+        !CurveV1AndSimilar.includes(s.swapExchanges[0].exchange.toLowerCase())
+      ) {
         lastExchange = false;
         optimizedRate.push(s);
       } else if (
@@ -45,5 +52,6 @@ export function curveV1Merge(or: UnoptimizedRate): UnoptimizedRate {
     ...r,
     swaps: fixRoute(r.swaps),
   }));
+
   return or;
 }
