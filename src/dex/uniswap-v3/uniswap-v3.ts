@@ -210,6 +210,8 @@ export class UniswapV3
         );
       };
 
+      void cleanExpiredNotExistingPoolsKeys();
+
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
         UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
@@ -960,7 +962,7 @@ export class UniswapV3
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<UniswapV3Param> {
     if (!UniswapV3.getDirectFunctionName().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -1023,7 +1025,7 @@ export class UniswapV3
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!UniswapV3.getDirectFunctionNameV6().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -1383,13 +1385,12 @@ export class UniswapV3
     if (!this.config.subgraphURL) return [];
 
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
-      return res.data;
+      return res?.data ?? {};
     } catch (e) {
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
       return {};

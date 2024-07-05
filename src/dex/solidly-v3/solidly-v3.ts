@@ -166,6 +166,8 @@ export class SolidlyV3
         );
       };
 
+      void cleanExpiredNotExistingPoolsKeys();
+
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
         UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
@@ -905,11 +907,10 @@ export class SolidlyV3
     timeout = 30000,
   ) {
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {

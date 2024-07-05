@@ -106,7 +106,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectParam>;
 
   // Same as above but for V6
@@ -123,7 +123,7 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectParam>;
 }
 

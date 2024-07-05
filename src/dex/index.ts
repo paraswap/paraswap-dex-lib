@@ -60,12 +60,14 @@ import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
+import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
+import { MaverickV2 } from './maverick-v2/maverick-v2';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
 import { TraderJoeV2 } from './trader-joe-v2';
@@ -73,6 +75,7 @@ import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { AngleTransmuter } from './angle-transmuter/angle-transmuter';
 import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
@@ -83,6 +86,7 @@ import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
+import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 
 const LegacyDexes = [
   CurveV2,
@@ -149,11 +153,14 @@ const Dexes = [
   Usdfi,
   Synthetix,
   CurveV1Factory,
+  CurveV1StableNg,
   WstETH,
   Hashflow,
   MaverickV1,
+  MaverickV2,
   Camelot,
   SwaapV2,
+  AngleTransmuter,
   AngleStakedStable,
   QuickPerps,
   NomiswapV2,
@@ -162,6 +169,7 @@ const Dexes = [
   Swell,
   PharaohV1,
   Spark,
+  AaveV3Stata,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

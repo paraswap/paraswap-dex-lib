@@ -59,7 +59,11 @@ export class VelodromeSlipstream extends UniswapV3 {
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(
-      _.pick(UniswapV3Config, ['VelodromeSlipstream', 'AerodromeSlipstream']),
+      _.pick(UniswapV3Config, [
+        'VelodromeSlipstream',
+        'VelodromeSlipstreamNewFactory',
+        'AerodromeSlipstream',
+      ]),
     );
 
   async initializePricing(blockNumber: number) {
@@ -76,6 +80,8 @@ export class VelodromeSlipstream extends UniswapV3 {
           maxTimestamp,
         );
       };
+
+      void cleanExpiredNotExistingPoolsKeys();
 
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),

@@ -13,8 +13,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       algebraStateMulticall: '0xfb948e6e23eb58ec7320ddb60df9115de07141ec',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sameepsi/quickswap-v3',
+      subgraphURL: '5AK9Y4tk27ZWrPKvSAUQmffXWyQvjWqyJ2GNEZUWTirU',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x2d98e2fa9da15aa6dc9581ab097ced7af697cb92',
       version: 'v1.1',
@@ -46,8 +45,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       algebraStateMulticall: '0xcd7C50ba57136b6B461168D1f634E2CffA4c298D',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/iliaazhel/zyberswap-info',
+      subgraphURL: '7ZP9MeeuXno2y9pWR5LzA96UtYuZYWTA4WYZDZR7ghbN',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x24e85f5f94c6017d2d87b434394e87df4e4d56e3',
       version: 'v1.1',
@@ -61,8 +59,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       algebraStateMulticall: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/iliaazhel/zyberswap-info-optimism-pp',
+      subgraphURL: '3CA9ffebLkS3N2otXaSj8XaDDdspty75upBjKTUS79qY',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0xc0d4323426c709e8d04b5b130e7f059523464a91',
       version: 'v1.1',
@@ -78,8 +75,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       algebraStateMulticall: '0x2cB568442a102dF518b3D37CBD0d2884523C940B',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/camelotlabs/camelot-amm-v3',
+      subgraphURL: '7mPnp1UqmefcCycB8umy4uUkTkFxMoHn1Y7ncBUscePp',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x6dd3fb9653b10e806650f107c3b5a0a6ff974f65',
       version: 'v1.9',
