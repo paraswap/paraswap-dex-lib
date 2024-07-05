@@ -124,7 +124,7 @@ export class CurveV1Factory
 
   readonly directSwapIface = new Interface(DirectSwapABI);
 
-  protected buySideSupported: boolean = false;
+  protected buySideSupported: boolean = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
@@ -664,6 +664,9 @@ export class CurveV1Factory
               basePoolStateFetcher,
               factoryImplementationFromConfig.customGasCost,
               factoryImplementationFromConfig.isStoreRateSupported,
+              undefined,
+              undefined,
+              factoryConfig?.isStableNg,
             );
 
             this.poolManager.initializeNewPool(poolIdentifier, newPool);
@@ -1205,10 +1208,25 @@ export class CurveV1Factory
         targetExchange: exchange,
         returnAmountPos: undefined,
       };
-    } else if (data.path.length > 1 && data.path.length <= 5) {
+    } else {
       const exchangeData = this.ifaces.curveV1Router.encodeFunctionData(
-        'exchange',
-        [],
+        'exchange(address[], uint256[][5], uint256, uint256, address[], address)',
+        [
+          data.path
+            .map(item => [item.tokenIn, item.exchange, item.tokenOut])
+            .flat(),
+          data.path.map(item => [
+            item.i,
+            item.j,
+            item.underlyingSwap ? 2 : 1,
+            item.isStableNg ? 10 : 0,
+            item.n_coins,
+          ]),
+          srcAmount,
+          side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE : destAmount,
+          undefined,
+          undefined,
+        ],
       );
 
       return {
@@ -1222,8 +1240,6 @@ export class CurveV1Factory
           'exchange',
         ),
       };
-    } else {
-      throw new Error('CurveV1Router is able to perform maximum 5 swaps');
     }
   }
 

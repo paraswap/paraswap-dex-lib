@@ -16,6 +16,8 @@ export abstract class PoolPollingBase {
 
   readonly fullName: string;
 
+  public isStableNg = false;
+
   protected _poolState: PoolState | null = null;
 
   protected abiCoder = Web3EthAbi as unknown as AbiCoder;
@@ -128,6 +130,8 @@ export abstract class PoolPollingBase {
             i: iC,
             j: jC,
             underlyingSwap: false,
+            isStableNg: this.isStableNg,
+            n_coins: this.poolConstants.COINS.length,
           },
         ],
       };
@@ -154,6 +158,8 @@ export abstract class PoolPollingBase {
               i: iU,
               j: jU,
               underlyingSwap: true,
+              isStableNg: this.isStableNg,
+              n_coins: this.poolConstants.COINS.length,
             },
           ],
         };

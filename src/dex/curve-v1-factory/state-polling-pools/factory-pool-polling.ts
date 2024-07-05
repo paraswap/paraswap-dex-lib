@@ -56,6 +56,7 @@ export class FactoryStateHandler extends PoolPollingBase {
     private additionalFuncsIface: Interface = new Interface([
       getStoredRatesABI(poolContextConstants?.N_COINS?.toString() || ''),
     ]),
+    public isStableNg = false,
   ) {
     super(
       logger,

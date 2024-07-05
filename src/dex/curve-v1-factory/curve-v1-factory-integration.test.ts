@@ -15,6 +15,7 @@ import {
 import { Tokens } from '../../../tests/constants-e2e';
 import { Address } from '@paraswap/core';
 import StableSwap3PoolABI from '../../abi/curve-v1/StableSwap3Pool.json';
+import CurveV1StableNgPoolAbi from '../../abi/curve-v1/CurveV1StableNg.json';
 
 export function getReaderCalldata(
   exchangeAddress: string,
@@ -126,15 +127,15 @@ export async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     curveV1Factory,
-    poolPrices![0].data.exchange,
-    poolPrices![0].data.underlyingSwap
+    poolPrices![0].data.path[0].exchange,
+    poolPrices![0].data.path[0].underlyingSwap
       ? 'get_dy_underlying'
       : poolContractMethod,
     blockNumber,
     poolPrices![0].prices,
     amounts,
-    poolPrices![0].data.i,
-    poolPrices![0].data.j,
+    poolPrices![0].data.path[0].i,
+    poolPrices![0].data.path[0].j,
     readerIface,
   );
 }
@@ -226,6 +227,10 @@ describe('CurveV1Factory', function () {
     });
 
     describe(`crvUSD-GHO`, () => {
+      const readerIface = new Interface(
+        CurveV1StableNgPoolAbi as JsonFragment[],
+      );
+
       const srcTokenSymbol = 'crvUSD';
       const destTokenSymbol = 'GHO';
       const amountsForSell = [
@@ -242,6 +247,15 @@ describe('CurveV1Factory', function () {
         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
       ];
 
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           curveV1Factory,
@@ -252,6 +266,23 @@ describe('CurveV1Factory', function () {
           destTokenSymbol,
           SwapSide.SELL,
           amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          curveV1Factory,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
         );
       });
 

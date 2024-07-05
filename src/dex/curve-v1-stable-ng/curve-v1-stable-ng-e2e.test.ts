@@ -63,26 +63,6 @@ describe('CurveV1StableNG E2E', () => {
         sidesToContractMethods,
       );
     });
-
-    describe('Multihop', () => {
-      describe('GHO -> USDT', () => {
-        const tokenASymbol: string = 'GHO';
-        const tokenBSymbol: string = 'USDT';
-
-        const tokenAAmount: string = '100000000';
-        const tokenBAmount: string = '1000000000000000000';
-
-        testForNetwork(
-          network,
-          dexKey,
-          tokenASymbol,
-          tokenBSymbol,
-          tokenAAmount,
-          tokenBAmount,
-          sidesToContractMethods,
-        );
-      });
-    });
   });
 
   describe('Polygon', () => {

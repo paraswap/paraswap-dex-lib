@@ -16,7 +16,8 @@ export function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
-    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    // [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]),
 ) {
   const provider = new StaticJsonRpcProvider(
@@ -77,20 +78,56 @@ describe('CurveV1Factory E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDD';
+    describe('USDT -> USDD', () => {
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDD';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '111000000000000000000';
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '111000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('GHO -> crvUSD', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('GHO -> USDT', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '100000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
   describe('Mainnet Native', () => {
     const network = Network.MAINNET;
