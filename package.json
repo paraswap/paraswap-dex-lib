@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "3.7.6-maverick-v2-pool-null-state.0",
+  "version": "3.7.6",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
