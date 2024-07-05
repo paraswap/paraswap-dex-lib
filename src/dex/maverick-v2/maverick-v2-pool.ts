@@ -343,4 +343,27 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
       return [0n, 0n];
     }
   }
+
+  async getOrGenerateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const state = this.getState(blockNumber);
+    if (state) {
+      return state;
+    }
+
+    this.logger.error(
+      `No state found for ${this.name} ${this.addressesSubscribed[0]}, generating new one`,
+    );
+    const newState = await this.generateState(blockNumber);
+
+    if (!newState) {
+      this.logger.error(
+        `Could not generate state for ${this.name} ${this.addressesSubscribed[0]}`,
+      );
+      return null;
+    }
+    this.setState(newState, blockNumber);
+    return newState;
+  }
 }
