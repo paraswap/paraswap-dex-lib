@@ -222,10 +222,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
-        {
-          address: '0x1764ee18e8B3ccA4787249Ceb249356192594585', // factory stable ng
-          isStableNg: true,
-        },
       ],
       router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
@@ -831,13 +827,10 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 3,
       },
     ],
-  },
-  [Network.BSC]: {
-    [SwapSide.SELL]: [
-      // use for beltfi (deprecated)
+    [SwapSide.BUY]: [
       {
-        name: 'BscAdapter01',
-        index: 2,
+        name: 'BuyAdapter02',
+        index: 5,
       },
     ],
   },
@@ -848,12 +841,24 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 3,
       },
     ],
+    [SwapSide.BUY]: [
+      {
+        name: 'PolygonBuyAdapter',
+        index: 10,
+      },
+    ],
   },
   [Network.AVALANCHE]: {
     [SwapSide.SELL]: [
       {
         name: 'AvalancheAdapter01',
         index: 5,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'AvalancheBuyAdapter',
+        index: 9,
       },
     ],
   },
@@ -864,12 +869,24 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 3,
       },
     ],
+    [SwapSide.BUY]: [
+      {
+        name: 'FantomBuyAdapter',
+        index: 6,
+      },
+    ],
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [
       {
         name: 'ArbitrumAdapter01',
         index: 6,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'ArbitrumBuyAdapter',
+        index: 12,
       },
     ],
   },
@@ -880,12 +897,24 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 5,
       },
     ],
+    [SwapSide.BUY]: [
+      {
+        name: 'OptimismBuyAdapter',
+        index: 8,
+      },
+    ],
   },
   [Network.BASE]: {
     [SwapSide.SELL]: [
       {
         name: 'BaseAdapter02',
         index: 3,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BaseBuyAdapter',
+        index: 9,
       },
     ],
   },

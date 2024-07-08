@@ -7,11 +7,16 @@ import { IDexHelper } from '../../dex-helper';
 import { Adapters, CurveV1StableNgConfig } from './config';
 import { AbiItem } from 'web3-utils';
 import { getDexKeysWithNetwork } from '../../utils';
+import { FactoryImplementationNames } from '../curve-v1-factory/types';
 
 export class CurveV1StableNg extends CurveV1Factory {
   protected buySideSupported: boolean = true;
 
   readonly needWrapNative: boolean = true;
+
+  protected factoryImplementationsSupportBuySide = new Set([
+    FactoryImplementationNames.FACTORY_STABLE_NG,
+  ]);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1StableNgConfig);

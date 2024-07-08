@@ -5,7 +5,13 @@ import {
   MAX_ALLOWED_STATE_DELAY_FACTOR,
   MIN_LIQUIDITY_IN_USD,
 } from '../constants';
-import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
+import {
+  CurveV1FactoryData,
+  ImplementationNames,
+  PoolConstants,
+  PoolContextConstants,
+  PoolState,
+} from '../types';
 import { Address } from '@paraswap/core';
 
 export type MulticallReturnedTypes = bigint | bigint[];
@@ -15,8 +21,6 @@ export abstract class PoolPollingBase {
   readonly CLASS_NAME = this.constructor.name;
 
   readonly fullName: string;
-
-  public isStableNg = false;
 
   protected _poolState: PoolState | null = null;
 
@@ -40,11 +44,12 @@ export abstract class PoolPollingBase {
     readonly dexKey: string,
     readonly network: number,
     readonly cacheStateKey: string,
-    readonly implementationName: string,
+    readonly implementationName: ImplementationNames,
     readonly implementationAddress: Address,
     readonly stateUpdatePeriodMs: number,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
+    readonly poolContextConstants: PoolContextConstants,
     readonly address: Address,
     readonly curveLiquidityApiSlug: string,
     readonly isLendingPool: boolean,
@@ -130,7 +135,7 @@ export abstract class PoolPollingBase {
             i: iC,
             j: jC,
             underlyingSwap: false,
-            isStableNg: this.isStableNg,
+            isStable: this.poolContextConstants.isStable ? true : false,
             n_coins: this.poolConstants.COINS.length,
           },
         ],
@@ -158,7 +163,7 @@ export abstract class PoolPollingBase {
               i: iU,
               j: jU,
               underlyingSwap: true,
-              isStableNg: this.isStableNg,
+              isStable: this.poolContextConstants.isStable ? true : false,
               n_coins: this.poolConstants.COINS.length,
             },
           ],

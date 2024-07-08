@@ -15,6 +15,7 @@ export type PoolContextConstants = {
   // for all pools
   isWrapNative: boolean;
   isLending: boolean;
+  isStable?: boolean;
 
   // Starting from this point, constants are context relevant for pricing
 
@@ -75,7 +76,7 @@ export type CurveV1FactoryData = {
     i: number;
     j: number;
     underlyingSwap: boolean;
-    isStableNg: boolean;
+    isStable: boolean;
     n_coins: number;
   }[];
   isApproved?: boolean;
@@ -205,6 +206,16 @@ export type DexParams = {
 export enum CurveSwapFunctions {
   exchange = 'exchange',
   exchange_underlying = 'exchange_underlying',
+}
+
+export enum CurveRouterSwapType {
+  exchange = 1,
+  exchange_underlying = 2,
+}
+
+export enum CurveRouterPoolType {
+  non_stable = 0,
+  stable = 10,
 }
 
 export type CurveV1FactoryIfaces = {

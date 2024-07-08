@@ -34,6 +34,8 @@ import {
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
+  CurveRouterPoolType,
+  CurveRouterSwapType,
   CurveSwapFunctions,
   CurveV1FactoryData,
   CurveV1FactoryDirectSwap,
@@ -42,6 +44,7 @@ import {
   CustomImplementationNames,
   DirectCurveV1FactoryParamV6,
   DirectCurveV1Param,
+  FactoryImplementationNames,
   ImplementationNames,
   PoolConstants,
 } from './types';
@@ -124,7 +127,9 @@ export class CurveV1Factory
 
   readonly directSwapIface = new Interface(DirectSwapABI);
 
-  protected buySideSupported: boolean = true;
+  protected factoryImplementationsSupportBuySide = new Set<ImplementationNames>(
+    [FactoryImplementationNames.FACTORY_PLAIN_2_CRV_EMA],
+  );
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
@@ -290,7 +295,7 @@ export class CurveV1Factory
                   this.dexKey,
                   this.dexHelper.config.data.network,
                   this.cacheStateKey,
-                  customPool.name,
+                  customPool.name as CustomImplementationNames,
                   implementationAddress,
                   customPool.address,
                   this.config.stateUpdatePeriodMs,
@@ -311,7 +316,7 @@ export class CurveV1Factory
                   this.dexKey,
                   this.dexHelper.config.data.network,
                   this.cacheStateKey,
-                  customPool.name,
+                  customPool.name as CustomImplementationNames,
                   implementationAddress,
                   customPool.address,
                   this.config.stateUpdatePeriodMs,
@@ -666,7 +671,6 @@ export class CurveV1Factory
               factoryImplementationFromConfig.isStoreRateSupported,
               undefined,
               undefined,
-              factoryConfig?.isStableNg,
             );
 
             this.poolManager.initializeNewPool(poolIdentifier, newPool);
@@ -709,10 +713,6 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (!this.buySideSupported && side === SwapSide.BUY) {
-      return [];
-    }
-
     const _srcToken = this.needWrapNative
       ? this.dexHelper.config.wrapETH(srcToken)
       : srcToken;
@@ -727,10 +727,16 @@ export class CurveV1Factory
       return [];
     }
 
-    const pools = this.poolManager.getPoolsForPair(
+    let pools = this.poolManager.getPoolsForPair(
       srcTokenAddress,
       destTokenAddress,
     );
+
+    if (side === SwapSide.BUY) {
+      pools = pools.filter(pool =>
+        this.factoryImplementationsSupportBuySide.has(pool.implementationName),
+      );
+    }
 
     return pools.map(pool =>
       this.getPoolIdentifier(pool.address, pool.isMetaPool),
@@ -752,10 +758,6 @@ export class CurveV1Factory
     },
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     try {
-      if (!this.buySideSupported && side === SwapSide.BUY) {
-        return null;
-      }
-
       const _isSrcTokenTransferFeeToBeExchanged =
         isSrcTokenTransferFeeToBeExchanged(transferFees);
 
@@ -792,6 +794,14 @@ export class CurveV1Factory
           srcTokenAddress,
           destTokenAddress,
           _isSrcTokenTransferFeeToBeExchanged,
+        );
+      }
+
+      if (side === SwapSide.BUY) {
+        pools = pools.filter(pool =>
+          this.factoryImplementationsSupportBuySide.has(
+            pool.implementationName,
+          ),
         );
       }
 
@@ -929,8 +939,9 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (!this.buySideSupported && side === SwapSide.BUY)
-      throw new Error(`Buy not supported`);
+    if (data.path.length > 1) {
+      throw new Error('Multihop is not supported by v5');
+    }
 
     const { i, j, underlyingSwap } = data.path[0];
     const payload = this.abiCoder.encodeParameter(
@@ -1026,6 +1037,11 @@ export class CurveV1Factory
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
+
+    if (data.path.length > 1) {
+      throw new Error('Multihop is not supported by v5');
+    }
+
     assert(side === SwapSide.SELL, 'Buy not supported');
 
     let isApproved: boolean = !!data.isApproved;
@@ -1086,6 +1102,11 @@ export class CurveV1Factory
     if (contractMethod !== DIRECT_METHOD_NAME_V6) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
+
+    if (data.path.length > 1) {
+      throw new Error('Multihop is not supported by direct method');
+    }
+
     assert(side === SwapSide.SELL, 'Buy not supported');
 
     const metadata = hexConcat([
@@ -1144,8 +1165,9 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (!this.buySideSupported && side === SwapSide.BUY)
-      throw new Error(`Buy not supported`);
+    if (data.path.length > 1) {
+      throw new Error('Multihop is not supported by v5');
+    }
 
     const { exchange, i, j, underlyingSwap } = data.path[0];
     const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
@@ -1181,9 +1203,6 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): DexExchangeParam {
-    if (!this.buySideSupported && side === SwapSide.BUY)
-      throw new Error(`Buy not supported`);
-
     if (data.path.length === 1) {
       const { exchange, i, j, underlyingSwap } = data.path[0];
 
@@ -1209,39 +1228,46 @@ export class CurveV1Factory
         returnAmountPos: undefined,
       };
     } else {
+      const pathLength = 11;
+      const swapParamsLength = 5;
+      const poolsLength = 5;
+
       const path = data.path
         .map((item, index) =>
           index === 0
-            ? [item.tokenIn, item.exchange, item.tokenOut] // we need tokenIn only for the first item because there is no previous pool
+            ? [item.tokenIn, item.exchange, item.tokenOut] // we need tokenIn only for the first item because there is no prev pool
             : [item.exchange, item.tokenOut],
         )
         .flat();
 
-      while (path.length < 11) {
+      while (path.length < pathLength) {
         path.push(NULL_ADDRESS);
       }
 
       const swapParams = data.path.map(item => [
         item.i,
         item.j,
-        item.underlyingSwap ? 2 : 1,
-        // item.isStableNg ? 10 : 0,
-        10,
+        item.underlyingSwap
+          ? CurveRouterSwapType.exchange_underlying
+          : CurveRouterSwapType.exchange,
+        item.isStable
+          ? CurveRouterPoolType.stable
+          : CurveRouterPoolType.non_stable,
         item.n_coins,
       ]);
 
-      while (swapParams.length < 5) {
+      while (swapParams.length < swapParamsLength) {
         swapParams.push([0, 0, 0, 0, 0]);
       }
 
       const pools = [];
 
-      while (pools.length < 5) {
+      while (pools.length < poolsLength) {
         pools.push(NULL_ADDRESS);
       }
 
       const exchangeData = this.ifaces.curveV1Router.encodeFunctionData(
-        'exchange(address[11], uint256[5][5], uint256, uint256, address[5], address)',
+        `exchange(address[${pathLength}], uint256[5][${swapParamsLength}], uint256, uint256, address[${poolsLength}], address)`,
         [
           path,
           swapParams,
@@ -1260,7 +1286,7 @@ export class CurveV1Factory
         targetExchange: this.config.router,
         returnAmountPos: extractReturnAmountPosition(
           this.ifaces.curveV1Router,
-          'exchange(address[11], uint256[5][5], uint256, uint256, address[5], address)',
+          `exchange(address[${pathLength}], uint256[5][${swapParamsLength}], uint256, uint256, address[${poolsLength}], address)`,
         ),
       };
     }

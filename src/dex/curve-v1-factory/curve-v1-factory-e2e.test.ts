@@ -16,7 +16,7 @@ export function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
-    // [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]),
 ) {
@@ -78,7 +78,7 @@ export function testForNetwork(
 }
 
 describe('CurveV1Factory E2E', () => {
-  const dexKey = ['CurveV1Factory', 'CurveV1StableNg'];
+  const dexKey = ['CurveV1Factory'];
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -121,8 +121,8 @@ describe('CurveV1Factory E2E', () => {
       const tokenASymbol: string = 'GHO';
       const tokenBSymbol: string = 'USDT';
 
-      const tokenAAmount: string = '1000000000000000000000';
-      const tokenBAmount: string = '100000000';
+      const tokenAAmount: string = '10000000000000000000';
+      const tokenBAmount: string = '1000000';
 
       testForNetwork(
         network,

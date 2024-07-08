@@ -1,5 +1,5 @@
 import { UnoptimizedRate } from '../../types';
-import { OptimalSwap } from '@paraswap/core';
+import { OptimalSwap, ParaSwapVersion } from '@paraswap/core';
 import _ from 'lodash';
 import { CurveV1FactoryConfig } from './config';
 import { CurveV1StableNgConfig } from '../curve-v1-stable-ng/config';
@@ -9,6 +9,11 @@ const CurveV1FactoryForks = Object.keys(CurveV1FactoryConfig)
   .map(dexName => dexName.toLowerCase());
 
 export function curveV1Merge(or: UnoptimizedRate): UnoptimizedRate {
+  // apply optimisation only for V6
+  if (or.version !== ParaSwapVersion.V6) {
+    return or;
+  }
+
   const fixRoute = (rawRate: OptimalSwap[]): OptimalSwap[] => {
     let lastExchange: false | OptimalSwap = false;
     let optimizedRate = new Array<OptimalSwap>();

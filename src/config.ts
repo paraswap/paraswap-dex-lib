@@ -228,7 +228,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
       AvalancheAdapter02: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
-      AvalancheBuyAdapter: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
+      AvalancheBuyAdapter: '0xaB38a72de187Cd5d6D9bACD6D13D090E841EC330',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
