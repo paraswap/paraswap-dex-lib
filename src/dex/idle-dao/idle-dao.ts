@@ -367,7 +367,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       return idleTokens
         .map((idleToken: IdleToken) => ({
           // liquidity is infinite, tokens are minted when swapping for idle tokens
-          liquidityUSD: 1e9,
+          liquidityUSD: 1e8,
           exchange: this.dexKey,
           address: idleToken.cdoAddress,
           connectorTokens: [getTokenFromIdleToken(idleToken)],
