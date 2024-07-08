@@ -19,6 +19,7 @@ import { Bancor } from './bancor/bancor';
 import { Compound } from './compound/compound';
 import { AaveV2 } from './aave-v2/aave-v2';
 import { AaveV3 } from './aave-v3/aave-v3';
+import { IdleDao } from './idle-dao/idle-dao';
 import { DodoV1 } from './dodo-v1/dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy/smoothy';
@@ -78,6 +79,7 @@ import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
+import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 
 const LegacyDexes = [
   CurveV2,
@@ -113,6 +115,7 @@ const Dexes = [
   Excalibur,
   AaveV2,
   AaveV3,
+  IdleDao,
   KyberDmm,
   Weth,
   PolygonMigrator,
@@ -152,6 +155,7 @@ const Dexes = [
   Swell,
   PharaohV1,
   Spark,
+  AaveV3Stata,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
