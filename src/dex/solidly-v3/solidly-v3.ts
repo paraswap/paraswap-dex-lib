@@ -166,6 +166,8 @@ export class SolidlyV3
         );
       };
 
+      void cleanExpiredNotExistingPoolsKeys();
+
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
         UNISWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
