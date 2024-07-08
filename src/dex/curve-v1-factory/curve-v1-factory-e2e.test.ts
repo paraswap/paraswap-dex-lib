@@ -16,8 +16,8 @@ export function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
-    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]),
 ) {
   const provider = new StaticJsonRpcProvider(
@@ -52,19 +52,24 @@ export function testForNetwork(
                 5000,
               );
             });
-            // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenBSymbol],
-            //     tokens[tokenASymbol],
-            //     holders[tokenBSymbol],
-            //     side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                5000,
+              );
+            });
           });
         });
       }),

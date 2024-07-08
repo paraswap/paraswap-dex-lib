@@ -23,7 +23,7 @@ const factoryPlain2CrvEma: get_dx = (
       (FEE_DENOMINATOR - fee);
   const x = self.get_y(self, state, j, i, y, xp, 0n, 0n);
 
-  return ((x - xp[i]) * PRECISION) / rates[j];
+  return ((x - xp[i]) * PRECISION) / rates[i];
 };
 
 const stableNg: get_dx = (

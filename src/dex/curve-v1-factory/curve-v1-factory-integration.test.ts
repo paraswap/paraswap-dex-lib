@@ -16,6 +16,7 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { Address } from '@paraswap/core';
 import StableSwap3PoolABI from '../../abi/curve-v1/StableSwap3Pool.json';
 import CurveV1StableNgPoolAbi from '../../abi/curve-v1/CurveV1StableNg.json';
+import * as util from 'util';
 
 export function getReaderCalldata(
   exchangeAddress: string,
@@ -114,7 +115,7 @@ export async function testPricingOnNetwork(
   );
   console.log(
     `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
+    util.inspect(poolPrices, false, null, true),
   );
 
   expect(poolPrices).not.toBeNull();
@@ -272,6 +273,94 @@ describe('CurveV1Factory', function () {
       });
 
       it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          curveV1Factory,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newCurveV1Factory = new CurveV1Factory(
+          network,
+          dexKey,
+          dexHelper,
+        );
+        if (newCurveV1Factory.updatePoolState) {
+          await newCurveV1Factory.updatePoolState();
+        }
+        const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
+
+    describe(`crvUSD-USDT`, () => {
+      const readerIface = new Interface(
+        CurveV1StableNgPoolAbi as JsonFragment[],
+      );
+
+      const srcTokenSymbol = 'crvUSD';
+      const destTokenSymbol = 'USDT';
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          curveV1Factory,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        console.log('amountsForBuy: ', amountsForBuy);
         await testPricingOnNetwork(
           curveV1Factory,
           network,
