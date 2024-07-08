@@ -63,6 +63,23 @@ describe('CurveV1StableNG E2E', () => {
         sidesToContractMethods,
       );
     });
+
+    describe('GHO -> crvUSD', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
 
   describe('Polygon', () => {

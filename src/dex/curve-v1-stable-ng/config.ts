@@ -60,6 +60,18 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
         },
+        '0xc65cb3156225380beda366610bab18d5835a1647': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0xc65cb3156225380beda366610bab18d5835a1647',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
+        '0xa0ec67a3c483674f77915893346a8ca3abe2b785': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0xa0ec67a3c483674f77915893346a8ca3abe2b785',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
       },
       customPools: {},
     },

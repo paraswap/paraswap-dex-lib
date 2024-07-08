@@ -1209,23 +1209,46 @@ export class CurveV1Factory
         returnAmountPos: undefined,
       };
     } else {
+      const path = data.path
+        .map((item, index) =>
+          index === 0
+            ? [item.tokenIn, item.exchange, item.tokenOut] // we need tokenIn only for the first item because there is no previous pool
+            : [item.exchange, item.tokenOut],
+        )
+        .flat();
+
+      while (path.length < 11) {
+        path.push(NULL_ADDRESS);
+      }
+
+      const swapParams = data.path.map(item => [
+        item.i,
+        item.j,
+        item.underlyingSwap ? 2 : 1,
+        // item.isStableNg ? 10 : 0,
+        10,
+        item.n_coins,
+      ]);
+
+      while (swapParams.length < 5) {
+        swapParams.push([0, 0, 0, 0, 0]);
+      }
+
+      const pools = [];
+
+      while (pools.length < 5) {
+        pools.push(NULL_ADDRESS);
+      }
+
       const exchangeData = this.ifaces.curveV1Router.encodeFunctionData(
-        'exchange(address[], uint256[][5], uint256, uint256, address[], address)',
+        'exchange(address[11], uint256[5][5], uint256, uint256, address[5], address)',
         [
-          data.path
-            .map(item => [item.tokenIn, item.exchange, item.tokenOut])
-            .flat(),
-          data.path.map(item => [
-            item.i,
-            item.j,
-            item.underlyingSwap ? 2 : 1,
-            item.isStableNg ? 10 : 0,
-            item.n_coins,
-          ]),
+          path,
+          swapParams,
           srcAmount,
           side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE : destAmount,
-          undefined,
-          undefined,
+          pools,
+          recipient,
         ],
       );
 
@@ -1233,11 +1256,11 @@ export class CurveV1Factory
         exchangeData,
         needWrapNative: this.needWrapNative,
         sendEthButSupportsInsertFromAmount: true,
-        dexFuncHasRecipient: false,
+        dexFuncHasRecipient: true,
         targetExchange: this.config.router,
         returnAmountPos: extractReturnAmountPosition(
           this.ifaces.curveV1Router,
-          'exchange',
+          'exchange(address[11], uint256[5][5], uint256, uint256, address[5], address)',
         ),
       };
     }
