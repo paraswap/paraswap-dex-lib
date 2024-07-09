@@ -14,10 +14,6 @@ export class CurveV1StableNg extends CurveV1Factory {
 
   readonly needWrapNative: boolean = true;
 
-  protected factoryImplementationsSupportBuySide = new Set([
-    FactoryImplementationNames.FACTORY_STABLE_NG,
-  ]);
-
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1StableNgConfig);
 
