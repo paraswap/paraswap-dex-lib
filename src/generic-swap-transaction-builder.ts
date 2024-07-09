@@ -716,9 +716,7 @@ export class GenericSwapTransactionBuilder {
     ];
 
     approvals.forEach((alreadyApproved, index) => {
-      // TODO: uncomment after testing
-      // if (!alreadyApproved && !skipApproval) {
-      if (!skipApproval) {
+      if (!alreadyApproved && !skipApproval) {
         const [token, target] = tokenTargetMapping[index].params;
         const exchangeParamIndex = tokenTargetMapping[index].exchangeParamIndex;
         const curExchangeParam = dexExchangeParams[exchangeParamIndex];
