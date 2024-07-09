@@ -38,7 +38,7 @@ function testForNetwork(
                 tokens[baseSlug],
                 tokens[inceptionSlug],
                 holders[baseSlug],
-                '1000000000',
+                '100000000',
                 side,
                 inceptionSlug,
                 contractMethod,
@@ -65,7 +65,7 @@ describe('Inception E2E', () => {
 
     Object.entries(InceptionNativeConfig).forEach(
       ([inceptionSymbol, chainConfig]) => {
-        testForNetwork(network, dexKey, inceptionSymbol, chainConfig[network]);
+        testForNetwork(network, inceptionSymbol, chainConfig[network]);
       },
     );
   });

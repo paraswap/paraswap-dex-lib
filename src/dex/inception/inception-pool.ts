@@ -3,7 +3,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { DexParams, PoolState } from './types';
+import { PoolState } from './types';
 import { getOnChainRatio } from './utils';
 import { BI_POWS } from '../../bigint-constants';
 

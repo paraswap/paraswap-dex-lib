@@ -166,7 +166,6 @@ export class Inception extends SimpleExchange implements IDex<InceptionData> {
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: this.config.vault,
-      swappedAmountNotPresentInExchangeData: true,
       returnAmountPos: undefined,
     };
   }
