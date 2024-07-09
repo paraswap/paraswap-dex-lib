@@ -110,12 +110,12 @@ export class SimpleExchange {
     spender?: Address,
     networkFee: NumberAsString = '0',
     preCalls?: Omit<SimpleExchangeParam, 'networkFee'>,
+    skipAllowance?: boolean,
   ): Promise<SimpleExchangeParam> {
-    const approveParam = await this.getApproveSimpleParam(
-      src,
-      spender || swapCallee,
-      srcAmount,
-    );
+    const approveParam = await (!skipAllowance
+      ? this.getApproveSimpleParam(src, spender || swapCallee, srcAmount)
+      : { callees: [], calldata: [], values: [], networkFee: '0' });
+
     const swapValue = (
       BigInt(networkFee) + (isETHAddress(src) ? BigInt(srcAmount) : 0n)
     ).toString();
