@@ -78,7 +78,7 @@ export function testForNetwork(
 }
 
 describe('CurveV1Factory E2E', () => {
-  const dexKey = ['CurveV1Factory'];
+  const dexKey = ['CurveV1Factory', 'CurveV1StableNg'];
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -364,6 +364,7 @@ describe('CurveV1Factory E2E', () => {
         SwapSide.SELL,
         [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
       ],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
       // [
       //   SwapSide.SELL,
       //   [
@@ -379,6 +380,24 @@ describe('CurveV1Factory E2E', () => {
       const tokenBSymbol: string = 'crvUSD';
 
       const tokenAAmount: string = '10000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        sideToContractMethods,
+      );
+    });
+
+    describe('USDM -> crvUSD', () => {
+      const tokenASymbol: string = 'USDM';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '1000000000000000000';
       const tokenBAmount: string = '1000000000000000000';
 
       testForNetwork(
