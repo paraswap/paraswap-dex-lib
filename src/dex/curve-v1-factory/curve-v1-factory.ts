@@ -1250,9 +1250,7 @@ export class CurveV1Factory
         item.underlyingSwap
           ? CurveRouterSwapType.exchange_underlying
           : CurveRouterSwapType.exchange,
-        item.isStable
-          ? CurveRouterPoolType.stable
-          : CurveRouterPoolType.non_stable,
+        CurveRouterPoolType.stable,
         item.n_coins,
       ]);
 
