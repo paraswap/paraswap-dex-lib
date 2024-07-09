@@ -128,7 +128,10 @@ export class CurveV1Factory
   readonly directSwapIface = new Interface(DirectSwapABI);
 
   protected factoryImplementationsSupportBuySide = new Set<ImplementationNames>(
-    [FactoryImplementationNames.FACTORY_PLAIN_2_CRV_EMA],
+    [
+      FactoryImplementationNames.FACTORY_PLAIN_2_CRV_EMA,
+      FactoryImplementationNames.FACTORY_STABLE_NG,
+    ],
   );
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
