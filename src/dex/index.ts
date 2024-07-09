@@ -83,6 +83,7 @@ import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
+import { Cables } from './cables/cables';
 
 const LegacyDexes = [
   CurveV2,
@@ -162,6 +163,7 @@ const Dexes = [
   Swell,
   PharaohV1,
   Spark,
+  Cables,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

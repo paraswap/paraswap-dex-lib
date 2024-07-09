@@ -64,6 +64,7 @@ import {
   RfqError,
   SlippageCheckError,
 } from './types';
+import { CablesConfig } from '../cables/config';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly isStatePollingDex = true;
@@ -83,7 +84,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   private marketMakersCacheKey: string;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(HashflowConfig);
+    getDexKeysWithNetwork(CablesConfig);
 
   logger: Logger;
 
