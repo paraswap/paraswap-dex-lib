@@ -623,7 +623,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         let approveWethCalldata = '0x';
         if (
           curExchangeParam.approveData &&
-          !curExchangeParam.transferSrcTokenBeforeSwap
+          !curExchangeParam.transferSrcTokenBeforeSwap &&
+          !curExchangeParam.skipApproval
         ) {
           approveWethCalldata = this.buildApproveCallData(
             curExchangeParam.approveData.target,

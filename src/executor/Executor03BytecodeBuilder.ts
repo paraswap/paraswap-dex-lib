@@ -164,6 +164,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (
       maybeWethCallData?.deposit &&
       isETHAddress(swap.srcToken) &&
+      !curExchangeParam.skipApproval &&
       curExchangeParam.needWrapNative
       // do deposit only for the first path with wrapping
       // exchangeParams.findIndex(p => p.needWrapNative) === index
