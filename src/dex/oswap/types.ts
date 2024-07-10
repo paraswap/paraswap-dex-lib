@@ -13,7 +13,6 @@ export type OSwapPoolState = {
 // set of parameters required to compute pool prices.
 export type OSwapData = {
   pool: Address;
-  receiver: Address;
   path: Address[];
 };
 

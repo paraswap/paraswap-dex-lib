@@ -9,11 +9,13 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { OSwapData, OSwapPool, OSwapPoolState } from './types';
 import {
@@ -70,7 +72,7 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
 
   // Returns the pool matching the specified token pair or null if none found.
@@ -211,7 +213,6 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
         unit: unitPrice,
         data: {
           pool: pool.address,
-          receiver: this.augustusAddress,
           path: [srcToken.address, destToken.address],
         },
         exchange: this.dexKey,
@@ -253,57 +254,47 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
     data: OSwapData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          path: 'address[]',
-          receiver: 'address',
-        },
-      },
-      {
-        path: data.path,
-        receiver: data.receiver,
-      },
-    );
     return {
       targetExchange: data.pool,
-      payload,
+      payload: '',
       networkFee: '0',
     };
   }
 
   // Encode call data used by simpleSwap like routers
   // Used for simpleSwap & simpleBuy
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
     data: OSwapData,
     side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
     let method: string;
     let args: any;
 
     const deadline = getLocalDeadlineAsFriendlyPlaceholder();
     if (side === SwapSide.SELL) {
       method = 'swapExactTokensForTokens';
-      args = [srcAmount, destAmount, data.path, data.receiver, deadline];
+      args = [srcAmount, destAmount, data.path, recipient, deadline];
     } else {
       method = 'swapTokensForExactTokens';
-      args = [destAmount, srcAmount, data.path, data.receiver, deadline];
+      args = [destAmount, srcAmount, data.path, recipient, deadline];
     }
 
     const swapData = this.iOSwap.encodeFunctionData(method, args);
 
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      data.pool,
-    );
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: data.pool,
+      returnAmountPos: undefined,
+    };
   }
 
   // This is called once before getTopPoolsForToken is
