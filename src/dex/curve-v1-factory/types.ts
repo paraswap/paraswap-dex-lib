@@ -76,7 +76,6 @@ export type CurveV1FactoryData = {
     i: number;
     j: number;
     underlyingSwap: boolean;
-    isStable: boolean;
     n_coins: number;
   }[];
   isApproved?: boolean;
