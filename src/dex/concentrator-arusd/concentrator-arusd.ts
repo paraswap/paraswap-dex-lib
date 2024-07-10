@@ -1,11 +1,9 @@
-import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   NumberAsString,
@@ -14,14 +12,13 @@ import {
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { ConcentratorArusdData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { ConcentratorArusdConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import ArUSD_ABI from '../../abi/concentrator/arUSD.json';
-import { uint256ToBigInt } from '../../lib/decoders';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class ConcentratorArusd
@@ -83,16 +80,10 @@ export class ConcentratorArusd
     return false;
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -105,10 +96,6 @@ export class ConcentratorArusd
     return [this.dexKey];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -156,10 +143,6 @@ export class ConcentratorArusd
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // V5: Used for multiSwap, buy & megaSwap
-  // V6: Not used, can be left blank
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -177,75 +160,6 @@ export class ConcentratorArusd
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: ConcentratorArusdData,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const is_rUSD_src = this.is_rUSD(srcToken);
-    const is_arUSD_src = this.is_arUSD(srcToken);
-    const is_rUSD_dest = this.is_rUSD(destToken);
-    const is_arUSD_dest = this.is_arUSD(destToken);
-    const is_weETH_dest = this.is_weETH(destToken);
-
-    if (is_rUSD_src && is_arUSD_dest) {
-      const approveParam = await this.getApproveSimpleParam(
-        this.config.rUSDAddress,
-        this.config.arUSDAddress,
-        srcAmount,
-      );
-      return {
-        callees: [...approveParam.callees, this.config.rUSDAddress],
-        calldata: [
-          ...approveParam.calldata,
-          ConcentratorArusd.arUSDIface.encodeFunctionData('deposit', [
-            srcAmount,
-            this.augustusAddress,
-          ]),
-        ],
-        values: [...approveParam.values, '0'],
-        networkFee: '0',
-      };
-    }
-    if (is_arUSD_src && is_rUSD_dest) {
-      return {
-        callees: [this.config.rUSDAddress],
-        calldata: [
-          ConcentratorArusd.arUSDIface.encodeFunctionData('redeem', [
-            srcAmount,
-            this.augustusAddress,
-            this.augustusAddress,
-          ]),
-        ],
-        values: ['0'],
-        networkFee: '0',
-      };
-    }
-    if (is_arUSD_src && is_weETH_dest) {
-      return {
-        callees: [this.config.rUSDAddress],
-        calldata: [
-          ConcentratorArusd.arUSDIface.encodeFunctionData('redeemToBaseToken', [
-            srcAmount,
-            this.augustusAddress,
-            this.augustusAddress,
-            0,
-          ]),
-        ],
-        values: ['0'],
-        networkFee: '0',
-      };
-    }
-    throw new Error('LOGIC ERROR');
-  }
-
   async getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -254,6 +168,8 @@ export class ConcentratorArusd
     recipient: Address,
     data: ConcentratorArusdData,
     side: SwapSide,
+    context: Context,
+    executorAddress: Address,
   ): Promise<DexExchangeParam> {
     const is_rUSD_src = this.is_rUSD(srcToken);
     const is_arUSD_src = this.is_arUSD(srcToken);
@@ -264,11 +180,11 @@ export class ConcentratorArusd
     if (is_rUSD_src && is_arUSD_dest) {
       const exchangeData = ConcentratorArusd.arUSDIface.encodeFunctionData(
         'deposit',
-        [srcAmount, this.augustusAddress],
+        [srcAmount, recipient],
       );
       return {
         needWrapNative: false,
-        dexFuncHasRecipient: false,
+        dexFuncHasRecipient: true,
         exchangeData,
         targetExchange: this.config.arUSDAddress,
         returnAmountPos: extractReturnAmountPosition(
@@ -281,11 +197,11 @@ export class ConcentratorArusd
     if (is_arUSD_src && is_rUSD_dest) {
       const exchangeData = ConcentratorArusd.arUSDIface.encodeFunctionData(
         'redeem',
-        [srcAmount, this.augustusAddress, this.augustusAddress],
+        [srcAmount, recipient, executorAddress],
       );
       return {
         needWrapNative: false,
-        dexFuncHasRecipient: false,
+        dexFuncHasRecipient: true,
         exchangeData,
         targetExchange: this.config.rUSDAddress,
         returnAmountPos: extractReturnAmountPosition(
