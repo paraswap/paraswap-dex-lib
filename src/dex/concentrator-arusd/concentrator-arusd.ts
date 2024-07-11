@@ -203,7 +203,7 @@ export class ConcentratorArusd
         needWrapNative: false,
         dexFuncHasRecipient: true,
         exchangeData,
-        targetExchange: this.config.rUSDAddress,
+        targetExchange: this.config.arUSDAddress,
         returnAmountPos: extractReturnAmountPosition(
           ConcentratorArusd.arUSDIface,
           'redeem',
@@ -214,13 +214,13 @@ export class ConcentratorArusd
     if (is_arUSD_src && is_weETH_dest) {
       const exchangeData = ConcentratorArusd.arUSDIface.encodeFunctionData(
         'redeemToBaseToken',
-        [srcAmount, this.augustusAddress, this.augustusAddress, 0],
+        [srcAmount, recipient, executorAddress, 0],
       );
       return {
         needWrapNative: false,
         dexFuncHasRecipient: false,
         exchangeData,
-        targetExchange: this.config.rUSDAddress,
+        targetExchange: this.config.arUSDAddress,
         returnAmountPos: extractReturnAmountPosition(
           ConcentratorArusd.arUSDIface,
           'redeemToBaseToken',

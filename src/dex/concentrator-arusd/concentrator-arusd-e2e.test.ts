@@ -19,7 +19,6 @@ function testForNetwork(
   tokenBSymbol: string,
   tokenAAmount: string,
   tokenBAmount: string,
-  nativeTokenAmount: string,
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -50,6 +49,19 @@ function testForNetwork(
                 provider,
               );
             });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),
@@ -66,40 +78,13 @@ describe('ConcentratorArusd E2E', () => {
 
   const tokenAAmount: string = '1000000000000000000';
   const tokenBAmount: string = '1000000000000000000';
-  const nativeTokenAmount = '1000000000000000000';
-  describe('Mainnet rUSD=>arUSD', () => {
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
-  });
 
-  describe('Mainnet arUSD=>rUSD', () => {
-    testForNetwork(
-      network,
-      dexKey,
-      tokenBSymbol,
-      tokenASymbol,
-      tokenBAmount,
-      tokenAAmount,
-      nativeTokenAmount,
-    );
-  });
-
-  describe('Mainnet arUSD=>weETH', () => {
-    testForNetwork(
-      network,
-      dexKey,
-      tokenBSymbol,
-      tokenASymbol,
-      tokenBAmount,
-      tokenAAmount,
-      nativeTokenAmount,
-    );
-  });
+  testForNetwork(
+    network,
+    dexKey,
+    tokenASymbol,
+    tokenBSymbol,
+    tokenAAmount,
+    tokenBAmount,
+  );
 });
