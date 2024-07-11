@@ -100,6 +100,23 @@ describe('CurveV1Factory E2E', () => {
       );
     });
 
+    describe('GHO -> USDC', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '100000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
     describe('GHO -> crvUSD', () => {
       const tokenASymbol: string = 'GHO';
       const tokenBSymbol: string = 'crvUSD';
