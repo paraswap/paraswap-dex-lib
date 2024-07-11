@@ -3,11 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -49,19 +45,6 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
           });
         });
       }),
@@ -73,18 +56,47 @@ describe('ConcentratorArusd E2E', () => {
   const dexKey = 'ConcentratorArusd';
   const network = Network.MAINNET;
 
-  const tokenASymbol: string = 'rUSD';
-  const tokenBSymbol: string = 'arUSD';
+  const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+    [
+      {
+        name: 'rUSD',
+        amount: '1000000000000000000',
+      },
+      {
+        name: 'arUSD',
+        amount: '1000000000000000000',
+      },
+    ],
+    [
+      {
+        name: 'arUSD',
+        amount: '1000000000000000000',
+      },
+      {
+        name: 'rUSD',
+        amount: '1000000000000000000',
+      },
+    ],
+    [
+      {
+        name: 'arUSD',
+        amount: '100000000000000',
+      },
+      {
+        name: 'weETH',
+        amount: '100000000000000',
+      },
+    ],
+  ];
 
-  const tokenAAmount: string = '1000000000000000000';
-  const tokenBAmount: string = '1000000000000000000';
-
-  testForNetwork(
-    network,
-    dexKey,
-    tokenASymbol,
-    tokenBSymbol,
-    tokenAAmount,
-    tokenBAmount,
-  );
+  pairs.forEach(pair => {
+    testForNetwork(
+      network,
+      dexKey,
+      pair[0].name,
+      pair[1].name,
+      pair[0].amount,
+      pair[1].amount,
+    );
+  });
 });

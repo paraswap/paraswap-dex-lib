@@ -64,7 +64,7 @@ export class ConcentratorArusd
   }
 
   is_weETH(token: string) {
-    return token.toLowerCase() === this.config.rUSDAddress;
+    return token.toLowerCase() === this.config.weETHAddress;
   }
 
   is_arUSD_swap_token(srcToken: string, destToken: string) {
@@ -218,7 +218,7 @@ export class ConcentratorArusd
       );
       return {
         needWrapNative: false,
-        dexFuncHasRecipient: false,
+        dexFuncHasRecipient: true,
         exchangeData,
         targetExchange: this.config.arUSDAddress,
         returnAmountPos: extractReturnAmountPosition(
