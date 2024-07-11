@@ -25,6 +25,7 @@ import {
 import { OSwapConfig, Adapters, OSWAP_GAS_COST } from './config';
 import { OSwapEventPool } from './oswap-pool';
 import OSwapABI from '../../abi/oswap/oswap.abi.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class OSwap extends SimpleExchange implements IDex<OSwapData> {
   readonly eventPools: { [id: string]: OSwapEventPool } = {};
@@ -276,10 +277,17 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
   ): DexExchangeParam {
     let method: string;
     let args: any;
+    let returnAmountPos: number | undefined = undefined;
 
     const deadline = getLocalDeadlineAsFriendlyPlaceholder();
     if (side === SwapSide.SELL) {
       method = 'swapExactTokensForTokens';
+      returnAmountPos = extractReturnAmountPosition(
+        this.iOSwap,
+        method,
+        'amounts',
+        1,
+      );
       args = [srcAmount, destAmount, data.path, recipient, deadline];
     } else {
       method = 'swapTokensForExactTokens';
@@ -293,7 +301,7 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: data.pool,
-      returnAmountPos: undefined,
+      returnAmountPos,
     };
   }
 
