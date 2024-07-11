@@ -255,6 +255,7 @@ export class Spark
             this.isDai(srcToken) ? 'shares' : 'assets',
           )
         : undefined,
+      skipApproval: isSell && this.isDai(destToken),
     };
   }
 
