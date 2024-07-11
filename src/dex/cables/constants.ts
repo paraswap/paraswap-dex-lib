@@ -23,6 +23,7 @@ export const CABLES_RATELIMIT_CACHE_VALUE = 'limited';
 export const CABLES_RESTRICT_TTL_S = 60 * 30; // 30 minutes
 export const CABLES_RESTRICTED_CACHE_KEY = 'restricted';
 
-export const CABLES_GAS_COST = 120_000;
 export const CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION =
   new BigNumber('0.005');
+
+export const CABLES_GAS_COST = 120_000;

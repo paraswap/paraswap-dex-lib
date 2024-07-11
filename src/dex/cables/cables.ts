@@ -26,7 +26,8 @@ import { getDexKeysWithNetwork } from '../../utils';
 import { CablesAdapters, CablesConfig } from './config';
 import { IDexHelper } from '../../dex-helper';
 import { CablesRateFetcher } from './rate-fetcher';
-import { CablesData } from './types';
+import { CablesData, PairData } from './types';
+import { CABLES_API_URL, CABLES_GAS_COST } from './constants';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -51,32 +52,40 @@ export class Cables extends SimpleExchange implements IDex<any> {
       {
         rateConfig: {
           pairsReqParams: {
-            url: '',
+            url: CABLES_API_URL + '/pairs',
             // headers?: RequestHeaders;
             // params?: any;
           },
           pricesReqParams: {
-            url: '',
+            url: CABLES_API_URL + '/prices',
             // headers?: RequestHeaders;
             // params?: any;
           },
           blacklistReqParams: {
-            url: '',
+            url: CABLES_API_URL + '/blacklist',
             // headers?: RequestHeaders;
             // params?: any;
           },
-          pairsIntervalMs: 1000,
-          pricesIntervalMs: 1000,
-          blacklistIntervalMs: 30_000,
+          tokensReqParams: {
+            url: CABLES_API_URL + '/tokens',
+            // headers: undefined,
+            // params: undefined,
+          },
+
+          pricesIntervalMs: 2000,
+          pairsIntervalMs: 10000,
+          blacklistIntervalMs: 30000,
+          tokensIntervalMs: 30000,
+
           pairsCacheKey: 'cablesPairsCacheKey',
           pricesCacheKey: 'cablesPricesCacheKey',
-          tokensAddrCacheKey: 'cablesTokensAddrCacheKey',
           tokensCacheKey: 'cablesTokensCacheKey',
           blacklistCacheKey: 'cablesBlacklistCacheKey',
-          blacklistCacheTTLSecs: 60,
+
           pairsCacheTTLSecs: 2,
-          pricesCacheTTLSecs: 2,
-          tokensCacheTTLSecs: 2,
+          pricesCacheTTLSecs: 10,
+          blacklistCacheTTLSecs: 30,
+          tokensCacheTTLSecs: 30,
         },
       },
     );
@@ -187,7 +196,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
   /**
    * POOLS
    */
-  getPoolIdentifier(srcAddress: Address, destAddress: Address, mm: string) {
+  getPoolIdentifier(srcAddress: Address, destAddress: Address, mm?: string) {
+    return `${this.dexKey}_${srcAddress}_${destAddress}`.toLowerCase();
     return `${this.dexKey}_${srcAddress}_${destAddress}_${mm}`.toLowerCase();
   }
 
@@ -237,7 +247,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return result;
   }
 
-  getPricesVolume(
+  async getPricesVolume(
     srcToken: Token,
     destToken: Token,
     amounts: bigint[],
@@ -247,7 +257,89 @@ export class Cables extends SimpleExchange implements IDex<any> {
     transferFees?: TransferFeeParams,
     isFirstSwap?: boolean,
   ): Promise<ExchangePrices<CablesData> | null> {
-    throw new Error('Method not implemented.');
+    try {
+      const normalizedSrcToken = this.normalizeToken(srcToken);
+      const normalizedDestToken = this.normalizeToken(destToken);
+      // If: same token, return null
+      if (normalizedSrcToken.address === normalizedDestToken.address) {
+        return null;
+      }
+
+      let pools = await this.getPoolIdentifiers(
+        srcToken,
+        destToken,
+        side,
+        blockNumber,
+      );
+      if (pools.length === 0) {
+        return null;
+      }
+
+      const prices = await this.getCachedPrices();
+      if (!prices) {
+        return null;
+      }
+
+      let pairKey = `${normalizedSrcToken.symbol}/${normalizedDestToken.symbol}`;
+      if (!(pairKey in Object.keys(prices))) {
+        // Revert
+        pairKey = `${normalizedDestToken.symbol}/${normalizedSrcToken.symbol}`;
+        if (!(pairKey in Object.keys(prices))) {
+          return null;
+        }
+      }
+
+      const priceData = prices[pairKey];
+      const baseToken = normalizedSrcToken.symbol;
+      const quoteToken = normalizedDestToken.symbol;
+
+      /**
+       * Orderbook
+       */
+      let orderbook;
+      if (side === SwapSide.BUY) {
+        priceData.asks;
+      } else {
+        orderbook = priceData.bids;
+      }
+      if (orderbook.length === 0) {
+        throw new Error(`Empty orderbook for ${pairKey}`);
+      }
+
+      const orderPrice = 0;
+      // const orderPrice = this.calculateOrderPrice(
+      //   amounts,
+      //   orderbook,
+      //   baseToken,
+      //   quoteToken,
+      //   isInputQuote,
+      // );
+
+      const outDecimals =
+        side === SwapSide.BUY
+          ? normalizedSrcToken.decimals
+          : normalizedDestToken.decimals;
+      return [
+        {
+          prices,
+          unit: BigInt(outDecimals),
+          exchange: this.dexKey,
+          gasCost: CABLES_GAS_COST,
+          data: {},
+        },
+      ];
+    } catch (e: unknown) {
+      this.logger.error(
+        `Error in getPricesVolume`,
+        {
+          srcToken: srcToken.address || srcToken.symbol,
+          destToken: destToken.address || destToken.symbol,
+          side,
+        },
+        e,
+      );
+      return null;
+    }
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<CablesData>): number | number[] {
@@ -292,5 +384,91 @@ export class Cables extends SimpleExchange implements IDex<any> {
   ): AsyncOrSync<PoolLiquidity[]> {
     throw new Error('Method not implemented.');
   }
-  //
+
+  /**
+   * CACHED UTILS
+   */
+  async getCachedTokens(): Promise<any> {
+    const cachedTokens = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.rateFetcher.tokensCacheKey,
+    );
+
+    return cachedTokens ? JSON.parse(cachedTokens) : {};
+  }
+  async getCachedPairs(): Promise<any> {
+    const cachedPairs = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.rateFetcher.pairsCacheKey,
+    );
+
+    return cachedPairs ? JSON.parse(cachedPairs) : {};
+  }
+  async getCachedPrices(): Promise<any> {
+    const cachedPrices = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.rateFetcher.pricesCacheKey,
+    );
+
+    return cachedPrices ? JSON.parse(cachedPrices) : {};
+  }
+  async getCachedTokensAddr(): Promise<any> {
+    const tokens = await this.getCachedTokens();
+    const tokensAddr: Record<string, Address> = {};
+    for (const addr of Object.keys(tokens)) {
+      tokensAddr[tokens[addr].symbol.toLowerCase()] = addr;
+    }
+    return tokensAddr;
+  }
+
+  getPairString(baseToken: Token, quoteToken: Token): string {
+    return `${baseToken.symbol}/${quoteToken.symbol}`.toLowerCase();
+  }
+
+  async getPairData(srcToken: Token, destToken: Token): Promise<any> {
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+    if (normalizedSrcToken.address === normalizedDestToken.address) {
+      return null;
+    }
+
+    const cachedTokens = await this.getCachedTokens();
+    if (
+      !(normalizedSrcToken.address in cachedTokens) ||
+      !(normalizedDestToken.address in cachedTokens)
+    ) {
+      return null;
+    }
+    normalizedSrcToken.symbol = cachedTokens[normalizedSrcToken.address].symbol;
+    normalizedDestToken.symbol =
+      cachedTokens[normalizedDestToken.address].symbol;
+
+    const cachedPairs = await this.getCachedPairs();
+    const potentialPairs = [
+      {
+        base: normalizedSrcToken.symbol,
+        quote: normalizedDestToken.symbol,
+        identifier: this.getPairString(normalizedSrcToken, normalizedDestToken),
+        isSrcBase: true,
+      },
+      {
+        base: normalizedDestToken.symbol,
+        quote: normalizedSrcToken.symbol,
+        identifier: this.getPairString(normalizedDestToken, normalizedSrcToken),
+        isSrcBase: false,
+      },
+    ];
+
+    for (const pair of potentialPairs) {
+      if (pair.identifier in cachedPairs) {
+        const pairData = cachedPairs[pair.identifier];
+        pairData.isSrcBase = pair.isSrcBase;
+        return pairData;
+      }
+    }
+    return null;
+  }
 }

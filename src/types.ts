@@ -214,9 +214,9 @@ export type PoolPrices<T> = {
   prices: bigint[];
   unit: bigint;
   data: T;
-  poolIdentifier?: string;
   exchange: string;
   gasCost: number | number[];
+  poolIdentifier?: string;
   gasCostL2?: number | number[];
   poolAddresses?: Array<Address>;
 };

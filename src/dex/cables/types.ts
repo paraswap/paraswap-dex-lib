@@ -75,14 +75,21 @@ export type CablesRateFetcherConfig = {
       headers?: RequestHeaders;
       params?: any;
     };
+    tokensReqParams: {
+      url: string;
+      headers?: RequestHeaders;
+      params?: any;
+    };
     pairsIntervalMs: number;
     pricesIntervalMs: number;
     blacklistIntervalMs: number;
+    tokensIntervalMs: number;
+
     pairsCacheKey: string;
     pricesCacheKey: string;
-    tokensAddrCacheKey: string;
-    tokensCacheKey: string;
     blacklistCacheKey: string;
+    tokensCacheKey: string;
+
     blacklistCacheTTLSecs: number;
     pairsCacheTTLSecs: number;
     pricesCacheTTLSecs: number;

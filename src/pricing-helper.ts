@@ -209,6 +209,7 @@ export class PricingHelper {
 
               const dexInstance = this.dexAdapterService.getDexByKey(key);
 
+              // console.log('here 123');
               if (
                 isSrcTokenTransferFeeToBeExchanged(transferFees) &&
                 !dexInstance.isFeeOnTransferSupported
@@ -216,6 +217,7 @@ export class PricingHelper {
                 clearTimeout(timer);
                 return resolve(null);
               }
+              // console.log('here 123');
 
               dexInstance
                 .getPricesVolume(
@@ -228,6 +230,7 @@ export class PricingHelper {
                   transferFees,
                 )
                 .then(poolPrices => {
+                  // console.log('pool prices from getPricesVolume', poolPrices);
                   try {
                     if (!poolPrices || !rollupL1ToL2GasRatio) {
                       return resolve(poolPrices);
