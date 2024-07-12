@@ -246,9 +246,9 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       return [];
     }
     const query = `
-      query ($token: Bytes!, $count: Int) {
+      query ($token: Bytes!, $limit: Int) {
         pools0: pairs(
-          first: $count
+          first: $limit
           orderBy: reserveUSD
           orderDirection: desc
           where: {token0: $token}
@@ -265,7 +265,7 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
           reserveUSD
         }
         pools1: pairs(
-          first: $count
+          first: $limit
           orderBy: reserveUSD
           orderDirection: desc
           where: {token1: $token}
@@ -282,13 +282,13 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
           reserveUSD
         }
       }`;
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), limit },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))
