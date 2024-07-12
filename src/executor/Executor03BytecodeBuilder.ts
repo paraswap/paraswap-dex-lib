@@ -67,28 +67,13 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     const exchangeParam = exchangeParams[exchangeParamIndex];
     const swap = priceRoute.bestRoute[0].swaps[0];
 
-    const {
-      dexFuncHasRecipient,
-      needWrapNative,
-      swappedAmountNotPresentInExchangeData,
-      specialDexFlag,
-      specialDexSupportsInsertFromAmount,
-    } = exchangeParam;
-    const isSpecialDex =
-      specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
-
-    const forcePreventInsertFromAmount =
-      swappedAmountNotPresentInExchangeData ||
-      (isSpecialDex && !specialDexSupportsInsertFromAmount);
+    const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
-    let dexFlag = forcePreventInsertFromAmount
-      ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP
-      : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0 or 3
-
+    let dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
@@ -96,21 +81,15 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       dexFlag =
         Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
-      dexFlag = forcePreventInsertFromAmount
-        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
-        : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 7
+      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
     } else if (isEthDest && needUnwrap) {
-      dexFlag = forcePreventInsertFromAmount
-        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
-        : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
+      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
       // dexFlag = Flag.ZERO;
     } else if (
       !isETHAddress(swap.destToken) &&
       exchangeParams.some(param => !param.dexFuncHasRecipient)
     ) {
-      dexFlag = forcePreventInsertFromAmount
-        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
-        : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
+      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
     }
 
     return {
