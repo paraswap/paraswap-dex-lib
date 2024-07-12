@@ -322,8 +322,7 @@ export class DexAdapterService {
     if (this.genericRFQDexKeys.has(dexKey)) {
       return dexKey;
     }
-    if (!isAdapters && /^paraswappool(.*)/i.test(dexKey)) return 'zerox';
-    else if ('uniswapforkoptimized' === dexKey) {
+    if ('uniswapforkoptimized' === dexKey) {
       if (!this.uniswapV2Alias)
         throw new Error(
           `${dexKey} dex is not supported for network(${this.network})!`,
