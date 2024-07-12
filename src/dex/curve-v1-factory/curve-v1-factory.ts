@@ -1205,6 +1205,7 @@ export class CurveV1Factory
     side: SwapSide,
   ): DexExchangeParam {
     if (data.path.length === 1) {
+      // Single pool encoding
       const { exchange, i, j, underlyingSwap } = data.path[0];
 
       const minAmountToReceive =
@@ -1228,68 +1229,69 @@ export class CurveV1Factory
         targetExchange: exchange,
         returnAmountPos: undefined,
       };
-    } else {
-      // Curve Ng Router exchange function params description https://github.com/curvefi/curve-router-ng/blob/master/contracts/Router.vy#L180
-      const pathLength = 11;
-      const swapParamsLength = 5;
-      const poolsLength = 5;
-
-      const path = data.path
-        .map((item, index) =>
-          index === 0
-            ? [item.tokenIn, item.exchange, item.tokenOut] // we need tokenIn only for the first item because there is no prev pool
-            : [item.exchange, item.tokenOut],
-        )
-        .flat();
-
-      while (path.length < pathLength) {
-        path.push(NULL_ADDRESS);
-      }
-
-      const swapParams = data.path.map(item => [
-        item.i,
-        item.j,
-        item.underlyingSwap
-          ? CurveRouterSwapType.exchange_underlying
-          : CurveRouterSwapType.exchange,
-        CurveRouterPoolType.stable,
-        item.n_coins,
-      ]);
-
-      while (swapParams.length < swapParamsLength) {
-        swapParams.push([0, 0, 0, 0, 0]);
-      }
-
-      const pools = [];
-
-      while (pools.length < poolsLength) {
-        pools.push(NULL_ADDRESS);
-      }
-
-      const exchangeData = this.ifaces.curveV1Router.encodeFunctionData(
-        `exchange(address[${pathLength}], uint256[5][${swapParamsLength}], uint256, uint256, address[${poolsLength}], address)`,
-        [
-          path,
-          swapParams,
-          srcAmount,
-          side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE : destAmount,
-          pools,
-          recipient,
-        ],
-      );
-
-      return {
-        exchangeData,
-        needWrapNative: this.needWrapNative,
-        sendEthButSupportsInsertFromAmount: true,
-        dexFuncHasRecipient: true,
-        targetExchange: this.config.router,
-        returnAmountPos: extractReturnAmountPosition(
-          this.ifaces.curveV1Router,
-          `exchange(address[${pathLength}], uint256[5][${swapParamsLength}], uint256, uint256, address[${poolsLength}], address)`,
-        ),
-      };
     }
+
+    // Multihop case encoding
+    // Curve Ng Router exchange function params description https://github.com/curvefi/curve-router-ng/blob/master/contracts/Router.vy#L180
+    const pathLength = 11;
+    const swapParamsLength = 5;
+    const poolsLength = 5;
+
+    const path = data.path
+      .map((item, index) =>
+        index === 0
+          ? [item.tokenIn, item.exchange, item.tokenOut] // we need tokenIn only for the first item because there is no prev pool
+          : [item.exchange, item.tokenOut],
+      )
+      .flat();
+
+    while (path.length < pathLength) {
+      path.push(NULL_ADDRESS);
+    }
+
+    const swapParams = data.path.map(item => [
+      item.i,
+      item.j,
+      item.underlyingSwap
+        ? CurveRouterSwapType.exchange_underlying
+        : CurveRouterSwapType.exchange,
+      CurveRouterPoolType.stable,
+      item.n_coins,
+    ]);
+
+    while (swapParams.length < swapParamsLength) {
+      swapParams.push([0, 0, 0, 0, 0]);
+    }
+
+    const pools = [];
+
+    while (pools.length < poolsLength) {
+      pools.push(NULL_ADDRESS);
+    }
+
+    const exchangeData = this.ifaces.curveV1Router.encodeFunctionData(
+      `exchange(address[${pathLength}], uint256[5][${swapParamsLength}], uint256, uint256, address[${poolsLength}], address)`,
+      [
+        path,
+        swapParams,
+        srcAmount,
+        side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE : destAmount,
+        pools,
+        recipient,
+      ],
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      sendEthButSupportsInsertFromAmount: true,
+      dexFuncHasRecipient: true,
+      targetExchange: this.config.router,
+      returnAmountPos: extractReturnAmountPosition(
+        this.ifaces.curveV1Router,
+        `exchange(address[${pathLength}], uint256[5][${swapParamsLength}], uint256, uint256, address[${poolsLength}], address)`,
+      ),
+    };
   }
 
   async updatePoolState(): Promise<void> {
