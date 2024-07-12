@@ -672,8 +672,6 @@ export class CurveV1Factory
               basePoolStateFetcher,
               factoryImplementationFromConfig.customGasCost,
               factoryImplementationFromConfig.isStoreRateSupported,
-              undefined,
-              undefined,
             );
 
             this.poolManager.initializeNewPool(poolIdentifier, newPool);
