@@ -10,13 +10,14 @@ dotenv.config();
 
 export function testForNetwork(
   network: Network,
-  dexKey: string,
+  dexKey: string | string[],
   tokenASymbol: string,
   tokenBSymbol: string,
   tokenAAmount: string,
   tokenBAmount: string,
   sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]),
 ) {
   const provider = new StaticJsonRpcProvider(
@@ -25,8 +26,6 @@ export function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-
-  // const sideToContractMethods = ;
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -62,6 +61,11 @@ export function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                5000,
               );
             });
           });
@@ -72,25 +76,78 @@ export function testForNetwork(
 }
 
 describe('CurveV1Factory E2E', () => {
-  const dexKey = 'CurveV1Factory';
+  const dexKey = ['CurveV1Factory', 'CurveV1StableNg'];
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDD';
+    describe('USDT -> USDD', () => {
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDD';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '111000000000000000000';
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '111000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('GHO -> USDC', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '100000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('GHO -> crvUSD', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('GHO -> USDT', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '10000000000000000000';
+      const tokenBAmount: string = '1000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
   describe('Mainnet Native', () => {
     const network = Network.MAINNET;
@@ -322,6 +379,7 @@ describe('CurveV1Factory E2E', () => {
         SwapSide.SELL,
         [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
       ],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
       // [
       //   SwapSide.SELL,
       //   [
@@ -337,6 +395,24 @@ describe('CurveV1Factory E2E', () => {
       const tokenBSymbol: string = 'crvUSD';
 
       const tokenAAmount: string = '10000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        sideToContractMethods,
+      );
+    });
+
+    describe('USDM -> crvUSD', () => {
+      const tokenASymbol: string = 'USDM';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '1000000000000000000';
       const tokenBAmount: string = '1000000000000000000';
 
       testForNetwork(

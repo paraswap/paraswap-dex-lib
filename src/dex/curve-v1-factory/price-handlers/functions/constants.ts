@@ -1,6 +1,4 @@
-import {} from 'ts-essentials';
 import { BI_POWS } from '../../../../bigint-constants';
-import { PRECISION } from '../../../kyberdmm/fee-formula';
 import { ImplementationNames, PoolContextConstants } from '../../types';
 
 const implementationConstants: Record<

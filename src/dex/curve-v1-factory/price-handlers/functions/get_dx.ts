@@ -3,6 +3,29 @@ import { get_dx, IPoolContext } from '../types';
 import { requireValue, throwNotExist } from './utils';
 import _ from 'lodash';
 
+const factoryPlain2CrvEma: get_dx = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dy: bigint,
+) => {
+  const balances = requireValue(self, state, 'balances', 'factoryPlain2CrvEma');
+  const fee = requireValue(self, state, 'fee', 'factoryPlain2CrvEma');
+  const { PRECISION, FEE_DENOMINATOR } = self.constants;
+  const { rate_multipliers: rates } = state.constants;
+
+  const xp = self._xp_mem(self, rates, balances);
+
+  const y =
+    xp[j] -
+    (((dy * rates[j]) / PRECISION + 1n) * FEE_DENOMINATOR) /
+      (FEE_DENOMINATOR - fee);
+  const x = self.get_y(self, state, j, i, y, xp, 0n, 0n);
+
+  return ((x - xp[i]) * PRECISION) / rates[i];
+};
+
 const stableNg: get_dx = (
   self: IPoolContext,
   state: PoolState,
@@ -110,7 +133,7 @@ const implementations: Record<ImplementationNames, get_dx> = {
   [ImplementationNames.FACTORY_PLAIN_2_BASIC_EMA]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
-  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: notExist,
+  [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: factoryPlain2CrvEma,
 
   [ImplementationNames.FACTORY_STABLE_NG]: stableNg,
 };
