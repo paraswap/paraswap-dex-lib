@@ -4,6 +4,7 @@ import {
   SwapSide,
   OptimalSwapExchange,
 } from '@paraswap/core';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
@@ -265,40 +266,50 @@ export class Cables extends SimpleExchange implements IDex<any> {
         return null;
       }
 
+      // Ensure that "symbol" is set
+      const tokens = await this.getCachedTokens();
+      for (const symbol of Object.keys(tokens)) {
+        const normalizedTokenAddress = tokens[symbol].address.toLowerCase();
+
+        if (normalizedSrcToken.address === normalizedTokenAddress) {
+          normalizedSrcToken.symbol = tokens[symbol].symbol;
+        }
+        if (normalizedDestToken.address === normalizedTokenAddress) {
+          normalizedDestToken.symbol = tokens[symbol].symbol;
+        }
+      }
+
+      // ---------- Pools ----------
       let pools = await this.getPoolIdentifiers(
         srcToken,
         destToken,
         side,
         blockNumber,
       );
-      if (pools.length === 0) {
-        return null;
-      }
+      if (pools.length === 0) return null;
 
+      // ---------- Prices ----------
       const prices = await this.getCachedPrices();
-      if (!prices) {
-        return null;
-      }
+      if (!prices) return null;
 
       let pairKey = `${normalizedSrcToken.symbol}/${normalizedDestToken.symbol}`;
-      if (!(pairKey in Object.keys(prices))) {
+      const pairsKeys = Object.keys(prices);
+
+      if (!pairsKeys.includes(pairKey)) {
         // Revert
         pairKey = `${normalizedDestToken.symbol}/${normalizedSrcToken.symbol}`;
-        if (!(pairKey in Object.keys(prices))) {
+        if (!pairsKeys.includes(pairKey)) {
           return null;
         }
       }
 
-      const priceData = prices[pairKey];
-      const baseToken = normalizedSrcToken.symbol;
-      const quoteToken = normalizedDestToken.symbol;
-
       /**
        * Orderbook
        */
+      const priceData = prices[pairKey];
       let orderbook;
       if (side === SwapSide.BUY) {
-        priceData.asks;
+        orderbook = priceData.asks;
       } else {
         orderbook = priceData.bids;
       }
@@ -319,15 +330,17 @@ export class Cables extends SimpleExchange implements IDex<any> {
         side === SwapSide.BUY
           ? normalizedSrcToken.decimals
           : normalizedDestToken.decimals;
-      return [
+      const result = [
         {
           prices,
           unit: BigInt(outDecimals),
           exchange: this.dexKey,
           gasCost: CABLES_GAS_COST,
+          orderPrice,
           data: {},
         },
       ];
+      return result;
     } catch (e: unknown) {
       this.logger.error(
         `Error in getPricesVolume`,
@@ -343,7 +356,18 @@ export class Cables extends SimpleExchange implements IDex<any> {
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<CablesData>): number | number[] {
-    throw new Error('Method not implemented.');
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      // addresses: makerAsset, takerAsset, maker, taker
+      CALLDATA_GAS_COST.ADDRESS * 4 +
+      // uint256: expiry
+      CALLDATA_GAS_COST.wordNonZeroBytes(16) +
+      // uint256: nonceAndMeta, makerAmount, takerAmount
+      CALLDATA_GAS_COST.AMOUNT * 3 +
+      // bytes: _signature (65 bytes)
+      CALLDATA_GAS_COST.FULL_WORD * 2 +
+      CALLDATA_GAS_COST.OFFSET_SMALL
+    );
   }
 
   async initializePricing(blockNumber: number): Promise<void> {

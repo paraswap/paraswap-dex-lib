@@ -209,7 +209,6 @@ export class PricingHelper {
 
               const dexInstance = this.dexAdapterService.getDexByKey(key);
 
-              // console.log('here 123');
               if (
                 isSrcTokenTransferFeeToBeExchanged(transferFees) &&
                 !dexInstance.isFeeOnTransferSupported
@@ -217,7 +216,6 @@ export class PricingHelper {
                 clearTimeout(timer);
                 return resolve(null);
               }
-              // console.log('here 123');
 
               dexInstance
                 .getPricesVolume(
@@ -230,7 +228,9 @@ export class PricingHelper {
                   transferFees,
                 )
                 .then(poolPrices => {
-                  // console.log('pool prices from getPricesVolume', poolPrices);
+                  console.log('pool prices from getPricesVolume', poolPrices);
+                  console.log('rollupL1ToL2GasRatio', rollupL1ToL2GasRatio);
+
                   try {
                     if (!poolPrices || !rollupL1ToL2GasRatio) {
                       return resolve(poolPrices);
@@ -283,6 +283,24 @@ export class PricingHelper {
         }
       }),
     );
+
+    console.log('DEX POOL PRICES', dexPoolPrices);
+    console.log('AMOUNTS');
+    console.log(amounts);
+
+    const formatted = dexPoolPrices
+      .filter(x => !!x)
+      .flat()
+      .map(p => {
+        console.log('Format P.prices', p?.prices);
+        console.log(
+          'P.prices.length',
+          p?.prices?.length,
+          'Amounts.length',
+          amounts.length,
+        );
+        return p;
+      });
 
     return dexPoolPrices
       .filter((x): x is ExchangePrices<any> => !!x)
