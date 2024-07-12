@@ -25,6 +25,7 @@ import { Onebit } from './onebit/onebit';
 import { Compound } from './compound/compound';
 import { AaveV2 } from './aave-v2/aave-v2';
 import { AaveV3 } from './aave-v3/aave-v3';
+import { IdleDao } from './idle-dao/idle-dao';
 import { OneInchLp } from './OneInchLp';
 import { DodoV1 } from './dodo-v1/dodo-v1';
 import { DodoV2 } from './dodo-v2';
@@ -75,6 +76,7 @@ import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { AngleTransmuter } from './angle-transmuter/angle-transmuter';
 import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
@@ -86,6 +88,7 @@ import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
+import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 
 const LegacyDexes = [
   CurveV2,
@@ -129,6 +132,7 @@ const Dexes = [
   Excalibur,
   AaveV2,
   AaveV3,
+  IdleDao,
   KyberDmm,
   Weth,
   PolygonMigrator,
@@ -159,6 +163,7 @@ const Dexes = [
   MaverickV2,
   Camelot,
   SwaapV2,
+  AngleTransmuter,
   AngleStakedStable,
   QuickPerps,
   NomiswapV2,
@@ -168,6 +173,7 @@ const Dexes = [
   PharaohV1,
   Spark,
   FxProtocolRusd,
+  AaveV3Stata,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
