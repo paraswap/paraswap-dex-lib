@@ -491,6 +491,10 @@ export const Tokens: {
       address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
       decimals: 18,
     },
+    rUSD: {
+      address: '0x65D72AA8DA931F047169112fcf34f52DbaAE7D18',
+      decimals: 18,
+    },
     stataUSDT: {
       address: '0x862c57d48becb45583aeba3f489696d22466ca1b',
       decimals: 6,
@@ -1569,6 +1573,7 @@ export const Holders: {
     stataUSDT: '0x6803364AceD5181877abC11E865FB27cB654a426',
     aaveUSDT: '0x32c98a981Fe7C333Bd4e8E7630E8e0CF5ce20987',
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
+    rUSD: '0x6415A12867Ff9C118Dd8c4A7FDf41FF0aC879C20',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',

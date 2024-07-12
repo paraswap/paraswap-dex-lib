@@ -87,6 +87,7 @@ import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
+import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 
 const LegacyDexes = [
@@ -171,6 +172,7 @@ const Dexes = [
   Swell,
   PharaohV1,
   Spark,
+  FxProtocolRusd,
   AaveV3Stata,
 ];
 
