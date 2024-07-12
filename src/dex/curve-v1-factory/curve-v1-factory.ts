@@ -1229,6 +1229,7 @@ export class CurveV1Factory
         returnAmountPos: undefined,
       };
     } else {
+      // Curve Ng Router exchange function params description https://github.com/curvefi/curve-router-ng/blob/master/contracts/Router.vy#L180
       const pathLength = 11;
       const swapParamsLength = 5;
       const poolsLength = 5;
