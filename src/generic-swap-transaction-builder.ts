@@ -7,7 +7,7 @@ import {
   OptimalSwapExchange,
   TxObject,
 } from './types';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   ETHER_ADDRESS,
   FEE_PERCENT_IN_BASIS_POINTS_MASK,
@@ -18,8 +18,10 @@ import {
   IS_TAKE_SURPLUS_MASK,
   IS_USER_SURPLUS_MASK,
   NULL_ADDRESS,
+  SwapSide,
 } from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
+import { ethers } from 'ethers';
 import AugustusV6ABI from './abi/augustus-v6/ABI.json';
 import { isETHAddress, uuidToBytes16 } from './utils';
 import {
@@ -32,7 +34,7 @@ import ERC20ABI from './abi/erc20.json';
 import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 import { IDexTxBuilder } from './dex/idex';
-import { ParaSwapVersion, SwapSide } from '@paraswap/core';
+import { ParaSwapVersion } from '@paraswap/core';
 
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
@@ -137,7 +139,7 @@ export class GenericSwapTransactionBuilder {
             const dexParams = await dex.getDexParam!(
               srcToken,
               destToken,
-              side === SwapSide.BUY ? se.srcAmount : srcAmount, // in other case we would not be able to make insert from amount on Ex3
+              srcAmount,
               destAmount,
               recipient,
               se.data,
