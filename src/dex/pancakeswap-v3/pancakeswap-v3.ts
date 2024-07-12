@@ -11,6 +11,7 @@ import {
   Logger,
   NumberAsString,
   PoolPrices,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -60,6 +61,7 @@ import {
   OnPoolCreatedCallback,
   PancakeswapV3Factory,
 } from './pancakeswap-v3-factory';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -87,7 +89,13 @@ export class PancakeswapV3
   intervalTask?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(_.pick(PancakeswapV3Config, ['PancakeswapV3']));
+    getDexKeysWithNetwork(
+      _.pick(PancakeswapV3Config, [
+        'PancakeswapV3',
+        'DackieSwapV3',
+        'SwapBasedV3',
+      ]),
+    );
 
   logger: Logger;
 
@@ -161,6 +169,8 @@ export class PancakeswapV3
           maxTimestamp,
         );
       };
+
+      void cleanExpiredNotExistingPoolsKeys();
 
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
@@ -845,10 +855,65 @@ export class PancakeswapV3
     );
   }
 
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: UniswapV3Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction =
+      side === SwapSide.SELL
+        ? UniswapV3Functions.exactInput
+        : UniswapV3Functions.exactOutput;
+
+    const path = this._encodePath(data.path, side);
+
+    const swapFunctionParams: UniswapV3SimpleSwapParams =
+      side === SwapSide.SELL
+        ? {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountIn: srcAmount,
+            amountOutMinimum: destAmount,
+            path,
+          }
+        : {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountOut: destAmount,
+            amountInMaximum: srcAmount,
+            path,
+          };
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
+    };
+  }
+
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.config.subgraphURL) return [];
+
     const _tokenAddress = tokenAddress.toLowerCase();
 
     const res = await this._querySubgraph(
@@ -1021,12 +1086,13 @@ export class PancakeswapV3
     variables: Object,
     timeout = 30000,
   ) {
+    if (!this.config.subgraphURL) return [];
+
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {

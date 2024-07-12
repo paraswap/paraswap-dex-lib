@@ -58,6 +58,7 @@ export type PoolState = {
   offpeg_fee_multiplier?: bigint; // from pool
   basePoolState?: PoolState;
   storedRates?: bigint[]; // from pool, but only for oracle ones
+  n_coins?: number;
 };
 
 export type PoolStateWithUpdateInfo<T> = {
@@ -115,6 +116,10 @@ export enum FactoryImplementationNames {
   FACTORY_PLAIN_4_BASIC = 'factory_plain_4_basic',
   FACTORY_PLAIN_4_ETH = 'factory_plain_4_eth',
   FACTORY_PLAIN_4_OPTIMIZED = 'factory_plain_4_optimized',
+
+  FACTORY_STABLE_NG = 'factory_stable_ng',
+  // FACTORY_STABLE_6_NG = 'factory_stable_6_ng',
+  // FACTORY_STABLE_8_NG = 'factory_stable_8_ng',
 }
 
 export enum CustomImplementationNames {
@@ -175,8 +180,14 @@ export type CustomPoolConfig = {
   useForPricing: boolean;
 };
 
+type DexParamFactory = {
+  address: string;
+  maxPlainCoins?: number;
+  isStableNg?: boolean;
+};
+
 export type DexParams = {
-  factoryAddresses: string[] | null;
+  factories: DexParamFactory[] | null;
   stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;
@@ -222,4 +233,22 @@ export type DirectCurveV1Param = [
   needWrapNative: boolean,
   permit: string,
   uuid: string,
+];
+
+export type DirectCurveV1FactoryParamV6 = [
+  curveData: NumberAsString,
+  curveAssets: NumberAsString,
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  quotedAmount: NumberAsString,
+  metadata: string,
+  beneficiary: Address,
+];
+
+export type CurveV1FactoryDirectSwap = [
+  params: DirectCurveV1FactoryParamV6,
+  partnerAndFee: string,
+  permit: string,
 ];

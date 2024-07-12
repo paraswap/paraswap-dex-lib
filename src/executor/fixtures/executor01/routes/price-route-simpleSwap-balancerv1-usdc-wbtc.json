@@ -1,0 +1,64 @@
+{
+  "blockNumber": 18812928,
+  "network": 1,
+  "srcToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "srcDecimals": 6,
+  "srcAmount": "3333000000",
+  "destToken": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+  "destDecimals": 8,
+  "destAmount": "7261672",
+  "bestRoute": [
+    {
+      "percent": 100,
+      "swaps": [
+        {
+          "srcToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "srcDecimals": 6,
+          "destToken": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "destDecimals": 8,
+          "swapExchanges": [
+            {
+              "exchange": "BalancerV1",
+              "srcAmount": "3333000000",
+              "destAmount": "7261672",
+              "percent": 100,
+              "poolAddresses": [
+                "0x2257aaac34bcb27900291f7b84ee2565a6cbac57",
+                "0x156d96eac6fe0e403428379c2d891c17a24c77f9"
+              ],
+              "data": {
+                "swaps": [
+                  {
+                    "pool": "0x2257aaac34bcb27900291f7b84ee2565a6cbac57",
+                    "tokenInParam": "3066360000",
+                    "tokenOutParam": "0",
+                    "maxPrice": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+                  },
+                  {
+                    "pool": "0x156d96eac6fe0e403428379c2d891c17a24c77f9",
+                    "tokenInParam": "266640000",
+                    "tokenOutParam": "0",
+                    "maxPrice": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+                  }
+                ],
+                "gasUSD": "25.65528"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "gasCostUSD": "37.584160",
+  "gasCost": "351592",
+  "side": "SELL",
+  "tokenTransferProxy": "0x216b4b4ba9f3e719726886d34a177484278bfcae",
+  "contractAddress": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57",
+  "contractMethod": "simpleSwap",
+  "partnerFee": 0,
+  "srcUSD": "3333.0000000000",
+  "destUSD": "2972.6380499200",
+  "partner": "any",
+  "maxImpactReached": false,
+  "hmac": "1e2a6109d1fe488da1e06c718921f8141f1a2157"
+}

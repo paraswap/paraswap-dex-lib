@@ -3,11 +3,16 @@ import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { Address } from '../../types';
 import RamsesV2StateMulticallABI from '../../abi/RamsesV2StateMulticall.abi.json';
+import VelodromeSlipstreamMulticallABi from '../../abi/velodrome-slipstream/VelodromeSlipstreamStateMulticall.abi.json';
 import { AbiItem } from 'web3-utils';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from './forks/ramses-v2/utils';
+import { decodeStateMultiCallResultWithRelativeBitmaps as decodeStateMultiCallResultWithRelativeBitmapsForRamses } from './forks/ramses-v2/utils';
+import { decodeStateMultiCallResultWithRelativeBitmaps as decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream } from './forks/velodrome-slipstream/utils';
 import { RamsesV2EventPool } from './forks/ramses-v2/ramses-v2-pool';
+import { VelodromeSlipstreamEventPool } from './forks/velodrome-slipstream/velodrome-slipstream-pool';
+import { VelodromeSlipstreamFactory } from './forks/velodrome-slipstream/velodrome-slipstream-factory';
 
 const SUPPORTED_FEES = [10000n, 3000n, 500n, 100n];
+const RAMSES_FORKS_FEES = [...SUPPORTED_FEES, 50n, 250n];
 
 // Pools that will be initialized on app startup
 // They are added for testing
@@ -40,7 +45,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
+      subgraphURL: '5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV',
     },
     [Network.BSC]: {
       factory: '0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7',
@@ -52,8 +57,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-bsc',
+      subgraphURL: 'F85MNzUGYqgSHSHRGgeVMNsdnW1KtZSVgFULumXRZTw2',
     },
     [Network.POLYGON]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -65,8 +69,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon',
+      subgraphURL: '3hCPRGf4z88VC5rsBKU5AA9FBBq5nF3jbKJG7VZCbhjm',
     },
     [Network.ARBITRUM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -78,8 +81,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal',
+      subgraphURL: '89nD6JoQmeFcYLoimEDuNatWmQHAJsh9mm887XJXxWto',
     },
     [Network.OPTIMISM]: {
       factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -91,8 +93,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis',
+      subgraphURL: '7SVwgBfXoWmiK6x1NF1VEo1szkeWLniqWN1oYsX3UMb5',
     },
     [Network.AVALANCHE]: {
       factory: '0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD',
@@ -104,8 +105,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/lynnshaoyu/uniswap-v3-avax',
+      subgraphURL: 'GVH9h9KZ9CqheUEL93qMbq7QwgoBu32QXQDPR6bev4Eo',
     },
     [Network.BASE]: {
       factory: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
@@ -132,8 +132,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-ethereum',
+      subgraphURL: '5nnoU1nUFeWqtXgbpC54L9PWdpgo7Y9HYinR3uTMsfzs',
     },
     [Network.POLYGON]: {
       factory: '0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2',
@@ -145,8 +144,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-polygon',
+      subgraphURL: 'CqLnQY1d6DLcBYu7aZvGmt17LoNdTe4fDYnGbE2EgotR',
     },
     [Network.BSC]: {
       factory: '0x126555dd55a39328F69400d6aE4F782Bd4C34ABb',
@@ -158,7 +156,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-bsc',
+      subgraphURL: 'FiJDXMFCBv88GP17g2TtPh8BcA8jZozn5WRW7hCN7cUT',
     },
     [Network.AVALANCHE]: {
       factory: '0x3e603C14aF37EBdaD31709C4f848Fc6aD5BEc715',
@@ -170,8 +168,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-avalanche',
+      subgraphURL: '4BxsTB5ADnYdgJgdmzyddmnDGCauctDia28uxB1hgTBE',
     },
     [Network.FANTOM]: {
       factory: '0x7770978eED668a3ba661d51a773d3a992Fc9DDCB',
@@ -183,7 +180,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-fantom',
+      subgraphURL: '4BzEvR229mwKjneCbJTDM8dsS3rjgoKcXt5C7J1DaUxK',
     },
     [Network.ARBITRUM]: {
       factory: '0x1af415a1eba07a4986a52b6f2e7de7003d82231e',
@@ -195,8 +192,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-arbitrum',
+      subgraphURL: '96EYD64NqmnFxMELu2QLWB95gqCmA9N96ssYsZfFiYHg',
     },
     [Network.OPTIMISM]: {
       factory: '0x9c6522117e2ed1fE5bdb72bb0eD5E3f2bdE7DBe0',
@@ -208,8 +204,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sushi-v3/v3-optimism',
+      subgraphURL: 'Dr3FkshPgTMMDwxckz3oZdwLxaPcbzZuAbE92i6arYtJ',
     },
     [Network.BASE]: {
       factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
@@ -236,8 +231,6 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash:
         '0x09c178be473df44d1de6970978a4fdedce1ce52a23b2b979754547f6b43a19a5',
-      subgraphURL:
-        'https://subgraph.chronos.exchange/subgraphs/name/chronos-v3',
     },
   },
   RamsesV2: {
@@ -246,18 +239,39 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       deployer: '0xb3e423ab9cE6C03D98326A3A2a0D7D96b0829f22',
       quoter: '0xAA20EFF7ad2F523590dE6c04918DaAE0904E3b20',
       router: '0xAA23611badAFB62D37E7295A682D21960ac85A90',
-      supportedFees: [...SUPPORTED_FEES, 50n],
+      supportedFees: RAMSES_FORKS_FEES,
       stateMulticall: '0x50EE4112Cab9c79812F23bE079aB3911395ACc8e',
       stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       chunksCount: 10,
       initRetryFrequency: 10,
       eventPoolImplementation: RamsesV2EventPool,
-      decodeStateMultiCallResultWithRelativeBitmaps,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForRamses,
+      initHash:
+        '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
+      subgraphURL: 'G2tXDm6mgqBMuC7hq9GRVeTv5SRBAVnPFGcpGBab2cea',
+    },
+  },
+  PharaohV2: {
+    [Network.AVALANCHE]: {
+      factory: '0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42',
+      deployer: '0x95120704f4E2D545Aea8b6B3c16d9Da1fa32E30F',
+      quoter: '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
+      router: '0xAAAE99091Fbb28D400029052821653C1C752483B',
+      supportedFees: RAMSES_FORKS_FEES,
+      stateMulticall: '0xd32C191e0febaa6Cc93A29Cb676474c72486E00b',
+      stateMultiCallAbi: RamsesV2StateMulticallABI as AbiItem[],
+      uniswapMulticall: '0x0139141Cd4Ee88dF3Cdb65881D411bAE271Ef0C2',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      eventPoolImplementation: RamsesV2EventPool,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForRamses,
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
       subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/ramsesexchange/concentrated-liquidity-graph',
+        'https://api.studio.thegraph.com/query/66247/pharaoh-cl/version/latest',
     },
   },
   'QuickSwapV3.1': {
@@ -287,8 +301,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 30,
       initHash:
         '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/0xalucard/ftm-spooky-v3',
+      subgraphURL: '6WBxx3gYia4oCLsYMFTZs6HLEnEqVMdpeZDCABnM1tj2',
     },
   },
   Retro: {
@@ -302,7 +315,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0x817e07951f93017a93327ac8cc31e946540203a19e1ecc37bc1761965c2d1090`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/ruvlol/univ3-test',
+      subgraphURL: 'DZyDuvUHNThtJJQAEbYGr32xYc93BZAdfqatpYUNMZbe',
     },
   },
   BaseswapV3: {
@@ -316,7 +329,99 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.thegraph.com/subgraphs/name/baseswapfi/v3-base',
+      subgraphURL: '39pzQzH5r3vmovd9fTs7rVDVFCj1xJye3dTMNHcSkSfL',
+    },
+  },
+  AlienBaseV3: {
+    [Network.BASE]: {
+      factory: '0x0Fd83557b2be93617c9C1C1B6fd549401C74558C',
+      quoter: '0x4fDBD73aD4B1DDde594BF05497C15f76308eFfb9',
+      router: '0x79edabc464dcdce8cbf1b60c003aceef7e0282d9',
+      supportedFees: [10000n, 3000n, 750n, 200n],
+      stateMulticall: '0x7160f736c52e1e78e92FD4eE4D73e21A7Cf4F950',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL: 'https://api.studio.thegraph.com/query/59130/v3alb/0.3',
+    },
+  },
+  VelodromeSlipstream: {
+    [Network.OPTIMISM]: {
+      factory: '0x548118C7E0B865C2CfA94D15EC86B666468ac758',
+      quoter: '0xA2DEcF05c16537C702779083Fe067e308463CE45',
+      router: '0x93A3b44C38A8557E935B3e2549B2809a582c28EE',
+      supportedFees: SUPPORTED_FEES,
+      tickSpacings: [1n, 50n, 100n, 200n, 2000n],
+      tickSpacingsToFees: {
+        '1': 100n,
+        '50': 500n,
+        '100': 500n,
+        '200': 3000n,
+        '2000': 10000n,
+      },
+      stateMulticall: '0xc055b23319b3a140D4De2d0001bd0A885B3d7DbB',
+      stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
+      eventPoolImplementation: VelodromeSlipstreamEventPool,
+      factoryImplementation: VelodromeSlipstreamFactory,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: '0xE0A596c403E854FFb9C828aB4f07eEae04A05D37', // pool implementation address from factory contract is used instead of initHash here
+    },
+  },
+  VelodromeSlipstreamNewFactory: {
+    [Network.OPTIMISM]: {
+      factory: '0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F',
+      quoter: '0x89D8218ed5fF1e46d8dcd33fb0bbeE3be1621466',
+      router: '0x49e94895A26e697602c8270e437688514b291a81',
+      supportedFees: SUPPORTED_FEES,
+      tickSpacings: [1n, 50n, 100n, 200n, 2000n],
+      tickSpacingsToFees: {
+        '1': 100n,
+        '50': 500n,
+        '100': 500n,
+        '200': 3000n,
+        '2000': 10000n,
+      },
+      stateMulticall: '0xc055b23319b3a140D4De2d0001bd0A885B3d7DbB',
+      stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
+      eventPoolImplementation: VelodromeSlipstreamEventPool,
+      factoryImplementation: VelodromeSlipstreamFactory,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
+      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: '0xc28ad28853a547556780bebf7847628501a3bcbb', // pool implementation address from factory contract is used instead of initHash here
+    },
+  },
+  AerodromeSlipstream: {
+    [Network.BASE]: {
+      factory: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A',
+      quoter: '0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0',
+      router: '0x1b2b6cE813b99b840Fe632c63bcA5394938Ef01e',
+      supportedFees: SUPPORTED_FEES,
+      tickSpacings: [1n, 50n, 100n, 200n, 2000n],
+      tickSpacingsToFees: {
+        '1': 100n,
+        '50': 500n,
+        '100': 500n,
+        '200': 3000n,
+        '2000': 10000n,
+      },
+      stateMulticall: '0x736518161516c1cfBD5bf5e7049FCBDC9b933987',
+      stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
+      eventPoolImplementation: VelodromeSlipstreamEventPool,
+      factoryImplementation: VelodromeSlipstreamFactory,
+      decodeStateMultiCallResultWithRelativeBitmaps:
+        decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: '0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831', // pool implementation address from factory contract is used instead of initHash here
     },
   },
 };

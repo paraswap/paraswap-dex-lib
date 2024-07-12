@@ -15,8 +15,7 @@ export const NomiswapV2Config: DexConfigMap<DexParams> = {
         '0x83eb759f5ea0525124f03d4ac741bb4af0bb1c703d5f694bd42a8bd72e495a01',
       poolGasCost: 120 * 1000,
       feeCode: 0, // this is ignored as Nomiswap uses dynamic fees,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/nominex/nomiswap-exchange-subgraph',
+      subgraphURL: '5CBKsDihF7KeBrNX4bgtb4tVFqy41PguVm88zBGpd4Hi',
     },
   },
 };

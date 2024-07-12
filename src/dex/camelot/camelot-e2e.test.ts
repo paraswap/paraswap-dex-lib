@@ -23,14 +23,31 @@ describe('Camelot E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
     ]);
 
-    const pairs: { name: string; sellAmount: string }[][] = [
+    type TestingPair = {
+      name: string;
+      sellAmount: string;
+    };
+    // To be tested against E2E endpoint
+    type TestingOptions = {
+      srcTokenTransferFee: number;
+      destTokenTransferFee: number;
+      srcTokenDexTransferFee: number;
+      destTokenDexTransferFee: number;
+      slippage: number;
+    };
+    type TestingParams =
+      | [TestingPair, TestingPair, TestingOptions]
+      | [TestingPair, TestingPair];
+
+    const pairs: TestingParams[] = [
       [
         { name: 'ETH', sellAmount: '700000000000' },
         { name: 'USDC', sellAmount: '1000000' },
@@ -51,6 +68,49 @@ describe('Camelot E2E', () => {
         { name: 'USDC', sellAmount: '100000' },
         { name: 'USDT', sellAmount: '100000' },
       ],
+      // Tax token without config
+      [
+        { name: 'RDPX', sellAmount: '100000000' },
+        { name: 'ETH', sellAmount: '1000000000' },
+        {
+          srcTokenTransferFee: 0,
+          destTokenTransferFee: 0,
+          srcTokenDexTransferFee: 1000,
+          destTokenDexTransferFee: 0,
+          slippage: 1000,
+        },
+      ],
+      [
+        { name: 'RDPX', sellAmount: '100000000' },
+        { name: 'WETH', sellAmount: '100000000' },
+        {
+          srcTokenTransferFee: 0,
+          destTokenTransferFee: 0,
+          srcTokenDexTransferFee: 1000,
+          destTokenDexTransferFee: 0,
+          slippage: 1000,
+        },
+      ],
+      [
+        { name: 'RDPX', sellAmount: '100000000' },
+        { name: 'DAI', sellAmount: '100000000' },
+        {
+          srcTokenTransferFee: 0,
+          destTokenTransferFee: 0,
+          srcTokenDexTransferFee: 1000,
+          destTokenDexTransferFee: 0,
+          slippage: 1000,
+        },
+      ],
+      // Tax token with config
+      [
+        { name: 'SEN', sellAmount: '100000000000000000' },
+        { name: 'ETH', sellAmount: '100000000000000000' },
+      ],
+      [
+        { name: 'SEN', sellAmount: '100000000000000000' },
+        { name: 'WETH', sellAmount: '100000000000000000' },
+      ],
     ];
 
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -69,6 +129,10 @@ describe('Camelot E2E', () => {
                   contractMethod,
                   network,
                   provider,
+                  undefined,
+                  undefined,
+                  (pair[2] ? pair[2] : undefined) as any,
+                  (pair[2] ? pair[2].slippage : undefined) as any,
                 );
               });
               it(`${pair[1].name} -> ${pair[0].name}`, async () => {
@@ -82,6 +146,10 @@ describe('Camelot E2E', () => {
                   contractMethod,
                   network,
                   provider,
+                  undefined,
+                  undefined,
+                  (pair[2] ? pair[2] : undefined) as any,
+                  (pair[2] ? pair[2].slippage : undefined) as any,
                 );
               });
             });

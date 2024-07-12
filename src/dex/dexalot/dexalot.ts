@@ -11,6 +11,8 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
   TransferFeeParams,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import {
   SwapSide,
@@ -597,7 +599,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
         userAddress: options.txOrigin,
         chainid: this.network,
-        executor: this.augustusAddress,
+        executor: options.executionContractAddress,
         partner: options.partner,
         slippage: slippageBps,
       };
@@ -719,7 +721,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       ];
     } catch (e) {
       if (isAxiosError(e) && e.response && e.response.data) {
-        const errorData: RFQResponseError = e.response.data;
+        const errorData = e.response.data as RFQResponseError;
         if (errorData.ReasonCode === 'FQ-009') {
           this.logger.warn(
             `${this.dexKey}-${this.network}: Encountered rate limited user=${options.txOrigin}. Adding to local rate limit cache`,
@@ -976,6 +978,51 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       swapData,
       this.mainnetRFQAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: DexalotData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { quoteData } = data;
+
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    const swapFunction = 'simpleSwap';
+    const swapFunctionParams = [
+      [
+        quoteData.nonceAndMeta,
+        quoteData.expiry,
+        quoteData.makerAsset,
+        quoteData.takerAsset,
+        quoteData.maker,
+        quoteData.taker,
+        quoteData.makerAmount,
+        quoteData.takerAmount,
+      ],
+      quoteData.signature,
+    ];
+
+    const exchangeData = this.rfqInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      targetExchange: this.mainnetRFQAddress,
+      returnAmountPos: undefined,
+    };
   }
 
   async getTopPoolsForToken(

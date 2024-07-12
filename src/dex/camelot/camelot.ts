@@ -8,6 +8,7 @@ import {
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Log,
   Logger,
@@ -48,6 +49,15 @@ import {
   OnPoolCreatedCallback,
   UniswapV2Factory,
 } from '../uniswap-v2/uniswap-v2-factory';
+import {
+  hexDataLength,
+  hexlify,
+  hexZeroPad,
+  id,
+  solidityPack,
+} from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
+import { Flag, SpecialDex } from '../../executor/types';
 
 const DefaultCamelotPoolGasCost = 90 * 1000;
 
@@ -167,6 +177,7 @@ export class Camelot
   feeFactor = 100000;
   factory: Contract;
 
+  needWrapNative = true;
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
 
@@ -714,13 +725,13 @@ export class Camelot
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -818,5 +829,45 @@ export class Camelot
       swapData,
       data.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SolidlyData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error('Buy not supported');
+    let exchangeDataTypes = ['bytes4', 'bytes32'];
+
+    let exchangeDataToPack = [
+      hexZeroPad(hexlify(0), 4),
+      hexZeroPad(hexlify(data.pools.length), 32),
+    ];
+
+    const pools = encodePools(data.pools, this.feeFactor);
+    pools.forEach(pool => {
+      exchangeDataTypes.push('bytes32');
+      exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
+    });
+
+    const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: recipient,
+      specialDexFlag: data.isFeeTokenInRoute
+        ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
+        : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
+      transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
+        ? undefined
+        : data.pools[0].address,
+      returnAmountPos: undefined,
+    };
   }
 }

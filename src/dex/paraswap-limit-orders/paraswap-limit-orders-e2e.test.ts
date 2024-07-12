@@ -12,8 +12,8 @@ import { generateConfig } from '../../config';
 describe('ParaSwapLimitOrders E2E', () => {
   const dexKey = 'ParaSwapLimitOrders';
 
-  describe('ParaSwapLimitOrders ROPSTEN', () => {
-    const network = Network.ROPSTEN;
+  describe('ParaSwapLimitOrders MAINNET', () => {
+    const network = Network.MAINNET;
     const tokens = Tokens[network];
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,

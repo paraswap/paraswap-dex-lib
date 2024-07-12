@@ -1,5 +1,5 @@
 import { defaultAbiCoder } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { AbiItem } from 'web3-utils';
 import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
@@ -13,6 +13,8 @@ import {
   Address,
   PoolLiquidity,
   Token,
+  DexExchangeParam,
+  NumberAsString,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -49,6 +51,8 @@ import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { AlgebraEventPoolV1_9_bidirectional_fee } from './algebra-pool-v1_9_bidirectional_fee';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -69,7 +73,10 @@ const MAX_STALE_STATE_BLOCK_AGE = {
   [Network.ZKEVM]: 150, // approximately 3min
 };
 
-type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
+type IAlgebraEventPool =
+  | AlgebraEventPoolV1_1
+  | AlgebraEventPoolV1_9
+  | AlgebraEventPoolV1_9_bidirectional_fee;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private readonly factory: AlgebraFactory;
@@ -95,7 +102,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
   private AlgebraPoolImplem:
     | typeof AlgebraEventPoolV1_1
-    | typeof AlgebraEventPoolV1_9;
+    | typeof AlgebraEventPoolV1_9
+    | typeof AlgebraEventPoolV1_9_bidirectional_fee;
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
@@ -132,7 +140,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
     this.AlgebraPoolImplem =
-      config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
+      config.version === 'v1.1'
+        ? AlgebraEventPoolV1_1
+        : config.version === 'v1.9-bidirectional-fee'
+        ? AlgebraEventPoolV1_9_bidirectional_fee
+        : AlgebraEventPoolV1_9;
 
     this.factory = new AlgebraFactory(
       dexHelper,
@@ -816,7 +828,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     if (data.feeOnTransfer) {
       _require(
-        data.path.length !== 1,
+        data.path.length === 1,
         `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
           .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
           .join(' ')}`,
@@ -867,6 +879,79 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       swapData,
       this.config.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AlgebraData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    let swapFunction;
+    let swapFunctionParams;
+
+    if (data.feeOnTransfer) {
+      _require(
+        data.path.length === 1,
+        `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
+          .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
+          .join(' ')}`,
+      );
+      swapFunction = AlgebraFunctions.exactInputWithFeeToken;
+      swapFunctionParams = {
+        limitSqrtPrice: '0',
+        recipient: recipient,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+        amountIn: srcAmount,
+        amountOutMinimum: destAmount,
+        tokenIn: data.path[0].tokenIn,
+        tokenOut: data.path[0].tokenOut,
+      };
+    } else {
+      swapFunction =
+        side === SwapSide.SELL
+          ? AlgebraFunctions.exactInput
+          : AlgebraFunctions.exactOutput;
+      const path = this._encodePath(data.path, side);
+      swapFunctionParams =
+        side === SwapSide.SELL
+          ? {
+              recipient: recipient,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountIn: srcAmount,
+              amountOutMinimum: destAmount,
+              path,
+            }
+          : {
+              recipient: recipient,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountOut: destAmount,
+              amountInMaximum: srcAmount,
+              path,
+            };
+    }
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
+    };
   }
 
   async getTopPoolsForToken(
@@ -1036,11 +1121,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     timeout = 30000,
   ) {
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {

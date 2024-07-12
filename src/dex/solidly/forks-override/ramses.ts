@@ -97,13 +97,13 @@ export class Ramses extends Solidly {
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -124,13 +124,13 @@ export class Ramses extends Solidly {
         }
       }`;
 
-    const { data: tokensData } = await this.dexHelper.httpRequest.post(
+    const { data: tokensData } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query: tokensQuery,
         variables: { tokenIds },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     const pools0 = await this.prepareSubgraphPools(

@@ -16,7 +16,7 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { Address } from '@paraswap/core';
 import StableSwap3PoolABI from '../../abi/curve-v1/StableSwap3Pool.json';
 
-function getReaderCalldata(
+export function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
@@ -30,7 +30,7 @@ function getReaderCalldata(
   }));
 }
 
-function decodeReaderResult(
+export function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
@@ -41,7 +41,7 @@ function decodeReaderResult(
   });
 }
 
-async function checkOnChainPricing(
+export async function checkOnChainPricing(
   curveV1Factory: CurveV1Factory,
   exchangeAddress: Address,
   funcName: string,
@@ -50,8 +50,9 @@ async function checkOnChainPricing(
   amounts: bigint[],
   i: number,
   j: number,
+  readerIface: Interface,
 ) {
-  const readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]);
+  // const readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
@@ -75,7 +76,7 @@ async function checkOnChainPricing(
   expect(prices).toEqual(expectedPrices);
 }
 
-async function testPricingOnNetwork(
+export async function testPricingOnNetwork(
   curveV1Factory: CurveV1Factory,
   network: Network,
   dexKey: string,
@@ -84,6 +85,8 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
+  poolContractMethod = 'get_dy',
+  readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]),
 ) {
   const networkTokens = Tokens[network];
 
@@ -124,12 +127,15 @@ async function testPricingOnNetwork(
   await checkOnChainPricing(
     curveV1Factory,
     poolPrices![0].data.exchange,
-    poolPrices![0].data.underlyingSwap ? 'get_dy_underlying' : 'get_dy',
+    poolPrices![0].data.underlyingSwap
+      ? 'get_dy_underlying'
+      : poolContractMethod,
     blockNumber,
     poolPrices![0].prices,
     amounts,
     poolPrices![0].data.i,
     poolPrices![0].data.j,
+    readerIface,
   );
 }
 

@@ -14,7 +14,7 @@ import { generateConfig } from '../../config';
 describe('MakerPsm E2E', () => {
   const dexKey = 'MakerPsm';
 
-  describe('MakerPsm MAINNET', () => {
+  describe('MakerPsm MAINNET_V6', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -26,19 +26,24 @@ describe('MakerPsm E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'DAI';
 
-    const tokenAAmount: string = '1000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000000000000';
 
     const sideToContractMethods = new Map([
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          ContractMethod.swapExactAmountInOutOnMakerPSM,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      [
+        SwapSide.BUY,
+        [
+          ContractMethod.swapExactAmountOut,
+          ContractMethod.swapExactAmountInOutOnMakerPSM,
+        ],
+      ],
     ]);
 
     sideToContractMethods.forEach((contractMethods, side) =>

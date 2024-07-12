@@ -23,9 +23,11 @@ import { IDex } from '../../dex/idex';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   ExchangeTxInfo,
   Logger,
+  NumberAsString,
   OptimalSwapExchange,
   PoolLiquidity,
   PoolPrices,
@@ -33,11 +35,14 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { TooStrictSlippageCheckError } from '../generic-rfq/types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, HashflowConfig } from './config';
 import {
+  CONSECUTIVE_ERROR_THRESHOLD,
+  CONSECUTIVE_ERROR_TIMESPAN_MS,
+  ERROR_CODE_TO_RESTRICT_TTL,
   HASHFLOW_API_CLIENT_NAME,
   HASHFLOW_API_MARKET_MAKERS_POLLING_INTERVAL_MS,
   HASHFLOW_API_PRICES_POLLING_INTERVAL_MS,
@@ -48,9 +53,12 @@ import {
   HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
   HASHFLOW_MM_RESTRICT_TTL_S,
   HASHFLOW_PRICES_CACHES_TTL_S,
+  UNKNOWN_ERROR_CODE,
 } from './constants';
 import { RateFetcher } from './rate-fetcher';
 import {
+  CacheErrorCodesData,
+  ErrorCode,
   HashflowData,
   PriceLevel,
   RfqError,
@@ -69,6 +77,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   private hashFlowAuthToken: string;
   private disabledMMs: Set<string>;
   private runtimeMMsRestrictHashMapKey: string;
+  private runtimeMMsRestrictHashMapErrorCodesKey: string;
 
   private pricesCacheKey: string;
   private marketMakersCacheKey: string;
@@ -108,6 +117,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     this.disabledMMs = new Set(dexHelper.config.data.hashFlowDisabledMMs);
     this.runtimeMMsRestrictHashMapKey =
       `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
+    this.runtimeMMsRestrictHashMapErrorCodesKey =
+      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms_error_codes`.toLowerCase();
 
     this.rateFetcher = new RateFetcher(
       this.dexHelper,
@@ -574,6 +585,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     let rfq: RfqResponse;
     try {
       rfq = await this.api.requestQuote({
+        // sender is not passed, so for now ignore executionContractAddress
         baseChain: chain,
         baseToken: normalizedSrcToken.address,
         quoteToken: normalizedDestToken.address,
@@ -582,7 +594,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
               baseTokenAmount: optimalSwapExchange.srcAmount,
             }
           : { quoteTokenAmount: optimalSwapExchange.destAmount }),
-        wallet: this.augustusAddress.toLowerCase(),
+        // receiver address
+        wallet: options.recipient.toLowerCase(),
         effectiveTrader: options.txOrigin.toLowerCase(),
         marketMakers: [mm],
       });
@@ -595,7 +608,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           normalizedDestToken.address,
         )}: ${JSON.stringify(rfq)}`;
         this.logger.warn(message);
-        throw new RfqError(message);
+        throw new RfqError(message, `${rfq?.error?.code}` as ErrorCode);
       } else if (!rfq.quotes[0].quoteData) {
         const message = `${this.dexKey}-${
           this.network
@@ -604,7 +617,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           normalizedDestToken.address,
         )}. Missing quote data`;
         this.logger.warn(message);
-        throw new RfqError(message);
+        throw new RfqError(message, 'MISSING_QUOTE_DATA');
       } else if (!rfq.quotes[0].signature) {
         const message = `${this.dexKey}-${
           this.network
@@ -613,7 +626,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           normalizedDestToken.address,
         )}. Missing signature`;
         this.logger.warn(message);
-        throw new RfqError(message);
+        throw new RfqError(message, 'MISSING_SIGNATURE_DATA');
       }
 
       assert(
@@ -729,7 +742,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           this.logger.warn(
             `${this.dexKey}-${this.network} MM unknown preprocess transaction error: ${e}`,
           );
-          await this.restrictMM(mm);
+          const code =
+            e instanceof RfqError || e instanceof SlippageCheckError
+              ? e?.code || UNKNOWN_ERROR_CODE
+              : UNKNOWN_ERROR_CODE;
+          await this.restrictMM(mm, code).catch(err =>
+            this.logger.warn(`Failed to restrict MM ${mm}: ${err}`),
+          );
         }
       }
 
@@ -737,24 +756,111 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     }
   }
 
-  async restrictMM(mm: string): Promise<void> {
-    this.logger.warn(
-      `${this.dexKey}-${this.network}: ${mm} was restricted for ${HASHFLOW_MM_RESTRICT_TTL_S} sec. due to fails`,
-    );
-
-    // We use timestamp for creation date to later discern if it already expired or not
-    await this.dexHelper.cache.hset(
-      this.runtimeMMsRestrictHashMapKey,
+  async restrictMM(mm: string, errorCode: ErrorCode): Promise<void> {
+    const errorCodesRaw = await this.dexHelper.cache.hget(
+      this.runtimeMMsRestrictHashMapErrorCodesKey,
       mm,
-      Date.now().toString(),
     );
 
-    // Expiry cache because it has levels for blacklisted MM
-    this.dexHelper.cache.del(this.dexKey, this.network, 'levels').catch(e => {
-      this.logger.error(
-        `${this.dexKey}-${this.network}: Failed to delete levels cache: ${e.message}`,
+    const errorCodes: CacheErrorCodesData = Utils.Parse(errorCodesRaw) || {};
+
+    const error = errorCodes?.[errorCode];
+
+    if (
+      !error ||
+      error.addedDatetimeMS + CONSECUTIVE_ERROR_TIMESPAN_MS < Date.now()
+    ) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: First encounter of error code=${errorCode} for ${mm} OR error ocurred outside of threshold, setting up counter`,
       );
-    });
+      const data: CacheErrorCodesData = {
+        ...errorCodes,
+        [errorCode]: {
+          count: 1,
+          addedDatetimeMS: Date.now(),
+        },
+      };
+      await this.dexHelper.cache.hset(
+        this.runtimeMMsRestrictHashMapErrorCodesKey,
+        mm,
+        Utils.Serialize(data),
+      );
+      return;
+    } else {
+      const restrictTTLMs =
+        ERROR_CODE_TO_RESTRICT_TTL[errorCode] ||
+        ERROR_CODE_TO_RESTRICT_TTL[UNKNOWN_ERROR_CODE];
+
+      if (error.count + 1 > CONSECUTIVE_ERROR_THRESHOLD) {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: ${mm} was restricted for ${
+            restrictTTLMs / 1000
+          } sec. due to ${errorCode} happening ${
+            error.count + 1
+          } times within last ${Math.floor(
+            CONSECUTIVE_ERROR_TIMESPAN_MS / 1000 / 60,
+          )} minutes`,
+        );
+
+        // date added is checked against HASHFLOW_MM_RESTRICT_TTL_S, as a hack we set a date so that it's checked against specific ttls based on error type to not change parsing logic for mms
+        //
+        // Example1: ttl for a particular error is 20 minutes (< default 60 minutes)
+        // Meaning we need to set `addedDatetimeMS` for restrict hash as Date.now() - 40 minutes (diff between default restrict ttl=1h and particular error restrict ttl = 20 minutes). So the `addedDatetimeMS` is in the past, and after 20 minutes mm will not be considered as restricted
+        //
+        // Example 2: ttl for a particular error is 80 minutes (> default 60 minutes)
+        // Meaning we need to set `addedDatetimeMS` for restrict hash as Date.now() + 20 minutes (in the future), then after an hour (default) it'll still be 20 minutes left for restriction to be cleared
+
+        const defaultRestrictTTLMS = Math.floor(
+          HASHFLOW_MM_RESTRICT_TTL_S * 1000,
+        );
+        const dateModifierMS =
+          defaultRestrictTTLMS > restrictTTLMs
+            ? -(defaultRestrictTTLMS - restrictTTLMs)
+            : restrictTTLMs - defaultRestrictTTLMS;
+
+        const date = (Date.now() + dateModifierMS).toString();
+
+        // We use timestamp for creation date to later discern if it already expired or not
+        await this.dexHelper.cache.hset(
+          this.runtimeMMsRestrictHashMapKey,
+          mm,
+          date,
+        );
+
+        // resetting error count
+        const data: CacheErrorCodesData = {
+          ...errorCodes,
+          [errorCode]: {
+            count: 1,
+            addedDatetimeMS: Date.now(),
+          },
+        };
+        await this.dexHelper.cache.hset(
+          this.runtimeMMsRestrictHashMapErrorCodesKey,
+          mm,
+          Utils.Serialize(data),
+        );
+
+        return;
+      } else {
+        const newCount = +error.count + 1;
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: ${mm} Error with code: ${errorCode} happened ${newCount} times (below or equal to the limit: ${CONSECUTIVE_ERROR_THRESHOLD}), updating counter`,
+        );
+        const data: CacheErrorCodesData = {
+          ...errorCodes,
+          [errorCode]: {
+            count: newCount,
+            addedDatetimeMS: error.addedDatetimeMS, // initial date stays
+          },
+        };
+        await this.dexHelper.cache.hset(
+          this.runtimeMMsRestrictHashMapErrorCodesKey,
+          mm,
+          Utils.Serialize(data),
+        );
+      }
+    }
   }
 
   getCalldataGasCost(poolPrices: PoolPrices<HashflowData>): number | number[] {
@@ -891,6 +997,50 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       swapData,
       this.routerAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: HashflowData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { quoteData, signature } = data;
+
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    // Encode here the transaction arguments
+    const exchangeData = this.routerInterface.encodeFunctionData('tradeRFQT', [
+      [
+        quoteData.pool,
+        quoteData.externalAccount ?? ZERO_ADDRESS,
+        quoteData.trader,
+        quoteData.effectiveTrader ?? quoteData.trader,
+        quoteData.baseToken,
+        quoteData.quoteToken,
+        quoteData.baseTokenAmount,
+        quoteData.baseTokenAmount,
+        quoteData.quoteTokenAmount,
+        quoteData.quoteExpiry,
+        quoteData.nonce ?? 0,
+        quoteData.txid,
+        signature,
+      ],
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.routerAddress,
+      returnAmountPos: undefined,
+    };
   }
 
   extractQuoteToken = (pair: {

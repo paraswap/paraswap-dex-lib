@@ -1,32 +1,33 @@
 import _ from 'lodash';
 import { AbiItem } from 'web3-utils';
-import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import { NumberAsString, OptimalSwapExchange, SwapSide } from '@paraswap/core';
 import { assert, AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
-  Token,
-  Address,
-  ExchangePrices,
-  PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
+  Address,
+  DexExchangeParam,
+  ExchangePrices,
+  ExchangeTxInfo,
   Logger,
+  PoolLiquidity,
+  PoolPrices,
+  PreprocessTransactionOptions,
+  SimpleExchangeParam,
+  Token,
   TransferFeeParams,
   TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
 } from '../../types';
 import {
-  SwapSide,
   Network,
-  SRC_TOKEN_PARASWAP_TRANSFERS,
   NULL_ADDRESS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   getBigIntPow,
   getDexKeysWithNetwork,
+  isETHAddress,
   isSrcTokenTransferFeeToBeExchanged,
   uuidToBytes16,
 } from '../../utils';
@@ -35,20 +36,23 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CurveSwapFunctions,
   CurveV1FactoryData,
+  CurveV1FactoryDirectSwap,
   CurveV1FactoryIfaces,
   CurveV1SwapType,
   CustomImplementationNames,
+  DirectCurveV1FactoryParamV6,
+  DirectCurveV1Param,
   ImplementationNames,
   PoolConstants,
-  DirectCurveV1Param,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { CurveV1FactoryConfig, Adapters } from './config';
+import { Adapters, CurveV1FactoryConfig } from './config';
 import {
   DIRECT_METHOD_NAME,
+  DIRECT_METHOD_NAME_V6,
   FACTORY_MAX_PLAIN_COINS,
   FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN,
   MIN_AMOUNT_TO_RECEIVE,
@@ -74,8 +78,11 @@ import { CustomBasePoolForFactory } from './state-polling-pools/custom-pool-poll
 import ImplementationConstants from './price-handlers/functions/constants';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { PriceHandler } from './price-handlers/price-handler';
+import { hexConcat, hexlify, hexZeroPad } from 'ethers/lib/utils';
+import { packCurveData } from '../../lib/curve/encoder';
+import { encodeCurveAssets } from '../curve-v1/packer';
 
-const DefaultCoinsABI: AbiItem = {
+export const DefaultCoinsABI: AbiItem = {
   type: 'function',
   name: 'coins',
   inputs: [
@@ -94,12 +101,15 @@ const DefaultCoinsABI: AbiItem = {
 
 export class CurveV1Factory
   extends SimpleExchange
-  implements IDex<CurveV1FactoryData, DirectCurveV1Param>
+  implements
+    IDex<CurveV1FactoryData, DirectCurveV1Param | CurveV1FactoryDirectSwap>
 {
   readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = false;
+  readonly needWrapNative: boolean = false;
   readonly isFeeOnTransferSupported = true;
   readonly isStatePollingDex = true;
+
+  private factoryAddresses: string[];
 
   readonly poolManager: CurveV1FactoryPoolManager;
   readonly ifaces: CurveV1FactoryIfaces;
@@ -111,6 +121,8 @@ export class CurveV1Factory
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   readonly directSwapIface = new Interface(DirectSwapABI);
+
+  protected buySideSupported: boolean = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CurveV1FactoryConfig);
@@ -124,10 +136,12 @@ export class CurveV1Factory
     protected adapters = Adapters[network] || {},
     protected config = CurveV1FactoryConfig[dexKey][network],
     // This type is used to support different encoding for uint128 and uint256 args
-    private coinsTypeTemplate: AbiItem = DefaultCoinsABI,
+    protected coinsTypeTemplate: AbiItem = DefaultCoinsABI,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(`${this.dexKey}-${this.network}`);
+    this.factoryAddresses =
+      this.config.factories?.map(e => e.address.toLowerCase()) || [];
     this.ifaces = {
       exchangeRouter: new Interface(CurveABI),
       factory: new Interface(FactoryCurveV1ABI as JsonFragment[]),
@@ -348,10 +362,7 @@ export class CurveV1Factory
       return;
     }
 
-    if (
-      !this.config.factoryAddresses ||
-      this.config.factoryAddresses.length == 0
-    ) {
+    if (!this.factoryAddresses || this.factoryAddresses.length == 0) {
       this.logger.warn(`No factory address specified in configs`);
       return;
     }
@@ -360,13 +371,13 @@ export class CurveV1Factory
     // So I put it here to not forget call, because custom pools must be initialised before factory pools
     // This function may be called multiple times, but will execute only once
     await this.initializeCustomPollingPools(
-      this.config.factoryAddresses,
+      this.factoryAddresses,
       blockNumber,
       initializeInitialState,
     );
 
     await Promise.all(
-      this.config.factoryAddresses.map(async factoryAddress => {
+      this.factoryAddresses.map(async factoryAddress => {
         try {
           const poolCountResult =
             await this.dexHelper.multiWrapper!.tryAggregate(true, [
@@ -426,6 +437,11 @@ export class CurveV1Factory
             }
           });
 
+          const factoryConfig = this.config.factories?.find(
+            ({ address }) =>
+              factoryAddress.toLowerCase() === address.toLowerCase(),
+          );
+
           let callDataFromFactoryPools: MultiCallParams<
             string[] | number[] | string
           >[] = poolAddresses
@@ -448,7 +464,11 @@ export class CurveV1Factory
                 ): string[] =>
                   generalDecoder<string[]>(
                     result,
-                    ['address[4]'],
+                    [
+                      `address[${
+                        factoryConfig?.maxPlainCoins?.toString() || ''
+                      }]`,
+                    ],
                     new Array(4).fill(NULL_ADDRESS),
                     parsed => parsed[0].map((p: string) => p.toLowerCase()),
                   ),
@@ -464,7 +484,11 @@ export class CurveV1Factory
                 ): number[] =>
                   generalDecoder<number[]>(
                     result,
-                    ['uint256[4]'],
+                    [
+                      `uint256[${
+                        factoryConfig?.maxPlainCoins?.toString() || ''
+                      }]`,
+                    ],
                     [0, 0, 0, 0],
                     parsed =>
                       parsed[0].map((p: BigNumber) => Number(p.toString())),
@@ -476,43 +500,51 @@ export class CurveV1Factory
           // This is divider between pools related results and implementations
           const factoryResultsDivider = callDataFromFactoryPools.length;
 
+          const metaPoolImplementations = factoryConfig?.isStableNg
+            ? []
+            : basePoolAddresses.map(basePoolAddress => ({
+                target: factoryAddress,
+                callData: this.ifaces.factory.encodeFunctionData(
+                  'metapool_implementations',
+                  [basePoolAddress],
+                ),
+                decodeFunction: (
+                  result: MultiResult<BytesLike> | BytesLike,
+                ): string[] =>
+                  generalDecoder<string[]>(
+                    result,
+                    ['address[10]'],
+                    new Array(10).fill(NULL_ADDRESS),
+                    parsed => parsed[0].map((p: string) => p.toLowerCase()),
+                  ),
+              }));
+
+          const plainImplementations = factoryConfig?.isStableNg
+            ? []
+            : _.flattenDeep(
+                _.range(2, FACTORY_MAX_PLAIN_COINS + 1).map(coinNumber =>
+                  _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(
+                    implInd => ({
+                      target: factoryAddress,
+                      callData: this.ifaces.factory.encodeFunctionData(
+                        'plain_implementations',
+                        [coinNumber, implInd],
+                      ),
+                      decodeFunction: addressDecode,
+                    }),
+                  ),
+                ),
+              );
+
           // Implementations must be requested from factory, but it accepts as arg basePool address
           // for metaPools
           callDataFromFactoryPools = callDataFromFactoryPools.concat(
-            ...basePoolAddresses.map(basePoolAddress => ({
-              target: factoryAddress,
-              callData: this.ifaces.factory.encodeFunctionData(
-                'metapool_implementations',
-                [basePoolAddress],
-              ),
-              decodeFunction: (
-                result: MultiResult<BytesLike> | BytesLike,
-              ): string[] =>
-                generalDecoder<string[]>(
-                  result,
-                  ['address[10]'],
-                  new Array(10).fill(NULL_ADDRESS),
-                  parsed => parsed[0].map((p: string) => p.toLowerCase()),
-                ),
-            })),
+            ...metaPoolImplementations,
             // To receive plain pool implementation address, you have to call plain_implementations
             // with two variables: N_COINS and implementations_index
             // N_COINS is between 2-4. Currently more than 4 coins is not supported
             // as for implementation index, there are only 0-9 indexes
-            ..._.flattenDeep(
-              _.range(2, FACTORY_MAX_PLAIN_COINS + 1).map(coinNumber =>
-                _.range(FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN).map(
-                  implInd => ({
-                    target: factoryAddress,
-                    callData: this.ifaces.factory.encodeFunctionData(
-                      'plain_implementations',
-                      [coinNumber, implInd],
-                    ),
-                    decodeFunction: addressDecode,
-                  }),
-                ),
-              ),
-            ),
+            ...plainImplementations,
           );
 
           const allResultsFromFactory = (
@@ -619,7 +651,7 @@ export class CurveV1Factory
               factoryImplementationFromConfig.name,
               implementationAddress.toLowerCase(),
               poolAddresses[i],
-              this.config.stateUpdatePeriodMs,
+              this.config,
               factoryAddress,
               poolIdentifier,
               poolConstants,
@@ -671,12 +703,19 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) {
+    if (!this.buySideSupported && side === SwapSide.BUY) {
       return [];
     }
 
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
+    const _srcToken = this.needWrapNative
+      ? this.dexHelper.config.wrapETH(srcToken)
+      : srcToken;
+    const _destToken = this.needWrapNative
+      ? this.dexHelper.config.wrapETH(destToken)
+      : destToken;
+
+    const srcTokenAddress = _srcToken.address.toLowerCase();
+    const destTokenAddress = _destToken.address.toLowerCase();
 
     if (srcTokenAddress === destTokenAddress) {
       return [];
@@ -707,15 +746,22 @@ export class CurveV1Factory
     },
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     try {
-      if (side === SwapSide.BUY) {
+      if (!this.buySideSupported && side === SwapSide.BUY) {
         return null;
       }
 
       const _isSrcTokenTransferFeeToBeExchanged =
         isSrcTokenTransferFeeToBeExchanged(transferFees);
 
-      const srcTokenAddress = srcToken.address.toLowerCase();
-      const destTokenAddress = destToken.address.toLowerCase();
+      const _srcToken = this.needWrapNative
+        ? this.dexHelper.config.wrapETH(srcToken)
+        : srcToken;
+      const _destToken = this.needWrapNative
+        ? this.dexHelper.config.wrapETH(destToken)
+        : destToken;
+
+      const srcTokenAddress = _srcToken.address.toLowerCase();
+      const destTokenAddress = _destToken.address.toLowerCase();
 
       if (srcTokenAddress === destTokenAddress) {
         return null;
@@ -755,7 +801,7 @@ export class CurveV1Factory
       }
 
       const amountsWithUnit = [
-        getBigIntPow(srcToken.decimals),
+        getBigIntPow(_srcToken.decimals),
         ...amounts.slice(1),
       ];
       const amountsWithUnitAndFee = _isSrcTokenTransferFeeToBeExchanged
@@ -810,6 +856,7 @@ export class CurveV1Factory
             let outputs: bigint[] = this.poolManager
               .getPriceHandler(pool.implementationAddress)
               .getOutputs(
+                side,
                 state,
                 amountsWithUnitAndFee,
                 poolData.i,
@@ -826,7 +873,7 @@ export class CurveV1Factory
 
             return {
               prices: [0n, ...outputs.slice(1)],
-              unit: outputs[0],
+              unit: side === SwapSide.SELL ? outputs[0] : 0n,
               data: poolData,
               exchange: this.dexKey,
               poolIdentifier: pool.poolIdentifier,
@@ -876,7 +923,8 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
 
     const { i, j, underlyingSwap } = data;
     const payload = this.abiCoder.encodeParameter(
@@ -927,13 +975,11 @@ export class CurveV1Factory
     let isApproved: boolean | undefined;
 
     try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      isApproved = await this.dexHelper.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        this.dexHelper.config.wrapETH(srcToken).address,
+        optimalSwapExchange.data.exchange,
+      );
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,
@@ -969,7 +1015,7 @@ export class CurveV1Factory
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectCurveV1Param> {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -1016,6 +1062,70 @@ export class CurveV1Factory
     };
   }
 
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: CurveV1FactoryData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod: string,
+  ) {
+    if (contractMethod !== DIRECT_METHOD_NAME_V6) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const swapParams: DirectCurveV1FactoryParamV6 = [
+      packCurveData(
+        data.exchange,
+        !data.isApproved, // approve flag, if not approved then set to true
+        isETHAddress(destToken) ? 0 : isETHAddress(srcToken) ? 3 : 0,
+        data.underlyingSwap
+          ? CurveV1SwapType.EXCHANGE_UNDERLYING
+          : CurveV1SwapType.EXCHANGE,
+      ).toString(),
+      encodeCurveAssets(data.i, data.j).toString(),
+      srcToken,
+      destToken,
+      fromAmount,
+      toAmount,
+      quotedAmount,
+      metadata,
+      beneficiary,
+    ];
+
+    const encodeParams: CurveV1FactoryDirectSwap = [
+      swapParams,
+      partnerAndFee,
+      permit,
+    ];
+
+    const encoder = (...params: CurveV1FactoryDirectSwap) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        DIRECT_METHOD_NAME_V6,
+        [...params],
+      );
+    };
+
+    return {
+      encoder,
+      params: encodeParams,
+      networkFee: '0',
+    };
+  }
+
   static getDirectFunctionName(): string[] {
     return [DIRECT_METHOD_NAME];
   }
@@ -1028,7 +1138,8 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
 
     const { exchange, i, j, underlyingSwap } = data;
     const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
@@ -1049,6 +1160,46 @@ export class CurveV1Factory
       swapData,
       exchange,
     );
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DIRECT_METHOD_NAME_V6];
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: CurveV1FactoryData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (!this.buySideSupported && side === SwapSide.BUY)
+      throw new Error(`Buy not supported`);
+
+    const { exchange, i, j, underlyingSwap } = data;
+
+    const minAmountToReceive =
+      side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE : destAmount;
+    const defaultArgs = [i, j, srcAmount, minAmountToReceive];
+
+    const swapMethod = underlyingSwap
+      ? CurveSwapFunctions.exchange_underlying
+      : CurveSwapFunctions.exchange;
+    const exchangeData = this.ifaces.exchangeRouter.encodeFunctionData(
+      swapMethod,
+      defaultArgs,
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      sendEthButSupportsInsertFromAmount: true,
+      dexFuncHasRecipient: false,
+      targetExchange: exchange,
+      returnAmountPos: undefined,
+    };
   }
 
   async updatePoolState(): Promise<void> {

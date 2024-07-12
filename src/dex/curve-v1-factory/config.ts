@@ -9,13 +9,21 @@ import {
 import { DexConfigMap, AdapterMappings } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { normalizeAddress } from '../../utils';
+import { FACTORY_MAX_PLAIN_COINS } from './constants';
 
+// stable ng factories addresses are taken from https://github.com/curvefi/curve-api/blob/main/constants/configs/configs.js
 const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
   CurveV1Factory: {
     [Network.MAINNET]: {
-      factoryAddresses: [
-        '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
-        '0x4f8846ae9380b90d2e71d5e3d042dff3e7ebb40d',
+      factories: [
+        {
+          address: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+        {
+          address: '0x4f8846ae9380b90d2e71d5e3d042dff3e7ebb40d',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
       ],
       stateUpdatePeriodMs: 5 * 1000,
       disabledPools: new Set([
@@ -208,7 +216,16 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       },
     },
     [Network.POLYGON]: {
-      factoryAddresses: ['0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee'],
+      factories: [
+        {
+          address: '0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+        {
+          address: '0x1764ee18e8B3ccA4787249Ceb249356192594585', // factory stable ng
+          isStableNg: true,
+        },
+      ],
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([
         '0x666Dc3b4baBfd063FaF965BD020024AF0dC51B64',
@@ -314,7 +331,12 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       },
     },
     [Network.FANTOM]: {
-      factoryAddresses: ['0x686d67265703D1f124c45E33d47d794c566889Ba'],
+      factories: [
+        {
+          address: '0x686d67265703D1f124c45E33d47d794c566889Ba',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+      ],
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -429,7 +451,12 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       },
     },
     [Network.AVALANCHE]: {
-      factoryAddresses: ['0xb17b674D9c5CB2e441F8e196a2f048A81355d031'],
+      factories: [
+        {
+          address: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+      ],
       stateUpdatePeriodMs: 2 * 1000,
       // FIX: This must be removed when we go for full CurveV1 event based support
       disabledPools: new Set(['0x16a7da911a4dd1d83f3ff066fe28f3c792c50d90']),
@@ -496,15 +523,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xc50c05ca1f8c2346664bd0d4a1eb6ac1da38414f',
           basePoolAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
         },
-        // Commented because these pools basics are not verified and looks very abandoned
-        // '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320': {
-        //   name: ImplementationNames.FACTORY_META_BTC,
-        //   address: '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320',
-        // },
-        // '0x505C34ED8dBE96d2D5C7D83158aA844887770970': {
-        //   name: ImplementationNames.FACTORY_META_BTC_BALANCES,
-        //   address: '0x505C34ED8dBE96d2D5C7D83158aA844887770970',
-        // },
       },
       customPools: {
         '0x7f90122BF0700F9E7e1F688fe926940E8839F353': {
@@ -516,18 +534,15 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           balancesInputType: 'uint256',
           useForPricing: false,
         },
-        // This contract is not verified. I think it is just abandoned. I am commenting both related
-        // btc meta pools
-        // ['']: {
-        //   name: '',
-        //   address: '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320',
-        //   lpTokenAddress: '',
-        //   liquidityApiSlug: '',
-        // },
       },
     },
     [Network.ARBITRUM]: {
-      factoryAddresses: ['0xb17b674D9c5CB2e441F8e196a2f048A81355d031'],
+      factories: [
+        {
+          address: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+      ],
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -653,7 +668,12 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
       },
     },
     [Network.OPTIMISM]: {
-      factoryAddresses: ['0x2db0E83599a91b508Ac268a6197b8B14F5e72840'],
+      factories: [
+        {
+          address: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+      ],
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -759,6 +779,40 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         },
       },
     },
+    [Network.BASE]: {
+      factories: [
+        {
+          address: '0x3093f9B57A428F3EB6285a589cb35bEA6e78c336',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+      ],
+      stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([]),
+      disabledImplementations: new Set([]),
+      factoryPoolImplementations: {
+        '0xD166EEdf272B860E991d331B71041799379185D5': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
+          address: '0xD166EEdf272B860E991d331B71041799379185D5',
+        },
+        '0x5C627d6925e448Ae418BC8a45d56B31fe5009Bea': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BALANCES,
+          address: '0x5C627d6925e448Ae418BC8a45d56B31fe5009Bea',
+        },
+        '0x0Cc51c9786f3777a6d50961CEBb2BB6E69ec5e07': {
+          name: ImplementationNames.FACTORY_PLAIN_3_BALANCES,
+          address: '0x0Cc51c9786f3777a6d50961CEBb2BB6E69ec5e07',
+        },
+        '0x22d710931f01c1681ca1570ff016ed42eb7b7c2a': {
+          name: ImplementationNames.FACTORY_PLAIN_2_ETH,
+          address: '0x22d710931f01c1681ca1570ff016ed42eb7b7c2a',
+        },
+        '0x1621E58d36EB5Ef26F9768Ebe9DB77181b1f5a02': {
+          name: ImplementationNames.FACTORY_PLAIN_4_BASIC,
+          address: '0x1621E58d36EB5Ef26F9768Ebe9DB77181b1f5a02',
+        },
+      },
+      customPools: {},
+    },
   },
 };
 
@@ -773,7 +827,7 @@ export const Adapters: Record<number, AdapterMappings> = {
   },
   [Network.BSC]: {
     [SwapSide.SELL]: [
-      // use for beltfi
+      // use for beltfi (deprecated)
       {
         name: 'BscAdapter01',
         index: 2,
@@ -820,11 +874,19 @@ export const Adapters: Record<number, AdapterMappings> = {
       },
     ],
   },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter02',
+        index: 3,
+      },
+    ],
+  },
 };
 
 // This become quite ugly :(
 // I just wanted to make sure that every address is lowercased and it is not missed it config changes at some point
-const configAddressesNormalizer = (
+export const configAddressesNormalizer = (
   config: DexConfigMap<DexParams>,
 ): DexConfigMap<DexParams> => {
   for (const dexKey of Object.keys(config)) {
@@ -867,6 +929,7 @@ const configAddressesNormalizer = (
               ? normalizeAddress(implementationConfig.basePoolAddress)
               : undefined,
             isStoreRateSupported: implementationConfig.isStoreRateSupported,
+            liquidityApiSlug: implementationConfig.liquidityApiSlug,
           };
           acc[normalizeAddress(implementationAddress)] =
             normalizedImplementation;
@@ -877,9 +940,12 @@ const configAddressesNormalizer = (
 
       // Unite everything into top level config
       const normalizedConfig: DexParams = {
-        factoryAddresses: _config.factoryAddresses
-          ? _config.factoryAddresses.map(e => e.toLowerCase())
-          : _config.factoryAddresses,
+        factories: _config.factories
+          ? _config.factories.map(e => ({
+              ...e,
+              address: e.address.toLowerCase(),
+            }))
+          : _config.factories,
         stateUpdatePeriodMs: _config.stateUpdatePeriodMs,
         factoryPoolImplementations,
         customPools,

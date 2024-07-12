@@ -10,8 +10,10 @@ import { UniswapV3 } from './uniswap-v3';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import UniswapV3QuoterV2ABI from '../../abi/uniswap-v3/UniswapV3QuoterV2.abi.json';
+import VelodromeSlipstreamQuoterV2ABI from '../../abi/velodrome-slipstream/VelodromeSlipstreamQuoterV2.abi.json';
 import { Address } from '@paraswap/core';
 import { UniswapV3Config } from './config';
+import { VelodromeSlipstream } from './forks/velodrome-slipstream/velodrome-slipstream';
 
 const network = Network.POLYGON;
 const TokenASymbol = 'USDC';
@@ -30,6 +32,7 @@ const amounts = [
 const amountsBuy = [0n, 1n * BI_POWS[18], 2n * BI_POWS[18], 3n * BI_POWS[18]];
 
 const quoterIface = new Interface(UniswapV3QuoterV2ABI);
+const velodromeQuoterIface = new Interface(VelodromeSlipstreamQuoterV2ABI);
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -70,10 +73,10 @@ async function checkOnChainPricing(
   tokenOut: Address,
   fee: bigint,
   _amounts: bigint[],
+  readerIface = quoterIface,
 ) {
   // Quoter address
   // const exchangeAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
-  const readerIface = quoterIface;
 
   const sum = prices.reduce((acc, curr) => (acc += curr), 0n);
 
@@ -102,6 +105,7 @@ async function checkOnChainPricing(
         .call({}, blockNumber)
     ).returnData;
   } catch (e) {
+    console.log('E: ', e);
     console.log(
       `Can not fetch on-chain pricing for fee ${fee}. It happens for low liquidity pools`,
       e,
@@ -112,8 +116,6 @@ async function checkOnChainPricing(
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
-
-  console.log('EXPECTED PRICES: ', expectedPrices);
 
   let firstZeroIndex = prices.slice(1).indexOf(0n);
 
@@ -610,6 +612,153 @@ describe('RamsesV2', () => {
     );
 
     expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+});
+
+describe('PharaohV2', () => {
+  const dexKey = 'PharaohV2';
+  let blockNumber: number;
+  let uniswapV3: UniswapV3;
+  let uniswapV3Mainnet: UniswapV3;
+
+  const network = Network.AVALANCHE;
+  const dexHelper = new DummyDexHelper(network);
+  const TokenASymbol = 'USDC';
+  const TokenA = Tokens[network][TokenASymbol];
+
+  const TokenBSymbol = 'USDCe';
+  const TokenB = Tokens[network][TokenBSymbol];
+
+  beforeEach(async () => {
+    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
+    uniswapV3Mainnet = new UniswapV3(Network.AVALANCHE, dexKey, dexHelper);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    const amounts = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+    ];
+
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.SELL,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          dexHelper,
+          uniswapV3,
+          'quoteExactInputSingle',
+          blockNumber,
+          '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amounts,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    const amounts = [
+      0n,
+      6000000n,
+      12000000n,
+      18000000n,
+      24000000n,
+      30000000n,
+      36000000n,
+      42000000n,
+    ];
+
+    const pools = await uniswapV3.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blockNumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await uniswapV3.getPricesVolume(
+      TokenA,
+      TokenB,
+      amounts,
+      SwapSide.BUY,
+      blockNumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+    let falseChecksCounter = 0;
+    await Promise.all(
+      poolPrices!.map(async price => {
+        const fee = uniswapV3.eventPools[price.poolIdentifier!]!.feeCode;
+        const res = await checkOnChainPricing(
+          dexHelper,
+          uniswapV3,
+          'quoteExactOutputSingle',
+          blockNumber,
+          '0xAAAEA10b0e6FBe566FE27c3A023DC5D8cA6Bca3d',
+          price.prices,
+          TokenA.address,
+          TokenB.address,
+          fee,
+          amounts,
+        );
+        if (res === false) falseChecksCounter++;
+      }),
+    );
+
+    expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+  });
+
+  it('getTopPoolsForToken', async function () {
+    const poolLiquidity = await uniswapV3.getTopPoolsForToken(
+      TokenB.address,
+      10,
+    );
+    console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
   });
 });
 
@@ -1860,6 +2009,299 @@ describe('SpookySwapV3', () => {
       console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
 
       checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+    });
+  });
+});
+
+describe('Slipstream', () => {
+  describe('VelodromeSlipstream', () => {
+    const dexKey = 'VelodromeSlipstream';
+
+    describe('Optimism', () => {
+      let blockNumber: number;
+      let slipstream: VelodromeSlipstream;
+
+      const network = Network.OPTIMISM;
+      const dexHelper = new DummyDexHelper(network);
+      const TokenASymbol = 'PSTAKE';
+      const TokenA = Tokens[network][TokenASymbol];
+
+      const TokenBSymbol = 'USDC';
+      const TokenB = Tokens[network][TokenBSymbol];
+
+      beforeEach(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        slipstream = new VelodromeSlipstream(network, dexKey, dexHelper);
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async () => {
+        const amounts = [0n, BI_POWS[18], BI_POWS[18] * 2n];
+
+        const pools = await slipstream.getPoolIdentifiers(
+          TokenA,
+          TokenB,
+          SwapSide.SELL,
+          blockNumber,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await slipstream.getPricesVolume(
+          TokenA,
+          TokenB,
+          amounts,
+          SwapSide.SELL,
+          blockNumber,
+          pools,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+        let falseChecksCounter = 0;
+        await Promise.all(
+          poolPrices!.map(async price => {
+            const tickSpacing =
+              slipstream.eventPools[price.poolIdentifier!]!.tickSpacing!;
+            const res = await checkOnChainPricing(
+              dexHelper,
+              slipstream,
+              'quoteExactInputSingle',
+              blockNumber,
+              '0x89D8218ed5fF1e46d8dcd33fb0bbeE3be1621466',
+              price.prices,
+              TokenA.address,
+              TokenB.address,
+              tickSpacing,
+              amounts,
+              velodromeQuoterIface,
+            );
+            if (res === false) falseChecksCounter++;
+          }),
+        );
+
+        expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async () => {
+        const amounts = [0n, BI_POWS[6], BI_POWS[6] * 2n];
+
+        const pools = await slipstream.getPoolIdentifiers(
+          TokenA,
+          TokenB,
+          SwapSide.BUY,
+          blockNumber,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await slipstream.getPricesVolume(
+          TokenA,
+          TokenB,
+          amounts,
+          SwapSide.BUY,
+          blockNumber,
+          pools,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+        let falseChecksCounter = 0;
+        await Promise.all(
+          poolPrices!.map(async price => {
+            const tickSpacing =
+              slipstream.eventPools[price.poolIdentifier!]!.tickSpacing!;
+            const res = await checkOnChainPricing(
+              dexHelper,
+              slipstream,
+              'quoteExactOutputSingle',
+              blockNumber,
+              '0x89D8218ed5fF1e46d8dcd33fb0bbeE3be1621466',
+              price.prices,
+              TokenA.address,
+              TokenB.address,
+              tickSpacing,
+              amounts,
+              velodromeQuoterIface,
+            );
+            if (res === false) falseChecksCounter++;
+          }),
+        );
+
+        expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+
+      it('getTopPoolsForToken', async () => {
+        const poolLiquidity = await slipstream.getTopPoolsForToken(
+          Tokens[network]['WETH'].address,
+          10,
+        );
+        console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+        expect(poolLiquidity).toEqual([]); // no subgraph
+      });
+    });
+  });
+
+  describe('AerodromeSlipstream', () => {
+    const dexKey = 'AerodromeSlipstream';
+    let blockNumber: number;
+    let slipstream: VelodromeSlipstream;
+
+    describe('Base', () => {
+      const network = Network.BASE;
+      const dexHelper = new DummyDexHelper(network);
+      const TokenASymbol = 'DOG';
+      const TokenA = Tokens[network][TokenASymbol];
+
+      const TokenBSymbol = 'WETH';
+      const TokenB = Tokens[network][TokenBSymbol];
+
+      beforeEach(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        slipstream = new VelodromeSlipstream(network, dexKey, dexHelper);
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async () => {
+        const amounts = [0n, BI_POWS[18], BI_POWS[18] * 2n];
+
+        const pools = await slipstream.getPoolIdentifiers(
+          TokenA,
+          TokenB,
+          SwapSide.SELL,
+          blockNumber,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await slipstream.getPricesVolume(
+          TokenA,
+          TokenB,
+          amounts,
+          SwapSide.SELL,
+          blockNumber,
+          pools,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+        let falseChecksCounter = 0;
+        await Promise.all(
+          poolPrices!.map(async price => {
+            const tickSpacing =
+              slipstream.eventPools[price.poolIdentifier!]!.tickSpacing!;
+            const res = await checkOnChainPricing(
+              dexHelper,
+              slipstream,
+              'quoteExactInputSingle',
+              blockNumber,
+              '0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0',
+              price.prices,
+              TokenA.address,
+              TokenB.address,
+              tickSpacing,
+              amounts,
+              velodromeQuoterIface,
+            );
+            if (res === false) falseChecksCounter++;
+          }),
+        );
+
+        expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async () => {
+        const amounts = [0n, BI_POWS[18], BI_POWS[18] * 2n];
+
+        const pools = await slipstream.getPoolIdentifiers(
+          TokenA,
+          TokenB,
+          SwapSide.BUY,
+          blockNumber,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await slipstream.getPricesVolume(
+          TokenA,
+          TokenB,
+          amounts,
+          SwapSide.BUY,
+          blockNumber,
+          pools,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+        let falseChecksCounter = 0;
+        await Promise.all(
+          poolPrices!.map(async price => {
+            const tickSpacing =
+              slipstream.eventPools[price.poolIdentifier!]!.tickSpacing!;
+            const res = await checkOnChainPricing(
+              dexHelper,
+              slipstream,
+              'quoteExactOutputSingle',
+              blockNumber,
+              '0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0',
+              price.prices,
+              TokenA.address,
+              TokenB.address,
+              tickSpacing,
+              amounts,
+              velodromeQuoterIface,
+            );
+            if (res === false) falseChecksCounter++;
+          }),
+        );
+
+        expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+
+      it('getTopPoolsForToken', async () => {
+        const poolLiquidity = await slipstream.getTopPoolsForToken(
+          Tokens[network]['DOG'].address,
+          10,
+        );
+        console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+        expect(poolLiquidity).toEqual([]); // no subgraph
+      });
     });
   });
 });
