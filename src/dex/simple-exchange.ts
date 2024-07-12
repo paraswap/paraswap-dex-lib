@@ -110,9 +110,9 @@ export class SimpleExchange {
     spender?: Address,
     networkFee: NumberAsString = '0',
     preCalls?: Omit<SimpleExchangeParam, 'networkFee'>,
-    skipAllowance?: boolean,
+    skipApproval?: boolean,
   ): Promise<SimpleExchangeParam> {
-    const approveParam = skipAllowance
+    const approveParam = skipApproval
       ? { callees: [], calldata: [], values: [], networkFee: '0' }
       : await this.getApproveSimpleParam(src, spender || swapCallee, srcAmount);
 
