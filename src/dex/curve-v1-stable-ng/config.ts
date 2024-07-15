@@ -270,13 +270,13 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [
       {
         name: 'BaseAdapter02',
-        index: 3,
+        index: 4,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'BaseBuyAdapter',
-        index: 9,
+        index: 10,
       },
     ],
   },
