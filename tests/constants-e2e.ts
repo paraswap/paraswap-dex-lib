@@ -190,14 +190,6 @@ export const Tokens: {
       addBalance: balanceOfFn,
       addAllowance: allowanceFn,
     },
-    USD0: {
-      address: '0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5',
-      decimals: 18,
-    },
-    USD0_PLUS: {
-      address: '0x35d8949372d46b7a3d5a56006ae77b215fc69bc0',
-      decimals: 18,
-    },
     MLN: {
       address: '0xec67005c4e498ec7f55e092bd1d35cbc47c91892',
       decimals: 18,
@@ -1577,8 +1569,6 @@ export const Holders: {
     stataUSDT: '0x6803364AceD5181877abC11E865FB27cB654a426',
     aaveUSDT: '0x32c98a981Fe7C333Bd4e8E7630E8e0CF5ce20987',
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
-    USD0: '0x3C2b59B0100Af7D881bD223f1F51fc404425C0Ce',
-    USD0_PLUS: '0xBcf2aB46782de614d75eE6EAD57000b6Fc56e2C4',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
