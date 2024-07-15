@@ -38,6 +38,7 @@ import {
   ONE_ORDER_GASCOST,
 } from './constant';
 import BigNumber from 'bignumber.js';
+import { SpecialDex } from '../../executor/types';
 
 const BLACKLIST_CACHE_PREFIX = `lo_blacklist`;
 
@@ -397,7 +398,9 @@ export class ParaSwapLimitOrders
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData: swapData,
+      specialDexFlag: SpecialDex.SWAP_ON_AUGUSTUS_RFQ,
       targetExchange: this.augustusRFQAddress,
+      specialDexSupportsInsertFromAmount: true,
       returnAmountPos: undefined,
     };
   }
