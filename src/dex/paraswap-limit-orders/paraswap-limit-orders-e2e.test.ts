@@ -147,7 +147,7 @@ describe('ParaSwapLimitOrders E2E', () => {
 
     const sideToContractMethods = new Map([
       [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-      // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     const tokenASymbol: string = 'USDC';
