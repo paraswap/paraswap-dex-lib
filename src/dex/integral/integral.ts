@@ -6,7 +6,6 @@ import {
   Address,
   ExchangePrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   PoolPrices,
@@ -235,7 +234,7 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
               address: destToken,
             } as Token).address,
             wrapUnwrap: isETHAddress(srcToken) || isETHAddress(destToken),
-            to: this.augustusAddress,
+            to: executorAddress,
             submitDeadline: Math.floor(Date.now() / 1000) + 24 * 3600,
           },
           ...(side === SwapSide.SELL
@@ -251,15 +250,6 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       exchangeData: swapData,
       targetExchange: exchange,
       returnAmountPos: undefined,
-      // returnAmountPos: isSell
-      //   ? extractReturnAmountPosition(
-      //       this.sdaiInterface,
-      //       this.isDai(srcToken)
-      //         ? SparkSDaiFunctions.deposit
-      //         : SparkSDaiFunctions.redeem,
-      //       this.isDai(srcToken) ? 'shares' : 'assets',
-      //     )
-      //   : undefined,
     };
   }
 
@@ -451,9 +441,10 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     const amountOut =
       (amountInMinusFee * props.price) / props.decimalsConverter;
     if (checkLimit && !this.checkLimits(amountOut, props.tokenOutLimits)) {
-      throw new Error(
-        `Out of Limits - amountOut ${amountOut} not in between limits ${props.tokenOutLimits}`,
-      );
+      return 0n;
+      // throw new Error(
+      //   `Out of Limits - amountOut ${amountOut} not in between limits ${props.tokenOutLimits}`,
+      // );
     }
     return amountOut;
   }
@@ -468,9 +459,10 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     }
 
     if (checkLimit && !this.checkLimits(amountOut, props.tokenOutLimits)) {
-      throw new Error(
-        `Out of Limits - amountOut ${amountOut} not in between limits ${props.tokenOutLimits}`,
-      );
+      return 0n;
+      // throw new Error(
+      //   `Out of Limits - amountOut ${amountOut} not in between limits ${props.tokenOutLimits}`,
+      // );
     }
 
     const amountIn = ceil_div(amountOut * props.decimalsConverter, props.price);

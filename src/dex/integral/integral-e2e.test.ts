@@ -74,8 +74,8 @@ describe('Integral E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '60000000000';
-    const tokenBAmount: string = '60000000000';
+    const tokenAAmount: string = '6000000000';
+    const tokenBAmount: string = '6000000000';
 
     testForNetwork(
       network,
@@ -90,11 +90,11 @@ describe('Integral E2E', () => {
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
 
-    const tokenASymbol: string = 'USDC';
+    const tokenASymbol: string = 'WETH';
     const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '60000000000';
-    const tokenBAmount: string = '60000000000';
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '6000000000';
 
     testForNetwork(
       network,
