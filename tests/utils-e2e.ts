@@ -43,6 +43,7 @@ import {
   constructSimpleSDK,
   SimpleFetchSDK,
 } from '@paraswap/sdk';
+import { ParaSwapVersion } from '@paraswap/core';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 import {
@@ -127,6 +128,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   ) {
     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.paraSwap = constructSimpleSDK({
+      version: ParaSwapVersion.V6,
       chainId: network,
       axios,
       apiURL: testingEndpoint,

@@ -13,6 +13,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x16C6521Dff6baB339122a0FE25a9116693265353', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 5 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -59,6 +60,18 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
         },
+        '0xc65cb3156225380beda366610bab18d5835a1647': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0xc65cb3156225380beda366610bab18d5835a1647',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
+        '0xa0ec67a3c483674f77915893346a8ca3abe2b785': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0xa0ec67a3c483674f77915893346a8ca3abe2b785',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
       },
       customPools: {},
     },
@@ -69,6 +82,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -95,6 +109,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -115,6 +130,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x2191718CD32d02B8E60BAdFFeA33E4B5DD9A0A0D', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -141,6 +157,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -161,6 +178,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x4f37A9d177470499A2dD084621020b023fcffc1F', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),

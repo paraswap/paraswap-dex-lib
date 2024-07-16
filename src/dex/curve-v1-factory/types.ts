@@ -15,6 +15,7 @@ export type PoolContextConstants = {
   // for all pools
   isWrapNative: boolean;
   isLending: boolean;
+  isStable?: boolean;
 
   // Starting from this point, constants are context relevant for pricing
 
@@ -68,10 +69,15 @@ export type PoolStateWithUpdateInfo<T> = {
 };
 
 export type CurveV1FactoryData = {
-  exchange: Address;
-  i: number;
-  j: number;
-  underlyingSwap: boolean;
+  path: {
+    tokenIn: Address;
+    tokenOut: Address;
+    exchange: Address;
+    i: number;
+    j: number;
+    underlyingSwap: boolean;
+    n_coins: number;
+  }[];
   isApproved?: boolean;
 };
 
@@ -118,8 +124,6 @@ export enum FactoryImplementationNames {
   FACTORY_PLAIN_4_OPTIMIZED = 'factory_plain_4_optimized',
 
   FACTORY_STABLE_NG = 'factory_stable_ng',
-  // FACTORY_STABLE_6_NG = 'factory_stable_6_ng',
-  // FACTORY_STABLE_8_NG = 'factory_stable_8_ng',
 }
 
 export enum CustomImplementationNames {
@@ -188,6 +192,7 @@ type DexParamFactory = {
 
 export type DexParams = {
   factories: DexParamFactory[] | null;
+  router: Address;
   stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;
@@ -202,8 +207,19 @@ export enum CurveSwapFunctions {
   exchange_underlying = 'exchange_underlying',
 }
 
+export enum CurveRouterSwapType {
+  exchange = 1,
+  exchange_underlying = 2,
+}
+
+export enum CurveRouterPoolType {
+  non_stable = 0,
+  stable = 10,
+}
+
 export type CurveV1FactoryIfaces = {
   exchangeRouter: Interface;
+  curveV1Router: Interface;
   factory: Interface;
   erc20: Interface;
   threePool: Interface;
