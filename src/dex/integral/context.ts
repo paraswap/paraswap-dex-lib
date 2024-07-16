@@ -21,10 +21,10 @@ import _ from 'lodash';
 export class IntegralContext {
   static instances: { [network: number]: IntegralContext } = {};
 
-  private _pools: { [poolId: string]: IntegralPool } = {};
-  private _tokens: { [tokenAddress: Address]: IntegralToken } = {};
-  private _factory: IntegralFactory;
-  private _relayer: IntegralRelayer;
+  pools: { [poolId: string]: IntegralPool } = {};
+  tokens: { [tokenAddress: Address]: IntegralToken } = {};
+  factory: IntegralFactory;
+  relayer: IntegralRelayer;
 
   logger: Logger;
 
@@ -37,14 +37,14 @@ export class IntegralContext {
     readonly relayerAddress: Address,
   ) {
     this.logger = dexHelper.getLogger(dexKey);
-    this._factory = new IntegralFactory(
+    this.factory = new IntegralFactory(
       dexHelper,
       dexKey,
       this.factoryAddress,
       this.onPoolCreatedAddPool,
       this.logger,
     );
-    this._relayer = new IntegralRelayer(
+    this.relayer = new IntegralRelayer(
       dexHelper,
       dexKey,
       this.erc20Interface,
@@ -60,23 +60,23 @@ export class IntegralContext {
     blockNumber: number,
     initPhase: boolean = false,
   ) {
-    this._relayer.addPools(pools);
+    this.relayer.addPools(pools);
     if (initPhase) {
-      await this._relayer.initialize(blockNumber);
+      await this.relayer.initialize(blockNumber);
     }
-    const _relayerState = this._relayer.getState(blockNumber);
+    const _relayerState = this.relayer.getState(blockNumber);
     const relayerState = _relayerState
       ? _relayerState
-      : await this._relayer.generateState(blockNumber);
+      : await this.relayer.generateState(blockNumber);
     if (!_relayerState) {
-      this._relayer.setState(relayerState, blockNumber);
+      this.relayer.setState(relayerState, blockNumber);
     }
     const poolInitProps = this.removeDisabledPoolInitProps(relayerState, pools);
 
     const bases = Object.entries(poolInitProps).map(([poolAddress, p]) => {
       const poolId = getPoolIdentifier(this.dexKey, p.token0, p.token1);
       const base =
-        (this._pools[poolId] && this._pools[poolId].base) ||
+        (this.pools[poolId] && this.pools[poolId].base) ||
         new IntegralEventPool(
           this.dexKey,
           this.network,
@@ -86,7 +86,7 @@ export class IntegralContext {
           p.token1,
           this.logger,
         );
-      this._pools[poolId] = { base, enabled: true };
+      this.pools[poolId] = { base, enabled: true };
       return base;
     });
     await Promise.all(
@@ -101,7 +101,7 @@ export class IntegralContext {
           : await base.generateState(blockNumber);
         const poolId = getPoolIdentifier(this.dexKey, base.token0, base.token1);
         const pricing =
-          (this._pools[poolId] && this._pools[poolId].pricing) ||
+          (this.pools[poolId] && this.pools[poolId].pricing) ||
           new IntegralPricing(
             this.dexHelper,
             poolId,
@@ -113,7 +113,7 @@ export class IntegralContext {
             this.logger,
             this.network,
           );
-        this._pools[poolId].pricing = pricing;
+        this.pools[poolId].pricing = pricing;
         return pricing;
       }),
     );
@@ -135,20 +135,20 @@ export class IntegralContext {
         this.logger,
       );
     bases.map(base => {
-      this._tokens[base.token0] =
-        this._tokens[base.token0] || initIntegralToken(base.token0);
-      this._tokens[base.token1] =
-        this._tokens[base.token1] || initIntegralToken(base.token1);
+      this.tokens[base.token0] =
+        this.tokens[base.token0] || initIntegralToken(base.token0);
+      this.tokens[base.token1] =
+        this.tokens[base.token1] || initIntegralToken(base.token1);
     });
     await Promise.all(
-      Object.values(this._tokens).map(
+      Object.values(this.tokens).map(
         token => !token.isInitialized && token.initialize(blockNumber),
       ),
     );
   }
 
   getPoolAddresses() {
-    return Object.values(this._pools)
+    return Object.values(this.pools)
       .filter(
         (pool): pool is Requires<IntegralPool, 'base'> =>
           !!pool.base && pool.enabled,
@@ -283,15 +283,5 @@ export class IntegralContext {
       state.tokens[token].balance += amount;
     }
     this.relayer.setState(state, blockNumber);
-  }
-
-  get pools() {
-    return this._pools;
-  }
-  get factory() {
-    return this._factory;
-  }
-  get relayer() {
-    return this._relayer;
   }
 }

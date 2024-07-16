@@ -22,11 +22,7 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { IntegralRelayer, OnPoolEnabledSetCallback } from './integral-relayer';
 import ERC20ABI from '../../abi/erc20.json';
 import { Interface } from 'ethers/lib/utils';
-import { onTransferUpdateBalance } from './helpers';
-// import {
-//   updateEventSubscriber,
-//   checkEventSubscriber,
-// } from './tests/utils-events';
+import { updateEventSubscriber, checkEventSubscriber } from './utils-e2e';
 import { IntegralToken } from './integral-token';
 import { IntegralContext } from './context';
 
@@ -293,7 +289,7 @@ describe('Integral Relayer Events Mainnet', function () {
 });
 
 describe('Integral Multiple Events Mainnet', function () {
-  let context: IntegralContextTest;
+  let context: IntegralContext;
   const onPoolEnabledSet = dummyCallback as unknown as OnPoolEnabledSetCallback;
   const relayerAddress =
     IntegralConfig[dexKey][network].relayerAddress.toLowerCase();
@@ -332,118 +328,106 @@ describe('Integral Multiple Events Mainnet', function () {
     },
   };
 
-  //   beforeEach(async () => {
-  //     context = new IntegralContextTest(
-  //       {},
-  //       {} as IntegralRelayer,
-  //       relayerAddress,
-  //     );
-  //     const onTransfer = (
-  //       token: Address,
-  //       from: Address,
-  //       to: Address,
-  //       amount: bigint,
-  //       blockNumber: number,
-  //     ) =>
-  //       onTransferUpdateBalance(
-  //         token,
-  //         from,
-  //         to,
-  //         amount,
-  //         blockNumber,
-  //         context as unknown as IntegralContext,
-  //       );
-  //     const tokensMap = Object.values(TEST_POOLS).reduce<{
-  //       [tokenAddress: Address]: null;
-  //     }>((memo, { token0, token1 }) => {
-  //       memo[token0.toLowerCase()] = null;
-  //       memo[token1.toLowerCase()] = null;
-  //       return memo;
-  //     }, {});
-  //     Object.keys(tokensMap).map(tokenAddress => {
-  //       context.tokens[tokenAddress] = new IntegralToken(
-  //         dexHelper,
-  //         dexKey,
-  //         erc20Interface,
-  //         tokenAddress,
-  //         relayerAddress,
-  //         onTransfer,
-  //         logger,
-  //       );
-  //     });
+  beforeEach(async () => {
+    context = IntegralContext.initialize(
+      network,
+      'Integral',
+      dexHelper,
+      erc20Interface,
+      IntegralConfig[dexKey][network].factoryAddress.toLowerCase(),
+      IntegralConfig[dexKey][network].relayerAddress.toLowerCase(),
+    );
+    const onTransfer = (
+      token: Address,
+      from: Address,
+      to: Address,
+      amount: bigint,
+      blockNumber: number,
+    ) => context.onTransferUpdateBalance(token, from, to, amount, blockNumber);
+    const tokensMap = Object.values(TEST_POOLS).reduce<{
+      [tokenAddress: Address]: null;
+    }>((memo, { token0, token1 }) => {
+      memo[token0.toLowerCase()] = null;
+      memo[token1.toLowerCase()] = null;
+      return memo;
+    }, {});
+    Object.keys(tokensMap).map(tokenAddress => {
+      context.tokens[tokenAddress] = new IntegralToken(
+        network,
+        dexHelper,
+        dexKey,
+        erc20Interface,
+        tokenAddress,
+        relayerAddress,
+        onTransfer,
+        logger,
+      );
+    });
 
-  //     const integralRelayer = new IntegralRelayer(
-  //       dexHelper,
-  //       dexKey,
-  //       erc20Interface,
-  //       relayerAddress.toLowerCase(),
-  //       TEST_POOLS,
-  //       onPoolEnabledSet,
-  //       logger,
-  //     );
-  //     context.relayer = integralRelayer;
-  //   });
+    const integralRelayer = new IntegralRelayer(
+      dexHelper,
+      dexKey,
+      erc20Interface,
+      relayerAddress.toLowerCase(),
+      TEST_POOLS,
+      onPoolEnabledSet,
+      logger,
+    );
+    context.relayer = integralRelayer;
+  });
 
-  //   // Object.entries(eventsToTest).forEach(
-  //   //   ([_, events]: [string, EventMappings]) => {
-  //   //     describe(`Events for Pool & Relayer`, () => {
-  //   //       Object.entries(events).forEach(
-  //   //         ([eventName, blockNumbers]: [string, number[]]) => {
-  //   //           describe(`${eventName}`, () => {
-  //   //             blockNumbers.forEach((blockNumber: number) => {
-  //   //               it(`State after ${blockNumber}`, async function () {
-  //   //                 await updateEventSubscriber<RelayerState>(
-  //   //                   context.relayer,
-  //   //                   context.relayer.addressesSubscribed,
-  //   //                   (_blockNumber: number) =>
-  //   //                     fetchRelayerState(
-  //   //                       context.relayer,
-  //   //                       _blockNumber,
-  //   //                       relayerAddress,
-  //   //                     ),
-  //   //                   blockNumber,
-  //   //                   `${dexKey}_${relayerAddress}`,
-  //   //                   dexHelper.provider,
-  //   //                 );
-  //   //                 const tokenArray = Object.values(context.tokens);
-  //   //                 await Promise.all(
-  //   //                   tokenArray.map(async t =>
-  //   //                     updateEventSubscriber<TokenState>(
-  //   //                       t,
-  //   //                       t.addressesSubscribed,
-  //   //                       (_blockNumber: number) =>
-  //   //                         fetchTokenState(t, _blockNumber, t.tokenAddress),
-  //   //                       blockNumber,
-  //   //                       `${dexKey}_${t.tokenAddress}`,
-  //   //                       dexHelper.provider,
-  //   //                     ),
-  //   //                   ),
-  //   //                 );
-  //   //                 await checkEventSubscriber<RelayerState>(
-  //   //                   context.relayer,
-  //   //                   (_blockNumber: number) =>
-  //   //                     fetchRelayerState(
-  //   //                       context.relayer,
-  //   //                       _blockNumber,
-  //   //                       relayerAddress,
-  //   //                     ),
-  //   //                   blockNumber,
-  //   //                   `${dexKey}_${relayerAddress}`,
-  //   //                 );
-  //   //               });
-  //   //             });
-  //   //           });
-  //   //         },
-  //   //       );
-  //   //     });
-  //   //   },
-  //   // );
+  Object.entries(eventsToTest).forEach(
+    ([_, events]: [string, EventMappings]) => {
+      describe(`Events for Pool & Relayer`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async function () {
+                  await updateEventSubscriber<RelayerState>(
+                    context.relayer,
+                    context.relayer.addressesSubscribed,
+                    (_blockNumber: number) =>
+                      fetchRelayerState(
+                        context.relayer,
+                        _blockNumber,
+                        relayerAddress,
+                      ),
+                    blockNumber,
+                    `${dexKey}_${relayerAddress}`,
+                    dexHelper.provider,
+                  );
+                  const tokenArray = Object.values(context.tokens);
+                  await Promise.all(
+                    tokenArray.map(async t =>
+                      updateEventSubscriber<TokenState>(
+                        t,
+                        t.addressesSubscribed,
+                        (_blockNumber: number) =>
+                          fetchTokenState(t, _blockNumber, t.tokenAddress),
+                        blockNumber,
+                        `${dexKey}_${t.tokenAddress}`,
+                        dexHelper.provider,
+                      ),
+                    ),
+                  );
+                  await checkEventSubscriber<RelayerState>(
+                    context.relayer,
+                    (_blockNumber: number) =>
+                      fetchRelayerState(
+                        context.relayer,
+                        _blockNumber,
+                        relayerAddress,
+                      ),
+                    blockNumber,
+                    `${dexKey}_${relayerAddress}`,
+                  );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
 });
-
-class IntegralContextTest {
-  constructor(
-    public tokens: { [tokenAddress: Address]: IntegralToken },
-    public relayer: IntegralRelayer,
-    public relayerAddress: Address,
-  ) {}
-}
