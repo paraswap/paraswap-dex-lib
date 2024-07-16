@@ -7,17 +7,19 @@ import { Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from 'log4js';
 import { Interface } from '@ethersproject/abi';
-import { IntegralPool, PoolInitProps, RelayerState, Requires } from './types';
 import {
-  getPoolIdentifier,
-  onPoolCreatedAddPool,
-  onRelayerPoolEnabledSet,
-  onTransferUpdateBalance,
-} from './helpers';
+  IntegralPool,
+  PoolInitProps,
+  RelayerPoolState,
+  RelayerState,
+  Requires,
+} from './types';
 import { IntegralToken } from './integral-token';
+import { getPoolBackReferencedFrom, getPoolIdentifier } from './utils';
+import _ from 'lodash';
 
 export class IntegralContext {
-  static instance: IntegralContext;
+  static instances: { [network: number]: IntegralContext } = {};
 
   private _pools: { [poolId: string]: IntegralPool } = {};
   private _tokens: { [tokenAddress: Address]: IntegralToken } = {};
@@ -39,7 +41,7 @@ export class IntegralContext {
       dexHelper,
       dexKey,
       this.factoryAddress,
-      onPoolCreatedAddPool,
+      this.onPoolCreatedAddPool,
       this.logger,
     );
     this._relayer = new IntegralRelayer(
@@ -48,7 +50,7 @@ export class IntegralContext {
       this.erc20Interface,
       this.relayerAddress,
       {},
-      onRelayerPoolEnabledSet,
+      this.onRelayerPoolEnabledSet,
       this.logger,
     );
   }
@@ -123,12 +125,13 @@ export class IntegralContext {
 
     const initIntegralToken = (token: Address) =>
       new IntegralToken(
+        this.network,
         this.dexHelper,
         this.dexKey,
         this.erc20Interface,
         token,
         this.relayerAddress,
-        onTransferUpdateBalance,
+        this.onTransferUpdateBalance,
         this.logger,
       );
     bases.map(base => {
@@ -172,8 +175,8 @@ export class IntegralContext {
     factoryAddress: Address,
     relayerAddress: Address,
   ) {
-    if (!this.instance) {
-      this.instance = new IntegralContext(
+    if (!this.instances[network]) {
+      this.instances[network] = new IntegralContext(
         network,
         dexKey,
         dexHelper,
@@ -182,14 +185,104 @@ export class IntegralContext {
         relayerAddress,
       );
     }
-    return this.instance;
+    return this.instances[network];
   }
 
-  public static getInstance() {
-    if (!this.instance) {
+  public static getInstance(network: Network) {
+    if (!this.instances[network]) {
       throw new Error('IntegralContext instance not initialized');
     }
-    return this.instance;
+    return this.instances[network];
+  }
+
+  async onRelayerPoolEnabledSet(
+    poolAddress: Address,
+    state: RelayerPoolState,
+    blockNumber: number,
+  ) {
+    const poolEntry = getPoolBackReferencedFrom(this, poolAddress);
+    if (state.isEnabled && (!poolEntry || !poolEntry[1].enabled)) {
+      const _factoryState = this.factory.getStaleState();
+      const factoryState = _factoryState
+        ? _factoryState
+        : await this.factory.generateState(blockNumber);
+      const { token0, token1 } = factoryState.pools[poolAddress];
+      await this.addPools({ [poolAddress]: { token0, token1 } }, blockNumber);
+    } else if (!state.isEnabled && poolEntry && poolEntry[1].enabled) {
+      this.pools[poolEntry[0]].enabled = false;
+    }
+  }
+
+  onRebalanceSellOrderExecuted(blockNumber: number, orderId: bigint) {
+    this.relayer.executeOrder(orderId, blockNumber);
+  }
+
+  async onPoolCreatedAddPool(
+    token0: Address,
+    token1: Address,
+    poolAddress: Address,
+    blockNumber: number,
+  ) {
+    await this.addPools({ [poolAddress]: { token0, token1 } }, blockNumber);
+  }
+
+  async onPoolSwapForRelayer(
+    blockNumber: number,
+    poolAddress: Address,
+    recipient: Address,
+    amount0Out: bigint,
+    amount1Out: bigint,
+  ) {
+    if (recipient.toLowerCase() === this.relayerAddress.toLowerCase()) {
+      const pools = this.relayer.getPools();
+      if (pools[poolAddress.toLowerCase()]) {
+        const token0 = pools[poolAddress.toLowerCase()].token0;
+        const token1 = pools[poolAddress.toLowerCase()].token1;
+
+        let _state = this.relayer.getStaleState();
+        if (!_state) {
+          _state = await this.relayer.generateState(blockNumber);
+          this.relayer.setState(_state, blockNumber);
+          return;
+        } else {
+          blockNumber = this.relayer.getStateBlockNumber();
+        }
+
+        const state: RelayerState = _.cloneDeep(_state);
+        if (amount1Out > 0n) {
+          state.tokens[token1].balance += amount1Out;
+        } else {
+          state.tokens[token0].balance += amount0Out;
+        }
+        this.relayer.setState(state, blockNumber);
+      } else {
+        this.logger.error(
+          'Integral Relayer: Pool address not found for',
+          poolAddress,
+        );
+      }
+    }
+  }
+
+  async onTransferUpdateBalance(
+    token: Address,
+    from: Address,
+    to: Address,
+    amount: bigint,
+    blockNumber: number,
+  ) {
+    let _state = this.relayer.getStaleState();
+    if (!_state) {
+      this.logger.error('Integral Token: Relayer stale state not found');
+      return;
+    }
+    const state: RelayerState = _.cloneDeep(_state);
+    if (this.relayer.relayerAddress.toLowerCase() === from) {
+      state.tokens[token].balance -= amount;
+    } else if (this.relayer.relayerAddress.toLowerCase() === to) {
+      state.tokens[token].balance += amount;
+    }
+    this.relayer.setState(state, blockNumber);
   }
 
   get pools() {

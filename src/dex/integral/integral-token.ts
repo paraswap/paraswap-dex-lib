@@ -5,6 +5,7 @@ import { IDexHelper } from '../../dex-helper';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, BlockHeader, Log, Logger } from '../../types';
 import { TokenState } from './types';
+import { Network } from '../../constants';
 
 export type OnTransferCallback = (
   token: Address,
@@ -26,6 +27,7 @@ export class IntegralToken extends StatefulEventSubscriber<TokenState> {
   logDecoder: (log: Log) => any;
 
   constructor(
+    readonly network: Network,
     readonly dexHelper: IDexHelper,
     parentName: string,
     protected readonly erc20Interface: Interface,

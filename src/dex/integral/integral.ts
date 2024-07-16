@@ -35,12 +35,13 @@ import {
   getPrice,
   isInverted,
   sortTokens,
-} from './helpers';
+} from './utils';
 import { IntegralContext } from './context';
 import { ceil_div } from './utils';
 
 const PRECISION = BI_POWS[18];
 const SUBGRAPH_TIMEOUT = 20 * 1000;
+const SWAP_ORDER_TIMEOUT = Math.floor(Date.now() / 1000) + 24 * 3600;
 const relayerInterface = new Interface(IntegralRelayerABI);
 
 export class Integral extends SimpleExchange implements IDex<IntegralData> {
@@ -221,21 +222,19 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
   ): DexExchangeParam {
     const { relayer: exchange } = data;
 
-    // Encode here the transaction arguments
+    const tokenIn = this.dexHelper.config.wrapETH(srcToken);
+    const tokenOut = this.dexHelper.config.wrapETH(destToken);
+
     const swapData = relayerInterface.encodeFunctionData(
       side === SwapSide.SELL ? IntegralFunctions.swap : IntegralFunctions.buy,
       [
         {
           ...{
-            tokenIn: this.dexHelper.config.wrapETH({
-              address: srcToken,
-            } as Token).address,
-            tokenOut: this.dexHelper.config.wrapETH({
-              address: destToken,
-            } as Token).address,
+            tokenIn,
+            tokenOut,
             wrapUnwrap: isETHAddress(srcToken) || isETHAddress(destToken),
-            to: executorAddress,
-            submitDeadline: Math.floor(Date.now() / 1000) + 24 * 3600,
+            to: recipient,
+            submitDeadline: SWAP_ORDER_TIMEOUT,
           },
           ...(side === SwapSide.SELL
             ? { amountIn: srcAmount, amountOutMin: destAmount }
