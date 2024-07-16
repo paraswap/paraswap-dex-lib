@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -15,30 +16,54 @@ import { Token } from '../../types';
 import { IntegralConfig } from './config';
 import IntegralRelayerABI from '../../abi/integral/relayer.json';
 import { Interface } from '@ethersproject/abi';
+import { uint256ToBigInt } from '../../lib/decoders';
+import { MultiCallParams } from '../../lib/multi-wrapper';
 
+jest.setTimeout(50 * 1000);
 const network = Network.MAINNET;
-const pairs = [['USDC', 'USDT']];
-const testData = [
-  0, 5100, 10200, 15300, 20400, 25500, 30600, 35700, 40800, 45900, 51000,
+const testDatas: {
+  tokenA: Token;
+  tokenB: Token;
+  block: number;
+  data: number[];
+}[] = [
+  {
+    tokenA: { symbol: 'USDC' } as Token,
+    tokenB: { symbol: 'USDT' } as Token,
+    block: 19608294,
+    data: [
+      0, 5100, 10200, 15300, 20400, 25500, 30600, 35700, 40800, 45900, 51000,
+    ],
+  },
+  {
+    tokenA: { symbol: 'USDT' } as Token,
+    tokenB: { symbol: 'WETH' } as Token,
+    block: 19831195,
+    data: [0, 1.7, 3.4, 5.1, 6.8, 8.5, 10.2, 11.9, 13.6, 15.3, 17],
+  },
 ];
+initializeTokens();
 
 const dexHelper = new DummyDexHelper(network);
 const dexKey = 'Integral';
 
 function initializeTokens() {
-  let tokensInPairs: Token[][] = [];
-  for (const [TokenASymbol, TokenBSymbol] of pairs) {
-    const TokenA = Tokens[network][TokenASymbol];
-    const TokenB = Tokens[network][TokenBSymbol];
-    TokenA.symbol = TokenASymbol;
-    TokenB.symbol = TokenBSymbol;
-    tokensInPairs.push([TokenA, TokenB]);
+  for (const [i, testData] of testDatas.entries()) {
+    const tokenA = Tokens[network][testData.tokenA.symbol!];
+    const tokenB = Tokens[network][testData.tokenB.symbol!];
+    tokenA.symbol = testData.tokenA.symbol;
+    tokenB.symbol = testData.tokenB.symbol;
+    testDatas[i].tokenA = tokenA;
+    testDatas[i].tokenB = tokenB;
   }
-  return tokensInPairs;
 }
 
 function initializeAmounts(token: Token, units: number[]) {
-  return units.map(unit => BigInt(unit) * BI_POWS[token.decimals]);
+  const precision = 10 ** 18;
+  return units.map(
+    unit =>
+      (BigInt(unit * precision) * BI_POWS[token.decimals]) / BigInt(precision),
+  );
 }
 
 async function checkOnChainPricing(
@@ -51,64 +76,63 @@ async function checkOnChainPricing(
   expectedAmounts: bigint[],
 ) {
   const relayerInterface = new Interface(IntegralRelayerABI);
-  const callData = expectedAmounts.slice(1).map(amount => ({
-    target: relayerAddress,
-    callData: relayerInterface.encodeFunctionData(funcName, [
-      TokenA.address,
-      TokenB.address,
-      amount,
-    ]),
-  }));
-  const results = (
-    await dexHelper.multiContract.methods
-      .aggregate(callData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  const expectedPrices = [0n].concat(
-    results.map((result: string) => BigInt(result)),
+  const callData = expectedAmounts
+    .slice(1)
+    .map<MultiCallParams<bigint>>(amount => ({
+      target: relayerAddress,
+      callData: relayerInterface.encodeFunctionData(funcName, [
+        TokenA.address,
+        TokenB.address,
+        amount,
+      ]),
+      decodeFunction: uint256ToBigInt,
+    }));
+  const results = await dexHelper.multiWrapper.tryAggregate(
+    false,
+    callData,
+    blockNumber,
+    dexHelper.multiWrapper.defaultBatchSize,
+    false,
   );
+
+  const expectedPrices = [0n].concat(results.map(result => result.returnData));
   expect(prices).toEqual(expectedPrices);
 }
 
-describe('Integral', function () {
-  let blockNumber: number;
-  let integral: Integral;
-  const tokensInPairs = initializeTokens();
+for (const { tokenA, tokenB, data, block } of testDatas) {
+  describe(`Integral Pool ${tokenB.symbol}-${tokenA.symbol}`, function () {
+    let integral: Integral;
 
-  beforeAll(async () => {
-    blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    beforeAll(async () => {
+      integral = new Integral(network, dexKey, dexHelper);
+      await integral.initializePricing(block);
+    });
 
-    integral = new Integral(network, dexKey, dexHelper);
-    await integral.initializePricing(blockNumber);
-  });
-
-  for (const [TokenA, TokenB] of tokensInPairs) {
-    it(`getPoolIdentifiers and getPricesVolume SELL [${TokenA.symbol}, ${TokenB.symbol}]`, async function () {
-      const amounts = initializeAmounts(TokenB, testData);
+    it(`getPoolIdentifiers and getPricesVolume SELL [${tokenB.symbol}, ${tokenA.symbol}]`, async function () {
+      const amounts = initializeAmounts(tokenB, data);
       const pools = await integral.getPoolIdentifiers(
-        TokenB,
-        TokenA,
+        tokenB,
+        tokenA,
         SwapSide.SELL,
-        blockNumber,
+        block,
       );
       console.log(
-        `${TokenA.symbol} <> ${TokenB.symbol} Pool Identifiers: `,
+        `${tokenA.symbol} <> ${tokenB.symbol} Pool Identifiers: `,
         pools,
       );
 
       expect(pools.length).toBeGreaterThan(0);
 
       const poolPrices = await integral.getPricesVolume(
-        TokenB,
-        TokenA,
+        tokenB,
+        tokenA,
         amounts,
         SwapSide.SELL,
-        blockNumber,
+        block,
         pools,
       );
       console.log(
-        `${TokenA.symbol} <> ${TokenB.symbol} Pool Prices, SELL: `,
+        `${tokenA.symbol} <> ${tokenB.symbol} Pool Prices, SELL: `,
         poolPrices,
       );
 
@@ -123,39 +147,39 @@ describe('Integral', function () {
       await checkOnChainPricing(
         IntegralConfig[dexKey][network].relayerAddress,
         'quoteSell',
-        blockNumber,
+        block,
         poolPrices![0].prices,
-        TokenB,
-        TokenA,
+        tokenB,
+        tokenA,
         amounts,
       );
     });
 
-    it(`getPoolIdentifiers and getPricesVolume BUY [${TokenA.symbol}, ${TokenB.symbol}]`, async function () {
-      const amounts = initializeAmounts(TokenB, testData);
+    it(`getPoolIdentifiers and getPricesVolume BUY [${tokenA.symbol}, ${tokenB.symbol}]`, async function () {
+      const amounts = initializeAmounts(tokenB, data);
       const pools = await integral.getPoolIdentifiers(
-        TokenA,
-        TokenB,
+        tokenA,
+        tokenB,
         SwapSide.BUY,
-        blockNumber,
+        block,
       );
       console.log(
-        `${TokenA.symbol} <> ${TokenB.symbol} Pool Identifiers: `,
+        `${tokenA.symbol} <> ${tokenB.symbol} Pool Identifiers: `,
         pools,
       );
 
       expect(pools.length).toBeGreaterThan(0);
 
       const poolPrices = await integral.getPricesVolume(
-        TokenA,
-        TokenB,
+        tokenA,
+        tokenB,
         amounts,
         SwapSide.BUY,
-        blockNumber,
+        block,
         pools,
       );
       console.log(
-        `${TokenA.symbol} <> ${TokenB.symbol} Pool Prices, Buy: `,
+        `${tokenA.symbol} <> ${tokenB.symbol} Pool Prices, Buy: `,
         poolPrices,
       );
 
@@ -170,32 +194,28 @@ describe('Integral', function () {
       await checkOnChainPricing(
         IntegralConfig[dexKey][network].relayerAddress,
         'quoteBuy',
-        blockNumber,
+        block,
         poolPrices![0].prices,
-        TokenA,
-        TokenB,
+        tokenA,
+        tokenB,
         amounts,
       );
     });
-  }
-});
+  });
+}
 
 describe('Integral Top Pools', function () {
-  let integral: Integral;
-  const tokensInPairs = initializeTokens();
+  const integral = new Integral(network, dexKey, dexHelper);
+  const { tokenA } = testDatas[0];
+  it(`getTopPoolsForToken [${tokenA.symbol}]`, async function () {
+    const poolLiquidity = await integral.getTopPoolsForToken(
+      tokenA.address,
+      10,
+    );
+    console.log(`${tokenA.symbol} Top Pools:`, poolLiquidity);
 
-  integral = new Integral(network, dexKey, dexHelper);
-  for (const [TokenA, TokenB] of tokensInPairs) {
-    it(`getTopPoolsForToken [${TokenA.symbol}]`, async function () {
-      const poolLiquidity = await integral.getTopPoolsForToken(
-        TokenA.address,
-        10,
-      );
-      console.log(`${TokenA.symbol} Top Pools:`, poolLiquidity);
-
-      if (!integral.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
-      }
-    });
-  }
+    if (!integral.hasConstantPriceLargeAmounts) {
+      checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+    }
+  });
 });

@@ -10,35 +10,45 @@ import {
   PoolLiquidity,
   Logger,
   PoolPrices,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
-import { IDex } from '../idex';
+import { Context, IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   IntegralData,
   IntegralFunctions,
-  IntegralPair,
-  IntegralPoolState,
+  PoolStates,
+  QuotingProps,
+  RelayerPoolState,
+  RelayerTokensState,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { IntegralConfig, Adapters } from './config';
-import { IntegralEventPool } from './integral-pool';
 import IntegralRelayerABI from '../../abi/integral/relayer.json';
 import { Interface } from '@ethersproject/abi';
-import { BigNumber } from 'ethers';
 import { BI_POWS } from '../../bigint-constants';
+import {
+  getDecimalsConverter,
+  getPoolIdentifier,
+  getPrice,
+  isInverted,
+  sortTokens,
+} from './helpers';
+import { IntegralContext } from './context';
+import { ceil_div } from './utils';
 
 const PRECISION = BI_POWS[18];
 const SUBGRAPH_TIMEOUT = 20 * 1000;
 const relayerInterface = new Interface(IntegralRelayerABI);
 
 export class Integral extends SimpleExchange implements IDex<IntegralData> {
-  pairs: { [key: string]: IntegralPair } = {};
-  protected relayerAddress: Address;
   protected subgraphURL: string | undefined;
   readonly hasConstantPriceLargeAmounts = false;
 
+  private readonly context: IntegralContext;
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -55,11 +65,24 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
-    this.relayerAddress = IntegralConfig[dexKey][network].relayerAddress;
+    this.context = IntegralContext.initialize(
+      network,
+      dexKey,
+      dexHelper,
+      this.erc20Interface,
+      IntegralConfig[dexKey][network].factoryAddress.toLowerCase(),
+      IntegralConfig[dexKey][network].relayerAddress.toLowerCase(),
+    );
     this.subgraphURL = IntegralConfig[dexKey][network].subgraphURL;
   }
 
-  async initializePricing(blockNumber: number) {}
+  async initializePricing(blockNumber: number) {
+    await this.context.factory.initialize(blockNumber);
+    const factoryState = this.context.factory.getState(blockNumber);
+    if (factoryState) {
+      await this.context.addPools(factoryState.pools, blockNumber, true);
+    }
+  }
 
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
@@ -80,11 +103,14 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       return [];
     }
 
-    const tokenAddress = [src.address.toLowerCase(), dest.address.toLowerCase()]
+    const tokenAddresses = [
+      src.address.toLowerCase(),
+      dest.address.toLowerCase(),
+    ]
       .sort((a, b) => (a > b ? 1 : -1))
       .join('_');
 
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+    const poolIdentifier = `${this.dexKey}_${tokenAddresses}`;
     return [poolIdentifier];
   }
 
@@ -106,21 +132,17 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       return null;
     }
 
-    const tokenAddress = [src.address.toLowerCase(), dest.address.toLowerCase()]
-      .sort((a, b) => (a > b ? 1 : -1))
-      .join('_');
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+    const poolIdentifier = getPoolIdentifier(
+      this.dexKey,
+      src.address,
+      dest.address,
+    );
     if (limitPools && limitPools.every(p => p !== poolIdentifier)) {
       return null;
     }
 
-    await this.syncPair([src, dest], blockNumber);
-    const pair = this.findPair(src, dest);
-    if (!(pair && pair.pool)) {
-      return null;
-    }
-    const pairState = pair.pool.getState(blockNumber);
-    if (!pairState) {
+    const props = await this.getQuotingProps(src, dest, blockNumber);
+    if (!props) {
       return null;
     }
 
@@ -129,25 +151,25 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     );
     const unit =
       side == SwapSide.SELL
-        ? this.quoteSell(unitAmount, src, dest, pairState, false)
-        : this.quoteBuy(unitAmount, src, dest, pairState, false);
+        ? this.quoteSell(unitAmount, props, false)
+        : this.quoteBuy(unitAmount, props, false);
     try {
       const prices =
         side == SwapSide.SELL
-          ? amounts.map(amount => this.quoteSell(amount, src, dest, pairState))
-          : amounts.map(amount => this.quoteBuy(amount, src, dest, pairState));
+          ? amounts.map(amount => this.quoteSell(amount, props))
+          : amounts.map(amount => this.quoteBuy(amount, props));
 
       return [
         {
           prices: prices,
           unit: unit,
           data: {
-            relayer: this.relayerAddress,
+            relayer: this.context.relayerAddress,
           },
           exchange: this.dexKey,
           poolIdentifier,
           gasCost: 0,
-          poolAddresses: [this.relayerAddress],
+          poolAddresses: this.context.getPoolAddresses(),
         },
       ];
     } catch (e) {
@@ -187,18 +209,17 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     };
   }
 
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  // Hint: this.buildSimpleParamWithoutWETHConversion
-  // could be useful
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
     data: IntegralData,
     side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
     const { relayer: exchange } = data;
 
     // Encode here the transaction arguments
@@ -224,14 +245,22 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       ],
     );
 
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      exchange,
-    );
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+      returnAmountPos: undefined,
+      // returnAmountPos: isSell
+      //   ? extractReturnAmountPosition(
+      //       this.sdaiInterface,
+      //       this.isDai(srcToken)
+      //         ? SparkSDaiFunctions.deposit
+      //         : SparkSDaiFunctions.redeem,
+      //       this.isDai(srcToken) ? 'shares' : 'assets',
+      //     )
+      //   : undefined,
+    };
   }
 
   async updatePoolState(): Promise<void> {}
@@ -324,25 +353,22 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     );
   }
 
-  async getPriceOnChain(pair: IntegralPair, blockNumber: number) {
+  async getPriceOnChain(
+    tokenIn: Token,
+    tokenOut: Token,
+    inverted: boolean,
+    blockNumber: number,
+  ): Promise<QuotingProps | null> {
     try {
       const calldata = [
         {
-          target: this.relayerAddress,
+          target: this.context.relayerAddress,
           callData: relayerInterface.encodeFunctionData('getPoolState', [
-            pair.token0.address,
-            pair.token1.address,
-          ]),
-        },
-        {
-          target: this.relayerAddress,
-          callData: relayerInterface.encodeFunctionData('getPoolState', [
-            pair.token1.address,
-            pair.token0.address,
+            tokenIn.address,
+            tokenOut.address,
           ]),
         },
       ];
-
       const data: { returnData: any[] } =
         await this.dexHelper.multiContract.methods
           .aggregate(calldata)
@@ -352,21 +378,22 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
         'getPoolState',
         data.returnData[0],
       );
-      const invertedResult = relayerInterface.decodeFunctionResult(
-        'getPoolState',
-        data.returnData[1],
-      );
+      const _limits = inverted
+        ? [result.limitMin1, result.limitMax1]
+        : [result.limitMin0, result.limitMax0];
+      const limits: [bigint, bigint] = [
+        BigInt(_limits[0].toString()),
+        BigInt(_limits[1].toString()),
+      ];
+      const [decimals0, decimals1] = inverted
+        ? [tokenOut.decimals, tokenIn.decimals]
+        : [tokenIn.decimals, tokenOut.decimals];
       return {
         price: BigInt(result.price.toString()),
-        invertedPrice: BigInt(invertedResult.price.toString()),
         fee: BigInt(result.fee.toString()),
-        limits0: [result.limitMin0, result.limitMax0].map((limit: BigNumber) =>
-          BigInt(limit.toString()),
-        ),
-        limits1: [result.limitMin1, result.limitMax1].map((limit: BigNumber) =>
-          BigInt(limit.toString()),
-        ),
-      } as IntegralPoolState;
+        tokenOutLimits: limits,
+        decimalsConverter: getDecimalsConverter(decimals0, decimals1, inverted),
+      };
     } catch (e) {
       this.logger.error(
         `Error_getPriceOnChain could not get data with error:`,
@@ -376,105 +403,56 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     }
   }
 
-  protected async addPool(
-    pair: IntegralPair,
-    params: IntegralPoolState,
-    blockNumber: number,
-  ) {
-    pair.pool = new IntegralEventPool(
-      this.dexKey,
-      this.network,
-      this.dexHelper,
-      pair.token0.address,
-      pair.token1.address,
-      this.logger,
-    );
+  private async getQuotingProps(src: Token, dest: Token, blockNumber: number) {
+    const poolId = getPoolIdentifier(this.dexKey, src.address, dest.address);
+    const inverted = isInverted(src.address, dest.address);
 
-    if (blockNumber) {
-      pair.pool.setState(params, blockNumber);
-    }
-  }
-
-  async syncPair(_pair: [Token, Token], blockNumber: number) {
-    if (!blockNumber) {
-      return;
-    }
-    const pair = this.findPair(_pair[0], _pair[1]);
-    if (!pair) {
-      return;
-    }
-    if (pair.pool && pair.pool.getState(blockNumber)) {
-      return;
-    }
-
-    const states = await this.getPriceOnChain(pair, blockNumber);
-
+    const states = this.getStates(poolId, blockNumber);
     if (!states) {
-      this.logger.error(`Error_getPriceOnChain didn't get any prices`);
-      return;
+      return await this.getPriceOnChain(src, dest, inverted, blockNumber);
     }
+    const { base, poolAddress, relayer, relayerTokens } = states;
 
-    if (!pair.pool) {
-      await this.addPool(pair, states, blockNumber);
-    } else {
-      pair.pool.setState(states, blockNumber);
-    }
-  }
+    const price = getPrice(states, inverted);
 
-  private findPair(from: Token, to: Token) {
-    if (from.address.toLocaleLowerCase() === to.address.toLowerCase()) {
-      return null;
-    }
-
-    const { key, token0, token1 } = this.generatePairKey(from, to);
-    if (!this.pairs[key]) {
-      this.pairs[key] = { token0, token1 };
-    }
-    return this.pairs[key];
-  }
-
-  private generatePairKey(tokenA: Token, tokenB: Token) {
-    const inverted =
-      tokenA.address.toLowerCase() > tokenB.address.toLowerCase();
-    const [token0, token1] = inverted ? [tokenB, tokenA] : [tokenA, tokenB];
-    return {
-      key: `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`,
-      token0,
-      token1,
+    const token0 = sortTokens(src.address, dest.address)[0];
+    const { max0, max1 } = this.getMaxLimits(
+      poolAddress,
+      relayer,
+      relayerTokens,
+    );
+    const props: QuotingProps = {
+      price,
+      fee: relayer.swapFee,
+      tokenOutLimits:
+        dest.address === token0
+          ? [relayer.limits.min0, max0]
+          : [relayer.limits.min1, max1],
+      decimalsConverter: getDecimalsConverter(
+        base.decimals0,
+        base.decimals1,
+        inverted,
+      ),
     };
+    return props;
   }
 
   private quoteSell(
     amountIn: bigint,
-    tokenIn: Token,
-    tokenOut: Token,
-    state: DeepReadonly<IntegralPoolState>,
+    props: DeepReadonly<QuotingProps>,
     checkLimit: boolean = true,
   ) {
     if (amountIn === 0n) {
       return 0n;
     }
-    const pair = this.findPair(tokenIn, tokenOut);
-    if (!pair) {
-      return 0n;
-    }
-    const inverted = !this.isFirst(tokenIn.address, pair);
 
-    const fee = (amountIn * state.fee) / PRECISION;
+    const fee = (amountIn * props.fee) / PRECISION;
     const amountInMinusFee = amountIn - fee;
-    const price = inverted ? state.invertedPrice : state.price;
-    const decimalsConverter = this.getDecimalsConverter(
-      pair.token0.decimals,
-      pair.token1.decimals,
-      inverted,
-    );
-    const amountOut = (amountInMinusFee * price) / decimalsConverter;
-    const limits = this.isFirst(tokenOut.address, pair)
-      ? state.limits0
-      : state.limits1;
-    if (checkLimit && !this.checkLimits(amountOut, limits)) {
+    const amountOut =
+      (amountInMinusFee * props.price) / props.decimalsConverter;
+    if (checkLimit && !this.checkLimits(amountOut, props.tokenOutLimits)) {
       throw new Error(
-        `Out of Limits - amountOut ${amountOut} not in between limits ${limits}`,
+        `Out of Limits - amountOut ${amountOut} not in between limits ${props.tokenOutLimits}`,
       );
     }
     return amountOut;
@@ -482,67 +460,28 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
 
   private quoteBuy(
     amountOut: bigint,
-    tokenIn: Token,
-    tokenOut: Token,
-    state: DeepReadonly<IntegralPoolState>,
+    props: DeepReadonly<QuotingProps>,
     checkLimit: boolean = true,
   ) {
     if (amountOut === 0n) {
       return 0n;
     }
-    const pair = this.findPair(tokenIn, tokenOut);
-    if (!pair) {
-      return 0n;
-    }
-    const inverted = !this.isFirst(tokenIn.address, pair);
-    const limits = this.isFirst(tokenOut.address, pair)
-      ? state.limits0
-      : state.limits1;
-    if (checkLimit && !this.checkLimits(amountOut, limits)) {
+
+    if (checkLimit && !this.checkLimits(amountOut, props.tokenOutLimits)) {
       throw new Error(
-        `Out of Limits - amountOut ${amountOut} not in between limits ${limits}`,
+        `Out of Limits - amountOut ${amountOut} not in between limits ${props.tokenOutLimits}`,
       );
     }
 
-    const price = inverted ? state.invertedPrice : state.price;
-    const decimalsConverter = this.getDecimalsConverter(
-      pair.token0.decimals,
-      pair.token1.decimals,
-      inverted,
-    );
-    const amountIn = this.ceil_div(amountOut * decimalsConverter, price);
+    const amountIn = ceil_div(amountOut * props.decimalsConverter, props.price);
     if (amountIn <= 0n) {
       return 0n;
     }
-    const amountInPlusFee = this.ceil_div(
+    const amountInPlusFee = ceil_div(
       amountIn * PRECISION,
-      PRECISION - state.fee,
+      PRECISION - props.fee,
     );
     return amountInPlusFee;
-  }
-
-  private isFirst(address: string, pair: IntegralPair) {
-    return address.toLowerCase() === pair.token0.address.toLowerCase();
-  }
-
-  private ceil_div(a: bigint, b: bigint) {
-    const c = a / b;
-    if (a != b * c) {
-      return c + 1n;
-    } else {
-      return c;
-    }
-  }
-
-  private getDecimalsConverter(
-    decimals0: number,
-    decimals1: number,
-    inverted: boolean,
-  ) {
-    return (
-      10n **
-      (18n + BigInt(inverted ? decimals1 - decimals0 : decimals0 - decimals1))
-    );
   }
 
   private checkLimits(amount: bigint, limits: readonly [bigint, bigint]) {
@@ -550,5 +489,44 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       return false;
     }
     return true;
+  }
+
+  private getStates(poolId: string, blockNumber: number): PoolStates | null {
+    const poolStates = this.context.pools[poolId];
+    if (poolStates && poolStates.base) {
+      const base = poolStates.base.getState(blockNumber);
+      const pricing =
+        poolStates.pricing && poolStates.pricing.getState(blockNumber);
+      const relayerState = this.context.relayer.getState(blockNumber);
+      const relayer =
+        relayerState && relayerState.pools[poolStates.base.poolAddress];
+      return base && pricing && relayer
+        ? {
+            base,
+            pricing,
+            relayer,
+            relayerTokens: relayerState.tokens,
+            poolAddress: poolStates.base.poolAddress,
+          }
+        : null;
+    } else {
+      return null;
+    }
+  }
+
+  private getMaxLimits(
+    poolAddress: Address,
+    relayer: RelayerPoolState,
+    relayerTokens: RelayerTokensState,
+  ) {
+    const { token0, token1 } =
+      this.context.relayer.getPools()[poolAddress.toLowerCase()];
+    const max0 =
+      (relayerTokens[token0].balance * relayer.limits.maxMultiplier0) /
+      10n ** 18n;
+    const max1 =
+      (relayerTokens[token1].balance * relayer.limits.maxMultiplier1) /
+      10n ** 18n;
+    return { max0, max1 };
   }
 }
