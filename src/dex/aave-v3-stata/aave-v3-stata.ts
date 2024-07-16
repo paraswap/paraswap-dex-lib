@@ -427,6 +427,7 @@ export class AaveV3Stata
       exchangeData: swapData,
       targetExchange: exchange,
       returnAmountPos,
+      skipApproval: srcType === TokenType.STATA_TOKEN,
     };
   }
 

@@ -350,6 +350,7 @@ export class IdleDao extends SimpleExchange implements IDex<IdleDaoData> {
       exchangeData,
       targetExchange: swapCallee,
       returnAmountPos: side === SwapSide.SELL ? returnAmountPos : undefined,
+      skipApproval: data.fromIdleToken,
     };
   }
 
