@@ -3,7 +3,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
+import {
+  Tokens,
+  Holders,
+  NativeTokenSymbols,
+} from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -52,28 +56,27 @@ function testForNetwork(
   });
 }
 
-describe('ConcentratorArusd E2E', () => {
-  const dexKey = 'ConcentratorArusd';
+describe('FxProtocolRusd E2E', () => {
+  const dexKey = 'FxProtocolRusd';
   const network = Network.MAINNET;
-
   const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
     [
       {
-        name: 'rUSD',
+        name: 'weETH',
         amount: '1000000000000000000',
       },
       {
-        name: 'arUSD',
+        name: 'rUSD',
         amount: '1000000000000000000',
       },
     ],
     [
       {
-        name: 'arUSD',
+        name: 'rUSD',
         amount: '1000000000000000000',
       },
       {
-        name: 'rUSD',
+        name: 'weETH',
         amount: '1000000000000000000',
       },
     ],

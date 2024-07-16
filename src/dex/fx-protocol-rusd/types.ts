@@ -4,9 +4,10 @@ export type PoolState = {
   nav: bigint;
 };
 
-export type ConcentratorArusdData = {};
+export type FxProtocolData = {};
 
 export type DexParams = {
-  arUSDAddress: Address;
   rUSDAddress: Address;
+  weETHAddress: Address;
+  ezETHAddress: Address;
 };
