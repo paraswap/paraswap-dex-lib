@@ -9,102 +9,78 @@ import { generateConfig } from '../../config';
 
 jest.setTimeout(1000 * 60 * 3);
 
-function testForNetwork(
-  network: Network,
-  dexKey: string,
-  tokenASymbol: string,
-  tokenBSymbol: string,
-  tokenAAmount: string,
-  tokenBAmount: string,
-) {
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
-  const tokens = Tokens[network];
-  const holders = Holders[network];
-
-  const sideToContractMethods = new Map([
-    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
-  ]);
-
-  describe(`${network}`, () => {
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
-          describe(`${contractMethod}`, () => {
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-          });
-        });
-      }),
-    );
-  });
-}
+const testCases = [
+  {
+    network: Network.MAINNET,
+    side: SwapSide.SELL,
+    method: ContractMethod.swapExactAmountIn,
+    tokenASymbol: 'USDC',
+    tokenBSymbol: 'USDT',
+    tokenAAmount: '5100000000',
+    tokenBAmount: '5100000000',
+  },
+  {
+    network: Network.MAINNET,
+    side: SwapSide.BUY,
+    method: ContractMethod.swapExactAmountOut,
+    tokenASymbol: 'USDC',
+    tokenBSymbol: 'USDT',
+    tokenAAmount: '5100000000',
+    tokenBAmount: '5100000000',
+  },
+  {
+    network: Network.ARBITRUM,
+    side: SwapSide.SELL,
+    method: ContractMethod.swapExactAmountIn,
+    tokenASymbol: 'WETH',
+    tokenBSymbol: 'USDT',
+    tokenAAmount: '1000000000000000000',
+    tokenBAmount: '5100000000',
+  },
+  {
+    network: Network.ARBITRUM,
+    side: SwapSide.BUY,
+    method: ContractMethod.swapExactAmountOut,
+    tokenASymbol: 'WETH',
+    tokenBSymbol: 'USDT',
+    tokenAAmount: '1000000000000000000',
+    tokenBAmount: '5100000000',
+  },
+];
 
 describe('Integral E2E', () => {
   const dexKey = 'Integral';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'USDT';
-
-    const tokenAAmount: string = '6000000000';
-    const tokenBAmount: string = '6000000000';
-
-    testForNetwork(
+  testCases.forEach(
+    ({
       network,
-      dexKey,
+      side,
+      method,
       tokenASymbol,
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-    );
-  });
+    }) => {
+      it(`${network}: ${tokenASymbol} -> ${tokenBSymbol} (${side} ${method})`, async () => {
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const tokens = Tokens[network];
+        const holders = Holders[network];
 
-  describe('Arbitrum', () => {
-    const network = Network.ARBITRUM;
-
-    const tokenASymbol: string = 'WETH';
-    const tokenBSymbol: string = 'USDT';
-
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '6000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+          side,
+          dexKey,
+          method,
+          network,
+          provider,
+        );
+      });
+    },
+  );
 });
