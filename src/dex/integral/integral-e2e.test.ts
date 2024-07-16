@@ -65,7 +65,7 @@ function testForNetwork(
   });
 }
 
-describe('sDAI E2E', () => {
+describe('Integral E2E', () => {
   const dexKey = 'Integral';
 
   describe('Mainnet', () => {
@@ -74,8 +74,8 @@ describe('sDAI E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '1000000';
-    const tokenBAmount: string = '1000000';
+    const tokenAAmount: string = '60000000000';
+    const tokenBAmount: string = '60000000000';
 
     testForNetwork(
       network,
@@ -93,8 +93,8 @@ describe('sDAI E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '1000000';
-    const tokenBAmount: string = '1000000';
+    const tokenAAmount: string = '60000000000';
+    const tokenBAmount: string = '60000000000';
 
     testForNetwork(
       network,
