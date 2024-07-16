@@ -6,7 +6,7 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Provider } from '@ethersproject/providers';
 import { DeepReadonly } from 'ts-essentials';
 
-const pathRoot = path.join(__dirname, '../../../../tests/');
+const pathRoot = path.join(__dirname, './test-artifacts/');
 const configPath = './configs.json';
 const absConfigPath = path.join(pathRoot, configPath);
 let configs: { [k: string]: any } = {};
