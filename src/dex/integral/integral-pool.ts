@@ -58,6 +58,13 @@ export class IntegralEventPool extends StatefulEventSubscriber<PoolState> {
     this.handlers['SetBurnFee'] = this.handleSetBurnFee.bind(this);
   }
 
+  protected getPoolIdentifierData() {
+    return {
+      token0: this.token0,
+      token1: this.token1,
+    };
+  }
+
   /**
    * The function is called every time any of the subscribed
    * addresses release log. The function accepts the current

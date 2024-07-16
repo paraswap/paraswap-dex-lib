@@ -78,6 +78,10 @@ export class IntegralRelayer extends StatefulEventSubscriber<RelayerState> {
     return this.pools;
   }
 
+  protected getPoolIdentifierData() {
+    return { relayer: this.relayerAddress };
+  }
+
   executeOrder(id: bigint, blockNumber: number) {
     this.orders[id.toString()].executedAt = blockNumber;
     delete this.orders[id.toString()];

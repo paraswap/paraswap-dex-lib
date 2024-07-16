@@ -61,6 +61,10 @@ export class IntegralToken extends StatefulEventSubscriber<TokenState> {
     return {};
   }
 
+  protected getPoolIdentifierData() {
+    return { token: this.tokenAddress };
+  }
+
   protected async processLog(
     state: TokenState,
     log: Readonly<Log>,

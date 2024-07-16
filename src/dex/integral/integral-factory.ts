@@ -46,6 +46,10 @@ export class IntegralFactory extends StatefulEventSubscriber<FactoryState> {
     this.handlers['PairCreated'] = this.handlePairCreated.bind(this);
   }
 
+  protected getPoolIdentifierData() {
+    return { factory: this.factoryAddress };
+  }
+
   async generateState(blockNumber?: number | 'latest'): Promise<FactoryState> {
     const factory = new this.dexHelper.web3Provider.eth.Contract(
       IntegralFactoryABI as any,
