@@ -63,9 +63,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
       Adapter04: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       Adapter05: '0x3329dfa55A40B450952FBE0203167Ae6908E656d',
-      Adapter06: '0x914a0dde48046d885ceaB82Ca4583678320107Cb',
+      Adapter06: '0xeab475f9be561f984632f424275a466f33dba0ae',
       BuyAdapter: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
-      BuyAdapter02: '0xD950A2D07158566374eD78ed321EE58B12995Afa',
+      BuyAdapter02: '0x3645410eea805034420A2e090cC9cCB388F19d9a',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -191,8 +191,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
       PolygonAdapter02: '0xE7d4CC1589311BD7Bb58739269748a20DAAD755D',
-      PolygonAdapter03: '0x4E9fefc805A2cCda69832937b20BD3D6DFa39DC2',
-      PolygonBuyAdapter: '0x5ac4842D2A160b3d35E8E635Ab8e5bD21Fac3f2c',
+      PolygonAdapter03: '0xadCE8b50dE9F2e6beF235FfFCB62145c7Dd92d30',
+      PolygonBuyAdapter: '0xE8a09B3248bF6F79190002F74e31f275D6684c20',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -228,8 +228,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0x88aF353d525ac67793cECA20EBe91c446038166C',
-      AvalancheBuyAdapter: '0x6d36A3A39A8384Ff79A52cA9bB09BAD9ADb579AF',
+      AvalancheAdapter02: '0xf2362C5271B8f1cC437894283f5C66B6EBb0F4E2',
+      AvalancheBuyAdapter: '0x633D34F9748684793141AD3344Eb93e5f424C18B',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -262,8 +262,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     adapterAddresses: {
       FantomAdapter01: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
-      FantomAdapter02: '0x9b42529a902Dd75644F9354E1fDfe5AA2544BdcA',
-      FantomBuyAdapter: '0x02Db4A2fDdfD584A83304Cb91F10e72f6F550e27',
+      FantomAdapter02: '0x6a6ebF0b938C04883eEdf3F3A6f3f6f7DF22C0ee',
+      FantomBuyAdapter: '0xDf34D7D2092135f17e3eA09C55D985Df34d4C0Dd',
     },
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
@@ -299,8 +299,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       ArbitrumAdapter02: '0x58a5f0b73969800FAFf8556cD2187E3FCE71A6cb',
-      ArbitrumAdapter03: '0x0E4f546204434De43e76181db7f26a2B007FB5cd',
-      ArbitrumBuyAdapter: '0xEfa069F9aF4023B08a4C1b7057033C0376F2f0B8',
+      ArbitrumAdapter03: '0xeF70C307773cCac66138e105860053c194558827',
+      ArbitrumBuyAdapter: '0x61D4B43349f207071e72000A8b4eF01AE5B4a03e',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
@@ -335,8 +335,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
     adapterAddresses: {
       OptimismAdapter01: '0x5dcf544b0c9689fa67dcb713fd2656d217e25a59',
-      OptimismAdapter02: '0xE421F52d97C70b306A4a2Eb91fD2eed8cd50D30e',
-      OptimismBuyAdapter: '0xFc1B5062D3258fe0E6CFd7428De4D146bBa9e29f',
+      OptimismAdapter02: '0x00374D9111c6a9F9B056022A43C62b3C8b615DA1',
+      OptimismBuyAdapter: '0x866B625e8C84B216798C3A8BB100e8ac40fb9305',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
@@ -405,8 +405,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     adapterAddresses: {
       BaseAdapter01: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
-      BaseAdapter02: '0x0C58F07c14892b7b887F44B610F017Cd2B7bD616',
-      BaseBuyAdapter: '0x74F1938aEbf06C74AbDcF39F857a6b9330C263Bc',
+      BaseAdapter02: '0xbB2977dcacD915E6fe085eEb0d144D948B51c9ac',
+      BaseBuyAdapter: '0x67E49323b1fB885b99A9A45fABC973Fe6063d5ab',
     },
     uniswapV2ExchangeRouterAddress:
       '0x75d199EfB540e47D27D52c62Da3E7daC2B9e834F',
