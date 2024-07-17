@@ -973,7 +973,7 @@ export class CurveV1Factory
     );
 
     return {
-      targetExchange: data.path[0].exchange,
+      targetExchange: this.config.router,
       payload,
       networkFee: '0',
     };
@@ -1249,8 +1249,10 @@ export class CurveV1Factory
 
     const pools = [];
 
+    let i = 0;
     while (pools.length < poolsLength) {
-      pools.push(NULL_ADDRESS);
+      pools.push(data.path[i] ? data.path[i].exchange : NULL_ADDRESS);
+      i++;
     }
 
     return {

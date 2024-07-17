@@ -185,6 +185,26 @@ describe('CurveV1StableNG E2E', () => {
   describe('Base', () => {
     const network = Network.BASE;
 
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          // ContractMethod.swapExactAmountIn
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [
+        SwapSide.BUY,
+        [
+          // ContractMethod.swapExactAmountOut
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+        ],
+      ],
+    ]);
+
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDM';
 
@@ -198,7 +218,7 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-      sidesToContractMethods,
+      sideToContractMethods,
     );
   });
 });
