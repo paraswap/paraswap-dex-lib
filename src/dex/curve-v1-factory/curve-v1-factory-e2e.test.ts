@@ -25,14 +25,14 @@ export function testForNetwork(
         ContractMethod.megaSwap,
       ],
     ],
-    [
-      SwapSide.BUY,
-      [
-        // ContractMethod.swapExactAmountOut
-        ContractMethod.simpleBuy,
-        ContractMethod.buy,
-      ],
-    ],
+    // [
+    //   SwapSide.BUY,
+    //   [
+    //     // ContractMethod.swapExactAmountOut
+    //     ContractMethod.simpleBuy,
+    //     ContractMethod.buy,
+    //   ],
+    // ],
   ]),
 ) {
   const provider = new StaticJsonRpcProvider(
@@ -399,14 +399,14 @@ describe('CurveV1Factory E2E', () => {
           ContractMethod.megaSwap,
         ],
       ],
-      // [
-      //   SwapSide.BUY,
-      //   [
-      //     // ContractMethod.swapExactAmountOut
-      //     ContractMethod.simpleBuy,
-      //     ContractMethod.buy,
-      //   ],
-      // ],
+      [
+        SwapSide.BUY,
+        [
+          // ContractMethod.swapExactAmountOut
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+        ],
+      ],
     ]);
 
     describe('USDC -> crvUSD', () => {

@@ -823,84 +823,84 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
     [SwapSide.SELL]: [
       {
-        name: 'Adapter01',
-        index: 3,
+        name: 'Adapter06',
+        index: 2,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'BuyAdapter02',
-        index: 5,
+        index: 6,
       },
     ],
   },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
-        name: 'PolygonAdapter01',
-        index: 3,
+        name: 'PolygonAdapter03',
+        index: 1,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'PolygonBuyAdapter',
-        index: 10,
+        index: 11,
       },
     ],
   },
   [Network.AVALANCHE]: {
     [SwapSide.SELL]: [
       {
-        name: 'AvalancheAdapter01',
-        index: 5,
+        name: 'AvalancheAdapter02',
+        index: 8,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'AvalancheBuyAdapter',
-        index: 9,
+        index: 10,
       },
     ],
   },
   [Network.FANTOM]: {
     [SwapSide.SELL]: [
       {
-        name: 'FantomAdapter01',
-        index: 3,
+        name: 'FantomAdapter02',
+        index: 2,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'FantomBuyAdapter',
-        index: 6,
+        index: 7,
       },
     ],
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [
       {
-        name: 'ArbitrumAdapter01',
-        index: 6,
+        name: 'ArbitrumAdapter03',
+        index: 3,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'ArbitrumBuyAdapter',
-        index: 12,
+        index: 13,
       },
     ],
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [
       {
-        name: 'OptimismAdapter01',
-        index: 5,
+        name: 'OptimismAdapter02',
+        index: 3,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'OptimismBuyAdapter',
-        index: 8,
+        index: 9,
       },
     ],
   },

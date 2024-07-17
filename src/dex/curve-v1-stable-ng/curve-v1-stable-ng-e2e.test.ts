@@ -26,6 +26,25 @@ describe('CurveV1StableNG E2E', () => {
   ]);
 
   describe('Mainnet', () => {
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          // ContractMethod.swapExactAmountIn
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [
+        SwapSide.BUY,
+        [
+          // ContractMethod.swapExactAmountOut
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+        ],
+      ],
+    ]);
     const network = Network.MAINNET;
 
     describe('GHO -> USDe', () => {
@@ -42,7 +61,7 @@ describe('CurveV1StableNG E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-        sidesToContractMethods,
+        sideToContractMethods,
       );
     });
 
@@ -85,6 +104,26 @@ describe('CurveV1StableNG E2E', () => {
   describe('Polygon', () => {
     const network = Network.POLYGON;
 
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          // ContractMethod.swapExactAmountIn
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [
+        SwapSide.BUY,
+        [
+          // ContractMethod.swapExactAmountOut
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+        ],
+      ],
+    ]);
+
     describe('crvUSD -> USDT', () => {
       const tokenASymbol: string = 'crvUSD';
       const tokenBSymbol: string = 'USDT';
@@ -99,7 +138,7 @@ describe('CurveV1StableNG E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-        sidesToContractMethods,
+        sideToContractMethods,
       );
     });
 
@@ -125,6 +164,26 @@ describe('CurveV1StableNG E2E', () => {
   describe('Fantom', () => {
     const network = Network.FANTOM;
 
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          // ContractMethod.swapExactAmountIn
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [
+        SwapSide.BUY,
+        [
+          // ContractMethod.swapExactAmountOut
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+        ],
+      ],
+    ]);
+
     const tokenASymbol: string = 'scrvUSDC_e';
     const tokenBSymbol: string = 'scrvUSDC_p';
 
@@ -138,12 +197,32 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-      sidesToContractMethods,
+      sideToContractMethods,
     );
   });
 
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          // ContractMethod.swapExactAmountIn
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [
+        SwapSide.BUY,
+        [
+          // ContractMethod.swapExactAmountOut
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+        ],
+      ],
+    ]);
 
     const tokenASymbol: string = 'crvUSD';
     const tokenBSymbol: string = 'USDCe';
@@ -158,12 +237,32 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-      sidesToContractMethods,
+      sideToContractMethods,
     );
   });
 
   describe('Optimism', () => {
     const network = Network.OPTIMISM;
+
+    const sideToContractMethods = new Map([
+      [
+        SwapSide.SELL,
+        [
+          // ContractMethod.swapExactAmountIn
+          ContractMethod.simpleSwap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      [
+        SwapSide.BUY,
+        [
+          // ContractMethod.swapExactAmountOut
+          ContractMethod.simpleBuy,
+          ContractMethod.buy,
+        ],
+      ],
+    ]);
 
     const tokenASymbol: string = 'crvUSD';
     const tokenBSymbol: string = 'USDC';
@@ -178,7 +277,7 @@ describe('CurveV1StableNG E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-      sidesToContractMethods,
+      sideToContractMethods,
     );
   });
 

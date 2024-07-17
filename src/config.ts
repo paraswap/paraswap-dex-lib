@@ -63,9 +63,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
       Adapter04: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       Adapter05: '0x3329dfa55A40B450952FBE0203167Ae6908E656d',
-      Adapter06: '0xe9166234DFB6d3ec05C82404109C02Ca82b16c22',
+      Adapter06: '0x2c4E0Ea1CB71D79288210903E96e2447Bb9CE784',
       BuyAdapter: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
-      BuyAdapter02: '0xc055b23319b3a140D4De2d0001bd0A885B3d7DbB',
+      BuyAdapter02: '0xFF2eFFA4737800f4CdfA8a724b4AAf28baE64B5f',
     },
     uniswapV2ExchangeRouterAddress:
       '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
@@ -191,7 +191,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
       PolygonAdapter02: '0xE7d4CC1589311BD7Bb58739269748a20DAAD755D',
-      PolygonBuyAdapter: '0xFCe7Fc27a1b5eB36F51486E660557e6e68509939',
+      PolygonAdapter03: '0x4E9fefc805A2cCda69832937b20BD3D6DFa39DC2',
+      PolygonBuyAdapter: '0x5ac4842D2A160b3d35E8E635Ab8e5bD21Fac3f2c',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -227,8 +228,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0xA10c9a84E72d9DfF424Fe2284B6460784bed407E',
-      AvalancheBuyAdapter: '0xaB38a72de187Cd5d6D9bACD6D13D090E841EC330',
+      AvalancheAdapter02: '0x88aF353d525ac67793cECA20EBe91c446038166C',
+      AvalancheBuyAdapter: '0x6d36A3A39A8384Ff79A52cA9bB09BAD9ADb579AF',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -261,8 +262,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     adapterAddresses: {
       FantomAdapter01: '0x654dE10890f8B2C5bF54E50Af169a7E93165C416',
-      FantomAdapter02: '0x248009f6F78b5AcD5EA2fc86d56b77A7AeEe2eFc',
-      FantomBuyAdapter: '0x1310dE2C69e9753bee19B5522bad39c5f788efd9',
+      FantomAdapter02: '0x9b42529a902Dd75644F9354E1fDfe5AA2544BdcA',
+      FantomBuyAdapter: '0x02Db4A2fDdfD584A83304Cb91F10e72f6F550e27',
     },
     uniswapV2ExchangeRouterAddress:
       '0xAB86e2bC9ec5485a9b60E684BA6d49bf4686ACC2',
@@ -298,8 +299,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       ArbitrumAdapter02: '0x58a5f0b73969800FAFf8556cD2187E3FCE71A6cb',
-      ArbitrumAdapter03: '0x97bdD2B98D9802b0e387FefdB2882C1b2dc2c344',
-      ArbitrumBuyAdapter: '0x94a299930e4c88c1368f7838a4B93Ae4e8693d0A',
+      ArbitrumAdapter03: '0x0E4f546204434De43e76181db7f26a2B007FB5cd',
+      ArbitrumBuyAdapter: '0xEfa069F9aF4023B08a4C1b7057033C0376F2f0B8',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
@@ -334,8 +335,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
     adapterAddresses: {
       OptimismAdapter01: '0x5dcf544b0c9689fa67dcb713fd2656d217e25a59',
-      OptimismAdapter02: '0x7b4B828a461063F2F47558c3544dA74964c7393D',
-      OptimismBuyAdapter: '0x249538c1154Da333E805fcb9caE3e70c5eE2436b',
+      OptimismAdapter02: '0xE421F52d97C70b306A4a2Eb91fD2eed8cd50D30e',
+      OptimismBuyAdapter: '0xFc1B5062D3258fe0E6CFd7428De4D146bBa9e29f',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
