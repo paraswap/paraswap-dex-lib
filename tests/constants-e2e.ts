@@ -91,6 +91,14 @@ export const Tokens: {
       address: '0x8f8221aFbB33998d8584A2B05749bA73c37a938a',
       decimals: 18,
     },
+    eETH: {
+      address: '0x35fA164735182de50811E8e2E824cFb9B6118ac2',
+      decimals: 18,
+    },
+    weETH: {
+      address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
+      decimals: 18,
+    },
     AMPL: {
       address: '0xd46ba6d942050d489dbd938a2c909a5d5039a161',
       decimals: 9,
@@ -481,14 +489,6 @@ export const Tokens: {
     },
     sDAI: {
       address: '0x83f20f44975d03b1b09e64809b757c47f942beea',
-      decimals: 18,
-    },
-    eETH: {
-      address: '0x35fa164735182de50811e8e2e824cfb9b6118ac2',
-      decimals: 18,
-    },
-    weETH: {
-      address: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
       decimals: 18,
     },
     stataUSDT: {
@@ -1543,7 +1543,7 @@ export const Holders: {
     USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     alETH: '0x500a4f1280a0b63f47862d658b6c335cc939aaed',
     SHIBA: '0x73af3bcf944a6559933396c1577b257e2054d935',
-    aEthWETH: '0xfEA3F5b06D41Cb1526b9cAf8be63c5b37C475f23',
+    aEthWETH: '0x931433324E6B0b5B04E3460ef3fb3f78dda3c721',
     dUSDC: '0x2FC2F705110A7F46Ce85F701d7217EF1018f01A3',
     PSP: '0xE5E5440a1CE69C5cf67BFFA74d185e57c31b43E5',
     EUROC: '0x64AE5802620398143FC7113037769175F74825Ea',
@@ -1741,8 +1741,8 @@ export const Holders: {
     EURA: '0x6dd7b830896b56812aa667bdd14b71c8b3252f8e',
     stEUR: '0xE588611e7A2392507879E3be80531654b85C16aA',
     USDA: '0xa86ff337db9107b54862d30d1a598f8be847b05e',
-    stUSD: '0xa9ddd91249dfdd450e81e1c56ab60e1a62651701',
-    stataUSDT: '0x403D37c861fb54b8F37a3A1870aBce335954840B',
+    stUSD: '0xBa511aAd739358b2F34285f9E2d5344017b7DcaD',
+    stataUSDT: '0xc5042f9d9a18e95547864438455c8f05b4987399',
     aaveUSDT: '0xAfa788fab589fe61C23DF76905558f4734444D67',
     crvUSD: '0x9755e99bdb99495d3d31d953785d993c6df8552e',
   },
@@ -1764,9 +1764,9 @@ export const Holders: {
     rETH: '0x4c2e69e58b14de9afedfb94319519ce34e087283',
     WBTC: '0xb9c8f0d3254007ee4b98970b94544e473cd610ec',
     frxETH: '0x4d4edf8291d169f975b99914b6ab3326abb45938',
-    EURA: '0xC18dAC166eDa9538933258d21A272C1775C19c73',
+    EURA: '0x9A760aa1Fe631fD9aC0Aee0965736121c7c132cc',
     stEUR: '0xA9DdD91249DFdd450E81E1c56Ab60E1A62651701',
-    USDA: '0xC18dAC166eDa9538933258d21A272C1775C19c73',
+    USDA: '0x7dFf12833a6f0e88f610E79E11E9506848cCF187',
     stUSD: '0xC98b0729695A25152B8D5b6B95709070605A7F60',
     crvUSD: '0x528e7aF33043Da06ca3DD407626a71DbBD3173D6',
     LUSD: '0xf0a9abb11958a071e168f2ee5bcbacf1abbde9cf',

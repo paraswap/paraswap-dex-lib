@@ -268,6 +268,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       (!isETHAddress(swap.srcToken) ||
         (isETHAddress(swap.srcToken) && index !== 0)) &&
       !curExchangeParam.transferSrcTokenBeforeSwap &&
+      !curExchangeParam.skipApproval &&
       curExchangeParam.approveData
     ) {
       const approveCallData = this.buildApproveCallData(
@@ -290,7 +291,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
           let approveWethCalldata = '0x';
           if (
             curExchangeParam.approveData &&
-            !curExchangeParam.transferSrcTokenBeforeSwap
+            !curExchangeParam.transferSrcTokenBeforeSwap &&
+            !curExchangeParam.skipApproval
           ) {
             approveWethCalldata = this.buildApproveCallData(
               curExchangeParam.approveData.target,
