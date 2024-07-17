@@ -16,23 +16,8 @@ export function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
-    [
-      SwapSide.SELL,
-      [
-        // ContractMethod.swapExactAmountIn
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-      ],
-    ],
-    // [
-    //   SwapSide.BUY,
-    //   [
-    //     // ContractMethod.swapExactAmountOut
-    //     ContractMethod.simpleBuy,
-    //     ContractMethod.buy,
-    //   ],
-    // ],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]),
 ) {
   const provider = new StaticJsonRpcProvider(
@@ -91,7 +76,7 @@ export function testForNetwork(
 }
 
 describe('CurveV1Factory E2E', () => {
-  const dexKey = ['CurveV1Factory'];
+  const dexKey = ['CurveV1Factory', 'CurveV1StableNg'];
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -392,21 +377,17 @@ describe('CurveV1Factory E2E', () => {
     const sideToContractMethods = new Map([
       [
         SwapSide.SELL,
-        [
-          // ContractMethod.swapExactAmountIn
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
-        ],
+        [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
       ],
-      [
-        SwapSide.BUY,
-        [
-          // ContractMethod.swapExactAmountOut
-          ContractMethod.simpleBuy,
-          ContractMethod.buy,
-        ],
-      ],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+      // [
+      //   SwapSide.SELL,
+      //   [
+      //     ContractMethod.simpleSwap,
+      //     ContractMethod.multiSwap,
+      //     ContractMethod.megaSwap,
+      //   ],
+      // ],
     ]);
 
     describe('USDC -> crvUSD', () => {
