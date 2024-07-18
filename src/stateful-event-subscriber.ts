@@ -226,15 +226,15 @@ export abstract class StatefulEventSubscriber<State>
   ): AsyncOrSync<DeepReadonly<State>>;
 
   restart(blockNumber: number): void {
-    this.logger.info(
-      `StatefulEventSubscriber restart, bn: ${blockNumber}: ${this.parentName}: ${this.name}`,
-    );
     for (const _bn of Object.keys(this.stateHistory)) {
       const bn = +_bn;
       if (bn >= blockNumber) break;
       delete this.stateHistory[bn];
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
+      this.logger.info(
+        `StatefulEventSubscriber restart, bn: ${blockNumber}: ${this.parentName}: ${this.name}`,
+      );
       this._setState(null, blockNumber);
     }
   }
@@ -333,9 +333,6 @@ export abstract class StatefulEventSubscriber<State>
   //current state to the latest one that is left, if any, unless the invalid
   //flag is not set, in which case the most recent state can be kept.
   rollback(blockNumber: number): void {
-    this.logger.info(
-      `StatefulEventSubscriber rollback, bn: ${blockNumber}: ${this.parentName}: ${this.name}`,
-    );
     if (this.invalid) {
       let lastBn = undefined;
       //loop in the ascending order of the blockNumber. V8 property when object keys are number.
@@ -351,6 +348,9 @@ export abstract class StatefulEventSubscriber<State>
       if (lastBn) {
         this._setState(this.stateHistory[lastBn], lastBn);
       } else {
+        this.logger.info(
+          `StatefulEventSubscriber rollback, bn: ${blockNumber}: ${this.parentName}: ${this.name}`,
+        );
         this._setState(null, blockNumber);
       }
     } else {
