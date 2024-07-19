@@ -233,7 +233,7 @@ export abstract class StatefulEventSubscriber<State>
     }
     if (this.state && this.stateBlockNumber < blockNumber) {
       this.logger.info(
-        `StatefulEventSubscriber restart, bn: ${blockNumber}: ${this.parentName}: ${this.name}`,
+        `StatefulEventSubscriber_1 restart, bn: ${blockNumber}, state_bn: ${this.stateBlockNumber}: ${this.parentName}: ${this.name}`,
       );
       this._setState(null, blockNumber);
     }
@@ -349,7 +349,7 @@ export abstract class StatefulEventSubscriber<State>
         this._setState(this.stateHistory[lastBn], lastBn);
       } else {
         this.logger.info(
-          `StatefulEventSubscriber rollback, bn: ${blockNumber}: ${this.parentName}: ${this.name}`,
+          `StatefulEventSubscriber_1 rollback, bn: ${blockNumber}: ${this.parentName}: ${this.name}`,
         );
         this._setState(null, blockNumber);
       }
@@ -366,7 +366,7 @@ export abstract class StatefulEventSubscriber<State>
 
   invalidate(): void {
     this.logger.info(
-      `StatefulEventSubscriber invalidate: ${this.parentName}: ${this.name}`,
+      `StatefulEventSubscriber_1 invalidate: ${this.parentName}: ${this.name}`,
     );
     this.invalid = true;
   }
