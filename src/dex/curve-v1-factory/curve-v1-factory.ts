@@ -113,6 +113,7 @@ export class CurveV1Factory
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative: boolean = false;
+
   readonly isFeeOnTransferSupported = true;
   readonly isStatePollingDex = true;
 
@@ -954,6 +955,8 @@ export class CurveV1Factory
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
+          needWrap: 'bool',
+          needUnwrap: 'bool',
           route: 'address[11]',
           swap_params: 'uint256[5][5]',
           amount: 'uint256',
@@ -963,6 +966,8 @@ export class CurveV1Factory
         },
       },
       {
+        needWrap: this.needWrapNative,
+        needUnwrap: this.needWrapNative,
         route: path,
         swap_params: swapParams,
         amount,
@@ -1056,6 +1061,15 @@ export class CurveV1Factory
 
     if (data.path.length > 1) {
       throw new Error('Multihop is not supported by v5');
+    }
+
+    if (
+      this.dexKey === 'CurveV1StableNg' &&
+      (isETHAddress(srcToken) || isETHAddress(destToken))
+    ) {
+      throw new Error(
+        'Direct method is not supported by CurveV1StableNg for routes where ETH is src or dest',
+      );
     }
 
     assert(side === SwapSide.SELL, 'Buy not supported');

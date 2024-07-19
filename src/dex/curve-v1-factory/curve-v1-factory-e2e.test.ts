@@ -76,7 +76,7 @@ export function testForNetwork(
 }
 
 describe('CurveV1Factory E2E', () => {
-  const dexKey = ['CurveV1Factory', 'CurveV1StableNg'];
+  const dexKey = ['CurveV1Factory'];
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -152,6 +152,24 @@ describe('CurveV1Factory E2E', () => {
   describe('Mainnet Native', () => {
     const network = Network.MAINNET;
 
+    const sidesToContractMethods = new Map([
+      // [
+      //   SwapSide.SELL,
+      //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+      // ],
+      // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.directCurveV1Swap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+      // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    ]);
+
     const tokenASymbol: string = 'ETH';
     const tokenBSymbol: string = 'alETH';
 
@@ -165,43 +183,65 @@ describe('CurveV1Factory E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
+      sidesToContractMethods,
     );
   });
-  describe('Mainnet crvUSD', () => {
-    const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'crvUSD';
-    const tokenBSymbol: string = 'USDT';
-
-    const tokenAAmount: string = '10000000000000000000';
-    const tokenBAmount: string = '10000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
   describe('Mainnet ng pool', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'ETH';
-    const tokenBSymbol: string = 'STETH';
+    const sidesToContractMethods = new Map([
+      // [
+      //   SwapSide.SELL,
+      //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+      // ],
+      // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+      [
+        SwapSide.SELL,
+        [
+          ContractMethod.simpleSwap,
+          ContractMethod.directCurveV1Swap,
+          ContractMethod.multiSwap,
+          ContractMethod.megaSwap,
+        ],
+      ],
+    ]);
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    describe('ETH -> STETH', () => {
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'STETH';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        sidesToContractMethods,
+      );
+    });
+
+    describe('crvUSD -> USDT', () => {
+      const tokenASymbol: string = 'crvUSD';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '10000000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        sidesToContractMethods,
+      );
+    });
   });
 
   describe('Mainnet SBTC2 pool', () => {
