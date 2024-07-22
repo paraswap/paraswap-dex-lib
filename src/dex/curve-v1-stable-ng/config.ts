@@ -209,18 +209,6 @@ export const Adapters: Record<number, AdapterMappings> = {
         index: 6,
       },
     ],
-    // [SwapSide.SELL]: [
-    //   {
-    //     name: 'Adapter01',
-    //     index: 3,
-    //   },
-    // ],
-    // [SwapSide.BUY]: [
-    //   {
-    //     name: 'BuyAdapter02',
-    //     index: 5,
-    //   },
-    // ],
   },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
