@@ -224,6 +224,7 @@ export class StatePollingManager {
     blockNumber?: number,
     liquidityUpdateFunc?: Function,
   ) {
+    const before = Date.now();
     if (pools.length === 0) {
       return;
     }
@@ -248,8 +249,16 @@ export class StatePollingManager {
       );
     }
 
+    const after = Date.now();
+
+    const totalExecutionTime = after - before;
+
     logger.info(
-      `CurveV1Factory: finished state update for ${pools.length} pools on network ${dexHelper.config.data.network}`,
+      `CurveV1Factory: finished state update for ${
+        pools.length
+      } pools on network ${dexHelper.config.data.network} in ${(
+        totalExecutionTime / 1000
+      ).toFixed(2)} s`,
     );
   }
 }
