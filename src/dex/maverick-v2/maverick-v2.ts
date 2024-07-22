@@ -27,6 +27,7 @@ import { MaverickV2EventPool } from './maverick-v2-pool';
 import { SUBGRAPH_TIMEOUT } from '../../constants';
 import { Interface } from '@ethersproject/abi';
 import MaverickV2PoolABI from '../../abi/maverick-v2/MaverickV2Pool.json';
+import MaverickV2RouterABI from '../../abi/maverick-v2/MaverickV2Router.json';
 import ERC20ABI from '../../abi/erc20.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
 const EFFICIENCY_FACTOR = 3;
@@ -52,6 +53,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     protected adapters = {},
     protected config = MaverickV2Config[dexKey][network],
     protected maverickV2Iface = new Interface(MaverickV2PoolABI),
+    protected maverickV2RouterIface = new Interface(MaverickV2RouterABI),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -103,9 +105,6 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO:
-    if (side === SwapSide.BUY) return [];
-
     const from = this.dexHelper.config.wrapETH(srcToken);
     const to = this.dexHelper.config.wrapETH(destToken);
 
@@ -148,9 +147,6 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         return null;
       }
 
-      // TODO:
-      if (side === SwapSide.BUY) return null;
-
       const allPools = await this.getPools(from, to);
 
       const allowedPools = limitPools
@@ -159,11 +155,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
 
       if (!allowedPools.length) return null;
 
-      // const unitAmount = getBigIntPow(
-      //   side === SwapSide.BUY ? to.decimals : from.decimals,
-      // );
-
-      const unitAmount = getBigIntPow(from.decimals);
+      const unitAmount = getBigIntPow(
+        side === SwapSide.BUY ? to.decimals : from.decimals,
+      );
 
       const tasks = allowedPools.map(async (pool: MaverickV2EventPool) => {
         try {
@@ -173,8 +167,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
             return null;
           }
 
-          // const [unit] = pool.swap(unitAmount, from, to, side === SwapSide.BUY);
-          const [unit] = pool.swap(unitAmount, from, to, false);
+          const [unit] = pool.swap(unitAmount, from, to, side === SwapSide.BUY);
           let lastOutput = 1n;
 
           const dataList: [bigint, bigint][] = amounts.map(amount => {
@@ -182,8 +175,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
               return [0n, 0n];
             }
 
-            // const output = pool.swap(amount, from, to, side === SwapSide.BUY);
-            const output = pool.swap(amount, from, to, false);
+            const output = pool.swap(amount, from, to, side === SwapSide.BUY);
             lastOutput = output[0];
             return output;
           });
@@ -262,45 +254,65 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     _: Context,
     executorAddress: Address,
   ): DexExchangeParam {
-    // TODO:
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-
     const { pool } = data;
 
     srcToken = this.dexHelper.config.wrapETH(srcToken);
     destToken = this.dexHelper.config.wrapETH(destToken);
 
-    const exchangeData = this.maverickV2Iface.encodeFunctionData('swap', [
-      recipient,
-      {
-        amount: side === SwapSide.SELL ? srcAmount : destAmount,
-        tokenAIn: data.tokenA.toLowerCase() === srcToken.toLowerCase(),
-        // exactOutput: side === SwapSide.BUY,
-        exactOutput: false,
-        tickLimit:
+    if (side === SwapSide.SELL) {
+      // Perform direct swap for SELL side
+
+      const exchangeData = this.maverickV2Iface.encodeFunctionData('swap', [
+        recipient,
+        {
+          amount: srcAmount,
+          tokenAIn: data.tokenA.toLowerCase() === srcToken.toLowerCase(),
+          exactOutput: false,
+          tickLimit:
+            data.tokenA.toLowerCase() === srcToken.toLowerCase()
+              ? BigInt(data.activeTick) + 100n
+              : BigInt(data.activeTick) - 100n,
+        },
+        '0x',
+      ]);
+
+      return {
+        needWrapNative: this.needWrapNative,
+        transferSrcTokenBeforeSwap: pool,
+        skipApproval: true,
+        targetExchange: pool,
+        dexFuncHasRecipient: true,
+        exchangeData,
+        returnAmountPos: extractReturnAmountPosition(
+          this.maverickV2Iface,
+          'swap',
+          'amountOut',
+        ),
+      };
+    } else {
+      // perform "exactOutputSingleMinimal" via MaverickV2's Router
+
+      const exchangeData = this.maverickV2RouterIface.encodeFunctionData(
+        'exactOutputSingleMinimal',
+        [
+          recipient,
+          pool,
+          data.tokenA.toLowerCase() === srcToken.toLowerCase(),
+          destAmount,
           data.tokenA.toLowerCase() === srcToken.toLowerCase()
             ? BigInt(data.activeTick) + 100n
             : BigInt(data.activeTick) - 100n,
-      },
-      '0x',
-    ]);
+        ],
+      );
 
-    return {
-      needWrapNative: this.needWrapNative,
-      transferSrcTokenBeforeSwap: pool,
-      // skipApproval: true,
-      targetExchange: pool,
-      dexFuncHasRecipient: true,
-      exchangeData,
-      returnAmountPos:
-        side === SwapSide.SELL
-          ? extractReturnAmountPosition(
-              this.maverickV2Iface,
-              'swap',
-              'amountOut',
-            )
-          : undefined,
-    };
+      return {
+        needWrapNative: this.needWrapNative,
+        targetExchange: this.config.routerAddress,
+        dexFuncHasRecipient: true,
+        exchangeData,
+        returnAmountPos: undefined,
+      };
+    }
   }
 
   // This is called once before getTopPoolsForToken is
