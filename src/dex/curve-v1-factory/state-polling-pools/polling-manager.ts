@@ -248,7 +248,7 @@ export class StatePollingManager {
       );
     }
 
-    logger.trace(
+    logger.info(
       `CurveV1Factory: finished state update for ${pools.length} pools on network ${dexHelper.config.data.network}`,
     );
   }
