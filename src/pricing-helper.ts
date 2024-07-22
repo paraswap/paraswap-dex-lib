@@ -228,8 +228,8 @@ export class PricingHelper {
                   transferFees,
                 )
                 .then(poolPrices => {
-                  console.log('pool prices from getPricesVolume', poolPrices);
-                  console.log('rollupL1ToL2GasRatio', rollupL1ToL2GasRatio);
+                  // console.log('pool prices from getPricesVolume', poolPrices);
+                  // console.log('rollupL1ToL2GasRatio', rollupL1ToL2GasRatio);
 
                   try {
                     if (!poolPrices || !rollupL1ToL2GasRatio) {
