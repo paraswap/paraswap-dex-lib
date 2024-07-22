@@ -84,7 +84,9 @@ export class CurveV1FactoryPoolManager {
   }
 
   updatePollingPoolsInBatch() {
-    this.logger.info('Updating pools in batch');
+    this.logger.info(
+      `Updating pools in batch on network ${this.dexHelper.config.data.network}`,
+    );
     // This is the sorted array of pools to update. Main point is - first are pools
     // from non-meta pools and only after that meta pools.
     // It may be optimized preparing this pools before hand
