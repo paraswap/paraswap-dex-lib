@@ -40,6 +40,8 @@ import {
   CurveV1FactoryData,
   CurveV1FactoryDirectSwap,
   CurveV1FactoryIfaces,
+  CurveV1RouterParam,
+  CurveV1RouterSwapParam,
   CurveV1SwapType,
   CustomImplementationNames,
   DirectCurveV1FactoryParamV6,
@@ -111,6 +113,7 @@ export class CurveV1Factory
 {
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative: boolean = false;
+
   readonly isFeeOnTransferSupported = true;
   readonly isStatePollingDex = true;
 
@@ -940,25 +943,42 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (data.path.length > 1) {
-      throw new Error('Multihop is not supported by v5');
-    }
+    // Multihop encoding
+    const {
+      path,
+      swapParams,
+      srcAmount: amount,
+      min_dy,
+      pools,
+    } = this.getMultihopParam(srcAmount, destAmount, data, side);
 
-    const { i, j, underlyingSwap } = data.path[0];
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
-          i: 'int128',
-          j: 'int128',
-          deadline: 'uint256',
-          underlyingSwap: 'bool',
+          needWrap: 'bool',
+          needUnwrap: 'bool',
+          route: 'address[11]',
+          swap_params: 'uint256[5][5]',
+          amount: 'uint256',
+          min_dy: 'uint256',
+          pools: 'address[5]',
+          receiver: 'address',
         },
       },
-      { i, j, deadline: 0, underlyingSwap },
+      {
+        needWrap: this.needWrapNative,
+        needUnwrap: this.needWrapNative,
+        route: path,
+        swap_params: swapParams,
+        amount,
+        min_dy,
+        pools,
+        receiver: this.augustusAddress,
+      },
     );
 
     return {
-      targetExchange: data.path[0].exchange,
+      targetExchange: this.config.router,
       payload,
       networkFee: '0',
     };
@@ -1067,7 +1087,7 @@ export class CurveV1Factory
         : CurveV1SwapType.EXCHANGE,
       beneficiary,
       // For CurveV1 we work as it is, without wrapping and unwrapping
-      false,
+      this.needWrapNative,
       permit,
       uuidToBytes16(uuid),
     ];
@@ -1115,11 +1135,21 @@ export class CurveV1Factory
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
+    let wrapFlag = 0;
+
+    if (this.needWrapNative && isETHAddress(srcToken)) {
+      wrapFlag = 1; // wrap src eth
+    } else if (!this.needWrapNative && isETHAddress(srcToken)) {
+      wrapFlag = 3; // add msg.value to router call
+    } else if (this.needWrapNative && isETHAddress(destToken)) {
+      wrapFlag = 2; // unwrap dest eth
+    }
+
     const swapParams: DirectCurveV1FactoryParamV6 = [
       packCurveData(
         data.path[0].exchange,
         !data.isApproved, // approve flag, if not approved then set to true
-        isETHAddress(destToken) ? 0 : isETHAddress(srcToken) ? 3 : 0,
+        wrapFlag,
         data.path[0].underlyingSwap
           ? CurveV1SwapType.EXCHANGE_UNDERLYING
           : CurveV1SwapType.EXCHANGE,
@@ -1166,19 +1196,18 @@ export class CurveV1Factory
     data: CurveV1FactoryData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    if (data.path.length > 1) {
-      throw new Error('Multihop is not supported by v5');
-    }
+    // Multihop encoding
+    const {
+      path,
+      swapParams,
+      srcAmount: amount,
+      min_dy,
+      pools,
+    } = this.getMultihopParam(srcAmount, destAmount, data, side);
 
-    const { exchange, i, j, underlyingSwap } = data.path[0];
-    const defaultArgs = [i, j, srcAmount, MIN_AMOUNT_TO_RECEIVE];
-    const swapMethod = underlyingSwap
-      ? CurveSwapFunctions.exchange_underlying
-      : CurveSwapFunctions.exchange;
-
-    const swapData = this.ifaces.exchangeRouter.encodeFunctionData(
-      swapMethod,
-      defaultArgs,
+    const swapData = this.ifaces.curveV1Router.encodeFunctionData(
+      `exchange(address[11], uint256[5][5], uint256, uint256, address[5], address)`,
+      [path, swapParams, amount, min_dy, pools, this.augustusAddress],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -1187,12 +1216,68 @@ export class CurveV1Factory
       destToken,
       destAmount,
       swapData,
-      exchange,
+      this.config.router,
     );
   }
 
   static getDirectFunctionNameV6(): string[] {
     return [DIRECT_METHOD_NAME_V6];
+  }
+
+  // Multihop case encoding for CurveRouter
+  // Curve Ng Router exchange function params description https://github.com/curvefi/curve-router-ng/blob/master/contracts/Router.vy#L180
+  getMultihopParam(
+    srcAmount: string,
+    destAmount: string,
+    data: CurveV1FactoryData,
+    side: SwapSide,
+  ): CurveV1RouterParam {
+    const pathLength = 11;
+    const swapParamsLength = 5;
+    const poolsLength = 5;
+
+    const path = data.path
+      .map((item, index) =>
+        index === 0
+          ? [item.tokenIn, item.exchange, item.tokenOut] // we need tokenIn only for the first item because there is no prev pool
+          : [item.exchange, item.tokenOut],
+      )
+      .flat();
+
+    while (path.length < pathLength) {
+      path.push(NULL_ADDRESS);
+    }
+
+    const swapParams: CurveV1RouterSwapParam[] = data.path.map(item => [
+      item.i,
+      item.j,
+      item.underlyingSwap
+        ? CurveRouterSwapType.exchange_underlying
+        : CurveRouterSwapType.exchange,
+      CurveRouterPoolType.stable,
+      item.n_coins,
+    ]);
+
+    while (swapParams.length < swapParamsLength) {
+      swapParams.push([0, 0, 0, 0, 0]);
+    }
+
+    const pools = [];
+
+    let i = 0;
+    while (pools.length < poolsLength) {
+      pools.push(data.path[i] ? data.path[i].exchange : NULL_ADDRESS);
+      i++;
+    }
+
+    return {
+      path,
+      swapParams,
+      srcAmount,
+      min_dy:
+        side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE.toString() : destAmount,
+      pools,
+    };
   }
 
   getDexParam(
@@ -1231,54 +1316,18 @@ export class CurveV1Factory
       };
     }
 
-    // Multihop case encoding
-    // Curve Ng Router exchange function params description https://github.com/curvefi/curve-router-ng/blob/master/contracts/Router.vy#L180
-    const pathLength = 11;
-    const swapParamsLength = 5;
-    const poolsLength = 5;
-
-    const path = data.path
-      .map((item, index) =>
-        index === 0
-          ? [item.tokenIn, item.exchange, item.tokenOut] // we need tokenIn only for the first item because there is no prev pool
-          : [item.exchange, item.tokenOut],
-      )
-      .flat();
-
-    while (path.length < pathLength) {
-      path.push(NULL_ADDRESS);
-    }
-
-    const swapParams = data.path.map(item => [
-      item.i,
-      item.j,
-      item.underlyingSwap
-        ? CurveRouterSwapType.exchange_underlying
-        : CurveRouterSwapType.exchange,
-      CurveRouterPoolType.stable,
-      item.n_coins,
-    ]);
-
-    while (swapParams.length < swapParamsLength) {
-      swapParams.push([0, 0, 0, 0, 0]);
-    }
-
-    const pools = [];
-
-    while (pools.length < poolsLength) {
-      pools.push(NULL_ADDRESS);
-    }
+    // Multihop encoding
+    const {
+      path,
+      swapParams,
+      srcAmount: amount,
+      min_dy,
+      pools,
+    } = this.getMultihopParam(srcAmount, destAmount, data, side);
 
     const exchangeData = this.ifaces.curveV1Router.encodeFunctionData(
-      `exchange(address[${pathLength}], uint256[5][${swapParamsLength}], uint256, uint256, address[${poolsLength}], address)`,
-      [
-        path,
-        swapParams,
-        srcAmount,
-        side === SwapSide.SELL ? MIN_AMOUNT_TO_RECEIVE : destAmount,
-        pools,
-        recipient,
-      ],
+      `exchange(address[11], uint256[5][5], uint256, uint256, address[5], address)`,
+      [path, swapParams, amount, min_dy, pools, recipient],
     );
 
     return {
@@ -1289,7 +1338,7 @@ export class CurveV1Factory
       targetExchange: this.config.router,
       returnAmountPos: extractReturnAmountPosition(
         this.ifaces.curveV1Router,
-        `exchange(address[${pathLength}], uint256[5][${swapParamsLength}], uint256, uint256, address[${poolsLength}], address)`,
+        `exchange(address[11], uint256[5][5], uint256, uint256, address[5], address)`,
       ),
     };
   }
