@@ -16,8 +16,13 @@ export function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
-    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountInOnCurveV1,
+      ],
+    ],
   ]),
 ) {
   const provider = new StaticJsonRpcProvider(
@@ -152,24 +157,6 @@ describe('CurveV1Factory E2E', () => {
   describe('Mainnet Native', () => {
     const network = Network.MAINNET;
 
-    const sidesToContractMethods = new Map([
-      // [
-      //   SwapSide.SELL,
-      //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
-      // ],
-      // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
-      [
-        SwapSide.SELL,
-        [
-          ContractMethod.simpleSwap,
-          ContractMethod.directCurveV1Swap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
-        ],
-      ],
-      // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-    ]);
-
     const tokenASymbol: string = 'ETH';
     const tokenBSymbol: string = 'alETH';
 
@@ -183,29 +170,11 @@ describe('CurveV1Factory E2E', () => {
       tokenBSymbol,
       tokenAAmount,
       tokenBAmount,
-      sidesToContractMethods,
     );
   });
 
   describe('Mainnet ng pool', () => {
     const network = Network.MAINNET;
-
-    const sidesToContractMethods = new Map([
-      // [
-      //   SwapSide.SELL,
-      //   [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
-      // ],
-      // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
-      [
-        SwapSide.SELL,
-        [
-          ContractMethod.simpleSwap,
-          ContractMethod.directCurveV1Swap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
-        ],
-      ],
-    ]);
 
     describe('ETH -> STETH', () => {
       const tokenASymbol: string = 'ETH';
@@ -221,7 +190,6 @@ describe('CurveV1Factory E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-        sidesToContractMethods,
       );
     });
 
@@ -239,7 +207,6 @@ describe('CurveV1Factory E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-        sidesToContractMethods,
       );
     });
   });
@@ -414,22 +381,6 @@ describe('CurveV1Factory E2E', () => {
   describe('Base', () => {
     const network = Network.BASE;
 
-    const sideToContractMethods = new Map([
-      [
-        SwapSide.SELL,
-        [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
-      ],
-      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
-      // [
-      //   SwapSide.SELL,
-      //   [
-      //     ContractMethod.simpleSwap,
-      //     ContractMethod.multiSwap,
-      //     ContractMethod.megaSwap,
-      //   ],
-      // ],
-    ]);
-
     describe('USDC -> crvUSD', () => {
       const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'crvUSD';
@@ -444,7 +395,6 @@ describe('CurveV1Factory E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-        sideToContractMethods,
       );
     });
 
@@ -462,7 +412,6 @@ describe('CurveV1Factory E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-        sideToContractMethods,
       );
     });
   });

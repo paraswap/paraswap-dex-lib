@@ -1063,12 +1063,9 @@ export class CurveV1Factory
       throw new Error('Multihop is not supported by v5');
     }
 
-    if (
-      this.dexKey === 'CurveV1StableNg' &&
-      (isETHAddress(srcToken) || isETHAddress(destToken))
-    ) {
+    if (this.dexKey === 'CurveV1StableNg') {
       throw new Error(
-        'Direct method is not supported by CurveV1StableNg for routes where ETH is src or dest',
+        'Direct method is not supported for CurveV1StableNg on v5',
       );
     }
 
@@ -1144,11 +1141,21 @@ export class CurveV1Factory
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
+    let wrapFlag = 0;
+
+    if (this.needWrapNative && isETHAddress(srcToken)) {
+      wrapFlag = 1; // wrap src eth
+    } else if (!this.needWrapNative && isETHAddress(srcToken)) {
+      wrapFlag = 3; // send eth
+    } else if (this.needWrapNative && isETHAddress(destToken)) {
+      wrapFlag = 2; // unwrap dest eth
+    }
+
     const swapParams: DirectCurveV1FactoryParamV6 = [
       packCurveData(
         data.path[0].exchange,
         !data.isApproved, // approve flag, if not approved then set to true
-        isETHAddress(destToken) ? 0 : isETHAddress(srcToken) ? 3 : 0,
+        wrapFlag,
         data.path[0].underlyingSwap
           ? CurveV1SwapType.EXCHANGE_UNDERLYING
           : CurveV1SwapType.EXCHANGE,
