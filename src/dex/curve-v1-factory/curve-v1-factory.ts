@@ -1063,12 +1063,6 @@ export class CurveV1Factory
       throw new Error('Multihop is not supported by v5');
     }
 
-    if (this.dexKey === 'CurveV1StableNg') {
-      throw new Error(
-        'Direct method is not supported for CurveV1StableNg on v5',
-      );
-    }
-
     assert(side === SwapSide.SELL, 'Buy not supported');
 
     let isApproved: boolean = !!data.isApproved;
@@ -1093,7 +1087,7 @@ export class CurveV1Factory
         : CurveV1SwapType.EXCHANGE,
       beneficiary,
       // For CurveV1 we work as it is, without wrapping and unwrapping
-      false,
+      this.needWrapNative,
       permit,
       uuidToBytes16(uuid),
     ];
