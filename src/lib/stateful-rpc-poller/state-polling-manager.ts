@@ -89,14 +89,21 @@ export class StatePollingManager {
         `onBlockNumber: pool=${p} from ${pool.dexKey} is not participate in updates`,
       );
 
-      if (
-        !pool.isPoolInTheMiddleOfUpdate &&
-        pool.isTimeToTriggerUpdate(blockNumber)
-      ) {
+      const isTimeToTriggerUpdate = pool.isTimeToTriggerUpdate(blockNumber);
+
+      if (!pool.isPoolInTheMiddleOfUpdate && isTimeToTriggerUpdate) {
         pool.isPoolInTheMiddleOfUpdate = true;
         poolsToBeUpdated.push(pool);
+      } else {
+        this.logger.info(
+          `onBlockNumber: pool=${pool.identifierKey} is not ready to be updated, isPoolInTheMiddleOfUpdate=${pool.isPoolInTheMiddleOfUpdate} isTimeToTriggerUpdate=${isTimeToTriggerUpdate}`,
+        );
       }
     });
+
+    this.logger.info(
+      `onBlockNumber: bn=${blockNumber}, pools=${this._poolsToBeUpdated.size}, poolsToUpdate=${poolsToBeUpdated.length}`,
+    );
 
     if (poolsToBeUpdated.length === 0) {
       this.logger.debug(
