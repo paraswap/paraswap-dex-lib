@@ -178,7 +178,7 @@ const fetchAllPools = `query ($count: Int) {
     orderBy: totalLiquidity
     orderDirection: desc
     where: {
-      and: [
+      or: [
         { 
           or: [
             { isInRecoveryMode: false }
@@ -1661,8 +1661,7 @@ export class BalancerV2
             },
             {
               id_in: $poolIds,
-              swapEnabled: true,
-              totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}
+              swapEnabled: true
             }
           ]
       }) {
