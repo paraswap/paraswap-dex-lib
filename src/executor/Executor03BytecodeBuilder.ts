@@ -147,6 +147,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
       !isETHAddress(swap.srcToken) &&
+      !curExchangeParam.skipApproval &&
       curExchangeParam.approveData
     ) {
       // TODO: as we give approve for MAX_UINT and approve for current targetExchange was given
@@ -163,6 +164,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (
       maybeWethCallData?.deposit &&
       isETHAddress(swap.srcToken) &&
+      !curExchangeParam.skipApproval &&
       curExchangeParam.needWrapNative
       // do deposit only for the first path with wrapping
       // exchangeParams.findIndex(p => p.needWrapNative) === index

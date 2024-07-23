@@ -358,6 +358,8 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
     swap: OptimalSwap,
     exchangeParam: DexExchangeParam,
   ): { target: string; token: Address } | null {
+    if (exchangeParam.skipApproval) return null;
+
     const target = exchangeParam.spender || exchangeParam.targetExchange;
 
     if (

@@ -1,5 +1,4 @@
-import { AsyncOrSync } from 'ts-essentials';
-import _, { chain } from 'lodash';
+import _ from 'lodash';
 import {
   Token,
   Address,
@@ -78,8 +77,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
             symbol: pool.tokenB.symbol,
             decimals: pool.tokenB.decimals,
           },
-          BigInt(pool.fee * 1e6) * BigInt(1e12),
-          BigInt(pool.feeB * 1e6) * BigInt(1e12),
+          BigInt(pool.fee * 1e18),
+          BigInt(pool.feeB * 1e18),
           BigInt(pool.tickSpacing),
           BigInt(0),
           BigInt(pool.lookback),
@@ -168,7 +167,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
 
       const tasks = allowedPools.map(async (pool: MaverickV2EventPool) => {
         try {
-          const state = pool.getState(blockNumber);
+          const state = await pool.getOrGenerateState(blockNumber);
           if (!state) {
             this.logger.debug(`Received null state for pool ${pool.address}`);
             return null;

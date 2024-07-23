@@ -623,9 +623,7 @@ export class GenericSwapTransactionBuilder {
     // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
     // Also that it is a direct swap.
     const _srcAmount =
-      swapIndex > 0 ||
-      side === SwapSide.SELL ||
-      this.dexAdapterService.getDexKeySpecial(se.exchange) === 'zerox'
+      swapIndex > 0 || side === SwapSide.SELL
         ? se.srcAmount
         : (
             (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /
