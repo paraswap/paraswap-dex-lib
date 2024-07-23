@@ -1259,7 +1259,7 @@ export class CurveV1Factory
     ]);
 
     while (swapParams.length < swapParamsLength) {
-      swapParams.push([0, 0, 0, CurveRouterPoolType.non_stable, 0]);
+      swapParams.push([0, 0, 0, 0, 0]);
     }
 
     const pools = [];
