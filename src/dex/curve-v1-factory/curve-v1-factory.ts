@@ -1140,7 +1140,7 @@ export class CurveV1Factory
     if (this.needWrapNative && isETHAddress(srcToken)) {
       wrapFlag = 1; // wrap src eth
     } else if (!this.needWrapNative && isETHAddress(srcToken)) {
-      wrapFlag = 3; // send eth
+      wrapFlag = 3; // add msg.value to router call
     } else if (this.needWrapNative && isETHAddress(destToken)) {
       wrapFlag = 2; // unwrap dest eth
     }
