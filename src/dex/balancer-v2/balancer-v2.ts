@@ -178,7 +178,7 @@ const fetchAllPools = `query ($count: Int) {
     orderBy: totalLiquidity
     orderDirection: desc
     where: {
-      or: [
+      and: [
         { 
           or: [
             { isInRecoveryMode: false }
@@ -186,7 +186,6 @@ const fetchAllPools = `query ($count: Int) {
           ]
         },
         {
-          totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
           totalShares_not_in: ["0", "0.000000000001"],
           id_not_in: [
             ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
@@ -217,7 +216,6 @@ const fetchAllPools = `query ($count: Int) {
     }
     mainIndex
     wrappedIndex
-
     root3Alpha
   }
 }`;
@@ -414,6 +412,9 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const variables = {
       count: MAX_POOL_CNT,
     };
+
+    console.log('QUERY: ', fetchAllPools);
+
     const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchAllPools, variables },
