@@ -413,8 +413,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       count: MAX_POOL_CNT,
     };
 
-    console.log('QUERY: ', fetchAllPools);
-
     const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchAllPools, variables },
