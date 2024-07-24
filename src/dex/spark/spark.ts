@@ -207,6 +207,10 @@ export class Spark
       destAmount,
       swapData,
       exchange,
+      undefined,
+      undefined,
+      undefined,
+      isSell && this.isDai(destToken),
     );
   }
 
@@ -251,6 +255,7 @@ export class Spark
             this.isDai(srcToken) ? 'shares' : 'assets',
           )
         : undefined,
+      skipApproval: isSell && this.isDai(destToken),
     };
   }
 
