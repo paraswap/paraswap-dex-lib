@@ -321,6 +321,20 @@ export class RateFetcher {
       });
   }
 
+  public async getAvailablePairs(): Promise<string[]> {
+    const pairs = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.dexHelper.config.data.network,
+      `pairs`,
+    );
+
+    if (!pairs) {
+      return [];
+    }
+
+    return JSON.parse(pairs) as string[];
+  }
+
   public async getOrderPrice(
     srcToken: Token,
     destToken: Token,
