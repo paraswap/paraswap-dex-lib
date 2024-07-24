@@ -20,6 +20,7 @@ import { ConcentratorArusdConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import ArUSD_ABI from '../../abi/concentrator/arUSD.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { uint256ToBigInt } from '../../lib/decoders';
 
 export class ConcentratorArusd
   extends SimpleExchange
@@ -50,7 +51,6 @@ export class ConcentratorArusd
     this.config = {
       rUSDAddress: config.rUSDAddress.toLowerCase(),
       arUSDAddress: config.arUSDAddress.toLowerCase(),
-      weETHAddress: config.weETHAddress.toLowerCase(),
     };
     this.logger = dexHelper.getLogger(dexKey);
   }
@@ -63,18 +63,11 @@ export class ConcentratorArusd
     return token.toLowerCase() === this.config.rUSDAddress;
   }
 
-  is_weETH(token: string) {
-    return token.toLowerCase() === this.config.weETHAddress;
-  }
-
   is_arUSD_swap_token(srcToken: string, destToken: string) {
     if (this.is_rUSD(srcToken) && this.is_arUSD(destToken)) {
       return true;
     }
     if (this.is_arUSD(srcToken) && this.is_rUSD(destToken)) {
-      return true;
-    }
-    if (this.is_arUSD(srcToken) && this.is_weETH(destToken)) {
       return true;
     }
     return false;
@@ -95,6 +88,75 @@ export class ConcentratorArusd
     }
     return [this.dexKey];
   }
+  async getAmountOut(
+    _tokenIn: Address,
+    _tokenOut: Address,
+    _amountsIn: bigint[],
+    blockNumber: number,
+  ): Promise<bigint[]> {
+    let data: bigint[] = _amountsIn;
+    try {
+      if (this.is_rUSD(_tokenIn)) {
+        data = await Promise.all(
+          _amountsIn.map(async _amountIn => {
+            try {
+              const readerCallData = [
+                {
+                  target: this.config.arUSDAddress,
+                  callData: ConcentratorArusd.arUSDIface.encodeFunctionData(
+                    'previewDeposit',
+                    [_amountIn],
+                  ),
+                  decodeFunction: uint256ToBigInt,
+                },
+              ];
+              const results =
+                await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+                  true,
+                  readerCallData,
+                  blockNumber,
+                );
+              return BigInt(results[0].returnData);
+            } catch (e) {
+              this.logger.error(e);
+              return BigInt(0n);
+            }
+          }),
+        );
+      }
+      if (this.is_arUSD(_tokenIn) && this.is_rUSD(_tokenOut)) {
+        data = await Promise.all(
+          _amountsIn.map(async _amountIn => {
+            try {
+              const readerCallData = [
+                {
+                  target: this.config.arUSDAddress,
+                  callData: ConcentratorArusd.arUSDIface.encodeFunctionData(
+                    'previewRedeem',
+                    [_amountIn],
+                  ),
+                  decodeFunction: uint256ToBigInt,
+                },
+              ];
+              const results =
+                await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+                  true,
+                  readerCallData,
+                  blockNumber,
+                );
+              return BigInt(results[0].returnData);
+            } catch (e) {
+              this.logger.error(e);
+              return BigInt(0n);
+            }
+          }),
+        );
+      }
+      return data;
+    } catch (error) {
+      return _amountsIn;
+    }
+  }
 
   async getPricesVolume(
     srcToken: Token,
@@ -111,27 +173,22 @@ export class ConcentratorArusd
     if (!isArUSDSwapToken) {
       return null;
     }
+    const prices = await this.getAmountOut(
+      srcToken.address,
+      destToken.address,
+      amounts,
+      blockNumber,
+    );
 
-    // const readerCallData = [
-    //   {
-    //     target: this.config.arUSDAddress,
-    //     callData: ConcentratorArusd.arUSDIface.encodeFunctionData('nav'),
-    //     decodeFunction: uint256ToBigInt,
-    //   },
-    // ];
-    // const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-    //   true,
-    //   readerCallData,
-    //   blockNumber,
-    // );
+    // console.log('amounts---', amounts, prices);
     return [
       {
         unit: 1000000000000000000n,
-        prices: amounts,
+        prices,
         data: {},
         poolAddresses: [this.config.arUSDAddress],
         exchange: this.dexKey,
-        gasCost: 70000,
+        gasCost: 1000000,
       },
     ];
   }
@@ -175,7 +232,6 @@ export class ConcentratorArusd
     const is_arUSD_src = this.is_arUSD(srcToken);
     const is_rUSD_dest = this.is_rUSD(destToken);
     const is_arUSD_dest = this.is_arUSD(destToken);
-    const is_weETH_dest = this.is_weETH(destToken);
 
     if (is_rUSD_src && is_arUSD_dest) {
       const exchangeData = ConcentratorArusd.arUSDIface.encodeFunctionData(
@@ -207,23 +263,6 @@ export class ConcentratorArusd
         returnAmountPos: extractReturnAmountPosition(
           ConcentratorArusd.arUSDIface,
           'redeem',
-          'assets',
-        ),
-      };
-    }
-    if (is_arUSD_src && is_weETH_dest) {
-      const exchangeData = ConcentratorArusd.arUSDIface.encodeFunctionData(
-        'redeemToBaseToken',
-        [srcAmount, recipient, executorAddress, 0],
-      );
-      return {
-        needWrapNative: false,
-        dexFuncHasRecipient: true,
-        exchangeData,
-        targetExchange: this.config.arUSDAddress,
-        returnAmountPos: extractReturnAmountPosition(
-          ConcentratorArusd.arUSDIface,
-          'redeemToBaseToken',
           'assets',
         ),
       };
