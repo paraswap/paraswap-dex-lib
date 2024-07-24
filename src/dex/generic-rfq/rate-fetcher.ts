@@ -228,6 +228,8 @@ export class RateFetcher {
 
     if (isEmpty(pairs)) return;
 
+    const currentPricePairs = new Set();
+
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
@@ -257,6 +259,7 @@ export class RateFetcher {
           this.config.rateConfig.dataTTLS,
           JSON.stringify(prices.bids),
         );
+        currentPricePairs.add(`${baseToken.address}_${quoteToken.address}`);
       }
 
       if (prices.asks.length) {
@@ -267,8 +270,19 @@ export class RateFetcher {
           this.config.rateConfig.dataTTLS,
           JSON.stringify(prices.asks),
         );
+        currentPricePairs.add(`${quoteToken.address}_${baseToken.address}`);
       }
     });
+
+    if (currentPricePairs.size > 0) {
+      this.dexHelper.cache.setex(
+        this.dexKey,
+        this.dexHelper.config.data.network,
+        `pairs`,
+        this.config.rateConfig.dataTTLS,
+        JSON.stringify(Array.from(currentPricePairs)),
+      );
+    }
   }
 
   checkHealth(): boolean {
