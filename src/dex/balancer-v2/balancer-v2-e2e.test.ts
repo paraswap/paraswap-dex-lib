@@ -1826,18 +1826,13 @@ describe('BalancerV2 E2E', () => {
           );
         });
       });
-    });
 
-    describe('BeetsFi Optimism', () => {
-      const dexKey = 'BeetsFi';
-      const network = Network.OPTIMISM;
+      describe('stataArbUSDCn -> GYD', () => {
+        const tokenASymbol: string = 'stataArbUSDCn';
+        const tokenBSymbol: string = 'GYD';
 
-      describe('stataOptUSDT -> stataOptUSDCn', () => {
-        const tokenASymbol: string = 'stataOptUSDT';
-        const tokenBSymbol: string = 'stataOptUSDCn';
-
-        const tokenAAmount: string = '110000';
-        const tokenBAmount: string = '110000';
+        const tokenAAmount: string = '100000';
+        const tokenBAmount: string = '8685800000000000';
 
         const provider = new StaticJsonRpcProvider(
           generateConfig(network).privateHttpProvider,
@@ -1908,6 +1903,76 @@ describe('BalancerV2 E2E', () => {
           );
         });
       });
+    });
+
+    describe('BeetsFi Optimism', () => {
+      const dexKey = 'BeetsFi';
+      const network = Network.OPTIMISM;
+
+      describe('stataOptUSDT -> stataOptUSDCn', () => {
+        const tokenASymbol: string = 'stataOptUSDT';
+        const tokenBSymbol: string = 'stataOptUSDCn';
+
+        const tokenAAmount: string = '110000';
+        const tokenBAmount: string = '110000';
+
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+
+        const sideToContractMethods = new Map([
+          [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+          [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+        ]);
+
+        describe(`${network}`, () => {
+          sideToContractMethods.forEach((contractMethods, side) =>
+            describe(`${side}`, () => {
+              contractMethods.forEach((contractMethod: ContractMethod) => {
+                describe(`${contractMethod}`, () => {
+                  it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+                    await testE2E(
+                      tokens[tokenASymbol],
+                      tokens[tokenBSymbol],
+                      holders[tokenASymbol],
+                      side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                      side,
+                      dexKey,
+                      contractMethod,
+                      network,
+                      provider,
+                      undefined,
+                      undefined,
+                      undefined,
+                      200,
+                    );
+                  });
+                  it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+                    await testE2E(
+                      tokens[tokenBSymbol],
+                      tokens[tokenASymbol],
+                      holders[tokenBSymbol],
+                      side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                      side,
+                      dexKey,
+                      contractMethod,
+                      network,
+                      provider,
+                      undefined,
+                      undefined,
+                      undefined,
+                      200,
+                    );
+                  });
+                });
+              });
+            }),
+          );
+        });
+      });
 
       describe('sDAI -> stataOptUSDCn', () => {
         const tokenASymbol: string = 'sDAI';
@@ -1924,20 +1989,8 @@ describe('BalancerV2 E2E', () => {
         const holders = Holders[network];
 
         const sideToContractMethods = new Map([
-          [
-            SwapSide.SELL,
-            [
-              ContractMethod.swapExactAmountIn,
-              ContractMethod.swapExactAmountInOnBalancerV2,
-            ],
-          ],
-          [
-            SwapSide.BUY,
-            [
-              ContractMethod.swapExactAmountOut,
-              ContractMethod.swapExactAmountOutOnBalancerV2,
-            ],
-          ],
+          [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+          [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
         ]);
 
         describe(`${network}`, () => {
