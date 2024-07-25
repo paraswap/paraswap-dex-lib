@@ -60,7 +60,7 @@ export class TraderJoeV22
               data.binStep, // _pairBinSteps: uint256[]
             ],
             [
-              2, // _versions: uint8[]
+              3, // _versions: uint8[]
             ],
             [
               data.tokenIn,
@@ -97,14 +97,14 @@ export class TraderJoeV22
         ? [
             srcAmount,
             destAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [[data.binStep], ['3'], [srcToken, destToken]],
             this.augustusAddress,
             getLocalDeadlineAsFriendlyPlaceholder(),
           ]
         : [
             destAmount,
             srcAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [[data.binStep], ['3'], [srcToken, destToken]],
             this.augustusAddress,
             getLocalDeadlineAsFriendlyPlaceholder(),
           ];
@@ -145,14 +145,14 @@ export class TraderJoeV22
         ? [
             srcAmount,
             destAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [[data.binStep], ['3'], [srcToken, destToken]],
             recipient,
             placeholder,
           ]
         : [
             destAmount,
             srcAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [[data.binStep], ['3'], [srcToken, destToken]],
             recipient,
             placeholder,
           ];
