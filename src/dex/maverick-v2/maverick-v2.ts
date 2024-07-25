@@ -330,7 +330,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const _tokenAddress = this.dexHelper.config.wrapETH(tokenAddress);
+    const _tokenAddress = this.dexHelper.config
+      .wrapETH(tokenAddress)
+      .toLowerCase();
 
     const pools = await this._queryPoolsAPI(SUBGRAPH_TIMEOUT);
 
