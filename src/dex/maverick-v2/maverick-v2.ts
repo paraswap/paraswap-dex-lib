@@ -185,6 +185,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
             return MAV_V2_BASE_GAS_COST + MAV_V2_TICK_GAS_COST * Number(t);
           });
 
+          // If pool isn't fully initialized, returns null
+          if (unit === 1n) return null;
+
           return {
             prices: dataList.map(d => d[0]),
             unit: BigInt(unit),
