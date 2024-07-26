@@ -73,6 +73,7 @@ import {
 import {
   DirectMethods,
   DirectMethodsV6,
+  MIN_SHARES_TO_FETCH_FOR_GYRO_POOLS,
   MIN_USD_LIQUIDITY_TO_FETCH,
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
@@ -207,7 +208,7 @@ const fetchAllPools = `query ($count: Int) {
                 ]
             },
             {
-                totalShares_not_in: ["0", "0.000000000001"],
+                totalShares_gt: ${MIN_SHARES_TO_FETCH_FOR_GYRO_POOLS.toString()}
                 id_not_in: [
                   ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
                 ],
@@ -435,6 +436,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const variables = {
       count: MAX_POOL_CNT,
     };
+
+    console.log('fetchAllPools: ', fetchAllPools);
 
     const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
