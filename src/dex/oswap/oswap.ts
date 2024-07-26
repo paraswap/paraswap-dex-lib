@@ -6,7 +6,6 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   NumberAsString,
@@ -138,26 +137,38 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
     from: Token,
     amount: bigint,
     side: SwapSide,
+    checkLiquidity = true,
   ): bigint {
     const rate =
       from.address.toLowerCase() === pool.token0
         ? state.traderate0
         : state.traderate1;
-    return side === SwapSide.SELL
-      ? (amount * rate) / getBigIntPow(36)
-      : (amount * getBigIntPow(36)) / rate;
+
+    const price =
+      side === SwapSide.SELL
+        ? (amount * rate) / getBigIntPow(36)
+        : (amount * getBigIntPow(36)) / rate;
+
+    if (
+      checkLiquidity &&
+      !this.hasEnoughLiquidity(pool, state, from, amount, price, side)
+    ) {
+      throw new Error('Not enough liquidity');
+    }
+
+    return price;
   }
 
   // Returns true if the pool has enough liquidity for the swap. False otherwise.
-  checkLiquidity(
+  hasEnoughLiquidity(
     pool: OSwapPool,
     state: OSwapPoolState,
     from: Token,
     amount: bigint,
+    needed: bigint,
     side: SwapSide,
   ): boolean {
     if (side === SwapSide.SELL) {
-      const needed = this.calcPrice(pool, state, from, amount, side);
       return from.address.toLowerCase() === pool.token0
         ? needed <= state.balance1
         : needed <= state.balance0;
@@ -180,48 +191,62 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<OSwapData>> {
-    // Get the pool to use.
-    const pool = this.getPoolByTokenPair(srcToken, destToken);
-    if (!pool) return null;
+    try {
+      // Get the pool to use.
+      const pool = this.getPoolByTokenPair(srcToken, destToken);
+      if (!pool) return null;
 
-    // Make sure the pool meets the optional limitPools filter.
-    if (limitPools && !limitPools.includes(pool.id)) return null;
+      // Make sure the pool meets the optional limitPools filter.
+      if (limitPools && !limitPools.includes(pool.id)) return null;
 
-    const eventPool = this.eventPools[pool.id];
-    if (!eventPool)
-      throw new Error(`OSwap pool ${pool.id}: No EventPool found.`);
+      const eventPool = this.eventPools[pool.id];
 
-    const state = await eventPool.getStateOrGenerate(blockNumber);
+      if (!eventPool) {
+        this.logger.error(`OSwap pool ${pool.id}: No EventPool found.`);
 
-    // Ensure there is enough liquidity in the pool to process all the requested swaps.
-    const totalAmount = amounts.reduce(
-      (a: bigint, b: bigint) => a + b,
-      BigInt(0),
-    );
-    if (!this.checkLiquidity(pool, state, srcToken, totalAmount, side)) {
+        return null;
+      }
+
+      const state = await eventPool.getStateOrGenerate(blockNumber);
+
+      // Calculate the prices
+      const unitAmount = getBigIntPow(18);
+      const unitPrice = this.calcPrice(
+        pool,
+        state,
+        srcToken,
+        unitAmount,
+        side,
+        false,
+      );
+      const prices = amounts.map(amount =>
+        this.calcPrice(pool, state, srcToken, amount, side),
+      );
+
+      return [
+        {
+          prices,
+          unit: unitPrice,
+          data: {
+            pool: pool.address,
+            path: [srcToken.address, destToken.address],
+          },
+          exchange: this.dexKey,
+          poolIdentifier: pool.id,
+          gasCost: OSWAP_GAS_COST,
+          poolAddresses: [pool.address],
+        },
+      ];
+    } catch (e) {
+      this.logger.error(
+        `Error_getPricesVolume ${srcToken.address || srcToken.symbol}, ${
+          destToken.address || destToken.symbol
+        }, ${side}:`,
+        e,
+      );
+
       return null;
     }
-    // Calculate the prices
-    const unitAmount = getBigIntPow(18);
-    const unitPrice = this.calcPrice(pool, state, srcToken, unitAmount, side);
-    const prices = amounts.map(amount =>
-      this.calcPrice(pool, state, srcToken, amount, side),
-    );
-
-    return [
-      {
-        prices,
-        unit: unitPrice,
-        data: {
-          pool: pool.address,
-          path: [srcToken.address, destToken.address],
-        },
-        exchange: this.dexKey,
-        poolIdentifier: pool.id,
-        gasCost: OSWAP_GAS_COST,
-        poolAddresses: [pool.address],
-      },
-    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
