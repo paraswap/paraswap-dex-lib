@@ -87,7 +87,7 @@ export class AaveV3Stata
     );
 
     if (cachedTokenList !== null) {
-      if (Object.keys(Tokens).length !== 0) return;
+      if (Object.keys(Tokens[this.network] ?? {}).length !== 0) return;
 
       const tokenListParsed = JSON.parse(cachedTokenList);
       setTokensOnNetwork(this.network, tokenListParsed);
