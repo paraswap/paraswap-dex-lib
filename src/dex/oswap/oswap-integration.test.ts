@@ -199,32 +199,14 @@ describe('OSwap', function () {
       const eventPool = oswap.eventPools[pool.id];
       const state = await eventPool.getStateOrGenerate(blockNumber, true);
 
-      // Sum up all the amounts from the test scenarios.
-      const sellTotalAmount = amountsForSell.reduce(
-        (a: bigint, b: bigint) => a + b,
-        BigInt(0),
+      const minBalance =
+        state.balance0 < state.balance1 ? state.balance0 : state.balance1;
+      const maxAmount = [...amountsForSell, ...amountsForBuy].reduce(
+        (max, amount) => (amount > max ? amount : max),
       );
-      const buyTotalAmount = amountsForBuy.reduce(
-        (a: bigint, b: bigint) => a + b,
-        BigInt(0),
-      );
+      const hasEnoughLiquidity = minBalance > maxAmount;
 
-      if (
-        !oswap.checkLiquidity(
-          pool,
-          state,
-          srcToken,
-          sellTotalAmount,
-          SwapSide.SELL,
-        ) ||
-        !oswap.checkLiquidity(
-          pool,
-          state,
-          destToken,
-          buyTotalAmount,
-          SwapSide.BUY,
-        )
-      ) {
+      if (!hasEnoughLiquidity) {
         return DEFAULT_BLOCK_NUMBER;
       }
       return blockNumber;
