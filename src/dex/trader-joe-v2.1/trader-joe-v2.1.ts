@@ -20,23 +20,23 @@ import {
   TraderJoeV2RouterFunctions,
   TraderJoeV2RouterParam,
 } from './types';
-import { TRADERJOE_V2_1_ROUTER_ADDRESS } from './config';
+import { TRADERJOE_V2_0_ROUTER_ADDRESS } from './config';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
-export class TraderJoeV21
+export class TraderJoeV20
   extends SimpleExchange
   implements IDexTxBuilder<TraderJoeV2Data, TraderJoeV2RouterParam>
 {
-  static dexKeys = ['traderjoev2.1'];
+  static dexKeys = ['traderjoev2.0'];
   protected routerAddress: string;
   exchangeRouterInterface: Interface;
   needWrapNative = true;
 
   constructor(dexHelper: IDexHelper) {
-    super(dexHelper, 'traderjoev2.1');
+    super(dexHelper, 'traderjoev2.0');
 
     this.routerAddress =
-      TRADERJOE_V2_1_ROUTER_ADDRESS[dexHelper.config.data.network];
+      TRADERJOE_V2_0_ROUTER_ADDRESS[dexHelper.config.data.network];
 
     this.exchangeRouterInterface = new Interface(
       TraderJoeV21RouterABI as JsonFragment[],
