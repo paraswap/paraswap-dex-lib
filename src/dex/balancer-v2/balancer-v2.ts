@@ -73,7 +73,6 @@ import {
 import {
   DirectMethods,
   DirectMethodsV6,
-  MIN_SHARES_TO_FETCH_FOR_GYRO_POOLS,
   MIN_USD_LIQUIDITY_TO_FETCH,
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
@@ -187,44 +186,22 @@ const fetchAllPools = `query ($count: Int) {
           ]
         },
         {
-          or: [
-            {
-                totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
-                totalShares_not_in: ["0", "0.000000000001"],
-                id_not_in: [
-                  ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
-                ],
-                address_not_in: [
-                  "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
-                  "0x2ff1a9dbdacd55297452cfd8a4d94724bc22a5f7",
-                  "0xbc0f2372008005471874e426e86ccfae7b4de79d",
-                  "0xdba274b4d04097b90a72b62467d828cefd708037",
-                  "0xf22ff21e17157340575158ad7394e068048dd98b",
-                  "0xf71d0774b214c4cf51e33eb3d30ef98132e4dbaa",
-                ],
-                swapEnabled: true,
-                poolType_in: [
-                  ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
-                ]
-            },
-            {
-                totalShares_gt: ${MIN_SHARES_TO_FETCH_FOR_GYRO_POOLS.toString()}
-                id_not_in: [
-                  ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
-                ],
-                address_not_in: [
-                  "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
-                  "0x2ff1a9dbdacd55297452cfd8a4d94724bc22a5f7",
-                  "0xbc0f2372008005471874e426e86ccfae7b4de79d",
-                  "0xdba274b4d04097b90a72b62467d828cefd708037",
-                  "0xf22ff21e17157340575158ad7394e068048dd98b",
-                  "0xf71d0774b214c4cf51e33eb3d30ef98132e4dbaa",
-                ],
-                swapEnabled: true,
-                poolType_in: [
-                  "${BalancerPoolTypes.GyroE}", "${BalancerPoolTypes.Gyro3}"
-                ]
-            }
+          totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
+          totalShares_not_in: ["0", "0.000000000001"],
+          id_not_in: [
+            ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
+          ],
+          address_not_in: [
+            "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
+            "0x2ff1a9dbdacd55297452cfd8a4d94724bc22a5f7",
+            "0xbc0f2372008005471874e426e86ccfae7b4de79d",
+            "0xdba274b4d04097b90a72b62467d828cefd708037",
+            "0xf22ff21e17157340575158ad7394e068048dd98b",
+            "0xf71d0774b214c4cf51e33eb3d30ef98132e4dbaa",
+          ],
+          swapEnabled: true,
+          poolType_in: [
+            ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
           ]
         }
       ]
@@ -240,6 +217,7 @@ const fetchAllPools = `query ($count: Int) {
     }
     mainIndex
     wrappedIndex
+
     root3Alpha
   }
 }`;
@@ -436,7 +414,6 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const variables = {
       count: MAX_POOL_CNT,
     };
-
     const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchAllPools, variables },
@@ -1684,7 +1661,8 @@ export class BalancerV2
             },
             {
               id_in: $poolIds,
-              swapEnabled: true
+              swapEnabled: true,
+              totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}
             }
           ]
       }) {
