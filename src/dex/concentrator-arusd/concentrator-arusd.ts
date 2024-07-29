@@ -19,8 +19,12 @@ import { SimpleExchange } from '../simple-exchange';
 import { ConcentratorArusdConfig, Adapters } from './config';
 import { Interface } from '@ethersproject/abi';
 import ArUSD_ABI from '../../abi/concentrator/arUSD.json';
+import ArUSD5115_ABI from '../../abi/concentrator/arUSD5115.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { uint256ToBigInt } from '../../lib/decoders';
+import { BI_POWS } from '../../bigint-constants';
+import { ConcentratorArusdEvent } from './concentrator-arusd-event';
+import { getOnChainState } from './utils';
 
 export class ConcentratorArusd
   extends SimpleExchange
@@ -38,6 +42,8 @@ export class ConcentratorArusd
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(ConcentratorArusdConfig);
 
+  arUSD5115Iface: Interface;
+  concentratorArusdEvent: ConcentratorArusdEvent;
   logger: Logger;
 
   constructor(
@@ -51,8 +57,30 @@ export class ConcentratorArusd
     this.config = {
       rUSDAddress: config.rUSDAddress.toLowerCase(),
       arUSDAddress: config.arUSDAddress.toLowerCase(),
+      arUSD5115Address: config.arUSD5115Address.toLowerCase(),
     };
+    this.arUSD5115Iface = new Interface(ArUSD5115_ABI);
     this.logger = dexHelper.getLogger(dexKey);
+    this.concentratorArusdEvent = new ConcentratorArusdEvent(
+      this.dexKey,
+      dexHelper,
+      this.config.arUSD5115Address,
+      this.arUSD5115Iface,
+      this.logger,
+    );
+  }
+
+  async initializePricing(blockNumber: number) {
+    const poolState = await getOnChainState(
+      this.dexHelper.multiContract,
+      this.config.arUSD5115Address,
+      this.arUSD5115Iface,
+      blockNumber,
+    );
+
+    await this.concentratorArusdEvent.initialize(blockNumber, {
+      state: poolState,
+    });
   }
 
   is_arUSD(token: string) {
@@ -88,75 +116,6 @@ export class ConcentratorArusd
     }
     return [this.dexKey];
   }
-  async getAmountOut(
-    _tokenIn: Address,
-    _tokenOut: Address,
-    _amountsIn: bigint[],
-    blockNumber: number,
-  ): Promise<bigint[]> {
-    let data: bigint[] = _amountsIn;
-    try {
-      if (this.is_rUSD(_tokenIn)) {
-        data = await Promise.all(
-          _amountsIn.map(async _amountIn => {
-            try {
-              const readerCallData = [
-                {
-                  target: this.config.arUSDAddress,
-                  callData: ConcentratorArusd.arUSDIface.encodeFunctionData(
-                    'previewDeposit',
-                    [_amountIn],
-                  ),
-                  decodeFunction: uint256ToBigInt,
-                },
-              ];
-              const results =
-                await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-                  true,
-                  readerCallData,
-                  blockNumber,
-                );
-              return BigInt(results[0].returnData);
-            } catch (e) {
-              this.logger.error(e);
-              return BigInt(0n);
-            }
-          }),
-        );
-      }
-      if (this.is_arUSD(_tokenIn) && this.is_rUSD(_tokenOut)) {
-        data = await Promise.all(
-          _amountsIn.map(async _amountIn => {
-            try {
-              const readerCallData = [
-                {
-                  target: this.config.arUSDAddress,
-                  callData: ConcentratorArusd.arUSDIface.encodeFunctionData(
-                    'previewRedeem',
-                    [_amountIn],
-                  ),
-                  decodeFunction: uint256ToBigInt,
-                },
-              ];
-              const results =
-                await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-                  true,
-                  readerCallData,
-                  blockNumber,
-                );
-              return BigInt(results[0].returnData);
-            } catch (e) {
-              this.logger.error(e);
-              return BigInt(0n);
-            }
-          }),
-        );
-      }
-      return data;
-    } catch (error) {
-      return _amountsIn;
-    }
-  }
 
   async getPricesVolume(
     srcToken: Token,
@@ -173,18 +132,18 @@ export class ConcentratorArusd
     if (!isArUSDSwapToken) {
       return null;
     }
-    const prices = await this.getAmountOut(
-      srcToken.address,
-      destToken.address,
-      amounts,
-      blockNumber,
-    );
-
-    // console.log('amounts---', amounts, prices);
+    const is_deposit = !!this.is_rUSD(srcToken.address);
+    const pool = this.concentratorArusdEvent;
+    const unitIn = BI_POWS[18];
+    const unitOut = pool.getPrice(blockNumber, unitIn, is_deposit);
+    const amountsOut = amounts.map(amountIn => {
+      const _newPrice = pool.getPrice(blockNumber, amountIn, is_deposit);
+      return _newPrice;
+    });
     return [
       {
-        unit: 1000000000000000000n,
-        prices,
+        unit: unitOut,
+        prices: amountsOut,
         data: {},
         poolAddresses: [this.config.arUSDAddress],
         exchange: this.dexKey,
