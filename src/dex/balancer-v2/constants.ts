@@ -1,7 +1,5 @@
 export const MIN_USD_LIQUIDITY_TO_FETCH = 100n;
 
-export const MIN_SHARES_TO_FETCH_FOR_GYRO_POOLS = 1n;
-
 // Let's take this trade as an example:
 // https://dashboard.tenderly.co/paraswap/paraswap/fork/e4c81946-fd6e-4299-b35c-c47b775e3c05/simulation/8839462c-6239-4ae1-9ed0-8013f89b41de/gas-usage
 
