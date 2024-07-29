@@ -15,7 +15,7 @@ import * as net from 'net';
 
 const networks = [Network.BSC];
 
-const dexKey = 'PancakeswapV3';
+const dexKey = 'SquadswapV3';
 
 const quoterIface = new Interface(PancakeswapV3QuoterABI);
 

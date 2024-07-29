@@ -105,7 +105,7 @@ function testForNetwork(
 }
 
 describe('SquadswapV3 E2E', () => {
-  const dexKey = 'PancakeswapV3';
+  const dexKey = 'SquadswapV3';
 
   describe('SquadswapV3 BSC', () => {
     const network = Network.BSC;
@@ -136,7 +136,7 @@ describe('SquadswapV3 E2E', () => {
           buyAmount: '100000000000000000000',
         },
         {
-          name: 'BUSD',
+          name: 'USDT',
           sellAmount: '100000000000000000000',
           buyAmount: '10000000000000',
         },
