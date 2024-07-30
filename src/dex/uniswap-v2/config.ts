@@ -382,6 +382,14 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  NinemmSwapV2: {
+    [Network.BASE]: {
+      factoryAddress: '0x4c1b8d4ae77a37b94e195cab316391d3c687ebd1',
+      initCode:
+        '0x6039d803db8e6f74aa7b5585b3209f67e1ebf47ee6c88fc044271912b14a862e',
+      feeCode: 25,
+    },
+  },
   MorpheusSwap: {
     [Network.FANTOM]: {
       subgraphURL: 'C5XUzYLrDHiiKL7zGjLLyiQueJkQfeUyMZCcgwnVWcNr',
