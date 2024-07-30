@@ -79,7 +79,7 @@ function testForNetwork(
 describe('SolidlyV3 E2E', () => {
   const dexKey = 'SolidlyV3';
 
-  describe('Mainnet_V6', () => {
+  describe('Mainnet', () => {
     const network = Network.MAINNET;
 
     const pairs = [
@@ -149,6 +149,117 @@ describe('SolidlyV3 E2E', () => {
         {
           name: 'SOLID',
           sellAmount: '1000000000000000000',
+          buyAmount: '1000000000',
+        },
+      ],
+    ];
+
+    testForNetwork(network, dexKey, pairs);
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const pairs = [
+      [
+        {
+          name: NativeTokenSymbols[network],
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+      ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+        {
+          name: 'WETH',
+          sellAmount: '100000',
+          buyAmount: '1000000000',
+        },
+      ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+        {
+          name: 'USDbC',
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+      ],
+    ];
+
+    testForNetwork(network, dexKey, pairs);
+  });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    const pairs = [
+      [
+        {
+          name: NativeTokenSymbols[network],
+          sellAmount: '10000',
+          buyAmount: '1000000000',
+        },
+        {
+          name: 'wstETH',
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+      ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '100000',
+          buyAmount: '1000000000',
+        },
+      ],
+    ];
+
+    testForNetwork(network, dexKey, pairs);
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const pairs = [
+      [
+        {
+          name: NativeTokenSymbols[network],
+          sellAmount: '10000',
+          buyAmount: '1000000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+      ],
+      [
+        {
+          name: 'USDC',
+          sellAmount: '1000000000',
+          buyAmount: '1000000000',
+        },
+        {
+          name: 'USDT',
+          sellAmount: '100000',
           buyAmount: '1000000000',
         },
       ],
