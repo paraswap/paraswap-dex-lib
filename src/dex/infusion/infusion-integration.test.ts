@@ -4,13 +4,12 @@ dotenv.config();
 
 import { DummyDexHelper } from '../../dex-helper';
 import { Network, SwapSide } from '../../constants';
-import { checkPoolPrices } from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 import { Infusion } from './infusion';
 import { Tokens } from '../../../tests/constants-e2e';
 import { Interface, Result } from '@ethersproject/abi';
 import infusionPairABI from '../../abi/infusion/InfusionPair.json';
-import { Velodrome } from './forks-override/velodrome';
 
 const amounts18 = [0n, BI_POWS[18], 2000000000000000000n];
 const amounts6 = [0n, BI_POWS[6], 2000000n];
@@ -82,9 +81,9 @@ describe('Infusion integration tests', () => {
     const dexHelper = new DummyDexHelper(network);
     const checkOnChainPricing = constructCheckOnChainPricing(dexHelper);
 
-    describe('Velodrome', () => {
+    describe('Infusion', () => {
       const dexKey = 'Infusion';
-      const velodrome = new Velodrome(network, dexKey, dexHelper);
+      const infusion = new Infusion(network, dexKey, dexHelper);
 
       describe('UniswapV2 like pool', function () {
         const TokenASymbol = 'USDC';
@@ -96,7 +95,7 @@ describe('Infusion integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume SELL', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await velodrome.getPoolIdentifiers(
+          const pools = await infusion.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -109,7 +108,7 @@ describe('Infusion integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await velodrome.getPricesVolume(
+          const poolPrices = await infusion.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -129,7 +128,7 @@ describe('Infusion integration tests', () => {
 
           for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              velodrome,
+              infusion,
               'getAmountOut',
               blocknumber,
               poolPrice.prices,
@@ -138,6 +137,23 @@ describe('Infusion integration tests', () => {
               amounts,
             );
           }
+        });
+
+        it('getTopPoolsForToken', async function () {
+          const dexHelper = new DummyDexHelper(Network.BASE);
+          const infusion = new Infusion(Network.BASE, dexKey, dexHelper);
+
+          const poolLiquidity = await infusion.getTopPoolsForToken(
+            '0x4200000000000000000000000000000000000006',
+            10,
+          );
+          console.log('WETH Top Pools:', poolLiquidity);
+
+          checkPoolsLiquidity(
+            poolLiquidity,
+            '0x4200000000000000000000000000000000000006',
+            dexKey,
+          );
         });
       });
 
@@ -151,7 +167,7 @@ describe('Infusion integration tests', () => {
 
         it('getPoolIdentifiers and getPricesVolume SELL', async function () {
           const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-          const pools = await velodrome.getPoolIdentifiers(
+          const pools = await infusion.getPoolIdentifiers(
             tokenA,
             tokenB,
             SwapSide.SELL,
@@ -164,7 +180,7 @@ describe('Infusion integration tests', () => {
 
           expect(pools.length).toBeGreaterThan(0);
 
-          const poolPrices = await velodrome.getPricesVolume(
+          const poolPrices = await infusion.getPricesVolume(
             tokenA,
             tokenB,
             amounts,
@@ -183,7 +199,7 @@ describe('Infusion integration tests', () => {
           // Check if onchain pricing equals to calculated ones
           for (const poolPrice of poolPrices || []) {
             await checkOnChainPricing(
-              velodrome,
+              infusion,
               'getAmountOut',
               blocknumber,
               poolPrice.prices,
@@ -192,6 +208,23 @@ describe('Infusion integration tests', () => {
               amounts,
             );
           }
+        });
+
+        it('getTopPoolsForToken', async function () {
+          const dexHelper = new DummyDexHelper(Network.BASE);
+          const infusion = new Infusion(Network.BASE, dexKey, dexHelper);
+
+          const poolLiquidity = await infusion.getTopPoolsForToken(
+            '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+            10,
+          );
+          console.log('WETH Top Pools:', poolLiquidity);
+
+          checkPoolsLiquidity(
+            poolLiquidity,
+            '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+            dexKey,
+          );
         });
       });
     });

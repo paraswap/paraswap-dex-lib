@@ -9,6 +9,7 @@ import {
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   PoolLiquidity,
   SimpleExchangeParam,
@@ -38,6 +39,7 @@ import {
 import { InfusionConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { isStablePair } from './utils/isStablePair';
+import { Context } from '../idex';
 
 export enum InfusionRouterFunctions {
   sellExactEth = 'swapExactETHForTokens',
@@ -446,13 +448,14 @@ export class Infusion extends UniswapV2 {
   ): Promise<PoolLiquidity[]> {
     if (!this.subgraphURL) return [];
 
-    let stableFieldKey = '';
+    let stableFieldKey = 'isStable';
 
-    if (this.dexKey.toLowerCase() === 'infusion') {
-      stableFieldKey = 'stable';
-    } else if (this.dexKey.toLowerCase() !== 'infusionv2') {
-      stableFieldKey = 'isStable';
-    }
+    // TODO: ?
+    // if (this.dexKey.toLowerCase() === 'infusion') {
+    //   stableFieldKey = 'stable';
+    // } else if (this.dexKey.toLowerCase() !== 'infusionv2') {
+    //   stableFieldKey = 'isStable';
+    // }
 
     const query = `query ($token: Bytes!, $count: Int) {
       pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
@@ -674,23 +677,82 @@ export class Infusion extends UniswapV2 {
     data: InfusionData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    const pools = encodePools(data.pools, this.feeFactor);
-    const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          weth: 'address',
-          pools: 'uint256[]',
-          isFeeTokenInRoute: 'bool',
-        },
-      },
-      { weth, pools, isFeeTokenInRoute: data.isFeeTokenInRoute },
-    );
+    // if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    // const pools = encodePools(data.pools, this.feeFactor);
+    // const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
+    // const payload = this.abiCoder.encodeParameter(
+    //   {
+    //     ParentStruct: {
+    //       weth: 'address',
+    //       pools: 'uint256[]',
+    //       isFeeTokenInRoute: 'bool',
+    //     },
+    //   },
+    //   { weth, pools, isFeeTokenInRoute: data.isFeeTokenInRoute },
+    // );
     return {
       targetExchange: data.router,
-      payload,
+      payload: '',
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    src: Address,
+    dest: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: InfusionData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    let routerMethod: any;
+    let routerArgs: InfusionParam;
+    const stable = isStablePair(this.network, src, dest);
+
+    const from = isETHAddress(src)
+      ? this.dexHelper.config.data.wrappedNativeTokenAddress
+      : src;
+    const to = isETHAddress(dest)
+      ? this.dexHelper.config.data.wrappedNativeTokenAddress
+      : dest;
+
+    routerMethod = isETHAddress(src)
+      ? InfusionRouterFunctions.sellExactEth
+      : InfusionRouterFunctions.swapExactIn;
+    routerMethod = isETHAddress(dest)
+      ? InfusionRouterFunctions.sellExactToken
+      : routerMethod;
+
+    routerArgs = isETHAddress(src)
+      ? [
+          destAmount,
+          [{ from, to, stable }],
+          recipient,
+          Math.floor(new Date().getTime()) + 120,
+        ]
+      : [
+          srcAmount,
+          destAmount,
+          [{ from, to, stable }],
+          recipient,
+          Math.floor(new Date().getTime()) + 120,
+        ];
+
+    // console.log('routerMethod', routerMethod, 'routerArgs', routerArgs);
+    const exchangeData = new Interface(infusionRouterABI).encodeFunctionData(
+      routerMethod,
+      routerArgs as InfusionParam,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: data.router,
+      returnAmountPos: undefined,
     };
   }
 
