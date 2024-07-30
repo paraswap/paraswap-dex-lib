@@ -1,0 +1,164 @@
+import { Address, NumberAsString } from '../../types';
+
+export type UniswapDataLegacy = {
+  router: Address;
+  path: Address[];
+  factory: Address;
+  initCode: string;
+  fee: number[];
+  feeFactor: number;
+};
+
+export type UniswapData = {
+  router: Address;
+  pools: UniswapPool[];
+  weth?: Address;
+};
+
+export enum UniswapV2Functions {
+  swap = 'swap',
+  buy = 'buy',
+  swapOnUniswap = 'swapOnUniswap',
+  buyOnUniswap = 'buyOnUniswap',
+  swapOnUniswapFork = 'swapOnUniswapFork',
+  buyOnUniswapFork = 'buyOnUniswapFork',
+  swapOnUniswapV2Fork = 'swapOnUniswapV2Fork',
+  buyOnUniswapV2Fork = 'buyOnUniswapV2Fork',
+  swapOnUniswapV2ForkWithPermit = 'swapOnUniswapV2ForkWithPermit',
+  buyOnUniswapV2ForkWithPermit = 'buyOnUniswapV2ForkWithPermit',
+}
+
+export enum UniswapV2FunctionsV6 {
+  swap = 'swapExactAmountInOnUniswapV2',
+  buy = 'swapExactAmountOutOnUniswapV2',
+}
+
+export type UniswapV2ParamsDirectBase = [
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  quotedAmount: NumberAsString,
+  metadata: string,
+  beneficiary: Address,
+  pools: string,
+];
+
+export type UniswapV2ParamsDirect = [
+  params: UniswapV2ParamsDirectBase,
+  partnerAndFee: string,
+  permit: string,
+];
+
+export type SwapOnUniswapParam = [
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  path: Address[],
+];
+
+export type BuyOnUniswapParam = [
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  path: Address[],
+];
+
+export type SwapOnUniswapForkParam = [
+  factory: Address,
+  initCode: string,
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  path: Address[],
+];
+
+export type BuyOnUniswapForkParam = [
+  factory: Address,
+  initCode: string,
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  path: Address[],
+];
+
+export type SwapOnUniswapV2ForkParam = [
+  tokenIn: Address,
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  weth: Address,
+  pools: NumberAsString[],
+];
+
+export type BuyOnUniswapV2ForkParam = [
+  tokenIn: Address,
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  weth: Address,
+  pools: NumberAsString[],
+];
+
+export type SwapOnUniswapV2ForkWithPermitParam = [
+  tokenIn: Address,
+  amountIn: NumberAsString,
+  amountOutMin: NumberAsString,
+  weth: Address,
+  pools: NumberAsString[],
+  permit: string,
+];
+
+export type BuyOnUniswapV2ForkWithPermitParam = [
+  tokenIn: Address,
+  amountInMax: NumberAsString,
+  amountOut: NumberAsString,
+  weth: Address,
+  pools: NumberAsString[],
+  permit: string,
+];
+
+export type UniswapParam =
+  | SwapOnUniswapParam
+  | BuyOnUniswapParam
+  | SwapOnUniswapForkParam
+  | BuyOnUniswapForkParam
+  | SwapOnUniswapV2ForkParam
+  | BuyOnUniswapV2ForkParam
+  | SwapOnUniswapV2ForkWithPermitParam
+  | BuyOnUniswapV2ForkWithPermitParam;
+
+export type UniswapPool = {
+  address: Address;
+  direction: boolean;
+  fee: number;
+};
+
+export type UniswapV2Data = {
+  router: Address;
+  path: Address[];
+  pools: {
+    address: Address;
+    direction: boolean;
+    fee: number;
+  }[];
+  factory: Address;
+  initCode: string;
+  feeFactor: number;
+  wethAddress?: string;
+};
+
+export interface DexParams {
+  subgraphType?: 'subgraphs' | 'deployments';
+  subgraphURL?: string;
+  factoryAddress: Address;
+  initCode: string; // deprecated
+  poolGasCost?: number;
+  feeCode: number;
+  router?: Address;
+  adapters?: { [side: string]: { name: string; index: number }[] | null };
+}
+
+export interface UniswapV2PoolOrderedParams {
+  tokenIn: string;
+  tokenOut: string;
+  reservesIn: string;
+  reservesOut: string;
+  fee: string;
+  direction: boolean;
+  exchange: string;
+}
