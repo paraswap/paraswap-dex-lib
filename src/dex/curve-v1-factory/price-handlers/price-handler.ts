@@ -83,38 +83,40 @@ export class PriceHandler {
     return amounts.map(amount => {
       if (amount === 0n) {
         return 0n;
-      } else {
-        try {
-          return isUnderlying
-            ? this.priceHandler.get_dy_underlying(
-                this.priceHandler,
-                state,
-                i,
-                j,
-                amount,
-              )
-            : side === SwapSide.SELL
-            ? this.priceHandler.get_dy(this.priceHandler, state, i, j, amount)
-            : this.priceHandler.get_dx(this.priceHandler, state, i, j, amount);
-        } catch (e) {
-          if (
-            e instanceof Error &&
-            e.message.startsWith(CONVERGENCE_ERROR_PREFIX)
-          ) {
-            this.logger.trace(`Convergence Error: `, e);
-          } else if (
-            e instanceof Error &&
-            e.message.startsWith(`Division by zero`)
-          ) {
-            this.logger.trace(
-              `Zero division Error suppressed because mostly it is expected`,
-              e,
-            );
-          } else {
-            this.logger.error(`Unexpected error while calculating price: `, e);
-          }
-          return 0n;
+      }
+      if (state.balances[side === SwapSide.SELL ? i : j] < amount) {
+        return 0n;
+      }
+      try {
+        return isUnderlying
+          ? this.priceHandler.get_dy_underlying(
+              this.priceHandler,
+              state,
+              i,
+              j,
+              amount,
+            )
+          : side === SwapSide.SELL
+          ? this.priceHandler.get_dy(this.priceHandler, state, i, j, amount)
+          : this.priceHandler.get_dx(this.priceHandler, state, i, j, amount);
+      } catch (e) {
+        if (
+          e instanceof Error &&
+          e.message.startsWith(CONVERGENCE_ERROR_PREFIX)
+        ) {
+          this.logger.trace(`Convergence Error: `, e);
+        } else if (
+          e instanceof Error &&
+          e.message.startsWith(`Division by zero`)
+        ) {
+          this.logger.trace(
+            `Zero division Error suppressed because mostly it is expected`,
+            e,
+          );
+        } else {
+          this.logger.error(`Unexpected error while calculating price: `, e);
         }
+        return 0n;
       }
     });
   }
