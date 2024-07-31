@@ -84,11 +84,11 @@ export class PriceHandler {
       if (amount === 0n) {
         return 0n;
       }
-      if (state.balances[side === SwapSide.SELL ? i : j] < amount) {
+      if (side === SwapSide.BUY && state.balances[j] < amount) {
         return 0n;
       }
       try {
-        return isUnderlying
+        const output = isUnderlying
           ? this.priceHandler.get_dy_underlying(
               this.priceHandler,
               state,
@@ -99,6 +99,13 @@ export class PriceHandler {
           : side === SwapSide.SELL
           ? this.priceHandler.get_dy(this.priceHandler, state, i, j, amount)
           : this.priceHandler.get_dx(this.priceHandler, state, i, j, amount);
+
+        // isUnderlying is always false for curve-v1-factory
+        if (side === SwapSide.SELL && state.balances[j] < output) {
+          return 0n;
+        }
+
+        return output;
       } catch (e) {
         if (
           e instanceof Error &&
