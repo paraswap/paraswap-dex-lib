@@ -272,6 +272,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       exchangeParamIndex,
       flag,
       maybeWethCallData,
+      swapExchangeIndex,
     } = params;
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
@@ -321,11 +322,11 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (insertAmount) {
       const fromAmount = ethers.utils.defaultAbiCoder.encode(
         ['uint256'],
-        [swap.swapExchanges[0].srcAmount],
+        [swap.swapExchanges[swapExchangeIndex].srcAmount],
       );
       const toAmount = ethers.utils.defaultAbiCoder.encode(
         ['uint256'],
-        [swap.swapExchanges[0].destAmount],
+        [swap.swapExchanges[swapExchangeIndex].destAmount],
       );
 
       const fromAmountIndex = exchangeData
