@@ -103,4 +103,16 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [{ name: 'FantomAdapter02', index: 1 }],
     [SwapSide.BUY]: [{ name: 'FantomBuyAdapter', index: 5 }],
   },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter02', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'BaseBuyAdapter', index: 11 }],
+  },
+  [Network.ARBITRUM]: {
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter03', index: 4 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 14 }],
+  },
+  [Network.OPTIMISM]: {
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter02', index: 4 }],
+    [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 10 }],
+  },
 };
