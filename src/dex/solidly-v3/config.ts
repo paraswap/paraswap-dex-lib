@@ -79,7 +79,7 @@ export const SolidlyV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash:
         '0xe9b68c5f77858eecac2e651646e208175e9b1359d68d0e14fc69f8c54e5010bf',
-      subgraphURL: 'ALCsbp7jWC6EQjwgicvZkG6dDEFGMV32QUZJvJGqL9K',
+      subgraphURL: 'ALCsbp7jWC6EQjwgicvZkG6dDEFGMV32QUZJvJGqL9Kx',
     },
     [Network.OPTIMISM]: {
       factory: '0x70Fe4a44EA505cFa3A57b95cF2862D4fd5F0f687',

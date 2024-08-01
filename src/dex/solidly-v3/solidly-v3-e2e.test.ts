@@ -110,12 +110,12 @@ describe('SolidlyV3 E2E', () => {
       [
         {
           name: 'USDC',
-          sellAmount: '400000000',
+          sellAmount: '4000000',
           buyAmount: '4000000',
         },
         {
           name: 'USDT',
-          sellAmount: '500000000',
+          sellAmount: '5000000',
           buyAmount: '5000000',
         },
       ],
@@ -164,37 +164,37 @@ describe('SolidlyV3 E2E', () => {
       [
         {
           name: NativeTokenSymbols[network],
-          sellAmount: '1000000000',
-          buyAmount: '1000000000',
+          sellAmount: '100000000000000', //0.0001 ETH
+          buyAmount: '100000000',
         },
         {
           name: 'USDC',
-          sellAmount: '1000000000',
-          buyAmount: '1000000000',
+          sellAmount: '1000000', // $1
+          buyAmount: '1000000', // $1
         },
       ],
       [
         {
           name: 'USDC',
-          sellAmount: '1000000000',
-          buyAmount: '1000000000',
+          sellAmount: '100000',
+          buyAmount: '100000',
         },
         {
           name: 'WETH',
-          sellAmount: '100000',
-          buyAmount: '1000000000',
+          sellAmount: '100000000000000', //0.0001 ETH
+          buyAmount: '100000000',
         },
       ],
       [
         {
           name: 'USDC',
-          sellAmount: '1000000000',
-          buyAmount: '1000000000',
+          sellAmount: '100000',
+          buyAmount: '100000',
         },
         {
           name: 'USDbC',
-          sellAmount: '1000000000',
-          buyAmount: '1000000000',
+          sellAmount: '100000',
+          buyAmount: '100000',
         },
       ],
     ];
@@ -242,7 +242,7 @@ describe('SolidlyV3 E2E', () => {
       [
         {
           name: NativeTokenSymbols[network],
-          sellAmount: '10000',
+          sellAmount: '10000000000000',
           buyAmount: '1000000000',
         },
         {
