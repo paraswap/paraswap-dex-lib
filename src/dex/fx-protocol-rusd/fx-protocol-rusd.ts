@@ -1,42 +1,29 @@
-import { AsyncOrSync, assert } from 'ts-essentials';
-import { BigNumber, BytesLike, ethers } from 'ethers';
 import {
   Token,
   Address,
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
   Logger,
   NumberAsString,
   DexExchangeParam,
+  PoolLiquidity,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { Utils, getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DexParams, FxProtocolData } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { FxProtocolConfig, Adapters } from './config';
+import { FxProtocolConfig } from './config';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import FxUSD_ABI from '../../abi/fx-protocol/FxUSD.json';
 import FxMarket_ABI from '../../abi/fx-protocol/FxMarket.json';
 import EthWeETHOralce_ABI from '../../abi/fx-protocol/weETHOralce.json';
 
-import { uint256ToBigInt } from '../../lib/decoders';
 import { extractReturnAmountPosition } from '../../executor/utils';
-import { getBigNumberPow } from '../../bignumber-constants';
 import { fxProtocolRusdEvent } from './fx-protocol-rusd-event';
-import { MultiResult } from '../../lib/multi-wrapper';
-import {
-  addressDecode,
-  generalDecoder,
-  uint256DecodeToNumber,
-  uint8ToNumber,
-} from '../../lib/decoders';
-import { bool } from 'joi';
 import { BI_POWS } from '../../bigint-constants';
 
 export class FxProtocolRusd
@@ -64,7 +51,6 @@ export class FxProtocolRusd
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     const config = FxProtocolConfig[dexKey][network];
@@ -140,26 +126,23 @@ export class FxProtocolRusd
   }
 
   is_weETH(token: string) {
-    return token.toLowerCase() === this.config.weETHAddress;
+    return token.toLowerCase() === this.config.weETHAddress.toLowerCase();
   }
 
   is_rUSD(token: string) {
-    return token.toLowerCase() === this.config.rUSDAddress;
+    return token.toLowerCase() === this.config.rUSDAddress.toLowerCase();
   }
 
   is_rUSD_swap_token(srcToken: string, destToken: string) {
-    if (this.is_weETH(srcToken) && this.is_rUSD(destToken)) {
-      return true;
-    }
-    if (this.is_rUSD(srcToken) && this.is_weETH(destToken)) {
-      return true;
-    }
-    return false;
+    return (
+      (this.is_weETH(srcToken) && this.is_rUSD(destToken)) ||
+      (this.is_rUSD(srcToken) && this.is_weETH(destToken))
+    );
   }
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
-  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+  getAdapters() {
+    return null;
   }
 
   async getPoolIdentifiers(
@@ -182,6 +165,11 @@ export class FxProtocolRusd
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<FxProtocolData>> {
+    if (side == SwapSide.BUY) {
+      // note: BUY is not supported
+      return null;
+    }
+
     const isRUSDSwapToken = this.is_rUSD_swap_token(
       srcToken.address,
       destToken.address,

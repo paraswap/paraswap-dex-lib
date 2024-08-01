@@ -6,10 +6,8 @@ import { Address, Log, Logger } from '../../types';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { FxProtocolPoolState } from './types';
 import { BI_POWS } from '../../bigint-constants';
-import { NULL_ADDRESS } from '../../constants';
 import { bigIntify, catchParseLogError } from '../../utils';
 import { getOnChainState } from './utils';
-import { number } from 'joi';
 
 export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolState> {
   decoder = (log: Log) => this.poolInterface.parseLog(log);
@@ -64,20 +62,21 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
     return state;
   }
 
-  getPrice(blockNumber: number, amount: bigint, is_redeem: boolean): bigint {
+  getPrice(blockNumber: number, amount: bigint, isRedeem: boolean): bigint {
     const state = this.getState(blockNumber);
     if (!state) throw new Error('Cannot compute price');
+
     const { nav, redeemFee, weETHPrice } = state;
     const baseTokenPrice = BigInt(weETHPrice * BI_POWS[10]);
-    if (is_redeem) {
-      const _redeemNum = BigInt(
+
+    if (isRedeem) {
+      return BigInt(
         (amount * nav * (BI_POWS[18] - redeemFee)) /
           BI_POWS[18] /
           baseTokenPrice,
       );
-      return _redeemNum;
+    } else {
+      return BigInt((baseTokenPrice * amount) / nav);
     }
-    const _mintNum = BigInt((baseTokenPrice * amount) / nav);
-    return _mintNum;
   }
 }

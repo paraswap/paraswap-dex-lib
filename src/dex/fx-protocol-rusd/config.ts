@@ -12,8 +12,3 @@ export const FxProtocolConfig: DexConfigMap<DexParams> = {
     },
   },
 };
-
-export const Adapters: Record<number, AdapterMappings> = {
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: 'Adapter02', index: 0 }] },
-};
