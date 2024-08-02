@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { AsyncOrSync } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import {
   AdapterExchangeParam,
@@ -20,9 +20,10 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DexParams, InceptionDexData, PoolState } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { Adapters, InceptionConfig } from './config';
+import { Adapters, InceptionConfig, InceptionPricePoolConfig } from './config';
 import { getTokenFromAddress, setTokensOnNetwork, Tokens } from './tokens';
-import { fetchTokenList, getOnChainRatio, getOnChainState } from './utils';
+import { fetchTokenList, getOnChainState } from './utils';
+import { InceptionEventPool } from './inception-event-pool';
 
 const DECIMALS = BigInt(1e18);
 
@@ -45,7 +46,7 @@ export class Inception
 
   logger: Logger;
 
-  private state: Record<string, { blockNumber: number; ratio: bigint }> = {};
+  private eventPool: InceptionEventPool;
 
   constructor(
     readonly network: Network,
@@ -58,6 +59,17 @@ export class Inception
     this.logger = dexHelper.getLogger(dexKey);
     this.vaultInterface = new Interface(INCEPTION_ABI as JsonFragment[]);
     this.poolInterface = new Interface(INCEPTION_POOL_ABI as JsonFragment[]);
+    this.eventPool = new InceptionEventPool(
+      dexKey,
+      network,
+      dexHelper,
+      this.logger,
+      {
+        ratioFeedAddress: InceptionPricePoolConfig[dexKey][network].ratioFeed,
+        initState: {},
+      },
+      this.poolInterface,
+    );
   }
 
   async initializePricing(blockNumber: number) {
@@ -67,10 +79,14 @@ export class Inception
       this.network,
       blockNumber,
     );
-    await this.initializeTokens(poolState, blockNumber);
+
+    await this.eventPool.initialize(blockNumber, {
+      state: poolState,
+    });
+    await this.initializeTokens();
   }
 
-  async initializeTokens(poolState: PoolState, blockNumber: number) {
+  async initializeTokens() {
     let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
@@ -83,13 +99,6 @@ export class Inception
 
       const tokenListParsed = JSON.parse(cachedTokenList);
       setTokensOnNetwork(this.network, tokenListParsed);
-
-      tokenListParsed.forEach((p: DexParams) => {
-        this.state[p.token] = {
-          blockNumber,
-          ratio: poolState[p.symbol.toLowerCase()].ratio,
-        };
-      });
       return;
     }
 
@@ -104,14 +113,6 @@ export class Inception
     );
 
     setTokensOnNetwork(this.network, tokenList);
-
-    // init state for all tokens as empty
-    tokenList.forEach(p => {
-      this.state[p.token] = {
-        blockNumber,
-        ratio: poolState[p.symbol.toLowerCase()].ratio,
-      };
-    });
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
@@ -133,6 +134,17 @@ export class Inception
     ];
   }
 
+  async getPoolState(
+    pool: InceptionEventPool,
+    blockNumber: number,
+  ): Promise<PoolState> {
+    const eventState = pool.getState(blockNumber);
+    if (eventState) return eventState;
+    const onChainState = await pool.generateState(blockNumber);
+    pool.setState(onChainState, blockNumber);
+    return onChainState;
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -148,45 +160,13 @@ export class Inception
       return null;
     }
 
-    const [inceptionToken] = [src.token.toLowerCase()];
-
-    if (
-      !this.state[inceptionToken]?.blockNumber ||
-      blockNumber > this.state[inceptionToken].blockNumber
-    ) {
-      const cached = await this.dexHelper.cache.get(
-        this.dexKey,
-        this.network,
-        `state_${inceptionToken}`,
-      );
-      if (cached) {
-        this.state[inceptionToken] = Utils.Parse(cached);
-      } else {
-        const ratio = await getOnChainRatio(
-          this.dexHelper.multiContract,
-          src.symbol === 'ETH' ? this.poolInterface : this.vaultInterface,
-          this.network,
-          src,
-          blockNumber,
-        );
-        this.state[inceptionToken] = {
-          blockNumber,
-          ratio,
-        };
-        this.dexHelper.cache.setex(
-          this.dexKey,
-          this.network,
-          `state_${inceptionToken}`,
-          60,
-          Utils.Serialize(this.state[inceptionToken]),
-        );
-      }
-    }
+    const poolState = await this.getPoolState(this.eventPool, blockNumber);
+    if (!poolState) return null;
 
     return [
       {
         prices: amounts.map(amount => {
-          const ratio = this.state[inceptionToken].ratio;
+          const ratio = poolState[src.symbol.toLowerCase()].ratio;
           return (ratio * amount) / DECIMALS;
         }),
         unit: DECIMALS,
@@ -195,7 +175,7 @@ export class Inception
         data: {
           exchange: dest.vault,
         },
-        poolAddresses: [inceptionToken],
+        poolAddresses: [src.token.toLowerCase()],
       },
     ];
   }

@@ -1,4 +1,4 @@
-import { DexParams } from './types';
+import { DexParams, PricePoolParams } from './types';
 import { AdapterMappings, DexConfigMap } from '../../types';
 import { Network, SwapSide } from '../../constants';
 
@@ -97,6 +97,14 @@ export const InceptionConfig: DexConfigMap<DexParams[]> = {
         baseTokenSlug: 'ETH',
       },
     ],
+  },
+};
+
+export const InceptionPricePoolConfig: DexConfigMap<PricePoolParams> = {
+  InceptionLRT: {
+    [Network.MAINNET]: {
+      ratioFeed: '0xFd73Be536503B5Aa80Bf99D1Fd65b1306c69B191',
+    },
   },
 };
 

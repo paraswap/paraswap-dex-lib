@@ -4,6 +4,11 @@ export type PoolState = {
   };
 };
 
+export type PoolConfig = {
+  ratioFeedAddress: string;
+  initState: PoolState;
+};
+
 export type InceptionDexData = {
   exchange: string;
 };
@@ -14,4 +19,8 @@ export type DexParams = {
   token: string;
   baseToken: string;
   baseTokenSlug: string;
+};
+
+export type PricePoolParams = {
+  ratioFeed: string;
 };
