@@ -392,7 +392,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
           acc,
           this.buildSingleSwapCallData({
             priceRoute,
-            exchangeParams,
+            exchangeParams: orderedExchangeParams.map(e => e.exchangeParam),
             index,
             flags,
             sender,
