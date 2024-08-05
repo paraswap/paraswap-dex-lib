@@ -336,17 +336,10 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
         .replace('0x', '')
         .indexOf(toAmount.replace('0x', ''));
 
-      assert(
-        fromAmountIndex !== -1,
-        'Encoding error: could not resolve position of fromAmount in exchangeData',
-      );
-      assert(
-        toAmountIndex !== -1,
-        'Encoding error: could not resolve position of toAmount in exchangeData',
-      );
-
-      fromAmountPos = fromAmountIndex / 2;
-      toAmountPos = toAmountIndex / 2;
+      fromAmountPos =
+        (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
+      toAmountPos =
+        (toAmountIndex !== -1 ? toAmountIndex : exchangeData.length) / 2;
     }
 
     return this.buildCallData(
