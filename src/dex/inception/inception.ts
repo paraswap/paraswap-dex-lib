@@ -22,13 +22,10 @@ import { DexParams, InceptionDexData, PoolState } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, InceptionConfig, InceptionPricePoolConfig } from './config';
 import { getTokenFromAddress, setTokensOnNetwork, Tokens } from './tokens';
-import { fetchTokenList, getOnChainState } from './utils';
+import { getOnChainState, getTokenList } from './utils';
 import { InceptionEventPool } from './inception-event-pool';
 
 const DECIMALS = BigInt(1e18);
-
-export const TOKEN_LIST_CACHE_KEY = 'inceptionlrt-token-list';
-const TOKEN_LIST_TTL_SECONDS = 24 * 60 * 60; // 1 day
 
 export class Inception
   extends SimpleExchange
@@ -87,30 +84,7 @@ export class Inception
   }
 
   async initializeTokens() {
-    let cachedTokenList = await this.dexHelper.cache.getAndCacheLocally(
-      this.dexKey,
-      this.network,
-      TOKEN_LIST_CACHE_KEY,
-      TOKEN_LIST_TTL_SECONDS,
-    );
-
-    if (cachedTokenList !== null) {
-      if (Object.keys(Tokens).length !== 0) return;
-
-      const tokenListParsed = JSON.parse(cachedTokenList);
-      setTokensOnNetwork(this.network, tokenListParsed);
-      return;
-    }
-
-    let tokenList = await fetchTokenList(this.network);
-
-    await this.dexHelper.cache.setexAndCacheLocally(
-      this.dexKey,
-      this.network,
-      TOKEN_LIST_CACHE_KEY,
-      TOKEN_LIST_TTL_SECONDS,
-      JSON.stringify(tokenList),
-    );
+    let tokenList = await getTokenList(this.network);
 
     setTokensOnNetwork(this.network, tokenList);
   }
@@ -235,6 +209,8 @@ export class Inception
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    await this.initializeTokens();
+    // TODO: Implement
     return [];
   }
 
