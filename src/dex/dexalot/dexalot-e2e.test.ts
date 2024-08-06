@@ -10,7 +10,6 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
-import { Contract } from 'ethers';
 
 function testForNetwork(
   network: Network,
@@ -221,6 +220,29 @@ describe('Dexalot E2E', () => {
     const tokenBSymbol: string = 'USDC';
 
     const tokenAAmount: string = '1000000';
+    const tokenBAmount: string = '1000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+      true,
+    );
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'WETH';
+    const tokenBSymbol: string = 'USDC';
+
+    // 0.001 WETH
+    const tokenAAmount: string = '1000000000000000';
     const tokenBAmount: string = '1000000';
     const nativeTokenAmount = '1000000000000000000';
 
