@@ -728,7 +728,6 @@ export class Infusion extends UniswapV2 {
           Math.floor(new Date().getTime()) + 120,
         ];
 
-    // console.log('routerMethod', routerMethod, 'routerArgs', routerArgs);
     const exchangeData = new Interface(infusionRouterABI).encodeFunctionData(
       routerMethod,
       routerArgs as InfusionParam,

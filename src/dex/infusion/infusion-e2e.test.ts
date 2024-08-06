@@ -91,6 +91,19 @@ describe('Infusion E2E', () => {
             provider,
           );
         });
+        it('USDC -> USDbC', async () => {
+          await testE2E(
+            tokens.USDC,
+            tokens.USDbC,
+            holders.USDC,
+            '9900000000',
+            SwapSide.SELL,
+            dexKey,
+            ContractMethod.swapExactAmountIn,
+            network,
+            provider,
+          );
+        });
       });
     });
   });
