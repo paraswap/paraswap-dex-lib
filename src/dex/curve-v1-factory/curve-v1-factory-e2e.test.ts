@@ -16,8 +16,13 @@ export function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
-    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountInOnCurveV1,
+      ],
+    ],
   ]),
 ) {
   const provider = new StaticJsonRpcProvider(
@@ -76,7 +81,7 @@ export function testForNetwork(
 }
 
 describe('CurveV1Factory E2E', () => {
-  const dexKey = ['CurveV1Factory', 'CurveV1StableNg'];
+  const dexKey = ['CurveV1Factory'];
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -167,41 +172,43 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
-  describe('Mainnet crvUSD', () => {
-    const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'crvUSD';
-    const tokenBSymbol: string = 'USDT';
-
-    const tokenAAmount: string = '10000000000000000000';
-    const tokenBAmount: string = '10000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
   describe('Mainnet ng pool', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'ETH';
-    const tokenBSymbol: string = 'STETH';
+    describe('ETH -> STETH', () => {
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'STETH';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('crvUSD -> USDT', () => {
+      const tokenASymbol: string = 'crvUSD';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '10000000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
 
   describe('Mainnet SBTC2 pool', () => {
@@ -374,22 +381,6 @@ describe('CurveV1Factory E2E', () => {
   describe('Base', () => {
     const network = Network.BASE;
 
-    const sideToContractMethods = new Map([
-      [
-        SwapSide.SELL,
-        [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
-      ],
-      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
-      // [
-      //   SwapSide.SELL,
-      //   [
-      //     ContractMethod.simpleSwap,
-      //     ContractMethod.multiSwap,
-      //     ContractMethod.megaSwap,
-      //   ],
-      // ],
-    ]);
-
     describe('USDC -> crvUSD', () => {
       const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'crvUSD';
@@ -404,7 +395,6 @@ describe('CurveV1Factory E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-        sideToContractMethods,
       );
     });
 
@@ -422,7 +412,6 @@ describe('CurveV1Factory E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
-        sideToContractMethods,
       );
     });
   });

@@ -251,6 +251,22 @@ export type DirectCurveV1Param = [
   uuid: string,
 ];
 
+export type CurveV1RouterSwapParam = [
+  number,
+  number,
+  number,
+  CurveRouterPoolType,
+  number,
+];
+
+export type CurveV1RouterParam = {
+  path: string[];
+  swapParams: CurveV1RouterSwapParam[];
+  srcAmount: string;
+  min_dy: string;
+  pools: string[];
+};
+
 export type DirectCurveV1FactoryParamV6 = [
   curveData: NumberAsString,
   curveAssets: NumberAsString,

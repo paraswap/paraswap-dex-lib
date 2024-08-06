@@ -11,18 +11,12 @@ describe('CurveV1StableNG E2E', () => {
   const sidesToContractMethods = new Map([
     [
       SwapSide.SELL,
-      [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+      [
+        ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountInOnCurveV1,
+      ],
     ],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
-    // [
-    //   SwapSide.SELL,
-    //   [
-    //     ContractMethod.simpleSwap,
-    //     ContractMethod.multiSwap,
-    //     ContractMethod.megaSwap,
-    //   ],
-    // ],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe('Mainnet', () => {
@@ -78,6 +72,7 @@ describe('CurveV1StableNG E2E', () => {
         tokenBSymbol,
         tokenAAmount,
         tokenBAmount,
+        sidesToContractMethods,
       );
     });
   });
