@@ -10,7 +10,6 @@ import {
   ExecutorBytecodeBuilder,
   SingleSwapCallDataParams,
 } from './ExecutorBytecodeBuilder';
-import { assert } from 'ts-essentials';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -386,12 +385,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
         .replace('0x', '')
         .indexOf(fromAmount.replace('0x', ''));
 
-      assert(
-        fromAmountIndex !== -1,
-        'Encoding error: could not resolve position of fromAmount in exchangeData',
-      );
-
-      fromAmountPos = fromAmountIndex / 2;
+      fromAmountPos =
+        (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
     }
 
     return this.buildCallData(
