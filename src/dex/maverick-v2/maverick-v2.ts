@@ -30,7 +30,10 @@ import MaverickV2PoolABI from '../../abi/maverick-v2/MaverickV2Pool.json';
 import MaverickV2RouterABI from '../../abi/maverick-v2/MaverickV2Router.json';
 import ERC20ABI from '../../abi/erc20.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
+
 const EFFICIENCY_FACTOR = 3;
+const POOL_LIST_CACHE_KEY = 'maverickv2-pool-list';
+const POOL_LIST_TTL_SECONDS = 24 * 60 * 60;
 
 export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   pools: { [key: string]: MaverickV2EventPool } = {};
@@ -292,30 +295,29 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
           'amountOut',
         ),
       };
-    } else {
-      // perform "exactOutputSingleMinimal" via MaverickV2's Router
-
-      const exchangeData = this.maverickV2RouterIface.encodeFunctionData(
-        'exactOutputSingleMinimal',
-        [
-          recipient,
-          pool,
-          data.tokenA.toLowerCase() === srcToken.toLowerCase(),
-          destAmount,
-          data.tokenA.toLowerCase() === srcToken.toLowerCase()
-            ? BigInt(data.activeTick) + 100n
-            : BigInt(data.activeTick) - 100n,
-        ],
-      );
-
-      return {
-        needWrapNative: this.needWrapNative,
-        targetExchange: this.config.routerAddress,
-        dexFuncHasRecipient: true,
-        exchangeData,
-        returnAmountPos: undefined,
-      };
     }
+
+    // perform "exactOutputSingleMinimal" via MaverickV2's Router
+    const exchangeData = this.maverickV2RouterIface.encodeFunctionData(
+      'exactOutputSingleMinimal',
+      [
+        recipient,
+        pool,
+        data.tokenA.toLowerCase() === srcToken.toLowerCase(),
+        destAmount,
+        data.tokenA.toLowerCase() === srcToken.toLowerCase()
+          ? BigInt(data.activeTick) + 100n
+          : BigInt(data.activeTick) - 100n,
+      ],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      targetExchange: this.config.routerAddress,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      returnAmountPos: undefined,
+    };
   }
 
   // This is called once before getTopPoolsForToken is
@@ -382,12 +384,31 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   private async _queryPoolsAPI(
     timeout = 30000,
   ): Promise<PoolAPIResponse['pools'] | []> {
+    let cachedPoolsJson = await this.dexHelper.cache.getAndCacheLocally(
+      this.dexKey,
+      this.network,
+      POOL_LIST_CACHE_KEY,
+      POOL_LIST_TTL_SECONDS,
+    );
+
+    if (cachedPoolsJson) return JSON.parse(cachedPoolsJson);
+
     try {
       const res = await this.dexHelper.httpRequest.get<PoolAPIResponse>(
         `${MAVERICK_API_URL}/api/v5/poolsNoBins/${this.network}`,
         timeout,
       );
-      return res.pools || [];
+      const pools = res.pools || [];
+
+      await this.dexHelper.cache.setex(
+        this.dexKey,
+        this.network,
+        POOL_LIST_CACHE_KEY,
+        POOL_LIST_TTL_SECONDS,
+        JSON.stringify(pools),
+      );
+
+      return pools;
     } catch (e) {
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
       return [];
