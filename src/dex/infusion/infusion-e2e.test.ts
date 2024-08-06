@@ -70,7 +70,7 @@ describe('Infusion E2E', () => {
             tokens.USDC,
             tokens.WETH,
             holders.USDC,
-            '3000000000000000',
+            '3000000',
             SwapSide.SELL,
             dexKey,
             ContractMethod.swapExactAmountIn,
