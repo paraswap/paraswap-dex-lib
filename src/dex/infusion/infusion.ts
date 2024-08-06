@@ -540,7 +540,7 @@ export class Infusion extends UniswapV2 {
   ): Promise<InfusionPoolOrderedParams | null> {
     const pair = await this.findInfusionPair(from, to, stable);
     if (!(pair && pair.pool && pair.exchange)) return null;
-    const pairState = pair.pool.getState(blockNumber);
+    const pairState = pair?.pool.getState(blockNumber);
 
     if (!pairState) {
       this.logger.error(
@@ -677,19 +677,6 @@ export class Infusion extends UniswapV2 {
     data: InfusionData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    // const pools = encodePools(data.pools, this.feeFactor);
-    // const weth = this.getWETHAddress(srcToken, destToken, data.wethAddress);
-    // const payload = this.abiCoder.encodeParameter(
-    //   {
-    //     ParentStruct: {
-    //       weth: 'address',
-    //       pools: 'uint256[]',
-    //       isFeeTokenInRoute: 'bool',
-    //     },
-    //   },
-    //   { weth, pools, isFeeTokenInRoute: data.isFeeTokenInRoute },
-    // );
     return {
       targetExchange: data.router,
       payload: '',
