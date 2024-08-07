@@ -70,11 +70,8 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [ContractMethod.simpleSwap, ContractMethod.swapExactAmountIn],
-    ],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -177,7 +174,7 @@ describe('MaverickV2 E2E', () => {
 
   testCases.forEach(
     ({ network, tokenAAmount, tokenBAmount, tokenASymbol, tokenBSymbol }) => {
-      const nativeTokenAmount = '100000000000000';
+      const nativeTokenAmount = '1000000000000000000';
 
       testForNetwork(
         network,

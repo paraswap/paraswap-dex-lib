@@ -120,6 +120,7 @@ export type MaverickV2Param = {
 };
 
 export type DexParams = {
+  routerAddress: string;
   quoterAddress: string;
   poolLensAddress: string;
 };

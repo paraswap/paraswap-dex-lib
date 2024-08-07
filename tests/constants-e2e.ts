@@ -1240,6 +1240,10 @@ export const Tokens: {
       address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
       decimals: 6,
     },
+    GHO: {
+      address: '0x7dff72693f6a4149b17e7c6314655f6a9f7c8b33',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1745,6 +1749,7 @@ export const Holders: {
     stataUSDT: '0xc5042f9d9a18e95547864438455c8f05b4987399',
     aaveUSDT: '0xAfa788fab589fe61C23DF76905558f4734444D67',
     crvUSD: '0x9755e99bdb99495d3d31d953785d993c6df8552e',
+    GHO: '0xda39E48523770197EF3CbB70C1bf1cCCF9B4b1E7',
   },
   [Network.OPTIMISM]: {
     ETH: '0xF6D4E5a7c5215F91f59a95065190CCa24bf64554',
