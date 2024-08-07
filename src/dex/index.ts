@@ -81,6 +81,7 @@ import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
+import { SquadswapV3 } from './squadswap-v3/squadswap-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -157,6 +158,7 @@ const Dexes = [
   PharaohV1,
   Spark,
   AaveV3Stata,
+  SquadswapV3,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
