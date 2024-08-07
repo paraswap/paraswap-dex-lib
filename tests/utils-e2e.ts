@@ -530,11 +530,12 @@ export async function testE2E(
         priceRoute.contractMethod
       })\nTenderly URL: ${swapTx!.url}`,
     );
-    try {
-      expect(swapTx!.success).toEqual(true);
-    } catch {
-      throw new Error(`Failed Tenderly simulation: ${swapTx!.url}`);
-    }
+    expect(swapTx!.success).toEqual(true);
+    // try {
+    //   expect(swapTx!.success).toEqual(true);
+    // } catch {
+    //   throw new Error(`Failed Tenderly simulation: ${swapTx!.url}`);
+    // }
   } finally {
     if (paraswap.releaseResources) {
       await paraswap.releaseResources();
