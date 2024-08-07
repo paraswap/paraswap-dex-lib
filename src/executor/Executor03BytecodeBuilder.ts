@@ -336,28 +336,6 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
         .replace('0x', '')
         .indexOf(toAmount.replace('0x', ''));
 
-      if (fromAmountIndex === -1) {
-        /* eslint-disable no-console */
-        console.log(
-          'Replayer: fromAmountIndex not found in ',
-          swap.swapExchanges[swapExchangeIndex].exchange,
-          fromAmount,
-          exchangeData,
-          swap.swapExchanges[swapExchangeIndex],
-        );
-      }
-
-      if (toAmountIndex === -1) {
-        /* eslint-disable no-console */
-        console.log(
-          'Replayer: toAmount not found in ',
-          swap.swapExchanges[swapExchangeIndex].exchange,
-          toAmount,
-          exchangeData,
-          swap.swapExchanges[swapExchangeIndex],
-        );
-      }
-
       fromAmountPos =
         (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
       toAmountPos =
