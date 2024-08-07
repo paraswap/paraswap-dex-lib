@@ -32,6 +32,7 @@ import ERC20ABI from '../../abi/erc20.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
 const EFFICIENCY_FACTOR = 3;
+const MIN_POOL_LIQUIDITY_USD = 300;
 const POOL_LIST_CACHE_KEY = 'maverickv2-pool-list';
 const POOL_LIST_TTL_SECONDS = 24 * 60 * 60;
 
@@ -187,9 +188,6 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
             if (d === 0n) return 0;
             return MAV_V2_BASE_GAS_COST + MAV_V2_TICK_GAS_COST * Number(t);
           });
-
-          // If pool isn't fully initialized, returns null
-          if (unit === 1n) return null;
 
           return {
             prices: dataList.map(d => d[0]),
@@ -374,11 +372,11 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       };
     });
 
-    return _.slice(
-      _.sortBy(labeledPools, [pool => -1 * pool.liquidityUSD]),
-      0,
-      limit,
-    );
+    const sortedPools = _.sortBy(labeledPools, [
+      pool => -1 * pool.liquidityUSD,
+    ]).filter(pool => pool.liquidityUSD >= MIN_POOL_LIQUIDITY_USD);
+
+    return _.slice(sortedPools, 0, limit);
   }
 
   private async _queryPoolsAPI(
