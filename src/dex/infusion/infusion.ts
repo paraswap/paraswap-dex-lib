@@ -39,7 +39,6 @@ import {
 import { InfusionConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { isStablePair } from './utils/isStablePair';
-import { Context } from '../idex';
 
 export enum InfusionRouterFunctions {
   sellExactEth = 'swapExactETHForTokens',
@@ -66,19 +65,6 @@ const velodromeFactoryIface = new Interface(VelodromeFactoryABI);
 const erc20Iface = new Interface(erc20ABI);
 const infusionPairIface = new Interface(infusionPairABI);
 const defaultAbiCoder = new AbiCoder();
-
-function encodePools(
-  pools: InfusionPool[],
-  feeFactor: number,
-): NumberAsString[] {
-  return pools.map(({ fee, direction, address }) => {
-    return (
-      (BigInt(feeFactor - fee) << 161n) +
-      ((direction ? 0n : 1n) << 160n) +
-      BigInt(address)
-    ).toString();
-  });
-}
 
 export class Infusion extends UniswapV2 {
   pairs: { [key: string]: InfusionPair } = {};
@@ -450,7 +436,6 @@ export class Infusion extends UniswapV2 {
 
     let stableFieldKey = 'isStable';
 
-    // TODO: ?
     // if (this.dexKey.toLowerCase() === 'infusion') {
     //   stableFieldKey = 'stable';
     // } else if (this.dexKey.toLowerCase() !== 'infusionv2') {
