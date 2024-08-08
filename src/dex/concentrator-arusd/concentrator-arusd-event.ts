@@ -6,10 +6,8 @@ import { Address, Log, Logger } from '../../types';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { ConcentratorArusdState } from './types';
 import { BI_POWS } from '../../bigint-constants';
-import { NULL_ADDRESS } from '../../constants';
 import { bigIntify } from '../../utils';
 import { getOnChainState } from './utils';
-import { number } from 'joi';
 
 export class ConcentratorArusdEvent extends StatefulEventSubscriber<ConcentratorArusdState> {
   decoder = (log: Log) => this.poolInterface.parseLog(log);
@@ -21,7 +19,7 @@ export class ConcentratorArusdEvent extends StatefulEventSubscriber<Concentrator
     private poolInterface: Interface,
     logger: Logger,
   ) {
-    super(parentName, 'fxProtocolRusd', dexHelper, logger);
+    super(parentName, 'ConcentratorArusd', dexHelper, logger);
     this.addressesSubscribed = [poolAddress];
   }
 
@@ -31,15 +29,13 @@ export class ConcentratorArusdEvent extends StatefulEventSubscriber<Concentrator
   ): AsyncOrSync<DeepReadonly<ConcentratorArusdState> | null> {
     const event = this.decoder(log);
     const _state: ConcentratorArusdState = _.cloneDeep(state);
-    if (event.name === 'Transfer') {
-      if (event.args.from == NULL_ADDRESS) {
-        _state.totalSupply += bigIntify(event.args.value);
-      } else {
-        _state.totalSupply -= bigIntify(event.args.value);
-      }
+    if (event.name === 'Deposit') {
+      _state.totalSupply += bigIntify(event.args.amountSyOut);
+      _state.totalAssets += bigIntify(event.args.amountDeposited);
       return _state;
-    } else if (event.name === 'UserDepositChange') {
-      _state.totalAssets = bigIntify(event.args.newDeposit);
+    } else if (event.name === 'Redeem') {
+      _state.totalSupply -= bigIntify(event.args.amountSyToRedeem);
+      _state.totalAssets -= bigIntify(event.args.amountTokenOut);
       return _state;
     }
     return null;

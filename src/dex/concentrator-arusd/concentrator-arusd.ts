@@ -21,7 +21,6 @@ import { Interface } from '@ethersproject/abi';
 import ArUSD_ABI from '../../abi/concentrator/arUSD.json';
 import ArUSD5115_ABI from '../../abi/concentrator/arUSD5115.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
-import { uint256ToBigInt } from '../../lib/decoders';
 import { BI_POWS } from '../../bigint-constants';
 import { ConcentratorArusdEvent } from './concentrator-arusd-event';
 import { getOnChainState } from './utils';
