@@ -13,6 +13,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x16C6521Dff6baB339122a0FE25a9116693265353', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 5 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -59,6 +60,18 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           liquidityApiSlug: '/factory-stable-ng',
           isStoreRateSupported: true,
         },
+        '0xc65cb3156225380beda366610bab18d5835a1647': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0xc65cb3156225380beda366610bab18d5835a1647',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
+        '0xa0ec67a3c483674f77915893346a8ca3abe2b785': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0xa0ec67a3c483674f77915893346a8ca3abe2b785',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
       },
       customPools: {},
     },
@@ -69,6 +82,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -95,6 +109,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -115,6 +130,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x2191718CD32d02B8E60BAdFFeA33E4B5DD9A0A0D', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -141,6 +157,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -161,6 +178,7 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
           isStableNg: true,
         },
       ],
+      router: '0x4f37A9d177470499A2dD084621020b023fcffc1F', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -181,70 +199,70 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
     [SwapSide.SELL]: [
       {
-        name: 'Adapter01',
-        index: 3,
+        name: 'Adapter06',
+        index: 2,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'BuyAdapter02',
-        index: 5,
+        index: 6,
       },
     ],
   },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
-        name: 'PolygonAdapter01',
-        index: 3,
+        name: 'PolygonAdapter03',
+        index: 1,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'PolygonBuyAdapter',
-        index: 10,
+        index: 11,
       },
     ],
   },
   [Network.FANTOM]: {
     [SwapSide.SELL]: [
       {
-        name: 'FantomAdapter01',
-        index: 3,
+        name: 'FantomAdapter02',
+        index: 2,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'FantomBuyAdapter',
-        index: 6,
+        index: 7,
       },
     ],
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [
       {
-        name: 'ArbitrumAdapter01',
-        index: 6,
+        name: 'ArbitrumAdapter03',
+        index: 3,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'ArbitrumBuyAdapter',
-        index: 12,
+        index: 13,
       },
     ],
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [
       {
-        name: 'OptimismAdapter01',
-        index: 5,
+        name: 'OptimismAdapter02',
+        index: 3,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'OptimismBuyAdapter',
-        index: 8,
+        index: 9,
       },
     ],
   },
@@ -252,13 +270,13 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.SELL]: [
       {
         name: 'BaseAdapter02',
-        index: 3,
+        index: 4,
       },
     ],
     [SwapSide.BUY]: [
       {
         name: 'BaseBuyAdapter',
-        index: 9,
+        index: 10,
       },
     ],
   },

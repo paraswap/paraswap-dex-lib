@@ -84,8 +84,19 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const _destToken = this.dexHelper.config.wrapETH(destToken);
-    return [this.getIdentifier(srcToken.address, _destToken.address)];
+    const _destToken = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
+    const _srcToken = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+
+    const currentPair = `${_srcToken}_${_destToken}`;
+    const availablePairs = await this.rateFetcher.getAvailablePairs();
+
+    return availablePairs
+      .filter(p => p === currentPair)
+      .map(_ => this.getIdentifier(_srcToken, _destToken));
   }
 
   calcOutsFromAmounts(
