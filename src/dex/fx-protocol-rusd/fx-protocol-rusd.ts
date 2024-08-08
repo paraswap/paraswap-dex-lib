@@ -292,12 +292,19 @@ export class FxProtocolRusd
       {
         exchange: this.dexKey,
         address: this.config.rUSDAddress,
-        connectorTokens: [
-          {
-            decimals: 18,
-            address: this.config.rUSDAddress,
-          },
-        ],
+        connectorTokens: this.is_weETH(tokenAddress)
+          ? [
+              {
+                decimals: 18,
+                address: this.config.rUSDAddress,
+              },
+            ]
+          : [
+              {
+                decimals: 18,
+                address: this.config.weETHAddress,
+              },
+            ],
         liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
       },
     ];
