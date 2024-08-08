@@ -288,6 +288,8 @@ export class FxProtocolRusd
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.is_rUSD(tokenAddress) && !this.is_weETH(tokenAddress)) return [];
+
     return [
       {
         exchange: this.dexKey,

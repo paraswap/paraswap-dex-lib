@@ -238,16 +238,25 @@ export class ConcentratorArusd
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.is_rUSD(tokenAddress) && !this.is_arUSD(tokenAddress)) return [];
+
     return [
       {
         exchange: this.dexKey,
         address: this.config.arUSDAddress,
-        connectorTokens: [
-          {
-            decimals: 18,
-            address: this.config.arUSDAddress,
-          },
-        ],
+        connectorTokens: this.is_rUSD(tokenAddress)
+          ? [
+              {
+                decimals: 18,
+                address: this.config.arUSDAddress,
+              },
+            ]
+          : [
+              {
+                decimals: 18,
+                address: this.config.rUSDAddress,
+              },
+            ],
         liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
       },
     ];
