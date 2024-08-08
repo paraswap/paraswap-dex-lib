@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { fxProtocolRusdEvent } from './fx-protocol-rusd-event';
+import { FxProtocolRusdEvent } from './fx-protocol-rusd-event';
 import { FxProtocolConfig } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -53,7 +53,7 @@ const dexKey = 'FxProtocolRusd';
 const network = Network.MAINNET;
 
 async function fetchPoolState(
-  fxProtocolPool: fxProtocolRusdEvent,
+  fxProtocolPool: FxProtocolRusdEvent,
   blockNumber: number,
 ): Promise<FxProtocolPoolState> {
   return fxProtocolPool.generateState(blockNumber);
@@ -73,7 +73,7 @@ describe('FxProtocolRusd Event', function () {
           const logger = dexHelper.getLogger(dexKey);
           const config = FxProtocolConfig[dexKey][network];
 
-          const fxProtocolPool = new fxProtocolRusdEvent(
+          const fxProtocolPool = new FxProtocolRusdEvent(
             dexKey,
             dexHelper,
             config.rUSDWeETHMarketAddress,

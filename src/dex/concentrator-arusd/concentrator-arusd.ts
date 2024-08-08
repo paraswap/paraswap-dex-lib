@@ -138,11 +138,17 @@ export class ConcentratorArusd
     const is_deposit = !!this.is_rUSD(srcToken.address);
     const pool = this.concentratorArusdEvent;
     const unitIn = BI_POWS[18];
-    const unitOut = pool.getPrice(blockNumber, unitIn, is_deposit);
-    const amountsOut = amounts.map(amountIn => {
-      const _newPrice = pool.getPrice(blockNumber, amountIn, is_deposit);
-      return _newPrice;
-    });
+    const unitOut = await pool.getPrice(blockNumber, unitIn, is_deposit);
+    const amountsOut = await Promise.all(
+      amounts.map(async amountIn => {
+        const _newPrice = await pool.getPrice(
+          blockNumber,
+          amountIn,
+          is_deposit,
+        );
+        return _newPrice;
+      }),
+    );
     return [
       {
         unit: unitOut,

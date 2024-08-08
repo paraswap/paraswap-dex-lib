@@ -6,7 +6,6 @@ import { Address, Log, Logger } from '../../types';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { ConcentratorArusdState } from './types';
 import { BI_POWS } from '../../bigint-constants';
-import { bigIntify } from '../../utils';
 import { getOnChainState } from './utils';
 
 export class ConcentratorArusdEvent extends StatefulEventSubscriber<ConcentratorArusdState> {
@@ -61,12 +60,12 @@ export class ConcentratorArusdEvent extends StatefulEventSubscriber<Concentrator
     return state;
   }
 
-  getPrice(
+  async getPrice(
     blockNumber: number,
     ethAmount: bigint,
     is_deposit: boolean,
-  ): bigint {
-    const state = this.getState(blockNumber);
+  ): Promise<bigint> {
+    const state = await this.getOrGenerateState(blockNumber);
     if (!state) throw new Error('Cannot compute price');
     const { totalSupply, totalAssets } = state;
     const nav = (BigInt(totalAssets) * BI_POWS[18]) / BigInt(totalSupply);
@@ -74,5 +73,28 @@ export class ConcentratorArusdEvent extends StatefulEventSubscriber<Concentrator
       return BigInt((ethAmount * BI_POWS[18]) / nav);
     }
     return BigInt((nav * ethAmount) / BI_POWS[18]);
+  }
+
+  async getOrGenerateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<ConcentratorArusdState> | null> {
+    const state = this.getState(blockNumber);
+    if (state) {
+      return state;
+    }
+
+    this.logger.debug(
+      `No state found for ${this.addressesSubscribed[0]}, generating new one`,
+    );
+    const newState = await this.generateState(blockNumber);
+
+    if (!newState) {
+      this.logger.debug(
+        `Could not regenerate state for ${this.addressesSubscribed[0]}`,
+      );
+      return null;
+    }
+    this.setState(newState, blockNumber);
+    return newState;
   }
 }

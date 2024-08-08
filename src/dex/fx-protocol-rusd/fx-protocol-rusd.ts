@@ -23,7 +23,7 @@ import FxMarket_ABI from '../../abi/fx-protocol/FxMarket.json';
 import EthWeETHOralce_ABI from '../../abi/fx-protocol/weETHOralce.json';
 
 import { extractReturnAmountPosition } from '../../executor/utils';
-import { fxProtocolRusdEvent } from './fx-protocol-rusd-event';
+import { FxProtocolRusdEvent } from './fx-protocol-rusd-event';
 import { BI_POWS } from '../../bigint-constants';
 
 export class FxProtocolRusd
@@ -44,7 +44,7 @@ export class FxProtocolRusd
   fxUSDIface: Interface;
   rUSDMarketIface: Interface;
   weETHOracleIface: Interface;
-  fxProtocolRusdPool: fxProtocolRusdEvent;
+  fxProtocolRusdPool: FxProtocolRusdEvent;
   logger: Logger;
 
   constructor(
@@ -64,7 +64,7 @@ export class FxProtocolRusd
       weETHOracleAddress: config.weETHOracleAddress.toLowerCase(),
     };
     this.logger = dexHelper.getLogger(dexKey);
-    this.fxProtocolRusdPool = new fxProtocolRusdEvent(
+    this.fxProtocolRusdPool = new FxProtocolRusdEvent(
       this.dexKey,
       dexHelper,
       this.config.rUSDWeETHMarketAddress,
@@ -178,13 +178,13 @@ export class FxProtocolRusd
       return null;
     }
     const pool = this.fxProtocolRusdPool;
-    if (!pool.getState(blockNumber)) return null;
-
     const is_redeem = this.is_weETH(destToken.address);
     const unitIn = BI_POWS[18];
-    const unitOut = pool.getPrice(blockNumber, unitIn, is_redeem);
-    const amountsOut = amounts.map(_amountIn =>
-      pool.getPrice(blockNumber, _amountIn, is_redeem),
+    const unitOut = await pool.getPrice(blockNumber, unitIn, is_redeem);
+    const amountsOut = await Promise.all(
+      amounts.map(_amountIn =>
+        pool.getPrice(blockNumber, _amountIn, is_redeem),
+      ),
     );
 
     return [

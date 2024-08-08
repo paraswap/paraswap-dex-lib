@@ -11,7 +11,7 @@ import { getOnChainState } from './utils';
 const ANSWER_UPDATED_TOPICHASH = `0x0559884fd3a460db3073b7fc896cc77986f16e378210ded43186175bf646fc5f`;
 const UPDATE_REDEEM_FEE_TOPICHASH = `0xb3d49e95905d108ea668ffe62a85ee16bdc4ff9f122a7137964327ea8e0585ff`;
 
-export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolState> {
+export class FxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolState> {
   constructor(
     parentName: string,
     protected dexHelper: IDexHelper,
@@ -29,17 +29,17 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
     state: DeepReadonly<FxProtocolPoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<FxProtocolPoolState> | null> {
-    // if (log.topics[0] === UPDATE_REDEEM_FEE_TOPICHASH) {
-    //   const [defaultFeeRatio] = defaultAbiCoder.decode(
-    //     ['uint256', 'int256'],
-    //     log.data,
-    //   );
+    if (log.topics[0] === UPDATE_REDEEM_FEE_TOPICHASH) {
+      const [defaultFeeRatio] = defaultAbiCoder.decode(
+        ['uint256', 'int256'],
+        log.data,
+      );
 
-    //   return {
-    //     ...state,
-    //     redeemFee: BigInt(defaultFeeRatio).toString(),
-    //   };
-    // }
+      return {
+        ...state,
+        redeemFee: BigInt(defaultFeeRatio).toString(),
+      };
+    }
 
     if (log.topics[0] === ANSWER_UPDATED_TOPICHASH) {
       return {
@@ -47,6 +47,7 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
         weETHPrice: BigInt(log.topics[1]).toString(),
       };
     }
+
     return null;
   }
 
@@ -64,8 +65,12 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
     return state;
   }
 
-  getPrice(blockNumber: number, amount: bigint, isRedeem: boolean): bigint {
-    const state = this.getState(blockNumber);
+  async getPrice(
+    blockNumber: number,
+    amount: bigint,
+    isRedeem: boolean,
+  ): Promise<bigint> {
+    const state = await this.getOrGenerateState(blockNumber);
     if (!state) throw new Error('Cannot compute price');
 
     const { nav, redeemFee, weETHPrice } = state;
@@ -80,5 +85,28 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
     } else {
       return BigInt((baseTokenPrice * amount) / BigInt(nav));
     }
+  }
+
+  async getOrGenerateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<FxProtocolPoolState> | null> {
+    const state = this.getState(blockNumber);
+    if (state) {
+      return state;
+    }
+
+    this.logger.debug(
+      `No state found for ${this.addressesSubscribed[0]}, generating new one`,
+    );
+    const newState = await this.generateState(blockNumber);
+
+    if (!newState) {
+      this.logger.debug(
+        `Could not regenerate state for ${this.addressesSubscribed[0]}`,
+      );
+      return null;
+    }
+    this.setState(newState, blockNumber);
+    return newState;
   }
 }
