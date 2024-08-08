@@ -16,7 +16,7 @@ import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { ConcentratorArusdData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { ConcentratorArusdConfig, Adapters } from './config';
+import { ConcentratorArusdConfig } from './config';
 import { Interface } from '@ethersproject/abi';
 import ArUSD_ABI from '../../abi/concentrator/arUSD.json';
 import ArUSD5115_ABI from '../../abi/concentrator/arUSD5115.json';
@@ -49,7 +49,7 @@ export class ConcentratorArusd
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
+    protected adapters = {},
   ) {
     super(dexHelper, dexKey);
     const config = ConcentratorArusdConfig[dexKey][network];

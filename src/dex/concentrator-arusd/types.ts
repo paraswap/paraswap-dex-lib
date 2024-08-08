@@ -1,11 +1,11 @@
 import { Address } from '../../types';
 
 export type ConcentratorArusdState = {
-  totalSupply: bigint;
-  totalAssets: bigint;
+  totalSupply: string;
+  totalAssets: string;
 };
 export type ConcentratorArusdNavState = {
-  nav: bigint;
+  nav: string;
 };
 export type ConcentratorArusdData = {};
 

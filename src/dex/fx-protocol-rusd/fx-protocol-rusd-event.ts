@@ -1,17 +1,17 @@
 import _ from 'lodash';
-import { Interface } from '@ethersproject/abi';
+import { defaultAbiCoder, Interface } from '@ethersproject/abi';
 import { IDexHelper } from '../../dex-helper';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Address, Log, Logger } from '../../types';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { FxProtocolPoolState } from './types';
 import { BI_POWS } from '../../bigint-constants';
-import { bigIntify, catchParseLogError } from '../../utils';
 import { getOnChainState } from './utils';
 
-export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolState> {
-  decoder = (log: Log) => this.marketInterface.parseLog(log);
+const ANSWER_UPDATED_TOPICHASH = `0x0559884fd3a460db3073b7fc896cc77986f16e378210ded43186175bf646fc5f`;
+const UPDATE_REDEEM_FEE_TOPICHASH = `0xb3d49e95905d108ea668ffe62a85ee16bdc4ff9f122a7137964327ea8e0585ff`;
 
+export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolState> {
   constructor(
     parentName: string,
     protected dexHelper: IDexHelper,
@@ -29,21 +29,25 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
     state: DeepReadonly<FxProtocolPoolState>,
     log: Readonly<Log>,
   ): AsyncOrSync<DeepReadonly<FxProtocolPoolState> | null> {
-    const event = this.decoder(log);
-    try {
-      const _state: FxProtocolPoolState = _.cloneDeep(state);
-      if (event.name === 'UpdateRedeemFeeRatioFToken') {
-        _state.redeemFee = bigIntify(event.args.defaultFeeRatio);
-        return _state;
-      } else if (event.name === 'AnswerUpdated') {
-        _state.weETHPrice = bigIntify(event.args.current);
-        return _state;
-      }
-      return null;
-    } catch (e) {
-      catchParseLogError(e, this.logger);
-      return null;
+    // if (log.topics[0] === UPDATE_REDEEM_FEE_TOPICHASH) {
+    //   const [defaultFeeRatio] = defaultAbiCoder.decode(
+    //     ['uint256', 'int256'],
+    //     log.data,
+    //   );
+
+    //   return {
+    //     ...state,
+    //     redeemFee: BigInt(defaultFeeRatio).toString(),
+    //   };
+    // }
+
+    if (log.topics[0] === ANSWER_UPDATED_TOPICHASH) {
+      return {
+        ...state,
+        weETHPrice: BigInt(log.topics[1]).toString(),
+      };
     }
+    return null;
   }
 
   async generateState(
@@ -65,16 +69,16 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
     if (!state) throw new Error('Cannot compute price');
 
     const { nav, redeemFee, weETHPrice } = state;
-    const baseTokenPrice = BigInt(weETHPrice * BI_POWS[10]);
+    const baseTokenPrice = BigInt(weETHPrice) * BI_POWS[10];
 
     if (isRedeem) {
       return BigInt(
-        (amount * nav * (BI_POWS[18] - redeemFee)) /
+        (amount * BigInt(nav) * (BI_POWS[18] - BigInt(redeemFee))) /
           BI_POWS[18] /
           baseTokenPrice,
       );
     } else {
-      return BigInt((baseTokenPrice * amount) / nav);
+      return BigInt((baseTokenPrice * amount) / BigInt(nav));
     }
   }
 }

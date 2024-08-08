@@ -30,12 +30,20 @@ export class ConcentratorArusdEvent extends StatefulEventSubscriber<Concentrator
     const event = this.decoder(log);
     const _state: ConcentratorArusdState = _.cloneDeep(state);
     if (event.name === 'Deposit') {
-      _state.totalSupply += bigIntify(event.args.amountSyOut);
-      _state.totalAssets += bigIntify(event.args.amountDeposited);
+      _state.totalSupply = (
+        BigInt(_state.totalSupply) + BigInt(event.args.amountSyOut)
+      ).toString();
+      _state.totalAssets = (
+        BigInt(_state.totalAssets) + BigInt(event.args.amountDeposited)
+      ).toString();
       return _state;
     } else if (event.name === 'Redeem') {
-      _state.totalSupply -= bigIntify(event.args.amountSyToRedeem);
-      _state.totalAssets -= bigIntify(event.args.amountTokenOut);
+      _state.totalSupply = (
+        BigInt(_state.totalSupply) - BigInt(event.args.amountSyToRedeem)
+      ).toString();
+      _state.totalAssets = (
+        BigInt(_state.totalAssets) - BigInt(event.args.amountTokenOut)
+      ).toString();
       return _state;
     }
     return null;

@@ -31,15 +31,16 @@ export async function getOnChainState(
       'fTokenRedeemFeeRatio',
       data.returnData[0],
     )[0],
-  );
+  ).toString();
   const weETHPrice = BigInt(
     ethWeETHOracleIface.decodeFunctionResult(
       'latestAnswer',
       data.returnData[1],
     )[0],
-  );
+  ).toString();
+
   return {
-    nav: 1000000000000000000n,
+    nav: '1000000000000000000',
     redeemFee,
     weETHPrice,
   };

@@ -1,9 +1,9 @@
 import { Address } from '../../types';
 
 export type FxProtocolPoolState = {
-  nav: bigint;
-  redeemFee: bigint;
-  weETHPrice: bigint;
+  nav: string;
+  redeemFee: string;
+  weETHPrice: string;
 };
 
 export type FxProtocolData = {};

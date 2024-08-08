@@ -101,17 +101,19 @@ export class FxProtocolRusd
         'fTokenRedeemFeeRatio',
         data.returnData[0],
       )[0],
-    );
+    ).toString();
+
     const weETHPrice = BigInt(
       this.weETHOracleIface.decodeFunctionResult(
         'latestAnswer',
         data.returnData[1],
       )[0],
-    );
+    ).toString();
+
     await Promise.all([
       this.fxProtocolRusdPool.initialize(blockNumber, {
         state: {
-          nav: 1000000000000000000n,
+          nav: '1000000000000000000',
           redeemFee,
           weETHPrice,
         },

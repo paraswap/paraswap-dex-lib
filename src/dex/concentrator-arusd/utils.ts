@@ -25,10 +25,10 @@ export async function getOnChainState(
 
   const totalSupply = BigInt(
     poolInterface.decodeFunctionResult('totalSupply', data.returnData[0])[0],
-  );
+  ).toString();
   const totalAssets = BigInt(
     poolInterface.decodeFunctionResult('getTotalAssets', data.returnData[1])[0],
-  );
+  ).toString();
   return {
     totalSupply,
     totalAssets,
