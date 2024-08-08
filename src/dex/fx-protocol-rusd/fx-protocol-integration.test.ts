@@ -39,7 +39,7 @@ describe('FxProtocolRusd', function () {
       SwapSide.SELL,
       blocknumber,
     );
-    console.log(`${weETHToken} <> ${rUSDSymbol} Pool Identifiers: `, pools);
+    console.log(`${weETHSymbol} <> ${rUSDSymbol} Pool Identifiers: `, pools);
 
     expect(pools.length).toBeGreaterThan(0);
 

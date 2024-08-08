@@ -152,7 +152,7 @@ export class FxProtocolRusd
     if (!this.is_rUSD_swap_token(srcToken.address, destToken.address)) {
       return [];
     }
-    return [this.dexKey];
+    return [`${this.dexKey}_${this.config.rUSDAddress}`];
   }
 
   async getPricesVolume(

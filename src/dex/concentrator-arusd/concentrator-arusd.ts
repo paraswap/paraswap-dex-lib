@@ -113,7 +113,7 @@ export class ConcentratorArusd
     if (!this.is_arUSD_swap_token(srcToken.address, destToken.address)) {
       return [];
     }
-    return [this.dexKey];
+    return [`${this.dexKey}_${this.config.arUSDAddress}`];
   }
 
   async getPricesVolume(
@@ -124,6 +124,10 @@ export class ConcentratorArusd
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<ConcentratorArusdData>> {
+    if (side == SwapSide.BUY) {
+      // note: BUY is not supported
+      return null;
+    }
     const isArUSDSwapToken = this.is_arUSD_swap_token(
       srcToken.address,
       destToken.address,
