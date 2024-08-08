@@ -1,40 +1,55 @@
 import {
   Address,
   NumberAsString,
-  SwapSide,
   OptimalSwapExchange,
+  SwapSide,
 } from '@paraswap/core';
-import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { AsyncOrSync } from 'ts-essentials';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { assert } from 'ts-essentials';
+import { Network } from '../../constants';
+import { IDexHelper } from '../../dex-helper';
 import {
-  Token,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   DexExchangeParam,
-  TxInfo,
-  TransferFeeParams,
   ExchangePrices,
-  PoolPrices,
-  PoolLiquidity,
+  ExchangeTxInfo,
   Logger,
+  PoolLiquidity,
+  PoolPrices,
+  PreprocessTransactionOptions,
+  SimpleExchangeParam,
+  Token,
+  TransferFeeParams,
+  TxInfo,
 } from '../../types';
+import { getDexKeysWithNetwork } from '../../utils';
 import { Context, IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
-import { Network } from '../../constants';
-import { getDexKeysWithNetwork } from '../../utils';
 import { CablesAdapters, CablesConfig } from './config';
-import { IDexHelper } from '../../dex-helper';
+import {
+  CABLES_API_URL,
+  CABLES_FIRM_QUOTE_TIMEOUT_MS,
+  CABLES_GAS_COST,
+  CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
+} from './constants';
 import { CablesRateFetcher } from './rate-fetcher';
-import { CablesData, PairData } from './types';
-import { CABLES_API_URL, CABLES_GAS_COST } from './constants';
+import { CablesData, CablesRFQResponse } from './types';
+import BigNumber from 'bignumber.js';
+import { ethers } from 'ethers';
+import { BI_MAX_UINT256 } from '../../bigint-constants';
+import {
+  SlippageCheckError,
+  TooStrictSlippageCheckError,
+} from '../generic-rfq/types';
+import { RFQResponse } from '../dexalot/types';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CablesConfig);
   private rateFetcher: CablesRateFetcher;
   logger: Logger;
+  private tokensMap: { [address: string]: Token } = {};
 
   constructor(
     readonly network: Network,
@@ -105,18 +120,189 @@ export class Cables extends SimpleExchange implements IDex<any> {
   ): NumberAsString {
     throw new Error('Method not implemented.');
   }
-  preProcessTransaction?(
+  async preProcessTransaction?(
     optimalSwapExchange: OptimalSwapExchange<CablesData>,
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     options: PreprocessTransactionOptions,
-  ): AsyncOrSync<[OptimalSwapExchange<CablesData>, ExchangeTxInfo]> {
-    throw new Error('Method not implemented.');
+  ): Promise<[OptimalSwapExchange<CablesData>, ExchangeTxInfo]> {
+    // if (await this.isBlacklisted(options.txOrigin)) {
+    //   this.logger.warn(
+    //     `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
+    //   );
+    //   throw new Error(
+    //     `${this.dexKey}-${
+    //       this.network
+    //     }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
+    //   );
+    // }
+
+    if (BigInt(optimalSwapExchange.srcAmount) === 0n) {
+      throw new Error('getFirmRate failed with srcAmount === 0');
+    }
+
+    // console.log('OPTIMAL SWAP EXCHANGE', srcToken, destToken, side, options);
+
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+    const swapIdentifier = `${this.dexKey}_${normalizedSrcToken.address}_${normalizedDestToken.address}_${side}`;
+
+    try {
+      const makerToken = normalizedDestToken;
+      const takerToken = normalizedSrcToken;
+
+      const isSell = side === SwapSide.SELL;
+      const isBuy = side === SwapSide.BUY;
+
+      const slippageBps = isSell
+        ? BigNumber(1)
+            .minus(options.slippageFactor)
+            .multipliedBy(10000)
+            .toFixed(0)
+        : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
+
+      const rfqParams = {
+        makerAsset: ethers.utils.getAddress(makerToken.address),
+        takerAsset: ethers.utils.getAddress(takerToken.address),
+        makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
+        takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
+        userAddress: options.txOrigin,
+        chainid: this.network,
+        executor: this.augustusAddress,
+        partner: options.partner,
+        slippage: slippageBps,
+      };
+
+      const rfq: CablesRFQResponse = await this.dexHelper.httpRequest.post(
+        `${CABLES_API_URL}/api/rfq/firm`,
+        rfqParams,
+        CABLES_FIRM_QUOTE_TIMEOUT_MS,
+        { 'x-apikey': 'TODO - API KEY' },
+      );
+
+      if (!rfq) {
+        throw new Error(
+          'Failed to fetch RFQ' +
+            swapIdentifier +
+            JSON.stringify(rfq + 'params' + rfqParams),
+        );
+      }
+      rfq.order.signature = rfq.signature;
+
+      const { order } = rfq;
+
+      assert(
+        order.makerAsset.toLowerCase() === makerToken.address,
+        `QuoteData makerAsset=${order.makerAsset} is different from Paraswap makerAsset=${makerToken.address}`,
+      );
+      assert(
+        order.takerAsset.toLowerCase() === takerToken.address,
+        `QuoteData takerAsset=${order.takerAsset} is different from Paraswap takerAsset=${takerToken.address}`,
+      );
+      if (isSell) {
+        assert(
+          order.takerAmount === optimalSwapExchange.srcAmount,
+          `QuoteData takerAmount=${order.takerAmount} is different from Paraswap srcAmount=${optimalSwapExchange.srcAmount}`,
+        );
+      } else {
+        assert(
+          order.makerAmount === optimalSwapExchange.destAmount,
+          `QuoteData makerAmount=${order.makerAmount} is different from Paraswap destAmount=${optimalSwapExchange.destAmount}`,
+        );
+      }
+
+      const expiryAsBigInt = BigInt(order.expiry);
+      const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
+
+      const slippageFactor = options.slippageFactor;
+      let isFailOnSlippage = false;
+      let slippageErrorMessage = '';
+
+      /**
+       * Slipage part 1
+       */
+      // if (isSell) {
+      //   if (
+      //     BigInt(order.makerAmount) <
+      //     BigInt(
+      //       new BigNumber(optimalSwapExchange.destAmount.toString())
+      //         .times(slippageFactor)
+      //         .toFixed(0),
+      //     )
+      //   ) {
+      //     isFailOnSlippage = true;
+      //     const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${order.makerAmount} / destAmount ${optimalSwapExchange.destAmount} < ${slippageFactor}`;
+      //     slippageErrorMessage = message;
+      //     this.logger.warn(message);
+      //   }
+      // } else {
+      //   if (
+      //     BigInt(order.takerAmount) >
+      //     BigInt(
+      //       slippageFactor
+      //         .times(optimalSwapExchange.srcAmount.toString())
+      //         .toFixed(0),
+      //     )
+      //   ) {
+      //     isFailOnSlippage = true;
+      //     const message = `${this.dexKey}-${
+      //       this.network
+      //     }: too much slippage on quote ${side} baseTokenAmount ${
+      //       order.takerAmount
+      //     } / srcAmount ${
+      //       optimalSwapExchange.srcAmount
+      //     } > ${slippageFactor.toFixed()}`;
+      //     slippageErrorMessage = message;
+      //     this.logger.warn(message);
+      //   }
+      // }
+
+      /**
+       * Slippage part 2
+       */
+      let isTooStrictSlippage = false;
+      if (
+        isFailOnSlippage &&
+        isSell &&
+        new BigNumber(1)
+          .minus(slippageFactor)
+          .lt(CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      } else if (
+        isFailOnSlippage &&
+        isBuy &&
+        slippageFactor
+          .minus(1)
+          .lt(CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      ) {
+        isTooStrictSlippage = true;
+      }
+
+      if (isFailOnSlippage && isTooStrictSlippage) {
+        throw new TooStrictSlippageCheckError(slippageErrorMessage);
+      } else if (isFailOnSlippage && !isTooStrictSlippage) {
+        throw new SlippageCheckError(slippageErrorMessage);
+      }
+
+      return [
+        {
+          ...optimalSwapExchange,
+          data: {
+            quoteData: order,
+          },
+        },
+        { deadline: minDeadline },
+      ];
+    } catch (e) {
+      throw e;
+    }
   }
-  getTokenFromAddress?(address: Address): Token {
-    throw new Error('Method not implemented.');
+  getTokenFromAddress(address: Address): Token {
+    return this.tokensMap[this.normalizeTokenAddress(address)];
   }
+
   getAdapterParam(
     srcToken: Address,
     destToken: Address,
@@ -190,8 +376,11 @@ export class Cables extends SimpleExchange implements IDex<any> {
   normalizeToken(token: Token): Token {
     return {
       ...token,
-      address: token.address.toLowerCase(),
+      address: this.normalizeTokenAddress(token.address),
     };
+  }
+  normalizeTokenAddress(address: Address): Address {
+    return address.toLowerCase();
   }
 
   /**
@@ -268,6 +457,12 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
       // Ensure that "symbol" is set
       const tokens = await this.getCachedTokens();
+      this.tokensMap = Object.keys(tokens).reduce((acc, key) => {
+        //@ts-ignore
+        acc[tokens[key].address.toLowerCase()] = tokens[key];
+        return acc;
+      }, {});
+
       for (const symbol of Object.keys(tokens)) {
         const normalizedTokenAddress = tokens[symbol].address.toLowerCase();
 
@@ -290,6 +485,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
       // ---------- Prices ----------
       const prices = await this.getCachedPrices();
+      // console.log('CACHED PRICES', prices);
       if (!prices) return null;
 
       let pairKey = `${normalizedSrcToken.symbol}/${normalizedDestToken.symbol}`;
@@ -307,13 +503,14 @@ export class Cables extends SimpleExchange implements IDex<any> {
        * Orderbook
        */
       const priceData = prices[pairKey];
-      let orderbook;
+
+      let orderbook: any[] = [];
       if (side === SwapSide.BUY) {
         orderbook = priceData.asks;
       } else {
         orderbook = priceData.bids;
       }
-      if (orderbook.length === 0) {
+      if (orderbook?.length === 0) {
         throw new Error(`Empty orderbook for ${pairKey}`);
       }
 
@@ -325,6 +522,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
       //   quoteToken,
       //   isInputQuote,
       // );
+      const calculatedPrices = amounts.map(amount => {
+        // TOB OF BOOK FOR NOW
+        const price = (
+          orderbook[0][0] *
+          10 ** normalizedDestToken.decimals
+        ).toFixed();
+        return BigInt(price);
+      });
+      // console.log('CALCULATED PRICES', calculatedPrices);
 
       const outDecimals =
         side === SwapSide.BUY
@@ -332,7 +538,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
           : normalizedDestToken.decimals;
       const result = [
         {
-          prices,
+          prices: calculatedPrices,
           unit: BigInt(outDecimals),
           exchange: this.dexKey,
           gasCost: CABLES_GAS_COST,

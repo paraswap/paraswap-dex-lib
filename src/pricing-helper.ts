@@ -228,10 +228,9 @@ export class PricingHelper {
                   transferFees,
                 )
                 .then(poolPrices => {
-                  // console.log('pool prices from getPricesVolume', poolPrices);
-                  // console.log('rollupL1ToL2GasRatio', rollupL1ToL2GasRatio);
-
                   try {
+                    // console.log('POOL PRICES INSIDE DEX INSTANCE', poolPrices);
+
                     if (!poolPrices || !rollupL1ToL2GasRatio) {
                       return resolve(poolPrices);
                     }
@@ -284,30 +283,21 @@ export class PricingHelper {
       }),
     );
 
-    console.log('DEX POOL PRICES', dexPoolPrices);
-    console.log('AMOUNTS');
-    console.log(amounts);
-
-    const formatted = dexPoolPrices
-      .filter(x => !!x)
-      .flat()
-      .map(p => {
-        console.log('Format P.prices', p?.prices);
-        console.log(
-          'P.prices.length',
-          p?.prices?.length,
-          'Amounts.length',
-          amounts.length,
-        );
-        return p;
-      });
+    // console.log('FROM TO', from, to);
+    // console.log('DEX POOL PRICES', dexPoolPrices);
+    // console.log('AMOUNTS', amounts);
 
     return dexPoolPrices
       .filter((x): x is ExchangePrices<any> => !!x)
       .flat() // flatten to get all the pools for the swap
       .filter(p => {
+        // console.log('Processing P', p);
+
         // Pools should only return correct chunks
         if (p.prices.length !== amounts.length) {
+          // console.log('P.prices', p.prices);
+          // console.log('Amounts', amounts);
+
           this.logger.error(
             `Error_getPoolPrices: ${p.exchange} returned prices with invalid chunks`,
           );

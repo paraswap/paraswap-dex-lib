@@ -83,7 +83,7 @@ export class CablesRateFetcher {
             );
           },
         },
-        handler: this.handleRatesResponse.bind(this),
+        handler: this.handlePricesResponse.bind(this),
       },
       config.rateConfig.pricesIntervalMs,
       logger,
@@ -154,7 +154,8 @@ export class CablesRateFetcher {
     );
   }
 
-  private handleRatesResponse(res: CablesPricesResponse): void {
+  private handlePricesResponse(res: CablesPricesResponse): void {
+    // console.log('PRICES RESPONSE', res);
     const { prices } = res;
 
     this.dexHelper.cache.setex(

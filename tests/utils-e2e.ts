@@ -497,7 +497,6 @@ export async function testE2E(
       forceRoute,
     );
 
-    console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     // send 1 wei of src token to AugustusV6 and Executors

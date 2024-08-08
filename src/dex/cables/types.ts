@@ -3,6 +3,11 @@ import { Token } from '../../types';
 import { Method } from '../../dex-helper/irequest-wrapper';
 import { AugustusRFQOrderData } from '../augustus-rfq';
 
+export type CablesRFQResponse = {
+  order: AugustusRFQOrderData;
+  signature: string;
+};
+
 export type CablesData = {
   quoteData?: AugustusRFQOrderData;
 };

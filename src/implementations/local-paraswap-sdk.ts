@@ -268,6 +268,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         executionContractAddress,
                       );
 
+                    // console.log('BEFORE', swap);
                     const [preprocessedRoute, txInfo] =
                       await dexLibExchange.preProcessTransaction(
                         se,

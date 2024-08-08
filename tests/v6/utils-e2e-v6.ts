@@ -93,7 +93,6 @@ export async function runE2ETest(
   }
 
   try {
-    console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
     const config = generateConfig(network);

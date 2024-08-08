@@ -3,7 +3,8 @@ import BigNumber from 'bignumber.js';
 /**
  * Cables
  */
-export const CABLES_API_URL = 'https://paraswap-integration.cryptosrvc.com';
+export const CABLES_API_URL =
+  'https://cables-evm-rfq-service.cryptosrvc.com/v1';
 
 export const CABLES_PRICES_CACHES_TTL_S = 3;
 export const CABLES_API_PRICES_POLLING_INTERVAL_MS = 1000; // 1 sec
