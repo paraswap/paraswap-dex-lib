@@ -67,8 +67,6 @@ export class FxProtocolRusd
     this.fxProtocolRusdPool = new fxProtocolRusdEvent(
       this.dexKey,
       dexHelper,
-      this.config.rUSDAddress,
-      this.fxUSDIface,
       this.config.rUSDWeETHMarketAddress,
       this.rUSDMarketIface,
       this.config.weETHOracleAddress,

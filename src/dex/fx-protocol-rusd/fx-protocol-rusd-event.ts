@@ -10,13 +10,11 @@ import { bigIntify, catchParseLogError } from '../../utils';
 import { getOnChainState } from './utils';
 
 export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolState> {
-  decoder = (log: Log) => this.poolInterface.parseLog(log);
+  decoder = (log: Log) => this.marketInterface.parseLog(log);
 
   constructor(
     parentName: string,
     protected dexHelper: IDexHelper,
-    private poolAddress: Address,
-    private poolInterface: Interface,
     private marketAddress: Address,
     private marketInterface: Interface,
     private weETHOracleAddress: Address,
@@ -24,7 +22,7 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
     logger: Logger,
   ) {
     super(parentName, 'fxProtocolRusd', dexHelper, logger);
-    this.addressesSubscribed = [poolAddress, weETHOracleAddress];
+    this.addressesSubscribed = [marketAddress, weETHOracleAddress];
   }
 
   protected processLog(
@@ -37,7 +35,7 @@ export class fxProtocolRusdEvent extends StatefulEventSubscriber<FxProtocolPoolS
       if (event.name === 'UpdateRedeemFeeRatioFToken') {
         _state.redeemFee = bigIntify(event.args.defaultFeeRatio);
         return _state;
-      } else if (event.name === 'updateDataFeedsValues') {
+      } else if (event.name === 'AnswerUpdated') {
         _state.weETHPrice = bigIntify(event.args.current);
         return _state;
       }

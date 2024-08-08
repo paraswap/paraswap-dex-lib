@@ -1,34 +1,90 @@
 [
   {
     "inputs": [
-      { "internalType": "address", "name": "_treasury", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_treasury",
+        "type": "address"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
-  { "inputs": [], "name": "ErrorCallerNotFUSD", "type": "error" },
-  { "inputs": [], "name": "ErrorDefaultFeeTooLarge", "type": "error" },
-  { "inputs": [], "name": "ErrorDeltaFeeTooSmall", "type": "error" },
+  {
+    "inputs": [],
+    "name": "ErrorCallerNotFUSD",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorDefaultFeeTooLarge",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorDeltaFeeTooSmall",
+    "type": "error"
+  },
   {
     "inputs": [],
     "name": "ErrorFTokenMintPausedInStabilityMode",
     "type": "error"
   },
-  { "inputs": [], "name": "ErrorInsufficientBaseOutput", "type": "error" },
-  { "inputs": [], "name": "ErrorInsufficientFTokenOutput", "type": "error" },
-  { "inputs": [], "name": "ErrorInsufficientXTokenOutput", "type": "error" },
-  { "inputs": [], "name": "ErrorMintPaused", "type": "error" },
-  { "inputs": [], "name": "ErrorMintZeroAmount", "type": "error" },
-  { "inputs": [], "name": "ErrorRedeemPaused", "type": "error" },
-  { "inputs": [], "name": "ErrorRedeemZeroAmount", "type": "error" },
-  { "inputs": [], "name": "ErrorStabilityRatioTooLarge", "type": "error" },
-  { "inputs": [], "name": "ErrorTotalFeeTooLarge", "type": "error" },
+  {
+    "inputs": [],
+    "name": "ErrorInsufficientBaseOutput",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorInsufficientFTokenOutput",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorInsufficientXTokenOutput",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorMintPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorMintZeroAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorRedeemPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorRedeemZeroAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorStabilityRatioTooLarge",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ErrorTotalFeeTooLarge",
+    "type": "error"
+  },
   {
     "inputs": [],
     "name": "ErrorXTokenRedeemPausedInStabilityMode",
     "type": "error"
   },
-  { "inputs": [], "name": "ErrorZeroAddress", "type": "error" },
+  {
+    "inputs": [],
+    "name": "ErrorZeroAddress",
+    "type": "error"
+  },
   {
     "anonymous": false,
     "inputs": [
@@ -508,27 +564,49 @@
   {
     "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "EMERGENCY_DAO_ROLE",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "baseToken",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_fxUSD", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_fxUSD",
+        "type": "address"
+      }
     ],
     "name": "enableFxUSD",
     "outputs": [],
@@ -538,7 +616,13 @@
   {
     "inputs": [],
     "name": "fToken",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -546,8 +630,16 @@
     "inputs": [],
     "name": "fTokenMintFeeRatio",
     "outputs": [
-      { "internalType": "uint256", "name": "defaultFee", "type": "uint256" },
-      { "internalType": "int256", "name": "deltaFee", "type": "int256" }
+      {
+        "internalType": "uint256",
+        "name": "defaultFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "deltaFee",
+        "type": "int256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -555,7 +647,13 @@
   {
     "inputs": [],
     "name": "fTokenMintPausedInStabilityMode",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -563,8 +661,16 @@
     "inputs": [],
     "name": "fTokenRedeemFeeRatio",
     "outputs": [
-      { "internalType": "uint256", "name": "defaultFee", "type": "uint256" },
-      { "internalType": "int256", "name": "deltaFee", "type": "int256" }
+      {
+        "internalType": "uint256",
+        "name": "defaultFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "deltaFee",
+        "type": "int256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -572,23 +678,47 @@
   {
     "inputs": [],
     "name": "fxUSD",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
     ],
     "name": "getRoleAdmin",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "grantRole",
     "outputs": [],
@@ -597,19 +727,45 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "hasRole",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_platform", "type": "address" },
-      { "internalType": "address", "name": "_reservePool", "type": "address" },
-      { "internalType": "address", "name": "_registry", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_platform",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_reservePool",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_registry",
+        "type": "address"
+      }
     ],
     "name": "initialize",
     "outputs": [],
@@ -618,8 +774,16 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_baseIn", "type": "uint256" },
-      { "internalType": "address", "name": "_recipient", "type": "address" },
+      {
+        "internalType": "uint256",
+        "name": "_baseIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_recipient",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "_minFTokenMinted",
@@ -628,7 +792,11 @@
     ],
     "name": "mintFToken",
     "outputs": [
-      { "internalType": "uint256", "name": "_fTokenMinted", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_fTokenMinted",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -636,14 +804,28 @@
   {
     "inputs": [],
     "name": "mintPaused",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_baseIn", "type": "uint256" },
-      { "internalType": "address", "name": "_recipient", "type": "address" },
+      {
+        "internalType": "uint256",
+        "name": "_baseIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_recipient",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "_minXTokenMinted",
@@ -652,8 +834,16 @@
     ],
     "name": "mintXToken",
     "outputs": [
-      { "internalType": "uint256", "name": "_xTokenMinted", "type": "uint256" },
-      { "internalType": "uint256", "name": "_bonus", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_xTokenMinted",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_bonus",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -661,20 +851,46 @@
   {
     "inputs": [],
     "name": "platform",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_fTokenIn", "type": "uint256" },
-      { "internalType": "address", "name": "_recipient", "type": "address" },
-      { "internalType": "uint256", "name": "_minBaseOut", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_fTokenIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_minBaseOut",
+        "type": "uint256"
+      }
     ],
     "name": "redeemFToken",
     "outputs": [
-      { "internalType": "uint256", "name": "_baseOut", "type": "uint256" },
-      { "internalType": "uint256", "name": "_bonus", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_baseOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_bonus",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -682,19 +898,41 @@
   {
     "inputs": [],
     "name": "redeemPaused",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_xTokenIn", "type": "uint256" },
-      { "internalType": "address", "name": "_recipient", "type": "address" },
-      { "internalType": "uint256", "name": "_minBaseOut", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_xTokenIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_minBaseOut",
+        "type": "uint256"
+      }
     ],
     "name": "redeemXToken",
     "outputs": [
-      { "internalType": "uint256", "name": "_baseOut", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_baseOut",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -702,14 +940,28 @@
   {
     "inputs": [],
     "name": "registry",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "renounceRole",
     "outputs": [],
@@ -719,14 +971,28 @@
   {
     "inputs": [],
     "name": "reservePool",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "revokeRole",
     "outputs": [],
@@ -736,29 +1002,55 @@
   {
     "inputs": [],
     "name": "stabilityRatio",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
     ],
     "name": "supportsInterface",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "treasury",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bool", "name": "_newStatus", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "_newStatus",
+        "type": "bool"
+      }
     ],
     "name": "updateFTokenMintStatusInStabilityMode",
     "outputs": [],
@@ -772,8 +1064,16 @@
         "name": "_defaultFeeRatio",
         "type": "uint128"
       },
-      { "internalType": "int128", "name": "_extraFeeRatio", "type": "int128" },
-      { "internalType": "bool", "name": "_isFToken", "type": "bool" }
+      {
+        "internalType": "int128",
+        "name": "_extraFeeRatio",
+        "type": "int128"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isFToken",
+        "type": "bool"
+      }
     ],
     "name": "updateMintFeeRatio",
     "outputs": [],
@@ -782,7 +1082,11 @@
   },
   {
     "inputs": [
-      { "internalType": "bool", "name": "_newStatus", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "_newStatus",
+        "type": "bool"
+      }
     ],
     "name": "updateMintStatus",
     "outputs": [],
@@ -791,7 +1095,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_newPlatform", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_newPlatform",
+        "type": "address"
+      }
     ],
     "name": "updatePlatform",
     "outputs": [],
@@ -800,7 +1108,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_newRegistry", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_newRegistry",
+        "type": "address"
+      }
     ],
     "name": "updateRebalancePoolRegistry",
     "outputs": [],
@@ -814,8 +1126,16 @@
         "name": "_defaultFeeRatio",
         "type": "uint256"
       },
-      { "internalType": "int256", "name": "_extraFeeRatio", "type": "int256" },
-      { "internalType": "bool", "name": "_isFToken", "type": "bool" }
+      {
+        "internalType": "int256",
+        "name": "_extraFeeRatio",
+        "type": "int256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isFToken",
+        "type": "bool"
+      }
     ],
     "name": "updateRedeemFeeRatio",
     "outputs": [],
@@ -824,7 +1144,11 @@
   },
   {
     "inputs": [
-      { "internalType": "bool", "name": "_newStatus", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "_newStatus",
+        "type": "bool"
+      }
     ],
     "name": "updateRedeemStatus",
     "outputs": [],
@@ -846,7 +1170,11 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_newRatio", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_newRatio",
+        "type": "uint256"
+      }
     ],
     "name": "updateStabilityRatio",
     "outputs": [],
@@ -855,7 +1183,11 @@
   },
   {
     "inputs": [
-      { "internalType": "bool", "name": "_newStatus", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "_newStatus",
+        "type": "bool"
+      }
     ],
     "name": "updateXTokenRedeemStatusInStabilityMode",
     "outputs": [],
@@ -865,7 +1197,13 @@
   {
     "inputs": [],
     "name": "xToken",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -873,8 +1211,16 @@
     "inputs": [],
     "name": "xTokenMintFeeRatio",
     "outputs": [
-      { "internalType": "uint256", "name": "defaultFee", "type": "uint256" },
-      { "internalType": "int256", "name": "deltaFee", "type": "int256" }
+      {
+        "internalType": "uint256",
+        "name": "defaultFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "deltaFee",
+        "type": "int256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -883,8 +1229,16 @@
     "inputs": [],
     "name": "xTokenRedeemFeeRatio",
     "outputs": [
-      { "internalType": "uint256", "name": "defaultFee", "type": "uint256" },
-      { "internalType": "int256", "name": "deltaFee", "type": "int256" }
+      {
+        "internalType": "uint256",
+        "name": "defaultFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "deltaFee",
+        "type": "int256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -892,8 +1246,39 @@
   {
     "inputs": [],
     "name": "xTokenRedeemPausedInStabilityMode",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "int256",
+        "name": "current",
+        "type": "int256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "updatedAt",
+        "type": "uint256"
+      }
+    ],
+    "name": "AnswerUpdated",
+    "type": "event"
   }
 ]
