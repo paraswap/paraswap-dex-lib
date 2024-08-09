@@ -74,7 +74,7 @@ describe('FxProtocolRusd E2E', () => {
     [
       {
         name: 'rUSD',
-        amount: '1000000000000000000',
+        amount: '100000000000000',
       },
       {
         name: 'weETH',

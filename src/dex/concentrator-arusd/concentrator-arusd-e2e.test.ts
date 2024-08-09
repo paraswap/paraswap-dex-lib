@@ -60,7 +60,7 @@ describe('ConcentratorArusd E2E', () => {
     [
       {
         name: 'rUSD',
-        amount: '1000000000000000000',
+        amount: '1000000000000000',
       },
       {
         name: 'arUSD',
