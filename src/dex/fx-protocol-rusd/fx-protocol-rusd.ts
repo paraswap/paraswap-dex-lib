@@ -25,6 +25,7 @@ import EthWeETHOralce_ABI from '../../abi/fx-protocol/weETHOralce.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { FxProtocolRusdEvent } from './fx-protocol-rusd-event';
 import { BI_POWS } from '../../bigint-constants';
+import { getOnChainState } from './utils';
 
 export class FxProtocolRusd
   extends SimpleExchange
@@ -76,47 +77,18 @@ export class FxProtocolRusd
   }
 
   async initializePricing(blockNumber: number) {
-    const data: { returnData: any[] } =
-      await this.dexHelper.multiContract.methods
-        .aggregate([
-          {
-            target: this.config.rUSDWeETHMarketAddress,
-            callData: this.rUSDMarketIface.encodeFunctionData(
-              'fTokenRedeemFeeRatio',
-              [],
-            ),
-          },
-          {
-            target: this.config.weETHOracleAddress,
-            callData: this.weETHOracleIface.encodeFunctionData(
-              'latestAnswer',
-              [],
-            ),
-          },
-        ])
-        .call({}, blockNumber);
-
-    const redeemFee = BigInt(
-      this.rUSDMarketIface.decodeFunctionResult(
-        'fTokenRedeemFeeRatio',
-        data.returnData[0],
-      )[0],
-    ).toString();
-
-    const weETHPrice = BigInt(
-      this.weETHOracleIface.decodeFunctionResult(
-        'latestAnswer',
-        data.returnData[1],
-      )[0],
-    ).toString();
+    const poolState = await getOnChainState(
+      this.dexHelper.multiContract,
+      this.config.rUSDWeETHMarketAddress,
+      this.rUSDMarketIface,
+      this.config.weETHOracleAddress,
+      this.weETHOracleIface,
+      blockNumber,
+    );
 
     await Promise.all([
       this.fxProtocolRusdPool.initialize(blockNumber, {
-        state: {
-          nav: '1000000000000000000',
-          redeemFee,
-          weETHPrice,
-        },
+        state: poolState,
       }),
     ]);
   }
@@ -165,10 +137,8 @@ export class FxProtocolRusd
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<FxProtocolData>> {
-    if (side == SwapSide.BUY) {
-      // note: BUY is not supported
-      return null;
-    }
+    // note: BUY is not supported
+    if (side === SwapSide.BUY) return null;
 
     const isRUSDSwapToken = this.is_rUSD_swap_token(
       srcToken.address,

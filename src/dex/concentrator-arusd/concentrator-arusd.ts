@@ -124,10 +124,9 @@ export class ConcentratorArusd
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<ConcentratorArusdData>> {
-    if (side == SwapSide.BUY) {
-      // note: BUY is not supported
-      return null;
-    }
+    // note: BUY is not supported
+    if (side === SwapSide.BUY) return null;
+
     const isArUSDSwapToken = this.is_arUSD_swap_token(
       srcToken.address,
       destToken.address,
