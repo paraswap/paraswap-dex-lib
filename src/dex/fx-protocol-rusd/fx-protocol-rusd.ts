@@ -213,12 +213,12 @@ export class FxProtocolRusd
       const exchangeData = this.fxUSDIface.encodeFunctionData('mint', [
         this.config.weETHAddress,
         srcAmount,
-        this.dexHelper.config.data.executorsAddresses?.Executor01,
+        recipient,
         '0',
       ]);
       return {
         needWrapNative: false,
-        dexFuncHasRecipient: false,
+        dexFuncHasRecipient: true,
         exchangeData,
         targetExchange: this.config.rUSDAddress,
         returnAmountPos: extractReturnAmountPosition(
@@ -232,12 +232,12 @@ export class FxProtocolRusd
       const exchangeData = this.fxUSDIface.encodeFunctionData('redeem', [
         this.config.weETHAddress,
         srcAmount,
-        this.dexHelper.config.data.executorsAddresses?.Executor01,
+        recipient,
         '0',
       ]);
       return {
         needWrapNative: false,
-        dexFuncHasRecipient: false,
+        dexFuncHasRecipient: true,
         exchangeData,
         targetExchange: this.config.rUSDAddress,
         returnAmountPos: extractReturnAmountPosition(
