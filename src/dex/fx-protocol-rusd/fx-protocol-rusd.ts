@@ -86,11 +86,9 @@ export class FxProtocolRusd
       blockNumber,
     );
 
-    await Promise.all([
-      this.fxProtocolRusdPool.initialize(blockNumber, {
-        state: poolState,
-      }),
-    ]);
+    await this.fxProtocolRusdPool.initialize(blockNumber, {
+      state: poolState,
+    });
   }
 
   getConfig() {
