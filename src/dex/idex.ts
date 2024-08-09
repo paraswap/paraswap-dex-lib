@@ -24,7 +24,88 @@ export type Context = {
   isGlobalDestToken: boolean;
 };
 
-export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
+export interface IDexTxBuilderV5<ExchangeData, DirectParam = null> {
+  // Encode params required by the exchange adapter
+  // V5: Used for multiSwap, buy & megaSwap
+  // V6: NOT used, pass a placeholder
+  getAdapterParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString, // required for buy case
+    data: ExchangeData,
+    side: SwapSide,
+  ): AdapterExchangeParam;
+
+  // Encode call data used by simpleSwap like routers
+  // V5: Used for simpleSwap & simpleBuy
+  // V6: NOT used, don't implement
+  getSimpleParam?(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+  ): AsyncOrSync<SimpleExchangeParam>;
+
+  // Returns params required by direct swap method.
+  // Only Dexes which have a direct method should implement this
+  // Used if there is a possibility for direct swap (Eg. UniswapV2,
+  // 0xV2/V4, etc)
+  getDirectParam?(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    expectedAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    feePercent: NumberAsString,
+    deadline: NumberAsString,
+    partner: string,
+    beneficiary: string,
+    contractMethod: string,
+  ): TxInfo<DirectParam>;
+}
+
+export interface IDexTxBuilderV6<ExchangeData, DirectParam = null> {
+  // Returns params required by generic method
+  getDexParam?(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: ExchangeData,
+    side: SwapSide,
+    context: Context,
+    executorAddress: Address,
+  ): AsyncOrSync<DexExchangeParam>;
+
+  // Returns params for direct method
+  getDirectParamV6?(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod: string,
+  ): TxInfo<DirectParam>;
+}
+
+export interface IDexTxBuilder<ExchangeData, DirectParam = null>
+  extends IDexTxBuilderV5<ExchangeData, DirectParam>,
+    IDexTxBuilderV6<ExchangeData, DirectParam> {
   needWrapNative: boolean;
   needsSequentialPreprocessing?: boolean;
 
@@ -51,80 +132,6 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
 
   // This is helper a function to support testing if preProcessTransaction is implemented
   getTokenFromAddress?(address: Address): Token;
-
-  // Encode params required by the exchange adapter
-  // V5: Used for multiSwap, buy & megaSwap
-  // V6: NOT used, pass a placeholder
-  getAdapterParam(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString, // required for buy case
-    data: ExchangeData,
-    side: SwapSide,
-  ): AdapterExchangeParam;
-
-  // Encode call data used by simpleSwap like routers
-  // V5: Used for simpleSwap & simpleBuy
-  // V6: NOT used, don't implement
-  getSimpleParam?(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    data: ExchangeData,
-    side: SwapSide,
-  ): AsyncOrSync<SimpleExchangeParam>;
-
-  getDexParam?(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    recipient: Address,
-    data: ExchangeData,
-    side: SwapSide,
-    context: Context,
-    executorAddress: Address,
-  ): AsyncOrSync<DexExchangeParam>;
-
-  // Returns params required by direct swap method.
-  // Only Dexes which have a direct method should implement this
-  // Used if there is a possibility for direct swap (Eg. UniswapV2,
-  // 0xV2/V4, etc)
-  getDirectParam?(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    expectedAmount: NumberAsString,
-    data: ExchangeData,
-    side: SwapSide,
-    permit: string,
-    uuid: string,
-    feePercent: NumberAsString,
-    deadline: NumberAsString,
-    partner: string,
-    beneficiary: string,
-    contractMethod: string,
-  ): TxInfo<DirectParam>;
-
-  // Same as above but for V6
-  getDirectParamV6?(
-    srcToken: Address,
-    destToken: Address,
-    fromAmount: NumberAsString,
-    toAmount: NumberAsString,
-    quotedAmount: NumberAsString,
-    data: ExchangeData,
-    side: SwapSide,
-    permit: string,
-    uuid: string,
-    partnerAndFee: string,
-    beneficiary: string,
-    blockNumber: number,
-    contractMethod: string,
-  ): TxInfo<DirectParam>;
 }
 
 export interface IDexPricing<ExchangeData> {
