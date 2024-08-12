@@ -196,6 +196,10 @@ const stableNg: get_dy = (
   const y = self.get_y(self, state, i, j, x, xp, amp, D);
   const dy = xp[j] - y - 1n;
 
+  if (y < 0n || x < 0n || dy < 0n) {
+    return 0n;
+  }
+
   const base_fee = stateFee;
   const fee_multiplier = offpeg_fee_multiplier;
   const dynamic_fee = self._dynamic_fee(
