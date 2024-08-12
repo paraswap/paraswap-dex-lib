@@ -55,18 +55,7 @@ export class TraderJoeV21
       ['tuple(tuple(uint256[],uint8[],address[]),uint256)'],
       [
         [
-          [
-            [
-              data.binStep, // _pairBinSteps: uint256[]
-            ],
-            [
-              2, // _versions: uint8[]
-            ],
-            [
-              data.tokenIn,
-              data.tokenOut, // _tokenPath: address[]
-            ],
-          ],
+          [data.binSteps, data.versions, data.tokenPath],
           getLocalDeadlineAsFriendlyPlaceholder(), // _deadline: uint256
         ],
       ],
@@ -97,14 +86,14 @@ export class TraderJoeV21
         ? [
             srcAmount,
             destAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [data.binSteps, data.versions, data.tokenPath],
             this.augustusAddress,
             getLocalDeadlineAsFriendlyPlaceholder(),
           ]
         : [
             destAmount,
             srcAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [data.binSteps, data.versions, data.tokenPath],
             this.augustusAddress,
             getLocalDeadlineAsFriendlyPlaceholder(),
           ];
@@ -145,14 +134,14 @@ export class TraderJoeV21
         ? [
             srcAmount,
             destAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [data.binSteps, data.versions, data.tokenPath],
             recipient,
             placeholder,
           ]
         : [
             destAmount,
             srcAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [data.binSteps, data.versions, data.tokenPath],
             recipient,
             placeholder,
           ];
