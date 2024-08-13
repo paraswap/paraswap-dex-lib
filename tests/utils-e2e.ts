@@ -53,7 +53,7 @@ import {
   Tokens,
   WrappedNativeTokenSymbols,
 } from './constants-e2e';
-import { sleep } from './utils';
+import { generateDeployBytecode, sleep } from './utils';
 import { assert } from 'ts-essentials';
 import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
@@ -61,6 +61,13 @@ import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
+
+const testContractProjectRootPath = process.env.TEST_CONTRACT_PROJECT_ROOT_PATH;
+const testContractName = process.env.TEST_CONTRACT_NAME;
+const testContractConfigFileName = process.env.TEST_CONTRACT_CONFIG_FILE_NAME;
+const testContractRelativePath = process.env.TEST_CONTRACT_RELATIVE_PATH;
+// Comma separated fields from config or actual values
+const testContractDeployArgs = process.env.TEST_CONTRACT_DEPLOY_ARGS;
 
 // If you want to test against deployed and verified contract
 const deployedTestContractAddress = process.env.DEPLOYED_TEST_CONTRACT_ADDRESS;
@@ -71,6 +78,15 @@ const testDirectRouterAbiPath = process.env.TEST_DIRECT_ROUTER_ABI_PATH;
 
 const directRouterIface = new Interface(
   testDirectRouterAbiPath ? require(testDirectRouterAbiPath) : '[]',
+);
+
+const testContractBytecode = generateDeployBytecode(
+  testContractProjectRootPath,
+  testContractName,
+  testContractConfigFileName,
+  testContractRelativePath,
+  testContractDeployArgs,
+  testContractType,
 );
 
 const erc20Interface = new Interface(Erc20ABI);
@@ -414,6 +430,43 @@ export async function testE2E(
       );
       expect(setImplementationTx.success).toEqual(true);
     }
+  } else if (testContractBytecode) {
+    const deployTx = await ts.simulate(
+      deployContractParams(testContractBytecode, network),
+    );
+
+    expect(deployTx.success).toEqual(true);
+
+    const contractAddress =
+      deployTx.transaction?.transaction_info.contract_address;
+    console.log(
+      formatDeployMessage(
+        'adapter',
+        contractAddress,
+        ts.forkId,
+        testContractName || '',
+        testContractRelativePath || '',
+      ),
+    );
+    const whitelistTx = await ts.simulate(
+      augustusGrantRoleParams(
+        contractAddress,
+        network,
+        testContractType || 'adapter',
+      ),
+    );
+    expect(whitelistTx.success).toEqual(true);
+
+    if (testContractType === 'router') {
+      const setImplementationTx = await ts.simulate(
+        augustusSetImplementationParams(
+          contractAddress,
+          network,
+          contractMethod,
+        ),
+      );
+      expect(setImplementationTx.success).toEqual(true);
+    }
   }
 
   const useAPI = testingEndpoint && !poolIdentifiers;
@@ -531,11 +584,6 @@ export async function testE2E(
       })\nTenderly URL: ${swapTx!.url}`,
     );
     expect(swapTx!.success).toEqual(true);
-    // try {
-    //   expect(swapTx!.success).toEqual(true);
-    // } catch {
-    //   throw new Error(`Failed Tenderly simulation: ${swapTx!.url}`);
-    // }
   } finally {
     if (paraswap.releaseResources) {
       await paraswap.releaseResources();
@@ -605,6 +653,32 @@ export async function newTestE2E({
   if (useTenderly) {
     ts = new TenderlySimulation(network);
     await ts.setup();
+  }
+
+  if (useTenderly && testContractBytecode) {
+    assert(
+      ts instanceof TenderlySimulation,
+      '`ts`  is not an instance of TenderlySimulation',
+    );
+    const deployTx = await ts.simulate(
+      deployContractParams(testContractBytecode, network),
+    );
+
+    expect(deployTx.success).toEqual(true);
+    const adapterAddress =
+      deployTx.transaction.transaction_info.contract_address;
+    console.log(
+      'Deployed adapter to address',
+      adapterAddress,
+      'used',
+      deployTx.gasUsed,
+      'gas',
+    );
+
+    const whitelistTx = await ts.simulate(
+      augustusGrantRoleParams(adapterAddress, network),
+    );
+    expect(whitelistTx.success).toEqual(true);
   }
 
   if (useTenderly && thirdPartyAddress) {

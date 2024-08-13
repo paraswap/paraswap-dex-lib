@@ -33,6 +33,7 @@ import { extractReturnAmountPosition } from '../../executor/utils';
 
 const EFFICIENCY_FACTOR = 3;
 const MIN_POOL_VOLUME_USD = 5000;
+const MIN_POOL_LIQUDITY_USD = 5000;
 const POOL_LIST_CACHE_KEY = 'maverickv2-pool-list';
 const POOL_LIST_TTL_SECONDS = 24 * 60 * 60;
 
@@ -314,7 +315,11 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       targetExchange: this.config.routerAddress,
       dexFuncHasRecipient: true,
       exchangeData,
-      returnAmountPos: undefined,
+      returnAmountPos: extractReturnAmountPosition(
+        this.maverickV2RouterIface,
+        'exactOutputSingleMinimal',
+        'amountOut_',
+      ),
     };
   }
 
@@ -352,7 +357,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         pool.tokenB.address.toLowerCase() === _tokenAddress;
 
       const saneVolume = pool.volume.amount >= MIN_POOL_VOLUME_USD;
-      return exactPair && saneVolume;
+      const saneLiquidity = pool.tvl.amount >= MIN_POOL_LIQUDITY_USD;
+      return exactPair && saneVolume && saneLiquidity;
     });
 
     const labeledPools = _.map(filteredPools, pool => {
