@@ -251,9 +251,20 @@ export class GenericSwapTransactionBuilder {
       [
         priceRoute.srcToken,
         priceRoute.destToken,
-        isSell ? priceRoute.srcAmount : minMaxAmount,
-        isSell ? minMaxAmount : priceRoute.destAmount,
-        isSell ? priceRoute.destAmount : priceRoute.srcAmount,
+        // TODO: temporary artificially increase total amounts by 10% to test insert from amount
+        (
+          (BigInt(isSell ? priceRoute.srcAmount : minMaxAmount) * 11n) /
+          10n
+        ).toString(),
+        (
+          (BigInt(isSell ? minMaxAmount : priceRoute.destAmount) * 11n) /
+          10n
+        ).toString(),
+        (
+          (BigInt(isSell ? priceRoute.destAmount : priceRoute.srcAmount) *
+            11n) /
+          10n
+        ).toString(),
         hexConcat([
           hexZeroPad(uuidToBytes16(uuid), 16),
           hexZeroPad(hexlify(priceRoute.blockNumber), 16),
