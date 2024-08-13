@@ -33,9 +33,9 @@ import { extractReturnAmountPosition } from '../../executor/utils';
 
 const EFFICIENCY_FACTOR = 3;
 const MIN_POOL_VOLUME_USD = 5000;
-const MIN_POOL_LIQUDITY_USD = 5000;
+const MIN_POOL_LIQUDITY_USD = 100;
 const POOL_LIST_CACHE_KEY = 'maverickv2-pool-list';
-const POOL_LIST_TTL_SECONDS = 24 * 60 * 60;
+const POOL_LIST_TTL_SECONDS = 60;
 
 export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   pools: { [key: string]: MaverickV2EventPool } = {};
@@ -352,13 +352,10 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     }
 
     const filteredPools = pools.filter(pool => {
-      const exactPair =
+      return (
         pool.tokenA.address.toLowerCase() === _tokenAddress ||
-        pool.tokenB.address.toLowerCase() === _tokenAddress;
-
-      const saneVolume = pool.volume.amount >= MIN_POOL_VOLUME_USD;
-      const saneLiquidity = pool.tvl.amount >= MIN_POOL_LIQUDITY_USD;
-      return exactPair && saneVolume && saneLiquidity;
+        pool.tokenB.address.toLowerCase() === _tokenAddress
+      );
     });
 
     const labeledPools = _.map(filteredPools, pool => {
@@ -404,7 +401,13 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         `${MAVERICK_API_URL}/api/v5/poolsNoBins/${this.network}`,
         timeout,
       );
-      const pools = res.pools || [];
+
+      const pools = (res.pools || []).filter(pool => {
+        return (
+          pool.volume.amount >= MIN_POOL_VOLUME_USD &&
+          pool.tvl.amount >= MIN_POOL_LIQUDITY_USD
+        );
+      });
 
       await this.dexHelper.cache.setex(
         this.dexKey,
