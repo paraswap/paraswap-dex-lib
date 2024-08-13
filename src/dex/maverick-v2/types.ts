@@ -133,6 +133,9 @@ export type PoolAPIResponse = {
     lowerTick: number;
     tickSpacing: number;
     id: string;
+    volume: {
+      amount: number;
+    };
     tokenA: {
       name: string;
       symbol: string;

@@ -32,7 +32,7 @@ import ERC20ABI from '../../abi/erc20.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
 const EFFICIENCY_FACTOR = 3;
-const MIN_POOL_LIQUIDITY_USD = 300;
+const MIN_POOL_VOLUME_USD = 5000;
 const POOL_LIST_CACHE_KEY = 'maverickv2-pool-list';
 const POOL_LIST_TTL_SECONDS = 24 * 60 * 60;
 
@@ -346,11 +346,13 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       return [];
     }
 
-    const filteredPools = _.filter(pools, pool => {
-      return (
+    const filteredPools = pools.filter(pool => {
+      const exactPair =
         pool.tokenA.address.toLowerCase() === _tokenAddress ||
-        pool.tokenB.address.toLowerCase() === _tokenAddress
-      );
+        pool.tokenB.address.toLowerCase() === _tokenAddress;
+
+      const saneVolume = pool.volume.amount >= MIN_POOL_VOLUME_USD;
+      return exactPair && saneVolume;
     });
 
     const labeledPools = _.map(filteredPools, pool => {
@@ -374,7 +376,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
 
     const sortedPools = _.sortBy(labeledPools, [
       pool => -1 * pool.liquidityUSD,
-    ]).filter(pool => pool.liquidityUSD >= MIN_POOL_LIQUIDITY_USD);
+    ]);
 
     return _.slice(sortedPools, 0, limit);
   }
