@@ -498,11 +498,13 @@ export class GenericSwapTransactionBuilder {
 
     const value = (
       priceRoute.srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase()
-        ? BigInt(
+        ? (BigInt(
             priceRoute.side === SwapSide.SELL
               ? priceRoute.srcAmount
               : minMaxAmount,
-          )
+          ) *
+            11n) /
+          10n
         : BigInt(0)
     ).toString();
 
