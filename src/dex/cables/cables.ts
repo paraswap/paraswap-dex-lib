@@ -42,7 +42,6 @@ import {
   SlippageCheckError,
   TooStrictSlippageCheckError,
 } from '../generic-rfq/types';
-import { RFQResponse } from '../dexalot/types';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -397,44 +396,23 @@ export class Cables extends SimpleExchange implements IDex<any> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const normalizedSrcToken = this.normalizeToken(srcToken);
-    const normalizedDestToken = this.normalizeToken(destToken);
-
-    if (normalizedSrcToken.address === normalizedDestToken.address) {
+    if (!srcToken || !destToken) {
+      return [];
+    }
+    const pairData = await this.getPairData(srcToken, destToken);
+    console.log('pairData', pairData);
+    if (!pairData) {
       return [];
     }
 
-    // TODO - remove hardcoding
-    const makers = ['0x5aFF01E3A80790c75F15fc6AEBd615c8343d4126'];
-    const levels: Record<string, any> = {
-      '0x5aFF01E3A80790c75F15fc6AEBd615c8343d4126': [
-        {
-          pair: {
-            baseToken: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
-            quoteToken: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
-          },
-        },
-      ],
-    };
+    const tokensAddr = (await this.getCachedTokensAddr()) || {};
 
-    const result = makers
-      .filter((m: string) => {
-        const pairs = levels[m]?.map((el: { pair: string }) => el.pair) ?? [];
-        return pairs.some(
-          (p: { baseToken: string; quoteToken: string }) =>
-            normalizedSrcToken.address === p.baseToken.toLowerCase() &&
-            normalizedDestToken.address === p.quoteToken.toLowerCase(),
-        );
-      })
-      .map(m =>
-        this.getPoolIdentifier(
-          normalizedSrcToken.address,
-          normalizedDestToken.address,
-          m,
-        ),
-      );
-
-    return result;
+    return [
+      this.getPoolIdentifier(
+        tokensAddr[pairData.base.toLowerCase()],
+        tokensAddr[pairData.quote.toLowerCase()],
+      ),
+    ];
   }
 
   async getPricesVolume(
@@ -658,25 +636,52 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return `${baseToken.symbol}/${quoteToken.symbol}`.toLowerCase();
   }
 
+  // Function to find a key by address
+  private findKeyByAddress = (
+    jsonData: any,
+    targetAddress: string,
+  ): string | undefined => {
+    for (const key in jsonData) {
+      if (jsonData[key].address.toLowerCase() === targetAddress.toLowerCase()) {
+        return key;
+      }
+    }
+    return undefined; // Address not found
+  };
+
   async getPairData(srcToken: Token, destToken: Token): Promise<any> {
     const normalizedSrcToken = this.normalizeToken(srcToken);
     const normalizedDestToken = this.normalizeToken(destToken);
+
     if (normalizedSrcToken.address === normalizedDestToken.address) {
       return null;
     }
 
     const cachedTokens = await this.getCachedTokens();
-    if (
-      !(normalizedSrcToken.address in cachedTokens) ||
-      !(normalizedDestToken.address in cachedTokens)
-    ) {
-      return null;
-    }
-    normalizedSrcToken.symbol = cachedTokens[normalizedSrcToken.address].symbol;
-    normalizedDestToken.symbol =
-      cachedTokens[normalizedDestToken.address].symbol;
+    console.log('Cables cachedTokens', cachedTokens);
+    console.log(
+      'Input tokens',
+      normalizedSrcToken.address,
+      normalizedDestToken.address,
+    );
+
+    normalizedSrcToken.symbol = this.findKeyByAddress(
+      cachedTokens,
+      normalizedSrcToken.address,
+    );
+    normalizedDestToken.symbol = this.findKeyByAddress(
+      cachedTokens,
+      normalizedDestToken.address,
+    );
+    console.log('Cables normalizedSrcToken.symbol', normalizedSrcToken.symbol);
+    console.log(
+      'Cables normalizedDestToken.symbol',
+      normalizedDestToken.symbol,
+    );
 
     const cachedPairs = await this.getCachedPairs();
+    console.log('Cables cachedPairs', cachedPairs);
+
     const potentialPairs = [
       {
         base: normalizedSrcToken.symbol,
@@ -691,6 +696,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         isSrcBase: false,
       },
     ];
+    console.log('Cables potentialPairs', potentialPairs);
 
     for (const pair of potentialPairs) {
       if (pair.identifier in cachedPairs) {

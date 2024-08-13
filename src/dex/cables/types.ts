@@ -34,13 +34,29 @@ export type PairData = {
   quote: string;
   liquidityUSD: number;
 };
-type PriceData = {
-  bids: string[][];
-  asks: string[][];
+
+export type PriceAndAmount = [string, string];
+
+export type PriceData = {
+  bids: PriceAndAmount[];
+  asks: PriceAndAmount[];
 };
+
 export type PriceDataMap = {
   [network: string]: {
     [pair: string]: PriceData;
+  };
+};
+
+export type TokenDataMap = {
+  [network: string]: {
+    [token: string]: Token;
+  };
+};
+
+export type PairsDataMap = {
+  [network: string]: {
+    [token: string]: PairData;
   };
 };
 
@@ -54,10 +70,10 @@ export type CablesBlacklistResponse = {
   blacklist: string[];
 };
 export type CablesTokensResponse = {
-  tokens: Record<string, Token>;
+  tokens: TokenDataMap;
 };
 export type CablesPairsResponse = {
-  pairs: Record<string, PairData>;
+  pairs: PairsDataMap;
 };
 
 /**

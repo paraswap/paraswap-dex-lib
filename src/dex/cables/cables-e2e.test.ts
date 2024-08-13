@@ -31,8 +31,8 @@ describe('Cables E2E', () => {
     ],
   ]);
 
-  describe('Arbitrum', () => {
-    const network = Network.ARBITRUM;
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
       network,
@@ -43,9 +43,9 @@ describe('Cables E2E', () => {
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
       [
         {
-          name: 'WETH',
-          sellAmount: '100000000000000000',
-          buyAmount: '100000000000000000',
+          name: 'USDC',
+          sellAmount: '1000000',
+          buyAmount: '1000000',
         },
         {
           name: 'USDT',
