@@ -58,7 +58,6 @@ async function checkOnChainPricing(
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
-
   expect(prices).toEqual(expectedPrices);
 }
 
