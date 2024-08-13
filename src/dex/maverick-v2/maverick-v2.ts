@@ -403,7 +403,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       );
 
       //dev: some pools could have large TVL but low volumes (because of pricing)
-      // to quickly remove this pools, i added this filter
+      // to quickly remove this pools, we have to check not only TVL but 24H Volume of pool
       const pools = (res.pools || []).filter(pool => {
         return (
           pool.volume.amount >= MIN_POOL_VOLUME_USD &&
