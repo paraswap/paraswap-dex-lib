@@ -66,7 +66,9 @@ import { MaverickV2 } from './maverick-v2/maverick-v2';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
 import { SwaapV2 } from './swaap-v2/swaap-v2';
-import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1';
+import { TraderJoeV20 } from './trader-joe-v2.1/trader-joe-v2.1';
+import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1-new';
+import { TraderJoeV22 } from './trader-joe-v2.1/trader-joe-v2.2';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
 import { AngleTransmuter } from './angle-transmuter/angle-transmuter';
@@ -94,7 +96,9 @@ const LegacyDexes = [
   DodoV2,
   QuickSwapV3,
   ThenaFusion,
+  TraderJoeV20,
   TraderJoeV21,
+  TraderJoeV22,
   Lido,
   AugustusRFQOrder,
   EtherFi,

@@ -20,23 +20,21 @@ import {
   TraderJoeV2RouterFunctions,
   TraderJoeV2RouterParam,
 } from './types';
-import { TRADERJOE_V2_0_ROUTER_ADDRESS } from './config';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
-export class TraderJoeV20
+export class BaseTraderJoeV2
   extends SimpleExchange
   implements IDexTxBuilder<TraderJoeV2Data, TraderJoeV2RouterParam>
 {
-  static dexKeys = ['traderjoev2.0'];
-  protected routerAddress: string;
   exchangeRouterInterface: Interface;
-  needWrapNative = true;
 
-  constructor(dexHelper: IDexHelper) {
-    super(dexHelper, 'traderjoev2.0');
-
-    this.routerAddress =
-      TRADERJOE_V2_0_ROUTER_ADDRESS[dexHelper.config.data.network];
+  constructor(
+    dexHelper: IDexHelper,
+    dexKey: string,
+    protected routerAddress: string,
+    protected versionIndex: string,
+  ) {
+    super(dexHelper, dexKey);
 
     this.exchangeRouterInterface = new Interface(
       TraderJoeV21RouterABI as JsonFragment[],
@@ -60,7 +58,7 @@ export class TraderJoeV20
               data.binStep, // _pairBinSteps: uint256[]
             ],
             [
-              2, // _versions: uint8[]
+              this.versionIndex, // _versions: uint8[]
             ],
             [
               data.tokenIn,
@@ -97,14 +95,14 @@ export class TraderJoeV20
         ? [
             srcAmount,
             destAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [[data.binStep], [this.versionIndex], [srcToken, destToken]],
             this.augustusAddress,
             getLocalDeadlineAsFriendlyPlaceholder(),
           ]
         : [
             destAmount,
             srcAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [[data.binStep], [this.versionIndex], [srcToken, destToken]],
             this.augustusAddress,
             getLocalDeadlineAsFriendlyPlaceholder(),
           ];
@@ -145,14 +143,14 @@ export class TraderJoeV20
         ? [
             srcAmount,
             destAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [[data.binStep], [this.versionIndex], [srcToken, destToken]],
             recipient,
             placeholder,
           ]
         : [
             destAmount,
             srcAmount,
-            [[data.binStep], ['2'], [srcToken, destToken]],
+            [[data.binStep], [this.versionIndex], [srcToken, destToken]],
             recipient,
             placeholder,
           ];
