@@ -102,7 +102,7 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     const name = `${parentName.toLowerCase()}-${tokenA.symbol}-${
       tokenB.symbol
-    }-${address.toLowerCase()}`;
+    }-${address.toLowerCase()}-${feeAIn}-${feeBIn}-${tickSpacing}-${lookback}`;
 
     super(parentName, name, dexHelper, logger);
 
