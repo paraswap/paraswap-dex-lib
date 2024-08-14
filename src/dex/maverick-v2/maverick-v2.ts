@@ -65,7 +65,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   }
 
   async initializePricing(blockNumber: number) {
-    const pools = await this._queryPoolsAPI(SUBGRAPH_TIMEOUT);
+    const pools = await this._queryPoolsAPI();
 
     await Promise.all(
       pools.map(async pool => {
@@ -104,6 +104,21 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     return null;
   }
 
+  async getEventPools(srcToken: Token, destToken: Token) {
+    srcToken = this.dexHelper.config.wrapETH(srcToken);
+    destToken = this.dexHelper.config.wrapETH(destToken);
+
+    return Object.values(this.pools).filter((pool: MaverickV2EventPool) => {
+      return (
+        (pool.tokenA.address.toLowerCase() === srcToken.address.toLowerCase() ||
+          pool.tokenA.address.toLowerCase() ===
+            destToken.address.toLowerCase()) &&
+        (pool.tokenB.address.toLowerCase() === srcToken.address.toLowerCase() ||
+          pool.tokenB.address.toLowerCase() === destToken.address.toLowerCase())
+      );
+    });
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -117,23 +132,8 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       return [];
     }
 
-    const pools = await this.getPools(from, to);
+    const pools = await this.getEventPools(from, to);
     return pools.map(pool => pool.name);
-  }
-
-  async getPools(srcToken: Token, destToken: Token) {
-    srcToken = this.dexHelper.config.wrapETH(srcToken);
-    destToken = this.dexHelper.config.wrapETH(destToken);
-
-    return Object.values(this.pools).filter((pool: MaverickV2EventPool) => {
-      return (
-        (pool.tokenA.address.toLowerCase() === srcToken.address.toLowerCase() ||
-          pool.tokenA.address.toLowerCase() ===
-            destToken.address.toLowerCase()) &&
-        (pool.tokenB.address.toLowerCase() === srcToken.address.toLowerCase() ||
-          pool.tokenB.address.toLowerCase() === destToken.address.toLowerCase())
-      );
-    });
   }
 
   async getPricesVolume(
@@ -152,7 +152,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         return null;
       }
 
-      const allPools = await this.getPools(from, to);
+      const allPools = await this.getEventPools(from, to);
 
       const allowedPools = limitPools
         ? allPools.filter(pool => limitPools.includes(pool.name))
@@ -342,7 +342,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       .wrapETH(tokenAddress)
       .toLowerCase();
 
-    const pools = await this._queryPoolsAPI(SUBGRAPH_TIMEOUT);
+    const pools = await this._queryPoolsAPI();
 
     if (!pools.length) {
       this.logger.error(
@@ -351,12 +351,19 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       return [];
     }
 
-    const filteredPools = pools.filter(pool => {
-      return (
-        pool.tokenA.address.toLowerCase() === _tokenAddress ||
-        pool.tokenB.address.toLowerCase() === _tokenAddress
-      );
-    });
+    const filteredPools = pools
+      .filter(pool => {
+        return (
+          pool.tokenA.address.toLowerCase() === _tokenAddress ||
+          pool.tokenB.address.toLowerCase() === _tokenAddress
+        );
+      })
+      .filter(pool => {
+        return (
+          pool.volume.amount >= MIN_POOL_VOLUME_USD &&
+          pool.tvl.amount >= MIN_POOL_LIQUDITY_USD
+        );
+      });
 
     const labeledPools = _.map(filteredPools, pool => {
       let token =
@@ -373,20 +380,18 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
             decimals: token.decimals,
           },
         ],
-        liquidityUSD: pool.tvl.amount * EFFICIENCY_FACTOR,
+        liquidityUSD: pool.tvl.amount,
       };
     });
 
     const sortedPools = _.sortBy(labeledPools, [
       pool => -1 * pool.liquidityUSD,
-    ]);
+    ]).filter(pool => pool.liquidityUSD >= MIN_POOL_LIQUDITY_USD);
 
     return _.slice(sortedPools, 0, limit);
   }
 
-  private async _queryPoolsAPI(
-    timeout = 30000,
-  ): Promise<PoolAPIResponse['pools'] | []> {
+  private async _queryPoolsAPI(): Promise<PoolAPIResponse['pools'] | []> {
     let cachedPoolsJson = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
@@ -399,17 +404,10 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     try {
       const res = await this.dexHelper.httpRequest.get<PoolAPIResponse>(
         `${MAVERICK_API_URL}/api/v5/poolsNoBins/${this.network}`,
-        timeout,
+        SUBGRAPH_TIMEOUT,
       );
 
-      //dev: some pools could have large TVL but low volumes (because of pricing)
-      // to quickly remove this pools, we have to check not only TVL but 24H Volume of pool
-      const pools = (res.pools || []).filter(pool => {
-        return (
-          pool.volume.amount >= MIN_POOL_VOLUME_USD &&
-          pool.tvl.amount >= MIN_POOL_LIQUDITY_USD
-        );
-      });
+      const pools = res.pools || [];
 
       await this.dexHelper.cache.setex(
         this.dexKey,
@@ -419,7 +417,12 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         JSON.stringify(pools),
       );
 
-      return pools;
+      return pools.filter(pool => {
+        return (
+          pool.volume.amount >= MIN_POOL_VOLUME_USD &&
+          pool.tvl.amount >= MIN_POOL_LIQUDITY_USD
+        );
+      });
     } catch (e) {
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
       return [];

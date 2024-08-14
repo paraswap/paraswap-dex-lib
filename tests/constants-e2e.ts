@@ -1385,6 +1385,10 @@ export const Tokens: {
     },
   },
   [Network.BASE]: {
+    wstETH: {
+      address: `0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452`,
+      decimals: 18,
+    },
     PRIME: {
       address: '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b',
       decimals: 18,

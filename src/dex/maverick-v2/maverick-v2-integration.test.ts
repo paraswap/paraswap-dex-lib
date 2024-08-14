@@ -176,16 +176,20 @@ async function testPricingOnNetwork(
   );
 }
 
+const testCases = [
+  { network: Network.MAINNET, srcTokenSymbol: 'USDT', destTokenSymbol: 'USDC' },
+  {
+    network: Network.ARBITRUM,
+    srcTokenSymbol: 'USDT',
+    destTokenSymbol: 'USDC',
+  },
+  { network: Network.BASE, srcTokenSymbol: 'ETH', destTokenSymbol: 'wstETH' },
+  // {network: Network.BSC, srcTokenSymbol: "USDC", destTokenSymbol: "USDT"},
+];
 describe('MaverickV2', function () {
   const dexKey = 'MaverickV2';
-  const networks = [
-    Network.MAINNET,
-    Network.ARBITRUM,
-    Network.BASE,
-    // Network.BSC,
-  ];
 
-  for (const network of networks) {
+  for (const { network, srcTokenSymbol, destTokenSymbol } of testCases) {
     const dexHelper = new DummyDexHelper(network);
 
     let blockNumber: number;
@@ -193,9 +197,6 @@ describe('MaverickV2', function () {
 
     describe(network, () => {
       const tokens = Tokens[network];
-
-      const srcTokenSymbol = 'ETH';
-      const destTokenSymbol = 'USDC';
 
       const srcDecimals = tokens[srcTokenSymbol].decimals;
       const destDecimals = tokens[destTokenSymbol].decimals;
@@ -271,7 +272,7 @@ describe('MaverickV2', function () {
           tokens[srcTokenSymbol].address,
           10,
         );
-        // console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
         if (!newMaverickV2.hasConstantPriceLargeAmounts) {
           checkPoolsLiquidity(
