@@ -49,6 +49,7 @@ import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { TickMath } from './contract-math/TickMath';
 import { OnPoolCreatedCallback, SolidlyV3Factory } from './solidly-v3-factory';
+import { SpecialDex } from '../../executor/types';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -727,6 +728,12 @@ export class SolidlyV3
       exchangeData: swapData,
       targetExchange: data.poolAddress,
       returnAmountPos: undefined,
+      ...(side === SwapSide.BUY
+        ? {
+            specialDexSupportsInsertFromAmount: true,
+            specialDexFlag: SpecialDex.BUY_ON_SOLIDLY_V3,
+          }
+        : {}),
     };
   }
 
