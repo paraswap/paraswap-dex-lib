@@ -70,7 +70,7 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    // [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -118,17 +118,17 @@ describe('MaverickV2 E2E', () => {
   const testCases = [
     {
       network: Network.BASE,
-      tokenASymbol: 'MAV',
-      tokenBSymbol: 'PRIME',
-      tokenAAmount: '1000000000000000',
-      tokenBAmount: '1000000000000000',
+      tokenASymbol: 'USDC',
+      tokenBSymbol: 'ETH',
+      tokenAAmount: '1000000000',
+      tokenBAmount: '1000000000000000000',
     },
     {
       network: Network.ARBITRUM,
       tokenASymbol: 'USDC',
-      tokenBSymbol: 'USDT',
-      tokenAAmount: '100000000',
-      tokenBAmount: '100000000',
+      tokenBSymbol: 'ETH',
+      tokenAAmount: '1000000',
+      tokenBAmount: '1000000000000000000',
     },
     {
       network: Network.BSC,
@@ -143,6 +143,13 @@ describe('MaverickV2 E2E', () => {
       tokenBSymbol: 'USDC',
       tokenAAmount: '1000000000000000000000',
       tokenBAmount: '100000000000',
+    },
+    {
+      network: Network.MAINNET,
+      tokenASymbol: 'ETH',
+      tokenBSymbol: 'USDC',
+      tokenAAmount: '1000000000000000000',
+      tokenBAmount: '1000000',
     },
   ];
 

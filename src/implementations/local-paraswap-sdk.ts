@@ -145,9 +145,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     if (!poolPrices || poolPrices.length == 0)
       throw new Error('Fail to get price for ' + this.dexKeys.join(', '));
 
-    const finalPrice =
-      _.maxBy(poolPrices, poolPrice => poolPrice.prices[chunks]) ||
-      poolPrices[0];
+    const finalPrice = poolPrices[0];
     const quoteAmount = finalPrice.prices[chunks];
     const srcAmount = (
       side === SwapSide.SELL ? amount : quoteAmount

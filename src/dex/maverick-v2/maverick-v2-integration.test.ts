@@ -177,7 +177,7 @@ async function testPricingOnNetwork(
 }
 
 const testCases = [
-  { network: Network.MAINNET, srcTokenSymbol: 'USDT', destTokenSymbol: 'USDC' },
+  { network: Network.MAINNET, srcTokenSymbol: 'GHO', destTokenSymbol: 'USDC' },
   {
     network: Network.ARBITRUM,
     srcTokenSymbol: 'USDT',
@@ -211,8 +211,8 @@ describe('MaverickV2', function () {
         6n * BI_POWS[srcDecimals],
         7n * BI_POWS[srcDecimals],
         8n * BI_POWS[srcDecimals],
-        // 9n * BI_POWS[srcDecimals],
-        // 10n * BI_POWS[srcDecimals],
+        9n * BI_POWS[srcDecimals],
+        10n * BI_POWS[srcDecimals],
       ];
 
       const amountsForBuy = [
@@ -225,8 +225,8 @@ describe('MaverickV2', function () {
         6n * BI_POWS[destDecimals],
         7n * BI_POWS[destDecimals],
         8n * BI_POWS[destDecimals],
-        // 9n * BI_POWS[destDecimals],
-        // 10n * BI_POWS[destDecimals],
+        9n * BI_POWS[destDecimals],
+        10n * BI_POWS[destDecimals],
       ];
 
       beforeAll(async () => {
