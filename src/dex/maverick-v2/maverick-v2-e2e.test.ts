@@ -139,10 +139,10 @@ describe('MaverickV2 E2E', () => {
     },
     {
       network: Network.MAINNET,
-      tokenASymbol: 'USDC',
-      tokenBSymbol: 'USDT',
-      tokenAAmount: '100000000',
-      tokenBAmount: '100000000',
+      tokenASymbol: 'GHO',
+      tokenBSymbol: 'USDC',
+      tokenAAmount: '1000000000000000000000',
+      tokenBAmount: '100000000000',
     },
   ];
 
