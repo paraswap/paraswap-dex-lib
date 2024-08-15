@@ -64,6 +64,10 @@ const stableNg: get_dx = (
   const y = xp[j] - (dy_with_fee * FEE_DENOMINATOR) / (FEE_DENOMINATOR - fee);
   const x = self.get_y(self, state, j, i, y, xp, amp, D);
 
+  if (y < 0n || x < 0n) {
+    return 0n;
+  }
+
   return ((x - xp[i]) * PRECISION) / rates[i];
 };
 
