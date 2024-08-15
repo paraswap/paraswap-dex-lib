@@ -400,12 +400,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         SUBGRAPH_TIMEOUT,
       );
 
-      const pools = (res.pools || []).filter(pool => {
-        return (
-          pool.volume.amount >= MIN_POOL_VOLUME_USD &&
-          pool.tvl.amount >= MIN_POOL_LIQUDITY_USD
-        );
-      });
+      const pools = res.pools || [];
 
       await this.dexHelper.cache.setex(
         this.dexKey,
