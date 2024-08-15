@@ -351,19 +351,12 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
       return [];
     }
 
-    const filteredPools = pools
-      .filter(pool => {
-        return (
-          pool.tokenA.address.toLowerCase() === _tokenAddress ||
-          pool.tokenB.address.toLowerCase() === _tokenAddress
-        );
-      })
-      .filter(pool => {
-        return (
-          pool.volume.amount >= MIN_POOL_VOLUME_USD &&
-          pool.tvl.amount >= MIN_POOL_LIQUDITY_USD
-        );
-      });
+    const filteredPools = pools.filter(pool => {
+      return (
+        pool.tokenA.address.toLowerCase() === _tokenAddress ||
+        pool.tokenB.address.toLowerCase() === _tokenAddress
+      );
+    });
 
     const labeledPools = _.map(filteredPools, pool => {
       let token =
@@ -386,7 +379,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
 
     const sortedPools = _.sortBy(labeledPools, [
       pool => -1 * pool.liquidityUSD,
-    ]).filter(pool => pool.liquidityUSD >= MIN_POOL_LIQUDITY_USD);
+    ]);
 
     return _.slice(sortedPools, 0, limit);
   }
@@ -407,7 +400,12 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         SUBGRAPH_TIMEOUT,
       );
 
-      const pools = res.pools || [];
+      const pools = (res.pools || []).filter(pool => {
+        return (
+          pool.volume.amount >= MIN_POOL_VOLUME_USD &&
+          pool.tvl.amount >= MIN_POOL_LIQUDITY_USD
+        );
+      });
 
       await this.dexHelper.cache.setex(
         this.dexKey,
@@ -417,12 +415,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         JSON.stringify(pools),
       );
 
-      return pools.filter(pool => {
-        return (
-          pool.volume.amount >= MIN_POOL_VOLUME_USD &&
-          pool.tvl.amount >= MIN_POOL_LIQUDITY_USD
-        );
-      });
+      return pools;
     } catch (e) {
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
       return [];
