@@ -1,13 +1,21 @@
 import { Address, OptimalSwap, UnoptimizedRate } from '../../types';
 import _ from 'lodash';
 
+// We support multihop for TraderJoeV2.1 and TraderJoeV2.2
+const TraderJoeV2Forks = ['TraderJoeV2.1', 'TraderJoeV2.2'].map(dexName =>
+  dexName.toLowerCase(),
+);
+
 export function traderJoeMerge(or: UnoptimizedRate): UnoptimizedRate {
   const fixRoute = (rawRate: OptimalSwap[]): OptimalSwap[] => {
     let lastExchange: false | OptimalSwap = false;
     let optimizedRate = new Array<OptimalSwap>();
 
     rawRate.forEach((s: OptimalSwap) => {
-      if (s.swapExchanges.length !== 1) {
+      if (
+        s.swapExchanges.length !== 1 ||
+        !TraderJoeV2Forks.includes(s.swapExchanges[0].exchange.toLowerCase())
+      ) {
         lastExchange = false;
         optimizedRate.push(s);
       } else if (
