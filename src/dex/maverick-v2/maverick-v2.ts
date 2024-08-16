@@ -31,9 +31,6 @@ import MaverickV2RouterABI from '../../abi/maverick-v2/MaverickV2Router.json';
 import ERC20ABI from '../../abi/erc20.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
-const EFFICIENCY_FACTOR = 3;
-const MIN_POOL_VOLUME_USD = 5000;
-const MIN_POOL_LIQUDITY_USD = 100;
 const POOL_LIST_CACHE_KEY = 'maverickv2-pool-list';
 const POOL_LIST_TTL_SECONDS = 60;
 
