@@ -105,16 +105,19 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
   }
 
   async getEventPools(srcToken: Token, destToken: Token) {
-    srcToken = this.dexHelper.config.wrapETH(srcToken);
-    destToken = this.dexHelper.config.wrapETH(destToken);
+    const fromToken = this.dexHelper.config.wrapETH(srcToken);
+    const toToken = this.dexHelper.config.wrapETH(destToken);
 
     return Object.values(this.pools).filter((pool: MaverickV2EventPool) => {
+      const tokenA = pool.tokenA.address.toLowerCase();
+      const tokenB = pool.tokenB.address.toLowerCase();
+
+      const fromAddress = fromToken.address.toLowerCase();
+      const toAddress = toToken.address.toLowerCase();
+
       return (
-        (pool.tokenA.address.toLowerCase() === srcToken.address.toLowerCase() ||
-          pool.tokenA.address.toLowerCase() ===
-            destToken.address.toLowerCase()) &&
-        (pool.tokenB.address.toLowerCase() === srcToken.address.toLowerCase() ||
-          pool.tokenB.address.toLowerCase() === destToken.address.toLowerCase())
+        (tokenA === fromAddress && tokenB === toAddress) ||
+        (tokenA === toAddress && tokenB === fromAddress)
       );
     });
   }
@@ -256,13 +259,14 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     recipient: Address,
     data: MaverickV2Data,
     side: SwapSide,
-    _: Context,
-    executorAddress: Address,
   ): DexExchangeParam {
     const { pool } = data;
 
-    srcToken = this.dexHelper.config.wrapETH(srcToken);
-    destToken = this.dexHelper.config.wrapETH(destToken);
+    const from = this.dexHelper.config.wrapETH(srcToken);
+    const tokenAIn = data.tokenA.toLowerCase() === from.toLowerCase();
+    const tickLimit = tokenAIn
+      ? BigInt(data.activeTick) + 100n
+      : BigInt(data.activeTick) - 100n;
 
     if (side === SwapSide.SELL) {
       // Perform direct swap for SELL side
@@ -271,12 +275,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         recipient,
         {
           amount: srcAmount,
-          tokenAIn: data.tokenA.toLowerCase() === srcToken.toLowerCase(),
+          tokenAIn,
           exactOutput: false,
-          tickLimit:
-            data.tokenA.toLowerCase() === srcToken.toLowerCase()
-              ? BigInt(data.activeTick) + 100n
-              : BigInt(data.activeTick) - 100n,
+          tickLimit,
         },
         '0x',
       ]);
@@ -299,15 +300,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     // perform "exactOutputSingleMinimal" via MaverickV2's Router
     const exchangeData = this.maverickV2RouterIface.encodeFunctionData(
       'exactOutputSingleMinimal',
-      [
-        recipient,
-        pool,
-        data.tokenA.toLowerCase() === srcToken.toLowerCase(),
-        destAmount,
-        data.tokenA.toLowerCase() === srcToken.toLowerCase()
-          ? BigInt(data.activeTick) + 100n
-          : BigInt(data.activeTick) - 100n,
-      ],
+      [recipient, pool, tokenAIn, destAmount, tickLimit],
     );
 
     return {
