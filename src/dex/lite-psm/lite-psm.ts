@@ -32,7 +32,7 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { LitePsmConfig } from './config';
-import PsmABI from '../../abi/maker-psm/psm.json';
+import PsmABI from '../../abi/lite-psm/psm.json';
 import { BI_POWS } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
 import { hexConcat, hexZeroPad, hexlify } from '@ethersproject/bytes';
@@ -43,6 +43,7 @@ import {
 } from '@paraswap/core';
 import { BigNumber } from 'ethers';
 import { LitePsmEventPool, getOnChainState } from './lite-psm-event-pool';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const psmInterface = new Interface(PsmABI);
 const WAD = BI_POWS[18];
@@ -449,7 +450,11 @@ export class LitePsm
       targetExchange: data.psmAddress,
       specialDexFlag,
       spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
-      returnAmountPos: undefined,
+      returnAmountPos: extractReturnAmountPosition(
+        psmInterface,
+        isGemSell ? 'sellGem' : 'buyGem',
+        isGemSell ? 'daiOutWad' : 'daiInWad',
+      ),
     };
   }
 
