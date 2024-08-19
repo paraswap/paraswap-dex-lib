@@ -24,6 +24,7 @@ export enum SpecialDex {
   SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE = 8,
   SWAP_ON_AUGUSTUS_RFQ = 9, // swapOnAugustusRFQ
   EXECUTE_VERTICAL_BRANCHING = 10, // execute vertical branching
+  BUY_ON_SOLIDLY_V3 = 11,
 }
 
 export enum Executors {

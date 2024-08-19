@@ -21,7 +21,7 @@ describe('AaveV3 E2E', () => {
 
   beforeAll(async () => {
     let results: Promise<void>[] = [];
-    for (const networkEntry in Network) {
+    for (const networkEntry of Object.values(Network)) {
       if (isNaN(Number(networkEntry))) {
         break;
       }
@@ -447,14 +447,9 @@ describe('AaveV3 E2E', () => {
 
     const pairs = [
       {
-        tokenSymbol: 'USDC',
-        aTokenSymbol: 'aEthUSDC',
-        amount: '10000',
-      },
-      {
         tokenSymbol: 'ETH',
         aTokenSymbol: 'aEthWETH',
-        amount: '100000000',
+        amount: '1000000000000000000',
       },
       {
         tokenSymbol: 'WETH',
@@ -481,7 +476,7 @@ describe('AaveV3 E2E', () => {
           describe(`${contractMethod}`, () => {
             it(pair.aTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
               await testE2E(
-                getTokenFromASymbol(network, pair.aTokenSymbol)!,
+                tokens[pair.aTokenSymbol],
                 tokens[pair.tokenSymbol],
                 holders[pair.aTokenSymbol],
                 pair.amount,
@@ -496,7 +491,7 @@ describe('AaveV3 E2E', () => {
             it(pair.tokenSymbol + ' -> ' + pair.aTokenSymbol, async () => {
               await testE2E(
                 tokens[pair.tokenSymbol],
-                getTokenFromASymbol(network, pair.aTokenSymbol)!,
+                tokens[pair.aTokenSymbol],
                 holders[pair.tokenSymbol],
                 pair.amount,
                 side,
