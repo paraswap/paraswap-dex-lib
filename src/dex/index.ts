@@ -83,6 +83,7 @@ import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/vel
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
+import { LitePsm } from './lite-psm/lite-psm';
 
 const LegacyDexes = [
   CurveV2,
@@ -161,6 +162,7 @@ const Dexes = [
   AaveV3Stata,
   ConcentratorArusd,
   FxProtocolRusd,
+  LitePsm,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
