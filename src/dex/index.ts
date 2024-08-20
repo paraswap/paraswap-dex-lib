@@ -84,7 +84,6 @@ import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/vel
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
-import { traderJoeMerge } from './trader-joe-v2.1/optimizer';
 
 const LegacyDexes = [
   CurveV2,
@@ -196,7 +195,6 @@ export class DexAdapterService {
     balancerV2Merge,
     uniswapMerge,
     curveV1Merge,
-    traderJoeMerge,
   ];
 
   constructor(
