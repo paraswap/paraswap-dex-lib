@@ -10,9 +10,13 @@ import { LitePsmConfig } from './config';
 import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
 import { erc20Iface } from '../../lib/tokens/utils';
+import DaiABI from '../../abi/lite-psm/dai.json';
+import UsdcABI from '../../abi/lite-psm/usdc.json';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
+const daiInterface = new Interface(DaiABI);
+const usdcInterface = new Interface(UsdcABI);
 
 const bigIntify = (b: any) => BigInt(b.toString());
 
@@ -115,11 +119,10 @@ export class LitePsmEventPool extends StatefulEventSubscriber<PoolState> {
       LitePsmConfig[this.parentName][this.network].dai.address.toLowerCase();
     this.logDecoder = (log: Log) => {
       const logAddress = log.address.toLowerCase();
-      if (
-        logAddress === this.daiAddress ||
-        logAddress === this.poolConfig.gem.address
-      ) {
-        return erc20Iface.parseLog(log);
+      if (logAddress === this.daiAddress) {
+        return daiInterface.parseLog(log);
+      } else if (logAddress === this.poolConfig.gem.address) {
+        return usdcInterface.parseLog(log);
       } else {
         return psmInterface.parseLog(log);
       }
@@ -155,10 +158,10 @@ export class LitePsmEventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   handleTransferDAI(event: any, pool: PoolState, log: Log): PoolState {
-    if (event.args?.from?.toLowerCase() === this.poolConfig.psmAddress) {
-      pool.daiBalance -= bigIntify(event.args.value);
-    } else if (event.args?.to?.toLowerCase() === this.poolConfig.psmAddress) {
-      pool.daiBalance += bigIntify(event.args.value);
+    if (event.args?.src?.toLowerCase() === this.poolConfig.psmAddress) {
+      pool.daiBalance -= bigIntify(event.args.wad);
+    } else if (event.args?.dst?.toLowerCase() === this.poolConfig.psmAddress) {
+      pool.daiBalance += bigIntify(event.args.wad);
     }
     return pool;
   }
