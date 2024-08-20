@@ -560,12 +560,10 @@ export class LitePsm
     //   this.vatAddress,
     //   'latest',
     // );
+    const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
     const poolStates = await Promise.all(
       Object.values(this.eventPools).map(e =>
-        this.getPoolState(
-          e,
-          this.dexHelper.blockManager.getLatestBlockNumber(),
-        ),
+        this.getPoolState(e, blockNumber),
       ),
     );
     return validPoolConfigs.map((p, i) => ({
