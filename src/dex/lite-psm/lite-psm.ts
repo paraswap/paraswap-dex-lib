@@ -298,8 +298,6 @@ export class LitePsm
     }
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -308,61 +306,11 @@ export class LitePsm
     data: LitePsmData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          gemJoinAddress: 'address',
-          toll: 'uint256',
-          to18ConversionFactor: 'uint256',
-        },
-      },
-      {
-        gemJoinAddress: data.gemJoinAddress,
-        toll: data.toll,
-        to18ConversionFactor,
-      },
-    );
-
     return {
-      targetExchange: data.psmAddress,
+      targetExchange: '0x',
       networkFee: '0',
-      payload,
+      payload: '0x',
     };
-  }
-
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: LitePsmData,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const { isGemSell, gemAmount } = this.getPsmParams(
-      srcToken,
-      srcAmount,
-      destAmount,
-      data,
-      side,
-    );
-
-    const swapData = psmInterface.encodeFunctionData(
-      isGemSell ? 'sellGem' : 'buyGem',
-      [this.augustusAddress, gemAmount],
-    );
-
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      data.psmAddress,
-      isGemSell ? data.gemJoinAddress : data.psmAddress,
-    );
   }
 
   getTokenFromAddress(address: Address): Token {
