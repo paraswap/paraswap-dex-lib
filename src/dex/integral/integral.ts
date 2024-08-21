@@ -168,7 +168,7 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
           },
           exchange: this.dexKey,
           poolIdentifier,
-          gasCost: 0,
+          gasCost: 350_000,
           poolAddresses: [props.poolAddress],
         },
       ];
@@ -220,8 +220,6 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     _: Context,
     executorAddress: Address,
   ): DexExchangeParam {
-    const { relayer: exchange } = data;
-
     const tokenIn = this.dexHelper.config.wrapETH(srcToken);
     const tokenOut = this.dexHelper.config.wrapETH(destToken);
 
@@ -247,15 +245,13 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData: swapData,
-      targetExchange: exchange,
+      targetExchange: this.context.relayerAddress,
       returnAmountPos: undefined,
     };
   }
 
   async updatePoolState(): Promise<void> {}
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
@@ -399,7 +395,8 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
 
     const states = this.getStates(poolId, blockNumber);
     if (!states) {
-      return await this.getPriceOnChain(src, dest, inverted, blockNumber);
+      const resp = await this.getPriceOnChain(src, dest, inverted, blockNumber);
+      return resp;
     }
 
     const { base, poolAddress, relayer, relayerTokens } = states;
