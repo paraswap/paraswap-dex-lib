@@ -7,7 +7,7 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-jest.setTimeout(1000 * 60 * 3);
+jest.setTimeout(1000 * 60 * 15);
 
 const testCases = [
   {

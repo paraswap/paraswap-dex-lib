@@ -14,6 +14,7 @@ export type IntegralPool = {
 };
 
 export type QuotingProps = {
+  poolAddress: Address;
   price: bigint;
   fee: bigint;
   tokenOutLimits: [bigint, bigint];

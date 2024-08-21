@@ -169,7 +169,7 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
           exchange: this.dexKey,
           poolIdentifier,
           gasCost: 0,
-          poolAddresses: this.context.getPoolAddresses(),
+          poolAddresses: [props.poolAddress],
         },
       ];
     } catch (e) {
@@ -379,6 +379,7 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
         : [tokenIn.decimals, tokenOut.decimals];
       return {
         price: BigInt(result.price.toString()),
+        poolAddress: result.poolAddress,
         fee: BigInt(result.fee.toString()),
         tokenOutLimits: limits,
         decimalsConverter: getDecimalsConverter(decimals0, decimals1, inverted),
@@ -400,8 +401,8 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
     if (!states) {
       return await this.getPriceOnChain(src, dest, inverted, blockNumber);
     }
-    const { base, poolAddress, relayer, relayerTokens } = states;
 
+    const { base, poolAddress, relayer, relayerTokens } = states;
     const price = getPrice(states, inverted);
 
     const token0 = sortTokens(src.address, dest.address)[0];
@@ -410,20 +411,20 @@ export class Integral extends SimpleExchange implements IDex<IntegralData> {
       relayer,
       relayerTokens,
     );
-    const props: QuotingProps = {
+    return {
       price,
+      poolAddress: states.poolAddress,
       fee: relayer.swapFee,
       tokenOutLimits:
         dest.address === token0
-          ? [relayer.limits.min0, max0]
-          : [relayer.limits.min1, max1],
+          ? ([relayer.limits.min0, max0] as [bigint, bigint])
+          : ([relayer.limits.min1, max1] as [bigint, bigint]),
       decimalsConverter: getDecimalsConverter(
         base.decimals0,
         base.decimals1,
         inverted,
       ),
     };
-    return props;
   }
 
   private quoteSell(
