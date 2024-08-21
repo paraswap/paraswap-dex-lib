@@ -554,18 +554,14 @@ export class LitePsm
       : [];
     if (!validPoolConfigs.length) return [];
 
-    // const poolStates = await getOnChainState(
-    //   this.dexHelper.multiContract,
-    //   validPoolConfigs,
-    //   this.vatAddress,
-    //   'latest',
-    // );
-    const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
-    const poolStates = await Promise.all(
-      Object.values(this.eventPools).map(e =>
-        this.getPoolState(e, blockNumber),
-      ),
+    const poolStates = await getOnChainState(
+      this.dexHelper.multiContract,
+      validPoolConfigs,
+      this.vatAddress,
+      'latest',
+      LitePsmConfig[this.dexKey][this.network].dai.address,
     );
+
     return validPoolConfigs.map((p, i) => ({
       exchange: this.dexKey,
       address: p.psmAddress,
