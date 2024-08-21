@@ -77,6 +77,7 @@ import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
+import { Integral } from './integral/integral';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
@@ -158,6 +159,7 @@ const Dexes = [
   SolidlyV3,
   Wombat,
   Swell,
+  Integral,
   PharaohV1,
   Spark,
   AaveV3Stata,
