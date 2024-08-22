@@ -170,6 +170,14 @@ export const Tokens: {
       address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
       decimals: 18,
     },
+    USDM: {
+      address: '0x59d9356e565ab3a36dd77763fc0d87feaf85508c',
+      decimals: 18,
+    },
+    wUSDM: {
+      address: '0x57f5e098cad7a3d1eed53991d4d66c45c9af7812',
+      decimals: 18,
+    },
     frxETH: {
       address: '0x5E8422345238F34275888049021821E8E08CAa1f',
       decimals: 18,
@@ -677,6 +685,14 @@ export const Tokens: {
       address: '0xe0b52e49357fd4daf2c15e02058dce6bc0057db4',
       decimals: 18,
       symbol: 'EURA',
+    },
+    USDM: {
+      address: '0x59d9356e565ab3a36dd77763fc0d87feaf85508c',
+      decimals: 18,
+    },
+    wUSDM: {
+      address: '0x57f5e098cad7a3d1eed53991d4d66c45c9af7812',
+      decimals: 18,
     },
     stEUR: {
       address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
@@ -1204,6 +1220,14 @@ export const Tokens: {
       decimals: 18,
       symbol: 'USDA',
     },
+    USDM: {
+      address: '0x59d9356e565ab3a36dd77763fc0d87feaf85508c',
+      decimals: 18,
+    },
+    wUSDM: {
+      address: '0x57f5e098cad7a3d1eed53991d4d66c45c9af7812',
+      decimals: 18,
+    },
     stUSD: {
       address: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',
       decimals: 18,
@@ -1332,6 +1356,14 @@ export const Tokens: {
       decimals: 18,
       symbol: 'EURA',
     },
+    USDM: {
+      address: '0x59d9356e565ab3a36dd77763fc0d87feaf85508c',
+      decimals: 18,
+    },
+    wUSDM: {
+      address: '0x57f5e098cad7a3d1eed53991d4d66c45c9af7812',
+      decimals: 18,
+    },
     stEUR: {
       address: '0x004626a008b1acdc4c74ab51644093b155e59a23',
       decimals: 18,
@@ -1404,6 +1436,10 @@ export const Tokens: {
     },
     USDM: {
       address: '0x59d9356e565ab3a36dd77763fc0d87feaf85508c',
+      decimals: 18,
+    },
+    wUSDM: {
+      address: '0x57f5e098cad7a3d1eed53991d4d66c45c9af7812',
       decimals: 18,
     },
     USDbC: {
@@ -1579,6 +1615,8 @@ export const Holders: {
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
+    USDM: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
+    wUSDM: '0x3B95bC951EE0f553ba487327278cAc44f29715E5',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
