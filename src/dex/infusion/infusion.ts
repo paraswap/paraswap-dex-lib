@@ -596,62 +596,8 @@ export class Infusion extends UniswapV2 {
     return stable ? 'S' : 'V';
   }
 
-  async getSimpleParam(
-    src: Address,
-    dest: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    data: UniswapData,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-
-    let routerMethod: any;
-    let routerArgs: InfusionParam;
-    const stable = isStablePair(this.network, src, dest);
-
-    const from = isETHAddress(src)
-      ? this.dexHelper.config.data.wrappedNativeTokenAddress
-      : src;
-    const to = isETHAddress(dest)
-      ? this.dexHelper.config.data.wrappedNativeTokenAddress
-      : dest;
-
-    routerMethod = isETHAddress(src)
-      ? InfusionRouterFunctions.sellExactEth
-      : InfusionRouterFunctions.swapExactIn;
-    routerMethod = isETHAddress(dest)
-      ? InfusionRouterFunctions.sellExactToken
-      : routerMethod;
-
-    routerArgs = isETHAddress(src)
-      ? [
-          destAmount,
-          [{ from, to, stable }],
-          this.augustusAddress,
-          Math.floor(new Date().getTime()) + 120,
-        ]
-      : [
-          srcAmount,
-          destAmount,
-          [{ from, to, stable }],
-          this.augustusAddress,
-          Math.floor(new Date().getTime()) + 120,
-        ];
-
-    // console.log('routerMethod', routerMethod, 'routerArgs', routerArgs);
-    const swapData = new Interface(infusionRouterABI).encodeFunctionData(
-      routerMethod,
-      routerArgs as InfusionParam,
-    );
-    return this.buildSimpleParamWithoutWETHConversion(
-      src,
-      srcAmount,
-      dest,
-      destAmount,
-      swapData,
-      data.router,
-    );
+  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
+    return null;
   }
 
   getAdapterParam(
