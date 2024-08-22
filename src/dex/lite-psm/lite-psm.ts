@@ -242,7 +242,7 @@ export class LitePsm
         },
         poolAddresses: [eventPool.poolConfig.psmAddress],
         exchange: this.dexKey,
-        gasCost: isSrcDai ? 80_000 : 100_000,
+        gasCost: 50000,
         poolIdentifier,
       },
     ];
