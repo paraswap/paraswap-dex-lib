@@ -68,6 +68,7 @@ import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
 import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1';
+import { TraderJoeV22 } from './trader-joe-v2.1/trader-joe-v2.2';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
 import { AngleTransmuter } from './angle-transmuter/angle-transmuter';
@@ -82,6 +83,9 @@ import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
+import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
+import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
+import { LitePsm } from './lite-psm/lite-psm';
 
 const LegacyDexes = [
   CurveV2,
@@ -94,6 +98,7 @@ const LegacyDexes = [
   QuickSwapV3,
   ThenaFusion,
   TraderJoeV21,
+  TraderJoeV22,
   Lido,
   AugustusRFQOrder,
   EtherFi,
@@ -159,6 +164,9 @@ const Dexes = [
   PharaohV1,
   Spark,
   AaveV3Stata,
+  ConcentratorArusd,
+  FxProtocolRusd,
+  LitePsm,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

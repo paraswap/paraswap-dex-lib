@@ -67,13 +67,28 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     const exchangeParam = exchangeParams[exchangeParamIndex];
     const swap = priceRoute.bestRoute[0].swaps[0];
 
-    const { dexFuncHasRecipient, needWrapNative } = exchangeParam;
+    const {
+      dexFuncHasRecipient,
+      needWrapNative,
+      swappedAmountNotPresentInExchangeData,
+      specialDexFlag,
+      specialDexSupportsInsertFromAmount,
+    } = exchangeParam;
+    const isSpecialDex =
+      specialDexFlag !== undefined && specialDexFlag !== SpecialDex.DEFAULT;
+
+    const forcePreventInsertFromAmount =
+      swappedAmountNotPresentInExchangeData ||
+      (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
     const needWrap = needWrapNative && isEthSrc && maybeWethCallData?.deposit;
     const needUnwrap =
       needWrapNative && isEthDest && maybeWethCallData?.withdraw;
 
-    let dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
+    let dexFlag = forcePreventInsertFromAmount
+      ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP
+      : Flag.INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0 or 3
+
     let approveFlag =
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
@@ -81,15 +96,21 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       dexFlag =
         Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
-      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 4
+      dexFlag = forcePreventInsertFromAmount
+        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP // 4
+        : Flag.INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP; // 7
     } else if (isEthDest && needUnwrap) {
-      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
+      dexFlag = forcePreventInsertFromAmount
+        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+        : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
       // dexFlag = Flag.ZERO;
     } else if (
       !isETHAddress(swap.destToken) &&
       exchangeParams.some(param => !param.dexFuncHasRecipient)
     ) {
-      dexFlag = Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 8
+      dexFlag = forcePreventInsertFromAmount
+        ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP // 8
+        : Flag.INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 11
     }
 
     return {
@@ -251,6 +272,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       exchangeParamIndex,
       flag,
       maybeWethCallData,
+      swapExchangeIndex,
     } = params;
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
     const checkDestTokenBalanceAfterSwap = flag % 3 === 2;
@@ -300,11 +322,11 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (insertAmount) {
       const fromAmount = ethers.utils.defaultAbiCoder.encode(
         ['uint256'],
-        [swap.swapExchanges[0].srcAmount],
+        [swap.swapExchanges[swapExchangeIndex].srcAmount],
       );
       const toAmount = ethers.utils.defaultAbiCoder.encode(
         ['uint256'],
-        [swap.swapExchanges[0].destAmount],
+        [swap.swapExchanges[swapExchangeIndex].destAmount],
       );
 
       const fromAmountIndex = exchangeData
@@ -314,17 +336,10 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
         .replace('0x', '')
         .indexOf(toAmount.replace('0x', ''));
 
-      assert(
-        fromAmountIndex !== -1,
-        'Encoding error: could not resolve position of fromAmount in exchangeData',
-      );
-      assert(
-        toAmountIndex !== -1,
-        'Encoding error: could not resolve position of toAmount in exchangeData',
-      );
-
-      fromAmountPos = fromAmountIndex / 2;
-      toAmountPos = toAmountIndex / 2;
+      fromAmountPos =
+        (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
+      toAmountPos =
+        (toAmountIndex !== -1 ? toAmountIndex : exchangeData.length) / 2;
     }
 
     return this.buildCallData(
@@ -377,7 +392,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
           acc,
           this.buildSingleSwapCallData({
             priceRoute,
-            exchangeParams,
+            exchangeParams: orderedExchangeParams.map(e => e.exchangeParam),
             index,
             flags,
             sender,
