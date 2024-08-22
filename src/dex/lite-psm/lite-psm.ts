@@ -450,10 +450,7 @@ export class LitePsm
       // not used on the contract, but used for analytics
       destToken,
       fromAmount,
-      // TODO: Investigate `toAmount` vs `quotedAmount`
-      side === SwapSide.BUY && srcToken.toLowerCase() === this.dai.address
-        ? toAmount
-        : quotedAmount,
+      toAmount,
       data.toll,
       to18ConversionFactor.toString(),
       data.psmAddress,

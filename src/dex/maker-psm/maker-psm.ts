@@ -653,11 +653,7 @@ export class MakerPsm
       // not used on the contract, but used for analytics
       destToken,
       fromAmount,
-      // as there's no slippage, use instead of toAmount
-      // TODO: Investigate `toAmount` vs `quotedAmount`
-      side === SwapSide.BUY && srcToken.toLowerCase() === this.dai.address
-        ? toAmount
-        : quotedAmount,
+      toAmount,
       data.toll,
       to18ConversionFactor.toString(),
       data.psmAddress,
