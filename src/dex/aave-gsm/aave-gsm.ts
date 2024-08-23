@@ -227,7 +227,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
         },
         poolAddresses: [target],
         exchange: this.dexKey,
-        gasCost: 130000,
+        gasCost: endpoint.indexOf('BuyAsset') > 0 ? 80000 : 74000,
         poolIdentifier: `${this.dexKey}_${target}`,
       },
     ];
@@ -273,10 +273,52 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     data: AaveGsmData,
     side: SwapSide,
   ): Promise<DexExchangeParam> {
-    const swapFunction =
-      srcToken.toLowerCase() === this.config.GHO ? 'buyAsset' : 'sellAsset';
-    const assetAmount =
-      srcToken.toLowerCase() === this.config.GHO ? destAmount : srcAmount;
+    const isSrcGho = srcToken.toLowerCase() === this.config.GHO;
+    const swapFunction = isSrcGho ? 'buyAsset' : 'sellAsset';
+    const ghoAmount = isSrcGho ? srcAmount : destAmount;
+    let assetAmount = isSrcGho ? destAmount : srcAmount;
+    const targetExchange =
+      srcToken.toLowerCase() === this.config.USDT ||
+      destToken.toLowerCase() === this.config.USDT
+        ? this.config.GSM_USDT
+        : this.config.GSM_USDC;
+
+    if (BigInt(assetAmount) == 1n) {
+      const endpoint = isSrcGho
+        ? 'getAssetAmountForBuyAsset'
+        : 'getAssetAmountForSellAsset';
+
+      const calldata = {
+        target: targetExchange,
+        callData: AaveGsm.gsmInterface.encodeFunctionData(endpoint, [
+          ghoAmount,
+        ]),
+        decodeFunction: (
+          result: MultiResult<BytesLike> | BytesLike,
+        ): { underlying: bigint; gho: bigint } => {
+          return generalDecoder(
+            result,
+            ['uint256', 'uint256', 'uint256', 'uint256'],
+            {
+              underlying: 0n,
+              gho: 0n,
+            },
+            value => ({
+              underlying: value[0].toBigInt(),
+              gho: value[1].toBigInt(),
+            }),
+          );
+        },
+      };
+
+      const result = await this.dexHelper.multiWrapper.tryAggregate<{
+        underlying: bigint;
+        gho: bigint;
+      }>(true, [calldata]);
+
+      assetAmount = result[0].returnData.underlying.toString();
+    }
+
     const exchangeData = AaveGsm.gsmInterface.encodeFunctionData(swapFunction, [
       assetAmount,
       recipient,
@@ -286,12 +328,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData,
-      targetExchange:
-        srcToken.toLowerCase() === this.config.USDT ||
-        destToken.toLowerCase() === this.config.USDT
-          ? this.config.GSM_USDT
-          : this.config.GSM_USDC,
-      returnAmountPos: srcToken.toLowerCase() === this.config.GHO ? 1 : 0,
+      targetExchange,
+      returnAmountPos: isSrcGho ? 1 : 0,
     };
   }
 
