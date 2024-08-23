@@ -368,7 +368,6 @@ export class Infusion extends UniswapV2 {
                 direction: pairParam.direction,
               },
             ],
-            isStable: stable,
           },
           exchange: this.dexKey,
           poolIdentifier,

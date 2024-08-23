@@ -19,7 +19,7 @@ export interface InfusionPoolOrderedParams extends UniswapV2PoolOrderedParams {
   stable: boolean;
 }
 
-export type InfusionData = UniswapV2Data & { isFeeTokenInRoute: boolean };
+export type InfusionData = UniswapV2Data;
 
 export type InfusionPool = UniswapPool;
 
