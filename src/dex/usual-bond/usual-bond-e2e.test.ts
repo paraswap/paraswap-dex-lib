@@ -71,8 +71,6 @@ function testForNetwork(
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -132,12 +130,12 @@ describe('UsualBond E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    // Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
+    const tokenASymbol: string = 'USD0';
+    const tokenBSymbol: string = 'USD0++';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '100000';
+    const tokenBAmount: string = '100000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

@@ -1,97 +1,91 @@
-import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
-  PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
+  PoolLiquidity,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { UsualBondData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { UsualBondConfig, Adapters } from './config';
-import { UsualBondEventPool } from './usual-bond-pool';
+import { UsualBondConfig } from './config';
+import { Interface, JsonFragment } from '@ethersproject/abi';
+import USD0PP_ABI from '../../abi/usual-bond/usd0pp.abi.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
+import { BI_POWS } from '../../bigint-constants';
 
 export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
+  protected config: DexParams;
+
   readonly hasConstantPriceLargeAmounts = true;
-
-  // Set true here if protocols works only with wrapped asset
   readonly needWrapNative = false;
-
   readonly isFeeOnTransferSupported = false;
-
-  readonly config: DexParams;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UsualBondConfig);
 
+  usd0ppIface: Interface;
   logger: Logger;
 
   constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey);
     const config = UsualBondConfig[dexKey][network];
+    this.usd0ppIface = new Interface(USD0PP_ABI as JsonFragment[]);
     this.config = {
-      usd0Address: config.usd0Address,
-      usd0ppAddress: config.usd0ppAddress,
+      usd0Address: config.usd0Address.toLowerCase(),
+      usd0ppAddress: config.usd0ppAddress.toLowerCase(),
     };
+    this.logger = dexHelper.getLogger(dexKey);
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    // No initialization needed for constant price
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
-  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+  getConfig() {
+    return this.config;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
+  is_usd0(token: string) {
+    return token.toLowerCase() === this.config.usd0Address.toLowerCase();
+  }
+
+  is_usd0pp(token: string) {
+    return token.toLowerCase() === this.config.usd0ppAddress.toLowerCase();
+  }
+
+  is_usd0_swap_token(srcToken: string, destToken: string) {
+    return this.is_usd0(srcToken) && this.is_usd0pp(destToken);
+  }
+
+  getAdapters() {
+    return null;
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // We want this route to be used only for buying USD0++ from USD0
-    if (side === SwapSide.BUY) return [];
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
-    if (
-      !(
-        srcTokenAddress === this.config.usd0Address &&
-        destTokenAddress === this.config.usd0ppAddress
-      )
-    ) {
+    if (!this.is_usd0_swap_token(srcToken.address, destToken.address)) {
       return [];
     }
-    return [this.dexKey];
+    return [`${this.dexKey}_${this.config.usd0ppAddress}`];
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -101,38 +95,36 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UsualBondData>> {
     if (side === SwapSide.BUY) return null;
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
-    if (
-      !(
-        srcTokenAddress === this.config.usd0Address &&
-        destTokenAddress === this.config.usd0ppAddress
-      )
-    ) {
+
+    const isUSD0SwapToken = this.is_usd0_swap_token(
+      srcToken.address,
+      destToken.address,
+    );
+    if (!isUSD0SwapToken) {
       return null;
     }
 
+    const unitIn = BI_POWS[18];
+    const unitOut = unitIn; // 1:1 swap
+    const amountsOut = amounts; // 1:1 swap, so output amounts are the same as input
+
     return [
       {
-        unit: 1000000000000000000n,
-        prices: amounts,
+        unit: unitOut,
+        prices: amountsOut,
         data: {},
         poolAddresses: [this.config.usd0ppAddress],
         exchange: this.dexKey,
         gasCost: 70000,
+        poolIdentifier: this.dexKey,
       },
     ];
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<UsualBondData>): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // V5: Used for multiSwap, buy & megaSwap
-  // V6: Not used, can be left blank
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -141,28 +133,70 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     data: UsualBondData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // Encode here the payload for adapter
     const payload = '0x';
 
     return {
-      targetExchange: this.config.usd0Address,
+      targetExchange: this.config.usd0ppAddress,
       payload,
       networkFee: '0',
     };
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
+  async getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: UsualBondData,
+    side: SwapSide,
+  ): Promise<DexExchangeParam> {
+    if (side === SwapSide.BUY) throw new Error('BUY not supported');
+
+    if (this.is_usd0(srcToken) && this.is_usd0pp(destToken)) {
+      const exchangeData = this.usd0ppIface.encodeFunctionData('mint', [
+        srcAmount,
+        recipient,
+      ]);
+      return {
+        needWrapNative: false,
+        dexFuncHasRecipient: true,
+        exchangeData,
+        targetExchange: this.config.usd0ppAddress,
+        returnAmountPos: extractReturnAmountPosition(
+          this.usd0ppIface,
+          'mint',
+          '_amountOut',
+        ),
+      };
+    }
+    throw new Error('LOGIC ERROR');
+  }
+
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.is_usd0(tokenAddress) && !this.is_usd0pp(tokenAddress)) return [];
+
     return [
       {
         exchange: this.dexKey,
         address: this.config.usd0ppAddress,
-        connectorTokens: [],
-        liquidityUSD: 1000000000000000000,
+        connectorTokens: this.is_usd0(tokenAddress)
+          ? [
+              {
+                decimals: 18,
+                address: this.config.usd0ppAddress,
+              },
+            ]
+          : [
+              {
+                decimals: 18,
+                address: this.config.usd0Address,
+              },
+            ],
+        liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
       },
     ];
   }
