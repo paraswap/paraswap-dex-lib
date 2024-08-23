@@ -235,6 +235,25 @@ export class Inception
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    await this.initializeTokens();
+    const token: DexParams = getTokenFromAddress(this.network, tokenAddress);
+
+    if (token) {
+      return [
+        {
+          liquidityUSD: 1e9,
+          exchange: this.dexKey,
+          address: token.vault,
+          connectorTokens: [
+            {
+              address: token.token,
+              decimals: 1e18,
+            },
+          ],
+        },
+      ];
+    }
+
     return [];
   }
 

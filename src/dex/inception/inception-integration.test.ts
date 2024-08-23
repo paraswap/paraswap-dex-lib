@@ -5,7 +5,7 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { Inception } from './inception';
-import { checkPoolPrices } from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { InceptionConfig } from './config';
 
@@ -61,6 +61,15 @@ describe('Inception', function () {
 
         expect(poolPrices).not.toBeNull();
         checkPoolPrices(poolPrices!, TokenBAmounts, SwapSide.SELL, dexKey);
+      });
+
+      it('getTopPoolsForToken', async function () {
+        const poolLiquidity = await inception.getTopPoolsForToken(
+          TokenA.address,
+          10,
+        );
+
+        checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
       });
     });
   });
