@@ -80,10 +80,26 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (!this.is_usd0_swap_token(srcToken.address, destToken.address)) {
+    if (side === SwapSide.BUY) return [];
+
+    if (!srcToken || !destToken) {
+      this.logger.error('Source or destination token is undefined');
       return [];
     }
-    return [`${this.dexKey}_${this.config.usd0ppAddress}`];
+
+    const srcTokenAddress = srcToken.address?.toLowerCase();
+    const destTokenAddress = destToken.address?.toLowerCase();
+
+    if (!srcTokenAddress || !destTokenAddress) {
+      this.logger.error('Source or destination token address is undefined');
+      return [];
+    }
+
+    if (this.is_usd0_swap_token(srcTokenAddress, destTokenAddress)) {
+      return [`${this.dexKey}_${this.config.usd0ppAddress}`];
+    }
+
+    return [];
   }
 
   async getPricesVolume(
@@ -177,25 +193,18 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (!this.is_usd0(tokenAddress) && !this.is_usd0pp(tokenAddress)) return [];
+    if (!this.is_usd0(tokenAddress)) return [];
 
     return [
       {
         exchange: this.dexKey,
-        address: this.config.usd0ppAddress,
-        connectorTokens: this.is_usd0(tokenAddress)
-          ? [
-              {
-                decimals: 18,
-                address: this.config.usd0ppAddress,
-              },
-            ]
-          : [
-              {
-                decimals: 18,
-                address: this.config.usd0Address,
-              },
-            ],
+        address: this.config.usd0Address,
+        connectorTokens: [
+          {
+            decimals: 18,
+            address: this.config.usd0ppAddress,
+          },
+        ],
         liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
       },
     ];

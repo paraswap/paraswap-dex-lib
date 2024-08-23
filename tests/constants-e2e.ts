@@ -510,10 +510,12 @@ export const Tokens: {
     USD0: {
       address: '0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5',
       decimals: 18,
+      symbol: 'USD0',
     },
-    USD0pp: {
+    'USD0++': {
       address: '0x35D8949372D46B7a3D5A56006AE77B215fc69bC0',
       decimals: 18,
+      symbol: 'USD0++',
     },
   },
   [Network.POLYGON]: {
@@ -1588,7 +1590,7 @@ export const Holders: {
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
     USD0: '0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5',
-    USD0pp: '0x35D8949372D46B7a3D5A56006AE77B215fc69bC0',
+    'USD0++': '0x35D8949372D46B7a3D5A56006AE77B215fc69bC0',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',

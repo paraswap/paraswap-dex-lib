@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
+import { Interface } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
@@ -13,44 +13,25 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for UsualBond general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover UsualBond specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import { UsualBondConfig } from './config';
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [amount]),
   }));
 }
 
 function decodeReaderResult(
-  results: Result,
+  results: any[],
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -64,15 +45,11 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from usualBond.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const { usd0ppAddress } = UsualBondConfig.UsualBond[Network.MAINNET];
+  const readerIface = usualBond.usd0ppIface;
 
   const readerCallData = getReaderCalldata(
-    exchangeAddress,
+    usd0ppAddress,
     readerIface,
     amounts.slice(1),
     funcName,
@@ -88,6 +65,35 @@ async function checkOnChainPricing(
   );
 
   expect(prices).toEqual(expectedPrices);
+}
+
+async function testPoolIdentifiers(
+  usualBond: UsualBond,
+  network: Network,
+  dexKey: string,
+  blockNumber: number,
+  srcTokenSymbol: string,
+  destTokenSymbol: string,
+) {
+  const networkTokens = Tokens[network];
+
+  console.log('Source Token:', networkTokens[srcTokenSymbol]);
+  console.log('Destination Token:', networkTokens[destTokenSymbol]);
+
+  const pools = await usualBond.getPoolIdentifiers(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
+    SwapSide.SELL,
+    blockNumber,
+  );
+  console.log(`Source Token: ${srcTokenSymbol}`);
+  console.log(`Destination Token: ${destTokenSymbol}`);
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
+    pools,
+  );
+
+  expect(pools.length).toBeGreaterThan(0);
 }
 
 async function testPricingOnNetwork(
@@ -109,6 +115,7 @@ async function testPricingOnNetwork(
     side,
     blockNumber,
   );
+
   console.log(
     `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
     pools,
@@ -130,13 +137,8 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
-  if (usualBond.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
+  checkConstantPoolPrices(poolPrices!, amounts, dexKey);
 
-  // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     usualBond,
     funcNameToCheck,
@@ -156,46 +158,29 @@ describe('UsualBond', function () {
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
+    // Print only the last two tokens
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USD0';
+    const destTokenSymbol = 'USD0++';
 
     const amountsForSell = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
-
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      1n * BI_POWS[18],
+      2n * BI_POWS[18],
+      3n * BI_POWS[18],
+      4n * BI_POWS[18],
+      5n * BI_POWS[18],
+      6n * BI_POWS[18],
+      7n * BI_POWS[18],
+      8n * BI_POWS[18],
+      9n * BI_POWS[18],
+      10n * BI_POWS[18],
     ];
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       usualBond = new UsualBond(network, dexKey, dexHelper);
-      if (usualBond.initializePricing) {
-        await usualBond.initializePricing(blockNumber);
-      }
+      await usualBond.initializePricing(blockNumber);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -204,48 +189,74 @@ describe('UsualBond', function () {
         network,
         dexKey,
         blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
+        srcTokenSymbol, // USD0
+        destTokenSymbol, // USD0++
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        usualBond,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        'mint',
       );
     });
 
     it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
       const newUsualBond = new UsualBond(network, dexKey, dexHelper);
-      if (newUsualBond.updatePoolState) {
-        await newUsualBond.updatePoolState();
-      }
       const poolLiquidity = await newUsualBond.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newUsualBond.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
+      checkPoolsLiquidity(
+        poolLiquidity,
+        tokens[srcTokenSymbol].address,
+        dexKey,
+      );
+    });
+  });
+});
+
+describe('UsualBond', function () {
+  const dexKey = 'UsualBond';
+  let blockNumber: number;
+  let usualBond: UsualBond;
+
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'USD0';
+    const destTokenSymbol = 'USD0++';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[18],
+      2n * BI_POWS[18],
+      3n * BI_POWS[18],
+      4n * BI_POWS[18],
+      5n * BI_POWS[18],
+      6n * BI_POWS[18],
+      7n * BI_POWS[18],
+      8n * BI_POWS[18],
+      9n * BI_POWS[18],
+      10n * BI_POWS[18],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      usualBond = new UsualBond(network, dexKey, dexHelper);
+      await usualBond.initializePricing(blockNumber);
+    });
+
+    it('getPoolIdentifiers ', async function () {
+      await testPoolIdentifiers(
+        usualBond,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol, // USD0
+        destTokenSymbol, // USD0++
+      );
     });
   });
 });
