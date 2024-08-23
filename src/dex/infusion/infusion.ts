@@ -12,13 +12,11 @@ import {
   DexExchangeParam,
   ExchangePrices,
   PoolLiquidity,
-  SimpleExchangeParam,
   Token,
   TransferFeeParams,
 } from '../../types';
 import { IDexHelper } from '../../dex-helper';
 import erc20ABI from '../../abi/erc20.json';
-import { UniswapData, UniswapV2Data } from '../uniswap-v2/types';
 import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import infusionFactoryABI from '../../abi/infusion/InfusionFactory.json';
 import infusionPairABI from '../../abi/infusion/InfusionPair.json';
@@ -32,11 +30,10 @@ import {
   PoolState,
   InfusionData,
   InfusionPair,
-  InfusionPool,
   InfusionPoolOrderedParams,
   InfusionParam,
 } from './types';
-import { InfusionConfig, Adapters } from './config';
+import { InfusionConfig } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { isStablePair } from './utils/isStablePair';
 
@@ -44,11 +41,6 @@ export enum InfusionRouterFunctions {
   sellExactEth = 'swapExactETHForTokens',
   sellExactToken = 'swapExactTokensForETH',
   swapExactIn = 'swapExactTokensForTokens',
-}
-
-export interface SmardexData extends Omit<UniswapV2Data, 'feeFactor'> {
-  deadline: number;
-  receiver: Address;
 }
 
 const VelodromeFactoryABI = [
@@ -111,7 +103,6 @@ export class Infusion extends UniswapV2 {
         ? poolGasCost
         : InfusionConfig[dexKey][network].poolGasCost,
       infusionPairIface,
-      Adapters[network] || undefined,
     );
 
     this.stableFee = InfusionConfig[dexKey][network].stableFee;
@@ -131,8 +122,6 @@ export class Infusion extends UniswapV2 {
 
     this.feeFactor =
       InfusionConfig[dexKey][network].feeFactor || this.feeFactor;
-
-    // this.exchangeRouterInterface = new Interface(infusionRouterABI);
   }
 
   async findInfusionPair(from: Token, to: Token, stable: boolean) {
@@ -166,8 +155,11 @@ export class Infusion extends UniswapV2 {
     if (!blockNumber) return;
     const pairsToFetch: InfusionPair[] = [];
     for (const _pair of pairs) {
-      for (const stable of [false, true]) {
-        const pair = await this.findInfusionPair(_pair[0], _pair[1], stable);
+      const pairs = await Promise.all([
+        this.findInfusionPair(_pair[0], _pair[1], true),
+        this.findInfusionPair(_pair[0], _pair[1], false),
+      ]);
+      for (const pair of pairs) {
         if (!(pair && pair.exchange)) continue;
         if (!pair.pool) {
           pairsToFetch.push(pair);
@@ -271,18 +263,6 @@ export class Infusion extends UniswapV2 {
         );
   }
 
-  async getBuyPrice(
-    priceParams: InfusionPoolOrderedParams,
-    srcAmount: bigint,
-  ): Promise<bigint> {
-    if (priceParams.stable) throw new Error(`Buy not supported`);
-    return Uniswapv2ConstantProductPool.getBuyPrice(
-      priceParams,
-      srcAmount,
-      this.feeFactor,
-    );
-  }
-
   async getPricesVolume(
     _from: Token,
     _to: Token,
@@ -297,7 +277,7 @@ export class Infusion extends UniswapV2 {
       srcDexFee: 0,
       destDexFee: 0,
     },
-  ): Promise<ExchangePrices<UniswapV2Data> | null> {
+  ): Promise<ExchangePrices<InfusionData> | null> {
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
       const from = this.dexHelper.config.wrapETH(_from);
@@ -342,10 +322,7 @@ export class Infusion extends UniswapV2 {
 
         if (!pairParam) return null;
 
-        const unitAmount = getBigIntPow(
-          // @ts-expect-error Buy side is not implemented yet
-          side === SwapSide.BUY ? to.decimals : from.decimals,
-        );
+        const unitAmount = getBigIntPow(from.decimals);
 
         const [unitVolumeWithFee, ...amountsWithFee] = applyTransferFee(
           [unitAmount, ...amounts],
@@ -354,29 +331,15 @@ export class Infusion extends UniswapV2 {
           isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
         );
 
-        const unit =
-          // @ts-expect-error Buy side is not implemented yet
-          side === SwapSide.BUY
-            ? await this.getBuyPricePath(unitVolumeWithFee, [pairParam])
-            : await this.getSellPricePath(unitVolumeWithFee, [pairParam]);
+        const unit = await this.getSellPricePath(unitVolumeWithFee, [
+          pairParam,
+        ]);
 
-        const prices =
-          // @ts-expect-error Buy side is not implemented yet
-          side === SwapSide.BUY
-            ? await Promise.all(
-                amountsWithFee.map(amount =>
-                  amount === 0n
-                    ? 0n
-                    : this.getBuyPricePath(amount, [pairParam]),
-                ),
-              )
-            : await Promise.all(
-                amountsWithFee.map(amount =>
-                  amount === 0n
-                    ? 0n
-                    : this.getSellPricePath(amount, [pairParam]),
-                ),
-              );
+        const prices = await Promise.all(
+          amountsWithFee.map(amount =>
+            amount === 0n ? 0n : this.getSellPricePath(amount, [pairParam]),
+          ),
+        );
 
         const [unitOutWithFee, ...outputsWithFee] = applyTransferFee(
           [unit, ...prices],
@@ -405,6 +368,7 @@ export class Infusion extends UniswapV2 {
                 direction: pairParam.direction,
               },
             ],
+            isStable: stable,
           },
           exchange: this.dexKey,
           poolIdentifier,
@@ -415,7 +379,7 @@ export class Infusion extends UniswapV2 {
 
       const resultPools = (await Promise.all(
         resultPromises,
-      )) as ExchangePrices<UniswapV2Data>;
+      )) as ExchangePrices<InfusionData>;
       const resultPoolsFiltered = resultPools.filter(item => !!item); // filter null elements
       return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
     } catch (e) {
@@ -435,12 +399,6 @@ export class Infusion extends UniswapV2 {
     if (!this.subgraphURL) return [];
 
     let stableFieldKey = 'isStable';
-
-    // if (this.dexKey.toLowerCase() === 'infusion') {
-    //   stableFieldKey = 'stable';
-    // } else if (this.dexKey.toLowerCase() !== 'infusionv2') {
-    //   stableFieldKey = 'isStable';
-    // }
 
     const query = `query ($token: Bytes!, $count: Int) {
       pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
@@ -649,14 +607,14 @@ export class Infusion extends UniswapV2 {
           destAmount,
           [{ from, to, stable }],
           recipient,
-          Math.floor(new Date().getTime()) + 120,
+          Math.floor(new Date().getTime() / 1000) + 120,
         ]
       : [
           srcAmount,
           destAmount,
           [{ from, to, stable }],
           recipient,
-          Math.floor(new Date().getTime()) + 120,
+          Math.floor(new Date().getTime() / 1000) + 120,
         ];
 
     const exchangeData = new Interface(infusionRouterABI).encodeFunctionData(

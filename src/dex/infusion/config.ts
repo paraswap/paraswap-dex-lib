@@ -19,9 +19,3 @@ export const InfusionConfig: DexConfigMap<DexParams> = {
     },
   },
 };
-
-export const Adapters: Record<number, AdapterMappings> = {
-  [Network.BASE]: {
-    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 6 }], // velodrome
-  },
-};
