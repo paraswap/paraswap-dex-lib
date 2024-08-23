@@ -73,8 +73,19 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    // We want this route to be used only for buying USD0++ from USD0
+    if (side === SwapSide.BUY) return [];
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+    if (
+      !(
+        srcTokenAddress === this.config.usd0Address &&
+        destTokenAddress === this.config.usd0ppAddress
+      )
+    ) {
+      return [];
+    }
+    return [this.dexKey];
   }
 
   // Returns pool prices for amounts.
@@ -89,13 +100,32 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UsualBondData>> {
-    // TODO: complete me!
-    return null;
+    if (side === SwapSide.BUY) return null;
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+    if (
+      !(
+        srcTokenAddress === this.config.usd0Address &&
+        destTokenAddress === this.config.usd0ppAddress
+      )
+    ) {
+      return null;
+    }
+
+    return [
+      {
+        unit: 1000000000000000000n,
+        prices: amounts,
+        data: {},
+        poolAddresses: [this.config.usd0ppAddress],
+        exchange: this.dexKey,
+        gasCost: 70000,
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<UsualBondData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -121,28 +151,19 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
-
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
-  }
-
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.config.usd0ppAddress,
+        connectorTokens: [],
+        liquidityUSD: 1000000000000000000,
+      },
+    ];
   }
 }
