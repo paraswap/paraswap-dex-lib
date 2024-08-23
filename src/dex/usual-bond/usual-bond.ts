@@ -14,19 +14,20 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { UsualBondData } from './types';
+import { UsualBondData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { UsualBondConfig, Adapters } from './config';
 import { UsualBondEventPool } from './usual-bond-pool';
 
 export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
-  protected eventPools: UsualBondEventPool;
+  readonly hasConstantPriceLargeAmounts = true;
 
-  readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+  // Set true here if protocols works only with wrapped asset
+  readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
+
+  readonly config: DexParams;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UsualBondConfig);
@@ -41,12 +42,11 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new UsualBondEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
+    const config = UsualBondConfig[dexKey][network];
+    this.config = {
+      usd0Address: config.usd0Address,
+      usd0ppAddress: config.usd0ppAddress,
+    };
   }
 
   // Initialize pricing is called once in the start of
@@ -111,14 +111,11 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     data: UsualBondData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const { exchange } = data;
-
     // Encode here the payload for adapter
-    const payload = '';
+    const payload = '0x';
 
     return {
-      targetExchange: exchange,
+      targetExchange: this.config.usd0Address,
       payload,
       networkFee: '0',
     };
