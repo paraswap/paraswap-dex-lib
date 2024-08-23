@@ -204,7 +204,7 @@ describe('OSwap', function () {
       const maxAmount = [...amountsForSell, ...amountsForBuy].reduce(
         (max, amount) => (amount > max ? amount : max),
       );
-      const hasEnoughLiquidity = minBalance > maxAmount;
+      const hasEnoughLiquidity = BigInt(minBalance) > maxAmount;
 
       if (!hasEnoughLiquidity) {
         return DEFAULT_BLOCK_NUMBER;
@@ -244,23 +244,45 @@ describe('OSwap', function () {
       );
     });
 
-    it('getTopPoolsForToken', async function () {
+    it(`getTopPoolsForToken ${srcTokenSymbol}`, async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newOSwap = new OSwap(network, dexKey, dexHelper);
-      if (newOSwap.updatePoolState) {
-        await newOSwap.updatePoolState();
-      }
+      await newOSwap.updatePoolState?.();
 
       const poolLiquidity = await newOSwap.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
 
+      console.log(`${srcTokenSymbol} top pools:`, poolLiquidity);
+
       if (!newOSwap.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+
+    it(`getTopPoolsForToken ${destTokenSymbol}`, async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newOSwap = new OSwap(network, dexKey, dexHelper);
+      await newOSwap.updatePoolState?.();
+
+      const poolLiquidity = await newOSwap.getTopPoolsForToken(
+        tokens[destTokenSymbol].address,
+        10,
+      );
+
+      console.log(`${destTokenSymbol} top pools:`, poolLiquidity);
+
+      if (!newOSwap.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][destTokenSymbol].address,
           dexKey,
         );
       }

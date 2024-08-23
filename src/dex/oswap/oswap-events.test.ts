@@ -29,12 +29,12 @@ function stateCompare(state1: OSwapPoolState, state2: OSwapPoolState) {
   // Some ERC20 tokens have rounding error which can lead to the balance computed from Transfer event valuee
   // to deviate by a couple gwei vs the on-chain balance.
   // For example stETH: https://docs.lido.fi/guides/lido-tokens-integration-guide/#1-2-wei-corner-case
-  expect(absdelta(state1.balance0, state2.balance0)).toBeLessThanOrEqual(
-    ROUNDING_ERROR,
-  );
-  expect(absdelta(state1.balance1, state2.balance1)).toBeLessThanOrEqual(
-    ROUNDING_ERROR,
-  );
+  expect(
+    absdelta(BigInt(state1.balance0), BigInt(state2.balance0)),
+  ).toBeLessThanOrEqual(ROUNDING_ERROR);
+  expect(
+    absdelta(BigInt(state1.balance1), BigInt(state2.balance1)),
+  ).toBeLessThanOrEqual(ROUNDING_ERROR);
 }
 
 describe('Oswap EventPool Mainnet', function () {
