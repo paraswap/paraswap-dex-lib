@@ -35,6 +35,8 @@ import {
 } from './constants';
 import { CablesRateFetcher } from './rate-fetcher';
 import { CablesData, CablesRFQResponse } from './types';
+import mainnetRFQAbi from '../../abi/cables/CablesMainnetRFQ.json';
+import { Interface } from 'ethers/lib/utils';
 import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
@@ -55,6 +57,9 @@ export class Cables extends SimpleExchange implements IDex<any> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = CablesAdapters[network] || {}, // readonly routerAddress: string = HashflowConfig['Hashflow'][network] //   .routerAddress, // protected routerInterface = new Interface(routerAbi),
+    readonly mainnetRFQAddress: string = CablesConfig['Cables'][network]
+      .mainnetRFQAddress,
+    protected rfqInterface = new Interface(mainnetRFQAbi),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -161,24 +166,37 @@ export class Cables extends SimpleExchange implements IDex<any> {
             .toFixed(0)
         : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
 
+      // const rfqParams = {
+      //   makerAsset: ethers.utils.getAddress(makerToken.address),
+      //   takerAsset: ethers.utils.getAddress(takerToken.address),
+      //   makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
+      //   takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
+      //   userAddress: options.txOrigin,
+      //   chainid: this.network,
+      //   executor: this.augustusAddress,
+      //   partner: options.partner,
+      //   slippage: slippageBps,
+      // };
+
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
-        makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
-        takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
+        ...(isBuy && { makerAmount: optimalSwapExchange.destAmount }),
+        ...(isSell && { takerAmount: optimalSwapExchange.srcAmount }),
         userAddress: options.txOrigin,
-        chainid: this.network,
-        executor: this.augustusAddress,
-        partner: options.partner,
-        slippage: slippageBps,
+        chainId: String(this.network),
       };
 
+      console.log('RFQ PARAMS:', rfqParams);
+
       const rfq: CablesRFQResponse = await this.dexHelper.httpRequest.post(
-        `${CABLES_API_URL}/api/rfq/firm`,
+        `${CABLES_API_URL}/quote`,
         rfqParams,
         CABLES_FIRM_QUOTE_TIMEOUT_MS,
         { 'x-apikey': 'TODO - API KEY' },
       );
+
+      console.log('RFQ RESPONSE:', rfq);
 
       if (!rfq) {
         throw new Error(
@@ -187,7 +205,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
             JSON.stringify(rfq + 'params' + rfqParams),
         );
       }
-      rfq.order.signature = rfq.signature;
 
       const { order } = rfq;
 
@@ -302,27 +319,51 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return this.tokensMap[this.normalizeTokenAddress(address)];
   }
 
-  getAdapterParam(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
+  async getSimpleParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
     data: CablesData,
     side: SwapSide,
-  ): AdapterExchangeParam {
-    throw new Error('Method not implemented.');
+  ): Promise<SimpleExchangeParam> {
+    const { quoteData } = data;
+
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    const swapFunction = 'simpleSwap';
+    const swapFunctionParams = [
+      [
+        quoteData.nonceAndMeta,
+        quoteData.expiry,
+        quoteData.makerAsset,
+        quoteData.takerAsset,
+        quoteData.taker,
+        quoteData.makerAmount,
+        quoteData.takerAmount,
+      ],
+      quoteData.signature,
+    ];
+
+    const swapData = this.rfqInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      this.mainnetRFQAddress,
+    );
   }
-  getSimpleParam?(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    data: CablesData,
-    side: SwapSide,
-  ): AsyncOrSync<SimpleExchangeParam> {
-    throw new Error('Method not implemented.');
-  }
-  getDexParam?(
+
+  getDexParam(
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
@@ -330,11 +371,110 @@ export class Cables extends SimpleExchange implements IDex<any> {
     recipient: Address,
     data: CablesData,
     side: SwapSide,
-    context: Context,
-    executorAddress: Address,
-  ): AsyncOrSync<DexExchangeParam> {
-    throw new Error('Method not implemented.');
+  ): DexExchangeParam {
+    const { quoteData } = data;
+
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    console.log('getDexParam arguments:', {
+      srcToken: srcToken,
+      destToken: destToken,
+      srcAmount: srcAmount,
+      destAmount: destAmount,
+      recipient: recipient,
+      data: data,
+      side: side,
+    });
+
+    const swapFunction = 'simpleSwap';
+    const swapFunctionParams = [
+      [
+        quoteData.nonceAndMeta,
+        quoteData.expiry,
+        quoteData.makerAsset,
+        quoteData.takerAsset,
+        quoteData.taker,
+        quoteData.makerAmount,
+        quoteData.takerAmount,
+      ],
+      quoteData.signature,
+    ];
+
+    console.log('swapFunctionParams', swapFunctionParams);
+
+    const exchangeData = this.rfqInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      targetExchange: this.mainnetRFQAddress,
+      returnAmountPos: undefined,
+    };
   }
+
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: CablesData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    const { quoteData } = data;
+
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    const params = [
+      {
+        nonceAndMeta: quoteData.nonceAndMeta,
+        expiry: quoteData.expiry,
+        makerAsset: quoteData.makerAsset,
+        takerAsset: quoteData.takerAsset,
+        taker: quoteData.taker,
+        makerAmount: quoteData.makerAmount,
+        takerAmount: quoteData.takerAmount,
+      },
+      quoteData.signature,
+    ];
+
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          order: {
+            nonceAndMeta: 'uint256',
+            expiry: 'uint128',
+            makerAsset: 'address',
+            takerAsset: 'address',
+            taker: 'address',
+            makerAmount: 'uint256',
+            takerAmount: 'uint256',
+          },
+          signature: 'bytes',
+        },
+      },
+      {
+        order: params[0],
+        signature: params[1],
+      },
+    );
+
+    return {
+      targetExchange: this.mainnetRFQAddress,
+      payload,
+      networkFee: '0',
+    };
+  }
+
   getDirectParam?(
     srcToken: Address,
     destToken: Address,

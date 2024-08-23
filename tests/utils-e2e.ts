@@ -387,12 +387,33 @@ export async function testE2E(
   replaceTenderlyWithEstimateGas?: boolean,
   forceRoute?: AddressOrSymbol[],
 ) {
+  console.log({
+    srcToken: srcToken ?? '--------',
+    destToken: destToken ?? '--------',
+    senderAddress: senderAddress ?? '--------',
+    _amount,
+    swapSide,
+    dexKeys,
+    contractMethod: contractMethod ?? '--------',
+    network,
+    // provider: _0 ?? '--------',
+    poolIdentifiers: poolIdentifiers ?? '--------',
+    limitOrderProvider: limitOrderProvider ?? '--------',
+    transferFees: transferFees ?? '--------',
+    slippage: slippage ?? 0,
+    sleepMs: sleepMs ?? 0,
+    replaceTenderlyWithEstimateGas: replaceTenderlyWithEstimateGas ?? false,
+    forceRoute: forceRoute ?? '--------',
+  });
+
   const amount = BigInt(_amount);
 
   const ts: TransactionSimulator = replaceTenderlyWithEstimateGas
     ? new EstimateGasSimulation(new DummyDexHelper(network).provider)
     : new TenderlySimulation(network);
   await ts.setup();
+
+  console.log('Tenderly setup complete.');
 
   if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
     const allowanceTx = await ts.simulate(
@@ -406,6 +427,8 @@ export async function testE2E(
     expect(allowanceTx!.success).toEqual(true);
     expect(augustusV6Allowance!.success).toEqual(true);
   }
+
+  console.log('Allowance check complete.');
 
   if (deployedTestContractAddress) {
     const whitelistTx = await ts.simulate(
@@ -466,6 +489,13 @@ export async function testE2E(
       expect(setImplementationTx.success).toEqual(true);
     }
   }
+  console.log('deployedTestContractAddress setup complete.');
+
+  console.log(
+    'testingEndpoint && !poolIdentifiers',
+    testingEndpoint,
+    !poolIdentifiers,
+  );
 
   const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
@@ -473,7 +503,11 @@ export async function testE2E(
     ? new APIParaswapSDK(network, dexKeys, '')
     : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
 
+  console.log('paraswap setup complete.');
+
   if (paraswap.initializePricing) await paraswap.initializePricing();
+
+  console.log('initializePricing complete.');
 
   if (sleepMs) {
     await sleep(sleepMs);
@@ -496,6 +530,8 @@ export async function testE2E(
       transferFees,
       forceRoute,
     );
+
+    console.log('priceRoute', priceRoute);
 
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 

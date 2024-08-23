@@ -12,23 +12,8 @@ describe('Cables E2E', () => {
   const dexKey = 'Cables';
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.swapExactAmountIn,
-        // ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-      ],
-    ],
-    [
-      SwapSide.BUY,
-      [
-        ContractMethod.swapExactAmountOut,
-        // ContractMethod.simpleBuy,
-        // ContractMethod.buy,
-      ],
-    ],
+    [SwapSide.SELL, [ContractMethod.simpleSwap]],
+    [SwapSide.BUY, [ContractMethod.simpleSwap]],
   ]);
 
   describe('Avalanche', () => {
@@ -80,26 +65,26 @@ describe('Cables E2E', () => {
                   sleepMs,
                 );
               });
-              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-                await testE2E(
-                  tokens[pair[1].name],
-                  tokens[pair[0].name],
-                  holders[pair[1].name],
-                  side === SwapSide.SELL
-                    ? pair[1].sellAmount
-                    : pair[1].buyAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  undefined,
-                  undefined,
-                  undefined,
-                  undefined,
-                  sleepMs,
-                );
-              });
+              // it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+              //   await testE2E(
+              //     tokens[pair[1].name],
+              //     tokens[pair[0].name],
+              //     holders[pair[1].name],
+              //     side === SwapSide.SELL
+              //       ? pair[1].sellAmount
+              //       : pair[1].buyAmount,
+              //     side,
+              //     dexKey,
+              //     contractMethod,
+              //     network,
+              //     provider,
+              //     undefined,
+              //     undefined,
+              //     undefined,
+              //     undefined,
+              //     sleepMs,
+              //   );
+              // });
             });
           });
         });

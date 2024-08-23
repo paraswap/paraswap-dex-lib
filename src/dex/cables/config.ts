@@ -4,7 +4,7 @@ import { AdapterMappings, DexConfigMap } from '../../types';
 export const CablesConfig: DexConfigMap<{ mainnetRFQAddress: string }> = {
   Cables: {
     [Network.AVALANCHE]: {
-      mainnetRFQAddress: '0xD7961aa9ad7b6a61F2a8958C44DbF4b17DB57EBB',
+      mainnetRFQAddress: '0xe3A95146129B9218E717054a4f830f1B2755193E',
     },
     [Network.ARBITRUM]: {
       mainnetRFQAddress: '0xD7961aa9ad7b6a61F2a8958C44DbF4b17DB57EBB',
