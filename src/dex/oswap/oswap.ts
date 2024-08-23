@@ -141,8 +141,8 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
   ): bigint {
     const rate =
       from.address.toLowerCase() === pool.token0
-        ? state.traderate0
-        : state.traderate1;
+        ? BigInt(state.traderate0)
+        : BigInt(state.traderate1);
 
     const price =
       side === SwapSide.SELL
@@ -170,13 +170,13 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
   ): boolean {
     if (side === SwapSide.SELL) {
       return from.address.toLowerCase() === pool.token0
-        ? needed <= state.balance1
-        : needed <= state.balance0;
+        ? needed <= BigInt(state.balance1)
+        : needed <= BigInt(state.balance0);
     }
     // SwapSide.BUY
     return from.address.toLowerCase() === pool.token0
-      ? amount <= state.balance1
-      : amount <= state.balance0;
+      ? amount <= BigInt(state.balance1)
+      : amount <= BigInt(state.balance0);
   }
 
   // Returns pool prices for amounts.
@@ -359,11 +359,11 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
 
         const usd0 = await this.dexHelper.getTokenUSDPrice(
           { address: pool.token0, decimals: 18 },
-          state.balance0,
+          BigInt(state.balance0),
         );
         const usd1 = await this.dexHelper.getTokenUSDPrice(
           { address: pool.token1, decimals: 18 },
-          state.balance1,
+          BigInt(state.balance1),
         );
 
         // Get the other token in the pair.

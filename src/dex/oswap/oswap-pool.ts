@@ -116,10 +116,10 @@ export class OSwapEventPool extends StatefulEventSubscriber<OSwapPoolState> {
     );
 
     return {
-      balance0: results[0],
-      balance1: results[1],
-      traderate0: results[2],
-      traderate1: results[3],
+      balance0: results[0].toString(),
+      balance1: results[1].toString(),
+      traderate0: results[2].toString(),
+      traderate1: results[3].toString(),
     };
   }
 
@@ -159,8 +159,8 @@ export class OSwapEventPool extends StatefulEventSubscriber<OSwapPoolState> {
     state: DeepReadonly<OSwapPoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<OSwapPoolState> | null {
-    let balance0: bigint = state.balance0;
-    let balance1: bigint = state.balance1;
+    let balance0: bigint = BigInt(state.balance0);
+    let balance1: bigint = BigInt(state.balance1);
 
     const tokenAddress = log.address.toLowerCase();
     const fromAddress = event.args.from.toLowerCase();
@@ -183,8 +183,8 @@ export class OSwapEventPool extends StatefulEventSubscriber<OSwapPoolState> {
 
     return {
       ...state,
-      balance0,
-      balance1,
+      balance0: balance0.toString(),
+      balance1: balance1.toString(),
     };
   }
 }
