@@ -84,6 +84,7 @@ import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/vel
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
+import { LitePsm } from './lite-psm/lite-psm';
 import { Akronswap } from './uniswap-v2/akronswap';
 
 const LegacyDexes = [
@@ -164,6 +165,7 @@ const Dexes = [
   AaveV3Stata,
   ConcentratorArusd,
   FxProtocolRusd,
+  LitePsm,
   Akronswap,
 ];
 

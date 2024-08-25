@@ -1,6 +1,4 @@
 import { Interface } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
-import { Contract } from 'web3-eth-contract';
 import {
   Token,
   Address,
@@ -18,7 +16,6 @@ import {
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   getDexKeysWithNetwork,
   getBigIntPow,
@@ -27,16 +24,15 @@ import {
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  MakerPsmData,
+  LitePsmData,
   PoolState,
   PoolConfig,
-  MakerPsmParams,
-  MakerPsmDirectPayload,
+  LitePsmParams,
+  LitePsmDirectPayload,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { MakerPsmConfig, Adapters } from './config';
-import PsmABI from '../../abi/maker-psm/psm.json';
-import VatABI from '../../abi/maker-psm/vat.json';
+import { LitePsmConfig } from './config';
+import PsmABI from '../../abi/lite-psm/psm.json';
 import { BI_POWS } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
 import { hexConcat, hexZeroPad, hexlify } from '@ethersproject/bytes';
@@ -46,180 +42,26 @@ import {
   ParaSwapVersion,
 } from '@paraswap/core';
 import { BigNumber } from 'ethers';
+import { LitePsmEventPool, getOnChainState } from './lite-psm-event-pool';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
-const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
 const WAD = BI_POWS[18];
 
-const bigIntify = (b: any) => BigInt(b.toString());
 const ceilDiv = (a: bigint, b: bigint) => (a + b - 1n) / b;
 
-async function getOnChainState(
-  multiContract: Contract,
-  poolConfigs: PoolConfig[],
-  vatAddress: Address,
-  blockNumber: number | 'latest',
-): Promise<PoolState[]> {
-  const callData = poolConfigs
-    .map(c => [
-      {
-        target: c.psmAddress,
-        callData: psmInterface.encodeFunctionData('tin', []),
-      },
-      {
-        target: c.psmAddress,
-        callData: psmInterface.encodeFunctionData('tout', []),
-      },
-      {
-        target: vatAddress,
-        callData: vatInterface.encodeFunctionData('ilks', [c.identifier]),
-      },
-    ])
-    .flat();
-
-  const res = await multiContract.methods
-    .aggregate(callData)
-    .call({}, blockNumber);
-
-  let i = 0;
-  return poolConfigs.map(c => {
-    const tin = bigIntify(
-      psmInterface.decodeFunctionResult('tin', res.returnData[i++])[0],
-    );
-    const tout = bigIntify(
-      psmInterface.decodeFunctionResult('tout', res.returnData[i++])[0],
-    );
-    const ilks = vatInterface.decodeFunctionResult('ilks', res.returnData[i++]);
-    const Art = bigIntify(ilks.Art);
-    const line = bigIntify(ilks.line);
-    const rate = bigIntify(ilks.rate);
-    return {
-      tin,
-      tout,
-      Art,
-      line,
-      rate,
-    };
-  });
-}
-
-export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
-  handlers: {
-    [event: string]: (event: any, pool: PoolState, log: Log) => PoolState;
-  } = {};
-
-  logDecoder: (log: Log) => any;
-
-  to18ConversionFactor: bigint;
-  bytes32Tout =
-    '0x746f757400000000000000000000000000000000000000000000000000000000'; // bytes32('tout')
-  bytes32Tin =
-    '0x74696e0000000000000000000000000000000000000000000000000000000000'; // bytes32('tin')
-
-  constructor(
-    parentName: string,
-    protected network: number,
-    protected dexHelper: IDexHelper,
-    logger: Logger,
-    public poolConfig: PoolConfig,
-    protected vatAddress: Address,
-  ) {
-    super(parentName, poolConfig.identifier, dexHelper, logger);
-
-    this.logDecoder = (log: Log) => psmInterface.parseLog(log);
-    this.addressesSubscribed = [poolConfig.psmAddress];
-    this.to18ConversionFactor = getBigIntPow(18 - poolConfig.gem.decimals);
-
-    // Add handlers
-    this.handlers['File'] = this.handleFile.bind(this);
-    this.handlers['SellGem'] = this.handleSellGem.bind(this);
-    this.handlers['BuyGem'] = this.handleBuyGem.bind(this);
-  }
-
-  handleFile(event: any, pool: PoolState, log: Log): PoolState {
-    if (event.args.what === this.bytes32Tin) {
-      pool.tin = bigIntify(event.args.data);
-    } else if (event.args.what === this.bytes32Tout) {
-      pool.tout = bigIntify(event.args.data);
-    }
-    return pool;
-  }
-
-  handleSellGem(event: any, pool: PoolState, log: Log): PoolState {
-    pool.Art += bigIntify(event.args.value) * this.to18ConversionFactor;
-    return pool;
-  }
-
-  handleBuyGem(event: any, pool: PoolState, log: Log): PoolState {
-    pool.Art -= bigIntify(event.args.value) * this.to18ConversionFactor;
-    return pool;
-  }
-
-  getIdentifier(): string {
-    return `${this.parentName}_${this.poolConfig.psmAddress}`.toLowerCase();
-  }
-
-  /**
-   * The function is called every time any of the subscribed
-   * addresses release log. The function accepts the current
-   * state, updates the state according to the log, and returns
-   * the updated state.
-   * @param state - Current state of event subscriber
-   * @param log - Log released by one of the subscribed addresses
-   * @returns Updates state of the event subscriber after the log
-   */
-  protected processLog(
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    try {
-      const event = this.logDecoder(log);
-      if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
-      }
-      return state;
-    } catch (e) {
-      this.logger.error(
-        `Error_${this.parentName}_processLog could not parse the log with topic ${log.topics}:`,
-        e,
-      );
-      return null;
-    }
-  }
-
-  /**
-   * The function generates state using on-chain calls. This
-   * function is called to regenerate state if the event based
-   * system fails to fetch events and the local state is no
-   * more correct.
-   * @param blockNumber - Blocknumber for which the state should
-   * should be generated
-   * @returns state of the event subscriber at blocknumber
-   */
-  async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
-    return (
-      await getOnChainState(
-        this.dexHelper.multiContract,
-        [this.poolConfig],
-        this.vatAddress,
-        blockNumber,
-      )
-    )[0];
-  }
-}
-
-export class MakerPsm
+export class LitePsm
   extends SimpleExchange
-  implements IDex<MakerPsmData, MakerPsmDirectPayload>
+  implements IDex<LitePsmData, LitePsmDirectPayload>
 {
-  protected eventPools: { [gemAddress: string]: MakerPsmEventPool };
+  protected eventPools: { [gemAddress: string]: LitePsmEventPool };
 
   // warning: There is limit on swap
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(MakerPsmConfig);
+    getDexKeysWithNetwork(LitePsmConfig);
 
   logger: Logger;
 
@@ -227,17 +69,16 @@ export class MakerPsm
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
-    protected adapters = Adapters[network],
-    protected dai: Token = MakerPsmConfig[dexKey][network].dai,
-    protected vatAddress: Address = MakerPsmConfig[dexKey][network].vatAddress,
-    protected poolConfigs: PoolConfig[] = MakerPsmConfig[dexKey][network].pools,
+    protected dai: Token = LitePsmConfig[dexKey][network].dai,
+    protected vatAddress: Address = LitePsmConfig[dexKey][network].vatAddress,
+    protected poolConfigs: PoolConfig[] = LitePsmConfig[dexKey][network].pools,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPools = {};
     poolConfigs.forEach(
       p =>
-        (this.eventPools[p.gem.address.toLowerCase()] = new MakerPsmEventPool(
+        (this.eventPools[p.gem.address.toLowerCase()] = new LitePsmEventPool(
           dexKey,
           network,
           dexHelper,
@@ -258,6 +99,7 @@ export class MakerPsm
       this.poolConfigs,
       this.vatAddress,
       blockNumber,
+      LitePsmConfig[this.dexKey][this.network].dai.address,
     );
     await Promise.all(
       this.poolConfigs.map(async (p, i) => {
@@ -272,10 +114,10 @@ export class MakerPsm
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side];
+    return null;
   }
 
-  getEventPool(srcToken: Token, destToken: Token): MakerPsmEventPool | null {
+  getEventPool(srcToken: Token, destToken: Token): LitePsmEventPool | null {
     const srcAddress = srcToken.address.toLowerCase();
     const destAddress = destToken.address.toLowerCase();
     return (
@@ -300,7 +142,7 @@ export class MakerPsm
   }
 
   async getPoolState(
-    pool: MakerPsmEventPool,
+    pool: LitePsmEventPool,
     blockNumber: number,
   ): Promise<PoolState> {
     const eventState = pool.getState(blockNumber);
@@ -317,9 +159,12 @@ export class MakerPsm
     amounts: bigint[],
     poolState: PoolState,
   ): bigint[] {
-    const sellGemCheck = (dart: bigint) =>
-      (dart + poolState.Art) * poolState.rate <= poolState.line;
-    const buyGemCheck = (dart: bigint) => dart <= poolState.Art;
+    const sellGemCheck = (dart: bigint) => {
+      return dart <= poolState.daiBalance;
+    };
+    const buyGemCheck = (dart: bigint) => {
+      return dart <= poolState.gemBalance * to18ConversionFactor;
+    };
 
     return amounts.map(a => {
       if (side === SwapSide.SELL) {
@@ -356,7 +201,7 @@ export class MakerPsm
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<MakerPsmData>> {
+  ): Promise<null | ExchangePrices<LitePsmData>> {
     const eventPool = this.getEventPool(srcToken, destToken);
     if (!eventPool) return null;
 
@@ -397,14 +242,14 @@ export class MakerPsm
         },
         poolAddresses: [eventPool.poolConfig.psmAddress],
         exchange: this.dexKey,
-        gasCost: 100 * 1000, //TODO: simulate and fix the gas cost
+        gasCost: isSrcDai ? 80_000 : 100_000,
         poolIdentifier,
       },
     ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(poolPrices: PoolPrices<MakerPsmData>): number | number[] {
+  getCalldataGasCost(poolPrices: PoolPrices<LitePsmData>): number | number[] {
     return (
       CALLDATA_GAS_COST.DEX_OVERHEAD +
       CALLDATA_GAS_COST.LENGTH_SMALL +
@@ -422,7 +267,7 @@ export class MakerPsm
     srcToken: string,
     srcAmount: string,
     destAmount: string,
-    data: MakerPsmData,
+    data: LitePsmData,
     side: SwapSide,
   ): { isGemSell: boolean; gemAmount: string } {
     const isSrcDai = srcToken.toLowerCase() === this.dai.address;
@@ -453,71 +298,19 @@ export class MakerPsm
     }
   }
 
-  // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
   getAdapterParam(
     srcToken: string,
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: MakerPsmData,
+    data: LitePsmData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          gemJoinAddress: 'address',
-          toll: 'uint256',
-          to18ConversionFactor: 'uint256',
-        },
-      },
-      {
-        gemJoinAddress: data.gemJoinAddress,
-        toll: data.toll,
-        to18ConversionFactor,
-      },
-    );
-
     return {
-      targetExchange: data.psmAddress,
+      targetExchange: '0x',
       networkFee: '0',
-      payload,
+      payload: '0x',
     };
-  }
-
-  // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: MakerPsmData,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const { isGemSell, gemAmount } = this.getPsmParams(
-      srcToken,
-      srcAmount,
-      destAmount,
-      data,
-      side,
-    );
-
-    const swapData = psmInterface.encodeFunctionData(
-      isGemSell ? 'sellGem' : 'buyGem',
-      [this.augustusAddress, gemAmount],
-    );
-
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      data.psmAddress,
-      isGemSell ? data.gemJoinAddress : data.psmAddress,
-    );
   }
 
   getTokenFromAddress(address: Address): Token {
@@ -525,12 +318,12 @@ export class MakerPsm
   }
 
   async preProcessTransaction?(
-    optimalSwapExchange: OptimalSwapExchange<MakerPsmData>,
+    optimalSwapExchange: OptimalSwapExchange<LitePsmData>,
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     options: PreprocessTransactionOptions,
-  ): Promise<[OptimalSwapExchange<MakerPsmData>, ExchangeTxInfo]> {
+  ): Promise<[OptimalSwapExchange<LitePsmData>, ExchangeTxInfo]> {
     if (!optimalSwapExchange.data) {
       throw new Error(
         `Error_${this.dexKey}_preProcessTransaction payload is not received`,
@@ -566,7 +359,7 @@ export class MakerPsm
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     recipient: Address,
-    data: MakerPsmData,
+    data: LitePsmData,
     side: SwapSide,
   ): DexExchangeParam {
     const { isGemSell, gemAmount } = this.getPsmParams(
@@ -605,7 +398,11 @@ export class MakerPsm
       targetExchange: data.psmAddress,
       specialDexFlag,
       spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
-      returnAmountPos: undefined,
+      returnAmountPos: extractReturnAmountPosition(
+        psmInterface,
+        isGemSell ? 'sellGem' : 'buyGem',
+        isGemSell ? 'daiOutWad' : 'daiInWad',
+      ),
     };
   }
 
@@ -615,7 +412,7 @@ export class MakerPsm
     fromAmount: NumberAsString,
     toAmount: NumberAsString,
     quotedAmount: NumberAsString,
-    data: MakerPsmData,
+    data: LitePsmData,
     side: SwapSide,
     permit: string,
     uuid: string,
@@ -625,7 +422,7 @@ export class MakerPsm
     contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
-    if (!MakerPsm.getDirectFunctionNameV6().includes(contractMethod!)) {
+    if (!LitePsm.getDirectFunctionNameV6().includes(contractMethod!)) {
       throw new Error(`Invalid contract method ${contractMethod}`);
     }
 
@@ -648,12 +445,11 @@ export class MakerPsm
       hexZeroPad(hexlify(blockNumber), 16),
     ]);
 
-    const params: MakerPsmParams = [
+    const params: LitePsmParams = [
       srcToken,
       // not used on the contract, but used for analytics
       destToken,
       fromAmount,
-      // as there's no slippage, use instead of toAmount
       // TODO: Investigate `toAmount` vs `quotedAmount`
       side === SwapSide.BUY && srcToken.toLowerCase() === this.dai.address
         ? toAmount
@@ -666,9 +462,9 @@ export class MakerPsm
       beneficiaryDirectionApproveFlag.toString(),
     ];
 
-    const payload: MakerPsmDirectPayload = [params, permit];
+    const payload: LitePsmDirectPayload = [params, permit];
 
-    const encoder = (...params: (string | MakerPsmDirectPayload)[]) => {
+    const encoder = (...params: (string | LitePsmDirectPayload)[]) => {
       return this.augustusV6Interface.encodeFunctionData(
         ContractMethodV6.swapExactAmountInOutOnMakerPSM,
         [...params],
@@ -687,10 +483,9 @@ export class MakerPsm
     const _tokenAddress = tokenAddress.toLowerCase();
     // Liquidity depends on the swapping side hence we simply use the min
     // Its always in terms of stable coin hence liquidityUSD = liquidity
-    const minLiq = (poolState: PoolState) => {
-      const buyLimit = poolState.Art;
-      const sellLimit =
-        (poolState.line - poolState.Art * poolState.rate) / poolState.rate;
+    const minLiq = (poolState: PoolState, decimals: number) => {
+      const buyLimit = poolState.gemBalance * getBigIntPow(18 - decimals);
+      const sellLimit = poolState.daiBalance;
       return (
         2 *
         parseInt(
@@ -715,11 +510,13 @@ export class MakerPsm
       validPoolConfigs,
       this.vatAddress,
       'latest',
+      LitePsmConfig[this.dexKey][this.network].dai.address,
     );
+
     return validPoolConfigs.map((p, i) => ({
       exchange: this.dexKey,
       address: p.psmAddress,
-      liquidityUSD: minLiq(poolStates[i]),
+      liquidityUSD: minLiq(poolStates[i], p.gem.decimals),
       connectorTokens: [isDai ? p.gem : this.dai],
     }));
   }
