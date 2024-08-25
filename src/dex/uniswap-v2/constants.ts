@@ -4,6 +4,7 @@ import { MDEXConfig } from './mdex';
 import { BiSwapConfig } from './biswap';
 import { DfynConfig } from './dfyn';
 import { ExcaliburConfig } from './excalibur';
+import { AkronswapConfig } from './akronswap';
 
 // BakerySwap and Dystopia were removed from AllUniswapForks and UniswapForksWithNetwork
 // as they have a modified pool implementation which are not compatible with
@@ -15,6 +16,7 @@ export const AllUniswapForks = [
   ...Object.keys(BiSwapConfig),
   ...Object.keys(DfynConfig),
   ...Object.keys(ExcaliburConfig),
+  ...Object.keys(AkronswapConfig),
 ];
 
 const transformToNetworkMap = (config: {
@@ -42,6 +44,7 @@ export const UniswapForksWithNetwork = transformToNetworkMap({
   ...BiSwapConfig,
   ...DfynConfig,
   ...ExcaliburConfig,
+  ...AkronswapConfig,
 });
 
 export const UniswapV2Alias: { [network: number]: string } = {
