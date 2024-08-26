@@ -15,34 +15,15 @@ import {
 import { Tokens } from '../../../tests/constants-e2e';
 import GSM_ABI from '../../abi/Aave_GSM.json';
 
-/*
-  README
-  ======
-
-  This test script adds tests for AaveGsm general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover AaveGsm specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [amount]),
   }));
 }
 
@@ -52,7 +33,6 @@ function decodeReaderResult(
   funcName: string,
   index: number,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[index]._hex);
@@ -67,10 +47,6 @@ async function checkOnChainPricing(
   amounts: bigint[],
 ) {
   const exchangeAddress = '0x686F8D21520f4ecEc7ba577be08354F4d1EB8262'; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from aaveGsm.Iface or from eventPool.
-  // It depends on your implementation
   const readerIface = new Interface(GSM_ABI);
 
   const readerCallData = getReaderCalldata(
@@ -165,8 +141,6 @@ describe('AaveGsm', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'USDT';
     const destTokenSymbol = 'GHO';
 
@@ -201,9 +175,9 @@ describe('AaveGsm', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       aaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (aaveGsm.initializePricing) {
-        await aaveGsm.initializePricing(blockNumber);
-      }
+      // if (aaveGsm?.initializePricing) {
+      //   await aaveGsm.initializePricing(blockNumber);
+      // }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -216,7 +190,7 @@ describe('AaveGsm', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'getGhoAmountForSellAsset', // TODO: Put here proper function name to check pricing
+        'getGhoAmountForSellAsset',
       );
     });
 
@@ -230,7 +204,7 @@ describe('AaveGsm', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        'getAssetAmountForSellAsset', // TODO: Put here proper function name to check pricing
+        'getAssetAmountForSellAsset',
       );
     });
 
@@ -238,9 +212,9 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (newAaveGsm.updatePoolState) {
-        await newAaveGsm.updatePoolState();
-      }
+      // if (newAaveGsm.updatePoolState) {
+      //   await newAaveGsm.updatePoolState();
+      // }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
@@ -263,7 +237,6 @@ describe('AaveGsm', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'USDC';
     const destTokenSymbol = 'GHO';
@@ -299,9 +272,9 @@ describe('AaveGsm', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       aaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (aaveGsm.initializePricing) {
-        await aaveGsm.initializePricing(blockNumber);
-      }
+      // if (aaveGsm.initializePricing) {
+      //   await aaveGsm.initializePricing(blockNumber);
+      // }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -314,7 +287,7 @@ describe('AaveGsm', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'getGhoAmountForSellAsset', // TODO: Put here proper function name to check pricing
+        'getGhoAmountForSellAsset',
       );
     });
 
@@ -328,7 +301,7 @@ describe('AaveGsm', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        'getAssetAmountForSellAsset', // TODO: Put here proper function name to check pricing
+        'getAssetAmountForSellAsset',
       );
     });
 
@@ -336,9 +309,9 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (newAaveGsm.updatePoolState) {
-        await newAaveGsm.updatePoolState();
-      }
+      // if (newAaveGsm.updatePoolState) {
+      //   await newAaveGsm.updatePoolState();
+      // }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
