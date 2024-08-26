@@ -8,8 +8,8 @@ import INCEPTION_VAULT_ABI from '../../abi/inception/inception-vault.json';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
 import { Interface } from '@ethersproject/abi';
-import { fetchTokenList } from './utils';
 import { setTokensOnNetwork } from './tokens';
+import { getTokenList } from './utils';
 
 jest.setTimeout(50 * 1000);
 const dexKey = 'InceptionLRT';
@@ -47,7 +47,7 @@ describe('Inception Event', function () {
             poolInterface,
           );
 
-          const tokenList = await fetchTokenList(network);
+          const tokenList = await getTokenList(network);
           setTokensOnNetwork(network, tokenList);
 
           await testEventSubscriber(

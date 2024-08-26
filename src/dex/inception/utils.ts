@@ -39,7 +39,7 @@ export async function getOnChainState(
   network: Network,
   blockNumber: number | 'latest',
 ): Promise<PoolState> {
-  let tokenList = await fetchTokenList(network);
+  let tokenList = await getTokenList(network);
   const state: PoolState = {};
   for (const p of tokenList) {
     let addr;
@@ -66,8 +66,6 @@ export async function getOnChainState(
   return state;
 }
 
-export const fetchTokenList = async (
-  network: Network,
-): Promise<DexParams[]> => {
+export const getTokenList = async (network: Network): Promise<DexParams[]> => {
   return InceptionConfig['InceptionLRT'][network];
 };
