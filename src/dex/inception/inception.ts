@@ -210,7 +210,24 @@ export class Inception
     limit: number,
   ): Promise<PoolLiquidity[]> {
     await this.initializeTokens();
-    // TODO: Implement
+
+    const token: DexParams = getTokenFromAddress(this.network, tokenAddress);
+
+    if (token) {
+      return [
+        {
+          liquidityUSD: 1e9,
+          exchange: this.dexKey,
+          address: token.vault,
+          connectorTokens: [
+            {
+              address: token.token,
+              decimals: 1e18,
+            },
+          ],
+        },
+      ];
+    }
     return [];
   }
 
