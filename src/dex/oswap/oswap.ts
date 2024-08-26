@@ -10,8 +10,14 @@ import {
   Logger,
   NumberAsString,
   DexExchangeParam,
+  TransferFeeParams,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import {
+  SwapSide,
+  Network,
+  DEST_TOKEN_PARASWAP_TRANSFERS,
+  SRC_TOKEN_PARASWAP_TRANSFERS,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
@@ -25,6 +31,7 @@ import { OSwapConfig, Adapters, OSWAP_GAS_COST } from './config';
 import { OSwapEventPool } from './oswap-pool';
 import OSwapABI from '../../abi/oswap/oswap.abi.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
 
 export class OSwap extends SimpleExchange implements IDex<OSwapData> {
   readonly eventPools: { [id: string]: OSwapEventPool } = {};
@@ -34,7 +41,7 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
   // This may change in the future, but currently OSwap does not support native ETH.
   readonly needWrapNative = true;
 
-  readonly isFeeOnTransferSupported = false;
+  readonly isFeeOnTransferSupported = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(OSwapConfig);
@@ -190,6 +197,12 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<null | ExchangePrices<OSwapData>> {
     try {
       // Get the pool to use.
@@ -223,10 +236,19 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
         this.calcPrice(pool, state, srcToken, amount, side),
       );
 
+      const [unitPriceWithFee, ...pricesWithFee] = applyTransferFee(
+        [unitPrice, ...prices],
+        side,
+        side === SwapSide.SELL ? transferFees.srcFee : transferFees.destFee,
+        side === SwapSide.SELL
+          ? SRC_TOKEN_PARASWAP_TRANSFERS
+          : DEST_TOKEN_PARASWAP_TRANSFERS,
+      );
+
       return [
         {
-          prices,
-          unit: unitPrice,
+          prices: pricesWithFee,
+          unit: unitPriceWithFee,
           data: {
             pool: pool.address,
             path: [srcToken.address, destToken.address],
