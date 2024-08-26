@@ -1,4 +1,3 @@
-import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -27,14 +26,12 @@ import { generalDecoder } from '../../lib/decoders';
 import { parseUnits } from 'ethers/lib/utils';
 
 export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
-  // protected eventPools: AaveGsmEventPool;
   static readonly gsmInterface = new Interface(GSM_ABI);
 
   protected config: DexParams;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+  readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
 
@@ -47,7 +44,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     const config = AaveGsmConfig[dexKey][network];
@@ -60,29 +57,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     };
 
     this.logger = dexHelper.getLogger(dexKey);
-    // this.eventPools = new AaveGsmEventPool(
-    //   dexKey,
-    //   network,
-    //   dexHelper,
-    //   this.logger,
-    // );
-  }
-
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
-    // const poolState = await getOnChainState(
-    //   this.dexHelper.multiContract,
-    //   this.swETHAddress,
-    //   this.swETHInterface,
-    //   blockNumber,
-    // );
-    // await this.eventPools.initialize(blockNumber, {
-    //   state: poolState,
-    // });
   }
 
   // Returns the list of contract adapters (name and index)
@@ -101,7 +75,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
 
@@ -136,7 +109,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AaveGsmData>> {
-    // TODO: complete me!
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
 
@@ -235,7 +207,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<AaveGsmData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -333,15 +304,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
-
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
@@ -406,11 +368,5 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     } else {
       return [];
     }
-  }
-
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
   }
 }
