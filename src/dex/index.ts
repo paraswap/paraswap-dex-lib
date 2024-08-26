@@ -60,6 +60,7 @@ import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
+import { Infusion } from './infusion/infusion';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { MaverickV2 } from './maverick-v2/maverick-v2';
@@ -148,6 +149,7 @@ const Dexes = [
   CurveV1StableNg,
   WstETH,
   Hashflow,
+  Infusion,
   MaverickV1,
   MaverickV2,
   Camelot,
