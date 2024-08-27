@@ -207,6 +207,14 @@ export interface IDexPricing<ExchangeData> {
   // useful for RFQ system
   isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean>;
 
+  addPoolGenerateState?({
+    poolIdentifier,
+    blockNumber,
+  }: {
+    poolIdentifier: string;
+    blockNumber: number;
+  }): AsyncOrSync<null | unknown>;
+
   // blacklist a specific userAddress from exchange
   setBlacklist?(userAddress?: Address): AsyncOrSync<boolean>;
 }

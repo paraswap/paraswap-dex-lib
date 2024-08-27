@@ -24,4 +24,6 @@ export interface IDexHelper {
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
   getTokenUSDPrice: (token: Token, amount: bigint) => Promise<number>;
+  dexStateSubscriber: any; // temp ?
+  dexStatePublisher: any; // temp ?
 }

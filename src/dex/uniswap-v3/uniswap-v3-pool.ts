@@ -4,10 +4,7 @@ import { Interface } from '@ethersproject/abi';
 import { ethers } from 'ethers';
 import { assert, DeepReadonly } from 'ts-essentials';
 import { Log, Logger, BlockHeader, Address } from '../../types';
-import {
-  InitializeStateOptions,
-  StatefulEventSubscriber,
-} from '../../stateful-event-subscriber';
+import { InitializeStateOptions } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   PoolState,
@@ -27,8 +24,9 @@ import { TickBitMap } from './contract-math/TickBitMap';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { decodeStateMultiCallResultWithRelativeBitmaps } from './utils';
 import { _reduceTickBitmap, _reduceTicks } from './contract-math/utils';
+import { StatefulDualSynchronizer } from '../../stateful-dual-synchronizer';
 
-export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
+export class UniswapV3EventPool extends StatefulDualSynchronizer<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
@@ -79,7 +77,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       poolKey = `${poolKey}_${tickSpacing}`;
     }
 
-    super(parentName, poolKey, dexHelper, logger, true, mapKey);
+    super(parentName, poolKey, dexHelper, logger);
     this.feeCodeAsString = feeCode.toString();
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();

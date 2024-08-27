@@ -3,7 +3,6 @@ import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import erc20ABI from '../../abi/erc20.json';
-import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
   AdapterExchangeParam,
   Address,
@@ -69,6 +68,7 @@ import {
   hexConcat,
 } from 'ethers/lib/utils';
 import { BigNumber } from 'ethers';
+import { StatefulDualSynchronizer } from '../../stateful-dual-synchronizer';
 
 const rebaseTokens = _rebaseTokens as { chainId: number; address: string }[];
 
@@ -124,11 +124,12 @@ export interface UniswapV2Pair {
   pool?: UniswapV2EventPool;
 }
 
-export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolState> {
+export class UniswapV2EventPool extends StatefulDualSynchronizer<UniswapV2PoolState> {
   decoder = (log: Log) => this.iface.parseLog(log);
 
   constructor(
-    parentName: string,
+    public parentName: string,
+    public poolIdentifier: string,
     protected dexHelper: IDexHelper,
     private poolAddress: Address,
     private token0: Token,
@@ -142,15 +143,7 @@ export class UniswapV2EventPool extends StatefulEventSubscriber<UniswapV2PoolSta
     private feesMultiCallDecoder?: (values: any[]) => number,
     private iface: Interface = uniswapV2PoolIface,
   ) {
-    super(
-      parentName,
-      (token0.symbol || token0.address) +
-        '-' +
-        (token1.symbol || token1.address) +
-        ' pool',
-      dexHelper,
-      logger,
-    );
+    super(parentName, poolIdentifier, dexHelper, logger);
   }
 
   protected processLog(
@@ -301,10 +294,11 @@ export class UniswapV2
     reserves1: string,
     feeCode: number,
     blockNumber: number,
-  ) {
+  ): Promise<UniswapV2EventPool | null> {
     const { callEntry, callDecoder } = this.getFeesMultiCallData(pair) || {};
     pair.pool = new UniswapV2EventPool(
       this.dexKey,
+      this._getPoolIdentifier(pair.token0, pair.token1),
       this.dexHelper,
       pair.exchange!,
       pair.token0,
@@ -318,9 +312,50 @@ export class UniswapV2
     );
     pair.pool.addressesSubscribed.push(pair.exchange!);
 
-    await pair.pool.initialize(blockNumber, {
+    try {
+      await pair.pool.initialize(
+        blockNumber,
+        /*, {
       state: { reserves0, reserves1, feeCode },
-    });
+    }
+      */
+      );
+      return pair.pool;
+    } catch (e) {
+      this.logger.error(`Error_addPool could not add pool with error:`, e);
+      delete pair.pool;
+      return null;
+    }
+  }
+
+  async addPoolGenerateState({
+    poolIdentifier,
+    blockNumber,
+  }: {
+    poolIdentifier: string;
+    blockNumber: number;
+  }): Promise<UniswapV2PoolState | null> {
+    // poolIdentifier is in the format of 'uniswapv2_<token0>_<token1>'
+    const [, token0, token1] = poolIdentifier.split('_');
+    const pair = await this.findPair(
+      { address: token0, decimals: 0 },
+      { address: token1, decimals: 0 },
+    );
+    if (!(pair && pair.exchange)) return null;
+
+    const [pairState] = await this.getManyPoolReserves([pair], blockNumber);
+
+    const pool = await this.addPool(
+      pair,
+      pairState.reserves0,
+      pairState.reserves1,
+      pairState.feeCode,
+      blockNumber,
+    );
+
+    if (!pool) return null;
+
+    return pool.getState(blockNumber);
   }
 
   async getBuyPrice(
@@ -479,7 +514,9 @@ export class UniswapV2
           pairState.feeCode,
           blockNumber,
         );
-      } else pair.pool.setState(pairState, blockNumber);
+      } else {
+        // pair.pool.setState(pairState, blockNumber); // TEMP: temporarily disabled to prevent confusions with new system
+      }
     }
   }
 
@@ -523,6 +560,19 @@ export class UniswapV2
       direction: true,
       exchange: pair.exchange,
     };
+  }
+
+  _getPoolIdentifier(_from: Token, _to: Token) {
+    const from = this.dexHelper.config.wrapETH(_from);
+    const to = this.dexHelper.config.wrapETH(_to);
+
+    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
+      .sort((a, b) => (a > b ? 1 : -1))
+      .join('_');
+
+    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+
+    return poolIdentifier.toLowerCase();
   }
 
   async getPoolIdentifiers(
