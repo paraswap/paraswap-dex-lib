@@ -30,7 +30,7 @@ function testForNetwork(
       [SwapSide.SELL, ['deposit' as ContractMethod]],
     ]);
 
-    describe(`${inceptionSlug} on ${network}`, () => {
+    describe(`${inceptionSlug}`, () => {
       sideToContractMethods.forEach((contractMethods, side) =>
         describe(`${side}`, () => {
           contractMethods.forEach((contractMethod: ContractMethod) => {

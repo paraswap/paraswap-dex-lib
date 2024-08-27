@@ -39,7 +39,7 @@ export class InceptionEventPool extends StatefulEventSubscriber<PoolState> {
           return _state;
         }
         default:
-          return null;
+          return _state;
       }
     } catch (e) {
       this.logger.error('Failed to parse log', e);
