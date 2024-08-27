@@ -25,7 +25,6 @@ import StkGHO_ABI from '../../abi/stkGHO.json';
 export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
   static readonly stkGHOInterface = new Interface(StkGHO_ABI);
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = false;
 
   protected config: DexParams;
@@ -51,14 +50,6 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
       stkGHO: config.stkGHO.toLowerCase(),
       GHO: config.GHO.toLowerCase(),
     };
-  }
-
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
   }
 
   // Returns the list of contract adapters (name and index)
@@ -149,7 +140,6 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<StkGHOData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -201,15 +191,6 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
-
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
@@ -239,7 +220,5 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
-  }
+  releaseResources(): AsyncOrSync<void> {}
 }

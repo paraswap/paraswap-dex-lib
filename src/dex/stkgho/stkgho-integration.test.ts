@@ -6,7 +6,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { StkGHO } from './stkGHO';
+import { StkGHO } from './stkgho';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -15,34 +15,15 @@ import {
 import { Tokens } from '../../../tests/constants-e2e';
 import StkGHO_ABI from '../../abi/stkGHO.json';
 
-/*
-  README
-  ======
-
-  This test script adds tests for StkGHO general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover StkGHO specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [amount]),
   }));
 }
 
@@ -51,7 +32,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -65,11 +45,7 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = '0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d'; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from stkGHO.Iface or from eventPool.
-  // It depends on your implementation
+  const exchangeAddress = '0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d';
   const readerIface = new Interface(StkGHO_ABI);
 
   const readerCallData = getReaderCalldata(
@@ -137,7 +113,6 @@ async function testPricingOnNetwork(
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
 
-  // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     stkGHO,
     funcNameToCheck,
@@ -158,7 +133,6 @@ describe('StkGHO', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'GHO';
     const destTokenSymbol = 'stkGHO';
@@ -194,9 +168,9 @@ describe('StkGHO', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       stkGHO = new StkGHO(network, dexKey, dexHelper);
-      if (stkGHO.initializePricing) {
-        await stkGHO.initializePricing(blockNumber);
-      }
+      // if (stkGHO.initializePricing) {
+      //   await stkGHO.initializePricing(blockNumber);
+      // }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -209,7 +183,7 @@ describe('StkGHO', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'previewStake', // TODO: Put here proper function name to check pricing
+        'previewStake',
       );
     });
 
@@ -223,7 +197,7 @@ describe('StkGHO', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        'previewStake', // TODO: Put here proper function name to check pricing
+        'previewStake',
       );
     });
 
@@ -231,9 +205,9 @@ describe('StkGHO', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newStkGHO = new StkGHO(network, dexKey, dexHelper);
-      if (newStkGHO.updatePoolState) {
-        await newStkGHO.updatePoolState();
-      }
+      // if (newStkGHO.updatePoolState) {
+      //   await newStkGHO.updatePoolState();
+      // }
       const poolLiquidity = await newStkGHO.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
