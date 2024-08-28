@@ -168,7 +168,6 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     side: SwapSide,
   ): Promise<DexExchangeParam> {
     if (side === SwapSide.BUY) throw new Error('BUY not supported');
-
     if (this.is_usd0(srcToken) && this.is_usd0pp(destToken)) {
       const exchangeData = this.usd0ppIface.encodeFunctionData('mint', [
         srcAmount,
@@ -179,11 +178,8 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
         dexFuncHasRecipient: true,
         exchangeData,
         targetExchange: this.config.usd0ppAddress,
-        returnAmountPos: extractReturnAmountPosition(
-          this.usd0ppIface,
-          'mint',
-          '_amountOut',
-        ),
+        returnAmountPos: Number(srcAmount),
+        spender: this.config.usd0ppAddress, // Add this if it's the same as targetExchange
       };
     }
     throw new Error('LOGIC ERROR');
@@ -198,7 +194,7 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     return [
       {
         exchange: this.dexKey,
-        address: this.config.usd0Address,
+        address: this.config.usd0ppAddress,
         connectorTokens: [
           {
             decimals: 18,

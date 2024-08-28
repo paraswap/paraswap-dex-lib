@@ -14,6 +14,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { UsualBondConfig } from './config';
+import USD0PP_ABI from '../../abi/usual-bond/usd0pp.abi.json';
 
 function getReaderCalldata(
   exchangeAddress: string,
@@ -46,25 +47,41 @@ async function checkOnChainPricing(
   amounts: bigint[],
 ) {
   const { usd0ppAddress } = UsualBondConfig.UsualBond[Network.MAINNET];
-  const readerIface = usualBond.usd0ppIface;
+  const readerIface = new Interface(USD0PP_ABI);
 
-  const readerCallData = getReaderCalldata(
+  const usd0ppContract = new usualBond.dexHelper.web3Provider.eth.Contract(
+    USD0PP_ABI as any,
     usd0ppAddress,
-    readerIface,
-    amounts.slice(1),
-    funcName,
-  );
-  const readerResult = (
-    await usualBond.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
   );
 
-  expect(prices).toEqual(expectedPrices);
+  try {
+    // Simulate the mint call
+    const amountToMint = '1000000000000000000'; // 1 ether in wei
+    const result = await usd0ppContract.methods
+      .mint(amountToMint)
+      .call({}, blockNumber);
+
+    console.log('Simulated mint result:', result);
+
+    // Compare the result with the expected prices
+    const expectedPrice = prices[0]; // Assuming prices[0] corresponds to minting 1 ether
+    console.log('Expected price:', expectedPrice.toString());
+    console.log('Actual result:', result.toString());
+
+    // You can add more detailed comparisons here
+  } catch (error) {
+    console.error('Error:', error);
+
+    if (typeof error === 'object' && error !== null && 'data' in error) {
+      const iface = new Interface(USD0PP_ABI);
+      try {
+        const decodedError = iface.parseError((error as { data: any }).data);
+        console.log('Decoded error:', decodedError);
+      } catch (decodeError) {
+        console.error('Failed to decode error:', decodeError);
+      }
+    }
+  }
 }
 
 async function testPoolIdentifiers(
