@@ -146,7 +146,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       throw new Error('getFirmRate failed with srcAmount === 0');
     }
 
-    // console.log('OPTIMAL SWAP EXCHANGE', srcToken, destToken, side, options);
+    console.log('OPTIMAL SWAP EXCHANGE', optimalSwapExchange);
 
     const normalizedSrcToken = this.normalizeToken(srcToken);
     const normalizedDestToken = this.normalizeToken(destToken);
@@ -183,7 +183,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         takerAsset: ethers.utils.getAddress(takerToken.address),
         ...(isBuy && { makerAmount: optimalSwapExchange.destAmount }),
         ...(isSell && { takerAmount: optimalSwapExchange.srcAmount }),
-        userAddress: options.txOrigin,
+        userAddress: options.executionContractAddress,
         chainId: String(this.network),
       };
 
@@ -231,9 +231,9 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const expiryAsBigInt = BigInt(order.expiry);
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
 
-      const slippageFactor = options.slippageFactor;
-      let isFailOnSlippage = false;
-      let slippageErrorMessage = '';
+      // const slippageFactor = options.slippageFactor;
+      // let isFailOnSlippage = false;
+      // let slippageErrorMessage = '';
 
       /**
        * Slipage part 1
@@ -277,30 +277,30 @@ export class Cables extends SimpleExchange implements IDex<any> {
       /**
        * Slippage part 2
        */
-      let isTooStrictSlippage = false;
-      if (
-        isFailOnSlippage &&
-        isSell &&
-        new BigNumber(1)
-          .minus(slippageFactor)
-          .lt(CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
-      } else if (
-        isFailOnSlippage &&
-        isBuy &&
-        slippageFactor
-          .minus(1)
-          .lt(CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
-      }
+      // let isTooStrictSlippage = false;
+      // if (
+      //   isFailOnSlippage &&
+      //   isSell &&
+      //   new BigNumber(1)
+      //     .minus(slippageFactor)
+      //     .lt(CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      // ) {
+      //   isTooStrictSlippage = true;
+      // } else if (
+      //   isFailOnSlippage &&
+      //   isBuy &&
+      //   slippageFactor
+      //     .minus(1)
+      //     .lt(CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+      // ) {
+      //   isTooStrictSlippage = true;
+      // }
 
-      if (isFailOnSlippage && isTooStrictSlippage) {
-        throw new TooStrictSlippageCheckError(slippageErrorMessage);
-      } else if (isFailOnSlippage && !isTooStrictSlippage) {
-        throw new SlippageCheckError(slippageErrorMessage);
-      }
+      // if (isFailOnSlippage && isTooStrictSlippage) {
+      //   throw new TooStrictSlippageCheckError(slippageErrorMessage);
+      // } else if (isFailOnSlippage && !isTooStrictSlippage) {
+      //   throw new SlippageCheckError(slippageErrorMessage);
+      // }
 
       return [
         {

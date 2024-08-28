@@ -1,19 +1,28 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import { testE2E } from '../../../tests/utils-e2e';
+import { testE2E, newTestE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-const sleepMs: number = 5000;
+const sleepMs: number = 10000;
+const slippage: number = 10;
 
 describe('Cables E2E', () => {
   const dexKey = 'Cables';
 
   const sideToContractMethods = new Map([
-    [SwapSide.SELL, [ContractMethod.simpleSwap]],
-    [SwapSide.BUY, [ContractMethod.simpleSwap]],
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
+      ],
+    ],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe('Avalanche', () => {
@@ -61,30 +70,30 @@ describe('Cables E2E', () => {
                   undefined,
                   undefined,
                   undefined,
-                  undefined,
+                  slippage,
                   sleepMs,
                 );
               });
-              // it(`${pair[1].name} -> ${pair[0].name}`, async () => {
-              //   await testE2E(
-              //     tokens[pair[1].name],
-              //     tokens[pair[0].name],
-              //     holders[pair[1].name],
-              //     side === SwapSide.SELL
-              //       ? pair[1].sellAmount
-              //       : pair[1].buyAmount,
-              //     side,
-              //     dexKey,
-              //     contractMethod,
-              //     network,
-              //     provider,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     sleepMs,
-              //   );
-              // });
+              it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                await testE2E(
+                  tokens[pair[1].name],
+                  tokens[pair[0].name],
+                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? pair[1].sellAmount
+                    : pair[1].buyAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  slippage,
+                  sleepMs,
+                );
+              });
             });
           });
         });
