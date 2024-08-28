@@ -3,11 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -43,6 +39,19 @@ function testForNetwork(
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
                 side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -87,44 +96,6 @@ describe('AaveGsm E2E', () => {
 
     const tokenAAmount: string = '1000000000000000000';
     const tokenBAmount: string = '1000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
-
-  describe('Mainnet USDT -> GHO', () => {
-    const network = Network.MAINNET;
-
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'GHO';
-
-    const tokenAAmount: string = '1000000';
-    const tokenBAmount: string = '1000000000000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
-
-  describe('Mainnet USDC -> GHO', () => {
-    const network = Network.MAINNET;
-
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'GHO';
-
-    const tokenAAmount: string = '1000000';
-    const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(
       network,
