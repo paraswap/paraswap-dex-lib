@@ -16,7 +16,7 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AaveGsmData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { AaveGsmConfig, Adapters } from './config';
+import { AaveGsmConfig } from './config';
 
 import GSM_ABI from '../../abi/Aave_GSM.json';
 import { Interface } from '@ethersproject/abi';
@@ -44,7 +44,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     const config = AaveGsmConfig[dexKey][network];
@@ -59,16 +58,10 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -210,10 +203,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // V5: Used for multiSwap, buy & megaSwap
-  // V6: Not used, can be left blank
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -222,10 +211,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     data: AaveGsmData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     const { exchange } = data;
 
-    // Encode here the payload for adapter
     const payload = '';
 
     return {
