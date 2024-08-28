@@ -121,7 +121,7 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     }
 
     const unitIn = BI_POWS[18];
-    const unitOut = unitIn; // 1:1 swap
+    const unitOut = BI_POWS[18]; // 1:1 swap
     const amountsOut = amounts; // 1:1 swap, so output amounts are the same as input
 
     return [
@@ -173,6 +173,12 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
         srcAmount,
         recipient,
       ]);
+
+      await this.dexHelper.augustusApprovals.hasApproval(
+        this.config.usd0ppAddress,
+        this.config.usd0Address,
+        this.config.usd0ppAddress,
+      );
       return {
         needWrapNative: false,
         dexFuncHasRecipient: true,
