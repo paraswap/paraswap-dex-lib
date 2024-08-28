@@ -86,6 +86,7 @@ import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 import { OSwap } from './oswap/oswap';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
+import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
 
 const LegacyDexes = [
@@ -168,6 +169,7 @@ const Dexes = [
   OSwap,
   ConcentratorArusd,
   FxProtocolRusd,
+  AaveGsm,
   LitePsm,
 ];
 
