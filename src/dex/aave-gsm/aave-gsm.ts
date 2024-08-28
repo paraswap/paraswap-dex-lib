@@ -18,15 +18,19 @@ import { AaveGsmData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveGsmConfig, Adapters } from './config';
 
-import GSM_ABI from '../../abi/Aave_GSM.json';
+import GSM_ABI from '../../abi/aave-gsm/Aave_GSM.json';
+import AGGREGATOR_ABI from '../../abi/aave-gsm/AggregatorInterface.json';
 import { Interface } from '@ethersproject/abi';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { BytesLike } from 'ethers';
-import { generalDecoder } from '../../lib/decoders';
-import { parseUnits } from 'ethers/lib/utils';
+import { generalDecoder, uint256ToBigInt } from '../../lib/decoders';
+import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { erc20Iface } from '../../lib/tokens/utils';
+import { ChainLinkPriceFeed } from '../jarvis-v6/chainLinkpriceFeed-event';
 
 export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   static readonly gsmInterface = new Interface(GSM_ABI);
+  static readonly aggregatorInterface = new Interface(AGGREGATOR_ABI);
 
   protected config: DexParams;
 
@@ -54,6 +58,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       USDT: config.USDT.toLowerCase(),
       USDC: config.USDC.toLowerCase(),
       GHO: config.GHO.toLowerCase(),
+      USDT_PRICE_FEED: config.USDT_PRICE_FEED,
+      USDC_PRICE_FEED: config.USDC_PRICE_FEED,
     };
 
     this.logger = dexHelper.getLogger(dexKey);
@@ -313,18 +319,57 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     tokenAddress = tokenAddress.toLowerCase();
 
     if (tokenAddress == this.config.GHO) {
-      return [
+      const calldata = [
         {
-          exchange: this.dexKey,
-          address: this.config.GSM_USDC,
-          connectorTokens: [
-            {
-              decimals: 6,
-              address: this.config.USDC,
-            },
-          ],
-          liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+          target: this.config.USDT,
+          callData: erc20Iface.encodeFunctionData('balanceOf', [
+            this.config.GSM_USDT,
+          ]),
+          decodeFunction: uint256ToBigInt,
         },
+        {
+          target: this.config.USDC,
+          callData: erc20Iface.encodeFunctionData('balanceOf', [
+            this.config.GSM_USDC,
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.config.USDT_PRICE_FEED,
+          callData: AaveGsm.aggregatorInterface.encodeFunctionData(
+            'latestAnswer',
+            [],
+          ),
+          decodeFunction: (
+            result: MultiResult<BytesLike> | BytesLike,
+          ): bigint => {
+            return generalDecoder(result, ['int256'], 0n, value =>
+              value[0].toBigInt(),
+            );
+          },
+        },
+        {
+          target: this.config.USDC_PRICE_FEED,
+          callData: AaveGsm.aggregatorInterface.encodeFunctionData(
+            'latestAnswer',
+            [],
+          ),
+          decodeFunction: (
+            result: MultiResult<BytesLike> | BytesLike,
+          ): bigint => {
+            return generalDecoder(result, ['int256'], 0n, value =>
+              value[0].toBigInt(),
+            );
+          },
+        },
+      ];
+
+      const result = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+        true,
+        calldata,
+      );
+
+      return [
         {
           exchange: this.dexKey,
           address: this.config.GSM_USDT,
@@ -334,7 +379,22 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
               address: this.config.USDT,
             },
           ],
-          liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+          liquidityUSD:
+            +formatUnits(result[0].returnData, 6) *
+            +formatUnits(result[2].returnData, 8),
+        },
+        {
+          exchange: this.dexKey,
+          address: this.config.GSM_USDC,
+          connectorTokens: [
+            {
+              decimals: 6,
+              address: this.config.USDC,
+            },
+          ],
+          liquidityUSD:
+            +formatUnits(result[1].returnData, 6) *
+            +formatUnits(result[3].returnData, 8),
         },
       ];
     } else if (tokenAddress == this.config.USDC) {

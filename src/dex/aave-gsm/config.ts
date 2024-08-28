@@ -11,6 +11,8 @@ export const AaveGsmConfig: DexConfigMap<DexParams> = {
       USDT: AaveV3Ethereum.ASSETS.USDT.UNDERLYING,
       USDC: AaveV3Ethereum.ASSETS.USDC.UNDERLYING,
       GHO: AaveV3Ethereum.ASSETS.GHO.UNDERLYING,
+      USDT_PRICE_FEED: '0x3E7d1eAB13ad0104d2750B8863b489D65364e32D',
+      USDC_PRICE_FEED: '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6',
     },
   },
 };

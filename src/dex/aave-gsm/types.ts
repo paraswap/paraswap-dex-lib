@@ -12,4 +12,6 @@ export type DexParams = {
   USDT: string;
   USDC: string;
   GHO: string;
+  USDT_PRICE_FEED: string;
+  USDC_PRICE_FEED: string;
 };
