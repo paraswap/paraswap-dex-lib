@@ -507,6 +507,10 @@ export const Tokens: {
       address: '0x07D1718fF05a8C53C8F05aDAEd57C0d672945f9a',
       decimals: 18,
     },
+    ynETH: {
+      address: '0x14dc3d915107dca9ed39e29e14fbdfe4358a1346',
+      decimals: 18,
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
