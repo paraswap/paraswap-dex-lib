@@ -8,25 +8,34 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { StkGHOData } from './types';
+import { DexParams, PoolState, StkGHOData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { StkGHOConfig, Adapters } from './config';
 import { StkGHOEventPool } from './stkgho-pool';
+import { Interface } from '@ethersproject/abi';
+import StkGHO_ABI from '../../abi/stkGHO.json';
+import { parseUnits } from 'ethers/lib/utils';
+import { uint256ToBigInt } from '../../lib/decoders';
 
 export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
-  protected eventPools: StkGHOEventPool;
+  static readonly stkGHOInterface = new Interface(StkGHO_ABI);
+  protected eventPool: StkGHOEventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
 
+  protected config: DexParams;
+
   readonly isFeeOnTransferSupported = false;
+  readonly exchangeRateUnit = 1_000_000_000_000_000_000n;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(StkGHOConfig);
@@ -41,12 +50,19 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new StkGHOEventPool(
+    this.eventPool = new StkGHOEventPool(
+      dexKey,
       dexKey,
       network,
       dexHelper,
       this.logger,
     );
+
+    const config = StkGHOConfig[dexKey][network];
+    this.config = {
+      stkGHO: config.stkGHO.toLowerCase(),
+      GHO: config.GHO.toLowerCase(),
+    };
   }
 
   // Initialize pricing is called once in the start of
@@ -54,7 +70,11 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    const state = await this.eventPool.generateState(blockNumber);
+
+    this.eventPool.initialize(blockNumber, {
+      state,
+    });
   }
 
   // Returns the list of contract adapters (name and index)
@@ -73,8 +93,25 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+
+    if (
+      srcTokenAddress === this.config.GHO &&
+      destTokenAddress === this.config.stkGHO
+    ) {
+      return [`${this.dexKey}`];
+    } else {
+      return [];
+    }
+  }
+
+  async getPoolState(blockNumber: number): Promise<PoolState> {
+    const eventState = this.eventPool.getState(blockNumber);
+    if (eventState) return eventState;
+    const onChainState = await this.eventPool.generateState(blockNumber);
+    this.eventPool.setState(onChainState, blockNumber);
+    return onChainState;
   }
 
   // Returns pool prices for amounts.
@@ -89,13 +126,37 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<StkGHOData>> {
-    // TODO: complete me!
-    return null;
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+
+    if (
+      srcTokenAddress != this.config.GHO ||
+      destTokenAddress != this.config.stkGHO
+    ) {
+      return null;
+    }
+
+    const state = await this.getPoolState(blockNumber);
+
+    return [
+      {
+        unit: state.exchangeRate,
+        prices: amounts.map(
+          amount => (state.exchangeRate * amount) / this.exchangeRateUnit,
+        ),
+        data: {
+          exchange: this.dexKey,
+        },
+        poolAddresses: ['this.config.stkGHO'],
+        exchange: this.dexKey,
+        gasCost: 100_000,
+        poolIdentifier: `${this.dexKey}`,
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<StkGHOData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -129,8 +190,29 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
   // update common state required for calculating
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+  async updatePoolState(): Promise<void> {}
+
+  async getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: StkGHOData,
+    side: SwapSide,
+  ): Promise<DexExchangeParam> {
+    const exchangeData = StkGHO.stkGHOInterface.encodeFunctionData('stake', [
+      recipient,
+      srcAmount,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.stkGHO,
+      returnAmountPos: undefined,
+    };
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -139,13 +221,28 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    tokenAddress = tokenAddress.toLowerCase();
+
+    if (tokenAddress == this.config.GHO) {
+      return [
+        {
+          exchange: this.dexKey,
+          address: this.config.stkGHO,
+          connectorTokens: [
+            {
+              decimals: 18,
+              address: this.config.stkGHO,
+            },
+          ],
+          liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+        },
+      ];
+    } else {
+      return [];
+    }
   }
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
-  }
+  releaseResources(): AsyncOrSync<void> {}
 }

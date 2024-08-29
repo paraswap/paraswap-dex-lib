@@ -6,42 +6,24 @@ import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { Stkgho } from './stkgho';
+import { StkGHO } from './stkgho';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for Stkgho general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Stkgho specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import StkGHO_ABI from '../../abi/stkGHO.json';
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [amount]),
   }));
 }
 
@@ -50,7 +32,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -58,18 +39,14 @@ function decodeReaderResult(
 }
 
 async function checkOnChainPricing(
-  stkgho: Stkgho,
+  stkGHO: StkGHO,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from stkgho.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const exchangeAddress = '0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d';
+  const readerIface = new Interface(StkGHO_ABI);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
@@ -78,7 +55,7 @@ async function checkOnChainPricing(
     funcName,
   );
   const readerResult = (
-    await stkgho.dexHelper.multiContract.methods
+    await stkGHO.dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
@@ -91,7 +68,7 @@ async function checkOnChainPricing(
 }
 
 async function testPricingOnNetwork(
-  stkgho: Stkgho,
+  stkGHO: StkGHO,
   network: Network,
   dexKey: string,
   blockNumber: number,
@@ -103,7 +80,7 @@ async function testPricingOnNetwork(
 ) {
   const networkTokens = Tokens[network];
 
-  const pools = await stkgho.getPoolIdentifiers(
+  const pools = await stkGHO.getPoolIdentifiers(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     side,
@@ -116,7 +93,7 @@ async function testPricingOnNetwork(
 
   expect(pools.length).toBeGreaterThan(0);
 
-  const poolPrices = await stkgho.getPricesVolume(
+  const poolPrices = await stkGHO.getPricesVolume(
     networkTokens[srcTokenSymbol],
     networkTokens[destTokenSymbol],
     amounts,
@@ -130,15 +107,14 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
-  if (stkgho.hasConstantPriceLargeAmounts) {
+  if (stkGHO.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   } else {
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
 
-  // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
-    stkgho,
+    stkGHO,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
@@ -146,10 +122,10 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('Stkgho', function () {
-  const dexKey = 'Stkgho';
+describe('StkGHO', function () {
+  const dexKey = 'StkGHO';
   let blockNumber: number;
-  let stkgho: Stkgho;
+  let stkGHO: StkGHO;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -157,10 +133,9 @@ describe('Stkgho', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'GHO';
+    const destTokenSymbol = 'stkGHO';
 
     const amountsForSell = [
       0n,
@@ -192,15 +167,15 @@ describe('Stkgho', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      stkgho = new Stkgho(network, dexKey, dexHelper);
-      if (stkgho.initializePricing) {
-        await stkgho.initializePricing(blockNumber);
-      }
+      stkGHO = new StkGHO(network, dexKey, dexHelper);
+      // if (stkGHO.initializePricing) {
+      //   await stkGHO.initializePricing(blockNumber);
+      // }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
-        stkgho,
+        stkGHO,
         network,
         dexKey,
         blockNumber,
@@ -208,13 +183,13 @@ describe('Stkgho', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'previewStake',
       );
     });
 
     it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       await testPricingOnNetwork(
-        stkgho,
+        stkGHO,
         network,
         dexKey,
         blockNumber,
@@ -222,24 +197,24 @@ describe('Stkgho', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        'previewStake',
       );
     });
 
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
-      const newStkgho = new Stkgho(network, dexKey, dexHelper);
-      if (newStkgho.updatePoolState) {
-        await newStkgho.updatePoolState();
-      }
-      const poolLiquidity = await newStkgho.getTopPoolsForToken(
+      const newStkGHO = new StkGHO(network, dexKey, dexHelper);
+      // if (newStkGHO.updatePoolState) {
+      //   await newStkGHO.updatePoolState();
+      // }
+      const poolLiquidity = await newStkGHO.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
       );
       console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
-      if (!newStkgho.hasConstantPriceLargeAmounts) {
+      if (!newStkGHO.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,

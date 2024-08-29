@@ -5,6 +5,9 @@ import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
+import StkGHO_ABI from '../../abi/stkGHO.json';
+import { StkGHOConfig } from './config';
+import { uint256ToBigInt } from '../../lib/decoders';
 
 export class StkGHOEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -20,25 +23,25 @@ export class StkGHOEventPool extends StatefulEventSubscriber<PoolState> {
   addressesSubscribed: string[];
 
   constructor(
+    readonly poolName: string,
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected stkGHOIface = new Interface(
-      '' /* TODO: Import and put here StkGHO ABI */,
-    ), // TODO: add any additional params required for event subscriber
+    protected stkGHOIface = new Interface(StkGHO_ABI),
   ) {
-    // TODO: Add pool name
-    super(parentName, 'POOL_NAME', dexHelper, logger);
+    super(parentName, poolName, dexHelper, logger);
 
     // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.stkGHOIface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
+    this.addressesSubscribed = [StkGHOConfig[parentName][network].stkGHO];
 
-    // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    this.handlers['ExchangeRateChanged'] =
+      this.handleExchangeRateChanged.bind(this);
+  }
+
+  getIdentifier(): string {
+    return `${this.parentName}`;
   }
 
   /**
@@ -76,16 +79,36 @@ export class StkGHOEventPool extends StatefulEventSubscriber<PoolState> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // TODO: complete me!
-    return {};
+    const callData = [
+      {
+        target: this.addressesSubscribed[0],
+        callData: this.stkGHOIface.encodeFunctionData('getExchangeRate', []),
+        decodeFunction: uint256ToBigInt,
+      },
+    ];
+
+    const res = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+      true,
+      callData,
+      blockNumber,
+    );
+
+    const result = {
+      exchangeRate: res[0].returnData,
+    };
+
+    return result;
   }
 
   // Its just a dummy example
-  handleMyEvent(
+  handleExchangeRateChanged(
     event: any,
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    return null;
+    console.log(event);
+    return {
+      exchangeRate: event.args.exchangeRate,
+    };
   }
 }
