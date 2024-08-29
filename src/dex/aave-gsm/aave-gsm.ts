@@ -15,7 +15,7 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AaveGsmData, DexParams } from './types';
+import { AaveGsmData, DexParams, PoolState } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveGsmConfig, Adapters } from './config';
 
@@ -26,9 +26,12 @@ import { BytesLike } from 'ethers';
 import { generalDecoder, uint256ToBigInt } from '../../lib/decoders';
 import { formatUnits, parseUnits } from 'ethers/lib/utils';
 import { erc20Iface } from '../../lib/tokens/utils';
+import { AaveGsmEventPool } from './aave-gsm-pool';
+import { MMath } from '../maverick-v1/maverick-math/maverick-basic-math';
 
 export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   static readonly gsmInterface = new Interface(GSM_ABI);
+  protected eventPools: Record<string, AaveGsmEventPool>;
 
   protected config: DexParams;
 
@@ -59,18 +62,48 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     };
 
     this.logger = dexHelper.getLogger(dexKey);
+
+    this.eventPools = {
+      [this.config.GSM_USDT]: new AaveGsmEventPool(
+        this.config.GSM_USDT,
+        this.dexKey,
+        this.network,
+        this.dexHelper,
+        this.logger,
+      ),
+      [this.config.GSM_USDC]: new AaveGsmEventPool(
+        this.config.GSM_USDC,
+        this.dexKey,
+        this.network,
+        this.dexHelper,
+        this.logger,
+      ),
+    };
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
+  async initializePoolPricing(pool: AaveGsmEventPool, blockNumber: number) {
+    const state = await pool.generateState(blockNumber);
+
+    pool.initialize(blockNumber, {
+      state,
+    });
+  }
+
+  async initializePricing(blockNumber: number) {
+    await this.initializePoolPricing(
+      this.eventPools[this.config.GSM_USDT],
+      blockNumber,
+    );
+    await this.initializePoolPricing(
+      this.eventPools[this.config.GSM_USDC],
+      blockNumber,
+    );
+  }
+
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -99,10 +132,61 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     }
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
+  async updatePoolState(): Promise<void> {
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    await this.initializePricing(blockNumber);
+  }
+
+  async getPoolState(gsm: string, blockNumber?: number): Promise<PoolState> {
+    if (!blockNumber) {
+      return this.eventPools[gsm].getStaleState()!;
+    }
+    const eventState = this.eventPools[gsm].getState(blockNumber);
+    if (eventState) return eventState;
+    const onChainState = await this.eventPools[gsm].generateState(blockNumber);
+    this.eventPools[gsm].setState(onChainState, blockNumber);
+    return onChainState;
+  }
+
+  getGhoAmountForBuyAsset(assetAmount: bigint, state: PoolState) {
+    if (assetAmount == 0n) {
+      return 0n;
+    }
+
+    const grossAmount = assetAmount * 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
+    const fee = MMath.mulDiv(grossAmount, state.buyFee, 10_000n, true);
+
+    return grossAmount + fee;
+  }
+
+  getAssetAmountForBuyAsset(ghoAmount: bigint, state: PoolState) {
+    const grossAmount = (ghoAmount * 10_000n) / (10_000n + state.buyFee);
+
+    return grossAmount / 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
+  }
+
+  getGhoAmountForSellAsset(assetAmount: bigint, state: PoolState) {
+    if (assetAmount == 0n) {
+      return 0n;
+    }
+
+    const grossAmount = assetAmount * 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
+    const fee = MMath.mulDiv(grossAmount, state.sellFee, 10_000n, true);
+
+    return grossAmount - fee;
+  }
+
+  getAssetAmountForSellAsset(ghoAmount: bigint, state: PoolState) {
+    const grossAmount = MMath.mulDiv(
+      ghoAmount,
+      10_000n,
+      10_000n - state.sellFee,
+      true,
+    );
+
+    return MMath.mulDiv(grossAmount, 1n, 1_000_000_000_000n, true); // 18 - 6 = 12 (decimals)
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -127,22 +211,9 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       return null;
     }
 
-    let endpoint: string;
+    let endpoint: Function;
     let target: string;
-    let resultIsGho: boolean;
-    if (srcTokenAddress == this.config.GHO && side == SwapSide.BUY) {
-      endpoint = 'getGhoAmountForBuyAsset';
-      resultIsGho = true;
-    } else if (srcTokenAddress == this.config.GHO && side == SwapSide.SELL) {
-      endpoint = 'getAssetAmountForBuyAsset';
-      resultIsGho = false;
-    } else if (destTokenAddress == this.config.GHO && side == SwapSide.SELL) {
-      endpoint = 'getGhoAmountForSellAsset';
-      resultIsGho = true;
-    } else {
-      endpoint = 'getAssetAmountForSellAsset';
-      resultIsGho = false;
-    }
+    let gas: number;
 
     if (
       srcTokenAddress == this.config.USDT ||
@@ -153,69 +224,46 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       target = this.config.GSM_USDC;
     }
 
+    if (srcTokenAddress == this.config.GHO && side == SwapSide.BUY) {
+      endpoint = this.getGhoAmountForBuyAsset;
+      gas = 80_000;
+    } else if (srcTokenAddress == this.config.GHO && side == SwapSide.SELL) {
+      endpoint = this.getAssetAmountForBuyAsset;
+      gas = 80_000;
+    } else if (destTokenAddress == this.config.GHO && side == SwapSide.SELL) {
+      endpoint = this.getGhoAmountForSellAsset;
+      gas = 70_000;
+    } else {
+      endpoint = this.getAssetAmountForSellAsset;
+      gas = 70_000;
+    }
+
     const unit = parseUnits(
       '1',
       side == SwapSide.SELL ? srcToken.decimals : destToken.decimals,
     ).toBigInt();
 
-    const amountsWithUnit = [...amounts, unit];
-
-    const calls = amountsWithUnit.map(amount => ({
-      target,
-      callData: AaveGsm.gsmInterface.encodeFunctionData(endpoint, [amount]),
-      decodeFunction: (
-        result: MultiResult<BytesLike> | BytesLike,
-      ): { underlying: bigint; gho: bigint } => {
-        return generalDecoder(
-          result,
-          ['uint256', 'uint256', 'uint256', 'uint256'],
-          {
-            underlying: 0n,
-            gho: 0n,
-          },
-          value => ({
-            underlying: value[0].toBigInt(),
-            gho: value[1].toBigInt(),
-          }),
-        );
-      },
-    }));
-
-    let results = await this.dexHelper.multiWrapper.tryAggregate<{
-      underlying: bigint;
-      gho: bigint;
-    }>(true, calls, blockNumber);
-
-    const unitPriceResult = results.pop()!;
+    const poolState = await this.getPoolState(target, blockNumber);
 
     return [
       {
-        unit: resultIsGho
-          ? unitPriceResult.returnData.gho
-          : unitPriceResult.returnData.underlying,
-        prices: results.map(result =>
-          resultIsGho ? result.returnData.gho : result.returnData.underlying,
-        ),
+        unit: endpoint(unit, poolState),
+        prices: amounts.map(amount => endpoint(amount, poolState)),
         data: {
           exchange: this.dexKey,
         },
         poolAddresses: [target],
         exchange: this.dexKey,
-        gasCost: endpoint.indexOf('BuyAsset') > 0 ? 80000 : 74000,
+        gasCost: gas,
         poolIdentifier: `${this.dexKey}_${target}`,
       },
     ];
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<AaveGsmData>): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // V5: Used for multiSwap, buy & megaSwap
-  // V6: Not used, can be left blank
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -257,39 +305,16 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
         : this.config.GSM_USDC;
 
     if (BigInt(assetAmount) == 1n) {
-      const endpoint = isSrcGho
-        ? 'getAssetAmountForBuyAsset'
-        : 'getAssetAmountForSellAsset';
-
-      const calldata = {
-        target: targetExchange,
-        callData: AaveGsm.gsmInterface.encodeFunctionData(endpoint, [
-          ghoAmount,
-        ]),
-        decodeFunction: (
-          result: MultiResult<BytesLike> | BytesLike,
-        ): { underlying: bigint; gho: bigint } => {
-          return generalDecoder(
-            result,
-            ['uint256', 'uint256', 'uint256', 'uint256'],
-            {
-              underlying: 0n,
-              gho: 0n,
-            },
-            value => ({
-              underlying: value[0].toBigInt(),
-              gho: value[1].toBigInt(),
-            }),
-          );
-        },
-      };
-
-      const result = await this.dexHelper.multiWrapper.tryAggregate<{
-        underlying: bigint;
-        gho: bigint;
-      }>(true, [calldata]);
-
-      assetAmount = result[0].returnData.underlying.toString();
+      const poolState = await this.getPoolState(targetExchange);
+      assetAmount = isSrcGho
+        ? this.getAssetAmountForBuyAsset(
+            BigInt(ghoAmount),
+            poolState,
+          ).toString()
+        : this.getAssetAmountForSellAsset(
+            BigInt(ghoAmount),
+            poolState,
+          ).toString();
     }
 
     const exchangeData = AaveGsm.gsmInterface.encodeFunctionData(swapFunction, [
@@ -315,27 +340,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     tokenAddress = tokenAddress.toLowerCase();
 
     if (tokenAddress == this.config.GHO) {
-      const calldata = [
-        {
-          target: this.config.USDT,
-          callData: erc20Iface.encodeFunctionData('balanceOf', [
-            this.config.GSM_USDT,
-          ]),
-          decodeFunction: uint256ToBigInt,
-        },
-        {
-          target: this.config.USDC,
-          callData: erc20Iface.encodeFunctionData('balanceOf', [
-            this.config.GSM_USDC,
-          ]),
-          decodeFunction: uint256ToBigInt,
-        },
-      ];
-
-      const result = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-        true,
-        calldata,
-      );
+      const usdtState = this.eventPools[this.config.GSM_USDT].getStaleState()!;
+      const usdcState = this.eventPools[this.config.GSM_USDC].getStaleState()!;
 
       return [
         {
@@ -347,7 +353,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
               address: this.config.USDT,
             },
           ],
-          liquidityUSD: +formatUnits(result[0].returnData, 6),
+          liquidityUSD: +formatUnits(usdtState.underlyingLiquidity, 6),
         },
         {
           exchange: this.dexKey,
@@ -358,7 +364,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
               address: this.config.USDC,
             },
           ],
-          liquidityUSD: +formatUnits(result[1].returnData, 6),
+          liquidityUSD: +formatUnits(usdcState.underlyingLiquidity, 6),
         },
       ];
     } else if (tokenAddress == this.config.USDC) {

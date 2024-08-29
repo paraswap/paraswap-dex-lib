@@ -5,6 +5,9 @@ import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
+import GSM_ABI from '../../abi/aave-gsm/Aave_GSM.json';
+import FEE_STRATEGY_ABI from '../../abi/aave-gsm/IFeeStrategy.json';
+import { addressDecode, uint256ToBigInt } from '../../lib/decoders';
 
 export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -12,7 +15,7 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
       event: any,
       state: DeepReadonly<PoolState>,
       log: Readonly<Log>,
-    ) => DeepReadonly<PoolState> | null;
+    ) => Promise<DeepReadonly<PoolState> | null>;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -20,25 +23,27 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
   addressesSubscribed: string[];
 
   constructor(
+    readonly gsm: string,
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected aaveGsmIface = new Interface(
-      '' /* TODO: Import and put here AaveGsm ABI */,
-    ), // TODO: add any additional params required for event subscriber
+    protected aaveGsmIface = new Interface(GSM_ABI),
+    protected feeStrategyIface = new Interface(FEE_STRATEGY_ABI),
+    protected PERCENT_FACTOR = 10_000n,
   ) {
-    // TODO: Add pool name
-    super(parentName, 'POOL_NAME', dexHelper, logger);
+    super(parentName, `${parentName}_${gsm}`, dexHelper, logger);
 
-    // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.aaveGsmIface.parseLog(log);
-    this.addressesSubscribed = [
-      /* subscribed addresses */
-    ];
+    this.addressesSubscribed = [gsm];
 
     // Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    this.handlers['FeeStrategyUpdated'] =
+      this.handleFeeStrategyUpdated.bind(this);
+  }
+
+  getIdentifier(): string {
+    return `${this.parentName}_${this.gsm}`;
   }
 
   /**
@@ -50,20 +55,62 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
    * @param log - Log released by one of the subscribed addresses
    * @returns Updates state of the event subscriber after the log
    */
-  protected processLog(
+  protected async processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
+  ): Promise<DeepReadonly<PoolState> | null> {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
+        return await this.handlers[event.name](event, state, log);
       }
     } catch (e) {
       catchParseLogError(e, this.logger);
     }
 
     return null;
+  }
+
+  async getFeeState(
+    address: string,
+    blockNumber: number | string = 'latest',
+  ): Promise<PoolState> {
+    const callData = [
+      {
+        target: address,
+        callData: this.feeStrategyIface.encodeFunctionData('getBuyFee', [
+          this.PERCENT_FACTOR,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: address,
+        callData: this.feeStrategyIface.encodeFunctionData('getSellFee', [
+          this.PERCENT_FACTOR,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
+      {
+        target: this.gsm,
+        callData: this.aaveGsmIface.encodeFunctionData(
+          'getAvailableLiquidity',
+          [],
+        ),
+        decodeFunction: uint256ToBigInt,
+      },
+    ];
+
+    const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+      true,
+      callData,
+      blockNumber,
+    );
+
+    return {
+      buyFee: results[0].returnData,
+      sellFee: results[1].returnData,
+      underlyingLiquidity: results[2].returnData,
+    };
   }
 
   /**
@@ -75,17 +122,32 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
-    // TODO: complete me!
-    return {};
+  async generateState(
+    blockNumber: number | string = 'latest',
+  ): Promise<DeepReadonly<PoolState>> {
+    const callData = [
+      {
+        target: this.gsm,
+        callData: this.aaveGsmIface.encodeFunctionData('getFeeStrategy', []),
+        decodeFunction: addressDecode,
+      },
+    ];
+
+    const results = await this.dexHelper.multiWrapper.tryAggregate<string>(
+      true,
+      callData,
+      blockNumber,
+    );
+
+    return await this.getFeeState(results[0].returnData, blockNumber);
   }
 
-  // Its just a dummy example
-  handleMyEvent(
+  async handleFeeStrategyUpdated(
     event: any,
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    return null;
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const feeStrategy = addressDecode(event.args.newFeeStrategy);
+    return await this.getFeeState(feeStrategy);
   }
 }

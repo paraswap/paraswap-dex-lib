@@ -1,10 +1,9 @@
 import { Address } from '../../types';
 
 export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
+  buyFee: bigint;
+  sellFee: bigint;
+  underlyingLiquidity: bigint;
 };
 
 export type AaveGsmData = {
