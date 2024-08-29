@@ -175,9 +175,6 @@ describe('AaveGsm', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       aaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      // if (aaveGsm?.initializePricing) {
-      //   await aaveGsm.initializePricing(blockNumber);
-      // }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -212,9 +209,6 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      // if (newAaveGsm.updatePoolState) {
-      //   await newAaveGsm.updatePoolState();
-      // }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
@@ -272,9 +266,6 @@ describe('AaveGsm', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       aaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      // if (aaveGsm.initializePricing) {
-      //   await aaveGsm.initializePricing(blockNumber);
-      // }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -309,9 +300,6 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      // if (newAaveGsm.updatePoolState) {
-      //   await newAaveGsm.updatePoolState();
-      // }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
