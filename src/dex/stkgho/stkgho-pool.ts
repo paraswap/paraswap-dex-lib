@@ -106,9 +106,8 @@ export class StkGHOEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState> | null {
-    console.log(event);
     return {
-      exchangeRate: event.args.exchangeRate,
+      exchangeRate: uint256ToBigInt(event.args.exchangeRate),
     };
   }
 }
