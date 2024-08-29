@@ -14,7 +14,3 @@ export const AaveGsmConfig: DexConfigMap<DexParams> = {
     },
   },
 };
-
-export const Adapters: Record<number, AdapterMappings> = {
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
-};

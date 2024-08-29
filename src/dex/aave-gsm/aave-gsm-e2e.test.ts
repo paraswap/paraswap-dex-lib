@@ -46,6 +46,19 @@ function testForNetwork(
                 provider,
               );
             });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),
@@ -83,44 +96,6 @@ describe('AaveGsm E2E', () => {
 
     const tokenAAmount: string = '1000000000000000000';
     const tokenBAmount: string = '1000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
-
-  describe('Mainnet USDT -> GHO', () => {
-    const network = Network.MAINNET;
-
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'GHO';
-
-    const tokenAAmount: string = '1000000';
-    const tokenBAmount: string = '1000000000000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
-
-  describe('Mainnet USDC -> GHO', () => {
-    const network = Network.MAINNET;
-
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'GHO';
-
-    const tokenAAmount: string = '1000000';
-    const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(
       network,
