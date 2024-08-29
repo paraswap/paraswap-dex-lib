@@ -168,9 +168,9 @@ describe('StkGHO', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       stkGHO = new StkGHO(network, dexKey, dexHelper);
-      // if (stkGHO.initializePricing) {
-      //   await stkGHO.initializePricing(blockNumber);
-      // }
+      if (stkGHO.initializePricing) {
+        await stkGHO.initializePricing(blockNumber);
+      }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -205,9 +205,9 @@ describe('StkGHO', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newStkGHO = new StkGHO(network, dexKey, dexHelper);
-      // if (newStkGHO.updatePoolState) {
-      //   await newStkGHO.updatePoolState();
-      // }
+      if (newStkGHO.updatePoolState) {
+        await newStkGHO.updatePoolState();
+      }
       const poolLiquidity = await newStkGHO.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
