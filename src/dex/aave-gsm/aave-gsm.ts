@@ -5,26 +5,35 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AaveGsmData } from './types';
+import { AaveGsmData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { AaveGsmConfig, Adapters } from './config';
-import { AaveGsmEventPool } from './aave-gsm-pool';
+
+import GSM_ABI from '../../abi/aave-gsm/Aave_GSM.json';
+import { Interface } from '@ethersproject/abi';
+import { MultiResult } from '../../lib/multi-wrapper';
+import { BytesLike } from 'ethers';
+import { generalDecoder, uint256ToBigInt } from '../../lib/decoders';
+import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { erc20Iface } from '../../lib/tokens/utils';
 
 export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
-  protected eventPools: AaveGsmEventPool;
+  static readonly gsmInterface = new Interface(GSM_ABI);
+
+  protected config: DexParams;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+  readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
 
@@ -37,24 +46,19 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new AaveGsmEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
-  }
+    const config = AaveGsmConfig[dexKey][network];
+    this.config = {
+      GSM_USDT: config.GSM_USDT.toLowerCase(),
+      GSM_USDC: config.GSM_USDC.toLowerCase(),
+      USDT: config.USDT.toLowerCase(),
+      USDC: config.USDC.toLowerCase(),
+      GHO: config.GHO.toLowerCase(),
+    };
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    this.logger = dexHelper.getLogger(dexKey);
   }
 
   // Returns the list of contract adapters (name and index)
@@ -73,8 +77,26 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+
+    if (
+      (srcTokenAddress === this.config.GHO &&
+        destTokenAddress === this.config.USDT) ||
+      (srcTokenAddress === this.config.USDT &&
+        destTokenAddress === this.config.GHO)
+    ) {
+      return [`${this.dexKey}_${this.config.GSM_USDT}`];
+    } else if (
+      (srcTokenAddress === this.config.GHO &&
+        destTokenAddress === this.config.USDC) ||
+      (srcTokenAddress === this.config.USDC &&
+        destTokenAddress === this.config.GHO)
+    ) {
+      return [`${this.dexKey}_${this.config.GSM_USDC}`];
+    } else {
+      return [];
+    }
   }
 
   // Returns pool prices for amounts.
@@ -89,13 +111,104 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AaveGsmData>> {
-    // TODO: complete me!
-    return null;
+    const srcTokenAddress = srcToken.address.toLowerCase();
+    const destTokenAddress = destToken.address.toLowerCase();
+
+    if (
+      !(
+        (srcTokenAddress == this.config.GHO &&
+          (destTokenAddress == this.config.USDC ||
+            destTokenAddress == this.config.USDT)) ||
+        (destTokenAddress == this.config.GHO &&
+          (srcTokenAddress == this.config.USDC ||
+            srcTokenAddress == this.config.USDT))
+      )
+    ) {
+      return null;
+    }
+
+    let endpoint: string;
+    let target: string;
+    let resultIsGho: boolean;
+    if (srcTokenAddress == this.config.GHO && side == SwapSide.BUY) {
+      endpoint = 'getGhoAmountForBuyAsset';
+      resultIsGho = true;
+    } else if (srcTokenAddress == this.config.GHO && side == SwapSide.SELL) {
+      endpoint = 'getAssetAmountForBuyAsset';
+      resultIsGho = false;
+    } else if (destTokenAddress == this.config.GHO && side == SwapSide.SELL) {
+      endpoint = 'getGhoAmountForSellAsset';
+      resultIsGho = true;
+    } else {
+      endpoint = 'getAssetAmountForSellAsset';
+      resultIsGho = false;
+    }
+
+    if (
+      srcTokenAddress == this.config.USDT ||
+      destTokenAddress == this.config.USDT
+    ) {
+      target = this.config.GSM_USDT;
+    } else {
+      target = this.config.GSM_USDC;
+    }
+
+    const unit = parseUnits(
+      '1',
+      side == SwapSide.SELL ? srcToken.decimals : destToken.decimals,
+    ).toBigInt();
+
+    const amountsWithUnit = [...amounts, unit];
+
+    const calls = amountsWithUnit.map(amount => ({
+      target,
+      callData: AaveGsm.gsmInterface.encodeFunctionData(endpoint, [amount]),
+      decodeFunction: (
+        result: MultiResult<BytesLike> | BytesLike,
+      ): { underlying: bigint; gho: bigint } => {
+        return generalDecoder(
+          result,
+          ['uint256', 'uint256', 'uint256', 'uint256'],
+          {
+            underlying: 0n,
+            gho: 0n,
+          },
+          value => ({
+            underlying: value[0].toBigInt(),
+            gho: value[1].toBigInt(),
+          }),
+        );
+      },
+    }));
+
+    let results = await this.dexHelper.multiWrapper.tryAggregate<{
+      underlying: bigint;
+      gho: bigint;
+    }>(true, calls, blockNumber);
+
+    const unitPriceResult = results.pop()!;
+
+    return [
+      {
+        unit: resultIsGho
+          ? unitPriceResult.returnData.gho
+          : unitPriceResult.returnData.underlying,
+        prices: results.map(result =>
+          resultIsGho ? result.returnData.gho : result.returnData.underlying,
+        ),
+        data: {
+          exchange: this.dexKey,
+        },
+        poolAddresses: [target],
+        exchange: this.dexKey,
+        gasCost: endpoint.indexOf('BuyAsset') > 0 ? 80000 : 74000,
+        poolIdentifier: `${this.dexKey}_${target}`,
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<AaveGsmData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -124,13 +237,73 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+  async getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AaveGsmData,
+    side: SwapSide,
+  ): Promise<DexExchangeParam> {
+    const isSrcGho = srcToken.toLowerCase() === this.config.GHO;
+    const swapFunction = isSrcGho ? 'buyAsset' : 'sellAsset';
+    const ghoAmount = isSrcGho ? srcAmount : destAmount;
+    let assetAmount = isSrcGho ? destAmount : srcAmount;
+    const targetExchange =
+      srcToken.toLowerCase() === this.config.USDT ||
+      destToken.toLowerCase() === this.config.USDT
+        ? this.config.GSM_USDT
+        : this.config.GSM_USDC;
+
+    if (BigInt(assetAmount) == 1n) {
+      const endpoint = isSrcGho
+        ? 'getAssetAmountForBuyAsset'
+        : 'getAssetAmountForSellAsset';
+
+      const calldata = {
+        target: targetExchange,
+        callData: AaveGsm.gsmInterface.encodeFunctionData(endpoint, [
+          ghoAmount,
+        ]),
+        decodeFunction: (
+          result: MultiResult<BytesLike> | BytesLike,
+        ): { underlying: bigint; gho: bigint } => {
+          return generalDecoder(
+            result,
+            ['uint256', 'uint256', 'uint256', 'uint256'],
+            {
+              underlying: 0n,
+              gho: 0n,
+            },
+            value => ({
+              underlying: value[0].toBigInt(),
+              gho: value[1].toBigInt(),
+            }),
+          );
+        },
+      };
+
+      const result = await this.dexHelper.multiWrapper.tryAggregate<{
+        underlying: bigint;
+        gho: bigint;
+      }>(true, [calldata]);
+
+      assetAmount = result[0].returnData.underlying.toString();
+    }
+
+    const exchangeData = AaveGsm.gsmInterface.encodeFunctionData(swapFunction, [
+      assetAmount,
+      recipient,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange,
+      returnAmountPos: isSrcGho ? 1 : 0,
+    };
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -139,13 +312,85 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
-  }
+    tokenAddress = tokenAddress.toLowerCase();
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+    if (tokenAddress == this.config.GHO) {
+      const calldata = [
+        {
+          target: this.config.USDT,
+          callData: erc20Iface.encodeFunctionData('balanceOf', [
+            this.config.GSM_USDT,
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: this.config.USDC,
+          callData: erc20Iface.encodeFunctionData('balanceOf', [
+            this.config.GSM_USDC,
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+      ];
+
+      const result = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+        true,
+        calldata,
+      );
+
+      return [
+        {
+          exchange: this.dexKey,
+          address: this.config.GSM_USDT,
+          connectorTokens: [
+            {
+              decimals: 6,
+              address: this.config.USDT,
+            },
+          ],
+          liquidityUSD: +formatUnits(result[0].returnData, 6),
+        },
+        {
+          exchange: this.dexKey,
+          address: this.config.GSM_USDC,
+          connectorTokens: [
+            {
+              decimals: 6,
+              address: this.config.USDC,
+            },
+          ],
+          liquidityUSD: +formatUnits(result[1].returnData, 6),
+        },
+      ];
+    } else if (tokenAddress == this.config.USDC) {
+      return [
+        {
+          exchange: this.dexKey,
+          address: this.config.GSM_USDC,
+          connectorTokens: [
+            {
+              decimals: 18,
+              address: this.config.GHO,
+            },
+          ],
+          liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+        },
+      ];
+    } else if (tokenAddress == this.config.USDT) {
+      return [
+        {
+          exchange: this.dexKey,
+          address: this.config.GSM_USDT,
+          connectorTokens: [
+            {
+              decimals: 18,
+              address: this.config.GHO,
+            },
+          ],
+          liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+        },
+      ];
+    } else {
+      return [];
+    }
   }
 }

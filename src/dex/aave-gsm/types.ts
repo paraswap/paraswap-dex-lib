@@ -8,15 +8,15 @@ export type PoolState = {
 };
 
 export type AaveGsmData = {
-  // TODO: AaveGsmData is the dex data that is
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
-  // Complete me!
   exchange: Address;
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
+  GSM_USDT: string;
+  GSM_USDC: string;
+  USDT: string;
+  USDC: string;
+  GHO: string;
 };

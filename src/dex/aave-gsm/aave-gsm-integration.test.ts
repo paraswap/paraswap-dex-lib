@@ -13,35 +13,17 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for AaveGsm general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover AaveGsm specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import GSM_ABI from '../../abi/aave-gsm/Aave_GSM.json';
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+    callData: readerIface.encodeFunctionData(funcName, [amount]),
   }));
 }
 
@@ -49,11 +31,11 @@ function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
+  index: number,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
+    return BigInt(parsed[index]._hex);
   });
 }
 
@@ -64,12 +46,8 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from aaveGsm.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const exchangeAddress = '0x686F8D21520f4ecEc7ba577be08354F4d1EB8262'; // TODO: Put here the real exchange address
+  const readerIface = new Interface(GSM_ABI);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
@@ -84,7 +62,12 @@ async function checkOnChainPricing(
   ).returnData;
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
+    decodeReaderResult(
+      readerResult,
+      readerIface,
+      funcName,
+      funcName.indexOf('getGho') == 0 ? 1 : 0,
+    ),
   );
 
   expect(prices).toEqual(expectedPrices);
@@ -151,16 +134,14 @@ describe('AaveGsm', function () {
   let blockNumber: number;
   let aaveGsm: AaveGsm;
 
-  describe('Mainnet', () => {
+  describe('Mainnet GSM_USDT: USDT -> GHO', () => {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'USDT';
+    const destTokenSymbol = 'GHO';
 
     const amountsForSell = [
       0n,
@@ -193,9 +174,9 @@ describe('AaveGsm', function () {
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       aaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (aaveGsm.initializePricing) {
-        await aaveGsm.initializePricing(blockNumber);
-      }
+      // if (aaveGsm?.initializePricing) {
+      //   await aaveGsm.initializePricing(blockNumber);
+      // }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -208,7 +189,7 @@ describe('AaveGsm', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'getGhoAmountForSellAsset',
       );
     });
 
@@ -222,7 +203,7 @@ describe('AaveGsm', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+        'getAssetAmountForSellAsset',
       );
     });
 
@@ -230,9 +211,299 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (newAaveGsm.updatePoolState) {
-        await newAaveGsm.updatePoolState();
+      // if (newAaveGsm.updatePoolState) {
+      //   await newAaveGsm.updatePoolState();
+      // }
+      const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newAaveGsm.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
       }
+    });
+  });
+
+  describe('Mainnet GSM_USDT: GHO -> USDT', () => {
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'GHO';
+    const destTokenSymbol = 'USDT';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      aaveGsm = new AaveGsm(network, dexKey, dexHelper);
+      // if (aaveGsm?.initializePricing) {
+      //   await aaveGsm.initializePricing(blockNumber);
+      // }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        aaveGsm,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'getAssetAmountForBuyAsset',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        aaveGsm,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        'getGhoAmountForBuyAsset',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
+      // if (newAaveGsm.updatePoolState) {
+      //   await newAaveGsm.updatePoolState();
+      // }
+      const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newAaveGsm.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+
+  describe('Mainnet GSM_USDC: USDC -> GHO', () => {
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    // Don't forget to update relevant tokens in constant-e2e.ts
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'GHO';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      aaveGsm = new AaveGsm(network, dexKey, dexHelper);
+      // if (aaveGsm.initializePricing) {
+      //   await aaveGsm.initializePricing(blockNumber);
+      // }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        aaveGsm,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'getGhoAmountForSellAsset',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        aaveGsm,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        'getAssetAmountForSellAsset',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
+      // if (newAaveGsm.updatePoolState) {
+      //   await newAaveGsm.updatePoolState();
+      // }
+      const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newAaveGsm.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+
+  describe('Mainnet GSM_USDC: GHO -> USDC', () => {
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    // Don't forget to update relevant tokens in constant-e2e.ts
+    const srcTokenSymbol = 'GHO';
+    const destTokenSymbol = 'USDC';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      aaveGsm = new AaveGsm(network, dexKey, dexHelper);
+      // if (aaveGsm.initializePricing) {
+      //   await aaveGsm.initializePricing(blockNumber);
+      // }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        aaveGsm,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        'getAssetAmountForBuyAsset',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        aaveGsm,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        'getGhoAmountForBuyAsset',
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
+      // if (newAaveGsm.updatePoolState) {
+      //   await newAaveGsm.updatePoolState();
+      // }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
