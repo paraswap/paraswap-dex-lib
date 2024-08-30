@@ -6,13 +6,15 @@ import {
   PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
+  NumberAsString,
+  DexExchangeParam,
   PoolLiquidity,
   Logger,
 } from '../../types';
 import { Contract } from 'web3-eth-contract';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { AaveGsmData, PoolState, PoolConfig } from './types';
@@ -21,6 +23,7 @@ import { AaveGsmConfig, Adapters } from './config';
 import { AaveGsmEventPool } from './aave-gsm-pool';
 import { Interface } from '@ethersproject/abi';
 import GsmABI from '../../abi/aave-gsm/gsm.json';
+import { get } from 'lodash';
 
 const bigIntify = (b: any) => BigInt(b.toString());
 const gsmInterface = new Interface(GsmABI);
@@ -138,6 +141,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected gho: Token = AaveGsmConfig[dexKey][network].gho,
     protected poolConfigs: PoolConfig[] = AaveGsmConfig[dexKey][network].pools,
   ) {
     super(dexHelper, dexKey);
@@ -145,7 +149,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     this.eventPools = {};
     poolConfigs.forEach(
       p =>
-        (this.eventPools[p.underlyingAddress.toLowerCase()] =
+        (this.eventPools[p.underlying.address.toLowerCase()] =
           new AaveGsmEventPool(dexKey, network, dexHelper, this.logger, p)),
     );
   }
@@ -155,7 +159,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
     const poolStates = await getOnChainState(
       this.dexHelper.multiContract,
       this.poolConfigs,
@@ -163,7 +166,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     );
     await Promise.all(
       this.poolConfigs.map(async (p, i) => {
-        const eventPool = this.eventPools[p.gem.address.toLowerCase()];
+        const eventPool = this.eventPools[p.underlying.address.toLowerCase()];
         await eventPool.initialize(blockNumber, {
           state: poolStates[i],
         });
@@ -174,7 +177,17 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return this.adapters[side];
+  }
+
+  getEventPool(srcToken: Token, destToken: Token): AaveGsmEventPool | null {
+    const srcAddress = srcToken.address.toLowerCase();
+    const destAddress = destToken.address.toLowerCase();
+    return (
+      (srcAddress === this.gho.address && this.eventPools[destAddress]) ||
+      (destAddress === this.gho.address && this.eventPools[srcAddress]) ||
+      null
+    );
   }
 
   // Returns list of pool identifiers that can be used
@@ -187,8 +200,84 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const eventPool = this.getEventPool(srcToken, destToken);
+    if (!eventPool) return [];
+    return [eventPool.getIdentifier()];
+  }
+
+  async getPoolState(
+    pool: AaveGsmEventPool,
+    blockNumber: number,
+  ): Promise<PoolState> {
+    const eventState = pool.getState(blockNumber);
+    if (eventState) return eventState;
+    const onChainState = await pool.generateState(blockNumber);
+    pool.setState(onChainState, blockNumber);
+    return onChainState;
+  }
+
+  // Using GHO to buy asset
+  async getGhoAmountForBuyAsset(
+    amounts: bigint[],
+    address: string,
+    blockNumber: number,
+  ): Promise<bigint[]> {
+    const results = await Promise.all(
+      amounts.map(async a => {
+        const data: { returnData: any } =
+          await this.dexHelper.multiContract.methods
+            .aggregate([
+              {
+                target: address,
+                callData: gsmInterface.encodeFunctionData(
+                  'getGhoAmountForBuyAsset',
+                  [a],
+                ),
+              },
+            ])
+            .call({}, blockNumber);
+
+        // Should give total amount of GHO user sells
+        const decodedResult = gsmInterface.decodeFunctionResult(
+          'getGhoAmountForBuyAsset',
+          data.returnData,
+        )[0][1];
+        return bigIntify(decodedResult);
+      }),
+    );
+    return results;
+  }
+
+  // Selling usdc/t to buy GHO
+  async getGhoAmountForSellAsset(
+    amounts: bigint[],
+    address: string,
+    blockNumber: number,
+  ): Promise<bigint[]> {
+    const results = await Promise.all(
+      amounts.map(async a => {
+        const data: { returnData: any[] } =
+          await this.dexHelper.multiContract.methods
+            .aggregate([
+              {
+                target: address,
+                callData: gsmInterface.encodeFunctionData(
+                  'getGhoAmountForSellAsset',
+                  [a],
+                ),
+              },
+            ])
+            .call({}, blockNumber);
+
+        // Decoding the result to get total usdc/t to sell
+        const decodedResult = gsmInterface.decodeFunctionResult(
+          'getGhoAmountForSellAsset',
+          data.returnData,
+        )[0][0];
+        return bigIntify(decodedResult);
+      }),
+    );
+    return results;
   }
 
   // Returns pool prices for amounts.
@@ -203,8 +292,73 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<AaveGsmData>> {
-    // TODO: complete me!
-    return null;
+    const eventPool = this.getEventPool(srcToken, destToken);
+    if (!eventPool) return null;
+
+    const poolIdentifier = eventPool.getIdentifier();
+    if (limitPools && !limitPools.includes(poolIdentifier)) return null;
+
+    const poolState = await this.getPoolState(eventPool, blockNumber);
+
+    // Exit if frozen or can't swap or seized
+    if (!poolState.canSwap || poolState.isFrozen || poolState.isSeized)
+      return null;
+
+    const unitVolume = getBigIntPow(
+      (side === SwapSide.SELL ? srcToken : destToken).decimals,
+    );
+
+    var prices: bigint[] = [];
+    var unit = BigInt(0);
+
+    // Figure out if we have USDC/USDT or GHO
+    const haveGHO =
+      (SwapSide.SELL && srcToken.address.toLowerCase() === this.gho.address) ||
+      (SwapSide.BUY && destToken.address.toLowerCase() !== this.gho.address);
+
+    // Using GHO to buy asset
+    if (haveGHO && SwapSide.BUY) {
+      const [unit, ...prices] = await this.getGhoAmountForBuyAsset(
+        amounts,
+        eventPool.poolConfig.gsmAddress,
+        blockNumber,
+      );
+    } else if (haveGHO && SwapSide.SELL) {
+      const [unit, ...prices] = await this.getGhoAmountForBuyAsset(
+        amounts,
+        eventPool.poolConfig.gsmAddress,
+        blockNumber,
+      );
+    } else if (!haveGHO && SwapSide.BUY) {
+      const [unit, ...prices] = await this.getGhoAmountForSellAsset(
+        amounts,
+        eventPool.poolConfig.gsmAddress,
+        blockNumber,
+      );
+    }
+    // Selling usdc/t to buy GHO
+    else if (!haveGHO && SwapSide.SELL) {
+      const [unit, ...prices] = await this.getGhoAmountForSellAsset(
+        amounts,
+        eventPool.poolConfig.gsmAddress,
+        blockNumber,
+      );
+    }
+
+    return [
+      {
+        prices,
+        unit,
+        data: {
+          exchange: this.dexKey,
+          assetAmount: amounts[0],
+        },
+        poolAddresses: [eventPool.poolConfig.gsmAddress],
+        exchange: this.dexKey,
+        gasCost: 100 * 1000, //TODO: simulate and fix the gas cost
+        poolIdentifier,
+      },
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -238,28 +392,126 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+  // TODO: This is a helper function from Maker PSM, so may not need if we do without it
+  // TODO: Copied from Maker PSM, need to update
+  /*
+  getGsmParams(
+    srcToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: AaveGsmData,
+    side: SwapSide,
+  ): { isGemSell: boolean; gemAmount: string } {
+    const isSrcDai = srcToken.toLowerCase() === this.dai.address;
+    const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
+    if (side === SwapSide.SELL) {
+      if (isSrcDai) {
+        const gemAmt18 = (BigInt(srcAmount) * WAD) / (WAD + BigInt(data.toll));
+        return {
+          isGemSell: false,
+          gemAmount: (gemAmt18 / to18ConversionFactor).toString(),
+        };
+      } else {
+        return { isGemSell: true, gemAmount: srcAmount };
+      }
+    } else {
+      if (isSrcDai) {
+        return { isGemSell: false, gemAmount: destAmount };
+      } else {
+        const gemAmt = ceilDiv(
+          BigInt(destAmount) * WAD,
+          (WAD - BigInt(data.toll)) * to18ConversionFactor,
+        );
+        return {
+          isGemSell: true,
+          gemAmount: gemAmt.toString(),
+        };
+      }
+    }
   }
+    */
 
+  // TODO: This is copied from maker-psm, need to update
+  /*
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AaveGsmData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { isGemSell, gemAmount } = this.getGsmParams(
+      srcToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+
+    let exchangeData = gsmInterface.encodeFunctionData(
+      isGemSell ? 'sellGem' : 'buyGem',
+      [recipient, gemAmount],
+    );
+
+    // append toll and to18ConversionFactor & set specialDexFlag = SWAP_ON_MAKER_PSM to
+    // - `buyGem` on Ex1 & Ex2
+    // - `sellGem` on Ex3
+    let specialDexFlag = SpecialDex.DEFAULT;
+    if (
+      (side === SwapSide.SELL && !isGemSell) ||
+      (side === SwapSide.BUY && isGemSell)
+    ) {
+      exchangeData = hexConcat([
+        exchangeData,
+        hexZeroPad(hexlify(BigInt(data.toll)), 32),
+        hexZeroPad(hexlify(getBigIntPow(18 - data.gemDecimals)), 32),
+      ]);
+      specialDexFlag = SpecialDex.SWAP_ON_MAKER_PSM;
+    }
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: data.exchange,
+      specialDexFlag,
+      spender: data.exchange,
+      returnAmountPos: undefined,
+    };
+  }
+*/
+
+  // (*TODO*) I think if the token is gho, should return min liquidity via getAvailableLiquidity() on both gsms
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
-  }
+    const _tokenAddress = tokenAddress.toLowerCase();
+    const isGho = _tokenAddress === this.gho.address.toLowerCase();
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+    const validPoolConfigs = isGho
+      ? this.poolConfigs
+      : this.eventPools[_tokenAddress]
+      ? [this.eventPools[_tokenAddress].poolConfig]
+      : [];
+    if (!validPoolConfigs.length) return [];
+
+    const poolStates = await getOnChainState(
+      this.dexHelper.multiContract,
+      validPoolConfigs,
+      'latest',
+    );
+    return validPoolConfigs.map((p, i) => ({
+      exchange: this.dexKey,
+      address: p.gsmAddress,
+      liquidityUSD: parseInt(
+        poolStates[i].availableUnderlyingLiquidity.toString(),
+      ),
+      connectorTokens: [isGho ? p.underlying : this.gho],
+    }));
   }
 }

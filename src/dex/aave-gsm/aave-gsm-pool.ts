@@ -6,6 +6,7 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState, PoolConfig } from './types';
 import { getOnChainState } from './aave-gsm';
+import GsmABI from '../../abi/aave-gsm/gsm.json';
 
 export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -26,19 +27,19 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     protected dexHelper: IDexHelper,
     logger: Logger,
     public poolConfig: PoolConfig,
-    protected aaveGsmIface = new Interface(
-      '' /* TODO: Import and put here AaveGsm ABI */,
-    ), // TODO: add any additional params required for event subscriber
+    protected gsmInterface = new Interface(GsmABI),
   ) {
-    // TODO: Add pool name
     super(parentName, poolConfig.identifier, dexHelper, logger);
 
-    // TODO: make logDecoder decode logs that
-    this.logDecoder = (log: Log) => this.aaveGsmIface.parseLog(log);
+    this.logDecoder = (log: Log) => this.gsmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.gsmAddress];
 
-    // Add handlers
+    // TODO: Add handlers
     this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+  }
+
+  getIdentifier(): string {
+    return `${this.parentName}_${this.poolConfig.gsmAddress}`.toLowerCase();
   }
 
   /**

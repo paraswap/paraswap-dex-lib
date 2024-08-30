@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { AaveGsmEventPool } from './aave-gsm-pool';
+import { AaveGsmConfig } from './config';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -43,40 +44,36 @@ import { PoolState } from './types';
 */
 
 jest.setTimeout(50 * 1000);
+const dexKey = 'AaveGsm';
+const network = Network.MAINNET;
+const config = AaveGsmConfig[dexKey][network];
 
 async function fetchPoolState(
-  aaveGsmPools: AaveGsmEventPool,
+  aaveGsmPool: AaveGsmEventPool,
   blockNumber: number,
-  poolAddress: string,
 ): Promise<PoolState> {
-  // TODO: complete me!
-  return {};
+  return aaveGsmPool.generateState(blockNumber);
 }
 
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('AaveGsm EventPool Mainnet', function () {
-  const dexKey = 'AaveGsm';
-  const network = Network.MAINNET;
+describe('AaveGsm Event', function () {
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let aaveGsmPool: AaveGsmEventPool;
+
+  const aaveGsmPool = new AaveGsmEventPool(
+    dexKey,
+    network,
+    dexHelper,
+    logger,
+    config.pools[0],
+  );
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
+    // TODO: Add events to test
   };
-
-  beforeEach(async () => {
-    aaveGsmPool = new AaveGsmEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      /* TODO: Put here additional constructor arguments if needed */
-    );
-  });
 
   Object.entries(eventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {
@@ -90,7 +87,7 @@ describe('AaveGsm EventPool Mainnet', function () {
                     aaveGsmPool,
                     aaveGsmPool.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(aaveGsmPool, _blockNumber, poolAddress),
+                      fetchPoolState(aaveGsmPool, _blockNumber),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,

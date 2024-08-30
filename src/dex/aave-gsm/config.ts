@@ -4,34 +4,29 @@ import { Network, SwapSide } from '../../constants';
 
 export const AaveGsmConfig: DexConfigMap<DexParams> = {
   AaveGsm: {
-    // TODO: Change to match AAVE GSM config
     [Network.MAINNET]: {
-      underlying: {
-        address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+      gho: {
+        address: '0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f',
         decimals: 18,
       },
       pools: [
         {
-          underlyingAddress: '0x6b175474e89094c44da98b954eedeac495271d0f',
-          gem: {
+          underlying: {
             address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
             decimals: 6,
           },
-          gemJoinAddress: '0x0a59649758aa4d66e25f08dd01271e891fe52199',
-          gsmAddress: '0x89b78cfa322f6c5de0abceecab66aee45393cc5a',
+          gsmAddress: '0x0d8effc11df3f229aa1ea0509bc9dfa632a13578',
           identifier:
-            '0x50534d2d555344432d4100000000000000000000000000000000000000000000', // bytes32("PSM-USDC-A")
+            '0x47534d2d55534443000000000000000000000000000000000000000000000000', // bytes32("GSM-USDC")
         },
         {
-          underlyingAddress: '0x6b175474e89094c44da98b954eedeac495271d0f',
-          gem: {
-            address: '0x8e870d67f660d95d5be530380d0ec0bd388289e1',
-            decimals: 18,
+          underlying: {
+            address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+            decimals: 6,
           },
-          gemJoinAddress: '0x7bbd8ca5e413bca521c2c80d8d1908616894cf21',
-          gsmAddress: '0x961ae24a1ceba861d1fdf723794f6024dc5485cf',
+          gsmAddress: '0x686f8d21520f4ecec7ba577be08354f4d1eb8262',
           identifier:
-            '0x50534d2d5041582d410000000000000000000000000000000000000000000000', // bytes32("PSM-PAX-A")
+            '0x47534d2d55534454000000000000000000000000000000000000000000000000', // bytes32("GSM-USDT")
         },
       ],
     },

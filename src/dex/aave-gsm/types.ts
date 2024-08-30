@@ -16,9 +16,7 @@ export type PoolState = {
 
 // TODO: Define appropriate pool config types
 export type PoolConfig = {
-  gem: Token;
-  gemJoinAddress: Address;
-  underlyingAddress: Address;
+  underlying: Token;
   gsmAddress: Address;
   identifier: string; // bytes32 of pool identifier (Eg. bytes32("PSM-USDC-A"))
 };
@@ -29,10 +27,11 @@ export type AaveGsmData = {
   // tx building. The data structure should be minimal.
   // Complete me!
   exchange: Address;
+  assetAmount: bigint;
 };
 
 // TODO: Make these types match what we need for Aave GSM
 export type DexParams = {
-  underlying: Token;
+  gho: Token;
   pools: PoolConfig[];
 };

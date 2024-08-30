@@ -133,11 +133,11 @@ describe('AaveGsm E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'GHO';
+    const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '100000000000000000000';
+    const tokenBAmount: string = '1000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
