@@ -44,7 +44,7 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
