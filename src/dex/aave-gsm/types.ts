@@ -1,5 +1,11 @@
 import { Address } from '../../types';
 
+export type PoolState = {
+  buyFee: bigint;
+  sellFee: bigint;
+  underlyingLiquidity: bigint;
+};
+
 export type AaveGsmData = {
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.
