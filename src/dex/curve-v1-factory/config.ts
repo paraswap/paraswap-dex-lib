@@ -24,11 +24,8 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x4f8846ae9380b90d2e71d5e3d042dff3e7ebb40d',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
-        {
-          address: '0x6A8cbed756804B16E05E741eDaBd5cB544AE21bf', // factory stable ng
-          isStableNg: true,
-        },
       ],
+      router: '0x16C6521Dff6baB339122a0FE25a9116693265353', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 5 * 1000,
       disabledPools: new Set([
         '0x28B0Cf1baFB707F2c6826d10caf6DD901a6540C5', // It is rug pool token
@@ -170,30 +167,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x67fe41A94e779CcFa22cff02cc2957DC9C0e4286',
           liquidityApiSlug: '/factory-crvusd',
         },
-        '0xdcc91f930b42619377c200ba05b7513f2958b202': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xdcc91f930b42619377c200ba05b7513f2958b202',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0x933f4769dcc27fc7345d9d5975ae48ec4d0f829c': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0x933f4769dcc27fc7345d9d5975ae48ec4d0f829c',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0xede71f77d7c900dca5892720e76316c6e575f0f7': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xede71f77d7c900dca5892720e76316c6e575f0f7',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0xdd7ebb1c49780519dd9755b8b1a23a6f42ce099e': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xdd7ebb1c49780519dd9755b8b1a23a6f42ce099e',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
       },
       customPools: {
         '0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2': {
@@ -249,11 +222,8 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x722272D36ef0Da72FF51c5A65Db7b870E2e8D4ee',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
-        {
-          address: '0x1764ee18e8B3ccA4787249Ceb249356192594585', // factory stable ng
-          isStableNg: true,
-        },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([
         '0x666Dc3b4baBfd063FaF965BD020024AF0dC51B64',
@@ -336,18 +306,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xD8336532f6ED7b94282fAF724fe41d6145E07Cfc',
           basePoolAddress: '0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67',
         },
-        '0xe265fc390e9129b7e337da23cd42e00c34da2ce3': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xe265fc390e9129b7e337da23cd42e00c34da2ce3',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0xa7ba18eefcd9513230987ec2fab6711af5abd9c2': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xa7ba18eefcd9513230987ec2fab6711af5abd9c2',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
       },
       customPools: {
         '0x445FE580eF8d70FF569aB36e80c647af338db351': {
@@ -376,11 +334,8 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x686d67265703D1f124c45E33d47d794c566889Ba',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
-        {
-          address: '0xe61Fb97Ef6eBFBa12B36Ffd7be785c1F5A2DE66b', // factory stable ng
-          isStableNg: true,
-        },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -463,12 +418,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xf82162bb68ad5a168345bb7efb2faa0edcca5177',
           basePoolAddress: '0x0fa949783947Bf6c1b171DB13AEACBB488845B3f',
         },
-        '0x5702bdb1ec244704e3cbbaae11a0275ae5b07499': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0x5702bdb1ec244704e3cbbaae11a0275ae5b07499',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
       },
       customPools: {
         '0x27E611FD27b276ACbd5Ffd632E5eAEBEC9761E40': {
@@ -507,6 +456,7 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       // FIX: This must be removed when we go for full CurveV1 event based support
       disabledPools: new Set(['0x16a7da911a4dd1d83f3ff066fe28f3c792c50d90']),
@@ -573,15 +523,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xc50c05ca1f8c2346664bd0d4a1eb6ac1da38414f',
           basePoolAddress: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
         },
-        // Commented because these pools basics are not verified and looks very abandoned
-        // '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320': {
-        //   name: ImplementationNames.FACTORY_META_BTC,
-        //   address: '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320',
-        // },
-        // '0x505C34ED8dBE96d2D5C7D83158aA844887770970': {
-        //   name: ImplementationNames.FACTORY_META_BTC_BALANCES,
-        //   address: '0x505C34ED8dBE96d2D5C7D83158aA844887770970',
-        // },
       },
       customPools: {
         '0x7f90122BF0700F9E7e1F688fe926940E8839F353': {
@@ -593,14 +534,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           balancesInputType: 'uint256',
           useForPricing: false,
         },
-        // This contract is not verified. I think it is just abandoned. I am commenting both related
-        // btc meta pools
-        // ['']: {
-        //   name: '',
-        //   address: '0xa27f39E9C21b3376F43266E13Ad5A5d6E9BdB320',
-        //   lpTokenAddress: '',
-        //   liquidityApiSlug: '',
-        // },
       },
     },
     [Network.ARBITRUM]: {
@@ -609,11 +542,8 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0xb17b674D9c5CB2e441F8e196a2f048A81355d031',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
-        {
-          address: '0x9AF14D26075f142eb3F292D5065EB3faa646167b', // factory stable ng
-          isStableNg: true,
-        },
       ],
+      router: '0x2191718CD32d02B8E60BAdFFeA33E4B5DD9A0A0D', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -707,18 +637,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           customGasCost: 130_000,
           isStoreRateSupported: true,
         },
-        '0xf6841c27fe35ed7069189afd5b81513578afd7ff': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xf6841c27fe35ed7069189afd5b81513578afd7ff',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
-        '0xff02cbd91f57a778bab7218da562594a680b8b61': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0xff02cbd91f57a778bab7218da562594a680b8b61',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
       },
       customPools: {
         '0x7f90122BF0700F9E7e1F688fe926940E8839F353': {
@@ -756,11 +674,8 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           address: '0x2db0E83599a91b508Ac268a6197b8B14F5e72840',
           maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
         },
-        {
-          address: '0x5eeE3091f747E60a045a2E715a4c71e600e31F6E', // factory stable ng
-          isStableNg: true,
-        },
       ],
+      router: '0x0DCDED3545D565bA3B19E683431381007245d983', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 2 * 1000,
       disabledPools: new Set([]),
       disabledImplementations: new Set([]),
@@ -844,12 +759,6 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
           customGasCost: 130_000,
           isStoreRateSupported: true,
         },
-        '0x635742dcc8313dcf8c904206037d962c042eafbd': {
-          name: ImplementationNames.FACTORY_STABLE_NG,
-          address: '0x635742dcc8313dcf8c904206037d962c042eafbd',
-          liquidityApiSlug: '/factory-stable-ng',
-          isStoreRateSupported: true,
-        },
       },
       customPools: {
         '0x1337BedC9D22ecbe766dF105c9623922A27963EC': {
@@ -872,6 +781,41 @@ const CurveV1FactoryConfig: DexConfigMap<DexParams> = {
         },
       },
     },
+    [Network.BASE]: {
+      factories: [
+        {
+          address: '0x3093f9B57A428F3EB6285a589cb35bEA6e78c336',
+          maxPlainCoins: FACTORY_MAX_PLAIN_COINS,
+        },
+      ],
+      router: '0x4f37A9d177470499A2dD084621020b023fcffc1F', // https://github.com/curvefi/curve-router-ng
+      stateUpdatePeriodMs: 2 * 1000,
+      disabledPools: new Set([]),
+      disabledImplementations: new Set([]),
+      factoryPoolImplementations: {
+        '0xD166EEdf272B860E991d331B71041799379185D5': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BASIC,
+          address: '0xD166EEdf272B860E991d331B71041799379185D5',
+        },
+        '0x5C627d6925e448Ae418BC8a45d56B31fe5009Bea': {
+          name: ImplementationNames.FACTORY_PLAIN_2_BALANCES,
+          address: '0x5C627d6925e448Ae418BC8a45d56B31fe5009Bea',
+        },
+        '0x0Cc51c9786f3777a6d50961CEBb2BB6E69ec5e07': {
+          name: ImplementationNames.FACTORY_PLAIN_3_BALANCES,
+          address: '0x0Cc51c9786f3777a6d50961CEBb2BB6E69ec5e07',
+        },
+        '0x22d710931f01c1681ca1570ff016ed42eb7b7c2a': {
+          name: ImplementationNames.FACTORY_PLAIN_2_ETH,
+          address: '0x22d710931f01c1681ca1570ff016ed42eb7b7c2a',
+        },
+        '0x1621E58d36EB5Ef26F9768Ebe9DB77181b1f5a02': {
+          name: ImplementationNames.FACTORY_PLAIN_4_BASIC,
+          address: '0x1621E58d36EB5Ef26F9768Ebe9DB77181b1f5a02',
+        },
+      },
+      customPools: {},
+    },
   },
 };
 
@@ -879,57 +823,98 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
     [SwapSide.SELL]: [
       {
-        name: 'Adapter01',
-        index: 3,
+        name: 'Adapter06',
+        index: 2,
       },
     ],
-  },
-  [Network.BSC]: {
-    [SwapSide.SELL]: [
-      // use for beltfi (deprecated)
+    [SwapSide.BUY]: [
       {
-        name: 'BscAdapter01',
-        index: 2,
+        name: 'BuyAdapter02',
+        index: 6,
       },
     ],
   },
   [Network.POLYGON]: {
     [SwapSide.SELL]: [
       {
-        name: 'PolygonAdapter01',
-        index: 3,
+        name: 'PolygonAdapter03',
+        index: 1,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'PolygonBuyAdapter',
+        index: 11,
       },
     ],
   },
   [Network.AVALANCHE]: {
     [SwapSide.SELL]: [
       {
-        name: 'AvalancheAdapter01',
-        index: 5,
+        name: 'AvalancheAdapter02',
+        index: 8,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'AvalancheBuyAdapter',
+        index: 10,
       },
     ],
   },
   [Network.FANTOM]: {
     [SwapSide.SELL]: [
       {
-        name: 'FantomAdapter01',
-        index: 3,
+        name: 'FantomAdapter02',
+        index: 2,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'FantomBuyAdapter',
+        index: 7,
       },
     ],
   },
   [Network.ARBITRUM]: {
     [SwapSide.SELL]: [
       {
-        name: 'ArbitrumAdapter01',
-        index: 6,
+        name: 'ArbitrumAdapter03',
+        index: 3,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'ArbitrumBuyAdapter',
+        index: 13,
       },
     ],
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [
       {
-        name: 'OptimismAdapter01',
-        index: 5,
+        name: 'OptimismAdapter02',
+        index: 3,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'OptimismBuyAdapter',
+        index: 9,
+      },
+    ],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [
+      {
+        name: 'BaseAdapter02',
+        index: 4,
+      },
+    ],
+    [SwapSide.BUY]: [
+      {
+        name: 'BaseBuyAdapter',
+        index: 10,
       },
     ],
   },
@@ -937,7 +922,7 @@ export const Adapters: Record<number, AdapterMappings> = {
 
 // This become quite ugly :(
 // I just wanted to make sure that every address is lowercased and it is not missed it config changes at some point
-const configAddressesNormalizer = (
+export const configAddressesNormalizer = (
   config: DexConfigMap<DexParams>,
 ): DexConfigMap<DexParams> => {
   for (const dexKey of Object.keys(config)) {
@@ -997,6 +982,7 @@ const configAddressesNormalizer = (
               address: e.address.toLowerCase(),
             }))
           : _config.factories,
+        router: _config.router,
         stateUpdatePeriodMs: _config.stateUpdatePeriodMs,
         factoryPoolImplementations,
         customPools,

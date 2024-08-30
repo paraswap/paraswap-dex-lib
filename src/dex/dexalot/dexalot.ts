@@ -599,7 +599,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
         userAddress: options.txOrigin,
         chainid: this.network,
-        executor: this.augustusAddress,
+        executor: options.executionContractAddress,
         partner: options.partner,
         slippage: slippageBps,
       };

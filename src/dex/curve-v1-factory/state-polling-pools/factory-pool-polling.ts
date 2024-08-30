@@ -67,6 +67,7 @@ export class FactoryStateHandler extends PoolPollingBase {
       config.stateUpdatePeriodMs,
       poolIdentifier,
       poolConstants,
+      poolContextConstants,
       address,
       liquidityApiSlug,
       false,

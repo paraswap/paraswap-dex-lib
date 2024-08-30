@@ -170,6 +170,8 @@ export class PancakeswapV3
         );
       };
 
+      void cleanExpiredNotExistingPoolsKeys();
+
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
         PANCAKESWAPV3_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,

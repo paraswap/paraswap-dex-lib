@@ -2,12 +2,10 @@ import _ from 'lodash';
 import { UnoptimizedRate } from '../types';
 import { CurveV2 } from './curve-v2/curve-v2';
 import { IDexTxBuilder, DexConstructor, IDex, IRouteOptimizer } from './idex';
-import { Jarvis } from './jarvis';
 import { JarvisV6 } from './jarvis-v6/jarvis-v6';
 import { StablePool } from './stable-pool/stable-pool';
 import { Weth } from './weth/weth';
 import { PolygonMigrator } from './polygon-migrator/polygon-migrator';
-import { ZeroX } from './zerox';
 import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
@@ -18,14 +16,10 @@ import { BiSwap } from './uniswap-v2/biswap';
 import { MDEX } from './uniswap-v2/mdex';
 import { Dfyn } from './uniswap-v2/dfyn';
 import { Bancor } from './bancor/bancor';
-import { BProtocol } from './bProtocol/bProtocol';
-import { MStable } from './mStable';
-import { Shell } from './shell';
-import { Onebit } from './onebit/onebit';
 import { Compound } from './compound/compound';
 import { AaveV2 } from './aave-v2/aave-v2';
 import { AaveV3 } from './aave-v3/aave-v3';
-import { OneInchLp } from './OneInchLp';
+import { IdleDao } from './idle-dao/idle-dao';
 import { DodoV1 } from './dodo-v1/dodo-v1';
 import { DodoV2 } from './dodo-v2';
 import { Smoothy } from './smoothy/smoothy';
@@ -60,19 +54,24 @@ import { CurveV1 } from './curve-v1/curve-v1';
 import { CurveFork } from './curve-v1/forks/curve-forks/curve-forks';
 import { Swerve } from './curve-v1/forks/swerve/swerve';
 import { CurveV1Factory } from './curve-v1-factory/curve-v1-factory';
+import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
+import { curveV1Merge } from './curve-v1-factory/optimizer';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
+import { Infusion } from './infusion/infusion';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
+import { MaverickV2 } from './maverick-v2/maverick-v2';
 import { QuickSwapV3 } from './quickswap/quickswap-v3';
 import { ThenaFusion } from './quickswap/thena-fusion';
-import { TraderJoeV2 } from './trader-joe-v2';
 import { SwaapV2 } from './swaap-v2/swaap-v2';
 import { TraderJoeV21 } from './trader-joe-v2.1/trader-joe-v2.1';
+import { TraderJoeV22 } from './trader-joe-v2.1/trader-joe-v2.2';
 import { PancakeswapV3 } from './pancakeswap-v3/pancakeswap-v3';
 import { Algebra } from './algebra/algebra';
+import { AngleTransmuter } from './angle-transmuter/angle-transmuter';
 import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
@@ -83,26 +82,24 @@ import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
+import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
+import { OSwap } from './oswap/oswap';
+import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
+import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
+import { LitePsm } from './lite-psm/lite-psm';
 
 const LegacyDexes = [
   CurveV2,
   StablePool,
   Smoothy,
-  ZeroX,
   Bancor,
-  BProtocol,
-  MStable,
-  Shell,
-  Onebit,
   Compound,
-  OneInchLp,
   DodoV1,
   DodoV2,
   QuickSwapV3,
   ThenaFusion,
-  TraderJoeV2,
   TraderJoeV21,
-  Jarvis,
+  TraderJoeV22,
   Lido,
   AugustusRFQOrder,
   EtherFi,
@@ -126,6 +123,7 @@ const Dexes = [
   Excalibur,
   AaveV2,
   AaveV3,
+  IdleDao,
   KyberDmm,
   Weth,
   PolygonMigrator,
@@ -149,11 +147,15 @@ const Dexes = [
   Usdfi,
   Synthetix,
   CurveV1Factory,
+  CurveV1StableNg,
   WstETH,
   Hashflow,
+  Infusion,
   MaverickV1,
+  MaverickV2,
   Camelot,
   SwaapV2,
+  AngleTransmuter,
   AngleStakedStable,
   QuickPerps,
   NomiswapV2,
@@ -162,6 +164,11 @@ const Dexes = [
   Swell,
   PharaohV1,
   Spark,
+  AaveV3Stata,
+  OSwap,
+  ConcentratorArusd,
+  FxProtocolRusd,
+  LitePsm,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
@@ -193,6 +200,7 @@ export class DexAdapterService {
     balancerV1Merge,
     balancerV2Merge,
     uniswapMerge,
+    curveV1Merge,
   ];
 
   constructor(
@@ -328,8 +336,7 @@ export class DexAdapterService {
     if (this.genericRFQDexKeys.has(dexKey)) {
       return dexKey;
     }
-    if (!isAdapters && /^paraswappool(.*)/i.test(dexKey)) return 'zerox';
-    else if ('uniswapforkoptimized' === dexKey) {
+    if ('uniswapforkoptimized' === dexKey) {
       if (!this.uniswapV2Alias)
         throw new Error(
           `${dexKey} dex is not supported for network(${this.network})!`,

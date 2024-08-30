@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { isEmpty } from 'lodash';
+import { isEmpty, omit } from 'lodash';
 import { SwapSide } from '@paraswap/core';
 import { BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
@@ -228,6 +228,8 @@ export class RateFetcher {
 
     if (isEmpty(pairs)) return;
 
+    const currentPricePairs = new Set();
+
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
@@ -257,6 +259,7 @@ export class RateFetcher {
           this.config.rateConfig.dataTTLS,
           JSON.stringify(prices.bids),
         );
+        currentPricePairs.add(`${baseToken.address}_${quoteToken.address}`);
       }
 
       if (prices.asks.length) {
@@ -267,8 +270,19 @@ export class RateFetcher {
           this.config.rateConfig.dataTTLS,
           JSON.stringify(prices.asks),
         );
+        currentPricePairs.add(`${quoteToken.address}_${baseToken.address}`);
       }
     });
+
+    if (currentPricePairs.size > 0) {
+      this.dexHelper.cache.setex(
+        this.dexKey,
+        this.dexHelper.config.data.network,
+        `pairs`,
+        this.config.rateConfig.dataTTLS,
+        JSON.stringify(Array.from(currentPricePairs)),
+      );
+    }
   }
 
   checkHealth(): boolean {
@@ -305,6 +319,20 @@ export class RateFetcher {
           liquidityUSD: p.liquidityUSD,
         };
       });
+  }
+
+  public async getAvailablePairs(): Promise<string[]> {
+    const pairs = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.dexHelper.config.data.network,
+      `pairs`,
+    );
+
+    if (!pairs) {
+      return [];
+    }
+
+    return JSON.parse(pairs) as string[];
   }
 
   public async getOrderPrice(
@@ -405,14 +433,15 @@ export class RateFetcher {
         timeout: GET_FIRM_RATE_TIMEOUT_MS,
       };
 
+      this.logger.info(
+        'FirmRate Request:',
+        JSON.stringify(omit(payload, 'secret')).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
+
       if (this.firmRateAuth) {
         this.firmRateAuth(payload);
         delete payload.secret;
       }
-      this.logger.info(
-        'FirmRate Request:',
-        JSON.stringify(payload).replace(/(?:\r\n|\r|\n)/g, ' '),
-      );
       const { data } = await this.dexHelper.httpRequest.request<unknown>(
         payload,
       );
