@@ -22,8 +22,6 @@ import { StkGHOConfig, Adapters } from './config';
 import { StkGHOEventPool } from './stkgho-pool';
 import { Interface } from '@ethersproject/abi';
 import StkGHO_ABI from '../../abi/stkGHO.json';
-import { parseUnits } from 'ethers/lib/utils';
-import { uint256ToBigInt } from '../../lib/decoders';
 
 export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
   static readonly stkGHOInterface = new Interface(StkGHO_ABI);
@@ -234,7 +232,7 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
               address: this.config.stkGHO,
             },
           ],
-          liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+          liquidityUSD: 1_000_000_000_000, // GHO to stkGHO supply is unlimited
         },
       ];
     } else {

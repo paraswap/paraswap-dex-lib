@@ -32,7 +32,6 @@ export class StkGHOEventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     super(parentName, poolName, dexHelper, logger);
 
-    // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.stkGHOIface.parseLog(log);
     this.addressesSubscribed = [StkGHOConfig[parentName][network].stkGHO];
 
@@ -100,7 +99,6 @@ export class StkGHOEventPool extends StatefulEventSubscriber<PoolState> {
     return result;
   }
 
-  // Its just a dummy example
   handleExchangeRateChanged(
     event: any,
     state: DeepReadonly<PoolState>,
