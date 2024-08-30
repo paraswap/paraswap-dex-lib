@@ -29,8 +29,9 @@ import {
   _reduceTickBitmap,
   _reduceTicks,
 } from '../uniswap-v3/contract-math/utils';
+import { StatefulDualSynchronizer } from '../../stateful-dual-synchronizer';
 
-export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
+export class PancakeSwapV3EventPool extends StatefulDualSynchronizer<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
@@ -61,7 +62,7 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
   constructor(
     readonly dexHelper: IDexHelper,
-    parentName: string,
+    dexKey: string,
     readonly stateMultiContract: Contract,
     readonly erc20Interface: Interface,
     protected readonly factoryAddress: Address,
@@ -73,14 +74,8 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
     readonly poolInitCodeHash: string,
     readonly poolDeployer?: string,
   ) {
-    super(
-      parentName,
-      `${token0}_${token1}_${feeCode}`,
-      dexHelper,
-      logger,
-      true,
-      mapKey,
-    );
+    const poolIdentifier = `${token0}_${token1}_${feeCode}`;
+    super(dexKey, poolIdentifier, dexHelper, logger);
     this.feeCodeAsString = feeCode.toString();
     this.token0 = token0.toLowerCase();
     this.token1 = token1.toLowerCase();

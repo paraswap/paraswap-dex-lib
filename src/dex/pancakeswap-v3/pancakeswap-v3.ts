@@ -62,6 +62,7 @@ import {
   PancakeswapV3Factory,
 } from './pancakeswap-v3-factory';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { DexPoolNotFoundError } from '../../dex-utils';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -293,7 +294,10 @@ export class PancakeswapV3
         },
       });
     } catch (e) {
-      if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
+      if (
+        (e instanceof Error && e.message.endsWith('Pool does not exist')) ||
+        e instanceof DexPoolNotFoundError
+      ) {
         // no need to await we want the set to have the pool key but it's not blocking
         this.dexHelper.cache.zadd(
           this.notExistingPoolSetKey,
@@ -366,6 +370,22 @@ export class PancakeswapV3
     }
 
     return true;
+  }
+
+  async addPoolGenerateState({
+    poolIdentifier,
+    blockNumber,
+  }: {
+    poolIdentifier: string;
+    blockNumber: number;
+  }): Promise<PoolState | null> {
+    const [token0, token1, fee] = poolIdentifier.split('_');
+
+    const pool = await this.getPool(token0, token1, BigInt(fee), blockNumber);
+
+    if (!pool) return null;
+
+    return pool.getState(blockNumber);
   }
 
   async getPoolIdentifiers(
@@ -661,7 +681,7 @@ export class PancakeswapV3
           if (state.liquidity <= 0n) {
             if (state.liquidity < 0) {
               this.logger.error(
-                `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.mapKey}`,
+                `${this.dexKey}-${this.network}: ${pool.poolAddress} pool has negative liquidity: ${state.liquidity}. Find with key: ${pool.poolIdentifier}`,
               );
             }
             this.logger.trace(`pool have 0 liquidity`);
