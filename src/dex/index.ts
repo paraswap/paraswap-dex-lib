@@ -87,6 +87,7 @@ import { OSwap } from './oswap/oswap';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { LitePsm } from './lite-psm/lite-psm';
+import { StkGHO } from './stkgho/stkgho';
 
 const LegacyDexes = [
   CurveV2,
@@ -169,6 +170,7 @@ const Dexes = [
   ConcentratorArusd,
   FxProtocolRusd,
   LitePsm,
+  StkGHO,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
