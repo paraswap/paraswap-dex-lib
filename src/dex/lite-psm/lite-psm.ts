@@ -242,7 +242,7 @@ export class LitePsm
         },
         poolAddresses: [eventPool.poolConfig.psmAddress],
         exchange: this.dexKey,
-        gasCost: isSrcDai ? 80_000 : 100_000,
+        gasCost: 50000,
         poolIdentifier,
       },
     ];
@@ -398,11 +398,10 @@ export class LitePsm
       targetExchange: data.psmAddress,
       specialDexFlag,
       spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
-      returnAmountPos: extractReturnAmountPosition(
-        psmInterface,
-        isGemSell ? 'sellGem' : 'buyGem',
-        isGemSell ? 'daiOutWad' : 'daiInWad',
-      ),
+      returnAmountPos:
+        side === SwapSide.SELL && isGemSell
+          ? extractReturnAmountPosition(psmInterface, 'sellGem', 'daiOutWad')
+          : undefined,
     };
   }
 
@@ -450,10 +449,7 @@ export class LitePsm
       // not used on the contract, but used for analytics
       destToken,
       fromAmount,
-      // TODO: Investigate `toAmount` vs `quotedAmount`
-      side === SwapSide.BUY && srcToken.toLowerCase() === this.dai.address
-        ? toAmount
-        : quotedAmount,
+      toAmount,
       data.toll,
       to18ConversionFactor.toString(),
       data.psmAddress,
