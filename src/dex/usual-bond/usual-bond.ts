@@ -171,20 +171,14 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     if (this.is_usd0(srcToken) && this.is_usd0pp(destToken)) {
       const exchangeData = this.usd0ppIface.encodeFunctionData('mint', [
         srcAmount,
-        recipient,
       ]);
 
-      await this.dexHelper.augustusApprovals.hasApproval(
-        this.config.usd0ppAddress,
-        this.config.usd0Address,
-        this.config.usd0ppAddress,
-      );
       return {
         needWrapNative: false,
-        dexFuncHasRecipient: true,
+        dexFuncHasRecipient: false,
         exchangeData,
         targetExchange: this.config.usd0ppAddress,
-        returnAmountPos: Number(srcAmount),
+        returnAmountPos: undefined,
         spender: this.config.usd0ppAddress, // Add this if it's the same as targetExchange
       };
     }

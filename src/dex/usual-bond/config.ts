@@ -1,6 +1,6 @@
 import { DexParams } from './types';
-import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { DexConfigMap } from '../../types';
+import { Network } from '../../constants';
 
 export const UsualBondConfig: DexConfigMap<DexParams> = {
   UsualBond: {
@@ -9,10 +9,4 @@ export const UsualBondConfig: DexConfigMap<DexParams> = {
       usd0ppAddress: '0x35D8949372D46B7a3D5A56006AE77B215fc69bC0',
     },
   },
-};
-
-export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
 };
