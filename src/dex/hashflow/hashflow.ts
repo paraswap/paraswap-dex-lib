@@ -64,6 +64,7 @@ import {
   RfqError,
   SlippageCheckError,
 } from './types';
+import { SpecialDex } from '../../executor/types';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly isStatePollingDex = true;
@@ -1040,6 +1041,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       exchangeData,
       targetExchange: this.routerAddress,
       returnAmountPos: undefined,
+      specialDexFlag: SpecialDex.SWAP_ON_HASHFLOW,
+      // cannot modify amount due to signature checks
+      specialDexSupportsInsertFromAmount: false,
     };
   }
 
