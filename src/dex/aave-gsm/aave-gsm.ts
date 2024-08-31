@@ -1,4 +1,7 @@
 import { AsyncOrSync } from 'ts-essentials';
+import { Contract } from 'web3-eth-contract';
+import { Interface } from '@ethersproject/abi';
+import { get } from 'lodash';
 import {
   Token,
   Address,
@@ -11,22 +14,22 @@ import {
   PoolLiquidity,
   Logger,
 } from '../../types';
-import { Contract } from 'web3-eth-contract';
+import GsmABI from '../../abi/aave-gsm/gsm.json';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AaveGsmData, PoolState, PoolConfig } from './types';
+import { BI_POWS } from '../../bigint-constants';
 import { SimpleExchange } from '../simple-exchange';
+import { AaveGsmData, PoolState, PoolConfig } from './types';
 import { AaveGsmConfig, Adapters } from './config';
 import { AaveGsmEventPool } from './aave-gsm-pool';
-import { Interface } from '@ethersproject/abi';
-import GsmABI from '../../abi/aave-gsm/gsm.json';
-import { get } from 'lodash';
 
 const bigIntify = (b: any) => BigInt(b.toString());
 const gsmInterface = new Interface(GsmABI);
+
+const WAD = BI_POWS[18];
 
 export async function getOnChainState(
   multiContract: Contract,
@@ -379,7 +382,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     data: AaveGsmData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     const { exchange } = data;
 
     // Encode here the payload for adapter
@@ -392,47 +394,40 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     };
   }
 
-  // TODO: This is a helper function from Maker PSM, so may not need if we do without it
-  // TODO: Copied from Maker PSM, need to update
-  /*
+  // TODO: Revisit for adding fees
   getGsmParams(
     srcToken: string,
     srcAmount: string,
     destAmount: string,
     data: AaveGsmData,
     side: SwapSide,
-  ): { isGemSell: boolean; gemAmount: string } {
-    const isSrcDai = srcToken.toLowerCase() === this.dai.address;
-    const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
+  ): { isUnderlyingSell: boolean; underlyingAmount: string } {
+    // Note: underlying here refers to usdc/t
+    const isSrcGho = srcToken.toLowerCase() === this.gho.address;
+    const to18ConversionFactor = getBigIntPow(12); // 18 - 6
     if (side === SwapSide.SELL) {
-      if (isSrcDai) {
-        const gemAmt18 = (BigInt(srcAmount) * WAD) / (WAD + BigInt(data.toll));
+      if (isSrcGho) {
+        const underlyingAmt18 = BigInt(srcAmount) * WAD;
         return {
-          isGemSell: false,
-          gemAmount: (gemAmt18 / to18ConversionFactor).toString(),
+          isUnderlyingSell: false,
+          underlyingAmount: (underlyingAmt18 / to18ConversionFactor).toString(),
         };
       } else {
-        return { isGemSell: true, gemAmount: srcAmount };
+        return { isUnderlyingSell: true, underlyingAmount: srcAmount };
       }
     } else {
-      if (isSrcDai) {
-        return { isGemSell: false, gemAmount: destAmount };
+      if (isSrcGho) {
+        return { isUnderlyingSell: false, underlyingAmount: destAmount };
       } else {
-        const gemAmt = ceilDiv(
-          BigInt(destAmount) * WAD,
-          (WAD - BigInt(data.toll)) * to18ConversionFactor,
-        );
+        const underlyingAmt = BigInt(destAmount) * WAD;
         return {
-          isGemSell: true,
-          gemAmount: gemAmt.toString(),
+          isUnderlyingSell: true,
+          underlyingAmount: underlyingAmt.toString(),
         };
       }
     }
   }
-    */
 
-  // TODO: This is copied from maker-psm, need to update
-  /*
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -442,7 +437,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     data: AaveGsmData,
     side: SwapSide,
   ): DexExchangeParam {
-    const { isGemSell, gemAmount } = this.getGsmParams(
+    const { isUnderlyingSell, underlyingAmount } = this.getGsmParams(
       srcToken,
       srcAmount,
       destAmount,
@@ -450,38 +445,21 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       side,
     );
 
+    // Selling usdc/t => selling usdc/t to buy GHO => sellAsset()
     let exchangeData = gsmInterface.encodeFunctionData(
-      isGemSell ? 'sellGem' : 'buyGem',
-      [recipient, gemAmount],
+      isUnderlyingSell ? 'sellAsset' : 'buyAsset',
+      [recipient, underlyingAmount],
     );
-
-    // append toll and to18ConversionFactor & set specialDexFlag = SWAP_ON_MAKER_PSM to
-    // - `buyGem` on Ex1 & Ex2
-    // - `sellGem` on Ex3
-    let specialDexFlag = SpecialDex.DEFAULT;
-    if (
-      (side === SwapSide.SELL && !isGemSell) ||
-      (side === SwapSide.BUY && isGemSell)
-    ) {
-      exchangeData = hexConcat([
-        exchangeData,
-        hexZeroPad(hexlify(BigInt(data.toll)), 32),
-        hexZeroPad(hexlify(getBigIntPow(18 - data.gemDecimals)), 32),
-      ]);
-      specialDexFlag = SpecialDex.SWAP_ON_MAKER_PSM;
-    }
 
     return {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: data.exchange,
-      specialDexFlag,
       spender: data.exchange,
       returnAmountPos: undefined,
     };
   }
-*/
 
   // (*TODO*) I think if the token is gho, should return min liquidity via getAvailableLiquidity() on both gsms
   // Returns list of top pools based on liquidity. Max
