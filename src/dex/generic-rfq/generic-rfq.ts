@@ -324,6 +324,17 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<ParaSwapLimitOrdersData>, ExchangeTxInfo]> {
+    if (await this.isBlacklisted(options.txOrigin)) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
+      );
+      throw new Error(
+        `${this.dexKey}-${
+          this.network
+        }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
+      );
+    }
+
     const isSell = side === SwapSide.SELL;
 
     const order = await this.rateFetcher.getFirmRate(
@@ -334,7 +345,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
       options.executionContractAddress,
-      options.txOrigin,
+      options.userAddress,
       options.partner,
       options.special,
     );
