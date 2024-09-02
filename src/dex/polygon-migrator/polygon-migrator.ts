@@ -34,6 +34,8 @@ export class PolygonMigrator
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;
 
+  needWrapNative = false;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(PolygonMigratorConfig);
 

@@ -53,6 +53,8 @@ export class AaveV3Stata
 
   readonly isFeeOnTransferSupported = false;
 
+  needWrapNative = false;
+
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(AaveV3StataConfig);
 

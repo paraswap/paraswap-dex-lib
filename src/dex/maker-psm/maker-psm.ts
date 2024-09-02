@@ -214,6 +214,8 @@ export class MakerPsm
 {
   protected eventPools: { [gemAddress: string]: MakerPsmEventPool };
 
+  needWrapNative = false;
+
   // warning: There is limit on swap
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;

@@ -12,7 +12,7 @@ import { generateConfig } from '../../config';
 import { ContractMethod, Network, SwapSide } from '../../constants';
 
 // Give time for rate fetcher to fill the cache
-const sleepMs = 3000;
+const sleepMs = 5000;
 
 function testForNetwork(
   network: Network,
@@ -175,23 +175,45 @@ describe('Hashflow E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDC';
+    describe('USDT -> USDC', () => {
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000';
-    const nativeTokenAmount = '1000000000000000000';
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '100000000';
+      const nativeTokenAmount = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+
+    describe('DAI -> USDC', () => {
+      const tokenASymbol: string = 'DAI';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '100000000000000000000';
+      const tokenBAmount: string = '100000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
   });
+
   describe('Polygon_V6', () => {
     const network = Network.POLYGON;
 

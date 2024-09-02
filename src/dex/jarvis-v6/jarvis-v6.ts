@@ -47,6 +47,8 @@ export class JarvisV6
 {
   protected eventPools: { [poolAddress: string]: JarvisV6EventPool };
 
+  needWrapNative = false;
+
   // opt out of pool allocation as dex allows for constant price swaps
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;

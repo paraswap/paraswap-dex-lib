@@ -148,6 +148,7 @@ export class GenericSwapTransactionBuilder {
                 isGlobalDestToken:
                   priceRoute.destToken.toLowerCase() ===
                   destToken.toLowerCase(),
+                swapExchange: se,
               },
               executorAddress,
             );

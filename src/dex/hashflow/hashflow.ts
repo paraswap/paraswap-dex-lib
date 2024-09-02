@@ -19,7 +19,7 @@ import {
   SwapSide,
 } from '../../constants';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import {
   AdapterExchangeParam,
   Address,
@@ -28,7 +28,6 @@ import {
   ExchangeTxInfo,
   Logger,
   NumberAsString,
-  OptimalSwapExchange,
   PoolLiquidity,
   PoolPrices,
   PreprocessTransactionOptions,
@@ -64,11 +63,24 @@ import {
   RfqError,
   SlippageCheckError,
 } from './types';
+import { OptimalSwapExchange } from '@paraswap/core';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly isStatePollingDex = true;
   readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = false;
+
+  needWrapNative = (se: OptimalSwapExchange<any>): boolean => {
+    if (
+      se.data.tokenIn ===
+        this.dexHelper.config.data.wrappedNativeTokenAddress ||
+      se.data.tokenOut === this.dexHelper.config.data.wrappedNativeTokenAddress
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
   readonly needsSequentialPreprocessing = true;
   readonly isFeeOnTransferSupported = false;
   private api: HashflowApi;
@@ -205,22 +217,74 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const levels = (await this.getCachedLevels()) || {};
     const makers = Object.keys(levels);
 
+    const isSrcEth = normalizedSrcToken.address === ZERO_ADDRESS; // Hashflow uses zero address for native eth
+    const isSrcWeth = this.isWETH(normalizedSrcToken.address);
+
+    const isDestEth = normalizedDestToken.address === ZERO_ADDRESS; // Hashflow uses zero address for native eth
+    const isDestWeth = this.isWETH(normalizedDestToken.address);
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const ethAddress = ZERO_ADDRESS.toLowerCase();
+
     return makers
-      .filter(m => {
-        const pairs = levels[m]?.map(entry => entry.pair) ?? [];
-        return pairs.some(
-          p =>
-            normalizedSrcToken.address === p.baseToken.toLowerCase() &&
-            normalizedDestToken.address === p.quoteToken.toLowerCase(),
-        );
-      })
-      .map(m =>
-        this.getPoolIdentifier(
-          normalizedSrcToken.address,
-          normalizedDestToken.address,
-          m,
-        ),
-      );
+      .reduce<{ maker: string; baseToken: string; quoteToken: string }[]>(
+        (memo, maker) => {
+          const pairs = levels[maker]?.map(entry => entry.pair) ?? [];
+
+          const foundPair = pairs.find(p => {
+            if (isSrcEth) {
+              return (
+                (normalizedSrcToken.address === p.baseToken.toLowerCase() || // checking native eth
+                  wethAddress === p.baseToken.toLowerCase()) && // additionally checking weth
+                normalizedDestToken.address === p.quoteToken.toLowerCase()
+              );
+            }
+
+            if (isSrcWeth) {
+              return (
+                (normalizedSrcToken.address === p.baseToken.toLowerCase() || // checking weth
+                  ethAddress === p.baseToken.toLowerCase()) && // additionally checking native eth
+                normalizedDestToken.address === p.quoteToken.toLowerCase()
+              );
+            }
+
+            if (isDestEth) {
+              return (
+                normalizedSrcToken.address === p.baseToken.toLowerCase() &&
+                (normalizedDestToken.address === p.quoteToken.toLowerCase() || // checking native eth
+                  wethAddress === p.quoteToken.toLowerCase()) // additionally checking weth
+              );
+            }
+
+            if (isDestWeth) {
+              return (
+                normalizedSrcToken.address === p.baseToken.toLowerCase() &&
+                (normalizedDestToken.address === p.quoteToken.toLowerCase() || // checking weth
+                  ethAddress === p.quoteToken.toLowerCase()) // additionally checking native eth
+              );
+            }
+
+            return (
+              normalizedSrcToken.address === p.baseToken.toLowerCase() &&
+              normalizedDestToken.address === p.quoteToken.toLowerCase()
+            );
+          });
+
+          if (foundPair) {
+            memo.push({
+              maker,
+              baseToken: foundPair.baseToken.toLowerCase(),
+              quoteToken: foundPair.quoteToken.toLowerCase(),
+            });
+          }
+
+          return memo;
+        },
+        [],
+      )
+      .map(({ maker, baseToken, quoteToken }) => {
+        return this.getPoolIdentifier(baseToken, quoteToken, maker);
+      });
   }
 
   private async getFilteredMarketMakers(makers: string[]): Promise<string[]> {
@@ -442,16 +506,17 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         return null;
       }
 
-      const prefix = this.getIdentifierPrefix(
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      );
-
       const pools =
         limitPools ??
         (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
-      const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
+      const marketMakersToUse = pools.map(p => {
+        const splitted = p.split(`_`);
+        return [
+          splitted[splitted.length - 2],
+          splitted[splitted.length - 1],
+        ].join('_');
+      });
 
       const levelsMap = (await this.getCachedLevels()) || {};
 
@@ -461,30 +526,107 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         }
       });
 
+      const isSrcEth = normalizedSrcToken.address === ZERO_ADDRESS; // Hashflow uses zero address for native eth
+      const isSrcWeth = this.isWETH(normalizedSrcToken.address);
+
+      const isDestEth = normalizedDestToken.address === ZERO_ADDRESS; // Hashflow uses zero address for native eth
+      const isDestWeth = this.isWETH(normalizedDestToken.address);
+      const wethAddress = this.dexHelper.config.data.wrappedNativeTokenAddress;
+
       const levelEntries: {
         mm: string;
         levels: PriceLevel[];
+        baseToken: string;
+        quoteToken: string;
       }[] = Object.keys(levelsMap)
         .map(mm => {
-          const entry = levelsMap[mm]?.find(
-            e =>
-              `${e.pair.baseToken}_${e.pair.quoteToken}` ===
+          const entry = levelsMap[mm]?.find(e => {
+            const pairName = `${e.pair.baseToken}_${e.pair.quoteToken}`;
+
+            if (isSrcEth) {
+              return (
+                pairName ===
+                  this.getPairName(
+                    normalizedSrcToken.address, // check native eth
+                    normalizedDestToken.address,
+                  ) ||
+                pairName ===
+                  this.getPairName(
+                    wethAddress, // check weth
+                    normalizedDestToken.address,
+                  )
+              );
+            }
+
+            if (isSrcWeth) {
+              return (
+                pairName ===
+                  this.getPairName(
+                    normalizedSrcToken.address, // check weth
+                    normalizedDestToken.address,
+                  ) ||
+                pairName ===
+                  this.getPairName(
+                    ZERO_ADDRESS, // check native eth
+                    normalizedDestToken.address,
+                  )
+              );
+            }
+
+            if (isDestEth) {
+              return (
+                pairName ===
+                  this.getPairName(
+                    normalizedSrcToken.address,
+                    normalizedDestToken.address, // check native eth
+                  ) ||
+                pairName ===
+                  this.getPairName(
+                    normalizedSrcToken.address,
+                    wethAddress, // check weth
+                  )
+              );
+            }
+
+            if (isDestWeth) {
+              return (
+                pairName ===
+                  this.getPairName(
+                    normalizedSrcToken.address,
+                    normalizedDestToken.address, // check  weth
+                  ) ||
+                pairName ===
+                  this.getPairName(
+                    normalizedSrcToken.address,
+                    ZERO_ADDRESS, // check native eth
+                  )
+              );
+            }
+
+            return (
+              pairName ===
               this.getPairName(
                 normalizedSrcToken.address,
                 normalizedDestToken.address,
-              ),
-          );
+              )
+            );
+          });
           if (entry === undefined) {
             return undefined;
           } else {
-            return { mm, levels: entry.levels };
+            return {
+              mm,
+              levels: entry.levels,
+              baseToken: entry.pair.baseToken,
+              quoteToken: entry.pair.quoteToken,
+            };
           }
         })
         .filter(o => o !== undefined)
         .map(o => o!);
 
       const prices = levelEntries.map(lEntry => {
-        const { mm, levels } = lEntry;
+        const { mm, levels, baseToken, quoteToken } = lEntry;
 
         if (levels.length === 0) {
           return null;
@@ -530,14 +672,14 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         return {
           gasCost: HASHFLOW_GAS_COST,
           exchange: this.dexKey,
-          data: { mm },
+          data: {
+            mm,
+            tokenIn: baseToken,
+            tokenOut: quoteToken,
+          },
           prices,
           unit: unitPrice,
-          poolIdentifier: this.getPoolIdentifier(
-            normalizedSrcToken.address,
-            normalizedDestToken.address,
-            mm,
-          ),
+          poolIdentifier: this.getPoolIdentifier(baseToken, quoteToken, mm),
           poolAddresses: [this.routerAddress],
         } as PoolPrices<HashflowData>;
       });
@@ -587,8 +729,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       rfq = await this.api.requestQuote({
         // sender is not passed, so for now ignore executionContractAddress
         baseChain: chain,
-        baseToken: normalizedSrcToken.address,
-        quoteToken: normalizedDestToken.address,
+        baseToken: optimalSwapExchange.data!.tokenIn,
+        quoteToken: optimalSwapExchange.data!.tokenOut,
         ...(side === SwapSide.SELL
           ? {
               baseTokenAmount: optimalSwapExchange.srcAmount,
@@ -630,12 +772,17 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       }
 
       assert(
-        rfq.quotes[0].quoteData.baseToken === normalizedSrcToken.address,
-        `QuoteData baseToken=${rfq.quotes[0].quoteData.baseToken} is different from srcToken=${normalizedSrcToken.address}`,
+        rfq.quotes[0].quoteData.baseToken === optimalSwapExchange.data!.tokenIn,
+        `QuoteData baseToken=${
+          rfq.quotes[0].quoteData.baseToken
+        } is different from srcToken=${optimalSwapExchange.data!.tokenIn}`,
       );
       assert(
-        rfq.quotes[0].quoteData.quoteToken === normalizedDestToken.address,
-        `QuoteData baseToken=${rfq.quotes[0].quoteData.quoteToken} is different from srcToken=${normalizedDestToken.address}`,
+        rfq.quotes[0].quoteData.quoteToken ===
+          optimalSwapExchange.data!.tokenOut,
+        `QuoteData baseToken=${
+          rfq.quotes[0].quoteData.quoteToken
+        } is different from srcToken=${optimalSwapExchange.data!.tokenOut}`,
       );
 
       const expiryAsBigInt = BigInt(rfq.quotes[0].quoteData.quoteExpiry);
@@ -718,6 +865,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           ...optimalSwapExchange,
           data: {
             mm,
+            tokenIn: optimalSwapExchange.data!.tokenIn,
+            tokenOut: optimalSwapExchange.data!.tokenOut,
             quoteData: rfq.quotes[0].quoteData,
             signature: rfq.quotes[0].signature,
           },
@@ -977,8 +1126,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         quoteData.externalAccount ?? ZERO_ADDRESS,
         quoteData.trader,
         quoteData.effectiveTrader ?? quoteData.trader,
-        quoteData.baseToken,
-        quoteData.quoteToken,
+        // quoteData.baseToken,
+        // quoteData.quoteToken,
+        data.tokenIn,
+        data.tokenOut,
         quoteData.baseTokenAmount,
         quoteData.baseTokenAmount,
         quoteData.quoteTokenAmount,
@@ -1007,6 +1158,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     recipient: Address,
     data: HashflowData,
     side: SwapSide,
+    context: Context,
   ): DexExchangeParam {
     const { quoteData, signature } = data;
 
@@ -1022,8 +1174,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         quoteData.externalAccount ?? ZERO_ADDRESS,
         quoteData.trader,
         quoteData.effectiveTrader ?? quoteData.trader,
-        quoteData.baseToken,
-        quoteData.quoteToken,
+        data.tokenIn,
+        // quoteData.baseToken,
+        // quoteData.quoteToken,
+        data.tokenOut,
         quoteData.baseTokenAmount,
         quoteData.baseTokenAmount,
         quoteData.quoteTokenAmount,
@@ -1035,7 +1189,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     ]);
 
     return {
-      needWrapNative: this.needWrapNative,
+      needWrapNative: this.needWrapNative(context.swapExchange),
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.routerAddress,
