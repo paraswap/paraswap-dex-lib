@@ -779,6 +779,15 @@ export class UniswapV3
           const balanceDestToken =
             _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
+          const id = Math.floor(Math.random() * 1e16);
+          const key = `UniswapV3Forks_${this.dexKey}_${this.getPoolIdentifier(
+            pool.token0,
+            pool.token1,
+            pool.feeCode,
+            pool.tickSpacing,
+          )}_${id}`;
+          // eslint-disable-next-line no-console
+          console.time(key);
           const unitResult = this._getOutputs(
             state,
             [unitAmount],
@@ -793,6 +802,8 @@ export class UniswapV3
             side,
             balanceDestToken,
           );
+          // eslint-disable-next-line no-console
+          console.timeEnd(key);
 
           if (!unitResult || !pricesResult) {
             this.logger.debug('Prices or unit is not calculated');
