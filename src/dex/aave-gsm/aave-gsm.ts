@@ -24,6 +24,11 @@ import { MultiResult } from '../../lib/multi-wrapper';
 import { BytesLike } from 'ethers';
 import { generalDecoder } from '../../lib/decoders';
 import { parseUnits } from 'ethers/lib/utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
+import {
+  RETURN_AMOUNT_POS_0,
+  RETURN_AMOUNT_POS_32,
+} from '../../executor/constants';
 
 export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   static readonly gsmInterface = new Interface(GSM_ABI);
@@ -287,7 +292,12 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange,
-      returnAmountPos: isSrcGho ? 1 : 0,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? isSrcGho
+            ? RETURN_AMOUNT_POS_32
+            : RETURN_AMOUNT_POS_0
+          : undefined,
     };
   }
 
