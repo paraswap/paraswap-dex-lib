@@ -111,6 +111,7 @@ export class PricingHelper {
     blockNumber: number,
     dexKeys: string[],
     filterConstantPricePool: boolean = false,
+    overrideTimeout?: number,
   ): Promise<{ [dexKey: string]: string[] | null }> {
     const poolIdentifiers = await Promise.all(
       dexKeys.map(async key => {
@@ -118,7 +119,7 @@ export class PricingHelper {
           return await new Promise<string[] | null>((resolve, reject) => {
             const timer = setTimeout(
               () => reject(new Error(`Timeout`)),
-              FETCH_POOL_IDENTIFIER_TIMEOUT,
+              overrideTimeout ?? FETCH_POOL_IDENTIFIER_TIMEOUT,
             );
             const dexInstance = this.dexAdapterService.getDexByKey(key);
 
@@ -192,6 +193,7 @@ export class PricingHelper {
       destDexFee: 0,
     },
     rollupL1ToL2GasRatio?: number,
+    overrideTimeout?: number,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
       dexKeys.map(async key => {
@@ -204,7 +206,7 @@ export class PricingHelper {
             (resolve, reject) => {
               const timer = setTimeout(
                 () => reject(new Error(`Timeout`)),
-                FETCH_POOL_PRICES_TIMEOUT,
+                overrideTimeout ?? FETCH_POOL_PRICES_TIMEOUT,
               );
 
               const dexInstance = this.dexAdapterService.getDexByKey(key);
