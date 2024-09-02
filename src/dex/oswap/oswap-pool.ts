@@ -126,9 +126,11 @@ export class OSwapEventPool extends StatefulEventSubscriber<OSwapPoolState> {
   async getStateOrGenerate(
     blockNumber: number,
     readonly: boolean = true,
-  ): Promise<OSwapPoolState> {
+    fmode?: boolean,
+  ): Promise<OSwapPoolState | null> {
     let state = this.getState(blockNumber);
     if (!state) {
+      if (fmode) return null;
       state = await this.generateState(blockNumber);
       if (!readonly) this.setState(state, blockNumber);
     }

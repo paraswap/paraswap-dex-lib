@@ -1,5 +1,5 @@
 import { Interface } from '@ethersproject/abi';
-import { AsyncOrSync } from 'ts-essentials';
+import { assert, AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -203,6 +203,8 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
       srcDexFee: 0,
       destDexFee: 0,
     },
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<OSwapData>> {
     try {
       // Get the pool to use.
@@ -220,7 +222,9 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
         return null;
       }
 
-      const state = await eventPool.getStateOrGenerate(blockNumber);
+      const state = await eventPool.getStateOrGenerate(blockNumber, fmode);
+
+      if (!state) return null;
 
       // Calculate the prices
       const unitAmount = getBigIntPow(18);
@@ -378,6 +382,8 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
         const blockNumber =
           await this.dexHelper.web3Provider.eth.getBlockNumber();
         const state = await eventPool.getStateOrGenerate(blockNumber);
+
+        assert(state, 'OSwap pool state not found');
 
         const usd0 = await this.dexHelper.getTokenUSDPrice(
           { address: pool.token0, decimals: 18 },

@@ -171,7 +171,11 @@ export class Solidly extends UniswapV2 {
     return pair;
   }
 
-  async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
+  async batchCatchUpPairs(
+    pairs: [Token, Token][],
+    blockNumber: number,
+    fmode?: boolean,
+  ) {
     if (!blockNumber) return;
     const pairsToFetch: SolidlyPair[] = [];
     for (const _pair of pairs) {
@@ -180,7 +184,7 @@ export class Solidly extends UniswapV2 {
         if (!(pair && pair.exchange)) continue;
         if (!pair.pool) {
           pairsToFetch.push(pair);
-        } else if (!pair.pool.getState(blockNumber)) {
+        } else if (!fmode && !pair.pool.getState(blockNumber)) {
           pairsToFetch.push(pair);
         }
       }
@@ -306,6 +310,8 @@ export class Solidly extends UniswapV2 {
       srcDexFee: 0,
       destDexFee: 0,
     },
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
       if (side === SwapSide.BUY) return null; // Buy side not implemented yet
@@ -323,7 +329,7 @@ export class Solidly extends UniswapV2 {
         .sort((a, b) => (a > b ? 1 : -1))
         .join('_');
 
-      await this.batchCatchUpPairs([[from, to]], blockNumber);
+      await this.batchCatchUpPairs([[from, to]], blockNumber, fmode);
 
       const resultPromises = [false, true].map(async stable => {
         // We don't support fee on transfer for stable pools yet

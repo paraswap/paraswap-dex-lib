@@ -623,6 +623,8 @@ export class CurveV1
       srcDexFee: 0,
       destDexFee: 0,
     },
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<ExchangePrices<CurveV1Data> | null> {
     try {
       if (side === SwapSide.BUY) {
@@ -721,7 +723,7 @@ export class CurveV1
       const onChainPoolIndexes = onChainPools.map(op => indexesByAddress[op]);
 
       // onChainPools are only supported for pools with linear price chunks
-      if (onChainPools.length) {
+      if (!fmode && onChainPools.length) {
         const pricesOnChain = await this.getRatesOnChain(
           _from,
           _to,

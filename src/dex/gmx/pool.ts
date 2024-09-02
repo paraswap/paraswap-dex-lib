@@ -98,9 +98,13 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     );
   }
 
-  async getStateOrGenerate(blockNumber: number): Promise<Readonly<PoolState>> {
+  async getStateOrGenerate(
+    blockNumber: number,
+    fmode?: boolean,
+  ): Promise<Readonly<PoolState | null>> {
     const evenState = this.getState(blockNumber);
     if (evenState) return evenState;
+    if (fmode) return null;
     const onChainState = await this.generateState(blockNumber);
     this.setState(onChainState, blockNumber);
     return onChainState;
@@ -134,9 +138,11 @@ export class GMXEventPool extends ComposedEventSubscriber<PoolState> {
     _tokenOut: Address,
     _amountsIn: bigint[],
     blockNumber: number,
+    fmode?: boolean,
   ): Promise<bigint[] | null> {
     const maxAmountIn = await this.getMaxAmountIn(_tokenIn, _tokenOut);
-    const state = await this.getStateOrGenerate(blockNumber);
+    const state = await this.getStateOrGenerate(blockNumber, fmode);
+    if (!state) return null;
     const priceIn = this.vault.getMinPrice(state, _tokenIn);
     const priceOut = this.vault.getMaxPrice(state, _tokenOut);
 

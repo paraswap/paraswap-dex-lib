@@ -10,6 +10,7 @@ import {
   Logger,
   NumberAsString,
   DexExchangeParam,
+  TransferFeeParams,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -121,6 +122,9 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<GMXData>> {
     if (side === SwapSide.BUY || !this.pool) return null;
     const srcAddress = this.dexHelper.config
@@ -148,6 +152,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
       destAddress,
       [unitVolume, ...amounts],
       blockNumber,
+      fmode,
     );
 
     if (!prices) return null;

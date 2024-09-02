@@ -760,6 +760,8 @@ export class CurveV1Factory
       srcDexFee: 0,
       destDexFee: 0,
     },
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     try {
       const _isSrcTokenTransferFeeToBeExchanged =
@@ -842,17 +844,16 @@ export class CurveV1Factory
         pools.map(
           async (pool): Promise<PoolPrices<CurveV1FactoryData> | null> => {
             let state = pool.getState();
-            if (!state) {
+            if (!fmode && !state) {
               await this.poolManager.updateManuallyPollingPools(
                 pool.baseStatePoolPolling
                   ? [pool.baseStatePoolPolling, pool]
                   : [pool],
               );
               state = pool.getState();
-              if (!state) {
-                return null;
-              }
             }
+
+            if (!state) return null;
 
             if (state.balances.every(b => b === 0n)) {
               this.logger.trace(

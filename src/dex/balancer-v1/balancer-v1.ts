@@ -11,6 +11,7 @@ import {
   PoolPrices,
   SimpleExchangeParam,
   Token,
+  TransferFeeParams,
 } from '../../types';
 import { Network, SUBGRAPH_TIMEOUT } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -184,6 +185,9 @@ export class BalancerV1
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<BalancerV1Data>> {
     if (!this.poolsInfo) return null;
 
@@ -210,7 +214,7 @@ export class BalancerV1
       }
     }
 
-    if (poolsMissingState.length) {
+    if (!fmode && poolsMissingState.length) {
       const poolStates = await generatePoolStates(
         poolsMissingState,
         this.balancerMulticall,

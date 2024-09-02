@@ -14,6 +14,7 @@ import {
   PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
+  TransferFeeParams,
   TxInfo,
 } from '../../types';
 import {
@@ -844,6 +845,9 @@ export class BalancerV2
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<BalancerV2Data>> {
     try {
       const _from = this.dexHelper.config.wrapETH(from);
@@ -892,7 +896,7 @@ export class BalancerV2
       );
 
       // Retrieve onchain state for any missing pools
-      if (missingPools.length > 0) {
+      if (!fmode && missingPools.length > 0) {
         const missingPoolsStateMap = await this.eventPools.getOnChainState(
           missingPools,
           blockNumber,

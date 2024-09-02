@@ -14,6 +14,7 @@ import {
   PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
+  TransferFeeParams,
   TxInfo,
 } from '../../types';
 import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
@@ -661,6 +662,9 @@ export class UniswapV3
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<UniswapV3Data>> {
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
@@ -737,14 +741,16 @@ export class UniswapV3
         p => p.getState(blockNumber)!,
       );
 
-      const rpcResultsPromise = this.getPricingFromRpc(
-        _srcToken,
-        _destToken,
-        amounts,
-        side,
-        this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
-        this.network === Network.ZKEVM ? [] : states,
-      );
+      const rpcResultsPromise = fmode
+        ? null
+        : this.getPricingFromRpc(
+            _srcToken,
+            _destToken,
+            amounts,
+            side,
+            this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
+            this.network === Network.ZKEVM ? [] : states,
+          );
 
       const unitAmount = getBigIntPow(
         side == SwapSide.SELL ? _srcToken.decimals : _destToken.decimals,

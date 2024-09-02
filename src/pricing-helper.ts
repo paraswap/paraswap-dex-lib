@@ -203,6 +203,7 @@ export class PricingHelper {
     },
     rollupL1ToL2GasRatio?: number,
     overrideTimeout?: number,
+    fmode?: boolean,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
       dexKeys.map(async key => {
@@ -246,6 +247,8 @@ export class PricingHelper {
                   blockNumber,
                   limitPools ? limitPools : undefined,
                   transferFees,
+                  false,
+                  fmode,
                 )
                 .then(poolPrices => {
                   try {

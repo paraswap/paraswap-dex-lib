@@ -445,7 +445,11 @@ export class UniswapV2
     }
   }
 
-  async batchCatchUpPairs(pairs: [Token, Token][], blockNumber: number) {
+  async batchCatchUpPairs(
+    pairs: [Token, Token][],
+    blockNumber: number,
+    fmode?: boolean,
+  ) {
     if (!blockNumber) return;
     const pairsToFetch: UniswapV2Pair[] = [];
     for (const _pair of pairs) {
@@ -453,7 +457,7 @@ export class UniswapV2
       if (!(pair && pair.exchange)) continue;
       if (!pair.pool) {
         pairsToFetch.push(pair);
-      } else if (!pair.pool.getState(blockNumber)) {
+      } else if (!fmode && !pair.pool.getState(blockNumber)) {
         pairsToFetch.push(pair);
       }
     }
@@ -560,6 +564,8 @@ export class UniswapV2
       srcDexFee: 0,
       destDexFee: 0,
     },
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<ExchangePrices<UniswapV2Data> | null> {
     try {
       const from = this.dexHelper.config.wrapETH(_from);
@@ -581,7 +587,7 @@ export class UniswapV2
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
 
-      await this.batchCatchUpPairs([[from, to]], blockNumber);
+      await this.batchCatchUpPairs([[from, to]], blockNumber, fmode);
       const isSell = side === SwapSide.SELL;
       const pairParam = await this.getPairOrderedParams(
         from,
