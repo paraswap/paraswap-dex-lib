@@ -11,11 +11,12 @@ import {
   Logger,
   NumberAsString,
   DexExchangeParam,
+  TransferFeeParams,
 } from '../../types';
 import nervePoolABIDefault from '../../abi/nerve/nerve-pool.json';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { getDexKeysWithNetwork, getBigIntPow, isTruthy } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -111,6 +112,7 @@ export class Nerve
   async getStates(
     pools?: NerveEventPool[],
     blockNumber?: number,
+    fmode?: boolean,
   ): Promise<DeepReadonly<{ state: PoolState; pool: NerveEventPool }[]>> {
     const _pools = pools === undefined ? this.allPools : pools;
 
@@ -121,20 +123,23 @@ export class Nerve
 
     // TODO: Need to batch this RPC calls in one multicall
     return Promise.all(
-      _pools.map(async eventPool => {
-        let state = eventPool.getState(_blockNumber);
-        if (!state || !state.isValid) {
-          this.logger.info(
-            `State for ${this.dexKey} pool ${eventPool.name} on ${this.network} is stale or invalid on block ${_blockNumber}. Generating new one`,
-          );
-          const newState = await eventPool.generateState(_blockNumber);
-          eventPool.setState(newState, _blockNumber);
-          return { state: newState, pool: eventPool };
-        } else {
-          return { state, pool: eventPool };
-        }
-      }),
-    );
+      _pools
+        .map(async eventPool => {
+          let state = eventPool.getState(_blockNumber);
+          if (!state || !state.isValid) {
+            this.logger.info(
+              `State for ${this.dexKey} pool ${eventPool.name} on ${this.network} is stale or invalid on block ${_blockNumber}. Generating new one`,
+            );
+            if (fmode) return null;
+            const newState = await eventPool.generateState(_blockNumber);
+            eventPool.setState(newState, _blockNumber);
+            return { state: newState, pool: eventPool };
+          } else {
+            return { state, pool: eventPool };
+          }
+        })
+        .filter(isTruthy),
+    ) as Promise<{ state: PoolState; pool: NerveEventPool }[]>;
   }
 
   async getPoolIdentifiers(
@@ -165,6 +170,9 @@ export class Nerve
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<NerveData>> {
     try {
       if (side === SwapSide.BUY) return null;
@@ -199,7 +207,11 @@ export class Nerve
           )
         : filterPoolsByIdentifiers(limitPools, this.allPools);
 
-      const statePoolPair = await this.getStates(selectedPools, blockNumber);
+      const statePoolPair = await this.getStates(
+        selectedPools,
+        blockNumber,
+        fmode,
+      );
 
       // here side === SwapSide.SELL
       const unitVolume = getBigIntPow(_srcToken.decimals);

@@ -10,6 +10,7 @@ import {
   PoolLiquidity,
   Logger,
   DexExchangeParam,
+  TransferFeeParams,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow, isTruthy } from '../../utils';
@@ -209,6 +210,9 @@ export class MaverickV1
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<MaverickV1Data>> {
     try {
       const from = this.dexHelper.config.wrapETH(srcToken);
@@ -236,6 +240,8 @@ export class MaverickV1
           allowedPools.map(async (pool: MaverickV1EventPool) => {
             try {
               let state = pool.getState(blockNumber);
+              if (fmode && !state) return null;
+
               if (state === null) {
                 state = await pool.generateState(blockNumber);
                 pool.setState(state, blockNumber);

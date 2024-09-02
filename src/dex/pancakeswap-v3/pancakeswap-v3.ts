@@ -12,6 +12,7 @@ import {
   NumberAsString,
   PoolPrices,
   DexExchangeParam,
+  TransferFeeParams,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -546,6 +547,9 @@ export class PancakeswapV3
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<UniswapV3Data>> {
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
@@ -632,13 +636,15 @@ export class PancakeswapV3
         },
       );
 
-      const rpcResultsPromise = this.getPricingFromRpc(
-        _srcToken,
-        _destToken,
-        amounts,
-        side,
-        this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
-      );
+      const rpcResultsPromise = fmode
+        ? null
+        : this.getPricingFromRpc(
+            _srcToken,
+            _destToken,
+            amounts,
+            side,
+            this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
+          );
 
       const states = poolsToUse.poolWithState.map(
         p => p.getState(blockNumber)!,

@@ -13,6 +13,7 @@ import {
   DexExchangeParam,
   ExchangeTxInfo,
   PreprocessTransactionOptions,
+  TransferFeeParams,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -144,9 +145,11 @@ export class LitePsm
   async getPoolState(
     pool: LitePsmEventPool,
     blockNumber: number,
-  ): Promise<PoolState> {
+    fmode?: boolean,
+  ): Promise<PoolState | null> {
     const eventState = pool.getState(blockNumber);
     if (eventState) return eventState;
+    if (fmode) return null;
     const onChainState = await pool.generateState(blockNumber);
     pool.setState(onChainState, blockNumber);
     return onChainState;
@@ -201,6 +204,9 @@ export class LitePsm
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<LitePsmData>> {
     const eventPool = this.getEventPool(srcToken, destToken);
     if (!eventPool) return null;
@@ -208,7 +214,9 @@ export class LitePsm
     const poolIdentifier = eventPool.getIdentifier();
     if (limitPools && !limitPools.includes(poolIdentifier)) return null;
 
-    const poolState = await this.getPoolState(eventPool, blockNumber);
+    const poolState = await this.getPoolState(eventPool, blockNumber, fmode);
+
+    if (!poolState) return null;
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? srcToken : destToken).decimals,

@@ -9,6 +9,7 @@ import {
   Logger,
   NumberAsString,
   DexExchangeParam,
+  TransferFeeParams,
 } from '../../types';
 import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -143,6 +144,9 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees?: TransferFeeParams,
+    isFirstSwap?: boolean,
+    fmode?: boolean,
   ): Promise<null | ExchangePrices<MaverickV2Data>> {
     try {
       const from = this.dexHelper.config.wrapETH(srcToken);
@@ -166,7 +170,7 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
 
       const tasks = allowedPools.map(async (pool: MaverickV2EventPool) => {
         try {
-          const state = await pool.getOrGenerateState(blockNumber);
+          const state = await pool.getOrGenerateState(blockNumber, fmode);
           if (!state) {
             this.logger.debug(`Received null state for pool ${pool.address}`);
             return null;

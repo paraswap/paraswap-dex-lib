@@ -346,11 +346,14 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
 
   async getOrGenerateState(
     blockNumber: number,
+    fmode?: boolean,
   ): Promise<DeepReadonly<PoolState> | null> {
     const state = this.getState(blockNumber);
     if (state) {
       return state;
     }
+
+    if (fmode) return null;
 
     this.logger.error(
       `No state found for ${this.name} ${this.addressesSubscribed[0]}, generating new one`,
