@@ -117,9 +117,18 @@ export class PricingHelper {
       dexKeys.map(async key => {
         try {
           return await new Promise<string[] | null>((resolve, reject) => {
+            const now = Date.now();
+            const timeout = overrideTimeout ?? FETCH_POOL_IDENTIFIER_TIMEOUT;
             const timer = setTimeout(
-              () => reject(new Error(`Timeout`)),
-              overrideTimeout ?? FETCH_POOL_IDENTIFIER_TIMEOUT,
+              () =>
+                reject(
+                  new Error(
+                    `Timeout of ${timeout}ms breached after ${
+                      Date.now() - now
+                    }ms for ${key}`,
+                  ),
+                ),
+              timeout,
             );
             const dexInstance = this.dexAdapterService.getDexByKey(key);
 
@@ -204,9 +213,18 @@ export class PricingHelper {
 
           return await new Promise<PoolPrices<any>[] | null>(
             (resolve, reject) => {
+              const now = Date.now();
+              const timeout = overrideTimeout ?? FETCH_POOL_PRICES_TIMEOUT;
               const timer = setTimeout(
-                () => reject(new Error(`Timeout`)),
-                overrideTimeout ?? FETCH_POOL_PRICES_TIMEOUT,
+                () =>
+                  reject(
+                    new Error(
+                      `Timeout of ${timeout}ms breached after ${
+                        Date.now() - now
+                      }ms for ${key}`,
+                    ),
+                  ),
+                timeout,
               );
 
               const dexInstance = this.dexAdapterService.getDexByKey(key);
