@@ -400,9 +400,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs: [],
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     adapterAddresses: {
       BaseAdapter01: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
