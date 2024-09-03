@@ -131,7 +131,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
-
   readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -358,7 +357,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
         },
         poolAddresses: [eventPool.poolConfig.gsmAddress],
         exchange: this.dexKey,
-        gasCost: 100 * 1000, //TODO: simulate and fix the gas cost
+        gasCost: 200 * 1000, //TODO: simulate and fix the gas cost
         poolIdentifier,
       },
     ];
