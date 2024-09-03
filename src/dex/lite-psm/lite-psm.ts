@@ -400,11 +400,10 @@ export class LitePsm
       targetExchange: data.psmAddress,
       specialDexFlag,
       spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
-      returnAmountPos: extractReturnAmountPosition(
-        psmInterface,
-        isGemSell ? 'sellGem' : 'buyGem',
-        isGemSell ? 'daiOutWad' : 'daiInWad',
-      ),
+      returnAmountPos:
+        side === SwapSide.SELL && isGemSell
+          ? extractReturnAmountPosition(psmInterface, 'sellGem', 'daiOutWad')
+          : undefined,
     };
   }
 

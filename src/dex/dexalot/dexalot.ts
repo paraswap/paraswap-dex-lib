@@ -68,6 +68,7 @@ import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { Method } from '../../dex-helper/irequest-wrapper';
+import { SpecialDex } from '../../executor/types';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -1022,6 +1023,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       dexFuncHasRecipient: false,
       targetExchange: this.mainnetRFQAddress,
       returnAmountPos: undefined,
+      specialDexFlag: SpecialDex.SWAP_ON_DEXALOT,
+      // cannot modify amount due to signature checks
+      specialDexSupportsInsertFromAmount: false,
     };
   }
 
