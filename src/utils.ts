@@ -408,3 +408,8 @@ export const uint32 = toUintN(32);
 export const uint64 = toUintN(64);
 export const uint128 = toUintN(128);
 export const uint256 = toUintN(256);
+
+export const sleep = (time: number) =>
+  new Promise(resolve => {
+    setTimeout(resolve, time);
+  });

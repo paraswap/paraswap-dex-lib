@@ -25,6 +25,7 @@ import {
   interpolate,
   isETHAddress,
   isTruthy,
+  sleep,
   uuidToBytes16,
 } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -764,6 +765,8 @@ export class UniswapV3
 
       const result = await Promise.all(
         poolsToUse.poolWithState.map(async (pool, i) => {
+          await sleep(0); // to sleep to unlock better EL utilisation
+
           const state = states[i];
 
           if (state.liquidity <= 0n) {
