@@ -59,6 +59,7 @@ function _priceComputationCycles(
   sqrtPriceLimitX96: bigint,
   zeroForOne: boolean,
   exactInput: boolean,
+  fMode?: boolean,
 ): [
   // result
   PriceComputationState,
@@ -80,16 +81,16 @@ function _priceComputationCycles(
   let lastTicksCopy: { index: number; tick: TickInfo } | undefined;
 
   let i = 0;
+  const maxCycle = fMode
+    ? MAX_PRICING_COMPUTATION_STEPS_ALLOWED / 4
+    : MAX_PRICING_COMPUTATION_STEPS_ALLOWED;
   for (
     ;
     state.amountSpecifiedRemaining !== 0n &&
     state.sqrtPriceX96 !== sqrtPriceLimitX96;
     ++i
   ) {
-    if (
-      latestFullCycleCache.tickCount + i >
-      MAX_PRICING_COMPUTATION_STEPS_ALLOWED
-    ) {
+    if (latestFullCycleCache.tickCount + i > maxCycle) {
       state.amountSpecifiedRemaining = 0n;
       state.amountCalculated = 0n;
       break;
@@ -240,6 +241,7 @@ class UniswapV3Math {
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
+    fmode?: boolean,
   ): OutputResult {
     const slot0Start = poolState.slot0;
 
@@ -325,6 +327,7 @@ class UniswapV3Math {
             sqrtPriceLimitX96,
             zeroForOne,
             exactInput,
+            fmode,
           );
         if (
           finalState.amountSpecifiedRemaining === 0n &&

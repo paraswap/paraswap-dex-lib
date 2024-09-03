@@ -794,6 +794,7 @@ export class UniswapV3
             zeroForOne,
             side,
             balanceDestToken,
+            fmode,
           );
           const pricesResult = this._getOutputs(
             state,
@@ -801,6 +802,7 @@ export class UniswapV3
             zeroForOne,
             side,
             balanceDestToken,
+            fmode,
           );
           // eslint-disable-next-line no-console
           console.timeEnd(key);
@@ -1348,6 +1350,7 @@ export class UniswapV3
     zeroForOne: boolean,
     side: SwapSide,
     destTokenBalance: bigint,
+    fmode?: boolean,
   ): OutputResult | null {
     try {
       const outputsResult = uniswapV3Math.queryOutputs(
@@ -1355,6 +1358,7 @@ export class UniswapV3
         amounts,
         zeroForOne,
         side,
+        fmode,
       );
 
       if (side === SwapSide.SELL) {
