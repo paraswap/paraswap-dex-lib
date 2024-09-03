@@ -329,9 +329,19 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
       );
       throw new Error(
-        `${this.dexKey}-${
-          this.network
-        }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
+        `${this.dexKey}-${this.network}: user=${options.txOrigin} is blacklisted`,
+      );
+    }
+
+    if (
+      options.userAddress !== options.txOrigin &&
+      (await this.isBlacklisted(options.userAddress))
+    ) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: blacklisted user address '${options.userAddress}' trying to build a transaction. Bailing...`,
+      );
+      throw new Error(
+        `${this.dexKey}-${this.network}: user=${options.userAddress} is blacklisted`,
       );
     }
 
