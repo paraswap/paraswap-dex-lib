@@ -238,6 +238,11 @@ export class PricingHelper {
                 return resolve(null);
               }
 
+              const timerKey = `getPricesVolume_${key}_${from.address}_${
+                to.address
+              }_${amounts[amounts.length - 1]}`;
+              // eslint-disable-next-line no-console
+              console.time(timerKey);
               dexInstance
                 .getPricesVolume(
                   from,
@@ -251,6 +256,8 @@ export class PricingHelper {
                   fmode,
                 )
                 .then(poolPrices => {
+                  // eslint-disable-next-line no-console
+                  console.timeEnd(timerKey);
                   try {
                     if (!poolPrices || !rollupL1ToL2GasRatio) {
                       return resolve(poolPrices);
