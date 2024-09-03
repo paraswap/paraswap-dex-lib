@@ -295,8 +295,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       returnAmountPos:
         side === SwapSide.SELL
           ? isSrcGho
-            ? RETURN_AMOUNT_POS_32
-            : RETURN_AMOUNT_POS_0
+            ? RETURN_AMOUNT_POS_0
+            : RETURN_AMOUNT_POS_32
           : undefined,
     };
   }
