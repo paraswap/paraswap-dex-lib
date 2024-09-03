@@ -1,5 +1,6 @@
 import { defaultAbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
+import * as path from 'path';
 import { pack } from '@ethersproject/solidity';
 import {
   AdapterExchangeParam,
@@ -74,6 +75,7 @@ import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 import { hexConcat, hexlify, hexZeroPad, hexValue } from 'ethers/lib/utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { Worker } from 'worker_threads';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -791,7 +793,7 @@ export class UniswapV3
           )}_${id}`;
           // eslint-disable-next-line no-console
           console.time(key);
-          const unitResult = this._getOutputs(
+          const unitResult = await this._getOutputs(
             state,
             [unitAmount],
             zeroForOne,
@@ -799,7 +801,7 @@ export class UniswapV3
             balanceDestToken,
             fmode,
           );
-          const pricesResult = this._getOutputs(
+          const pricesResult = await this._getOutputs(
             state,
             _amounts,
             zeroForOne,
@@ -1347,58 +1349,37 @@ export class UniswapV3
     return newConfig;
   }
 
-  protected _getOutputs(
+  async _getOutputs(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
     destTokenBalance: bigint,
     fmode?: boolean,
-  ): OutputResult | null {
-    try {
-      const outputsResult = uniswapV3Math.queryOutputs(
-        state,
-        amounts,
-        zeroForOne,
-        side,
-        fmode,
+  ): Promise<OutputResult | null> {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(
+        path.join(__dirname, './uniswap-v3-worker.js'),
+        {
+          workerData: {
+            state,
+            amounts,
+            zeroForOne,
+            side,
+            destTokenBalance,
+            fmode,
+          },
+        },
       );
 
-      if (side === SwapSide.SELL) {
-        if (outputsResult.outputs[0] > destTokenBalance) {
-          return null;
+      worker.on('message', resolve);
+      worker.on('error', reject);
+      worker.on('exit', code => {
+        if (code !== 0) {
+          reject(new Error(`Worker stopped with exit code ${code}`));
         }
-
-        for (let i = 0; i < outputsResult.outputs.length; i++) {
-          if (outputsResult.outputs[i] > destTokenBalance) {
-            outputsResult.outputs[i] = 0n;
-            outputsResult.tickCounts[i] = 0;
-          }
-        }
-      } else {
-        if (amounts[0] > destTokenBalance) {
-          return null;
-        }
-
-        // This may be improved by first checking outputs and requesting outputs
-        // only for amounts that makes more sense, but I don't think this is really
-        // important now
-        for (let i = 0; i < amounts.length; i++) {
-          if (amounts[i] > destTokenBalance) {
-            outputsResult.outputs[i] = 0n;
-            outputsResult.tickCounts[i] = 0;
-          }
-        }
-      }
-
-      return outputsResult;
-    } catch (e) {
-      this.logger.debug(
-        `${this.dexKey}: received error in _getOutputs while calculating outputs`,
-        e,
-      );
-      return null;
-    }
+      });
+    });
   }
 
   private async _querySubgraph(
