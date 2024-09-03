@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
-import { catchParseLogError } from '../../utils';
+import { catchParseLogError, getBigIntPow } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState, PoolConfig } from './types';
@@ -18,6 +18,7 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
   } = {};
 
   logDecoder: (log: Log) => any;
+  to18ConversionFactor: bigint;
 
   addressesSubscribed: string[];
 
@@ -33,9 +34,45 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
 
     this.logDecoder = (log: Log) => this.gsmInterface.parseLog(log);
     this.addressesSubscribed = [poolConfig.gsmAddress];
+    this.to18ConversionFactor = getBigIntPow(12);
 
-    // TODO: Add handlers
-    this.handlers['myEvent'] = this.handleMyEvent.bind(this);
+    // Add handlers
+    this.handlers['BuyAsset'] = this.handleBuyAsset.bind(this);
+    this.handlers['SellAsset'] = this.handleSellAsset.bind(this);
+    this.handlers['SwapFreeze'] = this.handleSwapFreeze.bind(this);
+    this.handlers['Seized'] = this.handleSeized.bind(this);
+  }
+
+  handleBuyAsset(event: any, pool: PoolState, log: Log): PoolState {
+    pool.accruedFees += BigInt(event.args.fee);
+    pool.availableUnderlyingLiquidity -= BigInt(event.args.underlyingAmount);
+    pool.availableUnderlyingExposure =
+      pool.exposureCapUnderlying > pool.availableUnderlyingLiquidity
+        ? BigInt(pool.exposureCapUnderlying - pool.availableUnderlyingLiquidity)
+        : BigInt(0);
+    return pool;
+  }
+
+  handleSellAsset(event: any, pool: PoolState, log: Log): PoolState {
+    pool.accruedFees += BigInt(event.args.fee);
+    pool.availableUnderlyingLiquidity += BigInt(event.args.underlyingAmount);
+    pool.availableUnderlyingExposure =
+      pool.exposureCapUnderlying > pool.availableUnderlyingLiquidity
+        ? BigInt(pool.exposureCapUnderlying - pool.availableUnderlyingLiquidity)
+        : BigInt(0);
+    return pool;
+  }
+
+  handleSwapFreeze(event: any, pool: PoolState, log: Log): PoolState {
+    pool.isFrozen = true;
+    pool.canSwap = false;
+    return pool;
+  }
+
+  handleSeized(event: any, pool: PoolState, log: Log): PoolState {
+    pool.isSeized = true;
+    pool.canSwap = false;
+    return pool;
   }
 
   getIdentifier(): string {

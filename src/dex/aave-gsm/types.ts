@@ -5,10 +5,11 @@ export type PoolState = {
   // subscriber. This should be the minimum
   // set of parameters required to compute
   // pool prices. Complete me!
-  canSwap: boolean;
+  canSwap: boolean; // TODO: Remove and use below
   isFrozen: boolean;
   isSeized: boolean;
   accruedFees: bigint;
+  // TODO: Consider renaming the below
   availableUnderlyingLiquidity: bigint;
   availableUnderlyingExposure: bigint;
   exposureCapUnderlying: bigint;
