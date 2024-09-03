@@ -122,13 +122,4 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
       )
     )[0];
   }
-
-  // Its just a dummy example
-  handleMyEvent(
-    event: any,
-    state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
-    return null;
-  }
 }
