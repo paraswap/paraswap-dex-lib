@@ -18,7 +18,6 @@ import {
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
-import { OptimalRate } from '@paraswap/core';
 
 export type Context = {
   isGlobalSrcToken: boolean;

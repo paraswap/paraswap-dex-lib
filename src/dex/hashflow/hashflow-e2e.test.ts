@@ -214,14 +214,14 @@ describe('Hashflow E2E', () => {
     });
   });
 
-  describe('Polygon_V6', () => {
+  describe('Polygon', () => {
     const network = Network.POLYGON;
 
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'DAI';
+    const tokenASymbol: string = 'USDCe';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '1000000000';
-    const tokenBAmount: string = '1000000000000000000000';
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '100000000000000000000';
 
     testForNetwork(
@@ -232,16 +232,18 @@ describe('Hashflow E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
+      true,
     );
   });
+
   describe('BSC', () => {
     const network = Network.BSC;
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000';
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -254,14 +256,15 @@ describe('Hashflow E2E', () => {
       nativeTokenAmount,
     );
   });
+
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '1000000000';
-    const tokenBAmount: string = '1000000000';
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -274,6 +277,7 @@ describe('Hashflow E2E', () => {
       nativeTokenAmount,
     );
   });
+
   describe('Optimism', () => {
     const network = Network.OPTIMISM;
 
