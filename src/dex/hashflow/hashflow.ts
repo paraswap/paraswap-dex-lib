@@ -64,6 +64,7 @@ import {
   SlippageCheckError,
 } from './types';
 import { OptimalSwapExchange } from '@paraswap/core';
+import { SpecialDex } from '../../executor/types';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   readonly isStatePollingDex = true;
@@ -71,13 +72,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
   needWrapNative = (se: OptimalSwapExchange<any>): boolean => {
     if (
-      se.data.tokenIn ===
-        this.dexHelper.config.data.wrappedNativeTokenAddress ||
-      se.data.tokenOut === this.dexHelper.config.data.wrappedNativeTokenAddress
+      se.data.tokenIn.toLowerCase() ===
+        this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase() ||
+      se.data.tokenOut.toLowerCase() ===
+        this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase()
     ) {
       return true;
     }
-
     return false;
   };
 
@@ -1194,6 +1195,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       exchangeData,
       targetExchange: this.routerAddress,
       returnAmountPos: undefined,
+      specialDexFlag: SpecialDex.SWAP_ON_HASHFLOW,
+      // cannot modify amount due to signature checks
+      specialDexSupportsInsertFromAmount: false,
     };
   }
 

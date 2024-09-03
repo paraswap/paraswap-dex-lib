@@ -258,10 +258,10 @@ describe('Hashflow E2E', () => {
     const network = Network.ARBITRUM;
 
     const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'WETH';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -272,7 +272,6 @@ describe('Hashflow E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
-      true,
     );
   });
   describe('Optimism', () => {
