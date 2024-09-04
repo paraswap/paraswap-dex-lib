@@ -1,6 +1,6 @@
 import { DexParams } from './types';
-import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { DexConfigMap } from '../../types';
+import { Network } from '../../constants';
 
 import { MiscEthereum } from '@bgd-labs/aave-address-book';
 
@@ -11,8 +11,4 @@ export const StkGHOConfig: DexConfigMap<DexParams> = {
       GHO: MiscEthereum.GHO_TOKEN,
     },
   },
-};
-
-export const Adapters: Record<number, AdapterMappings> = {
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
 };

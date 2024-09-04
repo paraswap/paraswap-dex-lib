@@ -18,7 +18,7 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DexParams, PoolState, StkGHOData } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { StkGHOConfig, Adapters } from './config';
+import { StkGHOConfig } from './config';
 import { StkGHOEventPool } from './stkgho-pool';
 import { Interface } from '@ethersproject/abi';
 import StkGHO_ABI from '../../abi/stkGHO.json';
@@ -44,7 +44,6 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -63,10 +62,6 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     };
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
     const state = await this.eventPool.generateState(blockNumber);
 
@@ -75,16 +70,10 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     });
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -112,10 +101,6 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     return onChainState;
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -153,15 +138,10 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     ];
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<StkGHOData>): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // V5: Used for multiSwap, buy & megaSwap
-  // V6: Not used, can be left blank
-  // Hint: abiCoder.encodeParameter() could be useful
   getAdapterParam(
     srcToken: string,
     destToken: string,
@@ -170,10 +150,8 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     data: StkGHOData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     const { exchange } = data;
 
-    // Encode here the payload for adapter
     const payload = '';
 
     return {
@@ -183,11 +161,6 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(): Promise<void> {}
 
   async getDexParam(
@@ -213,8 +186,6 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     };
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
