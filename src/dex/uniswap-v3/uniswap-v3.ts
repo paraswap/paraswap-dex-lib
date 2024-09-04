@@ -76,6 +76,7 @@ import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 import { hexConcat, hexlify, hexZeroPad, hexValue } from 'ethers/lib/utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { Worker } from 'worker_threads';
+import { _getOutputs } from './uniswap-v3-pricing';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -793,7 +794,7 @@ export class UniswapV3
           )}_${id}`;
           // eslint-disable-next-line no-console
           console.time(key);
-          const unitResult = await this._getOutputs(
+          const unitResult = _getOutputs(
             state,
             [unitAmount],
             zeroForOne,
@@ -801,7 +802,7 @@ export class UniswapV3
             balanceDestToken,
             fmode,
           );
-          const pricesResult = await this._getOutputs(
+          const pricesResult = await this._getOutputsThreaded(
             state,
             _amounts,
             zeroForOne,
@@ -1349,7 +1350,7 @@ export class UniswapV3
     return newConfig;
   }
 
-  async _getOutputs(
+  async _getOutputsThreaded(
     state: DeepReadonly<PoolState>,
     amounts: bigint[],
     zeroForOne: boolean,
