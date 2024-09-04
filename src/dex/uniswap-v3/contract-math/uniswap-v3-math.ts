@@ -82,7 +82,7 @@ function _priceComputationCycles(
 
   let i = 0;
   const maxCycle = fMode
-    ? MAX_PRICING_COMPUTATION_STEPS_ALLOWED / 4
+    ? Math.floor(0.8 * MAX_PRICING_COMPUTATION_STEPS_ALLOWED)
     : MAX_PRICING_COMPUTATION_STEPS_ALLOWED;
   for (
     ;
