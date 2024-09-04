@@ -21,11 +21,7 @@ import { AaveGsmConfig } from './config';
 
 import GSM_ABI from '../../abi/aave-gsm/Aave_GSM.json';
 import { Interface } from '@ethersproject/abi';
-import { MultiResult } from '../../lib/multi-wrapper';
-import { BytesLike } from 'ethers';
-import { generalDecoder, uint256ToBigInt } from '../../lib/decoders';
 import { formatUnits, parseUnits } from 'ethers/lib/utils';
-import { erc20Iface } from '../../lib/tokens/utils';
 import { AaveGsmEventPool } from './aave-gsm-pool';
 import { MMath } from '../maverick-v1/maverick-math/maverick-basic-math';
 import {
@@ -346,8 +342,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     tokenAddress = tokenAddress.toLowerCase();
 
     if (tokenAddress == this.config.GHO) {
-      const usdtState = this.eventPools[this.config.GSM_USDT].getStaleState()!;
-      const usdcState = this.eventPools[this.config.GSM_USDC].getStaleState()!;
+      const usdtState = this.eventPools[this.config.GSM_USDT].getStaleState();
+      const usdcState = this.eventPools[this.config.GSM_USDC].getStaleState();
 
       return [
         {
@@ -359,7 +355,9 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
               address: this.config.USDT,
             },
           ],
-          liquidityUSD: +formatUnits(usdtState.underlyingLiquidity, 6),
+          liquidityUSD: usdtState
+            ? +formatUnits(usdtState.underlyingLiquidity, 6)
+            : 1000000000,
         },
         {
           exchange: this.dexKey,
@@ -370,7 +368,9 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
               address: this.config.USDC,
             },
           ],
-          liquidityUSD: +formatUnits(usdcState.underlyingLiquidity, 6),
+          liquidityUSD: usdcState
+            ? +formatUnits(usdcState.underlyingLiquidity, 6)
+            : 1000000000,
         },
       ];
     } else if (tokenAddress == this.config.USDC) {
