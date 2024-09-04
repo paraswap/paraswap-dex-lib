@@ -802,14 +802,23 @@ export class UniswapV3
             balanceDestToken,
             fmode,
           );
-          const pricesResult = await this._getOutputsThreaded(
-            state,
-            _amounts,
-            zeroForOne,
-            side,
-            balanceDestToken,
-            fmode,
-          );
+          const pricesResult = !fmode
+            ? await this._getOutputsThreaded(
+                state,
+                _amounts,
+                zeroForOne,
+                side,
+                balanceDestToken,
+                fmode,
+              )
+            : _getOutputs(
+                state,
+                [unitAmount],
+                zeroForOne,
+                side,
+                balanceDestToken,
+                fmode,
+              );
           // eslint-disable-next-line no-console
           console.timeEnd(key);
 
