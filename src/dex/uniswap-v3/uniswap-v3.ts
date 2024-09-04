@@ -802,7 +802,7 @@ export class UniswapV3
             balanceDestToken,
             fmode,
           );
-          const pricesResult = !fmode
+          const pricesResult = fmode
             ? await this._getOutputsThreaded(
                 state,
                 _amounts,

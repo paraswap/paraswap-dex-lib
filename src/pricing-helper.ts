@@ -240,7 +240,9 @@ export class PricingHelper {
 
               const timerKey = `getPricesVolume_${key}_${from.address}_${
                 to.address
-              }_${amounts[amounts.length - 1]}`;
+              }_${amounts[amounts.length - 1]}_${Math.floor(
+                Math.random() * 1e6,
+              )}`;
               // eslint-disable-next-line no-console
               console.time(timerKey);
               dexInstance
