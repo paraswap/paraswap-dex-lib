@@ -205,8 +205,14 @@ export class PricingHelper {
     overrideTimeout?: number,
     fmode?: boolean,
   ): Promise<PoolPrices<any>[]> {
+    const start = Date.now();
+    const token_key = `${Math.round(Math.random() * 10_000)}_${from.address}_${
+      to.address
+    }`.toLowerCase();
+
     const dexPoolPrices = await Promise.all(
       dexKeys.map(async key => {
+        const start = Date.now();
         try {
           const limitPools = limitPoolsMap ? limitPoolsMap[key] : null;
 
@@ -302,18 +308,35 @@ export class PricingHelper {
                   }
                 }, reject)
                 .finally(() => {
+                  this.logger.info(
+                    `{benchmarks} (total-for-dex): [finally] Dex ${key}, tokenPair: ${token_key} took ${
+                      end - start
+                    }ms to resolve/reject`,
+                  );
                   clearTimeout(timer);
                 });
             },
           );
         } catch (e) {
-          this.logger.error(`Error_${key}_getPoolPrices:`, e);
+          this.logger.error(
+            `{benchmarks} (limited-by-timeout-for-dex) [error]: Dex ${key}, tokenPair: ${token_key} took ${
+              end - start
+            }ms to resolve/reject`,
+            e,
+          );
           return [];
+        } finally {
+          const end = Date.now();
+          this.logger.info(
+            `{benchmarks} (limited-by-timeout-for-dex) [finally]: Dex ${key}, tokenPair: ${token_key} took ${
+              end - start
+            }ms to resolve/reject`,
+          );
         }
       }),
     );
 
-    return dexPoolPrices
+    const prices = dexPoolPrices
       .filter((x): x is ExchangePrices<any> => !!x)
       .flat() // flatten to get all the pools for the swap
       .filter(p => {
@@ -348,5 +371,14 @@ export class PricingHelper {
         }
         return true;
       });
+
+    const end = Date.now();
+    this.logger.info(
+      `{benchmarks} (getPoolPrices): tokenPair: ${token_key} took ${
+        end - start
+      }ms to resolve/reject`,
+    );
+
+    return prices;
   }
 }
