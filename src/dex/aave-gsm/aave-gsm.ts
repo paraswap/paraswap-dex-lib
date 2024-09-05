@@ -148,7 +148,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   }
 
   getGhoAmountForBuyAsset(assetAmount: bigint, state: PoolState) {
-    if (assetAmount == 0n) {
+    if (assetAmount === 0n) {
       return 0n;
     }
 
@@ -165,7 +165,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   }
 
   getGhoAmountForSellAsset(assetAmount: bigint, state: PoolState) {
-    if (assetAmount == 0n) {
+    if (assetAmount === 0n) {
       return 0n;
     }
 
@@ -199,12 +199,12 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
 
     if (
       !(
-        (srcTokenAddress == this.config.GHO &&
-          (destTokenAddress == this.config.USDC ||
-            destTokenAddress == this.config.USDT)) ||
-        (destTokenAddress == this.config.GHO &&
-          (srcTokenAddress == this.config.USDC ||
-            srcTokenAddress == this.config.USDT))
+        (srcTokenAddress === this.config.GHO &&
+          (destTokenAddress === this.config.USDC ||
+            destTokenAddress === this.config.USDT)) ||
+        (destTokenAddress === this.config.GHO &&
+          (srcTokenAddress === this.config.USDC ||
+            srcTokenAddress === this.config.USDT))
       )
     ) {
       return null;
@@ -215,21 +215,21 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     let gas: number;
 
     if (
-      srcTokenAddress == this.config.USDT ||
-      destTokenAddress == this.config.USDT
+      srcTokenAddress === this.config.USDT ||
+      destTokenAddress === this.config.USDT
     ) {
       target = this.config.GSM_USDT;
     } else {
       target = this.config.GSM_USDC;
     }
 
-    if (srcTokenAddress == this.config.GHO && side == SwapSide.BUY) {
+    if (srcTokenAddress === this.config.GHO && side === SwapSide.BUY) {
       endpoint = this.getGhoAmountForBuyAsset;
       gas = 80_000;
-    } else if (srcTokenAddress == this.config.GHO && side == SwapSide.SELL) {
+    } else if (srcTokenAddress === this.config.GHO && side === SwapSide.SELL) {
       endpoint = this.getAssetAmountForBuyAsset;
       gas = 80_000;
-    } else if (destTokenAddress == this.config.GHO && side == SwapSide.SELL) {
+    } else if (destTokenAddress === this.config.GHO && side === SwapSide.SELL) {
       endpoint = this.getGhoAmountForSellAsset;
       gas = 70_000;
     } else {
@@ -239,7 +239,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
 
     const unit = parseUnits(
       '1',
-      side == SwapSide.SELL ? srcToken.decimals : destToken.decimals,
+      side === SwapSide.SELL ? srcToken.decimals : destToken.decimals,
     ).toBigInt();
 
     const poolState = await this.getPoolState(target, blockNumber);
@@ -301,7 +301,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
         ? this.config.GSM_USDT
         : this.config.GSM_USDC;
 
-    if (BigInt(assetAmount) == 1n) {
+    if (BigInt(assetAmount) === 1n) {
       const poolState = await this.getPoolState(targetExchange);
       assetAmount = isSrcGho
         ? this.getAssetAmountForBuyAsset(
@@ -341,7 +341,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   ): Promise<PoolLiquidity[]> {
     tokenAddress = tokenAddress.toLowerCase();
 
-    if (tokenAddress == this.config.GHO) {
+    if (tokenAddress === this.config.GHO) {
       const usdtState = this.eventPools[this.config.GSM_USDT].getStaleState();
       const usdcState = this.eventPools[this.config.GSM_USDC].getStaleState();
 
@@ -373,7 +373,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
             : 1000000000,
         },
       ];
-    } else if (tokenAddress == this.config.USDC) {
+    } else if (tokenAddress === this.config.USDC) {
       return [
         {
           exchange: this.dexKey,
@@ -387,7 +387,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
           liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
         },
       ];
-    } else if (tokenAddress == this.config.USDT) {
+    } else if (tokenAddress === this.config.USDT) {
       return [
         {
           exchange: this.dexKey,
