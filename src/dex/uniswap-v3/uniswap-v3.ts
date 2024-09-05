@@ -803,7 +803,7 @@ export class UniswapV3
             fmode,
           );
           const pricesResult =
-            fmode && Math.random() > 1 // disable
+            fmode && Math.random() < 1 / 4
               ? await this._getOutputsThreaded(
                   state,
                   _amounts,
