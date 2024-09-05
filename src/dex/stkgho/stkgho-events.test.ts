@@ -37,7 +37,7 @@ describe('StkGHO EventPool Mainnet', function () {
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     [StkGHOConfig[dexKey][network].stkGHO]: {
-      ExchangeRateChanged: [20630408, 20623242],
+      ExchangeRateChanged: [], // haven't been emitted yet
     },
   };
 
