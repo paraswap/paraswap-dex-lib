@@ -49,7 +49,7 @@ export class WooFiV2Math {
 
       if (!_state.woFeasible) {
         this.logger.error(
-          `Oracle state for base token ${baseToken} is not feasible`,
+          `Oracle state for base token ${baseToken} is not feasible, state timestamp: ${this.state.oracleTimestamp}`,
         );
         return null;
       }
@@ -83,7 +83,7 @@ export class WooFiV2Math {
 
       if (!_state.woFeasible) {
         this.logger.error(
-          `Oracle state for base token ${baseToken} is not feasible`,
+          `Oracle state for base token ${baseToken} is not feasible, oracle timestamp: ${this.state.oracleTimestamp}`,
         );
         return null;
       }
@@ -114,10 +114,19 @@ export class WooFiV2Math {
       let state2: TokenState = this.state.tokenStates[baseToken2];
 
       if (!state1.woFeasible || !state2.woFeasible) {
-        const token = !state1.woFeasible ? baseToken1 : baseToken2;
-        this.logger.error(
-          `Oracle state for base token ${token} is not feasible`,
-        );
+        let errorMessage = 'Oracle state is not feasible for base token';
+        const logBoth = !state1.woFeasible && !state2.woFeasible;
+
+        if (logBoth) {
+          errorMessage += `s ${baseToken1} and ${baseToken2}`;
+        } else {
+          const token = !state1.woFeasible ? baseToken1 : baseToken2;
+          errorMessage += ` ${token}`;
+        }
+
+        errorMessage += `, state timestamp: ${this.state.oracleTimestamp}`;
+
+        this.logger.error(errorMessage);
         return null;
       }
 
