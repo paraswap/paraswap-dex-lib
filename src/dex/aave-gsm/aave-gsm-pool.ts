@@ -129,7 +129,6 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState> | null> {
-    const feeStrategy = addressDecode(event.args.newFeeStrategy);
-    return await this.getFeeState(feeStrategy);
+    return await this.getFeeState(event.args.newFeeStrategy);
   }
 }
