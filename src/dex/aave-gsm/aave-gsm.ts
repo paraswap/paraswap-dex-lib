@@ -1,6 +1,7 @@
 import { AsyncOrSync } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
+import { BigNumber } from 'ethers';
 import { get } from 'lodash';
 import {
   Token,
@@ -244,6 +245,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
           'getGhoAmountForBuyAsset',
           data.returnData,
         )[0][1];
+
         return bigIntify(decodedResult);
       }),
     );
@@ -258,25 +260,36 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   ): Promise<bigint[]> {
     const results = await Promise.all(
       amounts.map(async a => {
-        const data: { returnData: any[] } =
-          await this.dexHelper.multiContract.methods
-            .aggregate([
-              {
-                target: address,
-                callData: gsmInterface.encodeFunctionData(
-                  'getGhoAmountForSellAsset',
-                  [a],
-                ),
-              },
-            ])
-            .call({}, blockNumber);
+        try {
+          const callData = gsmInterface.encodeFunctionData(
+            'getGhoAmountForSellAsset',
+            [a],
+          );
 
-        // Decoding the result to get total usdc/t to sell
-        const decodedResult = gsmInterface.decodeFunctionResult(
-          'getGhoAmountForSellAsset',
-          data.returnData,
-        )[0][0];
-        return bigIntify(decodedResult);
+          const data = await this.dexHelper.web3Provider.eth.call(
+            {
+              to: address,
+              data: callData,
+            },
+            blockNumber,
+          );
+
+          // Decoding the result to get the total usdc/t to sell
+          const decodedResult = gsmInterface.decodeFunctionResult(
+            'getGhoAmountForSellAsset',
+            data,
+          )[0];
+
+          if (!decodedResult || decodedResult.length === 0) {
+            throw new Error(`Failed to decode result for amount ${a}`);
+          }
+
+          const bigIntValue = BigInt(decodedResult.toString());
+
+          return bigIntValue;
+        } catch (error) {
+          return BigInt(0); // Return 0 in case of error
+        }
       }),
     );
     return results;
@@ -320,19 +333,19 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
 
     // Using GHO to buy asset
     if (haveGHO && SwapSide.BUY) {
-      const [unit, ...prices] = await this.getGhoAmountForBuyAsset(
+      prices = await this.getGhoAmountForBuyAsset(
         amounts,
         eventPool.poolConfig.gsmAddress,
         blockNumber,
       );
     } else if (haveGHO && SwapSide.SELL) {
-      const [unit, ...prices] = await this.getGhoAmountForBuyAsset(
+      prices = await this.getGhoAmountForBuyAsset(
         amounts,
         eventPool.poolConfig.gsmAddress,
         blockNumber,
       );
     } else if (!haveGHO && SwapSide.BUY) {
-      const [unit, ...prices] = await this.getGhoAmountForSellAsset(
+      prices = await this.getGhoAmountForSellAsset(
         amounts,
         eventPool.poolConfig.gsmAddress,
         blockNumber,
@@ -340,7 +353,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     }
     // Selling usdc/t to buy GHO
     else if (!haveGHO && SwapSide.SELL) {
-      const [unit, ...prices] = await this.getGhoAmountForSellAsset(
+      prices = await this.getGhoAmountForSellAsset(
         amounts,
         eventPool.poolConfig.gsmAddress,
         blockNumber,
