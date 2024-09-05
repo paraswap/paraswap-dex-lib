@@ -333,8 +333,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     };
   }
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,

@@ -4,6 +4,8 @@ export type PoolState = {
   buyFee: bigint;
   sellFee: bigint;
   underlyingLiquidity: bigint;
+  isFrozen: boolean;
+  isSeized: boolean;
 };
 
 export type AaveGsmData = {

@@ -7,7 +7,11 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
 import GSM_ABI from '../../abi/aave-gsm/Aave_GSM.json';
 import FEE_STRATEGY_ABI from '../../abi/aave-gsm/IFeeStrategy.json';
-import { addressDecode, uint256ToBigInt } from '../../lib/decoders';
+import {
+  addressDecode,
+  booleanDecode,
+  uint256ToBigInt,
+} from '../../lib/decoders';
 
 export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -40,6 +44,9 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     // Add handlers
     this.handlers['FeeStrategyUpdated'] =
       this.handleFeeStrategyUpdated.bind(this);
+
+    this.handlers['SwapFreeze'] = this.handleSwapFreeze.bind(this);
+    this.handlers['Seized'] = this.handleSeized.bind(this);
   }
 
   getIdentifier(): string {
@@ -62,7 +69,7 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     return null;
   }
 
-  async getFeeState(
+  async getOnChainState(
     address: string,
     blockNumber: number | string = 'latest',
   ): Promise<PoolState> {
@@ -89,18 +96,28 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
         ),
         decodeFunction: uint256ToBigInt,
       },
+      {
+        target: this.gsm,
+        callData: this.aaveGsmIface.encodeFunctionData('getIsFrozen', []),
+        decodeFunction: booleanDecode,
+      },
+      {
+        target: this.gsm,
+        callData: this.aaveGsmIface.encodeFunctionData('getIsSeized', []),
+        decodeFunction: booleanDecode,
+      },
     ];
 
-    const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-      true,
-      callData,
-      blockNumber,
-    );
+    const results = await this.dexHelper.multiWrapper.tryAggregate<
+      bigint | boolean
+    >(true, callData, blockNumber);
 
     return {
-      buyFee: results[0].returnData,
-      sellFee: results[1].returnData,
-      underlyingLiquidity: results[2].returnData,
+      buyFee: results[0].returnData as bigint,
+      sellFee: results[1].returnData as bigint,
+      underlyingLiquidity: results[2].returnData as bigint,
+      isFrozen: results[3].returnData as boolean,
+      isSeized: results[4].returnData as boolean,
     };
   }
 
@@ -115,13 +132,18 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
       },
     ];
 
-    const results = await this.dexHelper.multiWrapper.tryAggregate<string>(
+    const feeStrategy = await this.dexHelper.multiWrapper.tryAggregate<string>(
       true,
       callData,
       blockNumber,
     );
 
-    return await this.getFeeState(results[0].returnData, blockNumber);
+    const result = await this.getOnChainState(
+      feeStrategy[0].returnData,
+      blockNumber,
+    );
+
+    return result;
   }
 
   async handleFeeStrategyUpdated(
@@ -129,6 +151,28 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState> | null> {
-    return await this.getFeeState(event.args.newFeeStrategy);
+    return await this.getOnChainState(event.args.newFeeStrategy);
+  }
+
+  async handleSwapFreeze(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    return {
+      ...state,
+      isFrozen: event.args.enabled,
+    };
+  }
+
+  async handleSeized(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    return {
+      ...state,
+      isSeized: true,
+    };
   }
 }
