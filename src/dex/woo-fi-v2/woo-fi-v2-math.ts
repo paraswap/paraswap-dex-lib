@@ -83,7 +83,7 @@ export class WooFiV2Math {
 
       if (!_state.woFeasible) {
         this.logger.error(
-          `Oracle state for base token ${baseToken} is not feasible, oracle timestamp: ${this.state.oracleTimestamp}`,
+          `Oracle state for base token ${baseToken} is not feasible, state timestamp: ${this.state.oracleTimestamp}`,
         );
         return null;
       }
