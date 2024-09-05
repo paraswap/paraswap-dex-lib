@@ -244,6 +244,10 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
 
     const poolState = await this.getPoolState(target, blockNumber);
 
+    if (poolState.isFrozen || poolState.isSeized) {
+      return null;
+    }
+
     return [
       {
         unit: endpoint(unit, poolState),
