@@ -37,7 +37,7 @@ describe('AaveGsm EventPool Mainnet', function () {
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     [AaveGsmConfig[dexKey][network].GSM_USDT]: {
-      ExchangeRateChanged: [20630408, 20623242],
+      FeeStrategyUpdated: [20630408, 20623242],
     },
   };
 
