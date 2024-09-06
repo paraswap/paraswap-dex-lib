@@ -33,15 +33,15 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    // [
-    //   SwapSide.SELL,
-    //   [
-    //     // ContractMethod.swapExactAmountIn,
-    //     ContractMethod.simpleSwap,
-    //     ContractMethod.multiSwap,
-    //     ContractMethod.megaSwap,
-    //   ],
-    // ],
+    [
+      SwapSide.SELL,
+      [
+        // ContractMethod.swapExactAmountIn,
+        ContractMethod.simpleSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+      ],
+    ],
     [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
@@ -89,42 +89,42 @@ function testForNetwork(
                 );
               });
             } else {
-              // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              //   await testE2E(
-              //     tokens[nativeTokenSymbol],
-              //     tokens[tokenASymbol],
-              //     holders[nativeTokenSymbol],
-              //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-              //     side,
-              //     dexKey,
-              //     contractMethod,
-              //     network,
-              //     provider,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     sleepMs,
-              //   );
-              // });
-              // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              //   await testE2E(
-              //     tokens[tokenASymbol],
-              //     tokens[nativeTokenSymbol],
-              //     holders[tokenASymbol],
-              //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-              //     side,
-              //     dexKey,
-              //     contractMethod,
-              //     network,
-              //     provider,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     sleepMs,
-              //   );
-              // });
+              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[nativeTokenSymbol],
+                  tokens[tokenASymbol],
+                  holders[nativeTokenSymbol],
+                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
+                );
+              });
+              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[nativeTokenSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
+                );
+              });
               it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
                 await testE2E(
                   tokens[tokenASymbol],

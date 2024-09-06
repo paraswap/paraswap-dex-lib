@@ -294,7 +294,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         {
                           slippageFactor,
                           txOrigin: userAddress,
-                          executionContractAddress: '',
+                          userAddress,
+                          executionContractAddress,
                           isDirectMethod: DirectContractMethods.includes(
                             contractMethod as ContractMethod,
                           ),
