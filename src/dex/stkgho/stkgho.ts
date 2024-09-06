@@ -109,6 +109,10 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<StkGHOData>> {
+    if (side === SwapSide.BUY) {
+      return null;
+    }
+
     const srcTokenAddress = srcToken.address.toLowerCase();
     const destTokenAddress = destToken.address.toLowerCase();
 
