@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Logger } from 'log4js';
 import { MultiCallParams } from '../../../lib/multi-wrapper';
 import {
-  ImplementationNames,
+  CustomImplementationNames,
   PoolConstants,
   PoolContextConstants,
   PoolState,
@@ -101,7 +101,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
     readonly dexKey: string,
     network: number,
     cacheStateKey: string,
-    implementationName: ImplementationNames,
+    implementationName: CustomImplementationNames,
     implementationAddress: Address,
     address: Address,
     stateUpdatePeriodMs: number,
@@ -128,6 +128,7 @@ export class CustomBasePoolForFactory extends PoolPollingBase {
       stateUpdatePeriodMs,
       poolIdentifier,
       poolConstants,
+      poolContextConstants,
       address,
       curveLiquidityApiSlug,
       isLendingPool,

@@ -11,18 +11,12 @@ describe('CurveV1StableNG E2E', () => {
   const sidesToContractMethods = new Map([
     [
       SwapSide.SELL,
-      [ContractMethod.swapExactAmountIn, ContractMethod.directCurveV1Swap],
+      [
+        ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountInOnCurveV1,
+      ],
     ],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
-    // [
-    //   SwapSide.SELL,
-    //   [
-    //     ContractMethod.simpleSwap,
-    //     ContractMethod.multiSwap,
-    //     ContractMethod.megaSwap,
-    //   ],
-    // ],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe('Mainnet', () => {
@@ -49,6 +43,24 @@ describe('CurveV1StableNG E2E', () => {
     describe('weETH -> ETH', () => {
       const tokenASymbol: string = 'weETH';
       const tokenBSymbol: string = 'ETH';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        sidesToContractMethods,
+      );
+    });
+
+    describe('GHO -> crvUSD', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'crvUSD';
 
       const tokenAAmount: string = '1000000000000000000';
       const tokenBAmount: string = '1000000000000000000';

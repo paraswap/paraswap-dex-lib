@@ -159,6 +159,7 @@ export type AdapterExchangeParam = {
 
 export type DexExchangeParam = {
   needWrapNative: boolean;
+  skipApproval?: boolean;
   wethAddress?: string;
   exchangeData: string;
   targetExchange: string;
@@ -317,6 +318,7 @@ export type ExchangeTxInfo = {
 export type PreprocessTransactionOptions = {
   slippageFactor: BigNumber;
   txOrigin: Address;
+  userAddress: Address;
   executionContractAddress: Address;
   hmac?: string;
   mockRfqAndLO?: boolean;
