@@ -779,7 +779,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           : { quoteTokenAmount: optimalSwapExchange.destAmount }),
         // receiver address
         wallet: options.recipient.toLowerCase(),
-        effectiveTrader: options.txOrigin.toLowerCase(),
+        effectiveTrader: options.userAddress.toLowerCase(),
         marketMakers: [mm],
       });
 
@@ -920,9 +920,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         e.message?.toLowerCase().includes('user is restricted')
       ) {
         this.logger.warn(
-          `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
+          `${this.dexKey}-${this.network}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
         );
-        await this.setBlacklist(options.txOrigin);
+        await this.setBlacklist(options.userAddress);
       } else {
         if (e instanceof TooStrictSlippageCheckError) {
           this.logger.warn(
