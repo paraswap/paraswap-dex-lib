@@ -1128,6 +1128,10 @@ export const Tokens: {
       decimals: 6,
       symbol: 'USDC',
     },
+    SUSHI: {
+      address: '0xd4d42F0b6DEF4CE0383636770eF773390d85c61A',
+      decimals: 18,
+    },
     crvUSD: {
       address: '0x498bf2b1e120fed3ad3d42ea2165e9b73f99c1e5',
       decimals: 18,

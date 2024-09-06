@@ -64,7 +64,7 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
         method: 'GET',
       },
       secret,
-      intervalMs: 1000 * 2 * 1, // every 2 seconds
+      intervalMs: 1000 * 1 * 1, // every 2 seconds
       dataTTLS: 1000 * 5 * 1, // ttl 5 seconds
     },
     firmRateConfig: {
@@ -133,8 +133,8 @@ describe(`GenericRFQ ${dexKey} E2E`, () => {
         }
         const contractMethod =
           testCase.swapSide === SwapSide.BUY
-            ? ContractMethod.swapExactAmountInOutOnAugustusRFQTryBatchFill
-            : ContractMethod.swapExactAmountInOutOnAugustusRFQTryBatchFill;
+            ? ContractMethod.swapOnAugustusRFQTryBatchFill
+            : ContractMethod.swapOnAugustusRFQTryBatchFill;
         describe(`${contractMethod}`, () => {
           it(`${testCase.swapSide} ${testCase.srcToken} -> ${testCase.destToken}`, async () => {
             await newTestE2E({
