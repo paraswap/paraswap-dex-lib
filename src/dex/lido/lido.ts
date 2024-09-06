@@ -23,6 +23,8 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
 
   needWrapNative = false;
 
+  needUnwrapWeth = false;
+
   private network: number;
   private wethAddress: Address =
     '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'.toLowerCase();

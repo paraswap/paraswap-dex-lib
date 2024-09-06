@@ -6,7 +6,7 @@ import {
   TxInfo,
   SimpleExchangeParam,
 } from '../types';
-import { SwapSide } from '../constants';
+import { ETHER_ADDRESS, SwapSide } from '../constants';
 import IParaswapABI from '../abi/IParaswap.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress, uuidToBytes16 } from '../utils';
@@ -95,9 +95,11 @@ export abstract class SimpleRouterBase<RouterParam>
         swap.swapExchanges.map(async se => {
           const dex = this.dexAdapterService.getTxBuilderDexByKey(se.exchange);
           let _src = swap.srcToken;
-          let wethDeposit = 0n;
+          let wethDepositForNeedWrapNative = 0n;
+          let wethDepositForNeedUnwrapWeth = 0n;
           let _dest = swap.destToken;
-          let wethWithdraw = 0n;
+          let wethWithdrawForNeedWrapNative = 0n;
+          let wethWithdrawForNeedUnwrapWeth = 0n;
 
           // For case of buy apply slippage is applied to srcAmount in equal proportion as the complete swap
           // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
@@ -117,8 +119,13 @@ export abstract class SimpleRouterBase<RouterParam>
 
           const dexNeedWrapNative =
             typeof dex.needWrapNative === 'function'
-              ? dex.needWrapNative(se)
+              ? dex.needWrapNative(priceRoute, se)
               : dex.needWrapNative;
+
+          const dexNeedUnwrapWeth =
+            typeof dex.needUnwrapWeth === 'function'
+              ? dex.needUnwrapWeth(priceRoute, se)
+              : dex.needUnwrapWeth;
 
           if (dexNeedWrapNative) {
             if (isETHAddress(swap.srcToken)) {
@@ -126,7 +133,7 @@ export abstract class SimpleRouterBase<RouterParam>
                 throw new Error('Wrap native srcToken not in swapIndex 0');
               }
               _src = wethAddress;
-              wethDeposit = BigInt(_srcAmount);
+              wethDepositForNeedWrapNative = BigInt(_srcAmount);
             }
 
             if (isETHAddress(swap.destToken)) {
@@ -134,7 +141,21 @@ export abstract class SimpleRouterBase<RouterParam>
                 throw new Error('Wrap native destToken not in swapIndex last');
               }
               _dest = wethAddress;
-              wethWithdraw = BigInt(_destAmount);
+              wethWithdrawForNeedWrapNative = BigInt(_destAmount);
+            }
+          }
+
+          if (dexNeedUnwrapWeth) {
+            const wethAddr =
+              this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+            if (swap.srcToken.toLowerCase() === wethAddr) {
+              _src = ETHER_ADDRESS;
+              wethWithdrawForNeedUnwrapWeth = BigInt(_srcAmount);
+            }
+
+            if (swap.destToken.toLowerCase() === wethAddr) {
+              _dest = ETHER_ADDRESS;
+              wethDepositForNeedUnwrapWeth = BigInt(se.destAmount); // cant use _destAmount here because _destAmount could be 1
             }
           }
 
@@ -149,8 +170,10 @@ export abstract class SimpleRouterBase<RouterParam>
 
           return {
             simpleParams,
-            wethDeposit,
-            wethWithdraw,
+            wethDepositForNeedWrapNative,
+            wethWithdrawForNeedWrapNative,
+            wethWithdrawForNeedUnwrapWeth,
+            wethDepositForNeedUnwrapWeth,
           };
         }),
       ),
@@ -158,16 +181,30 @@ export abstract class SimpleRouterBase<RouterParam>
 
     const {
       simpleExchangeDataList,
-      srcAmountWethToDeposit,
-      destAmountWethToWithdraw,
+      srcAmountWethToDepositForNeedWrapNative,
+      destAmountWethToWithdrawForNeedWrapNative,
+      srcAmountWethToWithdrawForNeedUnwrapWeth,
+      destAmountWethToDepositForNeeUnwrapWeth,
     } = rawSimpleParams.reduce<{
       simpleExchangeDataList: SimpleExchangeParam[];
-      srcAmountWethToDeposit: bigint;
-      destAmountWethToWithdraw: bigint;
+      srcAmountWethToDepositForNeedWrapNative: bigint;
+      srcAmountWethToWithdrawForNeedUnwrapWeth: bigint;
+      destAmountWethToWithdrawForNeedWrapNative: bigint;
+      destAmountWethToDepositForNeeUnwrapWeth: bigint;
     }>(
       (acc, se) => {
-        acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
-        acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
+        acc.srcAmountWethToDepositForNeedWrapNative += BigInt(
+          se.wethDepositForNeedWrapNative,
+        );
+        acc.srcAmountWethToWithdrawForNeedUnwrapWeth += BigInt(
+          se.wethWithdrawForNeedUnwrapWeth,
+        );
+        acc.destAmountWethToWithdrawForNeedWrapNative += BigInt(
+          se.wethWithdrawForNeedWrapNative,
+        );
+        acc.destAmountWethToDepositForNeeUnwrapWeth += BigInt(
+          se.wethDepositForNeedUnwrapWeth,
+        );
         // V6 doesn't have simpleParams
         if (se.simpleParams) {
           acc.simpleExchangeDataList.push(se.simpleParams);
@@ -177,8 +214,10 @@ export abstract class SimpleRouterBase<RouterParam>
       },
       {
         simpleExchangeDataList: [],
-        srcAmountWethToDeposit: 0n,
-        destAmountWethToWithdraw: 0n,
+        srcAmountWethToDepositForNeedWrapNative: 0n,
+        srcAmountWethToWithdrawForNeedUnwrapWeth: 0n,
+        destAmountWethToWithdrawForNeedWrapNative: 0n,
+        destAmountWethToDepositForNeeUnwrapWeth: 0n,
       },
     );
 
@@ -193,9 +232,15 @@ export abstract class SimpleRouterBase<RouterParam>
     );
 
     const maybeWethCallData = this.getDepositWithdrawWethCallData(
-      srcAmountWethToDeposit,
-      destAmountWethToWithdraw,
+      srcAmountWethToDepositForNeedWrapNative,
+      destAmountWethToWithdrawForNeedWrapNative,
     );
+
+    const maybeWethCallDataForNeedUnwrapWeth =
+      this.getDepositWithdrawWethCallData(
+        destAmountWethToDepositForNeeUnwrapWeth,
+        srcAmountWethToWithdrawForNeedUnwrapWeth,
+      );
 
     if (maybeWethCallData) {
       if (maybeWethCallData.deposit) {
@@ -212,6 +257,32 @@ export abstract class SimpleRouterBase<RouterParam>
         simpleExchangeDataFlat.values.push(maybeWethCallData.withdraw.value);
         simpleExchangeDataFlat.calldata.push(
           maybeWethCallData.withdraw.calldata,
+        );
+      }
+    }
+
+    if (maybeWethCallDataForNeedUnwrapWeth) {
+      if (maybeWethCallDataForNeedUnwrapWeth.withdraw) {
+        simpleExchangeDataFlat.callees.unshift(
+          maybeWethCallDataForNeedUnwrapWeth.withdraw.callee,
+        );
+        simpleExchangeDataFlat.values.unshift(
+          maybeWethCallDataForNeedUnwrapWeth.withdraw.value,
+        );
+        simpleExchangeDataFlat.calldata.unshift(
+          maybeWethCallDataForNeedUnwrapWeth.withdraw.calldata,
+        );
+      }
+
+      if (maybeWethCallDataForNeedUnwrapWeth.deposit) {
+        simpleExchangeDataFlat.callees.push(
+          maybeWethCallDataForNeedUnwrapWeth.deposit.callee,
+        );
+        simpleExchangeDataFlat.values.push(
+          maybeWethCallDataForNeedUnwrapWeth.deposit.value,
+        );
+        simpleExchangeDataFlat.calldata.push(
+          maybeWethCallDataForNeedUnwrapWeth.deposit.calldata,
         );
       }
     }

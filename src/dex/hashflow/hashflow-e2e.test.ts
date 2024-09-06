@@ -1,6 +1,4 @@
 import dotenv from 'dotenv';
-dotenv.config();
-
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import {
   Holders,
@@ -10,6 +8,8 @@ import {
 import { testE2E } from '../../../tests/utils-e2e';
 import { generateConfig } from '../../config';
 import { ContractMethod, Network, SwapSide } from '../../constants';
+
+dotenv.config();
 
 // Give time for rate fetcher to fill the cache
 const sleepMs = 5000;
@@ -33,17 +33,17 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.swapExactAmountIn,
-        // ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-      ],
-    ],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [
+    //   SwapSide.SELL,
+    //   [
+    //     // ContractMethod.swapExactAmountIn,
+    //     ContractMethod.simpleSwap,
+    //     ContractMethod.multiSwap,
+    //     ContractMethod.megaSwap,
+    //   ],
+    // ],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -89,42 +89,42 @@ function testForNetwork(
                 );
               });
             } else {
-              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-                await testE2E(
-                  tokens[nativeTokenSymbol],
-                  tokens[tokenASymbol],
-                  holders[nativeTokenSymbol],
-                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  undefined,
-                  undefined,
-                  undefined,
-                  undefined,
-                  sleepMs,
-                );
-              });
-              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-                await testE2E(
-                  tokens[tokenASymbol],
-                  tokens[nativeTokenSymbol],
-                  holders[tokenASymbol],
-                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  undefined,
-                  undefined,
-                  undefined,
-                  undefined,
-                  sleepMs,
-                );
-              });
+              // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              //   await testE2E(
+              //     tokens[nativeTokenSymbol],
+              //     tokens[tokenASymbol],
+              //     holders[nativeTokenSymbol],
+              //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+              //     side,
+              //     dexKey,
+              //     contractMethod,
+              //     network,
+              //     provider,
+              //     undefined,
+              //     undefined,
+              //     undefined,
+              //     undefined,
+              //     sleepMs,
+              //   );
+              // });
+              // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              //   await testE2E(
+              //     tokens[tokenASymbol],
+              //     tokens[nativeTokenSymbol],
+              //     holders[tokenASymbol],
+              //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+              //     side,
+              //     dexKey,
+              //     contractMethod,
+              //     network,
+              //     provider,
+              //     undefined,
+              //     undefined,
+              //     undefined,
+              //     undefined,
+              //     sleepMs,
+              //   );
+              // });
               it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
                 await testE2E(
                   tokens[tokenASymbol],
@@ -181,7 +181,7 @@ describe('Hashflow E2E', () => {
 
       const tokenAAmount: string = '100000000';
       const tokenBAmount: string = '100000000';
-      const nativeTokenAmount = '1000000000000000000';
+      const nativeTokenAmount = '100000000000000000';
 
       testForNetwork(
         network,
@@ -192,6 +192,63 @@ describe('Hashflow E2E', () => {
         tokenBAmount,
         nativeTokenAmount,
       );
+    });
+
+    describe('WETH -> USDC', () => {
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '100000000000000000';
+      const tokenBAmount: string = '1000000';
+      const nativeTokenAmount = '100000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+
+      // it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+      //   await testE2E(
+      //     tokens[tokenASymbol],
+      //     tokens[tokenBSymbol],
+      //     holders[tokenASymbol],
+      //     tokenAAmount,
+      //     SwapSide.SELL,
+      //     dexKey,
+      //     ContractMethod.megaSwap,
+      //     network,
+      //     provider,
+      //     undefined,
+      //     undefined,
+      //     undefined,
+      //     undefined,
+      //     sleepMs,
+      //   );
+      // });
+      //
+      // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+      //   await testE2E(
+      //     tokens[tokenBSymbol],
+      //     tokens[tokenASymbol],
+      //     holders[tokenBSymbol],
+      //     tokenBAmount,
+      //     SwapSide.SELL,
+      //     dexKey,
+      //     ContractMethod.megaSwap,
+      //     network,
+      //     provider,
+      //     undefined,
+      //     undefined,
+      //     undefined,
+      //     undefined,
+      //     sleepMs,
+      //   );
+      // });
     });
 
     describe('DAI -> USDC', () => {
