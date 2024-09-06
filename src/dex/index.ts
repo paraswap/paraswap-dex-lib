@@ -88,6 +88,7 @@ import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
+import { StkGHO } from './stkgho/stkgho';
 
 const LegacyDexes = [
   CurveV2,
@@ -171,6 +172,7 @@ const Dexes = [
   FxProtocolRusd,
   AaveGsm,
   LitePsm,
+  StkGHO,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

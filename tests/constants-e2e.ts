@@ -455,6 +455,10 @@ export const Tokens: {
       address: '0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f',
       decimals: 18,
     },
+    stkGHO: {
+      address: '0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d',
+      decimals: 18,
+    },
     USDe: {
       address: '0x4c9EDD5852cd905f086C759E8383e09bff1E68B3',
       decimals: 18,
