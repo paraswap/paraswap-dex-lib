@@ -59,6 +59,7 @@ import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
 import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
+import { ParaSwapVersionUnion } from '@paraswap/sdk/dist/types';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -128,7 +129,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   ) {
     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.paraSwap = constructSimpleSDK({
-      version: ParaSwapVersion.V6,
+      version: ParaSwapVersion.V6 as ParaSwapVersionUnion,
       chainId: network,
       axios,
       apiURL: testingEndpoint,

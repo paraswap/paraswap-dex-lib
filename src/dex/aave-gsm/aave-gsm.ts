@@ -1,6 +1,8 @@
 import { AsyncOrSync } from 'ts-essentials';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from '@ethersproject/abi';
+import { hexConcat, hexZeroPad, hexlify } from '@ethersproject/bytes';
+import { ContractMethodV6 } from '@paraswap/core';
 import { BigNumber } from 'ethers';
 import { get } from 'lodash';
 import {
@@ -18,12 +20,22 @@ import {
 import GsmABI from '../../abi/aave-gsm/gsm.json';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { BI_POWS } from '../../bigint-constants';
 import { SimpleExchange } from '../simple-exchange';
-import { AaveGsmData, PoolState, PoolConfig } from './types';
+import {
+  AaveGsmData,
+  AaveGsmParams,
+  AaveGsmDirectPayload,
+  PoolState,
+  PoolConfig,
+} from './types';
 import { AaveGsmConfig, Adapters } from './config';
 import { AaveGsmEventPool } from './aave-gsm-pool';
 
@@ -157,10 +169,11 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     );
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
+  // TODO: Change this if needed
+  static getDirectFunctionNameV6(): string[] {
+    return [ContractMethodV6.swapExactAmountInOutOnMakerPSM];
+  }
+
   async initializePricing(blockNumber: number) {
     const poolStates = await getOnChainState(
       this.dexHelper.multiContract,
@@ -219,6 +232,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     return onChainState;
   }
 
+  /*
   // Using GHO to buy asset
   async getGhoAmountForBuyAsset(
     amounts: bigint[],
@@ -247,6 +261,50 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
         )[0][1];
 
         return bigIntify(decodedResult);
+      }),
+    );
+    return results;
+  }
+*/
+
+  // Using GHO to buy asset
+  async getGhoAmountForBuyAsset(
+    amounts: bigint[],
+    address: string,
+    blockNumber: number,
+  ): Promise<bigint[]> {
+    const results = await Promise.all(
+      amounts.map(async a => {
+        try {
+          const callData = gsmInterface.encodeFunctionData(
+            'getGhoAmountForBuyAsset',
+            [a],
+          );
+
+          const data = await this.dexHelper.web3Provider.eth.call(
+            {
+              to: address,
+              data: callData,
+            },
+            blockNumber,
+          );
+
+          // Decoding the result to get the total usdc/t to sell
+          const decodedResult = gsmInterface.decodeFunctionResult(
+            'getGhoAmountForBuyAsset',
+            data,
+          )[0];
+
+          if (!decodedResult || decodedResult.length === 0) {
+            throw new Error(`Failed to decode result for amount ${a}`);
+          }
+
+          const bigIntValue = BigInt(decodedResult.toString());
+
+          return bigIntValue;
+        } catch (error) {
+          return BigInt(0); // Return 0 in case of error
+        }
       }),
     );
     return results;
@@ -324,7 +382,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     );
 
     var prices: bigint[] = [];
-    var unit = BigInt(0);
+    var unit = unitVolume; //BigInt(0);
 
     // Figure out if we have USDC/USDT or GHO
     const haveGHO =
@@ -365,8 +423,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
         prices,
         unit,
         data: {
-          exchange: this.dexKey,
-          assetAmount: amounts[0],
+          exchange: eventPool.poolConfig.gsmAddress,
+          assetAmounts: amounts,
         },
         poolAddresses: [eventPool.poolConfig.gsmAddress],
         exchange: this.dexKey,
@@ -380,30 +438,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   getCalldataGasCost(poolPrices: PoolPrices<AaveGsmData>): number | number[] {
     // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
-  }
-
-  // Encode params required by the exchange adapter
-  // V5: Used for multiSwap, buy & megaSwap
-  // V6: Not used, can be left blank
-  // Hint: abiCoder.encodeParameter() could be useful
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: AaveGsmData,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    const { exchange } = data;
-
-    // Encode here the payload for adapter
-    const payload = '';
-
-    return {
-      targetExchange: exchange,
-      payload,
-      networkFee: '0',
-    };
   }
 
   // TODO: Revisit for adding fees
@@ -440,6 +474,34 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     }
   }
 
+  // Encode params required by the exchange adapter
+  // V5: Used for multiSwap, buy & megaSwap
+  // V6: Not used, can be left blank
+  // Hint: abiCoder.encodeParameter() could be useful
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: AaveGsmData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    const { exchange } = data;
+
+    // Encode here the payload for adapter
+    const payload = '';
+
+    return {
+      targetExchange: exchange,
+      payload,
+      networkFee: '0',
+    };
+  }
+
+  // (*TODO*) getSimpleParam ? (not sure if needed)
+
+  // (*TODO*) async preProcessTransaction? (not sure if needed)
+
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -457,10 +519,14 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       side,
     );
 
+    //console.log(`Got isUnderlyingSell: ${isUnderlyingSell}`);
+    //console.log(`Got underlyingAmount: ${underlyingAmount}`);
+    //console.log(`Got recipient: ${recipient}`);
+
     // Selling usdc/t => selling usdc/t to buy GHO => sellAsset()
     let exchangeData = gsmInterface.encodeFunctionData(
       isUnderlyingSell ? 'sellAsset' : 'buyAsset',
-      [recipient, underlyingAmount],
+      [underlyingAmount, recipient],
     );
 
     return {
@@ -472,6 +538,71 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       returnAmountPos: undefined,
     };
   }
+
+  /*
+  // (*TODO*) Implement from maker
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: AaveGsmData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod: string,
+  ) {
+    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+    if (!AaveGsm.getDirectFunctionNameV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    const beneficiaryParam = BigNumber.from(beneficiary);
+
+    //const approveParam = !data.isApproved
+      //? BigNumber.from(1).shl(255)
+      //: BigNumber.from(0);
+    const directionParam =
+      side === SwapSide.SELL ? BigNumber.from(0) : BigNumber.from(1).shl(254);
+
+    
+    //const beneficiaryDirectionApproveFlag = beneficiaryParam
+      //.or(directionParam)
+      //.or(approveParam);
+
+    const to18ConversionFactor = getBigIntPow(18 - 6);
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const params: AaveGsmParams = [
+      srcToken,
+      // not used on the contract, but used for analytics
+      destToken,
+      fromAmount,
+      toAmount,
+      data.exchange,
+      metadata,
+    ];
+
+    const payload: AaveGsmDirectPayload = [params, permit];
+
+    const encoder = (...params: (string | AaveGsmDirectPayload)[]) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        ContractMethodV6.swapExactAmountInOutOnMakerPSM,
+        [...params],
+      );
+    };
+
+    return { params: payload, encoder, networkFee: '0' };
+  }
+    */
 
   // (*TODO*) I think if the token is gho, should return min liquidity via getAvailableLiquidity() on both gsms
   // Returns list of top pools based on liquidity. Max

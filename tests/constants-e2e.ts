@@ -454,6 +454,7 @@ export const Tokens: {
     GHO: {
       address: '0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f',
       decimals: 18,
+      symbol: 'GHO',
     },
     USDe: {
       address: '0x4c9EDD5852cd905f086C759E8383e09bff1E68B3',
@@ -1572,7 +1573,7 @@ export const Holders: {
     USDA: '0x2686bC6A56D205010637CE1DF124b20Cb19E4054',
     stUSD: '0x4e83c0a323b68E3Bc7CC8a4E35326Fd0544A291E',
     crvUSD: '0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635',
-    GHO: '0x0F11640BF66e2D9352d9c41434A5C6E597c5e4c8',
+    GHO: '0xaFf94a1706eF11c0ddd1af83D17456423539B342',
     wibBTC: '0xFbdCA68601f835b27790D98bbb8eC7f05FDEaA9B',
     MATIC: '0x7073783eee7e9b3e6e4ddac4d7f49dc46044dd9a',
     POL: '0x05A47D9f589a001C15E38D068dCc5DaE6D96a2eb',

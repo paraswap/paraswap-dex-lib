@@ -28,7 +28,7 @@ describe('AaveGsm E2E', () => {
     const tokenBSymbol: string = 'GHO';
 
     const tokenAAmount: string = '10000000';
-    const tokenBAmount: string = '10000000000000000';
+    const tokenBAmount: string = '10000000000000000000';
 
     const sideToContractMethods = new Map([
       [

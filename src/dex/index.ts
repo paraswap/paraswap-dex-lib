@@ -30,6 +30,7 @@ import { Adapters } from '../types';
 import { Lido } from './lido/lido';
 import { Excalibur } from './uniswap-v2/excalibur';
 import { MakerPsm } from './maker-psm/maker-psm';
+import { AaveGsm } from './aave-gsm/aave-gsm';
 import { KyberDmm } from './kyberdmm/kyberdmm';
 import { GMX } from './gmx/gmx';
 import { WooFiV2 } from './woo-fi-v2/woo-fi-v2';
@@ -128,6 +129,7 @@ const Dexes = [
   Weth,
   PolygonMigrator,
   MakerPsm,
+  AaveGsm,
   Nerve,
   GMX,
   JarvisV6,

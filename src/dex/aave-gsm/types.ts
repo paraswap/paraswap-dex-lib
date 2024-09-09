@@ -1,4 +1,4 @@
-import { Address, Token } from '../../types';
+import { Address, NumberAsString, Token } from '../../types';
 
 export type PoolState = {
   canSwap: boolean; // TODO: Remove and use below
@@ -19,10 +19,21 @@ export type PoolConfig = {
 
 export type AaveGsmData = {
   exchange: Address;
-  assetAmount: bigint;
+  assetAmounts: bigint[];
 };
 
 export type DexParams = {
   gho: Token;
   pools: PoolConfig[];
 };
+
+export type AaveGsmParams = [
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  exchange: Address,
+  metadata: string,
+];
+
+export type AaveGsmDirectPayload = [params: AaveGsmParams, permit: string];
