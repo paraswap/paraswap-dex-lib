@@ -20,6 +20,8 @@ export class InceptionEventPool extends StatefulEventSubscriber<PoolState> {
     public poolInterface: Interface,
   ) {
     super(parentName, 'pool', dexHelper, logger);
+
+    this.addressesSubscribed = [poolConfig.ratioFeedAddress];
   }
 
   protected processLog(

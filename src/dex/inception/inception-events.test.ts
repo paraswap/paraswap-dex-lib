@@ -26,7 +26,8 @@ async function fetchPoolState(
 
 describe('Inception Event', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
-    RatioUpdated: [20438963, 20431766, 20424602],
+    // RatioUpdated: [20438963, 20431766, 20424602],
+    RatioUpdated: [20438962, 20431765, 20424601, 20703959, 20711125],
   };
 
   describe('InceptionEventPool', function () {
