@@ -27,7 +27,7 @@ function testForNetwork(
     const inceptionSlug = config.symbol;
 
     const sideToContractMethods = new Map([
-      [SwapSide.SELL, ['deposit' as ContractMethod]],
+      [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     ]);
 
     describe(`${inceptionSlug}`, () => {

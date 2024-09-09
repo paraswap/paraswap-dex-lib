@@ -1,5 +1,5 @@
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
+import { AsyncOrSync } from 'ts-essentials';
 import { NumberAsString, SwapSide } from '@paraswap/core';
 import {
   AdapterExchangeParam,
@@ -20,7 +20,7 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DexParams, InceptionDexData, PoolState } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { Adapters, InceptionConfig, InceptionPricePoolConfig } from './config';
+import { InceptionConfig, InceptionPricePoolConfig } from './config';
 import { getTokenFromAddress, setTokensOnNetwork, Tokens } from './tokens';
 import { getOnChainState, getTokenList } from './utils';
 import { InceptionEventPool } from './inception-event-pool';
@@ -50,7 +50,6 @@ export class Inception
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected config = InceptionConfig[dexKey][network],
-    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -127,6 +126,10 @@ export class Inception
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<InceptionDexData>> {
+    if (side === SwapSide.BUY) {
+      return null;
+    }
+
     const src = getTokenFromAddress(this.network, srcToken.address);
     const dest = getTokenFromAddress(this.network, destToken.address);
 
