@@ -309,7 +309,7 @@ export class PricingHelper {
                 }, reject)
                 .finally(() => {
                   this.logger.info(
-                    `{benchmarks} (total-for-dex): [finally] Dex ${key}, tokenPair: ${token_key} took ${
+                    `{benchmarks} (total-for-dex) [finally]: Dex ${key}, tokenPair: ${token_key} took ${
                       end - start
                     }ms to resolve/reject`,
                   );
@@ -374,7 +374,7 @@ export class PricingHelper {
 
     const end = Date.now();
     this.logger.info(
-      `{benchmarks} (getPoolPrices): tokenPair: ${token_key} took ${
+      `{benchmarks} (getPoolPrices) [finally]: Dex ${''}, tokenPair: ${token_key} took ${
         end - start
       }ms to resolve/reject`,
     );
