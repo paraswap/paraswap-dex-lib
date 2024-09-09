@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
-import { BlockHeader, Log, Logger } from '../../types';
+import { Address, BlockHeader, Log, Logger } from '../../types';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolConfig, PoolState } from './types';
@@ -16,12 +16,12 @@ export class InceptionEventPool extends StatefulEventSubscriber<PoolState> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    public poolConfig: PoolConfig,
+    protected ratioFeedAddress: Address,
     public poolInterface: Interface,
   ) {
-    super(parentName, poolConfig.ratioFeedAddress, dexHelper, logger);
+    super(parentName, ratioFeedAddress, dexHelper, logger);
 
-    this.addressesSubscribed = [poolConfig.ratioFeedAddress];
+    this.addressesSubscribed = [ratioFeedAddress];
   }
 
   protected processLog(
@@ -35,9 +35,11 @@ export class InceptionEventPool extends StatefulEventSubscriber<PoolState> {
       switch (parsed.name) {
         case 'RatioUpdated': {
           const tokenInfo = getTokenFromAddress(this.network, parsed.args[0]);
-          _state[tokenInfo.symbol.toLowerCase()] = {
-            ratio: BigInt(parsed.args[2].toString()),
-          };
+          if (tokenInfo) {
+            _state[tokenInfo.symbol.toLowerCase()] = {
+              ratio: BigInt(parsed.args[2].toString()),
+            };
+          }
           return _state;
         }
         default:

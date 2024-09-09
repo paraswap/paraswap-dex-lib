@@ -32,6 +32,6 @@ export function setTokensOnNetwork(network: Network, tokens: DexParams[]) {
 export function getTokenFromAddress(
   network: Network,
   address: string,
-): DexParams {
+): DexParams | undefined {
   return TokensByAddress[network]?.[address.toLowerCase()];
 }

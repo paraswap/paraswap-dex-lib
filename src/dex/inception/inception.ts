@@ -15,7 +15,7 @@ import INCEPTION_ABI from '../../abi/inception/inception-vault.json';
 import INCEPTION_POOL_ABI from '../../abi/inception/inception-ineth-pool.json';
 import { Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork, Utils } from '../../utils';
+import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DexParams, InceptionDexData, PoolState } from './types';
@@ -60,10 +60,7 @@ export class Inception
       network,
       dexHelper,
       this.logger,
-      {
-        ratioFeedAddress: InceptionPricePoolConfig[dexKey][network].ratioFeed,
-        initState: {},
-      },
+      InceptionPricePoolConfig[dexKey][network].ratioFeed,
       this.poolInterface,
     );
   }
@@ -133,7 +130,7 @@ export class Inception
     const src = getTokenFromAddress(this.network, srcToken.address);
     const dest = getTokenFromAddress(this.network, destToken.address);
 
-    if (src !== dest) {
+    if (!src || !dest || src !== dest) {
       return null;
     }
 
@@ -152,7 +149,7 @@ export class Inception
         data: {
           exchange: dest.vault,
         },
-        poolAddresses: [src.token.toLowerCase()],
+        poolAddresses: [dest.vault],
       },
     ];
   }
@@ -182,18 +179,25 @@ export class Inception
   ): DexExchangeParam {
     const dexParams = getTokenFromAddress(this.network, srcToken);
 
+    if (!dexParams) {
+      throw new Error('Unknown token');
+    }
+
     const isNative = dexParams.baseTokenSlug === 'ETH';
     let swapData;
     let dexFuncHasRecipient;
+    let swappedAmountNotPresentInExchangeData;
     if (isNative) {
       swapData = this.poolInterface.encodeFunctionData('stake()', []);
       dexFuncHasRecipient = false;
+      swappedAmountNotPresentInExchangeData = true;
     } else {
       swapData = this.vaultInterface.encodeFunctionData('deposit', [
         srcAmount,
         recipient,
       ]);
       dexFuncHasRecipient = true;
+      swappedAmountNotPresentInExchangeData = false;
     }
 
     return {
@@ -201,7 +205,7 @@ export class Inception
       dexFuncHasRecipient,
       exchangeData: swapData,
       targetExchange: dexParams.vault,
-      swappedAmountNotPresentInExchangeData: true,
+      swappedAmountNotPresentInExchangeData,
       returnAmountPos: undefined,
     };
   }
@@ -214,7 +218,7 @@ export class Inception
   ): Promise<PoolLiquidity[]> {
     await this.initializeTokens();
 
-    const token: DexParams = getTokenFromAddress(this.network, tokenAddress);
+    const token = getTokenFromAddress(this.network, tokenAddress);
 
     if (token) {
       return [
@@ -224,7 +228,10 @@ export class Inception
           address: token.vault,
           connectorTokens: [
             {
-              address: token.token,
+              address:
+                tokenAddress.toLowerCase() === token.token.toLowerCase()
+                  ? token.baseToken
+                  : token.token,
               decimals: 1e18,
             },
           ],

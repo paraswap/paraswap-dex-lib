@@ -41,10 +41,7 @@ describe('Inception Event', function () {
             network,
             dexHelper,
             logger,
-            {
-              ratioFeedAddress: ratioFeedAddress,
-              initState: {},
-            },
+            ratioFeedAddress,
             poolInterface,
           );
 
