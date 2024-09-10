@@ -118,7 +118,7 @@ describe('Bebop', function () {
 
     // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'WETH';
+    const srcTokenSymbol = 'ETH';
     const destTokenSymbol = 'USDC';
 
     const amountsForSell = [

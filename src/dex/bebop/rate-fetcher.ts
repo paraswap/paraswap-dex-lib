@@ -1,4 +1,4 @@
-import { Network } from '../../constants';
+import { ETHER_ADDRESS, Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher, SkippingRequest } from '../../lib/fetcher/fetcher';
 import { validateAndCast } from '../../lib/validators';
@@ -111,9 +111,20 @@ export class RateFetcher {
   }
 
   private handlePricesResponse(resp: BebopPricingResponse): void {
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     const normalizedPrices: BebopPricingResponse = {};
     for (const [pair, levels] of Object.entries(resp)) {
       normalizedPrices[pair.toLowerCase()] = levels;
+      const [base, quote] = pair.split('/');
+      // Also enter native token prices. Pricing doesn't come with these
+      if (
+        base.toLowerCase() === wethAddress ||
+        quote.toLowerCase() === wethAddress
+      ) {
+        const nativePair = pair.replace(base, ETHER_ADDRESS);
+        normalizedPrices[nativePair.toLowerCase()] = levels;
+      }
     }
 
     this.dexHelper.cache.setex(

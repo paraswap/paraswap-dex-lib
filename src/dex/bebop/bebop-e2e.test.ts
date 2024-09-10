@@ -83,42 +83,42 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[nativeTokenSymbol],
-            //     tokens[tokenASymbol],
-            //     holders[nativeTokenSymbol],
-            //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            // undefined,
-            // undefined,
-            // undefined,
-            // undefined,
-            // sleepMs,
-            //   );
-            // });
-            // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenASymbol],
-            //     tokens[nativeTokenSymbol],
-            //     holders[tokenASymbol],
-            //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            // undefined,
-            // undefined,
-            // undefined,
-            // undefined,
-            // sleepMs,
-            //   );
-            // });
+            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[nativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[nativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                sleepMs,
+              );
+            });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                sleepMs,
+              );
+            });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -150,12 +150,11 @@ describe('Bebop E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'WETH';
-    const tokenBSymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'WETH';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '3000000000';
+    const tokenAAmount: string = '2000000000';
+    const tokenBAmount: string = '1000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -167,7 +166,89 @@ describe('Bebop E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
+  });
 
-    // TODO: Add any additional test cases required to test Bebop
+  describe('Mainnet Alt Pair', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'WBTC';
+    const tokenBSymbol: string = 'WETH';
+
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'WETH';
+
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'USDbC';
+    const tokenBSymbol: string = 'WETH';
+
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'WETH';
+
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
   });
 });

@@ -50,7 +50,7 @@ import qs from 'qs';
 export class Bebop extends SimpleExchange implements IDex<BebopData> {
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+  readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
 
