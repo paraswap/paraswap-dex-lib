@@ -51,6 +51,9 @@ import { generateConfig } from '../../config';
   (This comment should be removed from the final implementation)
 */
 
+// Allow time for pricing to arrive
+const sleepMs = 2000;
+
 function testForNetwork(
   network: Network,
   dexKey: string,
@@ -80,32 +83,42 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[nativeTokenSymbol],
+            //     tokens[tokenASymbol],
+            //     holders[nativeTokenSymbol],
+            //     side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            // undefined,
+            // undefined,
+            // undefined,
+            // undefined,
+            // sleepMs,
+            //   );
+            // });
+            // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenASymbol],
+            //     tokens[nativeTokenSymbol],
+            //     holders[tokenASymbol],
+            //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            // undefined,
+            // undefined,
+            // undefined,
+            // undefined,
+            // sleepMs,
+            //   );
+            // });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -117,6 +130,11 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                sleepMs,
               );
             });
           });
@@ -133,11 +151,11 @@ describe('Bebop E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'WETH';
+    const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '3000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

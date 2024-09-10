@@ -1,4 +1,4 @@
-import { AsyncOrSync } from 'ts-essentials';
+import { assert, AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -11,6 +11,8 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
   ExchangeTxInfo,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -56,6 +58,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     getDexKeysWithNetwork(BebopConfig);
 
   private rateFetcher: RateFetcher;
+  private tokensMap: TokenDataMap = {};
 
   private pricesCacheKey: string;
   private tokensCacheKey: string;
@@ -359,7 +362,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   ): Promise<null | ExchangePrices<BebopData>> {
     // TODO: complete me!
     // Get the tokens for decimals and such if needed:
-    // this.tokensMap = (await this.getCachedTokens()) || {};
+    this.tokensMap = (await this.getCachedTokens()) || {};
     // Not needed for now because the data is already getting passed to the function
 
     try {
@@ -524,6 +527,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       return [];
     }
 
+    this.tokensMap = tokens;
+
     const pools: PoolLiquidity[] = [];
 
     for (const [pair, pairData] of Object.entries(prices)) {
@@ -574,6 +579,30 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       .slice(0, limit);
   }
 
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: BebopData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { tx } = data;
+
+    assert(tx !== undefined, `${this.dexKey}-${this.network}: tx undefined`);
+
+    const swapFunction = 'simpleSwap';
+
+    return {
+      exchangeData: tx.data,
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      targetExchange: this.settlementAddress,
+      returnAmountPos: undefined,
+    };
+  }
+
   async preProcessTransaction(
     optimalSwapExchange: OptimalSwapExchange<BebopData>,
     srcToken: Token,
@@ -589,7 +618,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       buy_tokens: utils.getAddress(destToken.address),
       sell_amounts: isSell ? optimalSwapExchange.srcAmount : undefined,
       buy_amounts: isBuy ? optimalSwapExchange.destAmount : undefined,
-      taker_address: utils.getAddress(options.txOrigin),
+      taker_address: utils.getAddress(options.executionContractAddress),
+      receiver_address: utils.getAddress(options.executionContractAddress),
       gasless: false,
       skip_validation: true,
       source: BEBOP_AUTH_NAME,
@@ -622,7 +652,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     if (side == SwapSide.SELL) {
       const requiredAmount = BigInt(optimalSwapExchange.destAmount);
       const quoteAmount = BigInt(
-        response.buyTokens[utils.getAddress(srcToken.address)].amount,
+        response.buyTokens[utils.getAddress(destToken.address)].amount,
       );
       const requiredAmountWithSlippage = new BigNumber(
         requiredAmount.toString(),
@@ -630,7 +660,9 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         .times(options.slippageFactor)
         .toFixed(0);
       if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
-        throw new Error('slippage');
+        throw new Error(
+          `slipped, ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
+        );
         // throw new SlippageCheckError(message);
       }
     } else {
@@ -643,8 +675,12 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       )
         .times(options.slippageFactor)
         .toFixed(0);
-      if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
-        throw new Error('slippage');
+      if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
+        throw new Error(
+          `slipped, ${
+            options.slippageFactor
+          } ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
+        );
         // throw new SlippageCheckError(message);
       }
     }
@@ -686,6 +722,15 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     }
 
     return null;
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    const bebopToken = this.tokensMap[address.toLowerCase()];
+    return {
+      address,
+      decimals: bebopToken.decimals,
+      symbol: bebopToken.ticker,
+    };
   }
 
   // This is optional function in case if your implementation has acquired any resources
