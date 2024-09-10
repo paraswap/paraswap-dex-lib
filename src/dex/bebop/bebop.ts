@@ -169,7 +169,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         `${srcToken.address.toLowerCase()}/${destToken.address.toLowerCase()}`
       ];
     if (directBook) {
-      console.log('EXISTS DIRECT BOOK');
       return [
         {
           pair: `${srcToken.address.toLowerCase()}/${destToken.address.toLowerCase()}`,
@@ -185,7 +184,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         `${destToken.address.toLowerCase()}/${srcToken.address.toLowerCase()}`
       ];
     if (inverseBook) {
-      console.log('EXISTS INVERSE BOOK SO INVERSING');
       const invertedBook = this.invertBook(inverseBook);
       return [
         {
@@ -197,29 +195,44 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       ];
     }
 
-    // TODO: Just first one for now.
+    // TODO: loop over middle tokens with priority
     const middleToken = BebopConfig['Bebop'][this.network].middleTokens[0];
     const baseMiddle =
       prices[`${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`];
     const quoteMiddle =
       prices[`${destToken.address.toLowerCase()}/${middleToken.toLowerCase()}`];
-    console.log(Boolean(baseMiddle), Boolean(quoteMiddle));
     if (baseMiddle && quoteMiddle) {
-      console.log('EXISTS CROSS');
-      return [
-        {
-          pair: `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`,
-          side: SwapSide.BUY,
-          book: baseMiddle,
-          targetQuote: side == SwapSide.BUY,
-        },
-        {
-          pair: `${middleToken.toLowerCase()}/${destToken.address.toLowerCase()}`,
-          side: SwapSide.BUY,
-          book: this.invertBook(quoteMiddle),
-          targetQuote: side == SwapSide.BUY,
-        },
-      ];
+      if (side == SwapSide.SELL) {
+        return [
+          {
+            pair: `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`,
+            side: side,
+            book: baseMiddle,
+            targetQuote: false,
+          },
+          {
+            pair: `${middleToken.toLowerCase()}/${destToken.address.toLowerCase()}`,
+            side: side,
+            book: this.invertBook(quoteMiddle),
+            targetQuote: false,
+          },
+        ];
+      } else {
+        return [
+          {
+            pair: `${middleToken.toLowerCase()}/${destToken.address.toLowerCase()}`,
+            side: side,
+            book: this.invertBook(quoteMiddle),
+            targetQuote: true,
+          },
+          {
+            pair: `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`,
+            side: side,
+            book: baseMiddle,
+            targetQuote: true,
+          },
+        ];
+      }
     }
 
     return [];
@@ -255,64 +268,37 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     let accumulated = BigNumber(0);
     let output = BigNumber(0);
     let filled = false;
-    // This can be just targetQuote instead
-    if (!instruction.targetQuote) {
-      for (const level of instruction.book.bids) {
-        const [price, size] = level;
-        const afterAccumulated = accumulated.plus(BigNumber(size));
-        if (afterAccumulated.lt(amount)) {
-          accumulated = accumulated.plus(size);
-          output = output.plus(BigNumber(size).times(price));
-          if (accumulated.eq(amount)) {
-            filled = true;
-            break;
-          }
-        } else {
-          const remaining = amount.minus(accumulated);
-          output = output.plus(remaining.times(price));
+    for (const level of instruction.book.bids) {
+      const [price, size] = level;
+      const amountToAccumulate = instruction.targetQuote
+        ? BigNumber(size).times(price)
+        : BigNumber(size);
+      const afterAccumulated = accumulated.plus(amountToAccumulate);
+      if (afterAccumulated.lt(amount)) {
+        accumulated = accumulated.plus(amountToAccumulate);
+        const amountToAddToOutput = instruction.targetQuote
+          ? BigNumber(size)
+          : BigNumber(size).times(price);
+        output = output.plus(amountToAddToOutput);
+        if (accumulated.eq(amount)) {
           filled = true;
           break;
         }
-      }
-      if (filled) {
-        return output;
       } else {
-        console.log(
-          instruction.book.bids,
-          amount.toString(),
-          output.toString(),
+        const remaining = amount.minus(accumulated);
+        output = output.plus(
+          instruction.targetQuote
+            ? remaining.div(price)
+            : remaining.times(price),
         );
-        return BigNumber(0);
+        filled = true;
+        break;
       }
+    }
+    if (filled) {
+      return output;
     } else {
-      // TODO: consolidate into above
-      for (const level of instruction.book.bids) {
-        const [price, size] = level;
-        const afterAccumulated = accumulated.plus(BigNumber(size * price)); // changed
-        if (afterAccumulated.lt(amount)) {
-          accumulated = accumulated.plus(size * price); // changed
-          output = output.plus(BigNumber(size));
-          if (accumulated.eq(amount)) {
-            filled = true;
-            break;
-          }
-        } else {
-          const remaining = amount.minus(accumulated);
-          output = output.plus(remaining.div(price)); // changed
-          filled = true;
-          break;
-        }
-      }
-      if (filled) {
-        return output;
-      } else {
-        console.log(
-          instruction.book.bids,
-          amount.toString(),
-          output.toString(),
-        );
-        return BigNumber(0);
-      }
+      return BigNumber(0);
     }
   }
 
@@ -323,7 +309,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     amounts: bigint[],
     side: SwapSide,
   ): bigint[] {
-    console.log('CALCULATE', instructions, srcToken, destToken, amounts, side);
     const outputs = [];
     // if (side === SwapSide.BUY) {
     // TODO: Buy and refactor to aggregate the code
@@ -349,12 +334,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           throw new Error(
             `No liquidity for ${instruction.side} - ${amountDecimals} of ${instruction.pair}`,
           );
-        } else {
-          console.log(
-            `Output for ${instruction.side} - ${amountDecimals} of ${
-              instruction.pair
-            }: ${output.toString()}`,
-          );
         }
       }
       if (output.gt(0)) {
@@ -362,54 +341,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           BigInt(output.times(getBigNumberPow(outputDecimals)).toFixed(0)),
         );
       }
-      // const amountDecimals = BigNumber(amount.toString()).div(getBigNumberPow(srcToken.decimals));
-      // let accumulated = BigNumber(0);
-      // let output = BigNumber(0);
-      // let filled = false;
-      // for (const level of pair.bids) {
-      //   const [price, size] = level;
-      //   const afterAccumulated = accumulated.plus(size);
-      //   if (afterAccumulated < amountDecimals) {
-      //     accumulated = accumulated.plus(size);
-      //     output = output.plus(BigNumber(size).times(price));
-      //   } else {
-      //     const remaining = amountDecimals.minus(accumulated);
-      //     output = output.plus(BigNumber(remaining).times(price));
-      //     filled = true;
-      //     break;
-      //   }
-      // }
-      // if (filled) {
-      //   outputs.push(BigInt(output.times(getBigNumberPow(destToken.decimals)).toFixed(0)));
-      // } else {
-      //   outputs.push(0n);
-      // }
     }
-    // for (const amount of amounts) {
-    //   const amountDecimals = BigNumber(amount.toString()).div(getBigNumberPow(srcToken.decimals));
-    //   let accumulated = BigNumber(0);
-    //   let output = BigNumber(0);
-    //   let filled = false;
-    //   for (const level of pair.bids) {
-    //     const [price, size] = level;
-    //     const totalAtLevel = BigNumber(size).times(BigNumber(price));
-    //     const afterAccumulated = accumulated.plus(totalAtLevel);
-    //     if (afterAccumulated < amountDecimals) {
-    //       accumulated = afterAccumulated;
-    //       output = output.plus(BigNumber(size));
-    //     } else {
-    //       const remaining = amountDecimals.minus(accumulated);
-    //       output = output.plus(BigNumber(remaining).div(price));
-    //       filled = true;
-    //       break;
-    //     }
-    //   }
-    //   if (filled) {
-    //     outputs.push(BigInt(output.times(getBigNumberPow(destToken.decimals)).toFixed(0)));
-    //   } else {
-    //     outputs.push(0n);
-    //   }
-    // }
     return outputs;
   }
 
@@ -441,7 +373,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         throw new Error(`No pools found`);
       }
 
-      // TODO: SELL only for now
       const instructions = await this.calculateInstructions(
         srcToken,
         destToken,
@@ -460,7 +391,9 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         side,
       );
 
-      console.log(' PRICE VOLUMES OUTPUT: ', outputs);
+      // TODO: On SwapSide.Sell, outputs compared  to quoting are coming out: -0.1 bips -> USDC, -1 bips Alt -> Alt.
+      // On SwapSide.Buy, outputs compared to quoteing are coming out: 0.1 bips -> USDC, 1-2 bips Alt -> Alt.
+
       const outDecimals = SwapSide.SELL
         ? destToken.decimals
         : srcToken.decimals;
