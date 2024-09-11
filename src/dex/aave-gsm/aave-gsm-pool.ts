@@ -47,6 +47,10 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
 
     this.handlers['SwapFreeze'] = this.handleSwapFreeze.bind(this);
     this.handlers['Seized'] = this.handleSeized.bind(this);
+    this.handlers['ExposureCapUpdated'] =
+      this.handleExposureCapUpdated.bind(this);
+    this.handlers['BuyAsset'] = this.handleBuyAsset.bind(this);
+    this.handlers['SellAsset'] = this.handleSellAsset.bind(this);
   }
 
   getIdentifier(): string {
@@ -106,6 +110,11 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
         callData: this.aaveGsmIface.encodeFunctionData('getIsSeized', []),
         decodeFunction: booleanDecode,
       },
+      {
+        target: this.gsm,
+        callData: this.aaveGsmIface.encodeFunctionData('getExposureCap', []),
+        decodeFunction: uint256ToBigInt,
+      },
     ];
 
     const results = await this.dexHelper.multiWrapper.tryAggregate<
@@ -118,6 +127,7 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
       underlyingLiquidity: results[2].returnData as bigint,
       isFrozen: results[3].returnData as boolean,
       isSeized: results[4].returnData as boolean,
+      exposureCap: results[5].returnData as bigint,
     };
   }
 
@@ -173,6 +183,43 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     return {
       ...state,
       isSeized: true,
+      exposureCap: BigInt(0),
+      underlyingLiquidity: BigInt(0),
+    };
+  }
+
+  async handleExposureCapUpdated(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    return {
+      ...state,
+      exposureCap: BigInt(event.args.newExposureCap),
+    };
+  }
+
+  async handleBuyAsset(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    return {
+      ...state,
+      underlyingLiquidity:
+        state.underlyingLiquidity - BigInt(event.args.underlyingAmount),
+    };
+  }
+
+  async handleSellAsset(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    return {
+      ...state,
+      underlyingLiquidity:
+        state.underlyingLiquidity + BigInt(event.args.underlyingAmount),
     };
   }
 }

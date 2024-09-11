@@ -6,6 +6,7 @@ export type PoolState = {
   underlyingLiquidity: bigint;
   isFrozen: boolean;
   isSeized: boolean;
+  exposureCap: bigint;
 };
 
 export type AaveGsmData = {

@@ -1,4 +1,3 @@
-import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -147,25 +146,43 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     return onChainState;
   }
 
+  canBuyAsset(assetAmount: bigint, state: PoolState) {
+    return assetAmount > 0n && state.underlyingLiquidity >= assetAmount;
+  }
+
+  canSellAsset(assetAmount: bigint, state: PoolState) {
+    return (
+      assetAmount > 0n &&
+      state.underlyingLiquidity + assetAmount <= state.exposureCap
+    );
+  }
+
   getGhoAmountForBuyAsset(assetAmount: bigint, state: PoolState) {
-    if (assetAmount === 0n) {
+    if (!this.canBuyAsset(assetAmount, state)) {
       return 0n;
     }
 
     const grossAmount = assetAmount * 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
     const fee = MMath.mulDiv(grossAmount, state.buyFee, 10_000n, true);
 
-    return grossAmount + fee;
+    const result = grossAmount + fee;
+
+    return result;
   }
 
   getAssetAmountForBuyAsset(ghoAmount: bigint, state: PoolState) {
     const grossAmount = (ghoAmount * 10_000n) / (10_000n + state.buyFee);
 
-    return grossAmount / 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
+    const result = grossAmount / 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
+
+    if (this.canBuyAsset(result, state)) {
+      return result;
+    }
+    return 0n;
   }
 
   getGhoAmountForSellAsset(assetAmount: bigint, state: PoolState) {
-    if (assetAmount === 0n) {
+    if (!this.canSellAsset(assetAmount, state)) {
       return 0n;
     }
 
@@ -183,7 +200,12 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       true,
     );
 
-    return MMath.mulDiv(grossAmount, 1n, 1_000_000_000_000n, true); // 18 - 6 = 12 (decimals)
+    const result = MMath.mulDiv(grossAmount, 1n, 1_000_000_000_000n, true); // 18 - 6 = 12 (decimals)
+
+    if (this.canSellAsset(result, state)) {
+      return result;
+    }
+    return 0n;
   }
 
   async getPricesVolume(
@@ -224,16 +246,20 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     }
 
     if (srcTokenAddress === this.config.GHO && side === SwapSide.BUY) {
-      endpoint = this.getGhoAmountForBuyAsset;
+      // amount = destAmount = assetAmount
+      endpoint = this.getGhoAmountForBuyAsset.bind(this);
       gas = 80_000;
     } else if (srcTokenAddress === this.config.GHO && side === SwapSide.SELL) {
-      endpoint = this.getAssetAmountForBuyAsset;
+      // amount = srcAmount = ghoAmount
+      endpoint = this.getAssetAmountForBuyAsset.bind(this);
       gas = 80_000;
     } else if (destTokenAddress === this.config.GHO && side === SwapSide.SELL) {
-      endpoint = this.getGhoAmountForSellAsset;
+      // amount = srcAmount = assetAmount
+      endpoint = this.getGhoAmountForSellAsset.bind(this);
       gas = 70_000;
     } else {
-      endpoint = this.getAssetAmountForSellAsset;
+      // amount = destAmount = ghoAmount
+      endpoint = this.getAssetAmountForSellAsset.bind(this);
       gas = 70_000;
     }
 
