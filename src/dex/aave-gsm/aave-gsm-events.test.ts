@@ -38,6 +38,9 @@ describe('AaveGsm EventPool Mainnet', function () {
   const eventsToTest: Record<Address, EventMappings> = {
     [AaveGsmConfig[dexKey][network].GSM_USDT]: {
       FeeStrategyUpdated: [], // Hasn't been emitted yet
+      BuyAsset: [20634073],
+      SellAsset: [20641217, 20641520, 20641913],
+      ExposureCapUpdated: [], // Hasn't been emitted yet
     },
   };
 
