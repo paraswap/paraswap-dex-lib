@@ -177,17 +177,17 @@ describe('UsualBond', function () {
     // Don't forget to update relevant tokens in constant-e2e.ts
 
     const amountsForSell = [
-      // 0n,
+      0n,
       1n * BI_POWS[18],
-      // 2n * BI_POWS[18],
-      // 3n * BI_POWS[18],
-      // 4n * BI_POWS[18],
-      // 5n * BI_POWS[18],
-      // 6n * BI_POWS[18],
-      // 7n * BI_POWS[18],
-      // 8n * BI_POWS[18],
-      // 9n * BI_POWS[18],
-      // 10n * BI_POWS[18],
+      2n * BI_POWS[18],
+      3n * BI_POWS[18],
+      4n * BI_POWS[18],
+      5n * BI_POWS[18],
+      6n * BI_POWS[18],
+      7n * BI_POWS[18],
+      8n * BI_POWS[18],
+      9n * BI_POWS[18],
+      10n * BI_POWS[18],
     ];
 
     beforeAll(async () => {
