@@ -131,22 +131,9 @@ export class Cables extends SimpleExchange implements IDex<any> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<CablesData>, ExchangeTxInfo]> {
-    // if (await this.isBlacklisted(options.txOrigin)) {
-    //   this.logger.warn(
-    //     `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
-    //   );
-    //   throw new Error(
-    //     `${this.dexKey}-${
-    //       this.network
-    //     }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
-    //   );
-    // }
-
     if (BigInt(optimalSwapExchange.srcAmount) === 0n) {
       throw new Error('getFirmRate failed with srcAmount === 0');
     }
-
-    console.log('OPTIMAL SWAP EXCHANGE', optimalSwapExchange);
 
     const normalizedSrcToken = this.normalizeToken(srcToken);
     const normalizedDestToken = this.normalizeToken(destToken);
@@ -166,18 +153,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
             .toFixed(0)
         : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
 
-      // const rfqParams = {
-      //   makerAsset: ethers.utils.getAddress(makerToken.address),
-      //   takerAsset: ethers.utils.getAddress(takerToken.address),
-      //   makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
-      //   takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
-      //   userAddress: options.txOrigin,
-      //   chainid: this.network,
-      //   executor: this.augustusAddress,
-      //   partner: options.partner,
-      //   slippage: slippageBps,
-      // };
-
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
@@ -187,16 +162,12 @@ export class Cables extends SimpleExchange implements IDex<any> {
         chainId: String(this.network),
       };
 
-      console.log('RFQ PARAMS:', rfqParams);
-
       const rfq: CablesRFQResponse = await this.dexHelper.httpRequest.post(
         `${CABLES_API_URL}/quote`,
         rfqParams,
         CABLES_FIRM_QUOTE_TIMEOUT_MS,
         { 'x-apikey': 'TODO - API KEY' },
       );
-
-      console.log('RFQ RESPONSE:', rfq);
 
       if (!rfq) {
         throw new Error(
@@ -230,77 +201,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
       const expiryAsBigInt = BigInt(order.expiry);
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
-
-      // const slippageFactor = options.slippageFactor;
-      // let isFailOnSlippage = false;
-      // let slippageErrorMessage = '';
-
-      /**
-       * Slipage part 1
-       */
-      // if (isSell) {
-      //   if (
-      //     BigInt(order.makerAmount) <
-      //     BigInt(
-      //       new BigNumber(optimalSwapExchange.destAmount.toString())
-      //         .times(slippageFactor)
-      //         .toFixed(0),
-      //     )
-      //   ) {
-      //     isFailOnSlippage = true;
-      //     const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${order.makerAmount} / destAmount ${optimalSwapExchange.destAmount} < ${slippageFactor}`;
-      //     slippageErrorMessage = message;
-      //     this.logger.warn(message);
-      //   }
-      // } else {
-      //   if (
-      //     BigInt(order.takerAmount) >
-      //     BigInt(
-      //       slippageFactor
-      //         .times(optimalSwapExchange.srcAmount.toString())
-      //         .toFixed(0),
-      //     )
-      //   ) {
-      //     isFailOnSlippage = true;
-      //     const message = `${this.dexKey}-${
-      //       this.network
-      //     }: too much slippage on quote ${side} baseTokenAmount ${
-      //       order.takerAmount
-      //     } / srcAmount ${
-      //       optimalSwapExchange.srcAmount
-      //     } > ${slippageFactor.toFixed()}`;
-      //     slippageErrorMessage = message;
-      //     this.logger.warn(message);
-      //   }
-      // }
-
-      /**
-       * Slippage part 2
-       */
-      // let isTooStrictSlippage = false;
-      // if (
-      //   isFailOnSlippage &&
-      //   isSell &&
-      //   new BigNumber(1)
-      //     .minus(slippageFactor)
-      //     .lt(CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      // ) {
-      //   isTooStrictSlippage = true;
-      // } else if (
-      //   isFailOnSlippage &&
-      //   isBuy &&
-      //   slippageFactor
-      //     .minus(1)
-      //     .lt(CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      // ) {
-      //   isTooStrictSlippage = true;
-      // }
-
-      // if (isFailOnSlippage && isTooStrictSlippage) {
-      //   throw new TooStrictSlippageCheckError(slippageErrorMessage);
-      // } else if (isFailOnSlippage && !isTooStrictSlippage) {
-      //   throw new SlippageCheckError(slippageErrorMessage);
-      // }
 
       return [
         {
@@ -379,16 +279,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
       `${this.dexKey}-${this.network}: quoteData undefined`,
     );
 
-    console.log('getDexParam arguments:', {
-      srcToken: srcToken,
-      destToken: destToken,
-      srcAmount: srcAmount,
-      destAmount: destAmount,
-      recipient: recipient,
-      data: data,
-      side: side,
-    });
-
     const swapFunction = 'simpleSwap';
     const swapFunctionParams = [
       [
@@ -402,8 +292,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
       ],
       quoteData.signature,
     ];
-
-    console.log('swapFunctionParams', swapFunctionParams);
 
     const exchangeData = this.rfqInterface.encodeFunctionData(
       swapFunction,
@@ -540,7 +428,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       return [];
     }
     const pairData = await this.getPairData(srcToken, destToken);
-    console.log('pairData', pairData);
+
     if (!pairData) {
       return [];
     }
@@ -603,7 +491,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
       // ---------- Prices ----------
       const prices = await this.getCachedPrices();
-      // console.log('CACHED PRICES', prices);
+
       if (!prices) return null;
 
       let pairKey = `${normalizedSrcToken.symbol}/${normalizedDestToken.symbol}`;
@@ -633,13 +521,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
       }
 
       const orderPrice = 0;
-      // const orderPrice = this.calculateOrderPrice(
-      //   amounts,
-      //   orderbook,
-      //   baseToken,
-      //   quoteToken,
-      //   isInputQuote,
-      // );
       const calculatedPrices = amounts.map(amount => {
         // TOB OF BOOK FOR NOW
         const price = (
@@ -648,7 +529,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
         ).toFixed();
         return BigInt(price);
       });
-      // console.log('CALCULATED PRICES', calculatedPrices);
 
       const outDecimals =
         side === SwapSide.BUY
@@ -778,15 +658,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
   // Function to find a key by address
   private findKeyByAddress = (
-    jsonData: any,
+    jsonData: Record<string, { address: string }>,
     targetAddress: string,
   ): string | undefined => {
-    for (const key in jsonData) {
-      if (jsonData[key].address.toLowerCase() === targetAddress.toLowerCase()) {
-        return key;
-      }
-    }
-    return undefined; // Address not found
+    const entries = Object.entries(jsonData);
+    const foundEntry = entries.find(
+      ([_, value]) =>
+        value.address.toLowerCase() === targetAddress.toLowerCase(),
+    );
+    return foundEntry ? foundEntry[0] : undefined;
   };
 
   async getPairData(srcToken: Token, destToken: Token): Promise<any> {
@@ -798,12 +678,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     }
 
     const cachedTokens = await this.getCachedTokens();
-    console.log('Cables cachedTokens', cachedTokens);
-    console.log(
-      'Input tokens',
-      normalizedSrcToken.address,
-      normalizedDestToken.address,
-    );
 
     normalizedSrcToken.symbol = this.findKeyByAddress(
       cachedTokens,
@@ -813,14 +687,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
       cachedTokens,
       normalizedDestToken.address,
     );
-    console.log('Cables normalizedSrcToken.symbol', normalizedSrcToken.symbol);
-    console.log(
-      'Cables normalizedDestToken.symbol',
-      normalizedDestToken.symbol,
-    );
 
     const cachedPairs = await this.getCachedPairs();
-    console.log('Cables cachedPairs', cachedPairs);
 
     const potentialPairs = [
       {
@@ -836,7 +704,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
         isSrcBase: false,
       },
     ];
-    console.log('Cables potentialPairs', potentialPairs);
 
     for (const pair of potentialPairs) {
       if (pair.identifier in cachedPairs) {
