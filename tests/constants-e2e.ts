@@ -1,12 +1,12 @@
 import {
-  SmartTokenParams,
-  balanceOfFn,
-  allowanceFn,
-  SmartToken,
-  balancesFn,
-  allowedFn,
-  _balancesFn,
   _allowancesFn,
+  _balancesFn,
+  allowanceFn,
+  allowedFn,
+  balanceOfFn,
+  balancesFn,
+  SmartToken,
+  SmartTokenParams,
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
@@ -502,6 +502,94 @@ export const Tokens: {
     aaveUSDT: {
       address: '0x23878914efe38d27c4d67ab83ed1b93a74d4086a',
       decimals: 6,
+    },
+    instETH: {
+      address: '0x7FA768E035F956c41d6aeaa3Bd857e7E5141CAd5',
+      decimals: 18,
+    },
+    inrETH: {
+      address: '0x80d69e79258FE9D056c822461c4eb0B4ca8802E2',
+      decimals: 18,
+    },
+    inoETH: {
+      address: '0x9181f633e9b9f15a32d5e37094f4c93b333e0e92',
+      decimals: 18,
+    },
+    inosETH: {
+      address: '0xfD07fD5EBEa6F24888a397997E262179Bf494336',
+      decimals: 18,
+    },
+    inankrETH: {
+      address: '0xfa2629B9cF3998D52726994E0FcdB750224D8B9D',
+      decimals: 18,
+    },
+    incbETH: {
+      address: '0xbf19eead55a6b100667f04f8fbc5371e03e8ab2e',
+      decimals: 18,
+    },
+    inwbETH: {
+      address: '0xda9b11cd701e10c2ec1a284f80820edd128c5246',
+      decimals: 18,
+    },
+    inswETH: {
+      address: '0xc3ade5ace1bbb033ccae8177c12ecbfa16bd6a9d',
+      decimals: 18,
+    },
+    inETHx: {
+      address: '0x57a5a0567187ff4a8dcc1a9bba86155e355878f2',
+      decimals: 18,
+    },
+    insfrxETH: {
+      address: '0x668308d77be3533c909a692302cb4d135bf8041c',
+      decimals: 18,
+    },
+    inmETH: {
+      address: '0xeCf3672A6d2147E2A77f07069Fb48d8Cf6F6Fbf9',
+      decimals: 18,
+    },
+    inlsETH: {
+      address: '0x94b888e11a9e960a9c3b3528eb6ac807b27ca62e',
+      decimals: 18,
+    },
+    inETH: {
+      address: '0xf073bAC22DAb7FaF4a3Dd6c6189a70D54110525C',
+      decimals: 18,
+    },
+    rETH: {
+      address: '0xae78736Cd615f374D3085123A210448E74Fc6393',
+      decimals: 18,
+    },
+    oETH: {
+      address: '0x856c4Efb76C1D1AE02e20CEB03A2A6a08b0b8dC3',
+      decimals: 18,
+    },
+    osETH: {
+      address: '0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38',
+      decimals: 18,
+    },
+    cbETH: {
+      address: '0xBe9895146f7AF43049ca1c1AE358B0541Ea49704',
+      decimals: 18,
+    },
+    wbETH: {
+      address: '0xa2E3356610840701BDf5611a53974510Ae27E2e1',
+      decimals: 18,
+    },
+    ETHx: {
+      address: '0xA35b1B31Ce002FBF2058D22F30f95D405200A15b',
+      decimals: 18,
+    },
+    sfrxETH: {
+      address: '0xac3E018457B222d93114458476f3E3416Abbe38F',
+      decimals: 18,
+    },
+    mETH: {
+      address: '0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa',
+      decimals: 18,
+    },
+    lsETH: {
+      address: '0x8c1BEd5b9a0928467c9B1341Da1D7BD5e10b6549',
+      decimals: 18,
     },
     rUSD: {
       address: '0x65D72AA8DA931F047169112fcf34f52DbaAE7D18',
@@ -1522,7 +1610,7 @@ export const Holders: {
     sDAI: '0x4C612E3B15b96Ff9A6faED838F8d07d479a8dD4c',
     CVX: '0x0aCA67Fa70B142A3b9bF2eD89A81B40ff85dACdC',
     MIM: '0xa046a8660e66d178ee07ec97c585eeb6aa18c26c',
-    AnkETH: '0xF7260D4ADc48fEefd5a19a9Eb23f9747CeE15C92',
+    AnkETH: '0xBB2d41AcfEA24A3A2aD4A6F95C3AcE1cC98c6ed6',
     DAI: '0xd1668fb5f690c59ab4b0cabad0f8c1617895052b',
     oldFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
     newFRAX: '0x183d0dc5867c01bfb1dbbc41d6a9d3de6e044626',
@@ -1589,6 +1677,17 @@ export const Holders: {
     stataUSDT: '0x6803364AceD5181877abC11E865FB27cB654a426',
     aaveUSDT: '0x32c98a981Fe7C333Bd4e8E7630E8e0CF5ce20987',
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
+    rETH: '0x9985dF20D7e9103ECBCeb16a84956434B6f06ae8',
+    oETH: '0xDcEe70654261AF21C44c093C300eD3Bb97b78192',
+    osETH: '0xe080027Bd47353b5D1639772b4a75E9Ed3658A0d',
+    cbETH: '0xd35faBF6Ec806f4D772617956A2058CdE086C6E0',
+    wbETH: '0xc6C010287683FD3Db7865016e3e1D6468Dd73aA6',
+    ETHx: '0x4F2083f5fBede34C2714aFfb3105539775f7FE64',
+    sfrxETH: '0xC2545C68a71F6803264bdE885870fD72D361fB9E',
+    mETH: '0xc3350595eD42EbE94556277bc77D257c76065291',
+    lsETH: '0xAe60d8180437b5C34bB956822ac2710972584473',
+    SWETH: '0xc585DF3a8C9ca0c614D023A812624bE36161502B',
+    inankrETH: '0x310C8f5274F74258cDe1E5101b50A0502b884aC4',
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
   },
