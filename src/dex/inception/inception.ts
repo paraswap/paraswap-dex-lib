@@ -148,6 +148,12 @@ export class Inception
       return null;
     }
 
+    // TODO: Implement in both directions
+    // only baseToken -> inception token swaps are supported
+    if (src.baseToken.toLowerCase() !== srcToken.address.toLowerCase()) {
+      return null;
+    }
+
     const poolState = await this.getPoolState(this.eventPool, blockNumber);
     if (!poolState) return null;
 
@@ -232,6 +238,7 @@ export class Inception
       exchangeData: swapData,
       targetExchange: dexParams.vault,
       swappedAmountNotPresentInExchangeData,
+      // TODO: Implement
       returnAmountPos: undefined,
     };
   }

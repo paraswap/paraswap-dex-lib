@@ -48,6 +48,19 @@ function testForNetwork(
                   provider,
                 );
               });
+              it(`${inceptionSlug} -> ${baseSlug}`, async () => {
+                await testE2E(
+                  tokens[inceptionSlug],
+                  tokens[baseSlug],
+                  holders[inceptionSlug],
+                  '100000000',
+                  side,
+                  inceptionName,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
             });
           });
         }),
