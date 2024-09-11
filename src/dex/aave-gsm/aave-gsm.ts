@@ -130,11 +130,6 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     }
   }
 
-  async updatePoolState(): Promise<void> {
-    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
-    await this.initializePricing(blockNumber);
-  }
-
   async getPoolState(gsm: string, blockNumber?: number): Promise<PoolState> {
     if (!blockNumber) {
       return this.eventPools[gsm].getStaleState()!;
