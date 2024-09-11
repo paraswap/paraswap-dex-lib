@@ -219,6 +219,7 @@ export class Inception
     let swapData;
     let dexFuncHasRecipient;
     let swappedAmountNotPresentInExchangeData;
+    let returnAmountPos = undefined;
     if (isNative) {
       swapData = this.poolInterface.encodeFunctionData('stake()', []);
       dexFuncHasRecipient = false;
@@ -230,6 +231,7 @@ export class Inception
       ]);
       dexFuncHasRecipient = true;
       swappedAmountNotPresentInExchangeData = false;
+      returnAmountPos = RETURN_AMOUNT_POS_0;
     }
 
     return {
@@ -238,8 +240,7 @@ export class Inception
       exchangeData: swapData,
       targetExchange: dexParams.vault,
       swappedAmountNotPresentInExchangeData,
-      // TODO: Implement
-      returnAmountPos: undefined,
+      returnAmountPos,
     };
   }
 
