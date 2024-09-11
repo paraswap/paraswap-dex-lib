@@ -30,34 +30,6 @@ import { Tokens } from '../../../tests/constants-e2e';
   (This comment should be removed from the final implementation)
 */
 
-function getReaderCalldata(
-  exchangeAddress: string,
-  readerIface: Interface,
-  amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
-) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
-  }));
-}
-
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
-  });
-}
-
 async function testPricingOnNetwork(
   bebop: Bebop,
   network: Network,
@@ -67,7 +39,6 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
-  funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
 
@@ -116,8 +87,6 @@ describe('Bebop', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'ETH';
     const destTokenSymbol = 'USDC';
 
@@ -174,7 +143,6 @@ describe('Bebop', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
       );
     });
 
@@ -188,7 +156,6 @@ describe('Bebop', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
       );
     });
 

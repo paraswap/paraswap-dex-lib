@@ -71,10 +71,8 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    // TODO: If buy is not supported remove the buy contract methods
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -153,7 +151,7 @@ describe('Bebop E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'WETH';
 
-    const tokenAAmount: string = '2000000000';
+    const tokenAAmount: string = '1000000000';
     const tokenBAmount: string = '1000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 

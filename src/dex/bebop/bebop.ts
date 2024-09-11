@@ -49,7 +49,6 @@ import qs from 'qs';
 
 export class Bebop extends SimpleExchange implements IDex<BebopData> {
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
@@ -72,7 +71,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
+    protected adapters = Adapters[network] || {},
     readonly settlementAddress: string = BebopConfig['Bebop'][network]
       .settlementAddress,
     protected settlementInterface = new Interface(settlementABI),
@@ -198,43 +197,48 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       ];
     }
 
-    // TODO: loop over middle tokens with priority
-    const middleToken = BebopConfig['Bebop'][this.network].middleTokens[0];
-    const baseMiddle =
-      prices[`${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`];
-    const quoteMiddle =
-      prices[`${destToken.address.toLowerCase()}/${middleToken.toLowerCase()}`];
-    if (baseMiddle && quoteMiddle) {
-      if (side == SwapSide.SELL) {
-        return [
-          {
-            pair: `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`,
-            side: side,
-            book: baseMiddle,
-            targetQuote: false,
-          },
-          {
-            pair: `${middleToken.toLowerCase()}/${destToken.address.toLowerCase()}`,
-            side: side,
-            book: this.invertBook(quoteMiddle),
-            targetQuote: false,
-          },
+    for (const middleToken of BebopConfig['Bebop'][this.network]
+      .middleTokens[0]) {
+      const baseMiddle =
+        prices[
+          `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`
         ];
-      } else {
-        return [
-          {
-            pair: `${middleToken.toLowerCase()}/${destToken.address.toLowerCase()}`,
-            side: side,
-            book: this.invertBook(quoteMiddle),
-            targetQuote: true,
-          },
-          {
-            pair: `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`,
-            side: side,
-            book: baseMiddle,
-            targetQuote: true,
-          },
+      const quoteMiddle =
+        prices[
+          `${destToken.address.toLowerCase()}/${middleToken.toLowerCase()}`
         ];
+      if (baseMiddle && quoteMiddle) {
+        if (side == SwapSide.SELL) {
+          return [
+            {
+              pair: `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`,
+              side: side,
+              book: baseMiddle,
+              targetQuote: false,
+            },
+            {
+              pair: `${middleToken.toLowerCase()}/${destToken.address.toLowerCase()}`,
+              side: side,
+              book: this.invertBook(quoteMiddle),
+              targetQuote: false,
+            },
+          ];
+        } else {
+          return [
+            {
+              pair: `${middleToken.toLowerCase()}/${destToken.address.toLowerCase()}`,
+              side: side,
+              book: this.invertBook(quoteMiddle),
+              targetQuote: true,
+            },
+            {
+              pair: `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`,
+              side: side,
+              book: baseMiddle,
+              targetQuote: true,
+            },
+          ];
+        }
       }
     }
 
@@ -313,8 +317,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     side: SwapSide,
   ): bigint[] {
     const outputs = [];
-    // if (side === SwapSide.BUY) {
-    // TODO: Buy and refactor to aggregate the code
     const inputDecimals =
       side == SwapSide.SELL ? srcToken.decimals : destToken.decimals;
     const outputDecimals =
@@ -360,20 +362,15 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BebopData>> {
-    // TODO: complete me!
-    // Get the tokens for decimals and such if needed:
     this.tokensMap = (await this.getCachedTokens()) || {};
-    // Not needed for now because the data is already getting passed to the function
 
     try {
-      const prices = await this.getCachedPrices();
-
       const pools =
         limitPools ??
         (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
       if (pools.length === 0) {
-        throw new Error(`No pools found`);
+        return null;
       }
 
       const instructions = await this.calculateInstructions(
@@ -383,7 +380,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       );
 
       if (!instructions) {
-        throw new Error(`No route found`);
+        return null;
       }
 
       const outputs = this.calculateOutput(
@@ -405,7 +402,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         {
           prices: outputs,
           unit: BigInt(outDecimals),
-          data: {}, // For now nothing? We will request a proper quote anyway
+          data: {},
           poolIdentifier: pools[0],
           exchange: this.dexKey,
           gasCost: BEBOP_GAS_COST,
@@ -476,7 +473,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     data: BebopData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     const { tx } = data;
 
     if (!tx) {
@@ -499,7 +495,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    const tokens = await this.getCachedTokens();
+
+    if (tokens) {
+      this.tokensMap = tokens;
+    }
   }
 
   getMaxLiquidity(levels: BebopLevel[]) {
@@ -514,20 +514,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
     const prices = await this.getCachedPrices();
 
     if (!prices) {
       return [];
     }
-
-    const tokens = await this.getCachedTokens();
-
-    if (!tokens) {
-      return [];
-    }
-
-    this.tokensMap = tokens;
 
     const pools: PoolLiquidity[] = [];
 
@@ -539,7 +530,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         const liquidityInQuote = this.getMaxLiquidity(pairData.bids);
         token = {
           address: quote,
-          decimals: tokens[quote.toLowerCase()].decimals,
+          decimals: this.tokensMap[quote.toLowerCase()].decimals,
         };
         const quoteTokenUsd = await this.dexHelper.getTokenUSDPrice(
           token,
@@ -550,7 +541,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         const liquidityInBase = this.getMaxLiquidity(pairData.asks);
         token = {
           address: base,
-          decimals: tokens[base.toLowerCase()].decimals,
+          decimals: this.tokensMap[base.toLowerCase()].decimals,
         };
         const baseTokenUsd = await this.dexHelper.getTokenUSDPrice(
           token,
@@ -565,8 +556,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           connectorTokens: [
             {
               address: quote,
-              decimals: tokens[quote.toLowerCase()].decimals,
-              symbol: tokens[quote.toLowerCase()].ticker,
+              decimals: this.tokensMap[quote.toLowerCase()].decimals,
+              symbol: this.tokensMap[quote.toLowerCase()].ticker,
             },
           ],
           liquidityUSD,
@@ -591,8 +582,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     const { tx } = data;
 
     assert(tx !== undefined, `${this.dexKey}-${this.network}: tx undefined`);
-
-    const swapFunction = 'simpleSwap';
 
     return {
       exchangeData: tx.data,
@@ -625,75 +614,78 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       source: BEBOP_AUTH_NAME,
     };
 
-    const response: BebopData = await this.dexHelper.httpRequest.get(
-      `${BEBOP_API_URL}/pmm/${
-        BebopConfig['Bebop'][this.network].chainName
-      }/v3/quote?${qs.stringify(params)}`,
-      BEBOP_QUOTE_TIMEOUT_MS,
-      {
-        'source-auth': this.bebopAuthToken,
-      },
-    );
-
-    if (!response) {
-      // TODO: better error handling
-      throw new Error('Failed to get quote');
-    }
-
-    if (
-      !response.tx ||
-      !response.buyTokens ||
-      !response.sellTokens ||
-      !response.expiry
-    ) {
-      throw new Error('No tx, or tokens in response');
-    }
-
-    if (side == SwapSide.SELL) {
-      const requiredAmount = BigInt(optimalSwapExchange.destAmount);
-      const quoteAmount = BigInt(
-        response.buyTokens[utils.getAddress(destToken.address)].amount,
-      );
-      const requiredAmountWithSlippage = new BigNumber(
-        requiredAmount.toString(),
-      )
-        .times(options.slippageFactor)
-        .toFixed(0);
-      if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
-        throw new Error(
-          `slipped, ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
-        );
-        // throw new SlippageCheckError(message);
-      }
-    } else {
-      const requiredAmount = BigInt(optimalSwapExchange.srcAmount);
-      const quoteAmount = BigInt(
-        response.sellTokens[utils.getAddress(srcToken.address)].amount,
-      );
-      const requiredAmountWithSlippage = new BigNumber(
-        requiredAmount.toString(),
-      )
-        .times(options.slippageFactor)
-        .toFixed(0);
-      if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
-        throw new Error(
-          `slipped, ${
-            options.slippageFactor
-          } ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
-        );
-        // throw new SlippageCheckError(message);
-      }
-    }
-
-    return [
-      {
-        ...optimalSwapExchange,
-        data: {
-          ...response,
+    try {
+      const response: BebopData = await this.dexHelper.httpRequest.get(
+        `${BEBOP_API_URL}/pmm/${
+          BebopConfig['Bebop'][this.network].chainName
+        }/v3/quote?${qs.stringify(params)}`,
+        BEBOP_QUOTE_TIMEOUT_MS,
+        {
+          'source-auth': this.bebopAuthToken,
         },
-      },
-      { deadline: BigInt(response.expiry) },
-    ];
+      );
+
+      if (!response) {
+        throw new Error('Failed to get quote');
+      }
+
+      if (
+        !response.tx ||
+        !response.buyTokens ||
+        !response.sellTokens ||
+        !response.expiry
+      ) {
+        throw new Error('Failed to get quote. No tx info');
+      }
+
+      if (side == SwapSide.SELL) {
+        const requiredAmount = BigInt(optimalSwapExchange.destAmount);
+        const quoteAmount = BigInt(
+          response.buyTokens[utils.getAddress(destToken.address)].amount,
+        );
+        const requiredAmountWithSlippage = new BigNumber(
+          requiredAmount.toString(),
+        )
+          .times(options.slippageFactor)
+          .toFixed(0);
+        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
+          throw new Error(
+            `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
+          );
+          // throw new SlippageCheckError(message);
+        }
+      } else {
+        const requiredAmount = BigInt(optimalSwapExchange.srcAmount);
+        const quoteAmount = BigInt(
+          response.sellTokens[utils.getAddress(srcToken.address)].amount,
+        );
+        const requiredAmountWithSlippage = new BigNumber(
+          requiredAmount.toString(),
+        )
+          .times(options.slippageFactor)
+          .toFixed(0);
+        if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
+          throw new Error(
+            `Slipped, factor: ${
+              options.slippageFactor
+            } ${quoteAmount.toString()} > ${requiredAmountWithSlippage}`,
+          );
+        }
+      }
+      return [
+        {
+          ...optimalSwapExchange,
+          data: {
+            ...response,
+          },
+        },
+        { deadline: BigInt(response.expiry) },
+      ];
+    } catch (e) {
+      const message = `${this.dexKey}-${this.network}: ${e}`;
+      this.logger.error(message);
+      throw new Error(message);
+    }
   }
 
   async getCachedPrices(): Promise<BebopPricingResponse | null> {
