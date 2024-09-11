@@ -308,6 +308,7 @@ export class PricingHelper {
                   }
                 }, reject)
                 .finally(() => {
+                  const end = Date.now();
                   this.logger.info(
                     `{benchmarks} (total-for-dex) [finally]: Dex ${key}, tokenPair: ${token_key} took ${
                       end - start
@@ -318,6 +319,7 @@ export class PricingHelper {
             },
           );
         } catch (e) {
+          const end = Date.now();
           this.logger.error(
             `{benchmarks} (limited-by-timeout-for-dex) [error]: Dex ${key}, tokenPair: ${token_key} took ${
               end - start
