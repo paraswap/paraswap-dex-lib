@@ -114,11 +114,9 @@ async function checkOnChainPricing(
     funcName,
   );
 
-  console.log(
-    await usualBond.dexHelper.multiContract.methods
-      .aggregate(approvalCallData)
-      .call({}, blockNumber),
-  );
+  await usualBond.dexHelper.multiContract.methods
+    .aggregate(approvalCallData)
+    .call({}, blockNumber);
 
   const readerResult = (
     await usualBond.dexHelper.multiContract.methods
