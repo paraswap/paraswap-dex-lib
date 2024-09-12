@@ -278,10 +278,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async getCachedTokens(): Promise<TokensMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       SWAAP_TOKENS_CACHE_KEY,
+      SWAAP_RFQ_TOKENS_CACHES_TTL_S,
     );
 
     if (cachedTokens) {
@@ -292,10 +293,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
-    const cachedLevels = await this.dexHelper.cache.get(
+    const cachedLevels = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       SWAAP_PRICES_CACHE_KEY,
+      SWAAP_RFQ_PRICES_CACHES_TTL_S,
     );
 
     if (cachedLevels) {
@@ -677,7 +679,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     );
 
     // We use timestamp for creation date to later discern if it already expired or not
-    await this.dexHelper.cache.hset(
+    await this.dexHelper.cache.hsetAndCacheLocally(
       this.runtimeMMsRestrictHashMapKey,
       poolIdentifier,
       Date.now().toString(),
@@ -700,7 +702,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
   async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
     const expirationThreshold = Date.now() - SWAAP_POOL_RESTRICT_TTL_S * 1000;
-    const createdAt = await this.dexHelper.cache.hget(
+    const createdAt = await this.dexHelper.cache.hgetAndCacheLocally(
       this.runtimeMMsRestrictHashMapKey,
       poolIdentifier,
     );
@@ -713,10 +715,12 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
+    const result = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.getBlackListKey(txOrigin),
+      // TODO-redis: temporary for tests
+      SWAAP_403_TTL_S,
     );
     return result === BLACKLISTED;
   }
@@ -729,7 +733,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     txOrigin: Address,
     ttl: number = SWAAP_403_TTL_S,
   ): Promise<boolean> {
-    await this.dexHelper.cache.setex(
+    await this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       this.getBlackListKey(txOrigin),
