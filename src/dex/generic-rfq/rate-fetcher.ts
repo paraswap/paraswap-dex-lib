@@ -217,7 +217,7 @@ export class RateFetcher {
   }
 
   public isBlackListed(userAddress: string) {
-    return this.dexHelper.cache.sismember(
+    return this.dexHelper.cache.sismemberAndCacheLocally(
       this.blackListCacheKey,
       userAddress.toLowerCase(),
     );
@@ -322,10 +322,11 @@ export class RateFetcher {
   }
 
   public async getAvailablePairs(): Promise<string[]> {
-    const pairs = await this.dexHelper.cache.get(
+    const pairs = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.dexHelper.config.data.network,
       `pairs`,
+      this.config.rateConfig.dataTTLS,
     );
 
     if (!pairs) {
@@ -344,32 +345,37 @@ export class RateFetcher {
 
     let pricesAsString: string | null = null;
     if (side === SwapSide.SELL) {
-      pricesAsString = await this.dexHelper.cache.get(
+      pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
         this.dexKey,
         this.dexHelper.config.data.network,
         `${srcToken.address}_${destToken.address}_bids`,
+
+        this.config.rateConfig.dataTTLS,
       );
 
       if (!pricesAsString) {
-        pricesAsString = await this.dexHelper.cache.get(
+        pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
           this.dexKey,
           this.dexHelper.config.data.network,
           `${destToken.address}_${srcToken.address}_asks`,
+          this.config.rateConfig.dataTTLS,
         );
         reversed = true;
       }
     } else {
-      pricesAsString = await this.dexHelper.cache.get(
+      pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
         this.dexKey,
         this.dexHelper.config.data.network,
         `${destToken.address}_${srcToken.address}_asks`,
+        this.config.rateConfig.dataTTLS,
       );
 
       if (!pricesAsString) {
-        pricesAsString = await this.dexHelper.cache.get(
+        pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
           this.dexKey,
           this.dexHelper.config.data.network,
           `${srcToken.address}_${destToken.address}_bids`,
+          this.config.rateConfig.dataTTLS,
         );
         reversed = true;
       }
