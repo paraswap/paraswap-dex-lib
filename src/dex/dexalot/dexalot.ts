@@ -238,10 +238,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedPairs(): Promise<PairDataMap | null> {
-    const cachedPairs = await this.dexHelper.cache.get(
+    const cachedPairs = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.pairsCacheKey,
+      DEXALOT_PAIRS_CACHES_TTL_S,
     );
 
     if (cachedPairs) {
@@ -252,10 +253,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedPrices(): Promise<PriceDataMap | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
+    const cachedPrices = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.pricesCacheKey,
+      DEXALOT_PAIRS_CACHES_TTL_S,
     );
 
     if (cachedPrices) {
@@ -266,10 +268,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedTokensAddr(): Promise<TokenAddrDataMap | null> {
-    const cachedTokensAddr = await this.dexHelper.cache.get(
+    const cachedTokensAddr = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.tokensAddrCacheKey,
+      DEXALOT_TOKENS_CACHES_TTL_S,
     );
 
     if (cachedTokensAddr) {
@@ -280,10 +283,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.tokensCacheKey,
+      DEXALOT_TOKENS_CACHES_TTL_S,
     );
 
     if (cachedTokens) {
@@ -843,7 +847,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     poolIdentifier: string,
     ttl: number = DEXALOT_RESTRICT_TTL_S,
   ): Promise<boolean> {
-    await this.dexHelper.cache.setex(
+    await this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       this.getRestrictedPoolKey(poolIdentifier),
@@ -854,10 +858,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
+    const result = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.getRestrictedPoolKey(poolIdentifier),
+      DEXALOT_RESTRICT_TTL_S,
     );
 
     return result === 'true';
@@ -867,10 +872,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     txOrigin: Address,
     ttl: number = DEXALOT_BLACKLIST_CACHES_TTL_S,
   ): Promise<boolean> {
-    const cachedBlacklist = await this.dexHelper.cache.get(
+    const cachedBlacklist = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.blacklistCacheKey,
+      DEXALOT_BLACKLIST_CACHES_TTL_S,
     );
 
     let blacklist: string[] = [];
@@ -880,7 +886,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
 
     blacklist.push(txOrigin.toLowerCase());
 
-    this.dexHelper.cache.setex(
+    this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       this.blacklistCacheKey,
@@ -892,10 +898,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const cachedBlacklist = await this.dexHelper.cache.get(
+    const cachedBlacklist = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.blacklistCacheKey,
+      DEXALOT_BLACKLIST_CACHES_TTL_S,
     );
 
     if (cachedBlacklist) {
@@ -916,16 +923,17 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async isRateLimited(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
+    const result = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.getRateLimitedKey(txOrigin),
+      DEXALOT_RATE_LIMITED_TTL_S,
     );
     return result === DEXALOT_RATELIMIT_CACHE_VALUE;
   }
 
   async setRateLimited(txOrigin: Address, ttl = DEXALOT_RATE_LIMITED_TTL_S) {
-    await this.dexHelper.cache.setex(
+    await this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       this.getRateLimitedKey(txOrigin),
