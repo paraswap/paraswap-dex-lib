@@ -85,7 +85,7 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
   };
 };
 
-const SKIP_TENDERLY = !!getEnv('GENERIC_RFQ_SKIP_TENDERLY', true);
+const SKIP_TENDERLY = getEnv('GENERIC_RFQ_SKIP_TENDERLY', true) === 'true';
 const dexKey = 'YOUR_NAME';
 
 describe(`GenericRFQ ${dexKey} E2E`, () => {
