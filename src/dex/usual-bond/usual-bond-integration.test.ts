@@ -14,6 +14,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import USD0PP_ABI from '../../abi/usual-bond/usd0pp.abi.json';
+import { func } from 'joi';
 
 /*
   README
@@ -52,6 +53,22 @@ function getReaderCalldata(
   }));
 }
 
+function getReaderCalldataApprove(
+  exchangeAddress: string,
+  readerIface: Interface,
+  amounts: bigint[],
+  funcName: string,
+  // TODO: Put here additional arguments you need
+) {
+  return amounts.map(amount => ({
+    target: exchangeAddress,
+    callData: readerIface.encodeFunctionData(funcName, [
+      exchangeAddress,
+      amount,
+    ]),
+  }));
+}
+
 function decodeReaderResult(
   results: Result,
   readerIface: Interface,
@@ -83,13 +100,25 @@ async function checkOnChainPricing(
   // It depends on your implementation
   const readerIface = new Interface(USD0PP_ABI as JsonFragment[]);
 
+  const approvalCallData = getReaderCalldataApprove(
+    exchangeAddress,
+    readerIface,
+    amounts,
+    'approve',
+  );
+
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts,
     funcName,
   );
-  console.log(readerCallData);
+
+  console.log(
+    await usualBond.dexHelper.multiContract.methods
+      .aggregate(approvalCallData)
+      .call({}, blockNumber),
+  );
 
   const readerResult = (
     await usualBond.dexHelper.multiContract.methods
