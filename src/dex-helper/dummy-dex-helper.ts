@@ -145,7 +145,24 @@ class DummyCache implements ICache {
     return;
   }
 
+  async hsetAndCacheLocally(
+    mapKey: string,
+    key: string,
+    value: string,
+  ): Promise<void> {
+    if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
+    this.hashStorage[mapKey][key] = value;
+    return;
+  }
+
   async hget(mapKey: string, key: string): Promise<string | null> {
+    return this.hashStorage[mapKey]?.[key] ?? null;
+  }
+
+  async hgetAndCacheLocally(
+    mapKey: string,
+    key: string,
+  ): Promise<string | null> {
     return this.hashStorage[mapKey]?.[key] ?? null;
   }
 

@@ -54,9 +54,17 @@ export interface ICache {
 
   hset(mapKey: string, key: string, value: string): Promise<void>;
 
+  hsetAndCacheLocally(
+    mapKey: string,
+    key: string,
+    value: string,
+  ): Promise<void>;
+
   hdel(mapKey: string, keys: string[]): Promise<number>;
 
   hget(mapKey: string, key: string): Promise<string | null>;
+
+  hgetAndCacheLocally(mapKey: string, key: string): Promise<string | null>;
 
   hmget(mapKey: string, keys: string[]): Promise<(string | null)[]>;
 
