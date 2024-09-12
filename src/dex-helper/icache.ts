@@ -7,9 +7,19 @@ export interface ICache {
 
   rawget(key: string): Promise<string | null>;
 
+  rawgetAndCacheLocally(key: string): Promise<string | null>;
+
   rawset(key: string, value: string, ttl: number): Promise<string | null>;
 
+  rawsetAndCacheLocally(
+    key: string,
+    value: string,
+    ttl: number,
+  ): Promise<string | null>;
+
   rawdel(key: string): Promise<void>;
+
+  rawdelAndCacheLocally(key: string): Promise<void>;
 
   del(dexKey: string, network: number, cacheKey: string): Promise<number>;
 
@@ -51,6 +61,8 @@ export interface ICache {
   zscore(setKey: string, key: string): Promise<string | null>;
 
   sismember(setKey: string, key: string): Promise<boolean>;
+
+  sismemberAndCacheLocally(setKey: string, key: string): Promise<boolean>;
 
   hset(mapKey: string, key: string, value: string): Promise<void>;
 

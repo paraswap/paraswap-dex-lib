@@ -45,7 +45,10 @@ class DummyCache implements ICache {
 
   async rawget(key: string): Promise<string | null> {
     return this.storage[key] ? this.storage[key] : null;
-    return null;
+  }
+
+  async rawgetAndCacheLocally(key: string): Promise<string | null> {
+    return this.storage[key] ? this.storage[key] : null;
   }
 
   async rawset(
@@ -55,6 +58,20 @@ class DummyCache implements ICache {
   ): Promise<string | null> {
     this.storage[key] = value;
     return 'OK';
+  }
+
+  async rawsetAndCacheLocally(
+    key: string,
+    value: string,
+    ttl: number,
+  ): Promise<string | null> {
+    this.storage[key] = value;
+    return 'OK';
+  }
+
+  async rawdelAndCacheLocally(key: string): Promise<void> {
+    delete this.storage[key];
+    return;
   }
 
   async rawdel(key: string): Promise<void> {
@@ -131,6 +148,18 @@ class DummyCache implements ICache {
   }
 
   async sismember(setKey: string, key: string): Promise<boolean> {
+    let set = this.setMap[setKey];
+    if (!set) {
+      return false;
+    }
+
+    return set.has(key);
+  }
+
+  async sismemberAndCacheLocally(
+    setKey: string,
+    key: string,
+  ): Promise<boolean> {
     let set = this.setMap[setKey];
     if (!set) {
       return false;
