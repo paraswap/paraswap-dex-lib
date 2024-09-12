@@ -392,7 +392,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   async getCachedMarketMakers(): Promise<
     MarketMakersResponse['marketMakers'] | null
   > {
-    const cachedMarketMakers = await this.dexHelper.cache.rawget(
+    const cachedMarketMakers = await this.dexHelper.cache.rawgetAndCacheLocally(
       this.marketMakersCacheKey,
     );
 
@@ -406,7 +406,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
-    const cachedLevels = await this.dexHelper.cache.rawget(this.pricesCacheKey);
+    const cachedLevels = await this.dexHelper.cache.rawgetAndCacheLocally(
+      this.pricesCacheKey,
+    );
 
     if (cachedLevels) {
       return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
@@ -757,7 +759,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   async restrictMM(mm: string, errorCode: ErrorCode): Promise<void> {
-    const errorCodesRaw = await this.dexHelper.cache.hget(
+    const errorCodesRaw = await this.dexHelper.cache.hgetAndCacheLocally(
       this.runtimeMMsRestrictHashMapErrorCodesKey,
       mm,
     );
@@ -780,7 +782,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           addedDatetimeMS: Date.now(),
         },
       };
-      await this.dexHelper.cache.hset(
+      await this.dexHelper.cache.hsetAndCacheLocally(
         this.runtimeMMsRestrictHashMapErrorCodesKey,
         mm,
         Utils.Serialize(data),
@@ -821,7 +823,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         const date = (Date.now() + dateModifierMS).toString();
 
         // We use timestamp for creation date to later discern if it already expired or not
-        await this.dexHelper.cache.hset(
+        await this.dexHelper.cache.hsetAndCacheLocally(
           this.runtimeMMsRestrictHashMapKey,
           mm,
           date,
@@ -835,7 +837,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             addedDatetimeMS: Date.now(),
           },
         };
-        await this.dexHelper.cache.hset(
+        await this.dexHelper.cache.hsetAndCacheLocally(
           this.runtimeMMsRestrictHashMapErrorCodesKey,
           mm,
           Utils.Serialize(data),
@@ -854,7 +856,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             addedDatetimeMS: error.addedDatetimeMS, // initial date stays
           },
         };
-        await this.dexHelper.cache.hset(
+        await this.dexHelper.cache.hsetAndCacheLocally(
           this.runtimeMMsRestrictHashMapErrorCodesKey,
           mm,
           Utils.Serialize(data),
@@ -933,10 +935,11 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
+    const result = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.getBlackListKey(txOrigin),
+      HASHFLOW_BLACKLIST_TTL_S,
     );
     return result === 'blacklisted';
   }
@@ -945,7 +948,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     txOrigin: Address,
     ttl: number = HASHFLOW_BLACKLIST_TTL_S,
   ) {
-    await this.dexHelper.cache.setex(
+    await this.dexHelper.cache.setexAndCacheLocally(
       this.dexKey,
       this.network,
       this.getBlackListKey(txOrigin),
