@@ -38,15 +38,6 @@ function getReaderCalldata(
   funcName: string,
   // TODO: Put here additional arguments you need
 ) {
-  console.log('exchangeAddress', exchangeAddress);
-  console.log('funcName', funcName);
-  console.log('amounts', amounts);
-  console.log(
-    amounts.map(amount => ({
-      target: exchangeAddress,
-      callData: readerIface.encodeFunctionData(funcName, [amount]),
-    })),
-  );
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [amount]),
@@ -81,60 +72,6 @@ function decodeReaderResult(
     // return BigInt(parsed[0]._hex);
     return amounts;
   });
-}
-
-async function checkOnChainPricing(
-  usualBond: UsualBond,
-  funcName: string,
-  blockNumber: number,
-  prices: bigint[],
-  amounts: bigint[],
-) {
-  const exchangeAddress = '0x35d8949372d46b7a3d5a56006ae77b215fc69bc0';
-
-  console.log('prices', prices);
-  console.log('amounts', amounts);
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from usualBond.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface(USD0PP_ABI as JsonFragment[]);
-
-  const approvalCallData = getReaderCalldataApprove(
-    exchangeAddress,
-    readerIface,
-    amounts,
-    'approve',
-  );
-
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts,
-    funcName,
-  );
-
-  await usualBond.dexHelper.multiContract.methods
-    .aggregate(approvalCallData)
-    .call({}, blockNumber);
-
-  const readerResult = (
-    await usualBond.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  console.log(readerResult);
-
-  // return the amounts
-  const expectedPrices = decodeReaderResult(
-    readerResult,
-    readerIface,
-    'mint',
-    amounts,
-  );
-
-  expect(prices).toEqual(expectedPrices);
 }
 
 async function testPricingOnNetwork(
@@ -180,13 +117,7 @@ async function testPricingOnNetwork(
   }
 
   // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    usualBond,
-    'mint',
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
+  checkPoolPrices(poolPrices!, amounts, side, dexKey);
 }
 
 describe('UsualBond', function () {
