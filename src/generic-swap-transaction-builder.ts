@@ -123,6 +123,8 @@ export class GenericSwapTransactionBuilder {
               recipient,
               wethDeposit,
               wethWithdraw,
+              wethDepositForNeedUnwrapWeth,
+              wethWithdrawForNeedUnwrapWeth,
             } = this.getDexCallsParams(
               priceRoute,
               routeIndex,
@@ -158,30 +160,47 @@ export class GenericSwapTransactionBuilder {
               dexParams,
               wethDeposit,
               wethWithdraw,
+              wethDepositForNeedUnwrapWeth,
+              wethWithdrawForNeedUnwrapWeth,
             };
           }),
         ),
       ),
     );
 
-    const { exchangeParams, srcAmountWethToDeposit, destAmountWethToWithdraw } =
-      await rawDexParams.reduce<{
-        exchangeParams: DexExchangeParam[];
-        srcAmountWethToDeposit: bigint;
-        destAmountWethToWithdraw: bigint;
-      }>(
-        (acc, se) => {
-          acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
-          acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
-          acc.exchangeParams.push(se.dexParams);
-          return acc;
-        },
-        {
-          exchangeParams: [],
-          srcAmountWethToDeposit: 0n,
-          destAmountWethToWithdraw: 0n,
-        },
-      );
+    const {
+      exchangeParams,
+      srcAmountWethToDeposit,
+      destAmountWethToWithdraw,
+      srcAmountWethToWithdrawForNeedUnwrapWeth,
+      destAmountWethToDepositForNeeUnwrapWeth,
+    } = await rawDexParams.reduce<{
+      exchangeParams: DexExchangeParam[];
+      srcAmountWethToDeposit: bigint;
+      destAmountWethToWithdraw: bigint;
+      srcAmountWethToWithdrawForNeedUnwrapWeth: bigint;
+      destAmountWethToDepositForNeeUnwrapWeth: bigint;
+    }>(
+      (acc, se) => {
+        acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
+        acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
+        acc.srcAmountWethToWithdrawForNeedUnwrapWeth += BigInt(
+          se.wethWithdrawForNeedUnwrapWeth,
+        );
+        acc.destAmountWethToDepositForNeeUnwrapWeth += BigInt(
+          se.wethDepositForNeedUnwrapWeth,
+        );
+        acc.exchangeParams.push(se.dexParams);
+        return acc;
+      },
+      {
+        exchangeParams: [],
+        srcAmountWethToDeposit: 0n,
+        destAmountWethToWithdraw: 0n,
+        srcAmountWethToWithdrawForNeedUnwrapWeth: 0n,
+        destAmountWethToDepositForNeeUnwrapWeth: 0n,
+      },
+    );
 
     const maybeWethCallData = this.getDepositWithdrawWethCallData(
       srcAmountWethToDeposit,
@@ -189,11 +208,19 @@ export class GenericSwapTransactionBuilder {
       side,
     );
 
+    const maybeWethCallDataForNeedUnwrapWeth =
+      this.getDepositWithdrawWethCallData(
+        destAmountWethToDepositForNeeUnwrapWeth,
+        srcAmountWethToWithdrawForNeedUnwrapWeth,
+        side,
+      );
+
     const buildExchangeParams = await this.addDexExchangeApproveParams(
       bytecodeBuilder,
       priceRoute,
       exchangeParams,
       maybeWethCallData,
+      maybeWethCallDataForNeedUnwrapWeth,
     );
 
     return bytecodeBuilder.buildByteCode(
@@ -201,6 +228,7 @@ export class GenericSwapTransactionBuilder {
       buildExchangeParams,
       userAddress,
       maybeWethCallData,
+      maybeWethCallDataForNeedUnwrapWeth,
     );
   }
 
@@ -601,9 +629,11 @@ export class GenericSwapTransactionBuilder {
     destAmount: string;
     wethDeposit: bigint;
     wethWithdraw: bigint;
+    wethDepositForNeedUnwrapWeth: bigint;
+    wethWithdrawForNeedUnwrapWeth: bigint;
   } {
     const wethAddress =
-      this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress;
+      this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
 
     const side = priceRoute.side;
 
@@ -618,6 +648,9 @@ export class GenericSwapTransactionBuilder {
     let _dest = swap.destToken;
 
     let wethWithdraw = 0n;
+
+    let wethWithdrawForNeedUnwrapWeth = 0n;
+    let wethDepositForNeedUnwrapWeth = 0n;
 
     // For case of buy apply slippage is applied to srcAmount in equal proportion as the complete swap
     // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
@@ -640,6 +673,13 @@ export class GenericSwapTransactionBuilder {
         ? dex.needWrapNative(priceRoute, se)
         : dex.needWrapNative;
 
+    const dexNeedUnwrapWeth =
+      dex.needUnwrapWeth !== undefined
+        ? typeof dex.needUnwrapWeth === 'function'
+          ? dex.needUnwrapWeth(priceRoute, se)
+          : dex.needUnwrapWeth
+        : false;
+
     if (isETHAddress(swap.srcToken) && dexNeedWrapNative) {
       _src = wethAddress;
       wethDeposit = BigInt(_srcAmount);
@@ -656,19 +696,42 @@ export class GenericSwapTransactionBuilder {
       wethWithdraw = BigInt(se.destAmount);
     }
 
+    if (dexNeedUnwrapWeth) {
+      const wethAddr =
+        this.dexAdapterService.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+      if (swap.srcToken.toLowerCase() === wethAddr) {
+        _src = ETHER_ADDRESS;
+        wethWithdrawForNeedUnwrapWeth = BigInt(_srcAmount);
+
+        if (side === SwapSide.BUY) {
+          wethDepositForNeedUnwrapWeth = 1n; // to add wrap after dex call for tokens remainder for buy side cases
+        }
+      }
+
+      if (swap.destToken.toLowerCase() === wethAddr) {
+        _dest = ETHER_ADDRESS;
+        wethDepositForNeedUnwrapWeth = BigInt(se.destAmount); // cant use _destAmount here because _destAmount could be 1
+      }
+    }
+
     const needToWithdrawAfterSwap = _dest === wethAddress && wethWithdraw;
+    const needToDepositAfterSwap =
+      swap.destToken.toLowerCase() === wethAddress &&
+      wethDepositForNeedUnwrapWeth;
 
     return {
       srcToken: _src,
       destToken: _dest,
       recipient:
-        needToWithdrawAfterSwap || !isLastSwap
+        needToWithdrawAfterSwap || !isLastSwap || needToDepositAfterSwap
           ? executionContractAddress
           : this.dexAdapterService.dexHelper.config.data.augustusV6Address!,
       srcAmount: _srcAmount,
       destAmount: _destAmount,
       wethDeposit,
       wethWithdraw,
+      wethWithdrawForNeedUnwrapWeth,
+      wethDepositForNeedUnwrapWeth,
     };
   }
 
@@ -677,6 +740,7 @@ export class GenericSwapTransactionBuilder {
     priceRoute: OptimalRate,
     dexExchangeParams: DexExchangeParam[],
     maybeWethCallData?: DepositWithdrawReturn,
+    maybeWethCallDataForNeedUnwrapWeth?: DepositWithdrawReturn,
   ): Promise<DexExchangeBuildParam[]> {
     const spender = bytecodeBuilder.getAddress();
     const tokenTargetMapping: {

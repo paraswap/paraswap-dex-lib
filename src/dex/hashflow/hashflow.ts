@@ -547,9 +547,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         return null;
       }
 
-      const pools =
+      let pools =
         limitPools ??
         (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+
+      pools = [
+        'hashflow_0x0000000000000000000000000000000000000000_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48_mm30_302',
+      ];
 
       const marketMakersToUse = pools.map(p => {
         const splitted = p.split(`_`);
@@ -1241,6 +1245,10 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     return {
       needWrapNative: this.needWrapNative(
+        context.priceRoute,
+        context.swapExchange,
+      ),
+      needUnwrapWeth: this.needUnwrapWeth(
         context.priceRoute,
         context.swapExchange,
       ),

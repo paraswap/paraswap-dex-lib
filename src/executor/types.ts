@@ -1,6 +1,7 @@
 export enum Flag {
   SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP = 18, // // (flag 18 mod 4) = case 2: sendEth equal to fromAmount + insert fromAmount, (flag 18 mod 3) = case 0: don't check balance after swap
   SEND_ETH_EQUAL_TO_FROM_AMOUNT_PLUS_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP = 14, // (flag 14 mod 4) = case 2: sendEth equal to fromAmount + insert fromAmount, (flag 14 mod 3) = case 2: case 2: check "srcToken" balance after swap
+  SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP = 13, // (flag 13 mod 4) = case 1: sendEth equal to fromAmount, (flag 13 mod 3) = case 1: check eth balance after swap
   INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP = 11, // (flag 11 mod 4) = case 3: insert fromAmount, (flag 11 mod 3) = case 2: check "srcToken" balance after swap
   SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP = 9, // (flag 9 mod 4) = case 1: sendEth equal to fromAmount, (flag 9 mod 3) = case 0: don't check balance after swap
   DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP = 8, // (flag 8 mod 4) = case 0: don't insert fromAmount, (flag 8 mod 3) = case 2: check "srcToken" balance after swap

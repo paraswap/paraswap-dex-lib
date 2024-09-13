@@ -210,6 +210,7 @@ describe('Hashflow E2E', () => {
         tokenAAmount,
         tokenBAmount,
         nativeTokenAmount,
+        true,
       );
 
       // it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
