@@ -2,51 +2,48 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { AaveGsmEventPool } from './aave-gsm-pool';
+import { StkGHOEventPool } from './stkgho-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { PoolState } from './types';
-import { AaveGsmConfig } from './config';
+import { StkGHOConfig } from './config';
 
 jest.setTimeout(50 * 1000);
 
 async function fetchPoolState(
-  aaveGsmPool: AaveGsmEventPool,
+  stkGHOPool: StkGHOEventPool,
   blockNumber: number,
   poolAddress: string,
 ): Promise<PoolState> {
-  const eventState = aaveGsmPool.getState(blockNumber);
+  const eventState = stkGHOPool.getState(blockNumber);
   if (eventState) return eventState;
-  const onChainState = await aaveGsmPool.generateState(blockNumber);
-  aaveGsmPool.setState(onChainState, blockNumber);
+  const onChainState = await stkGHOPool.generateState(blockNumber);
+  stkGHOPool.setState(onChainState, blockNumber);
   return onChainState;
 }
 
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('AaveGsm EventPool Mainnet', function () {
-  const dexKey = 'AaveGsm';
+describe('StkGHO EventPool Mainnet', function () {
+  const dexKey = 'StkGHO';
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let aaveGsmPool: AaveGsmEventPool;
+  let stkGHOPool: StkGHOEventPool;
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    [AaveGsmConfig[dexKey][network].GSM_USDT]: {
-      FeeStrategyUpdated: [], // Hasn't been emitted yet
-      BuyAsset: [20634073],
-      SellAsset: [20641217, 20641520, 20641913],
-      ExposureCapUpdated: [], // Hasn't been emitted yet
+    [StkGHOConfig[dexKey][network].stkGHO]: {
+      ExchangeRateChanged: [], // haven't been emitted yet
     },
   };
 
   beforeEach(async () => {
-    aaveGsmPool = new AaveGsmEventPool(
-      AaveGsmConfig[dexKey][network].GSM_USDT,
+    stkGHOPool = new StkGHOEventPool(
+      dexKey,
       dexKey,
       network,
       dexHelper,
@@ -63,10 +60,10 @@ describe('AaveGsm EventPool Mainnet', function () {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
                   await testEventSubscriber(
-                    aaveGsmPool,
-                    aaveGsmPool.addressesSubscribed,
+                    stkGHOPool,
+                    stkGHOPool.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(aaveGsmPool, _blockNumber, poolAddress),
+                      fetchPoolState(stkGHOPool, _blockNumber, poolAddress),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,

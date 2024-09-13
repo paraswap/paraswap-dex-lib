@@ -28,7 +28,7 @@ function testForNetwork(
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
-  describe.only(`${network}`, () => {
+  describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
@@ -46,19 +46,6 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
           });
         });
       }),
@@ -66,37 +53,17 @@ function testForNetwork(
   });
 }
 
-describe('AaveGsm E2E', () => {
-  const dexKey = 'AaveGsm';
+describe('StkGHO E2E', () => {
+  const dexKey = 'StkGHO';
 
-  describe('Mainnet GHO -> USDT', () => {
+  describe('Mainnet', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'GHO';
-    const tokenBSymbol: string = 'USDT';
+    const tokenBSymbol: string = 'stkGHO';
 
     const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '47166262';
-    // const tokenBAmount: string = '47166263';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
-
-  describe('Mainnet GHO -> USDC', () => {
-    const network = Network.MAINNET;
-
-    const tokenASymbol: string = 'GHO';
-    const tokenBSymbol: string = 'USDC';
-
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000';
+    const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(
       network,
