@@ -34,7 +34,7 @@ import {
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { getDexKeysWithNetwork, Utils } from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress, Utils } from '../../utils';
 import { TooStrictSlippageCheckError } from '../generic-rfq/types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, HashflowConfig } from './config';
@@ -547,13 +547,31 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         return null;
       }
 
-      const pools =
+      let pools =
         limitPools ??
         (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
 
-      // pools = [
-      //   'hashflow_0x0000000000000000000000000000000000000000_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48_mm30_302',
-      // ];
+      if (
+        ((isETHAddress(srcToken.address) &&
+          destToken.address.toLowerCase() ===
+            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()) ||
+          (isETHAddress(destToken.address) &&
+            srcToken.address.toLowerCase() ===
+              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()) ||
+          (srcToken.address.toLowerCase() ===
+            this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase() &&
+            destToken.address.toLowerCase() ===
+              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()) ||
+          (destToken.address.toLowerCase() ===
+            this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase() &&
+            srcToken.address.toLowerCase() ===
+              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase())) &&
+        this.network === Network.MAINNET
+      ) {
+        pools = [
+          'hashflow_0x0000000000000000000000000000000000000000_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48_mm30_302',
+        ];
+      }
 
       const marketMakersToUse = pools.map(p => {
         const splitted = p.split(`_`);
