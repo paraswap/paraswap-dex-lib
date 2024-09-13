@@ -1,6 +1,5 @@
 import { BytesLike } from 'ethers';
-import { defaultAbiCoder } from 'ethers/lib/utils';
-import { extractSuccessAndValue, generalDecoder } from '../../lib/decoders';
+import { generalDecoder } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { DecimalInfo, TokenInfo, TokenState } from './types';
 
@@ -40,6 +39,7 @@ export function stateDecoder(
       price: value[0].price.toBigInt(),
       spread: value[0].spread.toBigInt(),
       coeff: value[0].coeff.toBigInt(),
+      woFeasible: value[0].woFeasible,
     }),
   );
 }

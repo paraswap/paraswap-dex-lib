@@ -68,6 +68,7 @@ import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { Method } from '../../dex-helper/irequest-wrapper';
+import { SpecialDex } from '../../executor/types';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -597,7 +598,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         takerAsset: ethers.utils.getAddress(takerToken.address),
         makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
         takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
-        userAddress: options.txOrigin,
+        userAddress: options.userAddress,
         chainid: this.network,
         executor: options.executionContractAddress,
         partner: options.partner,
@@ -724,11 +725,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         const errorData = e.response.data as RFQResponseError;
         if (errorData.ReasonCode === 'FQ-009') {
           this.logger.warn(
-            `${this.dexKey}-${this.network}: Encountered rate limited user=${options.txOrigin}. Adding to local rate limit cache`,
+            `${this.dexKey}-${this.network}: Encountered rate limited user=${options.userAddress}. Adding to local rate limit cache`,
           );
-          await this.setRateLimited(options.txOrigin, errorData.RetryAfter);
+          await this.setRateLimited(options.userAddress, errorData.RetryAfter);
         } else {
-          await this.setBlacklist(options.txOrigin);
+          await this.setBlacklist(options.userAddress);
           this.logger.error(
             `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}: ${errorData.Reason}`,
           );
@@ -1022,6 +1023,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       dexFuncHasRecipient: false,
       targetExchange: this.mainnetRFQAddress,
       returnAmountPos: undefined,
+      specialDexFlag: SpecialDex.SWAP_ON_DEXALOT,
+      // cannot modify amount due to signature checks
+      specialDexSupportsInsertFromAmount: false,
     };
   }
 
