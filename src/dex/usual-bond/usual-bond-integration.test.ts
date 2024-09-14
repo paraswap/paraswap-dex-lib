@@ -36,7 +36,6 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
@@ -49,7 +48,6 @@ function getReaderCalldataApprove(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
@@ -58,20 +56,6 @@ function getReaderCalldataApprove(
       amount,
     ]),
   }));
-}
-
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-  amounts: bigint[],
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(amounts => {
-    // const parsed = readerIface.decodeFunctionResult(funcName, result);
-    // return BigInt(parsed[0]._hex);
-    return amounts;
-  });
 }
 
 async function testPricingOnNetwork(
@@ -129,9 +113,6 @@ describe('UsualBond', function () {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
-    const tokens = Tokens[network];
-
-    // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
 
     const amountsForSell = [
@@ -166,7 +147,7 @@ describe('UsualBond', function () {
         'USD0++',
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        '',
       );
     });
   });

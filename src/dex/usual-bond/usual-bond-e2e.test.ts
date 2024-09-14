@@ -68,7 +68,6 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
   ]);
@@ -121,7 +120,5 @@ describe('UsualBond E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
-
-    // TODO: Add any additional test cases required to test UsualBond
   });
 });
