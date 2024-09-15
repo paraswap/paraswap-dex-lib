@@ -455,6 +455,10 @@ export const Tokens: {
       address: '0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f',
       decimals: 18,
     },
+    stkGHO: {
+      address: '0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d',
+      decimals: 18,
+    },
     USDe: {
       address: '0x4c9EDD5852cd905f086C759E8383e09bff1E68B3',
       decimals: 18,
@@ -1807,7 +1811,7 @@ export const Holders: {
     PRIME: '0xe3879b7359695f802d6FD56Bb76fD82C362Dafd6',
     ETH: '0xd34ea7278e6bd48defe656bbe263aef11101469c',
     MAV: '0xf977814e90da44bfa03b6295a0616a897441acec',
-    USDC: '0xaac391f166f33cdaefaa4afa6616a3bea66b694d',
+    USDC: '0x21bD501F86A0B5cE0907651Df3368DA905B300A9',
     USDbC: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
     BAL: '0x854b004700885a61107b458f11ecc169a019b764',

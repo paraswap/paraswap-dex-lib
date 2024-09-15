@@ -60,6 +60,7 @@ import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
+import { Infusion } from './infusion/infusion';
 import { SolidlyEthereum } from './solidly/solidly-ethereum';
 import { MaverickV1 } from './maverick-v1/maverick-v1';
 import { MaverickV2 } from './maverick-v2/maverick-v2';
@@ -82,9 +83,12 @@ import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
+import { OSwap } from './oswap/oswap';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
+import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
+import { StkGHO } from './stkgho/stkgho';
 import { Akronswap } from './uniswap-v2/akronswap';
 
 const LegacyDexes = [
@@ -149,6 +153,7 @@ const Dexes = [
   CurveV1StableNg,
   WstETH,
   Hashflow,
+  Infusion,
   MaverickV1,
   MaverickV2,
   Camelot,
@@ -163,10 +168,12 @@ const Dexes = [
   PharaohV1,
   Spark,
   AaveV3Stata,
+  OSwap,
   ConcentratorArusd,
   FxProtocolRusd,
+  AaveGsm,
   LitePsm,
-  Akronswap,
+  StkGHO,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
