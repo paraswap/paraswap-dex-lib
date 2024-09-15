@@ -13,7 +13,7 @@ export const SkyConverterConfig: DexConfigMap<DexParams> = {
       newTokenAddress: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
       oldToNewFunctionName: 'daiToUsds',
       newToOldFunctionName: 'usdsToDai',
-      newTokenRateMultiplier: 1n,
+      newTokenRateMultiplier: 1n, // constant, never to be updated
       converterIface: new Interface(DaiUsdsConverterABI),
     },
   },
@@ -24,7 +24,7 @@ export const SkyConverterConfig: DexConfigMap<DexParams> = {
       newTokenAddress: '0x56072C95FAA701256059aa122697B133aDEd9279',
       oldToNewFunctionName: 'mkrToSky',
       newToOldFunctionName: 'skyToMkr',
-      newTokenRateMultiplier: 24_000n,
+      newTokenRateMultiplier: 24_000n, // constant, never to be updated
       converterIface: new Interface(MkrSkyConverterABI),
     },
   },

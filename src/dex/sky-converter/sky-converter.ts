@@ -77,6 +77,14 @@ export class SkyConverter
     }
   }
 
+  oldAmountToNewAmount(amount: bigint) {
+    return amount * this.config.newTokenRateMultiplier;
+  }
+
+  newAmountToOldAmount(amount: bigint) {
+    return amount / this.config.newTokenRateMultiplier;
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -95,9 +103,27 @@ export class SkyConverter
       return null;
     }
 
+    const isOldToNew = srcToken.address.toLowerCase() === this.oldToken;
+
+    let mappingFunction: Function;
+
+    if (side === SwapSide.SELL) {
+      if (isOldToNew) {
+        mappingFunction = this.oldAmountToNewAmount;
+      } else {
+        mappingFunction = this.newAmountToOldAmount;
+      }
+    } else {
+      if (isOldToNew) {
+        mappingFunction = this.newAmountToOldAmount;
+      } else {
+        mappingFunction = this.oldAmountToNewAmount;
+      }
+    }
+
     return [
       {
-        prices: amounts,
+        prices: amounts.map(el => mappingFunction(el)),
         unit: BI_POWS[18],
         // TODO: Update after simulations
         gasCost: 40_000,
@@ -133,14 +159,6 @@ export class SkyConverter
     };
   }
 
-  oldAmountToNewAmount(amount: bigint) {
-    return amount * this.config.newTokenRateMultiplier;
-  }
-
-  newAmountToOldAmount(amount: bigint) {
-    return amount / this.config.newTokenRateMultiplier;
-  }
-
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -154,7 +172,7 @@ export class SkyConverter
       srcToken === this.oldToken
         ? this.config.oldToNewFunctionName
         : this.config.newToOldFunctionName,
-      [recipient, side === SwapSide.SELL ? srcAmount : destAmount],
+      [recipient, srcAmount],
     );
 
     return {
