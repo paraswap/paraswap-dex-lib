@@ -89,6 +89,7 @@ import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
 import { StkGHO } from './stkgho/stkgho';
+import { Akronswap } from './uniswap-v2/akronswap';
 
 const LegacyDexes = [
   CurveV2,

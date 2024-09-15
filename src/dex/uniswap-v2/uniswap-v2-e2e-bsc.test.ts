@@ -1292,4 +1292,72 @@ describe('UniswapV2 E2E BSC', () => {
       }),
     );
   });
+
+  describe('Akronswap', () => {
+    const dexKey = 'Akronswap';
+
+    describe('Simpleswap', () => {
+      it('Token -> TOKEN', async () => {
+        await testE2E(
+          tokens.USDT,
+          tokens.BNB,
+          holders.USDT,
+          '7000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Simpleswap', () => {
+      it('Token -> TOKEN', async () => {
+        await testE2E(
+          tokens.WBNB,
+          tokens.USDT,
+          holders.WBNB,
+          '700000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Simpleswap', () => {
+      it('BNB -> TOKEN', async () => {
+        await testE2E(
+          tokens.BNB,
+          tokens.USDT,
+          holders.BNB,
+          '700000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('Multipswap', () => {
+      it('BNB -> TOKEN', async () => {
+        await testE2E(
+          tokens.BNB,
+          tokens.USDT,
+          holders.BNB,
+          '700000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
 });
