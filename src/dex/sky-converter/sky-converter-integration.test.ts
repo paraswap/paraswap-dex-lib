@@ -1,251 +1,125 @@
-/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
-import { BI_POWS } from '../../bigint-constants';
 import { SkyConverter } from './sky-converter';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { BI_POWS } from '../../bigint-constants';
 
-/*
-  README
-  ======
+const network = Network.MAINNET;
+const TokenASymbol = 'MKR';
+const TokenA = Tokens[network][TokenASymbol];
 
-  This test script adds tests for SkyConverter general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover SkyConverter specific
-  logic.
+const TokenBSymbol = 'SKY';
+const TokenB = Tokens[network][TokenBSymbol];
 
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
+const tokenAAmounts = [
+  0n,
+  1n * BI_POWS[18],
+  2n * BI_POWS[18],
+  3n * BI_POWS[18],
+  4n * BI_POWS[18],
+  5n * BI_POWS[18],
+  6n * BI_POWS[18],
+  7n * BI_POWS[18],
+  8n * BI_POWS[18],
+  9n * BI_POWS[18],
+  10n * BI_POWS[18],
+];
 
-  (This comment should be removed from the final implementation)
-*/
+const tokenBAmounts = [
+  0n,
+  1n * BI_POWS[18],
+  2n * BI_POWS[18],
+  3n * BI_POWS[18],
+  4n * BI_POWS[18],
+  5n * BI_POWS[18],
+  6n * BI_POWS[18],
+  7n * BI_POWS[18],
+  8n * BI_POWS[18],
+  9n * BI_POWS[18],
+  10n * BI_POWS[18],
+];
+// const tokenAAmounts = [0n, BI_POWS[8], 200000000n];
+//
+// const tokenBAmounts = [0n, BI_POWS[18], 2000000000000000000n];
 
-function getReaderCalldata(
-  exchangeAddress: string,
-  readerIface: Interface,
-  amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
-) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
-  }));
-}
-
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
-  });
-}
-
-async function checkOnChainPricing(
-  skyConverter: SkyConverter,
-  funcName: string,
-  blockNumber: number,
-  prices: bigint[],
-  amounts: bigint[],
-) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from skyConverter.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
-
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts.slice(1),
-    funcName,
-  );
-  const readerResult = (
-    await skyConverter.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
-  );
-
-  expect(prices).toEqual(expectedPrices);
-}
-
-async function testPricingOnNetwork(
-  skyConverter: SkyConverter,
-  network: Network,
-  dexKey: string,
-  blockNumber: number,
-  srcTokenSymbol: string,
-  destTokenSymbol: string,
-  side: SwapSide,
-  amounts: bigint[],
-  funcNameToCheck: string,
-) {
-  const networkTokens = Tokens[network];
-
-  const pools = await skyConverter.getPoolIdentifiers(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    side,
-    blockNumber,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
-    pools,
-  );
-
-  expect(pools.length).toBeGreaterThan(0);
-
-  const poolPrices = await skyConverter.getPricesVolume(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    amounts,
-    side,
-    blockNumber,
-    pools,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
-  );
-
-  expect(poolPrices).not.toBeNull();
-  if (skyConverter.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
-
-  // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    skyConverter,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
-}
+const dexKey = 'SkyConverter';
 
 describe('SkyConverter', function () {
-  const dexKey = 'SkyConverter';
-  let blockNumber: number;
-  let skyConverter: SkyConverter;
-
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
     const dexHelper = new DummyDexHelper(network);
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const skyConverter = new SkyConverter(network, dexKey, dexHelper);
 
-    const tokens = Tokens[network];
+    const pools = await skyConverter.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.SELL,
+      blocknumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    expect(pools.length).toBeGreaterThan(0);
 
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
+    const poolPrices = await skyConverter.getPricesVolume(
+      TokenA,
+      TokenB,
+      tokenAAmounts,
+      SwapSide.SELL,
+      blocknumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, tokenAAmounts, SwapSide.SELL, dexKey);
+  });
 
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      skyConverter = new SkyConverter(network, dexKey, dexHelper);
-      if (skyConverter.initializePricing) {
-        await skyConverter.initializePricing(blockNumber);
-      }
-    });
+  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    const dexHelper = new DummyDexHelper(network);
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const skyConverter = new SkyConverter(network, dexKey, dexHelper);
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        skyConverter,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
+    const pools = await skyConverter.getPoolIdentifiers(
+      TokenA,
+      TokenB,
+      SwapSide.BUY,
+      blocknumber,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        skyConverter,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
+    expect(pools.length).toBeGreaterThan(0);
 
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newSkyConverter = new SkyConverter(network, dexKey, dexHelper);
-      if (newSkyConverter.updatePoolState) {
-        await newSkyConverter.updatePoolState();
-      }
-      const poolLiquidity = await newSkyConverter.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+    const poolPrices = await skyConverter.getPricesVolume(
+      TokenA,
+      TokenB,
+      tokenBAmounts,
+      SwapSide.BUY,
+      blocknumber,
+      pools,
+    );
+    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
 
-      if (!newSkyConverter.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
-    });
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, tokenBAmounts, SwapSide.BUY, dexKey);
+  });
+
+  it('getTopPoolsForToken', async function () {
+    const dexHelper = new DummyDexHelper(network);
+    const skyConverter = new SkyConverter(network, dexKey, dexHelper);
+
+    const poolLiquidity = await skyConverter.getTopPoolsForToken(
+      TokenA.address,
+      10,
+    );
+    console.log(
+      `${TokenASymbol} Top Pools:`,
+      JSON.stringify(poolLiquidity, null, 2),
+    );
+
+    checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
   });
 });
