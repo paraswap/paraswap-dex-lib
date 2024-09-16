@@ -190,6 +190,36 @@ export class SkyConverter
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (tokenAddress.toLowerCase() === this.oldToken) {
+      return [
+        {
+          exchange: this.dexKey,
+          address: this.config.converterAddress,
+          connectorTokens: [
+            {
+              decimals: 18,
+              address: this.newToken,
+            },
+          ],
+          liquidityUSD: 1000000000, // infinite
+        },
+      ];
+    } else if (tokenAddress.toLowerCase() === this.newToken) {
+      return [
+        {
+          exchange: this.dexKey,
+          address: this.config.converterAddress,
+          connectorTokens: [
+            {
+              decimals: 18,
+              address: this.oldToken,
+            },
+          ],
+          liquidityUSD: 1000000000, // infinite
+        },
+      ];
+    }
+
     return [];
   }
 }
