@@ -9,11 +9,6 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { BI_POWS } from '../../bigint-constants';
 
 const network = Network.MAINNET;
-const TokenASymbol = 'MKR';
-const TokenA = Tokens[network][TokenASymbol];
-
-const TokenBSymbol = 'SKY';
-const TokenB = Tokens[network][TokenBSymbol];
 
 const tokenAAmounts = [
   0n,
@@ -42,84 +37,99 @@ const tokenBAmounts = [
   9n * BI_POWS[18],
   10n * BI_POWS[18],
 ];
-// const tokenAAmounts = [0n, BI_POWS[8], 200000000n];
-//
-// const tokenBAmounts = [0n, BI_POWS[18], 2000000000000000000n];
 
-const dexKey = 'SkyConverter';
+['DaiUsds', 'MkrSky'].forEach(dexKey => {
+  const TokenASymbol = dexKey === 'DaiUsds' ? 'DAI' : 'MKR';
+  const TokenA = Tokens[network][TokenASymbol];
 
-describe('SkyConverter', function () {
-  it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const skyConverter = new SkyConverter(network, dexKey, dexHelper);
+  const TokenBSymbol = dexKey === 'DaiUsds' ? 'USDS' : 'SKY';
+  const TokenB = Tokens[network][TokenBSymbol];
 
-    const pools = await skyConverter.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.SELL,
-      blocknumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+  describe(dexKey, function () {
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const skyConverter = new SkyConverter(network, dexKey, dexHelper);
 
-    expect(pools.length).toBeGreaterThan(0);
+      const pools = await skyConverter.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.SELL,
+        blocknumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
 
-    const poolPrices = await skyConverter.getPricesVolume(
-      TokenA,
-      TokenB,
-      tokenAAmounts,
-      SwapSide.SELL,
-      blocknumber,
-      pools,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+      expect(pools.length).toBeGreaterThan(0);
 
-    expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, tokenAAmounts, SwapSide.SELL, dexKey);
-  });
+      const poolPrices = await skyConverter.getPricesVolume(
+        TokenA,
+        TokenB,
+        tokenAAmounts,
+        SwapSide.SELL,
+        blocknumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
 
-  it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const skyConverter = new SkyConverter(network, dexKey, dexHelper);
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, tokenAAmounts, SwapSide.SELL, dexKey);
+    });
 
-    const pools = await skyConverter.getPoolIdentifiers(
-      TokenA,
-      TokenB,
-      SwapSide.BUY,
-      blocknumber,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `, pools);
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      const dexHelper = new DummyDexHelper(network);
+      const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      const skyConverter = new SkyConverter(network, dexKey, dexHelper);
 
-    expect(pools.length).toBeGreaterThan(0);
+      const pools = await skyConverter.getPoolIdentifiers(
+        TokenA,
+        TokenB,
+        SwapSide.BUY,
+        blocknumber,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+        pools,
+      );
 
-    const poolPrices = await skyConverter.getPricesVolume(
-      TokenA,
-      TokenB,
-      tokenBAmounts,
-      SwapSide.BUY,
-      blocknumber,
-      pools,
-    );
-    console.log(`${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `, poolPrices);
+      expect(pools.length).toBeGreaterThan(0);
 
-    expect(poolPrices).not.toBeNull();
-    checkPoolPrices(poolPrices!, tokenBAmounts, SwapSide.BUY, dexKey);
-  });
+      const poolPrices = await skyConverter.getPricesVolume(
+        TokenA,
+        TokenB,
+        tokenBAmounts,
+        SwapSide.BUY,
+        blocknumber,
+        pools,
+      );
+      console.log(
+        `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        poolPrices,
+      );
 
-  it('getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(network);
-    const skyConverter = new SkyConverter(network, dexKey, dexHelper);
+      expect(poolPrices).not.toBeNull();
+      checkPoolPrices(poolPrices!, tokenBAmounts, SwapSide.BUY, dexKey);
+    });
 
-    const poolLiquidity = await skyConverter.getTopPoolsForToken(
-      TokenA.address,
-      10,
-    );
-    console.log(
-      `${TokenASymbol} Top Pools:`,
-      JSON.stringify(poolLiquidity, null, 2),
-    );
+    it('getTopPoolsForToken', async function () {
+      const dexHelper = new DummyDexHelper(network);
+      const skyConverter = new SkyConverter(network, dexKey, dexHelper);
 
-    checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+      const poolLiquidity = await skyConverter.getTopPoolsForToken(
+        TokenA.address,
+        10,
+      );
+      console.log(
+        `${TokenASymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+    });
   });
 });

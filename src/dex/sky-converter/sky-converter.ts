@@ -109,15 +109,15 @@ export class SkyConverter
 
     if (side === SwapSide.SELL) {
       if (isOldToNew) {
-        mappingFunction = this.oldAmountToNewAmount;
+        mappingFunction = this.oldAmountToNewAmount.bind(this);
       } else {
-        mappingFunction = this.newAmountToOldAmount;
+        mappingFunction = this.newAmountToOldAmount.bind(this);
       }
     } else {
       if (isOldToNew) {
-        mappingFunction = this.newAmountToOldAmount;
+        mappingFunction = this.newAmountToOldAmount.bind(this);
       } else {
-        mappingFunction = this.oldAmountToNewAmount;
+        mappingFunction = this.oldAmountToNewAmount.bind(this);
       }
     }
 
