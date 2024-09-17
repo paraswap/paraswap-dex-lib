@@ -122,8 +122,7 @@ export class SkyConverter
       {
         prices: amounts.map(el => mappingFunction(el)),
         unit: BI_POWS[18],
-        // TODO: Update after simulations
-        gasCost: 40_000,
+        gasCost: 50_000,
         exchange: this.dexKey,
         poolAddresses: [this.config.converterAddress],
         data: null,
