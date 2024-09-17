@@ -48,6 +48,8 @@ import { extractReturnAmountPosition } from '../../executor/utils';
 const psmInterface = new Interface(PsmABI);
 const WAD = BI_POWS[18];
 
+const USDS = '0xdc035d45d973e3ec169d2276ddab16f1e407384f';
+
 const ceilDiv = (a: bigint, b: bigint) => (a + b - 1n) / b;
 
 export class LitePsm
@@ -123,6 +125,8 @@ export class LitePsm
     return (
       (srcAddress === this.dai.address && this.eventPools[destAddress]) ||
       (destAddress === this.dai.address && this.eventPools[srcAddress]) ||
+      (srcAddress === USDS && this.eventPools[destAddress]) ||
+      (destAddress === USDS && this.eventPools[srcAddress]) ||
       null
     );
   }
@@ -215,6 +219,7 @@ export class LitePsm
     );
 
     const isSrcDai = srcToken.address.toLowerCase() === this.dai.address;
+
     const gem = isSrcDai ? destToken : srcToken;
     const toll =
       (side === SwapSide.SELL && isSrcDai) ||
