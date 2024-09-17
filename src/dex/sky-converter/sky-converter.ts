@@ -23,11 +23,8 @@ export class SkyConverter
   extends SimpleExchange
   implements IDex<SkyConverterData>
 {
-  // readonly skyConverterInterface = new Interface(SkyConverterABI);
-  readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = true;
-
-  readonly isFeeOnTransferSupported = false;
+  readonly hasConstantPriceLargeAmounts = true;
+  readonly needWrapNative = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SkyConverterConfig);
@@ -66,12 +63,12 @@ export class SkyConverter
       srcToken.address.toLowerCase() === this.oldToken &&
       destToken.address.toLowerCase() === this.newToken
     ) {
-      return [`${this.network}_${destToken.address}`];
+      return [`${this.dexKey}_${destToken.address}`];
     } else if (
       srcToken.address.toLowerCase() === this.newToken &&
       destToken.address.toLowerCase() === this.oldToken
     ) {
-      return [`${this.network}_${srcToken.address}`];
+      return [`${this.dexKey}_${srcToken.address}`];
     } else {
       return [];
     }

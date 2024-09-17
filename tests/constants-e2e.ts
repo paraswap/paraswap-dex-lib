@@ -1500,9 +1500,8 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
-    // TODO: update
-    USDS: '',
-    SKY: '',
+    USDS: '0xE99d0ba6966c74BF78bF394BD29DCA154c6BC217',
+    SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
     MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
     // Idle tokens
     AA_wstETH: '0xd7C1b48877A7dFA7D51cf1144c89C0A3F134F935',

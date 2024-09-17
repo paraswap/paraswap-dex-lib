@@ -26,7 +26,6 @@ function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
@@ -72,16 +71,15 @@ function testForNetwork(
 }
 
 describe('SkyConverter E2E', () => {
-  const dexKey = 'SkyConverter';
-
   describe('USDS - DAI', () => {
+    const dexKey = 'DaiUsds';
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USDS';
-    const tokenBSymbol: string = 'DAI';
+    const tokenASymbol: string = 'DAI';
+    const tokenBSymbol: string = 'USDS';
 
-    const tokenAAmount: string = '100000000000000000000';
-    const tokenBAmount: string = '100000000000000000000';
+    const tokenAAmount: string = '10000000000000000000';
+    const tokenBAmount: string = '10000000000000000000';
 
     testForNetwork(
       network,
@@ -94,13 +92,14 @@ describe('SkyConverter E2E', () => {
   });
 
   describe('MKR - SKY', () => {
+    const dexKey = 'MkrSky';
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'MKR';
     const tokenBSymbol: string = 'SKY';
 
-    const tokenAAmount: string = '100000000000000000000';
-    const tokenBAmount: string = '100000000000000000000';
+    const tokenAAmount: string = '10000000000000000000';
+    const tokenBAmount: string = '10000000000000000000';
 
     testForNetwork(
       network,
