@@ -10,7 +10,7 @@ import { generateConfig } from '../../config';
 describe('LitePsm E2E', () => {
   const dexKey = 'LitePsm';
 
-  describe('LitePsm MAINNET_V6', () => {
+  describe('LitePsm DAI', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -77,7 +77,7 @@ describe('LitePsm E2E', () => {
     );
   });
 
-  describe('LitePsmNew', () => {
+  describe('LitePsm USDS', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
