@@ -19,6 +19,18 @@ export const Tokens: {
   [network: number]: { [symbol: string]: SmartTokenParams };
 } = {
   [Network.MAINNET]: {
+    USDS: {
+      address: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
+      decimals: 18,
+    },
+    SKY: {
+      address: '0x56072C95FAA701256059aa122697B133aDEd9279',
+      decimals: 18,
+    },
+    MKR: {
+      address: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
+      decimals: 18,
+    },
     AA_wstETH: {
       decimals: 18,
       address: '0x2688fc68c4eac90d9e5e1b94776cf14eade8d877',
@@ -1488,6 +1500,9 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
+    USDS: '0xE99d0ba6966c74BF78bF394BD29DCA154c6BC217',
+    SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
+    MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
     // Idle tokens
     AA_wstETH: '0xd7C1b48877A7dFA7D51cf1144c89C0A3F134F935',
     'AA_idle_cpPOR-USDC': '0x085c8eaccA6911fE60aE3f8FbAe5F3012E3A05Ec',
