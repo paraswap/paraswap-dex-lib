@@ -1500,7 +1500,7 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
-    USDS: '0xE99d0ba6966c74BF78bF394BD29DCA154c6BC217',
+    USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
     MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
     // Idle tokens
