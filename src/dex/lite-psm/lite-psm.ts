@@ -70,7 +70,7 @@ export class LitePsm
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected dai: Token = LitePsmConfig[dexKey][network].dai,
-    protected usds: Address = LitePsmConfig[dexKey][network].usdsAddress,
+    protected usds: Token = LitePsmConfig[dexKey][network].usds,
     protected usdsPsm: Address = LitePsmConfig[dexKey][network].usdsPsmAddress,
     protected vatAddress: Address = LitePsmConfig[dexKey][network].vatAddress,
     protected poolConfigs: PoolConfig[] = LitePsmConfig[dexKey][network].pools,
@@ -125,8 +125,8 @@ export class LitePsm
     return (
       (srcAddress === this.dai.address && this.eventPools[destAddress]) ||
       (destAddress === this.dai.address && this.eventPools[srcAddress]) ||
-      (srcAddress === this.usds && this.eventPools[destAddress]) ||
-      (destAddress === this.usds && this.eventPools[srcAddress]) ||
+      (srcAddress === this.usds.address && this.eventPools[destAddress]) ||
+      (destAddress === this.usds.address && this.eventPools[srcAddress]) ||
       null
     );
   }
@@ -223,7 +223,7 @@ export class LitePsm
     const isDaiSwap =
       isSrcDai || destToken.address.toLowerCase() === this.dai.address;
 
-    const isDestGem = isSrcDai || srcLower === this.usds;
+    const isDestGem = isSrcDai || srcLower === this.usds.address;
 
     const gem = isDestGem ? destToken : srcToken;
     const toll =
@@ -282,7 +282,7 @@ export class LitePsm
   ): { isGemSell: boolean; gemAmount: string } {
     const isDestGem =
       srcToken.toLowerCase() === this.dai.address ||
-      srcToken.toLowerCase() === this.usds;
+      srcToken.toLowerCase() === this.usds.address;
     const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
     if (side === SwapSide.SELL) {
       if (isDestGem) {
@@ -512,9 +512,10 @@ export class LitePsm
       );
     };
 
-    const isDai = _tokenAddress === this.dai.address;
+    const isDaiOrUsds =
+      _tokenAddress === this.dai.address || _tokenAddress === this.usds.address;
 
-    const validPoolConfigs = isDai
+    const validPoolConfigs = isDaiOrUsds
       ? this.poolConfigs
       : this.eventPools[_tokenAddress]
       ? [this.eventPools[_tokenAddress].poolConfig]
@@ -533,7 +534,7 @@ export class LitePsm
       exchange: this.dexKey,
       address: p.psmAddress,
       liquidityUSD: minLiq(poolStates[i], p.gem.decimals),
-      connectorTokens: [isDai ? p.gem : this.dai],
+      connectorTokens: isDaiOrUsds ? [p.gem] : [this.dai, this.usds],
     }));
   }
 }

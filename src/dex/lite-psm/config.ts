@@ -10,7 +10,10 @@ export const LitePsmConfig: DexConfigMap<DexParams> = {
         address: '0x6b175474e89094c44da98b954eedeac495271d0f',
         decimals: 18,
       },
-      usdsAddress: '0xdc035d45d973e3ec169d2276ddab16f1e407384f',
+      usds: {
+        address: '0xdc035d45d973e3ec169d2276ddab16f1e407384f',
+        decimals: 18,
+      },
       usdsPsmAddress: '0xA188EEC8F81263234dA3622A406892F3D630f98c',
       vatAddress: '0x35d1b3f3d7966a1dfe207aa4514c12a259a0492b',
       pools: [

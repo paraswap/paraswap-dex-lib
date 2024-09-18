@@ -24,7 +24,7 @@ export type PoolConfig = {
 
 export type DexParams = {
   dai: Token;
-  usdsAddress: Address;
+  usds: Token;
   usdsPsmAddress: Address;
   vatAddress: Address;
   pools: PoolConfig[];
