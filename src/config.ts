@@ -53,9 +53,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
@@ -146,9 +146,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
@@ -181,9 +181,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
@@ -222,9 +222,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
@@ -291,9 +291,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
@@ -325,9 +325,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_10,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
@@ -400,9 +400,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs: [],
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     adapterAddresses: {
       BaseAdapter01: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
