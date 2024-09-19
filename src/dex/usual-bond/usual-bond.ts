@@ -19,7 +19,6 @@ import { SimpleExchange } from '../simple-exchange';
 import { UsualBondConfig } from './config';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import USD0PP_ABI from '../../abi/usual-bond/usd0pp.abi.json';
-import { extractReturnAmountPosition } from '../../executor/utils';
 import { BI_POWS } from '../../bigint-constants';
 
 export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
@@ -80,8 +79,6 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) return [];
-
     if (!srcToken || !destToken) {
       this.logger.error('Source or destination token is undefined');
       return [];
@@ -110,17 +107,15 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UsualBondData>> {
-    if (side === SwapSide.BUY) return null;
-
     const isUSD0SwapToken = this.is_usd0_swap_token(
       srcToken.address,
       destToken.address,
     );
+
     if (!isUSD0SwapToken) {
       return null;
     }
 
-    const unitIn = BI_POWS[18];
     const unitOut = BI_POWS[18]; // 1:1 swap
     const amountsOut = amounts; // 1:1 swap, so output amounts are the same as input
 
@@ -167,7 +162,6 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     data: UsualBondData,
     side: SwapSide,
   ): Promise<DexExchangeParam> {
-    if (side === SwapSide.BUY) throw new Error('BUY not supported');
     if (this.is_usd0(srcToken) && this.is_usd0pp(destToken)) {
       const exchangeData = this.usd0ppIface.encodeFunctionData('mint', [
         srcAmount,
@@ -179,7 +173,6 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
         exchangeData,
         targetExchange: this.config.usd0ppAddress,
         returnAmountPos: undefined,
-        spender: this.config.usd0ppAddress, // Add this if it's the same as targetExchange
       };
     }
     throw new Error('LOGIC ERROR');
