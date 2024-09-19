@@ -14,6 +14,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import USD0PP_ABI from '../../abi/usual-bond/usd0pp.abi.json';
+import { func } from 'joi';
 
 /*
   README
@@ -35,79 +36,26 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
-  console.log('exchangeAddress', exchangeAddress);
-  console.log('funcName', funcName);
-  console.log('amounts', amounts);
-  console.log(
-    amounts.map(amount => ({
-      target: exchangeAddress,
-      callData: readerIface.encodeFunctionData(funcName, [amount]),
-    })),
-  );
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [amount]),
   }));
 }
 
-function decodeReaderResult(
-  results: Result,
+function getReaderCalldataApprove(
+  exchangeAddress: string,
   readerIface: Interface,
-  funcName: string,
   amounts: bigint[],
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(amounts => {
-    // const parsed = readerIface.decodeFunctionResult(funcName, result);
-    // return BigInt(parsed[0]._hex);
-    return amounts;
-  });
-}
-
-async function checkOnChainPricing(
-  usualBond: UsualBond,
   funcName: string,
-  blockNumber: number,
-  prices: bigint[],
-  amounts: bigint[],
 ) {
-  const exchangeAddress = '0x35d8949372d46b7a3d5a56006ae77b215fc69bc0';
-
-  console.log('prices', prices);
-  console.log('amounts', amounts);
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from usualBond.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface(USD0PP_ABI as JsonFragment[]);
-
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts,
-    funcName,
-  );
-  console.log(readerCallData);
-
-  const readerResult = (
-    await usualBond.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  console.log(readerResult);
-
-  // return the amounts
-  const expectedPrices = decodeReaderResult(
-    readerResult,
-    readerIface,
-    'mint',
-    amounts,
-  );
-
-  expect(prices).toEqual(expectedPrices);
+  return amounts.map(amount => ({
+    target: exchangeAddress,
+    callData: readerIface.encodeFunctionData(funcName, [
+      exchangeAddress,
+      amount,
+    ]),
+  }));
 }
 
 async function testPricingOnNetwork(
@@ -153,13 +101,7 @@ async function testPricingOnNetwork(
   }
 
   // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    usualBond,
-    'mint',
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
+  checkPoolPrices(poolPrices!, amounts, side, dexKey);
 }
 
 describe('UsualBond', function () {
@@ -171,23 +113,20 @@ describe('UsualBond', function () {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
-    const tokens = Tokens[network];
-
-    // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
 
     const amountsForSell = [
-      // 0n,
+      0n,
       1n * BI_POWS[18],
-      // 2n * BI_POWS[18],
-      // 3n * BI_POWS[18],
-      // 4n * BI_POWS[18],
-      // 5n * BI_POWS[18],
-      // 6n * BI_POWS[18],
-      // 7n * BI_POWS[18],
-      // 8n * BI_POWS[18],
-      // 9n * BI_POWS[18],
-      // 10n * BI_POWS[18],
+      2n * BI_POWS[18],
+      3n * BI_POWS[18],
+      4n * BI_POWS[18],
+      5n * BI_POWS[18],
+      6n * BI_POWS[18],
+      7n * BI_POWS[18],
+      8n * BI_POWS[18],
+      9n * BI_POWS[18],
+      10n * BI_POWS[18],
     ];
 
     beforeAll(async () => {
@@ -208,7 +147,7 @@ describe('UsualBond', function () {
         'USD0++',
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        '',
       );
     });
   });
