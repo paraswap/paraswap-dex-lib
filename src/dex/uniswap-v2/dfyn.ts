@@ -6,6 +6,7 @@ import {
   Token,
   ExchangePrices,
   DexExchangeParam,
+  ImprovedExchangePrices,
 } from '../../types';
 import { IDexHelper } from '../../dex-helper/index';
 import { Interface } from '@ethersproject/abi';
@@ -75,7 +76,7 @@ export class Dfyn extends UniswapV2 {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<ExchangePrices<UniswapV2Data> | null> {
+  ): Promise<ImprovedExchangePrices<UniswapV2Data>> {
     const _from = WrapDfynWETH(from);
     const _to = WrapDfynWETH(to);
     const prices = await super.getPricesVolume(
@@ -87,9 +88,12 @@ export class Dfyn extends UniswapV2 {
       limitPools,
     );
 
-    return prices
-      ? prices.map(p => ({ ...p, data: { ...p.data, weth: DfynWETH.address } }))
-      : null;
+    return prices.map(p => ({
+      poolId: p.poolId,
+      prices: !p.prices
+        ? p.prices
+        : { ...p.prices, data: { ...p.prices.data, weth: DfynWETH.address } },
+    }));
   }
 
   public getDexParam(

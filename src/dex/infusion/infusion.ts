@@ -5,12 +5,14 @@ import {
   SUBGRAPH_TIMEOUT,
   DEST_TOKEN_PARASWAP_TRANSFERS,
   SRC_TOKEN_PARASWAP_TRANSFERS,
+  ALL_POOLS_IDENTIFIER,
 } from '../../constants';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
   ExchangePrices,
+  ImprovedExchangePrices,
   PoolLiquidity,
   Token,
   TransferFeeParams,
@@ -277,14 +279,24 @@ export class Infusion extends UniswapV2 {
       srcDexFee: 0,
       destDexFee: 0,
     },
-  ): Promise<ExchangePrices<InfusionData> | null> {
+  ): Promise<ImprovedExchangePrices<InfusionData>> {
     try {
-      if (side === SwapSide.BUY) return null; // Buy side not implemented yet
+      if (side === SwapSide.BUY) {
+        return [
+          {
+            poolId: ALL_POOLS_IDENTIFIER,
+            prices: null,
+          },
+        ];
+      }
       const from = this.dexHelper.config.wrapETH(_from);
       const to = this.dexHelper.config.wrapETH(_to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
-        return null;
+        return [false, true].map(stable => ({
+          poolId: `${this.dexKey}_${tokenAddress}` + this.poolPostfix(stable),
+          prices: null,
+        }));
       }
 
       const tokenAddress = [
@@ -298,18 +310,25 @@ export class Infusion extends UniswapV2 {
 
       const resultPromises = [false, true].map(async stable => {
         // We don't support fee on transfer for stable pools yet
+        const poolIdentifier =
+          `${this.dexKey}_${tokenAddress}` + this.poolPostfix(stable);
+
         if (
           stable &&
           (transferFees.srcFee !== 0 || transferFees.srcDexFee !== 0)
         ) {
-          return null;
+          return {
+            poolId: poolIdentifier,
+            prices: null,
+          };
         }
 
-        const poolIdentifier =
-          `${this.dexKey}_${tokenAddress}` + this.poolPostfix(stable);
-
-        if (limitPools && limitPools.every(p => p !== poolIdentifier))
-          return null;
+        if (limitPools && limitPools.every(p => p !== poolIdentifier)) {
+          return {
+            poolId: poolIdentifier,
+            prices: null,
+          };
+        }
 
         const isSell = side === SwapSide.SELL;
         const pairParam = await this.getInfusionPairOrderedParams(
@@ -320,7 +339,12 @@ export class Infusion extends UniswapV2 {
           transferFees.srcDexFee,
         );
 
-        if (!pairParam) return null;
+        if (!pairParam) {
+          return {
+            poolId: poolIdentifier,
+            prices: null,
+          };
+        }
 
         const unitAmount = getBigIntPow(from.decimals);
 
@@ -352,42 +376,49 @@ export class Infusion extends UniswapV2 {
         );
 
         return {
-          prices: outputsWithFee,
-          unit: unitOutWithFee,
-          data: {
-            router: this.router,
-            path: [from.address.toLowerCase(), to.address.toLowerCase()],
-            factory: this.factoryAddress,
-            initCode: this.initCode,
-            feeFactor: this.feeFactor,
-            isFeeTokenInRoute: Object.values(transferFees).some(f => f !== 0),
-            pools: [
-              {
-                address: pairParam.exchange,
-                fee: parseInt(pairParam.fee),
-                direction: pairParam.direction,
-              },
-            ],
+          poolId: poolIdentifier,
+          prices: {
+            prices: outputsWithFee,
+            unit: unitOutWithFee,
+            data: {
+              router: this.router,
+              path: [from.address.toLowerCase(), to.address.toLowerCase()],
+              factory: this.factoryAddress,
+              initCode: this.initCode,
+              feeFactor: this.feeFactor,
+              isFeeTokenInRoute: Object.values(transferFees).some(f => f !== 0),
+              pools: [
+                {
+                  address: pairParam.exchange,
+                  fee: parseInt(pairParam.fee),
+                  direction: pairParam.direction,
+                },
+              ],
+            },
+            exchange: this.dexKey,
+            poolIdentifier,
+            gasCost: this.poolGasCost,
+            poolAddresses: [pairParam.exchange],
           },
-          exchange: this.dexKey,
-          poolIdentifier,
-          gasCost: this.poolGasCost,
-          poolAddresses: [pairParam.exchange],
         };
       });
 
-      const resultPools = (await Promise.all(
-        resultPromises,
-      )) as ExchangePrices<InfusionData>;
-      const resultPoolsFiltered = resultPools.filter(item => !!item); // filter null elements
-      return resultPoolsFiltered.length > 0 ? resultPoolsFiltered : null;
+      const resultPools: ImprovedExchangePrices<InfusionData> =
+        await Promise.all(resultPromises);
+
+      return resultPools;
     } catch (e) {
       if (blockNumber === 0)
         this.logger.error(
           `Error_getPricesVolume: Aurelius block manager not yet instantiated`,
         );
       this.logger.error(`Error_getPrices:`, e);
-      return null;
+      return [
+        {
+          poolId: ALL_POOLS_IDENTIFIER,
+          prices: null,
+        },
+      ];
     }
   }
 

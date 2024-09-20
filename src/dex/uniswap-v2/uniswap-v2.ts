@@ -17,6 +17,7 @@ import {
   TxInfo,
   TransferFeeParams,
   DexExchangeParam,
+  ImprovedExchangePrices,
 } from '../../types';
 import {
   UniswapData,
@@ -560,27 +561,34 @@ export class UniswapV2
       srcDexFee: 0,
       destDexFee: 0,
     },
-  ): Promise<ExchangePrices<UniswapV2Data> | null> {
+  ): Promise<ImprovedExchangePrices<UniswapV2Data>> {
+    const from = this.dexHelper.config.wrapETH(_from);
+    const to = this.dexHelper.config.wrapETH(_to);
+
+    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
+      .sort((a, b) => (a > b ? 1 : -1))
+      .join('_');
+
+    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+
+    if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      return [
+        {
+          poolId: poolIdentifier,
+          prices: null,
+        },
+      ];
+    }
+
+    if (limitPools && limitPools.every(p => p !== poolIdentifier))
+      return [
+        {
+          poolId: poolIdentifier,
+          prices: null,
+        },
+      ];
+
     try {
-      const from = this.dexHelper.config.wrapETH(_from);
-      const to = this.dexHelper.config.wrapETH(_to);
-
-      if (from.address.toLowerCase() === to.address.toLowerCase()) {
-        return null;
-      }
-
-      const tokenAddress = [
-        from.address.toLowerCase(),
-        to.address.toLowerCase(),
-      ]
-        .sort((a, b) => (a > b ? 1 : -1))
-        .join('_');
-
-      const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-
-      if (limitPools && limitPools.every(p => p !== poolIdentifier))
-        return null;
-
       await this.batchCatchUpPairs([[from, to]], blockNumber);
       const isSell = side === SwapSide.SELL;
       const pairParam = await this.getPairOrderedParams(
@@ -590,7 +598,13 @@ export class UniswapV2
         transferFees.srcDexFee,
       );
 
-      if (!pairParam) return null;
+      if (!pairParam)
+        return [
+          {
+            poolId: poolIdentifier,
+            prices: null,
+          },
+        ];
 
       const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
 
@@ -630,26 +644,29 @@ export class UniswapV2
       // As uniswapv2 just has one pool per token pair
       return [
         {
-          prices: outputsWithFee,
-          unit: unitOutWithFee,
-          data: {
-            router: this.router,
-            path: [from.address.toLowerCase(), to.address.toLowerCase()],
-            factory: this.factoryAddress,
-            initCode: this.initCode,
-            feeFactor: this.feeFactor,
-            pools: [
-              {
-                address: pairParam.exchange,
-                fee: parseInt(pairParam.fee),
-                direction: pairParam.direction,
-              },
-            ],
+          poolId: poolIdentifier,
+          prices: {
+            prices: outputsWithFee,
+            unit: unitOutWithFee,
+            data: {
+              router: this.router,
+              path: [from.address.toLowerCase(), to.address.toLowerCase()],
+              factory: this.factoryAddress,
+              initCode: this.initCode,
+              feeFactor: this.feeFactor,
+              pools: [
+                {
+                  address: pairParam.exchange,
+                  fee: parseInt(pairParam.fee),
+                  direction: pairParam.direction,
+                },
+              ],
+            },
+            exchange: this.dexKey,
+            poolIdentifier,
+            gasCost: this.poolGasCost,
+            poolAddresses: [pairParam.exchange],
           },
-          exchange: this.dexKey,
-          poolIdentifier,
-          gasCost: this.poolGasCost,
-          poolAddresses: [pairParam.exchange],
         },
       ];
     } catch (e) {
@@ -658,7 +675,12 @@ export class UniswapV2
           `Error_getPricesVolume: Aurelius block manager not yet instantiated`,
         );
       this.logger.error(`Error_getPrices:`, e);
-      return null;
+      return [
+        {
+          poolId: poolIdentifier,
+          prices: null,
+        },
+      ];
     }
   }
 
