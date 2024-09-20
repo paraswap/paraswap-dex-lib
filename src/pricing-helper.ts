@@ -7,6 +7,9 @@ import {
   ExchangePrices,
   UnoptimizedRate,
   TransferFeeParams,
+  ImprovedPoolPrices,
+  ImprovedPoolPrice,
+  toImprovedPoolPrices,
 } from './types';
 import {
   SwapSide,
@@ -192,7 +195,7 @@ export class PricingHelper {
       destDexFee: 0,
     },
     rollupL1ToL2GasRatio?: number,
-  ): Promise<PoolPrices<any>[]> {
+  ): Promise<ImprovedPoolPrices<any>> {
     const dexPoolPrices = await Promise.all(
       dexKeys.map(async key => {
         try {
@@ -200,7 +203,7 @@ export class PricingHelper {
 
           if (limitPools && !limitPools.length) return [];
 
-          return await new Promise<PoolPrices<any>[] | null>(
+          return await new Promise<ImprovedPoolPrices<any>>(
             (resolve, reject) => {
               const timer = setTimeout(
                 () => reject(new Error(`Timeout`)),
@@ -214,7 +217,9 @@ export class PricingHelper {
                 !dexInstance.isFeeOnTransferSupported
               ) {
                 clearTimeout(timer);
-                return resolve(null);
+                return resolve([
+                  { dexKey: key, poolId: 'unknown_pool', prices: null },
+                ]);
               }
 
               dexInstance
@@ -228,31 +233,38 @@ export class PricingHelper {
                   transferFees,
                 )
                 .then(poolPrices => {
+                  // TODO-rec: refactor
+                  const improvedPrices = toImprovedPoolPrices(key, poolPrices);
+                  if (!rollupL1ToL2GasRatio) {
+                    return resolve(improvedPrices);
+                  }
                   try {
-                    if (!poolPrices || !rollupL1ToL2GasRatio) {
-                      return resolve(poolPrices);
-                    }
                     return resolve(
-                      poolPrices.map(pp => {
-                        pp.gasCostL2 = pp.gasCost;
-                        const gasCostL1 = dexInstance.getCalldataGasCost(pp);
+                      improvedPrices.map(pp => {
+                        if (pp.prices === null) {
+                          return pp;
+                        }
+                        pp.prices.gasCostL2 = pp.prices.gasCost;
+                        const gasCostL1 = dexInstance.getCalldataGasCost(
+                          pp.prices,
+                        );
                         if (
-                          typeof pp.gasCost === 'number' &&
+                          typeof pp.prices.gasCost === 'number' &&
                           typeof gasCostL1 === 'number'
                         ) {
-                          pp.gasCost += Math.ceil(
+                          pp.prices.gasCost += Math.ceil(
                             rollupL1ToL2GasRatio * gasCostL1,
                           );
                         } else if (
-                          typeof pp.gasCost !== 'number' &&
+                          typeof pp.prices.gasCost !== 'number' &&
                           typeof gasCostL1 !== 'number'
                         ) {
-                          if (pp.gasCost.length !== gasCostL1.length) {
+                          if (pp.prices.gasCost.length !== gasCostL1.length) {
                             throw new Error(
                               `getCalldataGasCost returned wrong array length in dex ${key}`,
                             );
                           }
-                          pp.gasCost = pp.gasCost.map(
+                          pp.prices.gasCost = pp.prices.gasCost.map(
                             (g, i) =>
                               g +
                               Math.ceil(rollupL1ToL2GasRatio * gasCostL1[i]),
@@ -281,40 +293,49 @@ export class PricingHelper {
       }),
     );
 
-    return dexPoolPrices
-      .filter((x): x is ExchangePrices<any> => !!x)
-      .flat() // flatten to get all the pools for the swap
-      .filter(p => {
-        // Pools should only return correct chunks
-        if (p.prices.length !== amounts.length) {
-          this.logger.error(
-            `Error_getPoolPrices: ${p.exchange} returned prices with invalid chunks`,
-          );
-          return false;
-        }
-
-        if (Array.isArray(p.gasCost)) {
-          if (p.gasCost.length !== amounts.length) {
+    return (
+      dexPoolPrices
+        // TODO-rec: ignore for now as we return all available prices & pools
+        // .filter((x): x is ExchangePrices<any> => !!x)
+        .flat() // flatten to get all the pools for the swap
+        .filter(p => {
+          if (p.prices === null) {
+            return true;
+          }
+          // Pools should only return correct chunks
+          if (p.prices.prices.length !== amounts.length) {
             this.logger.error(
-              `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array length: ${p.gasCost.length} !== ${amounts.length}`,
+              `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid chunks`,
             );
             return false;
           }
 
-          for (const [i, amount] of amounts.entries()) {
-            if (amount === 0n && p.gasCost[i] !== 0) {
+          if (Array.isArray(p.prices.gasCost)) {
+            if (p.prices.gasCost.length !== amounts.length) {
               this.logger.error(
-                `Error_getPoolPrices: ${p.exchange} returned prices with invalid gasCost array. At index ${i} amount is 0 but gasCost is ${p.gasCost[i]}`,
+                `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid gasCost array length: ${p.prices.gasCost.length} !== ${amounts.length}`,
               );
               return false;
             }
-          }
-        }
 
-        if (p.prices.every(pi => pi === 0n)) {
-          return false;
-        }
-        return true;
-      });
+            for (const [i, amount] of amounts.entries()) {
+              if (amount === 0n && p.prices.gasCost[i] !== 0) {
+                this.logger.error(
+                  `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid gasCost array. At index ${i} amount is 0 but gasCost is ${p.prices.gasCost[i]}`,
+                );
+                return false;
+              }
+            }
+          }
+
+          if (p.prices.prices.every(pi => pi === 0n)) {
+            this.logger.error(
+              `Error_getPoolPrices: ${p.prices.exchange} returned all 0n prices`,
+            );
+            return false;
+          }
+          return true;
+        })
+    );
   }
 }

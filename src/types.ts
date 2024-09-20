@@ -211,6 +211,58 @@ export type aToken = {
 
 export type ExchangePrices<T> = PoolPrices<T>[];
 
+type PoolIdentifier = string;
+// TODO-rec: check if better to return array aka { id: string, prices: PoolPrices<T> | null }[] instead of the object
+// in terms of performance, garbage collector, etc
+
+type ImprovedExchangePrice<T> = {
+  poolId: string;
+  prices: PoolPrices<T> | null;
+};
+export type ImprovedPoolPrice<T> = ImprovedExchangePrice<T> & {
+  dexKey: string;
+};
+
+export type ImprovedExchangePrices<T> = ImprovedExchangePrice<T>[];
+export type ImprovedPoolPrices<T> = ImprovedPoolPrice<T>[];
+
+export function isImprovedExchangePrice<T>(
+  exchangePrices: PoolPrices<T> | ImprovedExchangePrice<T>,
+): exchangePrices is ImprovedExchangePrice<T> {
+  return exchangePrices.hasOwnProperty('poolId');
+}
+
+export function toImprovedPoolPrices<T>(
+  dexKey: string,
+  exchangePrices: ExchangePrices<T> | ImprovedExchangePrices<T> | null,
+): ImprovedPoolPrices<T> {
+  if (exchangePrices === null) {
+    return [
+      {
+        dexKey,
+        poolId: 'unknown_pool',
+        prices: exchangePrices,
+      },
+    ];
+  }
+
+  return exchangePrices.map(exchangePrice => {
+    const isImprovedPrices = isImprovedExchangePrice(exchangePrice);
+
+    return {
+      dexKey,
+      poolId: isImprovedPrices ? exchangePrice?.poolId : 'unknown_pool',
+      prices: isImprovedPrices ? exchangePrice.prices : exchangePrice,
+    };
+  });
+}
+
+const a: ImprovedPoolPrice<string> = {
+  dexKey: '',
+  poolId: 'unknown_pool',
+  prices: null,
+};
+
 export type PoolPrices<T> = {
   prices: bigint[];
   unit: bigint;

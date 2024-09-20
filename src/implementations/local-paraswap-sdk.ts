@@ -131,7 +131,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     const amounts = _.range(0, chunks + 1).map(
       i => (amount * BigInt(i)) / BigInt(chunks),
     );
-    const poolPrices = await this.pricingHelper.getPoolPrices(
+    const improvedPoolPrices = await this.pricingHelper.getPoolPrices(
       from,
       to,
       amounts,
@@ -142,7 +142,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       transferFees,
     );
 
-    if (!poolPrices || poolPrices.length == 0)
+    const poolPrices = improvedPoolPrices.map(p => p.prices).filter(p => !!p);
+
+    if (!poolPrices || poolPrices.length == 0 || poolPrices[0] === null)
       throw new Error('Fail to get price for ' + this.dexKeys.join(', '));
 
     const finalPrice = poolPrices[0];

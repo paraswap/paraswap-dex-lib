@@ -67,3 +67,5 @@ export const IS_CAP_SURPLUS_MASK = BigNumber.from('1').shl(92);
 export const IS_SKIP_BLACKLIST_MASK = BigNumber.from('1').shl(93);
 export const IS_REFERRAL_MASK = BigNumber.from('1').shl(94);
 export const IS_TAKE_SURPLUS_MASK = BigNumber.from('1').shl(95);
+
+export const ALL_POOLS_IDENTIFIER = '*';
