@@ -33,6 +33,7 @@ import {
 } from './types';
 import { IDex } from '../idex';
 import {
+  ALL_POOLS_IDENTIFIER,
   DEST_TOKEN_PARASWAP_TRANSFERS,
   ETHER_ADDRESS,
   Network,
@@ -569,17 +570,16 @@ export class UniswapV2
       .sort((a, b) => (a > b ? 1 : -1))
       .join('_');
 
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [
         {
-          poolId: poolIdentifier,
+          poolId: ALL_POOLS_IDENTIFIER,
           prices: null,
         },
       ];
     }
 
+    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
     if (limitPools && limitPools.every(p => p !== poolIdentifier))
       return [
         {

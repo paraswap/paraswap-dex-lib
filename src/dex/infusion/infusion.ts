@@ -293,10 +293,12 @@ export class Infusion extends UniswapV2 {
       const to = this.dexHelper.config.wrapETH(_to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
-        return [false, true].map(stable => ({
-          poolId: `${this.dexKey}_${tokenAddress}` + this.poolPostfix(stable),
-          prices: null,
-        }));
+        return [
+          {
+            poolId: ALL_POOLS_IDENTIFIER,
+            prices: null,
+          },
+        ];
       }
 
       const tokenAddress = [
