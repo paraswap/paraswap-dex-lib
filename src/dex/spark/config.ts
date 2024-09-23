@@ -2,7 +2,7 @@ import { SparkParams } from './types';
 import { DexConfigMap } from '../../types';
 import { Network } from '../../constants';
 import { SwapSide } from '@paraswap/core';
-import SavingsDaiAbi from '../../abi/sdai/SavingsDai.abi.json';
+import PotAbi from '../../abi/maker-psm/pot.json';
 import SavingsUSDSAbi from '../../abi/sdai/SavingsUSDS.abi.json';
 import { Interface } from '@ethersproject/abi';
 
@@ -18,7 +18,7 @@ export const SDaiConfig: DexConfigMap<SparkParams> = {
         topic:
           '0x6473720000000000000000000000000000000000000000000000000000000000',
       },
-      abiInterface: new Interface(SavingsDaiAbi),
+      poolInterface: new Interface(PotAbi),
     },
   },
   sUSDS: {
@@ -32,7 +32,7 @@ export const SDaiConfig: DexConfigMap<SparkParams> = {
         topic:
           '0x7373720000000000000000000000000000000000000000000000000000000000',
       },
-      abiInterface: new Interface(SavingsUSDSAbi),
+      poolInterface: new Interface(SavingsUSDSAbi),
     },
   },
 };

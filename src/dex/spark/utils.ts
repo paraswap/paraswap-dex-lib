@@ -23,7 +23,7 @@ export async function getOnChainState(
     );
   }
 
-  return getOnChainStateSDAI(
+  return getOnChainStateUSDS(
     multiContract,
     potAddress,
     potInterface,

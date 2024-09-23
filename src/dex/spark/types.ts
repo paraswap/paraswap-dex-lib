@@ -11,7 +11,7 @@ export type SparkParams = {
     symbol: 'dsr' | 'ssr';
     topic: string;
   };
-  abiInterface: Interface;
+  poolInterface: Interface;
 };
 
 export enum SparkSDaiFunctions {

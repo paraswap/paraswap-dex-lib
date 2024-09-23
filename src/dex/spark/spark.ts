@@ -47,7 +47,8 @@ export class Spark
     readonly daiAddress: string = SDaiConfig[dexKey][network].daiAddress,
     readonly sdaiAddress: string = SDaiConfig[dexKey][network].sdaiAddress,
     readonly potAddress: string = SDaiConfig[dexKey][network].potAddress,
-    readonly abiInterface: Interface = SDaiConfig[dexKey][network].abiInterface,
+    readonly abiInterface: Interface = SDaiConfig[dexKey][network]
+      .poolInterface,
 
     protected adapters = Adapters[network] || {},
     protected sdaiInterface = new Interface(SavingsDaiAbi),
