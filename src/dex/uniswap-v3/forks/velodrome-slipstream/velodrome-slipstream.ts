@@ -112,14 +112,18 @@ export class VelodromeSlipstream extends UniswapV3 {
     srcAddress: string,
     destAddress: string,
     blockNumber: number,
-  ): Promise<(UniswapV3EventPool | null)[]> {
+  ): Promise<(UniswapV3EventPool | string)[]> {
     return Promise.all(
       this.config.tickSpacings!.map(async tickSpacing => {
         const fee = this.config.tickSpacingsToFees![tickSpacing.toString()];
-        const locallyFoundPool =
-          this.eventPools[
-            this.getPoolIdentifier(srcAddress, destAddress, fee, tickSpacing)
-          ];
+        const poolId = this.getPoolIdentifier(
+          srcAddress,
+          destAddress,
+          fee,
+          tickSpacing,
+        );
+
+        const locallyFoundPool = this.eventPools[poolId];
 
         if (locallyFoundPool) return locallyFoundPool;
 
@@ -130,6 +134,11 @@ export class VelodromeSlipstream extends UniswapV3 {
           blockNumber,
           tickSpacing,
         );
+
+        if (newlyFetchedPool === null) {
+          return poolId;
+        }
+
         return newlyFetchedPool;
       }),
     );
