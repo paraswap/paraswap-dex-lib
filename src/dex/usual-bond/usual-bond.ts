@@ -182,7 +182,8 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (!this.is_usd0(tokenAddress)) return [];
+    const isUsd0 = this.is_usd0(tokenAddress);
+    if (!isUsd0 && !this.is_usd0pp(tokenAddress)) return [];
 
     return [
       {
@@ -191,7 +192,9 @@ export class UsualBond extends SimpleExchange implements IDex<UsualBondData> {
         connectorTokens: [
           {
             decimals: 18,
-            address: this.config.usd0ppAddress,
+            address: isUsd0
+              ? this.config.usd0ppAddress
+              : this.config.usd0Address,
           },
         ],
         liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred

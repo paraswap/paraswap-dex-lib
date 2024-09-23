@@ -7,7 +7,11 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { UsualBond } from './usual-bond';
-import { checkPoolPrices, checkConstantPoolPrices } from '../../../tests/utils';
+import {
+  checkPoolPrices,
+  checkConstantPoolPrices,
+  checkPoolsLiquidity,
+} from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
 async function testPricingOnNetwork(
@@ -101,6 +105,40 @@ describe('UsualBond', function () {
         amountsForSell,
         '',
       );
+    });
+
+    it('getTopPoolsForToken: USD0', async function () {
+      const tokenA = Tokens[network]['USD0'];
+      const dexHelper = new DummyDexHelper(network);
+      const usualBond = new UsualBond(network, dexKey, dexHelper);
+
+      const poolLiquidity = await usualBond.getTopPoolsForToken(
+        tokenA.address,
+        10,
+      );
+      console.log(
+        `${tokenA.symbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+    });
+
+    it('getTopPoolsForToken: USD0++', async function () {
+      const tokenA = Tokens[network]['USD0++'];
+      const dexHelper = new DummyDexHelper(network);
+      const usualBond = new UsualBond(network, dexKey, dexHelper);
+
+      const poolLiquidity = await usualBond.getTopPoolsForToken(
+        tokenA.address,
+        10,
+      );
+      console.log(
+        `${tokenA.symbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
     });
   });
 });
