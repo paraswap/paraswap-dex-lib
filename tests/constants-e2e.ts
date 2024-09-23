@@ -19,6 +19,10 @@ export const Tokens: {
   [network: number]: { [symbol: string]: SmartTokenParams };
 } = {
   [Network.MAINNET]: {
+    sUSDS: {
+      address: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',
+      decimals: 18,
+    },
     USDS: {
       address: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
       decimals: 18,
@@ -1501,6 +1505,7 @@ export const Holders: {
 } = {
   [Network.MAINNET]: {
     USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
+    sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
     MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
     // Idle tokens

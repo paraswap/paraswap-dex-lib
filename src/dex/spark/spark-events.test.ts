@@ -56,7 +56,7 @@ async function fetchPoolState(
   return sdaiPool.generateState(blockNumber);
 }
 
-describe('SDai Event', function () {
+describe('SDai', function () {
   const blockNumbers: { [eventName: string]: number[] } = {
     drip: [19827559, 19827524, 19827163, 19827124, 19827000, 19826892],
     // TODO: no matching logs, you have to manually call "file"
@@ -78,11 +78,14 @@ describe('SDai Event', function () {
 
           const sdaiPool = new SparkSDaiEventPool(
             dexKey,
+            network,
             `dai-sdai-pool`,
             dexHelper,
             addresses.potAddress,
             new Interface(PotAbi),
             logger,
+            '0x6473720000000000000000000000000000000000000000000000000000000000',
+            'dsr',
           );
 
           await sdaiPool.initialize(blockNumber);
@@ -96,6 +99,53 @@ describe('SDai Event', function () {
             dexHelper.provider,
           );
         });
+      });
+    });
+  });
+});
+
+describe('sUSDS', function () {
+  const blockNumbers: { [eventName: string]: number[] } = {
+    // TODO: Add & check
+    drip: [20812786, 20812797, 20813343, 20813668, 20814065, 20814418],
+    // TODO: no matching logs, you have to manually call "file"
+    // from "0xbe8e3e3618f7474f8cb1d074a26affef007e98fb" address
+    // https://etherscan.io/advanced-filter?fadd=0x197e90f9fad81970ba7976f33cbd77088e5d7cf7&tadd=0x197e90f9fad81970ba7976f33cbd77088e5d7cf7&mtd=0x29ae8114%7eFile
+    // file: [19831086]
+  };
+
+  const addresses: { [contract: string]: string } = {
+    potAddress: SDaiConfig[dexKey][network].potAddress,
+  };
+
+  Object.keys(blockNumbers).forEach((event: string) => {
+    blockNumbers[event].forEach((blockNumber: number) => {
+      it(`Should return the correct state after the ${blockNumber}:${event}`, async function () {
+        const dexHelper = new DummyDexHelper(network);
+        const logger = dexHelper.getLogger(dexKey);
+
+        const sUSDSPool = new SparkSDaiEventPool(
+          dexKey,
+          network,
+          `dai-sdai-pool`,
+          dexHelper,
+          addresses.potAddress,
+          new Interface(PotAbi),
+          logger,
+          '0x7373720000000000000000000000000000000000000000000000000000000000',
+          'ssr',
+        );
+
+        await sUSDSPool.initialize(blockNumber);
+
+        await testEventSubscriber(
+          sUSDSPool,
+          sUSDSPool.addressesSubscribed,
+          (_blockNumber: number) => fetchPoolState(sUSDSPool, _blockNumber),
+          blockNumber,
+          `${dexKey}_${sUSDSPool}`,
+          dexHelper.provider,
+        );
       });
     });
   });

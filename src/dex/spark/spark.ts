@@ -47,20 +47,23 @@ export class Spark
     readonly daiAddress: string = SDaiConfig[dexKey][network].daiAddress,
     readonly sdaiAddress: string = SDaiConfig[dexKey][network].sdaiAddress,
     readonly potAddress: string = SDaiConfig[dexKey][network].potAddress,
+    readonly abiInterface: Interface = SDaiConfig[dexKey][network].abiInterface,
 
     protected adapters = Adapters[network] || {},
     protected sdaiInterface = new Interface(SavingsDaiAbi),
-    protected potInterface = new Interface(PotAbi),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.eventPool = new SparkSDaiEventPool(
       this.dexKey,
+      this.network,
       `${this.daiAddress}_${this.sdaiAddress}`,
       dexHelper,
       this.potAddress,
-      this.potInterface,
+      this.abiInterface,
       this.logger,
+      SDaiConfig[dexKey][network].savingsRate.topic,
+      SDaiConfig[dexKey][network].savingsRate.symbol,
     );
   }
 

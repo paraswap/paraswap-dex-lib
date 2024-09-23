@@ -7,6 +7,8 @@ import type { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import type { Address, BlockHeader, Log, Logger } from '../../types';
 import type { SparkSDaiPoolState } from './types';
 import { getOnChainState } from './utils';
+import { SDaiConfig } from './config';
+import { Network } from '../../constants';
 
 const RAY = BI_POWS[27];
 const ZERO = BigInt(0);
@@ -17,10 +19,6 @@ const HALF = RAY / TWO;
 const FILE_TOPICHASH = `0x29ae811400000000000000000000000000000000000000000000000000000000`;
 // function drip()
 const DRIP_TOPICHASH = `0x9f678cca00000000000000000000000000000000000000000000000000000000`;
-// function cage()
-const CAGE_TOPICHASH = `0x6924500900000000000000000000000000000000000000000000000000000000`;
-// bytes32 repr of "dsr" string
-const DSR_TOPIC = `0x6473720000000000000000000000000000000000000000000000000000000000`;
 
 const rpow = (x: bigint, n: bigint): bigint => {
   if (!x && !n) return RAY;
@@ -54,11 +52,14 @@ const calcChi = (state: SparkSDaiPoolState, currentTimestamp?: number) => {
 export class SparkSDaiEventPool extends StatefulEventSubscriber<SparkSDaiPoolState> {
   constructor(
     parentName: string,
+    network: Network,
     poolName: string,
     protected dexHelper: IDexHelper,
     private potAddress: Address,
     private potInterface: Interface,
     logger: Logger,
+    private savingsRateTopic: string,
+    private savingsRateSymbol: 'ssr' | 'dsr',
   ) {
     super(parentName, poolName, dexHelper, logger);
     this.addressesSubscribed = [potAddress];
@@ -69,7 +70,10 @@ export class SparkSDaiEventPool extends StatefulEventSubscriber<SparkSDaiPoolSta
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
   ): AsyncOrSync<DeepReadonly<SparkSDaiPoolState> | null> {
-    if (log.topics[0] === FILE_TOPICHASH && log.topics[2] === DSR_TOPIC) {
+    if (
+      log.topics[0] === FILE_TOPICHASH &&
+      log.topics[2] === this.savingsRateTopic
+    ) {
       return {
         ...state,
         dsr: BigInt(log.topics[3]).toString(),
@@ -94,6 +98,7 @@ export class SparkSDaiEventPool extends StatefulEventSubscriber<SparkSDaiPoolSta
       this.dexHelper.multiContract,
       this.potAddress,
       this.potInterface,
+      this.savingsRateSymbol,
       blockNumber,
     );
   }
