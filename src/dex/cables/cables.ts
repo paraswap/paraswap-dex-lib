@@ -26,7 +26,7 @@ import {
 import { getDexKeysWithNetwork } from '../../utils';
 import { Context, IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
-import { CablesAdapters, CablesConfig } from './config';
+import { CablesConfig } from './config';
 import {
   CABLES_API_URL,
   CABLES_FIRM_QUOTE_TIMEOUT_MS,
@@ -56,7 +56,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = CablesAdapters[network] || {}, // readonly routerAddress: string = HashflowConfig['Hashflow'][network] //   .routerAddress, // protected routerInterface = new Interface(routerAbi),
     readonly mainnetRFQAddress: string = CablesConfig['Cables'][network]
       .mainnetRFQAddress,
     protected rfqInterface = new Interface(mainnetRFQAbi),
@@ -219,50 +218,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return this.tokensMap[this.normalizeTokenAddress(address)];
   }
 
-  async getSimpleParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: CablesData,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const { quoteData } = data;
-
-    assert(
-      quoteData !== undefined,
-      `${this.dexKey}-${this.network}: quoteData undefined`,
-    );
-
-    const swapFunction = 'simpleSwap';
-    const swapFunctionParams = [
-      [
-        quoteData.nonceAndMeta,
-        quoteData.expiry,
-        quoteData.makerAsset,
-        quoteData.takerAsset,
-        quoteData.taker,
-        quoteData.makerAmount,
-        quoteData.takerAmount,
-      ],
-      quoteData.signature,
-    ];
-
-    const swapData = this.rfqInterface.encodeFunctionData(
-      swapFunction,
-      swapFunctionParams,
-    );
-
-    return this.buildSimpleParamWithoutWETHConversion(
-      srcToken,
-      srcAmount,
-      destToken,
-      destAmount,
-      swapData,
-      this.mainnetRFQAddress,
-    );
-  }
-
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -362,43 +317,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
       networkFee: '0',
     };
   }
-
-  getDirectParam?(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    expectedAmount: NumberAsString,
-    data: CablesData,
-    side: SwapSide,
-    permit: string,
-    uuid: string,
-    feePercent: NumberAsString,
-    deadline: NumberAsString,
-    partner: string,
-    beneficiary: string,
-    contractMethod?: string,
-  ): TxInfo<null> {
-    throw new Error('Method not implemented.');
-  }
-  getDirectParamV6?(
-    srcToken: Address,
-    destToken: Address,
-    fromAmount: NumberAsString,
-    toAmount: NumberAsString,
-    quotedAmount: NumberAsString,
-    data: CablesData,
-    side: SwapSide,
-    permit: string,
-    uuid: string,
-    partnerAndFee: string,
-    beneficiary: string,
-    blockNumber: number,
-    contractMethod?: string,
-  ): TxInfo<null> {
-    throw new Error('Method not implemented.');
-  }
-  isStatePollingDex?: boolean | undefined;
 
   normalizeToken(token: Token): Token {
     return {
@@ -582,7 +500,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return;
   }
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
   releaseResources?(): AsyncOrSync<void> {
     if (this.rateFetcher) {

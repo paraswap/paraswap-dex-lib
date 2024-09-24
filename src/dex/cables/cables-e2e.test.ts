@@ -13,16 +13,8 @@ describe('Cables E2E', () => {
   const dexKey = 'Cables';
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.swapExactAmountIn,
-        // ContractMethod.simpleSwap,
-        // ContractMethod.megaSwap,
-        // ContractMethod.multiSwap,
-      ],
-    ],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
