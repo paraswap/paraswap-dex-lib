@@ -523,6 +523,16 @@ export const Tokens: {
       address: '0x07D1718fF05a8C53C8F05aDAEd57C0d672945f9a',
       decimals: 18,
     },
+    USD0: {
+      address: '0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5',
+      decimals: 18,
+      symbol: 'USD0',
+    },
+    'USD0++': {
+      address: '0x35D8949372D46B7a3D5A56006AE77B215fc69bC0',
+      decimals: 18,
+      symbol: 'USD0++',
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
@@ -1606,6 +1616,8 @@ export const Holders: {
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
+    USD0: '0x6A5d5Af0E266a24648a9d7E8D388EAEc7AbD8433',
+    'USD0++': '0x2227b6806339906707b43F36a1f07B52FF7Fa776',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
