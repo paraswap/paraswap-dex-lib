@@ -521,7 +521,7 @@ export class WooFiV2 extends SimpleExchange implements IDex<WooFiV2Data> {
       this.getIdentifier(),
       this.dexHelper,
       this.config,
-      Object.values(this.tokenByAddress),
+      this.baseTokens,
     );
 
     this.pollingManager.initializeAllPendingPools();
