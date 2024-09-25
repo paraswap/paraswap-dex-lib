@@ -137,9 +137,13 @@ export class Spark
       }
     }
 
+    const timestamp = +(await this.dexHelper.provider.getBlock(blockNumber))
+      .timestamp;
+    // const timestamp = Math.floor(Date.now() / 1000);
+
     return [
       {
-        prices: amounts.map(amount => calcFunction(amount, state)),
+        prices: amounts.map(amount => calcFunction(amount, state, timestamp)),
         unit: BI_POWS[18],
         gasCost: SDAI_DEPOSIT_GAS_COST,
         exchange: this.dexKey,
@@ -295,29 +299,33 @@ export class Spark
   previewRedeem(
     shares: bigint,
     state: SparkSDaiPoolState,
-    blockTimestamp: bigint,
+    blockTimestamp: number,
   ) {
-    // console.log('REDEEM_CHI', calcChi(state));
-    return (shares * calcChi(state)) / RAY;
+    return (shares * calcChi(state, blockTimestamp)) / RAY;
   }
 
-  previewMint(shares: bigint, state: SparkSDaiPoolState) {
-    // console.log('MINT_CHI', calcChi(state));
-    return this.divUp(shares * calcChi(state), RAY);
+  previewMint(
+    shares: bigint,
+    state: SparkSDaiPoolState,
+    blockTimestamp: number,
+  ) {
+    return this.divUp(shares * calcChi(state, blockTimestamp), RAY);
   }
 
-  previewWithdraw(assets: bigint, state: SparkSDaiPoolState) {
-    // console.log('WITHDRAW_CHI', calcChi(state));
-    return this.divUp(assets * RAY, calcChi(state));
+  previewWithdraw(
+    assets: bigint,
+    state: SparkSDaiPoolState,
+    blockTimestamp: number,
+  ) {
+    return this.divUp(assets * RAY, calcChi(state, blockTimestamp));
   }
 
   previewDeposit(
     assets: bigint,
     state: SparkSDaiPoolState,
-    blockTimestamp: bigint,
+    blockTimestamp: number,
   ) {
-    // console.log(`DEPOSIT_CHI`, _chi);
-    return (assets * RAY) / calcChi(state);
+    return (assets * RAY) / calcChi(state, blockTimestamp);
   }
 
   divUp(x: bigint, y: bigint): bigint {
