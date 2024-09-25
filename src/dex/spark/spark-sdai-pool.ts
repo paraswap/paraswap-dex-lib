@@ -10,7 +10,7 @@ import { getOnChainState } from './utils';
 import { SDaiConfig } from './config';
 import { Network } from '../../constants';
 
-const RAY = BI_POWS[27];
+export const RAY = BI_POWS[27];
 const ZERO = BigInt(0);
 const TWO = BigInt(2);
 const HALF = RAY / TWO;
@@ -36,7 +36,10 @@ const rpow = (x: bigint, n: bigint): bigint => {
   return z;
 };
 
-const calcChi = (state: SparkSDaiPoolState, currentTimestamp?: number) => {
+export const calcChi = (
+  state: SparkSDaiPoolState,
+  currentTimestamp?: number,
+) => {
   currentTimestamp ||= Math.floor(Date.now() / 1000);
   if (!state.live) return RAY;
 
@@ -103,17 +106,12 @@ export class SparkSDaiEventPool extends StatefulEventSubscriber<SparkSDaiPoolSta
     );
   }
 
-  convertToSDai(daiAmount: bigint, blockNumber: number): bigint {
-    const state = this.getState(blockNumber);
-    if (!state) throw new Error(`SDai state at ${blockNumber} does not exists`);
-
-    return (daiAmount * RAY) / calcChi(state);
-  }
-
-  convertToDai(sdaiAmount: bigint, blockNumber: number): bigint {
-    const state = this.getState(blockNumber);
-    if (!state) throw new Error(`SDai state at ${blockNumber} does not exists`);
-
-    return (sdaiAmount * calcChi(state)) / RAY;
+  async getOrGenerateState(blockNumber: number): Promise<SparkSDaiPoolState> {
+    let state = this.getState(blockNumber);
+    if (!state) {
+      state = await this.generateState(blockNumber);
+      this.setState(state, blockNumber);
+    }
+    return state;
   }
 }
