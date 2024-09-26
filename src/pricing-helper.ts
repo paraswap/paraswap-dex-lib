@@ -288,7 +288,14 @@ export class PricingHelper {
           );
         } catch (e) {
           this.logger.error(`Error_${key}_getPoolPrices:`, e);
-          return [];
+          // TODO-rec: check if timeout should be the reason for dex excluding
+          return [
+            {
+              dexKey: key,
+              poolId: 'unknown_pool',
+              prices: null,
+            },
+          ];
         }
       }),
     );
