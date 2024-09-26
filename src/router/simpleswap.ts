@@ -119,12 +119,12 @@ export abstract class SimpleRouterBase<RouterParam>
 
           const dexNeedWrapNative =
             typeof dex.needWrapNative === 'function'
-              ? dex.needWrapNative(priceRoute, se)
+              ? dex.needWrapNative(priceRoute, swap, se)
               : dex.needWrapNative;
 
           const dexNeedUnwrapWeth =
             typeof dex.needUnwrapWeth === 'function'
-              ? dex.needUnwrapWeth(priceRoute, se)
+              ? dex.needUnwrapWeth(priceRoute, swap, se)
               : dex.needUnwrapWeth;
 
           if (dexNeedWrapNative) {

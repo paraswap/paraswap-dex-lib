@@ -151,6 +151,7 @@ export class GenericSwapTransactionBuilder {
                   priceRoute.destToken.toLowerCase() ===
                   destToken.toLowerCase(),
                 priceRoute: priceRoute,
+                swap: swap,
                 swapExchange: se,
               },
               executorAddress,
@@ -670,13 +671,13 @@ export class GenericSwapTransactionBuilder {
 
     const dexNeedWrapNative =
       typeof dex.needWrapNative === 'function'
-        ? dex.needWrapNative(priceRoute, se)
+        ? dex.needWrapNative(priceRoute, swap, se)
         : dex.needWrapNative;
 
     const dexNeedUnwrapWeth =
       dex.needUnwrapWeth !== undefined
         ? typeof dex.needUnwrapWeth === 'function'
-          ? dex.needUnwrapWeth(priceRoute, se)
+          ? dex.needUnwrapWeth(priceRoute, swap, se)
           : dex.needUnwrapWeth
         : false;
 

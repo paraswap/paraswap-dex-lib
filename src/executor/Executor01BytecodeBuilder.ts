@@ -205,7 +205,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
     const needCheckEthBalance =
       (isEthDest && !needWrapNative) || (isWethDest && needWrapForWethDest);
 
-    const needCheckSrcTokenBalanceOf = needUnwrap && !isLastSwap;
+    const needCheckSrcTokenBalanceOf =
+      (needUnwrap && !isLastSwap) || needWrapForWethDest;
 
     let dexFlag: Flag;
     let approveFlag =

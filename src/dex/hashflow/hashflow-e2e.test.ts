@@ -36,14 +36,14 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        // ContractMethod.swapExactAmountIn,
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
-    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -270,6 +270,176 @@ describe('Hashflow E2E', () => {
         nativeTokenAmount,
       );
     });
+
+    describe('Multiswap', () => {
+      it('USDC -> ETH -> DAI', async () => {
+        const dexKeys = ['Hashflow'];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const slippage = undefined;
+
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'DAI';
+
+        const tokenAAmount: string = '22943400';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const contractMethod = ContractMethod.swapExactAmountIn;
+        const side = SwapSide.SELL;
+
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+          false,
+          [
+            '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+            '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+          ],
+        );
+      });
+
+      it('DAI -> ETH -> USDC', async () => {
+        const dexKeys = ['Hashflow'];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const slippage = undefined;
+
+        const tokenASymbol: string = 'DAI';
+        const tokenBSymbol: string = 'ETH';
+
+        const tokenAAmount: string = '22675013677618734169';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const contractMethod = ContractMethod.swapExactAmountIn;
+        const side = SwapSide.SELL;
+
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+          false,
+          [
+            '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+            '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+          ],
+        );
+      });
+
+      it('DAI -> USDC -> WETH', async () => {
+        const dexKeys = ['Hashflow'];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const slippage = undefined;
+
+        const tokenASymbol: string = 'DAI';
+        const tokenBSymbol: string = 'ETH';
+
+        const tokenAAmount: string = '22675013677618734169';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const contractMethod = ContractMethod.swapExactAmountIn;
+        const side = SwapSide.SELL;
+
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+          false,
+          [
+            '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+            '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+            '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // WETH
+          ],
+        );
+      });
+
+      it('WETH -> USDC -> DAI', async () => {
+        const dexKeys = ['Hashflow'];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const slippage = undefined;
+
+        const tokenASymbol: string = 'WETH';
+        const tokenBSymbol: string = 'DAI';
+
+        const tokenAAmount: string = '8878957204610561';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const contractMethod = ContractMethod.swapExactAmountIn;
+        const side = SwapSide.SELL;
+
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          slippage,
+          2000,
+          false,
+          [
+            '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // WETH
+            '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+            '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+          ],
+        );
+      });
+    });
   });
 
   describe('Polygon', () => {
@@ -290,7 +460,7 @@ describe('Hashflow E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
-      true,
+      // true,
     );
   });
 

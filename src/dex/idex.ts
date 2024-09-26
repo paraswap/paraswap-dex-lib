@@ -18,22 +18,25 @@ import {
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
-import { OptimalRate } from '@paraswap/core';
+import { OptimalRate, OptimalSwap } from '@paraswap/core';
 
 export type Context = {
   isGlobalSrcToken: boolean;
   isGlobalDestToken: boolean;
   swapExchange: OptimalSwapExchange<any>;
+  swap: OptimalSwap;
   priceRoute: OptimalRate;
 };
 
 export type NeedWrapNativeFunc = (
   priceRoute: OptimalRate,
+  swap: OptimalSwap,
   se: OptimalSwapExchange<any>,
 ) => boolean;
 
 export type NeedUnwrapWethFunc = (
   priceRoute: OptimalRate,
+  swap: OptimalSwap,
   se: OptimalSwapExchange<any>,
 ) => boolean;
 

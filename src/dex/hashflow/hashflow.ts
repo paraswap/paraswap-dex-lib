@@ -63,7 +63,7 @@ import {
   RfqError,
   SlippageCheckError,
 } from './types';
-import { OptimalRate, OptimalSwapExchange } from '@paraswap/core';
+import { OptimalRate, OptimalSwap, OptimalSwapExchange } from '@paraswap/core';
 import { SpecialDex } from '../../executor/types';
 
 export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
@@ -72,24 +72,22 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
   needUnwrapWeth = (
     priceRoute: OptimalRate,
+    swap: OptimalSwap,
     se: OptimalSwapExchange<any>,
   ): boolean => {
-    const priceRouteSrc = priceRoute.srcToken;
-    const priceRouteDest = priceRoute.destToken;
+    const swapSrc = swap.srcToken;
+    const swapDest = swap.destToken;
 
     const wethAddr =
       this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     const tokenIn = se.data.tokenIn.toLowerCase();
     const tokenOut = se.data.tokenOut.toLowerCase();
 
-    if (priceRouteSrc.toLowerCase() === wethAddr && tokenIn === ZERO_ADDRESS) {
+    if (swapSrc.toLowerCase() === wethAddr && tokenIn === ZERO_ADDRESS) {
       return true; // WETH is src but native ETH pool is used, we need unwrap weth in this case
     }
 
-    if (
-      priceRouteDest.toLowerCase() === wethAddr &&
-      tokenOut === ZERO_ADDRESS
-    ) {
+    if (swapDest.toLowerCase() === wethAddr && tokenOut === ZERO_ADDRESS) {
       return true; // WETH is dest but native ETH pool is used, we need unwrap weth in this case
     }
 
@@ -98,25 +96,23 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
   needWrapNative = (
     priceRoute: OptimalRate,
+    swap: OptimalSwap,
     se: OptimalSwapExchange<any>,
   ): boolean => {
-    const priceRouteSrc = priceRoute.srcToken;
-    const priceRouteDest = priceRoute.destToken;
+    const swapSrc = swap.srcToken;
+    const swapDest = swap.destToken;
 
     const wethAddr =
       this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     const tokenIn = se.data.tokenIn.toLowerCase();
     const tokenOut = se.data.tokenOut.toLowerCase();
 
-    if (priceRouteSrc === ETHER_ADDRESS.toLowerCase() && tokenIn === wethAddr) {
+    if (swapSrc === ETHER_ADDRESS.toLowerCase() && tokenIn === wethAddr) {
       return true; // ETH is src but WETH pool is used, we need wrap native in this case
     }
 
-    if (
-      priceRouteDest === ETHER_ADDRESS.toLowerCase() &&
-      tokenOut === wethAddr
-    ) {
-      return true; // ETH is src but WETH pool is used, we need wrap native in this case
+    if (swapDest === ETHER_ADDRESS.toLowerCase() && tokenOut === wethAddr) {
+      return true; // ETH is dest but WETH pool is used, we need wrap native in this case
     }
 
     return false;
@@ -1264,10 +1260,12 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return {
       needWrapNative: this.needWrapNative(
         context.priceRoute,
+        context.swap,
         context.swapExchange,
       ),
       needUnwrapWeth: this.needUnwrapWeth(
         context.priceRoute,
+        context.swap,
         context.swapExchange,
       ),
       dexFuncHasRecipient: true,
