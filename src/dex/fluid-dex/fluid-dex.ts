@@ -130,37 +130,17 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       const state = await eventPool.getStateOrGenerate(blockNumber);
 
-      // Calculate the prices
-      const unitAmount = getBigIntPow(18);
-      // const unitPrice = this.calcPrice(
-      //   pool,
-      //   state,
-      //   srcToken,
-      //   unitAmount,
-      //   side,
-      //   false,
-      // );
-
       const swap0To1: boolean = side === SwapSide.SELL;
 
       const prices = amounts.map(amount =>
         // this.calcPrice(pool, state, srcToken, amount, side),
         this.swapIn(
           swap0To1,
-          amount as any,
+          amount,
           state.collateralReserves,
           state.debtReserves,
         ),
       );
-
-      // const [unitPriceWithFee, ...pricesWithFee] = applyTransferFee(
-      //   [unitPrice, ...prices],
-      //   side,
-      //   side === SwapSide.SELL ? transferFees.srcFee : transferFees.destFee,
-      //   side === SwapSide.SELL
-      //     ? SRC_TOKEN_PARASWAP_TRANSFERS
-      //     : DEST_TOKEN_PARASWAP_TRANSFERS,
-      // );
 
       return [
         {
@@ -266,8 +246,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @returns {number} amountOut - The calculated output amount.
    */
   swapIn(
-    swap0To1: Boolean,
-    amountToSwap: number,
+    swap0To1: boolean,
+    amountToSwap: bigint,
     colReserves: CollateralReserves,
     debtReserves: DebtReserves,
   ) {
@@ -285,35 +265,34 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       token1ImaginaryReserves: debtToken1ImaginaryReserves,
     } = debtReserves;
 
-    // Check if all reserves of collateral pool are greater than 0
+    // Convert all reserves to BigInt
     const colPoolEnabled =
-      token0RealReserves > 0 &&
-      token1RealReserves > 0 &&
-      token0ImaginaryReserves > 0 &&
-      token1ImaginaryReserves > 0;
+      BigInt(token0RealReserves) > 0n &&
+      BigInt(token1RealReserves) > 0n &&
+      BigInt(token0ImaginaryReserves) > 0n &&
+      BigInt(token1ImaginaryReserves) > 0n;
 
-    // Check if all reserves of debt pool are greater than 0
     const debtPoolEnabled =
-      debtToken0RealReserves > 0 &&
-      debtToken1RealReserves > 0 &&
-      debtToken0ImaginaryReserves > 0 &&
-      debtToken1ImaginaryReserves > 0;
+      BigInt(debtToken0RealReserves) > 0n &&
+      BigInt(debtToken1RealReserves) > 0n &&
+      BigInt(debtToken0ImaginaryReserves) > 0n &&
+      BigInt(debtToken1ImaginaryReserves) > 0n;
 
     let colIReserveIn, colIReserveOut, debtIReserveIn, debtIReserveOut;
 
     if (swap0To1) {
-      colIReserveIn = token0ImaginaryReserves;
-      colIReserveOut = token1ImaginaryReserves;
-      debtIReserveIn = debtToken0ImaginaryReserves;
-      debtIReserveOut = debtToken1ImaginaryReserves;
+      colIReserveIn = BigInt(token0ImaginaryReserves);
+      colIReserveOut = BigInt(token1ImaginaryReserves);
+      debtIReserveIn = BigInt(debtToken0ImaginaryReserves);
+      debtIReserveOut = BigInt(debtToken1ImaginaryReserves);
     } else {
-      colIReserveIn = token1ImaginaryReserves;
-      colIReserveOut = token0ImaginaryReserves;
-      debtIReserveIn = debtToken1ImaginaryReserves;
-      debtIReserveOut = debtToken0ImaginaryReserves;
+      colIReserveIn = BigInt(token1ImaginaryReserves);
+      colIReserveOut = BigInt(token0ImaginaryReserves);
+      debtIReserveIn = BigInt(debtToken1ImaginaryReserves);
+      debtIReserveOut = BigInt(debtToken0ImaginaryReserves);
     }
 
-    let a;
+    let a: bigint;
     if (colPoolEnabled && debtPoolEnabled) {
       a = this.swapRoutingIn(
         amountToSwap,
@@ -323,17 +302,17 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveIn,
       );
     } else if (debtPoolEnabled) {
-      a = -1; // Route from debt pool
+      a = -1n; // Route from debt pool
     } else if (colPoolEnabled) {
-      a = amountToSwap + 1; // Route from collateral pool
+      a = amountToSwap + 1n; // Route from collateral pool
     } else {
       throw new Error('No pools are enabled');
     }
 
-    let amountOutCollateral = 0;
-    let amountOutDebt = 0;
+    let amountOutCollateral: bigint = 0n;
+    let amountOutDebt: bigint = 0n;
 
-    if (a <= 0) {
+    if (a <= 0n) {
       // Entire trade routes through debt pool
       amountOutDebt = this.getAmountOut(
         amountToSwap,
@@ -375,17 +354,42 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @note If a > 0 & a < t then swap will route through both pools.
    */
   swapRoutingIn(
-    t: number,
-    x: number,
-    y: number,
-    x2: number,
-    y2: number,
-  ): number {
-    // Adding 1e18 precision
-    var xyRoot = Math.sqrt(x * y * 1e18);
-    var x2y2Root = Math.sqrt(x2 * y2 * 1e18);
+    t: bigint,
+    x: bigint,
+    y: bigint,
+    x2: bigint,
+    y2: bigint,
+  ): bigint {
+    const precision = BigInt(1e18);
+
+    // Helper function for integer square root
+    const sqrtBigInt = (value: bigint): bigint => {
+      if (value < 0n) {
+        throw new Error('Square root of negative number is not allowed');
+      }
+      if (value < 2n) {
+        return value;
+      }
+
+      let x = value;
+      let y = (x + 1n) / 2n;
+      while (y < x) {
+        x = y;
+        y = (x + value / x) / 2n;
+      }
+      return x;
+    };
+
+    const xyRoot = sqrtBigInt((x * y * precision) / precision);
+    const x2y2Root = sqrtBigInt((x2 * y2 * precision) / precision);
+
     // Calculating 'a' using the given formula
-    var a = (y2 * xyRoot + t * xyRoot - y * x2y2Root) / (xyRoot + x2y2Root);
+    const numerator = y2 * xyRoot + t * xyRoot - y * x2y2Root;
+    const denominator = xyRoot + x2y2Root;
+
+    // Perform the division and maintain precision
+    const a = (numerator * precision) / denominator / precision;
+
     return a;
   }
 
@@ -397,15 +401,16 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @returns {number} - The maximum output amount of the other asset.
    */
   getAmountOut(
-    amountIn: number,
-    iReserveIn: number,
-    iReserveOut: number,
-  ): number {
+    amountIn: bigint,
+    reserveIn: bigint,
+    reserveOut: bigint,
+  ): bigint {
     // Both numerator and denominator are scaled to 1e6 to factor in fee scaling.
-    const numerator = amountIn * iReserveOut;
-    const denominator = iReserveIn + amountIn;
+    const scale = BigInt(1_000_000);
+    const numerator = amountIn * reserveOut * scale;
+    const denominator = reserveIn * scale + amountIn * scale;
 
-    // Using the swap formula: (AmountIn * iReserveY) / (iReserveX + AmountIn)
+    // Using the swap formula: (AmountIn * ReserveOut * scale) / (ReserveIn * scale + AmountIn * scale)
     return numerator / denominator;
   }
 }
