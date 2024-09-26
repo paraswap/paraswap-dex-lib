@@ -25,6 +25,14 @@ export type DebtReserves = {
   token1ImaginaryReserves: number; // Changed from uint to number
 };
 
+export interface PoolWithReserves {
+  pool: string;
+  token0_: string;
+  token1_: string;
+  collateralReserves: CollateralReserves;
+  debtReserves: DebtReserves;
+}
+
 export type FluidDexData = {
   // TODO: FluidDexData is the dex data that is
   // returned by the API that can be used for
@@ -39,6 +47,11 @@ export type FluidDexData = {
 export type FluidDexPool = {
   id: string;
   address: Address;
+  debtOperations: Address;
+  colOperations: Address;
+  perfectOperationsAndSwapOut: Address;
+  liquidityUserModule: Address;
+  resolver: Address;
   token0: Address;
   token1: Address;
 };

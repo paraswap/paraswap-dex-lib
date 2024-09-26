@@ -128,7 +128,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         return null;
       }
 
-      const state = await eventPool.generateState(blockNumber);
+      const state = await eventPool.getStateOrGenerate(blockNumber);
 
       // Calculate the prices
       const unitAmount = getBigIntPow(18);
@@ -164,8 +164,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       return [
         {
-          prices: [BigInt(0)], // to be done
-          unit: BigInt(0), // to be done
+          prices: amounts, // to be done
+          unit: getBigIntPow(
+            (side === SwapSide.SELL ? destToken : srcToken).decimals,
+          ), // to be done
           data: {
             colReserves: state.collateralReserves,
             debtReserves: state.debtReserves,
