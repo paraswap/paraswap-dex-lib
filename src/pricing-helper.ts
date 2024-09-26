@@ -218,7 +218,11 @@ export class PricingHelper {
               ) {
                 clearTimeout(timer);
                 return resolve([
-                  { dexKey: key, poolId: 'unknown_pool', prices: null },
+                  {
+                    dexKey: key,
+                    poolId: 'isSrcTokenTransferFeeToBeExchanged_pool',
+                    prices: null,
+                  },
                 ]);
               }
 
@@ -292,7 +296,7 @@ export class PricingHelper {
           return [
             {
               dexKey: key,
-              poolId: 'unknown_pool',
+              poolId: (e as unknown as Error).message ?? 'Error_getPoolPrices',
               prices: null,
             },
           ];
