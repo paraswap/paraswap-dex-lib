@@ -196,8 +196,14 @@ export class PricingHelper {
     },
     rollupL1ToL2GasRatio?: number,
   ): Promise<ImprovedPoolPrices<any>> {
+    const start = Date.now();
+    const token_key = `${Math.round(Math.random() * 10_000)}_${from.address}_${
+      to.address
+    }`.toLowerCase();
+
     const dexPoolPrices = await Promise.all(
       dexKeys.map(async key => {
+        const start = Date.now();
         try {
           const limitPools = limitPoolsMap ? limitPoolsMap[key] : null;
 
@@ -286,12 +292,25 @@ export class PricingHelper {
                   }
                 }, reject)
                 .finally(() => {
+                  const end = Date.now();
+                  this.logger.info(
+                    `{benchmarks} (total-for-dex) [finally]: Dex ${key}, tokenPair: ${token_key} took ${
+                      end - start
+                    }ms to resolve/reject`,
+                  );
                   clearTimeout(timer);
                 });
             },
           );
         } catch (e) {
           this.logger.error(`Error_${key}_getPoolPrices:`, e);
+          const end = Date.now();
+          this.logger.error(
+            `{benchmarks} (limited-by-timeout-for-dex) [error]: Dex ${key}, tokenPair: ${token_key} took ${
+              end - start
+            }ms to resolve/reject`,
+            e,
+          );
           // TODO-rec: check if timeout should be the reason for dex excluding
           return [
             {
@@ -300,53 +319,66 @@ export class PricingHelper {
               prices: null,
             },
           ];
+        } finally {
+          const end = Date.now();
+          this.logger.info(
+            `{benchmarks} (limited-by-timeout-for-dex) [finally]: Dex ${key}, tokenPair: ${token_key} took ${
+              end - start
+            }ms to resolve/reject`,
+          );
         }
       }),
     );
 
-    return (
-      dexPoolPrices
-        // TODO-rec: ignore for now as we return all available prices & pools
-        // .filter((x): x is ExchangePrices<any> => !!x)
-        .flat() // flatten to get all the pools for the swap
-        .filter(p => {
-          if (p.prices === null) {
-            return true;
-          }
-          // Pools should only return correct chunks
-          if (p.prices.prices.length !== amounts.length) {
+    const prices = dexPoolPrices
+      // TODO-rec: ignore for now as we return all available prices & pools
+      // .filter((x): x is ExchangePrices<any> => !!x)
+      .flat() // flatten to get all the pools for the swap
+      .filter(p => {
+        if (p.prices === null) {
+          return true;
+        }
+        // Pools should only return correct chunks
+        if (p.prices.prices.length !== amounts.length) {
+          this.logger.error(
+            `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid chunks`,
+          );
+          return false;
+        }
+
+        if (Array.isArray(p.prices.gasCost)) {
+          if (p.prices.gasCost.length !== amounts.length) {
             this.logger.error(
-              `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid chunks`,
+              `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid gasCost array length: ${p.prices.gasCost.length} !== ${amounts.length}`,
             );
             return false;
           }
 
-          if (Array.isArray(p.prices.gasCost)) {
-            if (p.prices.gasCost.length !== amounts.length) {
+          for (const [i, amount] of amounts.entries()) {
+            if (amount === 0n && p.prices.gasCost[i] !== 0) {
               this.logger.error(
-                `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid gasCost array length: ${p.prices.gasCost.length} !== ${amounts.length}`,
+                `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid gasCost array. At index ${i} amount is 0 but gasCost is ${p.prices.gasCost[i]}`,
               );
               return false;
             }
-
-            for (const [i, amount] of amounts.entries()) {
-              if (amount === 0n && p.prices.gasCost[i] !== 0) {
-                this.logger.error(
-                  `Error_getPoolPrices: ${p.prices.exchange} returned prices with invalid gasCost array. At index ${i} amount is 0 but gasCost is ${p.prices.gasCost[i]}`,
-                );
-                return false;
-              }
-            }
           }
+        }
 
-          if (p.prices.prices.every(pi => pi === 0n)) {
-            this.logger.error(
-              `Error_getPoolPrices: ${p.prices.exchange} returned all 0n prices`,
-            );
-            return false;
-          }
-          return true;
-        })
+        if (p.prices.prices.every(pi => pi === 0n)) {
+          this.logger.error(
+            `Error_getPoolPrices: ${p.prices.exchange} returned all 0n prices`,
+          );
+          return false;
+        }
+        return true;
+      });
+
+    const end = Date.now();
+    this.logger.info(
+      `{benchmarks} (getPoolPrices) [finally]: Dex ${''}, tokenPair: ${token_key} took ${
+        end - start
+      }ms to resolve/reject (total dexs: ${dexKeys.length})`,
     );
+    return prices;
   }
 }
