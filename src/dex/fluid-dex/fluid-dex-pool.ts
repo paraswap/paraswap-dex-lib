@@ -13,6 +13,8 @@ import { eachOfSeries } from 'async';
 import { USD_PRECISION } from '../woo-fi-v2/constants';
 import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
 import { BytesLike, defaultAbiCoder } from 'ethers/lib/utils';
+import { Address } from '../../types';
+import { generalDecoder } from '../../lib/decoders';
 
 export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState> {
   handlers: {
@@ -25,7 +27,8 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: string[];
+  addressesSubscribed: Address[];
+  protected liquidityIface = new Interface(LiquidityABI); // TODO: add any additional params required for event subscriber
 
   constructor(
     readonly parentName: string,
@@ -33,7 +36,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected liquidityIface = new Interface(LiquidityABI), // TODO: add any additional params required for event subscriber
   ) {
     // TODO: Add pool name
     super(parentName, pool.id, dexHelper, logger);
@@ -94,56 +96,53 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   decodePoolWithReserves = (
     result: MultiResult<BytesLike> | BytesLike,
   ): PoolWithReserves => {
-    const [isSuccess, toDecode] = this.extractSuccessAndValue(result);
-
-    // if (!isSuccess) {
-    //   return null;
-    // }
-
-    const decodedResult = defaultAbiCoder.decode(
+    return generalDecoder(
+      result,
       [
         'tuple(address pool, address token0_, address token1_, ' +
           'tuple(uint256 token0RealReserves, uint256 token1RealReserves, uint256 token0ImaginaryReserves, uint256 token1ImaginaryReserves) collateralReserves, ' +
           'tuple(uint256 token0Debt, uint256 token1Debt, uint256 token0RealReserves, uint256 token1RealReserves, uint256 token0ImaginaryReserves, uint256 token1ImaginaryReserves) debtReserves)',
       ],
-      toDecode,
-    )[0];
-
-    return {
-      pool: decodedResult.pool,
-      token0_: decodedResult.token0_,
-      token1_: decodedResult.token1_,
-      collateralReserves: {
-        token0RealReserves: Number(
-          decodedResult.collateralReserves.token0RealReserves,
-        ),
-        token1RealReserves: Number(
-          decodedResult.collateralReserves.token1RealReserves,
-        ),
-        token0ImaginaryReserves: Number(
-          decodedResult.collateralReserves.token0ImaginaryReserves,
-        ),
-        token1ImaginaryReserves: Number(
-          decodedResult.collateralReserves.token1ImaginaryReserves,
-        ),
+      undefined,
+      decoded => {
+        const [decodedResult] = decoded;
+        return {
+          pool: decodedResult.pool,
+          token0_: decodedResult.token0_,
+          token1_: decodedResult.token1_,
+          collateralReserves: {
+            token0RealReserves: Number(
+              decodedResult.collateralReserves.token0RealReserves,
+            ),
+            token1RealReserves: Number(
+              decodedResult.collateralReserves.token1RealReserves,
+            ),
+            token0ImaginaryReserves: Number(
+              decodedResult.collateralReserves.token0ImaginaryReserves,
+            ),
+            token1ImaginaryReserves: Number(
+              decodedResult.collateralReserves.token1ImaginaryReserves,
+            ),
+          },
+          debtReserves: {
+            token0Debt: Number(decodedResult.debtReserves.token0Debt),
+            token1Debt: Number(decodedResult.debtReserves.token1Debt),
+            token0RealReserves: Number(
+              decodedResult.debtReserves.token0RealReserves,
+            ),
+            token1RealReserves: Number(
+              decodedResult.debtReserves.token1RealReserves,
+            ),
+            token0ImaginaryReserves: Number(
+              decodedResult.debtReserves.token0ImaginaryReserves,
+            ),
+            token1ImaginaryReserves: Number(
+              decodedResult.debtReserves.token1ImaginaryReserves,
+            ),
+          },
+        };
       },
-      debtReserves: {
-        token0Debt: Number(decodedResult.debtReserves.token0Debt),
-        token1Debt: Number(decodedResult.debtReserves.token1Debt),
-        token0RealReserves: Number(
-          decodedResult.debtReserves.token0RealReserves,
-        ),
-        token1RealReserves: Number(
-          decodedResult.debtReserves.token1RealReserves,
-        ),
-        token0ImaginaryReserves: Number(
-          decodedResult.debtReserves.token0ImaginaryReserves,
-        ),
-        token1ImaginaryReserves: Number(
-          decodedResult.debtReserves.token1ImaginaryReserves,
-        ),
-      },
-    };
+    );
   };
 
   extractSuccessAndValue = (

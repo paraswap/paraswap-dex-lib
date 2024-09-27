@@ -7,7 +7,8 @@ import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { PoolState } from './types';
+import { FluidDexPool, FluidDexPoolState } from './types';
+import { FluidDexConfig } from './config';
 
 /*
   README
@@ -45,12 +46,11 @@ import { PoolState } from './types';
 jest.setTimeout(50 * 1000);
 
 async function fetchPoolState(
-  fluidDexPools: FluidDexEventPool,
+  fluidDexPool: FluidDexEventPool,
   blockNumber: number,
-  poolAddress: string,
-): Promise<PoolState> {
+): Promise<FluidDexPoolState> {
   // TODO: complete me!
-  return {};
+  return fluidDexPool.generateState(blockNumber);
 }
 
 // eventName -> blockNumbers
@@ -61,16 +61,22 @@ describe('FluidDex EventPool Mainnet', function () {
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let fluidDexPool: FluidDexEventPool;
+  const fluidDexPool: FluidDexPool = FluidDexConfig[dexKey][network].pools[0];
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     // TODO: complete me!
+    [fluidDexPool.liquidityUserModule]: {
+      LogOperate: [18917344],
+    },
   };
 
+  let fluidDexEventPool: FluidDexEventPool;
+
   beforeEach(async () => {
-    fluidDexPool = new FluidDexEventPool(
-      dexKey,
+    fluidDexEventPool = new FluidDexEventPool(
+      'FluidDex',
+      fluidDexPool,
       network,
       dexHelper,
       logger,
@@ -87,10 +93,10 @@ describe('FluidDex EventPool Mainnet', function () {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
                   await testEventSubscriber(
-                    fluidDexPool,
-                    fluidDexPool.addressesSubscribed,
+                    fluidDexEventPool,
+                    fluidDexEventPool.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(fluidDexPool, _blockNumber, poolAddress),
+                      fetchPoolState(fluidDexEventPool, _blockNumber),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
