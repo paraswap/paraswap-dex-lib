@@ -53,8 +53,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_1,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x6175475cD856067ea0afF4ab9A49885073958E78',
-      Executor02: '0x49e94895A26e697602c8270e437688514b291a81',
+      Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
+      Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
       Executor03: '0x7775a7d31fD8Df4F16fEbE1B49CA8541783fd00f',
     },
     adapterAddresses: {
@@ -291,8 +291,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_42161`]?.split(',') || [],
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
-      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
+      Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
       Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
