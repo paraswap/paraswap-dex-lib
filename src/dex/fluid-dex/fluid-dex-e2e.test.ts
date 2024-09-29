@@ -70,15 +70,15 @@ function testForNetwork(
 
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
-    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.SELL, ['swapIn']],
     // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
+        contractMethods.forEach((contractMethod: string) => {
           describe(`${contractMethod}`, () => {
             it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
               await testE2E(
@@ -88,7 +88,7 @@ function testForNetwork(
                 side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
                 side,
                 dexKey,
-                contractMethod,
+                contractMethod as ContractMethod,
                 network,
                 provider,
               );
@@ -101,7 +101,7 @@ function testForNetwork(
                 side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
                 side,
                 dexKey,
-                contractMethod,
+                contractMethod as ContractMethod,
                 network,
                 provider,
               );
@@ -114,7 +114,7 @@ function testForNetwork(
                 side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
                 side,
                 dexKey,
-                contractMethod,
+                contractMethod as ContractMethod,
                 network,
                 provider,
               );
@@ -133,11 +133,11 @@ describe('FluidDex E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'wstETH';
+    const tokenBSymbol: string = 'ETH';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

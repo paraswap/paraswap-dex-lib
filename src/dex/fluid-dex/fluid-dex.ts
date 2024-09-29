@@ -16,8 +16,10 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CollateralReserves,
   DebtReserves,
+  DexParams,
   FluidDexData,
   FluidDexPool,
+  FluidDexPoolState,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { FluidDexConfig, Adapters, FLUID_DEX_GAS_COST } from './config';
@@ -41,15 +43,27 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   readonly pools: [FluidDexPool];
 
+  protected adapters;
+
   constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {}, // TODO: add any additional optional params to support other fork DEXes
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.pools = FluidDexConfig[dexKey][network].pools;
+    this.pools = FluidDexConfig['FluidDex'][network].pools;
+    this.adapters = Adapters[network] || {}; // TODO: add any additional optional params to support other fork DEXes
+
+    for (const pool of this.pools) {
+      this.eventPools[pool.id] = new FluidDexEventPool(
+        'FluidDex',
+        pool,
+        network,
+        dexHelper,
+        this.logger,
+      );
+    }
   }
 
   // Initialize pricing is called once in the start of
@@ -128,6 +142,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         return null;
       }
 
+      // const state = await eventPool.generateState(blockNumber);
       const state = await eventPool.getStateOrGenerate(blockNumber);
 
       const swap0To1: boolean = side === SwapSide.SELL;
@@ -218,7 +233,57 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     //TODO: complete me!
-    return [];
+    let liquidityAmounts: { [id: string]: number } = {};
+    for (const pool of this.pools) {
+      if (
+        pool.token0 === tokenAddress.toLowerCase() ||
+        pool.token1 === tokenAddress.toLowerCase()
+      ) {
+        const state: FluidDexPoolState = await this.eventPools[
+          pool.id
+        ].getStateOrGenerate(
+          await this.dexHelper.provider.getBlockNumber(),
+          false,
+        );
+
+        liquidityAmounts[pool.id] =
+          pool.token0 === tokenAddress
+            ? state.collateralReserves.token0RealReserves +
+              state.debtReserves.token0RealReserves
+            : state.collateralReserves.token1RealReserves +
+              state.debtReserves.token1RealReserves;
+      }
+    }
+
+    // console.log(
+    //   'Number of pools with liquidity: ' + Object.keys(liquidityAmounts).length,
+    // );
+
+    const entries = Object.entries(liquidityAmounts);
+
+    // Sort the entries based on the values in descending order
+    entries.sort((a, b) => b[1] - a[1]);
+
+    // Take the top k entries
+    const topKEntries = entries.slice(0, limit);
+
+    // Convert the array back to an object
+    const sortedAmounts = Object.fromEntries(topKEntries);
+
+    const poolLiquidities: PoolLiquidity[] = [];
+
+    for (const [id, amount] of Object.entries(sortedAmounts)) {
+      const pool = this.pools.find(p => p.id === id);
+      if (!pool) continue; // Skip if pool not found
+
+      poolLiquidities.push({
+        exchange: 'FluidDex',
+        address: pool.address,
+        connectorTokens: [],
+        liquidityUSD: amount,
+      });
+    }
+    return poolLiquidities;
   }
 
   // This is optional function in case if your implementation has acquired any resources

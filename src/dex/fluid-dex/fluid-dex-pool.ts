@@ -4,7 +4,7 @@ import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import FluidDexABI from '../../abi/fluid-dex/fluid-dex.abi.json';
+import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import { FluidDexPool, FluidDexPoolState, PoolWithReserves } from './types';
@@ -73,7 +73,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
         target: this.pool.resolver,
-        callData: ResolverAbi.encodeFunctionData('getPoolReserves', [
+        callData: ResolverAbi.encodeFunctionData('getCollateralReserves', [
           this.pool.address,
         ]),
         decodeFunction: await this.decodePoolWithReserves,
@@ -213,10 +213,10 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   async generateState(
     blockNumber: number,
   ): Promise<DeepReadonly<FluidDexPoolState>> {
-    const ResolverAbi = new Interface(ResolverABI);
+    const ResolverAbi = new Interface(FluidDexPoolABI);
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
-        target: this.pool.resolver,
+        target: this.pool.address,
         callData: ResolverAbi.encodeFunctionData('getPoolReserves', [
           this.pool.address,
         ]),

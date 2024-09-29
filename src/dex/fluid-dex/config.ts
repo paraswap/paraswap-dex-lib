@@ -7,16 +7,16 @@ export const FluidDexConfig: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       pools: [
         {
-          id: 'FluidDex_0x6d83f60eEac0e50A1250760151E81Db2a278e03a', // Pool identifier: `{dex_key}_{pool_address}`
-          address: '0x6d83f60eEac0e50A1250760151E81Db2a278e03a', // Address of the pool
-          debtOperations: '0xaf19a6F318b7F8f58c9F9C89Acc1eC40a3AFcdF5',
-          colOperations: '0x835a8E10e8F473174F937AFA0eC22fC9a7Fa504F',
+          id: 'FluidDex_0x6d83f60eeac0e50a1250760151e81db2a278e03a', // Pool identifier: `{dex_key}_{pool_address}`
+          address: '0x6d83f60eeac0e50a1250760151e81db2a278e03a', // Address of the pool
+          debtOperations: '0xaf19a6f318b7f8f58c9f9c89acc1ec40a3afcdf5',
+          colOperations: '0x835a8e10e8f473174f937afa0ec22fc9a7fa504f',
           perfectOperationsAndSwapOut:
-            '0x8Cf39E1bD5722BAaC7056E1A02eE139296B224ED',
-          liquidityUserModule: '0x8eC5e29eA39b2f64B21e32cB9Ff11D5059982F8C',
-          resolver: '0xfE1CBE632855e279601EaAF58D3cB552271BfDF5',
-          token0: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', // wstETH
-          token1: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+            '0x8cf39e1bd5722baac7056e1a02ee139296b224ed',
+          liquidityUserModule: '0x8ec5e29ea39b2f64b21e32cb9ff11d5059982f8c',
+          resolver: '0x8620487dd447a0d4930191f917d886cbb0664d7c',
+          token0: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0', // wstETH
+          token1: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
         },
       ],
     },
