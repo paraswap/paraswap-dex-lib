@@ -1,6 +1,6 @@
 import { DexParams } from './types';
-import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { DexConfigMap } from '../../types';
+import { Network } from '../../constants';
 
 export const BebopConfig: DexConfigMap<DexParams> = {
   Bebop: {
@@ -33,28 +33,5 @@ export const BebopConfig: DexConfigMap<DexParams> = {
       chainName: 'optimism',
       middleTokens: ['0x7F5c764cBc14f9669B88837ca1490cCa17c31607'],
     },
-  },
-};
-
-export const Adapters: Record<number, AdapterMappings> = {
-  [Network.MAINNET]: {
-    [SwapSide.SELL]: [{ name: 'Adapter03', index: 14 }],
-    [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 7 }],
-  },
-  [Network.BSC]: {
-    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 2 }],
-    [SwapSide.BUY]: [{ name: 'BscBuyAdapter', index: 3 }],
-  },
-  [Network.ARBITRUM]: {
-    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 14 }],
-    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 4 }],
-  },
-  [Network.BASE]: {
-    [SwapSide.SELL]: [{ name: 'BaseAdapeter01', index: 11 }],
-    [SwapSide.BUY]: [{ name: 'BaseBuyAdapter', index: 7 }],
-  },
-  [Network.OPTIMISM]: {
-    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 10 }],
-    [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 4 }],
   },
 };

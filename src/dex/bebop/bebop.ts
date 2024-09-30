@@ -5,7 +5,6 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   OptimalSwapExchange,
@@ -29,7 +28,7 @@ import {
 } from './types';
 import settlementABI from '../../abi/bebop/BebopSettlement.abi.json';
 import { SimpleExchange } from '../simple-exchange';
-import { BebopConfig, Adapters } from './config';
+import { BebopConfig } from './config';
 import { Interface } from 'ethers/lib/utils';
 import { RateFetcher } from './rate-fetcher';
 import {
@@ -71,7 +70,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
     readonly settlementAddress: string = BebopConfig['Bebop'][network]
       .settlementAddress,
     protected settlementInterface = new Interface(settlementABI),
@@ -134,7 +132,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
 
   getPoolIdentifier(base: string, quote: string): string {

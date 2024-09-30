@@ -9,7 +9,7 @@ import {
   BebopTokensResponse,
 } from './types';
 import { pricesResponseValidator, tokensResponseValidator } from './validators';
-import { WebSocketFetcher } from './websocket-fetcher';
+import { WebSocketFetcher } from '../../lib/fetcher/wsFetcher';
 
 export class RateFetcher {
   private pricesFetcher: WebSocketFetcher<BebopPricingResponse>;
