@@ -18,7 +18,7 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { WUSDMData, DexParams, PoolState } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { WUSDMConfig, Adapters } from './config';
+import { WUSDMConfig } from './config';
 import { Utils } from '../../utils';
 import { Interface } from '@ethersproject/abi';
 import wUSDM_ABI from '../../abi/wUSDM.json';
@@ -53,7 +53,6 @@ export class WUSDM extends SimpleExchange implements IDex<WUSDMData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     const config = WUSDMConfig[dexKey][network];
@@ -64,10 +63,8 @@ export class WUSDM extends SimpleExchange implements IDex<WUSDMData> {
     this.logger = dexHelper.getLogger(dexKey);
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return null;
   }
 
   // Returns list of pool identifiers that can be used

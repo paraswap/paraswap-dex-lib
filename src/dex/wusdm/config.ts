@@ -1,6 +1,6 @@
 import { DexParams } from './types';
-import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { DexConfigMap } from '../../types';
+import { Network } from '../../constants';
 
 export const WUSDMConfig: DexConfigMap<DexParams> = {
   wUSDM: {
@@ -25,10 +25,4 @@ export const WUSDMConfig: DexConfigMap<DexParams> = {
       USDMAddress: '0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C',
     },
   },
-};
-
-export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
 };
