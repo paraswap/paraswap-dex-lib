@@ -43,9 +43,9 @@ function getReaderCalldata(
     callData: readerIface.encodeFunctionData(funcName, [
       // TODO: Put here additional arguments to encode them
       '0x6d83f60eeac0e50a1250760151e81db2a278e03a',
-      true,
+      funcName == 'estimateSwapIn' ? true : false,
       amount,
-      0,
+      funcName == 'estimateSwapIn' ? 0 : 10 ** 30,
     ]),
   }));
 }
@@ -70,7 +70,7 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const resolverAddress = '0xfe1cbe632855e279601eaaf58d3cb552271bfdf5'; // TODO: Put here the real exchange address
+  const resolverAddress = '0x278166a9b88f166eb170d55801be1b1d1e576330'; // TODO: Put here the real exchange address
 
   // TODO: Replace dummy interface with the real one
   // Normally you can get it from fluidDex.Iface or from eventPool.
@@ -81,7 +81,7 @@ async function checkOnChainPricing(
     resolverAddress,
     readerIface,
     amounts.slice(1),
-    'estimateSwapIn',
+    funcName,
   );
   const readerResult = (
     await fluidDex.dexHelper.multiContract.methods
@@ -97,28 +97,6 @@ async function checkOnChainPricing(
   console.log('prices fetched from reserves : ' + expectedPrices);
 
   // expect(prices).toEqual(expectedPrices);
-
-  console.log(
-    'swap amount : ' +
-      fluidDex.swapIn(
-        false,
-        BigInt(1000000000000000000), // Convert to BigInt
-        {
-          token0RealReserves: 62488268533789980,
-          token1RealReserves: 2169957278960,
-          token0ImaginaryReserves: 73751087371915120,
-          token1ImaginaryReserves: 19566413072683,
-        },
-        {
-          token0Debt: 16591411151470,
-          token1Debt: 62514322242914216,
-          token0RealReserves: 2169113849912,
-          token1RealReserves: 2560161590859,
-          token0ImaginaryReserves: 73781841100419650,
-          token1ImaginaryReserves: 19576634814289,
-        },
-      ),
-  );
 }
 
 async function testPricingOnNetwork(
@@ -239,7 +217,7 @@ describe('FluidDex', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
+        'estimateSwapIn', // TODO: Put here proper function name to check pricing
       );
     });
 
@@ -253,7 +231,7 @@ describe('FluidDex', function () {
     //     destTokenSymbol,
     //     SwapSide.BUY,
     //     amountsForBuy,
-    //     '', // TODO: Put here proper function name to check pricing
+    //     'estimateSwapOut', // TODO: Put here proper function name to check pricing
     //   );
     // });
 

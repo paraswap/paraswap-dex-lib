@@ -198,6 +198,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
       state = await this.generateState(blockNumber);
       if (!readonly) this.setState(state, blockNumber);
     }
+    // console.log('fluidDexPool - getStateOrGenerate : ' + state);
     return state;
   }
 
@@ -213,10 +214,10 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   async generateState(
     blockNumber: number,
   ): Promise<DeepReadonly<FluidDexPoolState>> {
-    const ResolverAbi = new Interface(FluidDexPoolABI);
+    const ResolverAbi = new Interface(ResolverABI);
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
-        target: this.pool.address,
+        target: this.pool.resolver,
         callData: ResolverAbi.encodeFunctionData('getPoolReserves', [
           this.pool.address,
         ]),
@@ -230,6 +231,8 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
         blockNumber,
         this.dexHelper.multiWrapper.defaultBatchSize,
       );
+
+    // console.log('fluidDexpool - generateState results: ' + results);
 
     return {
       collateralReserves: results[0].collateralReserves,

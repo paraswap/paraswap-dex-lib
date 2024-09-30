@@ -137,13 +137,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       const eventPool = this.eventPools[pool.id];
 
       if (!eventPool) {
-        this.logger.error(`OSwap pool ${pool.id}: No EventPool found.`);
+        this.logger.error(`fluid-dex pool ${pool.id}: No EventPool found.`);
 
         return null;
       }
 
       // const state = await eventPool.generateState(blockNumber);
       const state = await eventPool.getStateOrGenerate(blockNumber);
+      // console.log('fluidDex - getPricesVolume : ' + state);
 
       const swap0To1: boolean = side === SwapSide.SELL;
 
@@ -157,9 +158,22 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         ),
       );
 
+      // console.log('state colres is -> ');
+      // console.log(state.collateralReserves.token0ImaginaryReserves);
+      // console.log(state.collateralReserves.token0RealReserves);
+      // console.log(state.collateralReserves.token1ImaginaryReserves);
+      // console.log(state.collateralReserves.token1RealReserves);
+      // console.log('state debtres is -> ');
+      // console.log(state.debtReserves.token0Debt);
+      // console.log(state.debtReserves.token0ImaginaryReserves);
+      // console.log(state.debtReserves.token0RealReserves);
+      // console.log(state.debtReserves.token1Debt);
+      // console.log(state.debtReserves.token1ImaginaryReserves);
+      // console.log(state.debtReserves.token1RealReserves);
+
       return [
         {
-          prices: amounts, // to be done
+          prices: prices, // to be done
           unit: getBigIntPow(
             (side === SwapSide.SELL ? destToken : srcToken).decimals,
           ), // to be done

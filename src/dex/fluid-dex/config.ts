@@ -14,7 +14,7 @@ export const FluidDexConfig: DexConfigMap<DexParams> = {
           perfectOperationsAndSwapOut:
             '0x8cf39e1bd5722baac7056e1a02ee139296b224ed',
           liquidityUserModule: '0x8ec5e29ea39b2f64b21e32cb9ff11d5059982f8c',
-          resolver: '0x8620487dd447a0d4930191f917d886cbb0664d7c',
+          resolver: '0x278166a9b88f166eb170d55801be1b1d1e576330',
           token0: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0', // wstETH
           token1: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
         },
