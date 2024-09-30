@@ -88,7 +88,9 @@ import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
+import { UsualBond } from './usual-bond/usual-bond';
 import { StkGHO } from './stkgho/stkgho';
+import { SkyConverter } from './sky-converter/sky-converter';
 import { RubiconRfq } from './rubicon-rfq/rubicon-rfq';
 
 const LegacyDexes = [
@@ -173,7 +175,10 @@ const Dexes = [
   FxProtocolRusd,
   AaveGsm,
   LitePsm,
+  UsualBond,
   StkGHO,
+  RubiconRfq,
+  SkyConverter,
   RubiconRfq,
 ];
 

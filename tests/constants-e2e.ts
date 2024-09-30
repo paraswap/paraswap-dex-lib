@@ -19,6 +19,22 @@ export const Tokens: {
   [network: number]: { [symbol: string]: SmartTokenParams };
 } = {
   [Network.MAINNET]: {
+    sUSDS: {
+      address: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',
+      decimals: 18,
+    },
+    USDS: {
+      address: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
+      decimals: 18,
+    },
+    SKY: {
+      address: '0x56072C95FAA701256059aa122697B133aDEd9279',
+      decimals: 18,
+    },
+    MKR: {
+      address: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
+      decimals: 18,
+    },
     AA_wstETH: {
       decimals: 18,
       address: '0x2688fc68c4eac90d9e5e1b94776cf14eade8d877',
@@ -510,6 +526,16 @@ export const Tokens: {
     arUSD: {
       address: '0x07D1718fF05a8C53C8F05aDAEd57C0d672945f9a',
       decimals: 18,
+    },
+    USD0: {
+      address: '0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5',
+      decimals: 18,
+      symbol: 'USD0',
+    },
+    'USD0++': {
+      address: '0x35D8949372D46B7a3D5A56006AE77B215fc69bC0',
+      decimals: 18,
+      symbol: 'USD0++',
     },
   },
   [Network.POLYGON]: {
@@ -1488,6 +1514,10 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
+    USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
+    sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
+    SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
+    MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
     // Idle tokens
     AA_wstETH: '0xd7C1b48877A7dFA7D51cf1144c89C0A3F134F935',
     'AA_idle_cpPOR-USDC': '0x085c8eaccA6911fE60aE3f8FbAe5F3012E3A05Ec',
@@ -1591,6 +1621,8 @@ export const Holders: {
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
+    USD0: '0x6A5d5Af0E266a24648a9d7E8D388EAEc7AbD8433',
+    'USD0++': '0x2227b6806339906707b43F36a1f07B52FF7Fa776',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
