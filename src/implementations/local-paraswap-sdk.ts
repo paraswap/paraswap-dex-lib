@@ -96,6 +96,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
         delete this.dexKeys[this.dexKeys.indexOf(dexKey)];
       }
     });
+
+    // Remove the null entries
+    this.dexKeys = this.dexKeys.filter(key => key !== null);
   }
 
   async initializePricing() {
@@ -127,6 +130,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
         blockNumber,
         this.dexKeys,
       ));
+
+    // console.log("this is pool identifiers" + JSON.stringify(poolIdentifiers, null, 2));
 
     const amounts = _.range(0, chunks + 1).map(
       i => (amount * BigInt(i)) / BigInt(chunks),

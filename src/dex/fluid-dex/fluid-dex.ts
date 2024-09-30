@@ -1,4 +1,5 @@
 import { AsyncOrSync } from 'ts-essentials';
+import { Interface } from '@ethersproject/abi';
 import {
   Token,
   Address,
@@ -7,11 +8,12 @@ import {
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
+  DexExchangeParam,
   Logger,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CollateralReserves,
@@ -21,18 +23,23 @@ import {
   FluidDexPool,
   FluidDexPoolState,
 } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import {
+  SimpleExchange,
+  getLocalDeadlineAsFriendlyPlaceholder,
+} from '../simple-exchange';
+import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
 import { FluidDexConfig, Adapters, FLUID_DEX_GAS_COST } from './config';
 import { FluidDexEventPool } from './fluid-dex-pool';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   readonly eventPools: { [id: string]: FluidDexEventPool } = {};
 
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = true;
+  readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
 
@@ -42,6 +49,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   logger: Logger;
 
   readonly pools: [FluidDexPool];
+
+  readonly iFluidDexPool: Interface;
 
   protected adapters;
 
@@ -54,7 +63,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     this.logger = dexHelper.getLogger(dexKey);
     this.pools = FluidDexConfig['FluidDex'][network].pools;
     this.adapters = Adapters[network] || {}; // TODO: add any additional optional params to support other fork DEXes
-
+    this.iFluidDexPool = new Interface(FluidDexPoolABI);
     for (const pool of this.pools) {
       this.eventPools[pool.id] = new FluidDexEventPool(
         'FluidDex',
@@ -99,6 +108,27 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   getPoolByTokenPair(srcToken: Token, destToken: Token): FluidDexPool | null {
     const srcAddress = srcToken.address.toLowerCase();
     const destAddress = destToken.address.toLowerCase();
+
+    // A pair must have 2 different tokens.
+    if (srcAddress === destAddress) return null;
+
+    for (const pool of this.pools) {
+      if (
+        (srcAddress === pool.token0 && destAddress === pool.token1) ||
+        (srcAddress === pool.token1 && destAddress === pool.token0)
+      ) {
+        return pool;
+      }
+    }
+    return null;
+  }
+
+  getPoolByTokenPairAddress(
+    srcToken: Address,
+    destToken: Address,
+  ): FluidDexPool | null {
+    const srcAddress = srcToken.toLowerCase();
+    const destAddress = destToken.toLowerCase();
 
     // A pair must have 2 different tokens.
     if (srcAddress === destAddress) return null;
@@ -491,5 +521,47 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
     // Using the swap formula: (AmountIn * ReserveOut * scale) / (ReserveIn * scale + AmountIn * scale)
     return numerator / denominator;
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: string,
+    destAmount: string,
+    recipient: Address,
+    data: FluidDexData,
+    side: SwapSide,
+    context: Context,
+    executorAddress: Address,
+  ): AsyncOrSync<DexExchangeParam> {
+    let method: string;
+    let args: any;
+    let returnAmountPos: number | undefined = undefined;
+
+    const deadline = getLocalDeadlineAsFriendlyPlaceholder();
+    if (side === SwapSide.SELL) {
+      method = 'swapIn';
+      returnAmountPos = extractReturnAmountPosition(
+        this.iFluidDexPool,
+        method,
+        'amountOut_',
+        1,
+      );
+      args = [true, BigInt(srcAmount), BigInt(destAmount), recipient];
+    } else {
+      method = 'swapOut';
+      args = [false, BigInt(srcAmount), BigInt(destAmount), recipient];
+    }
+
+    const swapData = this.iFluidDexPool.encodeFunctionData(method, args);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: this.getPoolByTokenPairAddress(srcToken, destToken)!
+        .address,
+      returnAmountPos,
+    };
   }
 }
