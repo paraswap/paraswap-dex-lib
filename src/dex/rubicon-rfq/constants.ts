@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 // TODO: update
-export const RUBICON_RFQ_API_URL = 'http://localhost:22869';
+export const RUBICON_RFQ_API_URL = 'https://rfq.rubicon.finance';
 export const RUBICON_RFQ_CLIENT_TAG = 'paraswap';
 
 export const RUBICON_RFQ_MARKETS_ENDPOINT = '/markets';
