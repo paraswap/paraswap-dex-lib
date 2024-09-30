@@ -89,6 +89,7 @@ import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
 import { StkGHO } from './stkgho/stkgho';
+import { RubiconRfq } from './rubicon-rfq/rubicon-rfq';
 
 const LegacyDexes = [
   CurveV2,
@@ -173,6 +174,7 @@ const Dexes = [
   AaveGsm,
   LitePsm,
   StkGHO,
+  RubiconRfq,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
