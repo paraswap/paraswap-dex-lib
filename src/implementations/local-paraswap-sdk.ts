@@ -25,6 +25,7 @@ import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-build
 import { AddressOrSymbol } from '@paraswap/sdk';
 import { ParaSwapVersion } from '@paraswap/core';
 import { TransactionBuilder } from '../transaction-builder';
+import { QuickPerps } from '../dex/quick-perps/quick-perps';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -152,6 +153,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
 
     const finalPrice = poolPrices[0];
     const quoteAmount = finalPrice.prices[chunks];
+
     const srcAmount = (
       side === SwapSide.SELL ? amount : quoteAmount
     ).toString();
@@ -326,6 +328,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       partnerFeePercent: '0',
       deadline: deadline.toString(),
       uuid: uuid(),
+      beneficiary: '0x5F4e77A22e394B51dC7Efb8e3C78121e489E78cD', // @(to be changed)
     });
   }
 }

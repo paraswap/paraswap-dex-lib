@@ -59,6 +59,7 @@ import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
 import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
+import { minBy } from 'lodash';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -388,6 +389,7 @@ export async function testE2E(
   sleepMs?: number,
   replaceTenderlyWithEstimateGas?: boolean,
   forceRoute?: AddressOrSymbol[],
+  beneficiary: Address = NULL_ADDRESS,
 ) {
   const amount = BigInt(_amount);
 
@@ -499,6 +501,8 @@ export async function testE2E(
       forceRoute,
     );
 
+    console.log('price route : ' + priceRoute);
+
     console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 
@@ -562,11 +566,19 @@ export async function testE2E(
       (swapSide === SwapSide.SELL
         ? BigInt(priceRoute.destAmount) * (10000n - BigInt(_slippage))
         : BigInt(priceRoute.srcAmount) * (10000n + BigInt(_slippage))) / 10000n;
+
+    console.log('slippage : ' + _slippage);
+
+    console.log('original amount : ' + amount);
+    console.log('minmaxamount : ' + minMaxAmount);
+
     const swapParams = await paraswap.buildTransaction(
       priceRoute,
       minMaxAmount,
       senderAddress,
     );
+
+    console.log('these are the swap params : ' + JSON.stringify(swapParams));
 
     const swapTx = await ts.simulate(swapParams);
 

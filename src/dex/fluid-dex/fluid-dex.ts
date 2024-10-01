@@ -188,19 +188,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         ),
       );
 
-      // console.log('state colres is -> ');
-      // console.log(state.collateralReserves.token0ImaginaryReserves);
-      // console.log(state.collateralReserves.token0RealReserves);
-      // console.log(state.collateralReserves.token1ImaginaryReserves);
-      // console.log(state.collateralReserves.token1RealReserves);
-      // console.log('state debtres is -> ');
-      // console.log(state.debtReserves.token0Debt);
-      // console.log(state.debtReserves.token0ImaginaryReserves);
-      // console.log(state.debtReserves.token0RealReserves);
-      // console.log(state.debtReserves.token1Debt);
-      // console.log(state.debtReserves.token1ImaginaryReserves);
-      // console.log(state.debtReserves.token1RealReserves);
-
       return [
         {
           prices: prices, // to be done
@@ -539,19 +526,36 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     let returnAmountPos: number | undefined = undefined;
 
     const deadline = getLocalDeadlineAsFriendlyPlaceholder();
-    if (side === SwapSide.SELL) {
-      method = 'swapIn';
-      returnAmountPos = extractReturnAmountPosition(
-        this.iFluidDexPool,
-        method,
-        'amountOut_',
-        1,
-      );
-      args = [true, BigInt(srcAmount), BigInt(destAmount), recipient];
-    } else {
-      method = 'swapOut';
-      args = [false, BigInt(srcAmount), BigInt(destAmount), recipient];
-    }
+
+    // const poolPrices = await this.pricingHelper.getPoolPrices(
+    //   from,
+    //   to,
+    //   amounts,
+    //   side,
+    //   blockNumber,
+    //   this.dexKeys,
+    //   poolIdentifiers,
+    //   transferFees,
+    // );
+
+    // console.log("pool prices : " + poolPrices);
+
+    // const finalPrice = poolPrices[0];
+    // const quoteAmount = finalPrice.prices[10];
+
+    method = 'swapIn';
+    returnAmountPos = extractReturnAmountPosition(
+      this.iFluidDexPool,
+      method,
+      'amountOut_',
+      1,
+    );
+
+    // if (side == SwapSide.SELL) {
+    //   args = [true, BigInt(srcAmount), BigInt(0), recipient];
+    // } else {
+    args = [false, BigInt(srcAmount), BigInt(0), recipient];
+    // }
 
     const swapData = this.iFluidDexPool.encodeFunctionData(method, args);
 
