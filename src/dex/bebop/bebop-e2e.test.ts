@@ -13,7 +13,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
 // Allow time for pricing to arrive
-const sleepMs = 2000;
+const sleepMs = 4000;
 
 function testForNetwork(
   network: Network,

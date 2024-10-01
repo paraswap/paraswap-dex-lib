@@ -125,8 +125,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     if (!this.dexHelper.config.isSlave) {
       this.rateFetcher.start();
     }
-
-    return;
   }
 
   // Returns the list of contract adapters (name and index)
@@ -195,8 +193,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       ];
     }
 
-    for (const middleToken of BebopConfig['Bebop'][this.network]
-      .middleTokens[0]) {
+    for (const middleToken of BebopConfig['Bebop'][this.network].middleTokens) {
       const baseMiddle =
         prices[
           `${srcToken.address.toLowerCase()}/${middleToken.toLowerCase()}`
@@ -334,9 +331,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           output.gt(0) ? output : amountDecimals,
         );
         if (output.eq(0)) {
-          throw new Error(
+          this.logger.warn(
             `No liquidity for ${instruction.side} - ${amountDecimals} of ${instruction.pair}`,
           );
+          outputs.push(0n);
+          continue;
         }
       }
       if (output.gt(0)) {
@@ -389,7 +388,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         side,
       );
 
-      // TODO: On SwapSide.Sell, outputs compared  to quoting are coming out: -0.1 bips -> USDC, -1 bips Alt -> Alt.
+      // On SwapSide.Sell, outputs compared  to quoting are coming out: -0.1 bips -> USDC, -1 bips Alt -> Alt.
       // On SwapSide.Buy, outputs compared to quoteing are coming out: 0.1 bips -> USDC, 1-2 bips Alt -> Alt.
 
       const outDecimals = SwapSide.SELL
@@ -650,7 +649,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           throw new Error(
             `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
           );
-          // throw new SlippageCheckError(message);
         }
       } else {
         const requiredAmount = BigInt(optimalSwapExchange.srcAmount);
