@@ -1,3 +1,4 @@
+export const BEBOP_INIT_TIMEOUT_MS = 5000;
 export const BEBOP_PRICES_CACHE_TTL = 10;
 export const BEBOP_TOKENS_CACHE_TTL = 60;
 export const BEBOP_TOKENS_POLLING_INTERVAL_MS = 30 * 1000;

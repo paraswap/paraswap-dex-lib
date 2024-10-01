@@ -12,9 +12,6 @@ import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
-// Allow time for pricing to arrive
-const sleepMs = 4000;
-
 function testForNetwork(
   network: Network,
   dexKey: string,
@@ -53,11 +50,6 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                sleepMs,
               );
             });
             it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
@@ -71,11 +63,6 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                sleepMs,
               );
             });
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
@@ -89,11 +76,6 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                sleepMs,
               );
             });
           });

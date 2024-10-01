@@ -13,7 +13,7 @@ import {
   NumberAsString,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -35,6 +35,7 @@ import {
   BEBOP_API_URL,
   BEBOP_AUTH_NAME,
   BEBOP_GAS_COST,
+  BEBOP_INIT_TIMEOUT_MS,
   BEBOP_PRICES_CACHE_TTL,
   BEBOP_QUOTE_TIMEOUT_MS,
   BEBOP_TOKENS_CACHE_TTL,
@@ -117,13 +118,10 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     );
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
   async initializePricing(blockNumber: number) {
     if (!this.dexHelper.config.isSlave) {
       this.rateFetcher.start();
+      await sleep(BEBOP_INIT_TIMEOUT_MS);
     }
   }
 
@@ -726,3 +724,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     }
   }
 }
+
+const sleep = (time: number) =>
+  new Promise(resolve => {
+    setTimeout(resolve, time);
+  });

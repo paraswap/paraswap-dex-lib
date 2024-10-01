@@ -11,7 +11,6 @@ import {
   checkPoolPrices,
   checkPoolsLiquidity,
   checkConstantPoolPrices,
-  sleep,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
@@ -108,7 +107,6 @@ describe('Bebop', function () {
       bebop = new Bebop(network, dexKey, dexHelper);
       if (bebop.initializePricing) {
         await bebop.initializePricing(blockNumber);
-        await sleep(4000);
       }
     });
 

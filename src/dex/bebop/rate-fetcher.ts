@@ -1,6 +1,6 @@
 import { ETHER_ADDRESS, Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
-import { Fetcher, SkippingRequest } from '../../lib/fetcher/fetcher';
+import { Fetcher } from '../../lib/fetcher/fetcher';
 import { validateAndCast } from '../../lib/validators';
 import { Logger, Token } from '../../types';
 import {
