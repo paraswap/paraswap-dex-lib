@@ -383,8 +383,9 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         side,
       );
 
+      // Up to 3bps deviation is expected in the output compared to the on-chain result
       // On SwapSide.Sell, outputs compared  to quoting are coming out: -0.1 bips -> USDC, -1 bips Alt -> Alt.
-      // On SwapSide.Buy, outputs compared to quoteing are coming out: 0.1 bips -> USDC, 1-2 bips Alt -> Alt.
+      // On SwapSide.Buy, outputs compared to quoteing are coming out: 0.1 bips -> USDC, 1-3 bips Alt -> Alt.
 
       const outDecimals = SwapSide.SELL
         ? destToken.decimals
