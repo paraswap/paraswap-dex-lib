@@ -331,10 +331,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           output.gt(0) ? output : amountDecimals,
         );
         if (output.eq(0)) {
-          this.logger.warn(
-            `No liquidity for ${instruction.side} - ${amountDecimals} of ${instruction.pair}`,
-          );
-          outputs.push(0n);
+          outputs.push(0n); // No liquidity at this size
           continue;
         }
       }
