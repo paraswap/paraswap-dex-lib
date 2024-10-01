@@ -108,7 +108,7 @@ describe('Bebop', function () {
       bebop = new Bebop(network, dexKey, dexHelper);
       if (bebop.initializePricing) {
         await bebop.initializePricing(blockNumber);
-        await sleep(2000);
+        await sleep(4000);
       }
     });
 
