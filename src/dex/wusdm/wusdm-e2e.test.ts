@@ -77,7 +77,7 @@ function testForNetwork(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
-                tokenAAmount,
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -90,7 +90,7 @@ function testForNetwork(
                 tokens[tokenBSymbol],
                 tokens[tokenASymbol],
                 holders[tokenBSymbol],
-                tokenBAmount,
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -127,5 +127,83 @@ describe('MountainProtocol E2E', () => {
     );
 
     // TODO: Add any additional test cases required to test MountainProtocol
+  });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
+
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+
+    // TODO: Add any additional test cases required to test MountainProtocol
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
+
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
+
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
+
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
   });
 });

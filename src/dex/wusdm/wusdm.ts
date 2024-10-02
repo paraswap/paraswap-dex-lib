@@ -14,90 +14,103 @@ import {
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { IDex, Context } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { WUSDMData, DexParams, PoolState } from './types';
+import {
+  WUSDMData,
+  WUSDMFunctions,
+  WusdmParams,
+  WusdmPoolState,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { WUSDMConfig } from './config';
 import { Utils } from '../../utils';
+import { BI_POWS } from '../../bigint-constants';
+import { WusdmEventPool } from './wusdm-pool';
 import { Interface } from '@ethersproject/abi';
 import wUSDM_ABI from '../../abi/wUSDM.json';
-import USDM_ABI from '../../abi/USDM.json';
+import { DEPOSIT_TOPIC, WITHDRAW_TOPIC } from './constants';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { uint256ToBigInt } from '../../lib/decoders';
 
-export class WUSDM extends SimpleExchange implements IDex<WUSDMData> {
-  static readonly wUSDMIface = new Interface(wUSDM_ABI);
-  static readonly USDMIface = new Interface(USDM_ABI);
-
-  protected config: DexParams;
-
+export class WUSDM
+  extends SimpleExchange
+  implements IDex<WUSDMData, WusdmParams>
+{
   readonly hasConstantPriceLargeAmounts = true;
-  // TODO: set true here if protocols works only with wrapped asset
-  readonly needWrapNative = false;
-
-  readonly isFeeOnTransferSupported = true;
+  readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WUSDMConfig);
 
+  public readonly eventPool: WusdmEventPool;
   logger: Logger;
-
-  private state: { blockNumber: number } & PoolState = {
-    blockNumber: 0,
-    totalAssets: 0n,
-    totalShares: 0n,
-  };
 
   constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
+    readonly wUSDMAddress: string = WUSDMConfig[dexKey][network].wUSDMAddress,
+    readonly USDMAddress: string = WUSDMConfig[dexKey][network].USDMAddress,
+    readonly wUSDMInterface: Interface = new Interface(wUSDM_ABI),
   ) {
     super(dexHelper, dexKey);
-    const config = WUSDMConfig[dexKey][network];
-    this.config = {
-      wUSDMAddress: config.wUSDMAddress.toLowerCase(),
-      USDMAddress: config.USDMAddress.toLowerCase(),
-    };
     this.logger = dexHelper.getLogger(dexKey);
+    this.eventPool = new WusdmEventPool(
+      this.dexKey,
+      this.network,
+      `${this.wUSDMAddress}_${this.USDMAddress}`,
+      dexHelper,
+      this.wUSDMAddress,
+      this.wUSDMInterface,
+      this.logger,
+      DEPOSIT_TOPIC,
+      WITHDRAW_TOPIC,
+    );
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
+  isAppropriatePair(srcToken: Token, destToken: Token): boolean {
+    return (
+      (srcToken.address.toLowerCase() === this.wUSDMAddress.toLowerCase() &&
+        destToken.address.toLowerCase() === this.USDMAddress.toLowerCase()) ||
+      (srcToken.address.toLowerCase() === this.USDMAddress.toLowerCase() &&
+        destToken.address.toLowerCase() === this.wUSDMAddress.toLowerCase())
+    );
+  }
+
+  async initializePricing(blockNumber: number) {
+    await this.eventPool.initialize(blockNumber);
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    if (side === SwapSide.BUY) return [];
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
-    if (
-      !(
-        (srcTokenAddress === this.config.wUSDMAddress &&
-          destTokenAddress === this.config.USDMAddress) ||
-        (srcTokenAddress === this.config.USDMAddress &&
-          destTokenAddress === this.config.wUSDMAddress)
-      )
-    ) {
-      return [];
-    }
-    return [this.dexKey];
+    return this.isAppropriatePair(srcToken, destToken)
+      ? [`${this.dexKey}_${this.wUSDMAddress}`]
+      : [];
   }
 
-  protected calcWrap = (amount: bigint): bigint =>
-    (amount * this.state.totalShares) / this.state.totalAssets;
+  isUSDM(tokenAddress: Address) {
+    return this.USDMAddress.toLowerCase() === tokenAddress.toLowerCase();
+  }
 
-  protected calcUnwrap = (amount: bigint): bigint =>
-    (amount * this.state.totalAssets) / this.state.totalShares;
+  isWUSDM(tokenAddress: Address) {
+    return this.wUSDMAddress.toLowerCase() === tokenAddress.toLowerCase();
+  }
+
+  isWrap(srcToken: Token, destToken: Token, side: SwapSide) {
+    if (side === SwapSide.SELL) {
+      return this.isUSDM(srcToken.address) && this.isWUSDM(destToken.address);
+    }
+    return this.isWUSDM(srcToken.address) && this.isUSDM(destToken.address);
+  }
 
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
@@ -111,73 +124,37 @@ export class WUSDM extends SimpleExchange implements IDex<WUSDMData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<WUSDMData>> {
-    if (side === SwapSide.BUY) return null;
-    const srcTokenAddress = srcToken.address.toLowerCase();
-    const destTokenAddress = destToken.address.toLowerCase();
-    if (
-      !(
-        (srcTokenAddress === this.config.wUSDMAddress &&
-          destTokenAddress === this.config.USDMAddress) ||
-        (srcTokenAddress === this.config.USDMAddress &&
-          destTokenAddress === this.config.wUSDMAddress)
-      )
-    ) {
-      return null;
-    }
-    const wrap = srcTokenAddress === this.config.USDMAddress;
+    if (!this.isAppropriatePair(srcToken, destToken)) return null;
+    const state = this.eventPool.getState(blockNumber);
+    if (!state) return null;
 
-    if (blockNumber > this.state.blockNumber) {
-      const cached = await this.dexHelper.cache.get(
-        this.dexKey,
-        this.network,
-        'state',
-      );
-      if (cached) {
-        this.state = Utils.Parse(cached);
+    const isSrcAsset = this.isUSDM(srcToken.address);
+
+    const isWrap = this.isWrap(srcToken, destToken, side);
+
+    let calcFunction: Function;
+
+    if (side === SwapSide.SELL) {
+      if (isSrcAsset) {
+        calcFunction = this.previewDeposit.bind(this);
+      } else {
+        calcFunction = this.previewRedeem.bind(this);
       }
-      if (blockNumber > this.state.blockNumber) {
-        const calls = [
-          {
-            target: this.config.wUSDMAddress,
-            callData: WUSDM.wUSDMIface.encodeFunctionData('totalSupply'),
-            decodeFunction: uint256ToBigInt,
-          },
-          {
-            target: this.config.wUSDMAddress,
-            callData: WUSDM.wUSDMIface.encodeFunctionData('totalAssets'),
-            decodeFunction: uint256ToBigInt,
-          },
-        ];
-        const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-          true,
-          calls,
-          blockNumber,
-        );
-        this.state = {
-          blockNumber,
-          totalShares: results[0].returnData,
-          totalAssets: results[1].returnData,
-        };
-        this.dexHelper.cache.setex(
-          this.dexKey,
-          this.network,
-          'state',
-          60,
-          Utils.Serialize(this.state),
-        );
+    } else {
+      if (isSrcAsset) {
+        calcFunction = this.previewMint.bind(this);
+      } else {
+        calcFunction = this.previewWithdraw.bind(this);
       }
     }
-
-    const calc = wrap ? this.calcWrap : this.calcUnwrap;
     return [
       {
-        unit: calc(1000000000000000000n),
-        prices: amounts.map(calc),
-        data: {},
-        poolAddresses: [this.config.wUSDMAddress],
+        unit: BI_POWS[18],
+        prices: amounts.map(amount => calcFunction(amount, state)),
+        gasCost: isWrap ? 60000 : 70000,
+        data: { exchange: `${this.wUSDMAddress}` },
+        poolAddresses: [this.wUSDMAddress],
         exchange: this.dexKey,
-        gasCost: wrap ? 60000 : 70000,
-        poolIdentifier: this.dexKey,
       },
     ];
   }
@@ -188,7 +165,72 @@ export class WUSDM extends SimpleExchange implements IDex<WUSDMData> {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  async getDexParam(
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    limit: number,
+  ): Promise<PoolLiquidity[]> {
+    if (!this.isUSDM(tokenAddress) && !this.isWUSDM(tokenAddress)) return [];
+
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.wUSDMAddress,
+        connectorTokens: [
+          {
+            decimals: 18,
+            address: this.isUSDM(tokenAddress)
+              ? this.wUSDMAddress
+              : this.USDMAddress,
+          },
+        ],
+        liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+      },
+    ];
+  }
+
+  async getSimpleParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: WUSDMData,
+    side: SwapSide,
+  ): Promise<SimpleExchangeParam> {
+    const isSell = side === SwapSide.SELL;
+    const { exchange } = data;
+
+    let swapData: string;
+    if (this.isUSDM(srcToken)) {
+      swapData = this.wUSDMInterface.encodeFunctionData(
+        isSell ? WUSDMFunctions.deposit : WUSDMFunctions.mint,
+        [isSell ? srcAmount : destAmount, this.augustusAddress],
+      );
+    } else {
+      swapData = this.wUSDMInterface.encodeFunctionData(
+        isSell ? WUSDMFunctions.redeem : WUSDMFunctions.withdraw,
+        [
+          isSell ? srcAmount : destAmount,
+          this.augustusAddress,
+          this.augustusAddress,
+        ],
+      );
+    }
+
+    return this.buildSimpleParamWithoutWETHConversion(
+      srcToken,
+      srcAmount,
+      destToken,
+      destAmount,
+      swapData,
+      exchange,
+      undefined,
+      undefined,
+      undefined,
+      isSell && this.isUSDM(destToken),
+    );
+  }
+
+  getDexParam(
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
@@ -196,29 +238,39 @@ export class WUSDM extends SimpleExchange implements IDex<WUSDMData> {
     recipient: Address,
     data: WUSDMData,
     side: SwapSide,
-  ): Promise<DexExchangeParam> {
-    const swapFunction =
-      srcToken.toLowerCase() === this.config.wUSDMAddress
-        ? 'redeem'
-        : 'deposit';
-    const exchangeData =
-      swapFunction === 'deposit'
-        ? WUSDM.wUSDMIface.encodeFunctionData('deposit', [srcAmount, recipient])
-        : WUSDM.wUSDMIface.encodeFunctionData('redeem', [
-            srcAmount,
-            recipient,
-            recipient,
-          ]);
+    _: Context,
+    executorAddress: Address,
+  ): DexExchangeParam {
+    const isSell = side === SwapSide.SELL;
+    const { exchange } = data;
+
+    let swapData: string;
+    if (this.isUSDM(srcToken)) {
+      swapData = this.wUSDMInterface.encodeFunctionData(
+        isSell ? WUSDMFunctions.deposit : WUSDMFunctions.mint,
+        [isSell ? srcAmount : destAmount, recipient],
+      );
+    } else {
+      swapData = this.wUSDMInterface.encodeFunctionData(
+        isSell ? WUSDMFunctions.redeem : WUSDMFunctions.withdraw,
+        [isSell ? srcAmount : destAmount, recipient, executorAddress],
+      );
+    }
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
-      exchangeData,
-      targetExchange: this.config.wUSDMAddress,
-      returnAmountPos:
-        side === SwapSide.SELL
-          ? extractReturnAmountPosition(WUSDM.wUSDMIface, swapFunction)
-          : undefined,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      targetExchange: exchange,
+      returnAmountPos: isSell
+        ? extractReturnAmountPosition(
+            this.wUSDMInterface,
+            this.isUSDM(srcToken)
+              ? WUSDMFunctions.deposit
+              : WUSDMFunctions.redeem,
+          )
+        : undefined,
+      skipApproval: isSell && this.isUSDM(destToken),
     };
   }
 
@@ -234,47 +286,45 @@ export class WUSDM extends SimpleExchange implements IDex<WUSDMData> {
     data: WUSDMData,
     side: SwapSide,
   ): AdapterExchangeParam {
+    const { exchange } = data;
+
+    const payload = this.abiCoder.encodeParameter(
+      {
+        ParentStruct: {
+          toStaked: 'bool',
+        },
+      },
+      {
+        toStaked: this.isUSDM(srcToken),
+      },
+    );
+
     return {
-      targetExchange: this.config.wUSDMAddress,
-      payload: '0x',
+      targetExchange: exchange,
+      payload,
       networkFee: '0',
     };
-  }
-
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
-  async getTopPoolsForToken(
-    tokenAddress: Address,
-    limit: number,
-  ): Promise<PoolLiquidity[]> {
-    tokenAddress = tokenAddress.toLowerCase();
-    if (
-      tokenAddress !== this.config.USDMAddress &&
-      tokenAddress !== this.config.wUSDMAddress
-    ) {
-      return [];
-    }
-    return [
-      {
-        exchange: this.dexKey,
-        address: this.config.wUSDMAddress,
-        connectorTokens: [
-          {
-            decimals: 18,
-            address:
-              tokenAddress === this.config.USDMAddress
-                ? this.config.wUSDMAddress
-                : this.config.USDMAddress,
-          },
-        ],
-        liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
-      },
-    ];
   }
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     // TODO: complete me!
+  }
+
+  previewRedeem(shares: bigint, state: WusdmPoolState) {
+    return (shares * state.totalAssets) / state.totalShares;
+  }
+
+  previewMint(shares: bigint, state: WusdmPoolState) {
+    return (shares * state.totalAssets) / state.totalShares;
+  }
+
+  previewWithdraw(assets: bigint, state: WusdmPoolState) {
+    return (assets * state.totalShares) / state.totalAssets;
+  }
+
+  previewDeposit(assets: bigint, state: WusdmPoolState) {
+    return (assets * state.totalShares) / state.totalAssets;
   }
 }
