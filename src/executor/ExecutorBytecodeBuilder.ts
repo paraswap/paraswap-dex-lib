@@ -38,6 +38,7 @@ export type SingleSwapCallDataParams<T> = {
   flags: { approves: Flag[]; dexes: Flag[]; wrap: Flag };
   sender: string;
   maybeWethCallData?: DepositWithdrawReturn;
+  maybeWethCallDataForNeedUnwrapWeth?: DepositWithdrawReturn;
 } & T;
 
 export type DexCallDataParams<T> = {
@@ -67,6 +68,7 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
     swapExchangeIndex: number,
     exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
+    maybeWethCallDataForNeedUnwrapWeth?: DepositWithdrawReturn,
   ): {
     dexFlag: Flag;
     approveFlag: Flag;
@@ -86,6 +88,7 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
     swapExchangeIndex: number,
     exchangeParamIndex: number,
     maybeWethCallData?: DepositWithdrawReturn,
+    maybeWethCallDataForNeedUnwrapWeth?: DepositWithdrawReturn,
   ): {
     dexFlag: Flag;
     approveFlag: Flag;
@@ -102,6 +105,7 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
     exchangeParams: DexExchangeBuildParam[],
     sender: string,
     maybeWethCallData?: DepositWithdrawReturn,
+    maybeWethCallDataForNeedUnwrapWeth?: DepositWithdrawReturn,
   ): string;
 
   public abstract getAddress(): string;
@@ -297,6 +301,7 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
     priceRoute: OptimalRate,
     exchangeParams: DexExchangeBuildParam[],
     maybeWethCallData?: DepositWithdrawReturn,
+    maybeWethCallDataForNeedUnwrapWeth?: DepositWithdrawReturn,
   ): { approves: Flag[]; dexes: Flag[]; wrap: Flag } {
     const isMegaSwap = priceRoute.bestRoute.length > 1;
     const isMultiSwap = !isMegaSwap && priceRoute.bestRoute[0].swaps.length > 1;
@@ -323,6 +328,7 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
             swapExchangeIndex,
             exchangeParamIndex,
             maybeWethCallData,
+            maybeWethCallDataForNeedUnwrapWeth,
           );
 
           flags.dexes.push(dexFlag);

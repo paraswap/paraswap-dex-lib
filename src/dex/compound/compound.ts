@@ -21,6 +21,8 @@ export class Compound
   static dexKeys = ['compound'];
   cethInterface: Interface;
 
+  needWrapNative = false;
+
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'compound');
     this.cethInterface = new Interface(Ceth as JsonFragment[]);

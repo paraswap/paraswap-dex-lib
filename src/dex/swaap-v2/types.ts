@@ -5,6 +5,8 @@ import { Token } from '../../types';
 export type SwaapV2Data = {
   router: string;
   callData: string;
+  tokenIn: string;
+  tokenOut: string;
 };
 
 export type DexParams = {};

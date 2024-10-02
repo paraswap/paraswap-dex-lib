@@ -4,6 +4,8 @@ import { ERROR_CODE_TO_RESTRICT_TTL, UNKNOWN_ERROR_CODE } from './constants';
 
 export type HashflowData = {
   mm: string;
+  tokenIn: string;
+  tokenOut: string;
   quoteData?: QuoteData;
   signature?: string;
 };

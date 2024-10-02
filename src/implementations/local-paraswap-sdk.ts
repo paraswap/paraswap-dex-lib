@@ -262,16 +262,27 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                     }
 
                     const { recipient } =
-                      this.transactionBuilder.getDexCallsParams(
-                        priceRoute,
-                        routeIndex,
-                        swap,
-                        swapIndex,
-                        se,
-                        minMaxAmount.toString(),
-                        dex,
-                        executionContractAddress,
-                      );
+                      priceRoute.version === ParaSwapVersion.V5
+                        ? this.transactionBuilderV5.getDexCallsParams(
+                            priceRoute,
+                            routeIndex,
+                            swap,
+                            swapIndex,
+                            se,
+                            minMaxAmount.toString(),
+                            dex,
+                            executionContractAddress,
+                          )
+                        : this.transactionBuilder.getDexCallsParams(
+                            priceRoute,
+                            routeIndex,
+                            swap,
+                            swapIndex,
+                            se,
+                            minMaxAmount.toString(),
+                            dex,
+                            executionContractAddress,
+                          );
 
                     const [preprocessedRoute, txInfo] =
                       await dexLibExchange.preProcessTransaction(

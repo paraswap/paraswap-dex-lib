@@ -7,7 +7,7 @@ import {
   NumberAsString,
   SimpleExchangeParam,
 } from '../../types';
-import { IDexTxBuilder } from '../idex';
+import { Context, IDexTxBuilder } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
 import StablePoolABI from '../../abi/StablePool.json';
 import { IDexHelper } from '../../dex-helper';
@@ -21,6 +21,8 @@ export class StablePool
   static dexKeys = ['nerve', 'ironv2', 'snowball', 'axial'];
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
+
+  needWrapNative = false;
 
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'stablePool');
@@ -96,6 +98,7 @@ export class StablePool
     _recipient: Address,
     data: StablePoolData,
     side: SwapSide,
+    context: Context,
   ): DexExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
