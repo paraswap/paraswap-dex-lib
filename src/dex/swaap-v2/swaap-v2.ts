@@ -18,10 +18,13 @@ import {
   MAX_INT,
   MAX_UINT,
   CACHE_PREFIX,
+  NULL_ADDRESS,
+  ETHER_ADDRESS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import { uniq } from 'lodash';
 import { getDexKeysWithNetwork, isAxiosError } from '../../utils';
-import { IDex } from '../idex';
+import { Context, IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   SwaapV2Data,
@@ -78,18 +81,67 @@ import {
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { OptimalRate, OptimalSwap } from '@paraswap/core';
+import { ZERO_ADDRESS } from '@hashflow/sdk';
 
 const BLACKLISTED = 'blacklisted';
 
 export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   readonly isStatePollingDex = true;
   readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
   private rateFetcher: RateFetcher;
   private swaapV2AuthToken: string;
   private tokensMap: TokensMap = {};
   private runtimeMMsRestrictHashMapKey: string;
+
+  needUnwrapWeth = (
+    priceRoute: OptimalRate,
+    swap: OptimalSwap,
+    se: OptimalSwapExchange<any>,
+  ): boolean => {
+    const swapSrc = swap.srcToken.toLowerCase();
+    const swapDest = swap.destToken.toLowerCase();
+
+    const wethAddr =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const tokenIn = se.data.tokenIn.toLowerCase();
+    const tokenOut = se.data.tokenOut.toLowerCase();
+
+    if (swapSrc.toLowerCase() === wethAddr && tokenIn === NULL_ADDRESS) {
+      return true; // WETH is src but native ETH pool is used, we need unwrap weth in this case
+    }
+
+    if (swapDest.toLowerCase() === wethAddr && tokenOut === NULL_ADDRESS) {
+      return true; // WETH is dest but native ETH pool is used, we need unwrap weth in this case
+    }
+
+    return false;
+  };
+
+  needWrapNative = (
+    priceRoute: OptimalRate,
+    swap: OptimalSwap,
+    se: OptimalSwapExchange<any>,
+  ): boolean => {
+    const swapSrc = swap.srcToken.toLowerCase();
+    const swapDest = swap.destToken.toLowerCase();
+
+    const wethAddr =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const tokenIn = se.data.tokenIn.toLowerCase();
+    const tokenOut = se.data.tokenOut.toLowerCase();
+
+    if (swapSrc === ETHER_ADDRESS.toLowerCase() && tokenIn === wethAddr) {
+      return true; // ETH is src but WETH pool is used, we need wrap native in this case
+    }
+
+    if (swapDest === ETHER_ADDRESS.toLowerCase() && tokenOut === wethAddr) {
+      return true; // ETH is dest but WETH pool is used, we need wrap native in this case
+    }
+
+    return false;
+  };
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SwaapV2Config);
@@ -162,26 +214,68 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       return [];
     }
 
-    const poolIdentifier = getPoolIdentifier(
-      this.dexKey,
-      normalizedSrcToken.address,
-      normalizedDestToken.address,
-    );
+    const wethAddr =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const isSrcEth = normalizedSrcToken.address === NULL_ADDRESS; // SwaapV2 uses zero address for native eth
+    const isSrcWeth = this.isWETH(normalizedSrcToken.address);
+
+    const isDestEth = normalizedDestToken.address === NULL_ADDRESS; // SwaapV2 uses zero address for native eth
+    const isDestWeth = this.isWETH(normalizedDestToken.address);
+
+    const poolIdentifiers = [
+      getPoolIdentifier(
+        this.dexKey,
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
+      ),
+    ];
+
+    if (isSrcWeth) {
+      poolIdentifiers.push(
+        getPoolIdentifier(
+          this.dexKey,
+          NULL_ADDRESS,
+          normalizedDestToken.address,
+        ),
+      ); // native eth pool
+    }
+
+    if (isSrcEth) {
+      poolIdentifiers.push(this.dexKey, wethAddr, normalizedDestToken.address); // weth pool
+    }
+
+    if (isDestWeth) {
+      poolIdentifiers.push(
+        getPoolIdentifier(
+          this.dexKey,
+          normalizedSrcToken.address,
+          NULL_ADDRESS,
+        ),
+      ); // native eth pool
+    }
+
+    if (isDestEth) {
+      poolIdentifiers.push(
+        getPoolIdentifier(this.dexKey, normalizedSrcToken.address, wethAddr),
+      ); // weth pool
+    }
 
     const levels = await this.getCachedLevels();
     if (levels === null) {
       return [];
     }
 
-    return Object.keys(levels)
-      .map((pair: string) => {
-        return getPoolIdentifier(
-          this.dexKey,
-          levels[pair].base!,
-          levels[pair].quote!,
-        );
-      })
-      .filter((pi: string) => pi === poolIdentifier);
+    const allPoolIds = Object.keys(levels).map((pair: string) => {
+      return getPoolIdentifier(
+        this.dexKey,
+        levels[pair].base!,
+        levels[pair].quote!,
+      );
+    });
+
+    return uniq(
+      allPoolIds.filter((pi: string) => poolIdentifiers.includes(pi)),
+    );
   }
 
   computePricesFromLevelsBids(
@@ -340,9 +434,17 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         return null;
       }
 
+      const wethAddr =
+        this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+      const isSrcEth = normalizedSrcToken.address === NULL_ADDRESS; // SwaapV2 uses zero address for native eth
+      const isSrcWeth = this.isWETH(normalizedSrcToken.address);
+
+      const isDestEth = normalizedDestToken.address === NULL_ADDRESS; // SwaapV2 uses zero address for native eth
+      const isDestWeth = this.isWETH(normalizedDestToken.address);
+
       const pools = limitPools
-        ? limitPools.filter(
-            p =>
+        ? limitPools.filter(p => {
+            const isAppropriatePool =
               p ===
                 getPoolIdentifier(
                   this.dexKey,
@@ -354,8 +456,58 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
                   this.dexKey,
                   normalizedDestToken.address,
                   normalizedSrcToken.address,
-                ),
-          )
+                );
+
+            if (isSrcEth) {
+              return (
+                isAppropriatePool ||
+                p ===
+                  getPoolIdentifier(
+                    this.dexKey,
+                    wethAddr,
+                    normalizedDestToken.address,
+                  )
+              );
+            }
+
+            if (isSrcWeth) {
+              return (
+                isAppropriatePool ||
+                p ===
+                  getPoolIdentifier(
+                    this.dexKey,
+                    NULL_ADDRESS,
+                    normalizedDestToken.address,
+                  )
+              );
+            }
+
+            if (isDestEth) {
+              return (
+                isAppropriatePool ||
+                p ===
+                  getPoolIdentifier(
+                    this.dexKey,
+                    normalizedSrcToken.address,
+                    wethAddr,
+                  )
+              );
+            }
+
+            if (isDestWeth) {
+              return (
+                isAppropriatePool ||
+                p ===
+                  getPoolIdentifier(
+                    this.dexKey,
+                    normalizedSrcToken.address,
+                    NULL_ADDRESS,
+                  )
+              );
+            }
+
+            return isAppropriatePool;
+          })
         : await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber);
 
       if (pools.length === 0) {
@@ -370,14 +522,10 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       const levelEntries: SwaapV2PriceLevels[] = Object.keys(levels)
         .filter(pair => {
           const { base, quote } = levels[pair];
-          if (
+          return (
             pools.includes(getPoolIdentifier(this.dexKey, quote, base)) ||
             pools.includes(getPoolIdentifier(this.dexKey, base, quote))
-          ) {
-            return true;
-          }
-
-          return false;
+          );
         })
         .map(pair => {
           return levels[pair];
@@ -421,13 +569,38 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           ? STABLE_SWAP_GAS_COST_ESTIMATION
           : VOLATILE_SWAP_GAS_COST_ESTIMATION;
 
+        const tokenIn =
+          normalizedSrcToken.address === NULL_ADDRESS &&
+          [askAndBids.base, askAndBids.quote].includes(wethAddr)
+            ? wethAddr
+            : normalizedSrcToken.address === wethAddr &&
+              [askAndBids.base, askAndBids.quote].includes(NULL_ADDRESS)
+            ? NULL_ADDRESS
+            : normalizedSrcToken.address;
+
+        const tokenOut =
+          normalizedDestToken.address === NULL_ADDRESS &&
+          [askAndBids.base, askAndBids.quote].includes(wethAddr)
+            ? wethAddr
+            : normalizedDestToken.address === wethAddr &&
+              [askAndBids.base, askAndBids.quote].includes(NULL_ADDRESS)
+            ? NULL_ADDRESS
+            : normalizedDestToken.address;
+
         return {
           gasCost: gasCost,
           exchange: this.dexKey,
-          data: {},
+          data: {
+            tokenIn,
+            tokenOut,
+          },
           prices,
           unit: unitPrice === undefined ? 0n : unitPrice,
-          poolIdentifier: requestedPoolIdentifier,
+          poolIdentifier: getPoolIdentifier(
+            this.dexKey,
+            askAndBids.base,
+            askAndBids.quote,
+          ),
         } as PoolPrices<SwaapV2Data>;
       });
 
@@ -453,6 +626,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     recipient: string,
     data: SwaapV2Data,
     side: SwapSide,
+    context: Context,
   ): AsyncOrSync<DexExchangeParam> {
     const { router, callData } = data;
     const isBatchSwap = callData.slice(0, 10) === BATCH_SWAP_SELECTOR;
@@ -471,7 +645,16 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     );
 
     return {
-      needWrapNative: this.needWrapNative,
+      needWrapNative: this.needWrapNative(
+        context.priceRoute,
+        context.swap,
+        context.swapExchange,
+      ),
+      needUnwrapWeth: this.needUnwrapWeth(
+        context.priceRoute,
+        context.swap,
+        context.swapExchange,
+      ),
       specialDexSupportsInsertFromAmount: true,
       dexFuncHasRecipient: true,
       exchangeData: callData,
@@ -520,8 +703,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     try {
       const quote = await this.rateFetcher.getQuote(
         this.network,
-        normalizedSrcToken,
-        normalizedDestToken,
+        { address: optimalSwapExchange.data!.tokenIn, decimals: 18 },
+        { address: optimalSwapExchange.data!.tokenOut, decimals: 18 },
         isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
         isSell ? SWAAP_ORDER_TYPE_SELL : SWAAP_ORDER_TYPE_BUY,
         options.userAddress,
@@ -628,6 +811,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         {
           ...optimalSwapExchange,
           data: {
+            tokenIn: optimalSwapExchange.data!.tokenIn,
+            tokenOut: optimalSwapExchange.data!.tokenOut,
             router: quote.router,
             callData: quote.calldata,
           },
@@ -659,7 +844,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
             normalizedSrcToken.address,
             normalizedDestToken.address,
           );
-          var message = 'Unknown error';
+          let message = 'Unknown error';
           if (e instanceof Error) {
             message = `${e.name}: ${e.message}`;
           }
