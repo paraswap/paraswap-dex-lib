@@ -551,11 +551,27 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       1,
     );
 
-    // if (side == SwapSide.SELL) {
-    //   args = [true, BigInt(srcAmount), BigInt(0), recipient];
-    // } else {
-    args = [false, BigInt(srcAmount), BigInt(0), recipient];
-    // }
+    const pool = this.getPoolByTokenPairAddress(srcToken, destToken);
+
+    if (srcToken == '0xEeeeeEeeeeeeEeeeeeeEeeeeEeeeeeEeeeeEeeeE') {
+      throw new Error(
+        'srcToken can not be Native ETH, try exchanging tokens and swapSide',
+      );
+    }
+
+    if (side == SwapSide.SELL) {
+      if (pool!.token0.toLowerCase() != srcToken.toLowerCase()) {
+        args = [false, BigInt(srcAmount), BigInt(0), recipient];
+      } else {
+        args = [true, BigInt(srcAmount), BigInt(0), recipient];
+      }
+    } else {
+      if (pool!.token0.toLowerCase() != srcToken.toLowerCase()) {
+        args = [true, BigInt(srcAmount), BigInt(0), recipient];
+      } else {
+        args = [false, BigInt(srcAmount), BigInt(0), recipient];
+      }
+    }
 
     const swapData = this.iFluidDexPool.encodeFunctionData(method, args);
 

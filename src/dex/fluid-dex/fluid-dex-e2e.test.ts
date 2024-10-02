@@ -76,19 +76,6 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: string) => {
           describe(`${contractMethod}`, () => {
-            // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[nativeTokenSymbol],
-            //     tokens[tokenASymbol],
-            //     holders[nativeTokenSymbol],
-            //     tokenAAmount,
-            //     SwapSide.BUY,
-            //     dexKey,
-            //     contractMethod as ContractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
             it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
               await testE2E(
                 tokens[nativeTokenSymbol],
@@ -102,40 +89,26 @@ function testForNetwork(
                 provider,
               );
             });
-            // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenASymbol],
-            //     tokens[nativeTokenSymbol],
-            //     holders[tokenASymbol],
-            //     side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod as ContractMethod,
-            //     network,
-            //     provider,
-            //     null, // poolIdentifiers
-            //     undefined, // limitOrderProvider
-            //     undefined, // transferFees
-            //     undefined, // slippage
-            //     undefined, // sleepMs
-            //     undefined, // replaceTenderlyWithEstimateGas
-            //     undefined, // forceRoute
-            //     // '0x5F4e77A22e394B51dC7Efb8e3C78121e489E78cD',// beneficiary
-            //   );
-            // });
-            // it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenASymbol],
-            //     tokens[tokenBSymbol],
-            //     holders[tokenASymbol],
-            //     side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod as ContractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                tokenAAmount,
+                SwapSide.SELL,
+                dexKey,
+                contractMethod as ContractMethod,
+                network,
+                provider,
+                null, // poolIdentifiers
+                undefined, // limitOrderProvider
+                undefined, // transferFees
+                undefined, // slippage
+                undefined, // sleepMs
+                undefined, // replaceTenderlyWithEstimateGas
+                undefined, // forceRoute
+              );
+            });
           });
         });
       }),
