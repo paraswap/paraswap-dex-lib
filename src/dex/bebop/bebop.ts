@@ -119,10 +119,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async initializePricing(blockNumber: number) {
-    if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher.start();
-      await sleep(BEBOP_INIT_TIMEOUT_MS);
-    }
+    // TODO: improve?
+    // if (!this.dexHelper.config.isSlave) {
+    this.rateFetcher.start();
+    await sleep(BEBOP_INIT_TIMEOUT_MS);
+    // }
   }
 
   // Returns the list of contract adapters (name and index)
