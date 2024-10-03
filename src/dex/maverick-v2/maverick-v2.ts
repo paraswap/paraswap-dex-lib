@@ -9,8 +9,14 @@ import {
   Logger,
   NumberAsString,
   DexExchangeParam,
+  ImprovedExchangePrices,
 } from '../../types';
-import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import {
+  SwapSide,
+  Network,
+  NULL_ADDRESS,
+  ALL_POOLS_IDENTIFIER,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
@@ -143,13 +149,18 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<MaverickV2Data>> {
+  ): Promise<ImprovedExchangePrices<MaverickV2Data>> {
     try {
       const from = this.dexHelper.config.wrapETH(srcToken);
       const to = this.dexHelper.config.wrapETH(destToken);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
-        return null;
+        return [
+          {
+            prices: null,
+            poolId: ALL_POOLS_IDENTIFIER,
+          },
+        ];
       }
 
       const allPools = await this.getEventPools(from, to);
@@ -158,18 +169,22 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         ? allPools.filter(pool => limitPools.includes(pool.name))
         : allPools;
 
-      if (!allowedPools.length) return null;
+      if (!allowedPools.length) return [];
 
       const unitAmount = getBigIntPow(
         side === SwapSide.BUY ? to.decimals : from.decimals,
       );
 
       const tasks = allowedPools.map(async (pool: MaverickV2EventPool) => {
+        const poolId = pool.name;
         try {
           const state = await pool.getOrGenerateState(blockNumber);
           if (!state) {
             this.logger.debug(`Received null state for pool ${pool.address}`);
-            return null;
+            return {
+              prices: null,
+              poolId,
+            };
           }
 
           const [unit] = pool.swap(unitAmount, from, to, side === SwapSide.BUY);
@@ -191,29 +206,35 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
           });
 
           return {
-            prices: dataList.map(d => d[0]),
-            unit: BigInt(unit),
-            data: {
-              pool: pool.address,
-              tokenA: pool.tokenA.address,
-              tokenB: pool.tokenB.address,
-              activeTick: state.activeTick.toString(),
+            poolId,
+            prices: {
+              prices: dataList.map(d => d[0]),
+              unit: BigInt(unit),
+              data: {
+                pool: pool.address,
+                tokenA: pool.tokenA.address,
+                tokenB: pool.tokenB.address,
+                activeTick: state.activeTick.toString(),
+              },
+              exchange: this.dexKey,
+              poolIdentifier: pool.name,
+              gasCost: gasCosts,
+              poolAddresses: [pool.address],
             },
-            exchange: this.dexKey,
-            poolIdentifier: pool.name,
-            gasCost: gasCosts,
-            poolAddresses: [pool.address],
           };
         } catch (e) {
           this.logger.debug(
             `Failed to get prices for pool ${pool.address}, from=${from.address}, to=${to.address}`,
             e,
           );
-          return null;
+          return {
+            prices: null,
+            poolId,
+          };
         }
       });
 
-      return Promise.all(tasks).then(tasks => tasks.filter(isTruthy));
+      return Promise.all(tasks);
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -221,7 +242,12 @@ export class MaverickV2 extends SimpleExchange implements IDex<MaverickV2Data> {
         }, ${side}:`,
         e,
       );
-      return null;
+      return [
+        {
+          prices: null,
+          poolId: ALL_POOLS_IDENTIFIER,
+        },
+      ];
     }
   }
 
