@@ -5,8 +5,8 @@ import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
-  ExchangePrices,
   ExchangeTxInfo,
+  ImprovedExchangePrices,
   Log,
   Logger,
   PoolLiquidity,
@@ -17,6 +17,7 @@ import {
   TxInfo,
 } from '../../types';
 import {
+  ALL_POOLS_IDENTIFIER,
   ETHER_ADDRESS,
   MAX_INT,
   Network,
@@ -844,13 +845,18 @@ export class BalancerV2
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<BalancerV2Data>> {
+  ): Promise<ImprovedExchangePrices<BalancerV2Data>> {
     try {
       const _from = this.dexHelper.config.wrapETH(from);
       const _to = this.dexHelper.config.wrapETH(to);
 
       if (_from.address === _to.address) {
-        return null;
+        return [
+          {
+            poolId: ALL_POOLS_IDENTIFIER,
+            prices: null,
+          },
+        ];
       }
 
       const allPools = this.getPoolsWithTokenPair(_from, _to);
@@ -861,7 +867,7 @@ export class BalancerV2
           )
         : allPools;
 
-      if (!allowedPools.length) return null;
+      if (!allowedPools.length) return [];
 
       const eventPoolStatesRO = await this.eventPools.getState(blockNumber);
       if (!eventPoolStatesRO) {
@@ -904,64 +910,73 @@ export class BalancerV2
         );
       }
 
-      const poolPrices = allowedPools
-        .map((pool: SubgraphPoolBase) => {
-          try {
-            const poolAddress = pool.address.toLowerCase();
+      const poolPrices = allowedPools.map((pool: SubgraphPoolBase) => {
+        const poolAddress = pool.address.toLowerCase();
+        const poolId = `${this.dexKey}_${poolAddress}`;
 
-            const path = poolGetPathForTokenInOut(
-              _from.address,
-              _to.address,
-              pool,
-              this.poolAddressMap,
+        try {
+          const path = poolGetPathForTokenInOut(
+            _from.address,
+            _to.address,
+            pool,
+            this.poolAddressMap,
+            side,
+          );
+
+          let pathAmounts = amounts;
+          let resOut: { unit: bigint; prices: bigint[] } | null = null;
+
+          for (let i = 0; i < path.length; i++) {
+            const poolAddress = path[i].pool.address.toLowerCase();
+            const poolState = (eventPoolStates[poolAddress] ||
+              nonEventPoolStates[poolAddress]) as PoolState | undefined;
+            if (!poolState) {
+              this.logger.error(`Unable to find the poolState ${poolAddress}`);
+              return {
+                poolId,
+                prices: null,
+              };
+            }
+
+            const unitVolume = getBigIntPow(
+              (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
+                .decimals,
+            );
+
+            const res = this.eventPools.getPricesPool(
+              path[i].tokenIn,
+              path[i].tokenOut,
+              path[i].pool,
+              poolState,
+              pathAmounts,
+              unitVolume,
               side,
             );
 
-            let pathAmounts = amounts;
-            let resOut: { unit: bigint; prices: bigint[] } | null = null;
-
-            for (let i = 0; i < path.length; i++) {
-              const poolAddress = path[i].pool.address.toLowerCase();
-              const poolState = (eventPoolStates[poolAddress] ||
-                nonEventPoolStates[poolAddress]) as PoolState | undefined;
-              if (!poolState) {
-                this.logger.error(
-                  `Unable to find the poolState ${poolAddress}`,
-                );
-                return null;
-              }
-
-              const unitVolume = getBigIntPow(
-                (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
-                  .decimals,
-              );
-
-              const res = this.eventPools.getPricesPool(
-                path[i].tokenIn,
-                path[i].tokenOut,
-                path[i].pool,
-                poolState,
-                pathAmounts,
-                unitVolume,
-                side,
-              );
-
-              if (!res) {
-                return null;
-              }
-
-              pathAmounts = res.prices;
-
-              if (i === path.length - 1) {
-                resOut = res;
-              }
+            if (!res) {
+              return {
+                poolId,
+                prices: null,
+              };
             }
 
-            if (!resOut) {
-              return null;
-            }
+            pathAmounts = res.prices;
 
+            if (i === path.length - 1) {
+              resOut = res;
+            }
+          }
+
+          if (!resOut) {
             return {
+              poolId,
+              prices: null,
+            };
+          }
+
+          return {
+            poolId,
+            prices: {
               unit: resOut.unit,
               prices: resOut.prices,
               data: {
@@ -972,22 +987,26 @@ export class BalancerV2
               gasCost:
                 STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
               poolIdentifier: `${this.dexKey}_${poolAddress}`,
-            };
+            },
+          };
 
-            // TODO: re-check what should be the current block time stamp
-          } catch (e) {
-            this.logger.warn(
-              `Error_getPrices ${from.symbol || from.address}, ${
-                to.symbol || to.address
-              }, ${side}, ${pool.address}:`,
-              e,
-            );
+          // TODO: re-check what should be the current block time stamp
+        } catch (e) {
+          this.logger.warn(
+            `Error_getPrices ${from.symbol || from.address}, ${
+              to.symbol || to.address
+            }, ${side}, ${pool.address}:`,
+            e,
+          );
 
-            return;
-          }
-        })
-        .filter(p => !!p);
-      return poolPrices as ExchangePrices<BalancerV2Data>;
+          return {
+            poolId,
+            prices: null,
+          };
+        }
+      });
+
+      return poolPrices;
     } catch (e) {
       this.logger.error(
         `Error_getPrices ${from.symbol || from.address}, ${
@@ -995,7 +1014,12 @@ export class BalancerV2
         }, ${side}:`,
         e,
       );
-      return null;
+      return [
+        {
+          poolId: ALL_POOLS_IDENTIFIER,
+          prices: null,
+        },
+      ];
     }
   }
 
