@@ -54,6 +54,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   protected adapters;
 
+  FEE_100_PERCENT = 1000000n;
+
   constructor(
     readonly network: Network,
     readonly dexKey: string,
@@ -174,7 +176,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       // const state = await eventPool.generateState(blockNumber);
       const state = await eventPool.getStateOrGenerate(blockNumber);
-      // console.log('fluidDex - getPricesVolume : ' + state);
 
       const swap0To1: boolean = side === SwapSide.SELL;
 
@@ -185,8 +186,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
           amount,
           state.collateralReserves,
           state.debtReserves,
+          srcToken.decimals,
+          destToken.decimals,
+          0n,
         ),
       );
+
+      // console.log('these are the prices : ' + prices);
+      // console.log('hehe' + swap0To1);
 
       return [
         {
@@ -264,7 +271,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     //TODO: complete me!
-    let liquidityAmounts: { [id: string]: number } = {};
+    let liquidityAmounts: { [id: string]: bigint } = {};
     for (const pool of this.pools) {
       if (
         pool.token0 === tokenAddress.toLowerCase() ||
@@ -286,14 +293,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       }
     }
 
-    // console.log(
-    //   'Number of pools with liquidity: ' + Object.keys(liquidityAmounts).length,
-    // );
-
     const entries = Object.entries(liquidityAmounts);
 
     // Sort the entries based on the values in descending order
-    entries.sort((a, b) => b[1] - a[1]);
+    entries.sort((a, b) => {
+      if (b[1] > a[1]) return 1;
+      if (b[1] < a[1]) return -1;
+      return 0;
+    });
 
     // Take the top k entries
     const topKEntries = entries.slice(0, limit);
@@ -311,7 +318,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         exchange: 'FluidDex',
         address: pool.address,
         connectorTokens: [],
-        liquidityUSD: amount,
+        liquidityUSD: Number(amount), // converted to number
       });
     }
     return poolLiquidities;
@@ -321,193 +328,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     // TODO: complete me!
-  }
-
-  /**
-   * Calculates the output amount for a given input amount in a swap operation.
-   * @param {boolean} swap0To1 - Direction of the swap. True if swapping token0 for token1, false otherwise.
-   * @param {number} amountToSwap - The amount of input token to be swapped.
-   * @param {Object} colReserves - The reserves of the collateral pool.
-   * @param {number} colReserves.token0RealReserves - Real reserves of token0 in the collateral pool.
-   * @param {number} colReserves.token1RealReserves - Real reserves of token1 in the collateral pool.
-   * @param {number} colReserves.token0ImaginaryReserves - Imaginary reserves of token0 in the collateral pool.
-   * @param {number} colReserves.token1ImaginaryReserves - Imaginary reserves of token1 in the collateral pool.
-   * @param {Object} debtReserves - The reserves of the debt pool.
-   * @param {number} debtReserves.token0RealReserves - Real reserves of token0 in the debt pool.
-   * @param {number} debtReserves.token1RealReserves - Real reserves of token1 in the debt pool.
-   * @param {number} debtReserves.token0ImaginaryReserves - Imaginary reserves of token0 in the debt pool.
-   * @param {number} debtReserves.token1ImaginaryReserves - Imaginary reserves of token1 in the debt pool.
-   * @returns {Object} An object containing the input amount and the calculated output amount.
-   * @returns {number} amountIn - The input amount.
-   * @returns {number} amountOut - The calculated output amount.
-   */
-  swapIn(
-    swap0To1: boolean,
-    amountToSwap: bigint,
-    colReserves: CollateralReserves,
-    debtReserves: DebtReserves,
-  ) {
-    const {
-      token0RealReserves,
-      token1RealReserves,
-      token0ImaginaryReserves,
-      token1ImaginaryReserves,
-    } = colReserves;
-
-    const {
-      token0RealReserves: debtToken0RealReserves,
-      token1RealReserves: debtToken1RealReserves,
-      token0ImaginaryReserves: debtToken0ImaginaryReserves,
-      token1ImaginaryReserves: debtToken1ImaginaryReserves,
-    } = debtReserves;
-
-    // Convert all reserves to BigInt
-    const colPoolEnabled =
-      BigInt(token0RealReserves) > 0n &&
-      BigInt(token1RealReserves) > 0n &&
-      BigInt(token0ImaginaryReserves) > 0n &&
-      BigInt(token1ImaginaryReserves) > 0n;
-
-    const debtPoolEnabled =
-      BigInt(debtToken0RealReserves) > 0n &&
-      BigInt(debtToken1RealReserves) > 0n &&
-      BigInt(debtToken0ImaginaryReserves) > 0n &&
-      BigInt(debtToken1ImaginaryReserves) > 0n;
-
-    let colIReserveIn, colIReserveOut, debtIReserveIn, debtIReserveOut;
-
-    if (swap0To1) {
-      colIReserveIn = BigInt(token0ImaginaryReserves);
-      colIReserveOut = BigInt(token1ImaginaryReserves);
-      debtIReserveIn = BigInt(debtToken0ImaginaryReserves);
-      debtIReserveOut = BigInt(debtToken1ImaginaryReserves);
-    } else {
-      colIReserveIn = BigInt(token1ImaginaryReserves);
-      colIReserveOut = BigInt(token0ImaginaryReserves);
-      debtIReserveIn = BigInt(debtToken1ImaginaryReserves);
-      debtIReserveOut = BigInt(debtToken0ImaginaryReserves);
-    }
-
-    let a: bigint;
-    if (colPoolEnabled && debtPoolEnabled) {
-      a = this.swapRoutingIn(
-        amountToSwap,
-        colIReserveOut,
-        colIReserveIn,
-        debtIReserveOut,
-        debtIReserveIn,
-      );
-    } else if (debtPoolEnabled) {
-      a = -1n; // Route from debt pool
-    } else if (colPoolEnabled) {
-      a = amountToSwap + 1n; // Route from collateral pool
-    } else {
-      throw new Error('No pools are enabled');
-    }
-
-    let amountOutCollateral: bigint = 0n;
-    let amountOutDebt: bigint = 0n;
-
-    if (a <= 0n) {
-      // Entire trade routes through debt pool
-      amountOutDebt = this.getAmountOut(
-        amountToSwap,
-        debtIReserveIn,
-        debtIReserveOut,
-      );
-    } else if (a >= amountToSwap) {
-      // Entire trade routes through collateral pool
-      amountOutCollateral = this.getAmountOut(
-        amountToSwap,
-        colIReserveIn,
-        colIReserveOut,
-      );
-    } else {
-      // Trade routes through both pools
-      amountOutCollateral = this.getAmountOut(a, colIReserveIn, colIReserveOut);
-      amountOutDebt = this.getAmountOut(
-        amountToSwap - a,
-        debtIReserveIn,
-        debtIReserveOut,
-      );
-    }
-
-    const totalAmountOut = amountOutCollateral + amountOutDebt;
-
-    return totalAmountOut;
-  }
-
-  /**
-   * Calculates how much of a swap should go through the collateral pool.
-   * @param {number} t - Total amount in.
-   * @param {number} x - Imaginary reserves of token out of collateral.
-   * @param {number} y - Imaginary reserves of token in of collateral.
-   * @param {number} x2 - Imaginary reserves of token out of debt.
-   * @param {number} y2 - Imaginary reserves of token in of debt.
-   * @returns {number} a - How much swap should go through collateral pool. Remaining will go from debt.
-   * @note If a < 0 then entire trade route through debt pool and debt pool arbitrage with col pool.
-   * @note If a > t then entire trade route through col pool and col pool arbitrage with debt pool.
-   * @note If a > 0 & a < t then swap will route through both pools.
-   */
-  swapRoutingIn(
-    t: bigint,
-    x: bigint,
-    y: bigint,
-    x2: bigint,
-    y2: bigint,
-  ): bigint {
-    const precision = BigInt(1e18);
-
-    // Helper function for integer square root
-    const sqrtBigInt = (value: bigint): bigint => {
-      if (value < 0n) {
-        throw new Error('Square root of negative number is not allowed');
-      }
-      if (value < 2n) {
-        return value;
-      }
-
-      let x = value;
-      let y = (x + 1n) / 2n;
-      while (y < x) {
-        x = y;
-        y = (x + value / x) / 2n;
-      }
-      return x;
-    };
-
-    const xyRoot = sqrtBigInt((x * y * precision) / precision);
-    const x2y2Root = sqrtBigInt((x2 * y2 * precision) / precision);
-
-    // Calculating 'a' using the given formula
-    const numerator = y2 * xyRoot + t * xyRoot - y * x2y2Root;
-    const denominator = xyRoot + x2y2Root;
-
-    // Perform the division and maintain precision
-    const a = (numerator * precision) / denominator / precision;
-
-    return a;
-  }
-
-  /**
-   * Given an input amount of asset and pair reserves, returns the maximum output amount of the other asset.
-   * @param {number} amountIn - The amount of input asset.
-   * @param {number} iReserveIn - Imaginary token reserve with input amount.
-   * @param {number} iReserveOut - Imaginary token reserve of output amount.
-   * @returns {number} - The maximum output amount of the other asset.
-   */
-  getAmountOut(
-    amountIn: bigint,
-    reserveIn: bigint,
-    reserveOut: bigint,
-  ): bigint {
-    // Both numerator and denominator are scaled to 1e6 to factor in fee scaling.
-    const scale = BigInt(1_000_000);
-    const numerator = amountIn * reserveOut * scale;
-    const denominator = reserveIn * scale + amountIn * scale;
-
-    // Using the swap formula: (AmountIn * ReserveOut * scale) / (ReserveIn * scale + AmountIn * scale)
-    return numerator / denominator;
   }
 
   getDexParam(
@@ -526,22 +346,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     let returnAmountPos: number | undefined = undefined;
 
     const deadline = getLocalDeadlineAsFriendlyPlaceholder();
-
-    // const poolPrices = await this.pricingHelper.getPoolPrices(
-    //   from,
-    //   to,
-    //   amounts,
-    //   side,
-    //   blockNumber,
-    //   this.dexKeys,
-    //   poolIdentifiers,
-    //   transferFees,
-    // );
-
-    // console.log("pool prices : " + poolPrices);
-
-    // const finalPrice = poolPrices[0];
-    // const quoteAmount = finalPrice.prices[10];
 
     method = 'swapIn';
     returnAmountPos = extractReturnAmountPosition(
@@ -583,5 +387,368 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         .address,
       returnAmountPos,
     };
+  }
+
+  /**
+   * Calculates the output amount for a given input amount in a swap operation.
+   * @param swap0To1 - Direction of the swap. True if swapping token0 for token1, false otherwise.
+   * @param amountIn - The amount of input token to be swapped (as a BigInt).
+   * @param colReserves - The reserves of the collateral pool.
+   * @param debtReserves - The reserves of the debt pool.
+   * @param inDecimals - The number of decimals for the input token.
+   * @param outDecimals - The number of decimals for the output token.
+   * @returns The calculated output amount (as a BigInt).
+   */
+  swapIn(
+    swap0To1: boolean,
+    amountIn: bigint,
+    colReserves: CollateralReserves,
+    debtReserves: DebtReserves,
+    inDecimals: number,
+    outDecimals: number,
+    fee: bigint,
+  ): bigint {
+    if (amountIn === 0n) {
+      return 0n; // Return 0 if input amount is 0
+    }
+    // console.log('amountIn : ' + amountIn);
+    const amountInAdjusted =
+      (((amountIn * (this.FEE_100_PERCENT - fee)) / this.FEE_100_PERCENT) *
+        BigInt(10 ** 12)) /
+      BigInt(inDecimals);
+    // console.log('amountInAdjusted : ' + amountInAdjusted);
+    const amountOut = this.swapInAdjusted(
+      swap0To1,
+      amountInAdjusted, // Convert back to number for internal calculations
+      colReserves,
+      debtReserves,
+    );
+    // console.log('amountOut : ' + amountOut);
+    return amountOut * BigInt(10 ** (outDecimals - 12));
+  }
+
+  /**
+   * Calculates the output amount for a given input amount in a swap operation.
+   * @param swap0To1 - Direction of the swap. True if swapping token0 for token1, false otherwise.
+   * @param amountToSwap - The amount of input token to be swapped.
+   * @param colReserves - The reserves of the collateral pool.
+   * @param debtReserves - The reserves of the debt pool.
+   * @returns The calculated output amount.
+   */
+  private swapInAdjusted(
+    swap0To1: boolean,
+    amountToSwap: bigint,
+    colReserves: CollateralReserves,
+    debtReserves: DebtReserves,
+  ): bigint {
+    const {
+      token0RealReserves,
+      token1RealReserves,
+      token0ImaginaryReserves,
+      token1ImaginaryReserves,
+    } = colReserves;
+
+    const {
+      token0RealReserves: debtToken0RealReserves,
+      token1RealReserves: debtToken1RealReserves,
+      token0ImaginaryReserves: debtToken0ImaginaryReserves,
+      token1ImaginaryReserves: debtToken1ImaginaryReserves,
+    } = debtReserves;
+
+    // Check if all reserves of collateral pool are greater than 0
+    const colPoolEnabled =
+      token0RealReserves > BigInt(0) &&
+      token1RealReserves > BigInt(0) &&
+      token0ImaginaryReserves > BigInt(0) &&
+      token1ImaginaryReserves > BigInt(0);
+
+    // Check if all reserves of debt pool are greater than 0
+    const debtPoolEnabled =
+      debtToken0RealReserves > BigInt(0) &&
+      debtToken1RealReserves > BigInt(0) &&
+      debtToken0ImaginaryReserves > BigInt(0) &&
+      debtToken1ImaginaryReserves > BigInt(0);
+
+    let colIReserveIn: bigint,
+      colIReserveOut: bigint,
+      debtIReserveIn: bigint,
+      debtIReserveOut: bigint;
+
+    if (swap0To1) {
+      colIReserveIn = token0ImaginaryReserves;
+      colIReserveOut = token1ImaginaryReserves;
+      debtIReserveIn = debtToken0ImaginaryReserves;
+      debtIReserveOut = debtToken1ImaginaryReserves;
+    } else {
+      colIReserveIn = token1ImaginaryReserves;
+      colIReserveOut = token0ImaginaryReserves;
+      debtIReserveIn = debtToken1ImaginaryReserves;
+      debtIReserveOut = debtToken0ImaginaryReserves;
+    }
+
+    let a: bigint;
+    if (colPoolEnabled && debtPoolEnabled) {
+      a = this.swapRoutingIn(
+        amountToSwap,
+        colIReserveOut,
+        colIReserveIn,
+        debtIReserveOut,
+        debtIReserveIn,
+      );
+    } else if (debtPoolEnabled) {
+      a = BigInt(-1); // Route from debt pool
+    } else if (colPoolEnabled) {
+      a = amountToSwap + BigInt(1); // Route from collateral pool
+    } else {
+      throw new Error('No pools are enabled');
+    }
+
+    let amountOutCollateral = BigInt(0);
+    let amountOutDebt = BigInt(0);
+
+    if (a <= BigInt(0)) {
+      // Entire trade routes through debt pool
+      amountOutDebt = this.getAmountOut(
+        amountToSwap,
+        debtIReserveIn,
+        debtIReserveOut,
+      );
+    } else if (a >= amountToSwap) {
+      // Entire trade routes through collateral pool
+      amountOutCollateral = this.getAmountOut(
+        amountToSwap,
+        colIReserveIn,
+        colIReserveOut,
+      );
+    } else {
+      // Trade routes through both pools
+      amountOutCollateral = this.getAmountOut(a, colIReserveIn, colIReserveOut);
+      amountOutDebt = this.getAmountOut(
+        amountToSwap - a,
+        debtIReserveIn,
+        debtIReserveOut,
+      );
+    }
+
+    const totalAmountOut = amountOutCollateral + amountOutDebt;
+
+    return totalAmountOut;
+  }
+
+  /**
+   * Given an input amount of asset and pair reserves, returns the maximum output amount of the other asset.
+   * @param amountIn - The amount of input asset.
+   * @param iReserveIn - Imaginary token reserve with input amount.
+   * @param iReserveOut - Imaginary token reserve of output amount.
+   * @returns The maximum output amount of the other asset.
+   */
+  private getAmountOut(
+    amountIn: bigint,
+    iReserveIn: bigint,
+    iReserveOut: bigint,
+  ): bigint {
+    // Both numerator and denominator are scaled to 1e6 to factor in fee scaling.
+    const numerator = amountIn * iReserveOut;
+    const denominator = iReserveIn + amountIn;
+
+    // Using the swap formula: (AmountIn * iReserveY) / (iReserveX + AmountIn)
+    // We use division with rounding down, which is the default for bigint division
+    return numerator / denominator;
+  }
+
+  /**
+   * Calculates the input amount for a given output amount in a swap operation.
+   * @param swap0to1 - Direction of the swap. True if swapping token0 for token1, false otherwise.
+   * @param amountOut - The amount of output token to be swapped.
+   * @param colReserves - The reserves of the collateral pool.
+   * @param debtReserves - The reserves of the debt pool.
+   * @returns The calculated input amount required for the swap.
+   */
+  swapOutAdjusted(
+    swap0to1: boolean,
+    amountOut: bigint,
+    colReserves: CollateralReserves,
+    debtReserves: DebtReserves,
+  ): bigint {
+    const {
+      token0RealReserves,
+      token1RealReserves,
+      token0ImaginaryReserves,
+      token1ImaginaryReserves,
+    } = colReserves;
+
+    const {
+      token0RealReserves: debtToken0RealReserves,
+      token1RealReserves: debtToken1RealReserves,
+      token0ImaginaryReserves: debtToken0ImaginaryReserves,
+      token1ImaginaryReserves: debtToken1ImaginaryReserves,
+    } = debtReserves;
+
+    // Check if all reserves of collateral pool are greater than 0
+    const colPoolEnabled =
+      token0RealReserves > 0 &&
+      token1RealReserves > 0 &&
+      token0ImaginaryReserves > 0 &&
+      token1ImaginaryReserves > 0;
+
+    // Check if all reserves of debt pool are greater than 0
+    const debtPoolEnabled =
+      debtToken0RealReserves > 0 &&
+      debtToken1RealReserves > 0 &&
+      debtToken0ImaginaryReserves > 0 &&
+      debtToken1ImaginaryReserves > 0;
+
+    let colIReserveIn: bigint,
+      colIReserveOut: bigint,
+      debtIReserveIn: bigint,
+      debtIReserveOut: bigint;
+
+    if (swap0to1) {
+      colIReserveIn = token0ImaginaryReserves;
+      colIReserveOut = token1ImaginaryReserves;
+      debtIReserveIn = debtToken0ImaginaryReserves;
+      debtIReserveOut = debtToken1ImaginaryReserves;
+    } else {
+      colIReserveIn = token1ImaginaryReserves;
+      colIReserveOut = token0ImaginaryReserves;
+      debtIReserveIn = debtToken1ImaginaryReserves;
+      debtIReserveOut = debtToken0ImaginaryReserves;
+    }
+
+    let a: bigint;
+    if (colPoolEnabled && debtPoolEnabled) {
+      a = this.swapRoutingOut(
+        amountOut,
+        colIReserveIn,
+        colIReserveOut,
+        debtIReserveIn,
+        debtIReserveOut,
+      );
+    } else if (debtPoolEnabled) {
+      a = BigInt(-1); // Route from debt pool
+    } else if (colPoolEnabled) {
+      a = amountOut + BigInt(1); // Route from collateral pool
+    } else {
+      throw new Error('No pools are enabled');
+    }
+
+    let amountInCollateral = BigInt(0);
+    let amountInDebt = BigInt(0);
+
+    if (a <= 0) {
+      // Entire trade routes through debt pool
+      amountInDebt = this.getAmountIn(
+        amountOut,
+        debtIReserveIn,
+        debtIReserveOut,
+      );
+    } else if (a >= amountOut) {
+      // Entire trade routes through collateral pool
+      amountInCollateral = this.getAmountIn(
+        amountOut,
+        colIReserveIn,
+        colIReserveOut,
+      );
+    } else {
+      // Trade routes through both pools
+      amountInCollateral = this.getAmountIn(a, colIReserveIn, colIReserveOut);
+      amountInDebt = this.getAmountIn(
+        amountOut - a,
+        debtIReserveIn,
+        debtIReserveOut,
+      );
+    }
+
+    const totalAmountIn = amountInCollateral + amountInDebt;
+
+    return totalAmountIn;
+  }
+
+  /**
+   * Given an output amount of asset and pair reserves, returns the input amount of the other asset
+   * @param amountOut - Desired output amount of the asset.
+   * @param iReserveIn - Imaginary token reserve of input amount.
+   * @param iReserveOut - Imaginary token reserve of output amount.
+   * @returns The input amount of the other asset.
+   */
+  private getAmountIn(
+    amountOut: bigint,
+    iReserveIn: bigint,
+    iReserveOut: bigint,
+  ): bigint {
+    // Both numerator and denominator are scaled to 1e6 to factor in fee scaling.
+    const numerator = amountOut * iReserveIn;
+    const denominator = iReserveOut - amountOut;
+
+    // Using the swap formula: (AmountOut * iReserveX) / (iReserveY - AmountOut)
+    return numerator / denominator;
+  }
+
+  /**
+   * Calculates how much of a swap should go through the collateral pool for output amount.
+   * @param t - Total amount out.
+   * @param x - Imaginary reserves of token in of collateral.
+   * @param y - Imaginary reserves of token out of collateral.
+   * @param x2 - Imaginary reserves of token in of debt.
+   * @param y2 - Imaginary reserves of token out of debt.
+   * @returns How much swap should go through collateral pool. Remaining will go from debt.
+   * @note If a < 0 then entire trade route through debt pool and debt pool arbitrage with col pool.
+   * @note If a > t then entire trade route through col pool and col pool arbitrage with debt pool.
+   * @note If a > 0 & a < t then swap will route through both pools.
+   */
+  private swapRoutingOut(
+    t: bigint,
+    x: bigint,
+    y: bigint,
+    x2: bigint,
+    y2: bigint,
+  ): bigint {
+    // Adding 1e18 precision
+    const xyRoot = BigInt(
+      Math.floor(Math.sqrt(Number(x * y * BigInt(10n ** 18n)))),
+    );
+    const x2y2Root = BigInt(
+      Math.floor(Math.sqrt(Number(x2 * y2 * BigInt(10n ** 18n)))),
+    );
+
+    // 1e18 precision gets cancelled out in division
+    const numerator = t * xyRoot + y * x2y2Root - y2 * xyRoot;
+    const denominator = xyRoot + x2y2Root;
+
+    // Use integer division (rounds down)
+    const a = numerator / denominator;
+
+    return a;
+  }
+
+  /**
+   * Calculates how much of a swap should go through the collateral pool.
+   * @param t - Total amount in.
+   * @param x - Imaginary reserves of token out of collateral.
+   * @param y - Imaginary reserves of token in of collateral.
+   * @param x2 - Imaginary reserves of token out of debt.
+   * @param y2 - Imaginary reserves of token in of debt.
+   * @returns How much swap should go through collateral pool. Remaining will go from debt.
+   * @note If a < 0 then entire trade route through debt pool and debt pool arbitrage with col pool.
+   * @note If a > t then entire trade route through col pool and col pool arbitrage with debt pool.
+   * @note If a > 0 & a < t then swap will route through both pools.
+   */
+  swapRoutingIn(
+    t: bigint,
+    x: bigint,
+    y: bigint,
+    x2: bigint,
+    y2: bigint,
+  ): bigint {
+    // Adding 1e18 precision
+    const xyRoot = BigInt(Math.floor(Math.sqrt(Number(x * y * BigInt(1e18)))));
+    const x2y2Root = BigInt(
+      Math.floor(Math.sqrt(Number(x2 * y2 * BigInt(1e18)))),
+    );
+
+    // Calculating 'a' using the given formula
+    const a = (y2 * xyRoot + t * xyRoot - y * x2y2Root) / (xyRoot + x2y2Root);
+
+    return a;
   }
 }

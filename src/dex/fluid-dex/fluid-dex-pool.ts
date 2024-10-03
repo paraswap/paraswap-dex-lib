@@ -111,32 +111,32 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
           token0_: decodedResult.token0_,
           token1_: decodedResult.token1_,
           collateralReserves: {
-            token0RealReserves: Number(
+            token0RealReserves: BigInt(
               decodedResult.collateralReserves.token0RealReserves,
             ),
-            token1RealReserves: Number(
+            token1RealReserves: BigInt(
               decodedResult.collateralReserves.token1RealReserves,
             ),
-            token0ImaginaryReserves: Number(
+            token0ImaginaryReserves: BigInt(
               decodedResult.collateralReserves.token0ImaginaryReserves,
             ),
-            token1ImaginaryReserves: Number(
+            token1ImaginaryReserves: BigInt(
               decodedResult.collateralReserves.token1ImaginaryReserves,
             ),
           },
           debtReserves: {
-            token0Debt: Number(decodedResult.debtReserves.token0Debt),
-            token1Debt: Number(decodedResult.debtReserves.token1Debt),
-            token0RealReserves: Number(
+            token0Debt: BigInt(decodedResult.debtReserves.token0Debt),
+            token1Debt: BigInt(decodedResult.debtReserves.token1Debt),
+            token0RealReserves: BigInt(
               decodedResult.debtReserves.token0RealReserves,
             ),
-            token1RealReserves: Number(
+            token1RealReserves: BigInt(
               decodedResult.debtReserves.token1RealReserves,
             ),
-            token0ImaginaryReserves: Number(
+            token0ImaginaryReserves: BigInt(
               decodedResult.debtReserves.token0ImaginaryReserves,
             ),
-            token1ImaginaryReserves: Number(
+            token1ImaginaryReserves: BigInt(
               decodedResult.debtReserves.token1ImaginaryReserves,
             ),
           },

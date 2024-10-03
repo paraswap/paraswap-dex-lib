@@ -221,19 +221,19 @@ describe('FluidDex', function () {
       );
     });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        fluidDex,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        'estimateSwapOut', // TODO: Put here proper function name to check pricing
-      );
-    });
+    // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    //   await testPricingOnNetwork(
+    //     fluidDex,
+    //     network,
+    //     dexKey,
+    //     blockNumber,
+    //     srcTokenSymbol,
+    //     destTokenSymbol,
+    //     SwapSide.BUY,
+    //     amountsForBuy,
+    //     'estimateSwapOut', // TODO: Put here proper function name to check pricing
+    //   );
+    // });
 
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because

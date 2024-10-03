@@ -10,19 +10,19 @@ export type FluidDexPoolState = {
 };
 
 export type CollateralReserves = {
-  token0RealReserves: number; // Changed from uint to number
-  token1RealReserves: number; // Changed from uint to number
-  token0ImaginaryReserves: number; // Changed from uint to number
-  token1ImaginaryReserves: number; // Changed from uint to number
+  token0RealReserves: bigint; // Changed from uint to bigint
+  token1RealReserves: bigint; // Changed from uint to bigint
+  token0ImaginaryReserves: bigint; // Changed from uint to bigint
+  token1ImaginaryReserves: bigint; // Changed from uint to bigint
 };
 
 export type DebtReserves = {
-  token0Debt: number; // Changed from uint to number
-  token1Debt: number; // Changed from uint to number
-  token0RealReserves: number; // Changed from uint to number
-  token1RealReserves: number; // Changed from uint to number
-  token0ImaginaryReserves: number; // Changed from uint to number
-  token1ImaginaryReserves: number; // Changed from uint to number
+  token0Debt: bigint; // Changed from uint to bigint
+  token1Debt: bigint; // Changed from uint to bigint
+  token0RealReserves: bigint; // Changed from uint to bigint
+  token1RealReserves: bigint; // Changed from uint to bigint
+  token0ImaginaryReserves: bigint; // Changed from uint to bigint
+  token1ImaginaryReserves: bigint; // Changed from uint to bigint
 };
 
 export interface PoolWithReserves {

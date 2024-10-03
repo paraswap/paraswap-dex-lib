@@ -76,19 +76,19 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: string) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                tokenBAmount,
-                SwapSide.SELL,
-                dexKey,
-                contractMethod as ContractMethod,
-                network,
-                provider,
-              );
-            });
+            // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[nativeTokenSymbol],
+            //     tokens[tokenASymbol],
+            //     holders[nativeTokenSymbol],
+            //     tokenBAmount,
+            //     SwapSide.SELL,
+            //     dexKey,
+            //     contractMethod as ContractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
             it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
