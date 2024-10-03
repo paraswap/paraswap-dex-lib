@@ -1,9 +1,10 @@
-import { SparkParams } from './types';
+import { SparkParams, SparkSDaiFunctions, SparkSUSDSFunctions } from './types';
 import { DexConfigMap } from '../../types';
 import { Network } from '../../constants';
 import { SwapSide } from '@paraswap/core';
 import PotAbi from '../../abi/maker-psm/pot.json';
 import SavingsUSDSAbi from '../../abi/sdai/SavingsUSDS.abi.json';
+import SavingsDaiAbi from '../../abi/sdai/SavingsDai.abi.json';
 import { Interface } from '@ethersproject/abi';
 
 export const SDaiConfig: DexConfigMap<SparkParams> = {
@@ -19,6 +20,9 @@ export const SDaiConfig: DexConfigMap<SparkParams> = {
           '0x6473720000000000000000000000000000000000000000000000000000000000',
       },
       poolInterface: new Interface(PotAbi),
+      exchangeInterface: new Interface(SavingsDaiAbi),
+      swapFunctions: SparkSDaiFunctions,
+      referralCode: null,
     },
   },
   sUSDS: {
@@ -33,6 +37,9 @@ export const SDaiConfig: DexConfigMap<SparkParams> = {
           '0x7373720000000000000000000000000000000000000000000000000000000000',
       },
       poolInterface: new Interface(SavingsUSDSAbi),
+      exchangeInterface: new Interface(SavingsUSDSAbi),
+      swapFunctions: SparkSUSDSFunctions,
+      referralCode: '1004',
     },
   },
 };
