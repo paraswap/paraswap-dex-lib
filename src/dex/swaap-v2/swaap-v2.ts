@@ -23,7 +23,7 @@ import {
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { uniq } from 'lodash';
-import { getDexKeysWithNetwork, isAxiosError } from '../../utils';
+import { getDexKeysWithNetwork, isAxiosError, isETHAddress } from '../../utils';
 import { Context, IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -82,7 +82,6 @@ import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { OptimalRate, OptimalSwap } from '@paraswap/core';
-import { ZERO_ADDRESS } from '@hashflow/sdk';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -92,7 +91,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   readonly isFeeOnTransferSupported = false;
   private rateFetcher: RateFetcher;
   private swaapV2AuthToken: string;
-  private tokensMap: TokensMap = {};
+  public tokensMap: TokensMap = {};
   private runtimeMMsRestrictHashMapKey: string;
 
   needUnwrapWeth = (
@@ -442,7 +441,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       const isDestEth = normalizedDestToken.address === NULL_ADDRESS; // SwaapV2 uses zero address for native eth
       const isDestWeth = this.isWETH(normalizedDestToken.address);
 
-      const pools = limitPools
+      let pools = limitPools
         ? limitPools.filter(p => {
             const isAppropriatePool =
               p ===
@@ -512,6 +511,28 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
       if (pools.length === 0) {
         return null;
+      }
+
+      if (
+        ((isETHAddress(srcToken.address) &&
+          destToken.address.toLowerCase() ===
+            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()) ||
+          (isETHAddress(destToken.address) &&
+            srcToken.address.toLowerCase() ===
+              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()) ||
+          (srcToken.address.toLowerCase() ===
+            this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase() &&
+            destToken.address.toLowerCase() ===
+              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()) ||
+          (destToken.address.toLowerCase() ===
+            this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase() &&
+            srcToken.address.toLowerCase() ===
+              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase())) &&
+        this.network === Network.MAINNET
+      ) {
+        pools = [
+          'swaapv2_0x0000000000000000000000000000000000000000_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        ];
       }
 
       const levels = await this.getCachedLevels();
@@ -678,6 +699,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<SwaapV2Data>, ExchangeTxInfo]> {
+    this.tokensMap = (await this.getCachedTokens()) || {};
+
     if (await this.isBlacklisted(options.txOrigin)) {
       this.logger.warn(
         `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,

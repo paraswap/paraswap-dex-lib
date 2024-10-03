@@ -505,6 +505,127 @@ export async function testE2E(
       forceRoute,
     );
 
+    // const priceRoute = {
+    //   blockNumber: 20879357,
+    //   network: 1,
+    //   srcToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    //   srcDecimals: 18,
+    //   srcAmount: '100000000000000000000',
+    //   destToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    //   destDecimals: 6,
+    //   destAmount: '243963352377',
+    //   bestRoute: [
+    //     {
+    //       percent: 64,
+    //       swaps: [
+    //         {
+    //           srcToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    //           srcDecimals: 18,
+    //           destToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    //           destDecimals: 6,
+    //           swapExchanges: [
+    //             {
+    //               exchange: 'SwaapV2',
+    //               srcAmount: '32000000000000000000',
+    //               destAmount: '78071021726',
+    //               percent: 50,
+    //               data: {
+    //                 tokenIn: '0x0000000000000000000000000000000000000000',
+    //                 tokenOut: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    //                 gasUSD: '14.750987',
+    //               },
+    //             },
+    //             {
+    //               exchange: 'SwaapV2',
+    //               srcAmount: '32000000000000000000',
+    //               destAmount: '78071021726',
+    //               percent: 50,
+    //               data: {
+    //                 tokenIn: '0x0000000000000000000000000000000000000000',
+    //                 tokenOut: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    //                 gasUSD: '14.750987',
+    //               },
+    //             },
+    //           ],
+    //         },
+    //       ],
+    //     },
+    //     {
+    //       percent: 36,
+    //       swaps: [
+    //         {
+    //           srcToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    //           srcDecimals: 18,
+    //           destToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    //           destDecimals: 6,
+    //           swapExchanges: [
+    //             {
+    //               exchange: 'Hashflow',
+    //               srcAmount: '20001600000000000000',
+    //               destAmount: '48806377303',
+    //               percent: 55.56,
+    //               poolAddresses: ['0x55084eE0fEf03f14a305cd24286359A35D735151'],
+    //               data: {
+    //                 mm: 'mm12_1',
+    //                 tokenIn: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    //                 tokenOut: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    //                 gasUSD: '9.833991',
+    //               },
+    //             },
+    //             {
+    //               exchange: 'Hashflow',
+    //               srcAmount: '15998400000000000000',
+    //               destAmount: '39024672766',
+    //               percent: 44.44,
+    //               poolAddresses: ['0x55084eE0fEf03f14a305cd24286359A35D735151'],
+    //               data: {
+    //                 mm: 'mm21_1',
+    //                 tokenIn: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    //                 tokenOut: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    //                 gasUSD: '9.833991',
+    //               },
+    //             },
+    //           ],
+    //         },
+    //         {
+    //           srcToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    //           srcDecimals: 6,
+    //           destToken: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    //           destDecimals: 6,
+    //           swapExchanges: [
+    //             {
+    //               exchange: 'Hashflow',
+    //               srcAmount: '87831050069',
+    //               destAmount: '87821308925',
+    //               percent: 100,
+    //               poolAddresses: ['0x55084eE0fEf03f14a305cd24286359A35D735151'],
+    //               data: {
+    //                 mm: 'mm12_1',
+    //                 tokenIn: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    //                 tokenOut: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    //                 gasUSD: '9.833991',
+    //               },
+    //             },
+    //           ],
+    //         },
+    //       ],
+    //     },
+    //   ],
+    //   gasCostUSD: '69.533199',
+    //   gasCost: '707070',
+    //   others: [],
+    //   side: 'SELL',
+    //   version: '6.2',
+    //   contractAddress: '0x6a000f20005980200259b80c5102003040001068',
+    //   tokenTransferProxy: '0x6a000f20005980200259b80c5102003040001068',
+    //   contractMethod: 'swapExactAmountIn',
+    //   partnerFee: 0.15,
+    //   srcUSD: '243235.0000000000',
+    //   destUSD: '243039.7071249007',
+    //   partner: 'paraswap.io-staging',
+    //   maxImpactReached: false,
+    //   hmac: '4509f8cd893cf95801c781ace09e43a504198b4c',
+    // } as OptimalRate;
     // DAI -> USDC -> WETH
     // const priceRoute = {
     //   blockNumber: 20829396,
