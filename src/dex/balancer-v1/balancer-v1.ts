@@ -5,14 +5,18 @@ import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
-  ExchangePrices,
+  ImprovedExchangePrices,
   Logger,
   PoolLiquidity,
   PoolPrices,
   SimpleExchangeParam,
   Token,
 } from '../../types';
-import { Network, SUBGRAPH_TIMEOUT } from '../../constants';
+import {
+  ALL_POOLS_IDENTIFIER,
+  Network,
+  SUBGRAPH_TIMEOUT,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -184,23 +188,40 @@ export class BalancerV1
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<BalancerV1Data>> {
-    if (!this.poolsInfo) return null;
+  ): Promise<ImprovedExchangePrices<BalancerV1Data>> {
+    // TODO-rec: should return [{ poolId: all_pools_identifiers, prices: null }] ??
+    if (!this.poolsInfo) return [];
 
     const from = this.dexHelper.config.wrapETH(srcToken);
     const to = this.dexHelper.config.wrapETH(destToken);
     from.address = from.address.toLowerCase();
     to.address = to.address.toLowerCase();
-    if (from.address === to.address) return null;
+
+    if (from.address === to.address)
+      return [
+        {
+          poolId: ALL_POOLS_IDENTIFIER,
+          prices: null,
+        },
+      ];
 
     let poolInfos = this.getPoolInfosWithTokens(from, to);
-    if (!poolInfos.length) return null;
+    if (!poolInfos.length) {
+      return [
+        {
+          poolId: ALL_POOLS_IDENTIFIER,
+          prices: null,
+        },
+      ];
+    }
+
     if (limitPools) {
       poolInfos = poolInfos.filter(p =>
         limitPools.includes(`${this.dexKey}_${p.id}`),
       );
     }
-    if (!poolInfos.length) return null;
+
+    if (!poolInfos.length) return [];
 
     const poolsMissingState: PoolInfo[] = [];
     for (const poolInfo of poolInfos) {
@@ -241,6 +262,14 @@ export class BalancerV1
       );
     }
 
+    const invalidPoolsPrices: ImprovedExchangePrices<BalancerV1Data> = poolInfos
+      .map(p => this.eventPools[p.id])
+      .filter(p => !p.checkBalance(from, to, amounts[1], side, blockNumber))
+      .map(p => ({
+        poolId: `${this.dexKey}_${p.poolInfo.id}`,
+        prices: null,
+      }));
+
     const pools = poolInfos
       .map(p => this.eventPools[p.id])
       .filter(p => p.checkBalance(from, to, amounts[1], side, blockNumber))
@@ -251,27 +280,41 @@ export class BalancerV1
       .sort((a, b) => (a.score < b.score ? 1 : a.score > b.score ? -1 : 0))
       .slice(0, MAX_POOLS_FOR_PRICING)
       .map(ps => ps.pool);
-    if (!pools.length) return null;
+
+    if (!pools.length) return invalidPoolsPrices;
 
     const amountsWithUnit = [
       getBigIntPow((side === SwapSide.SELL ? from : to).decimals),
       ...amounts.slice(1),
     ];
-    return pools.map(p => {
-      const rates = p.calcPrices(from, to, amountsWithUnit, side, blockNumber);
 
-      return {
-        unit: rates[0],
-        prices: [0n, ...rates.slice(1)],
-        data: {
-          poolId: p.poolInfo.id,
-        },
-        poolAddresses: [p.poolInfo.id],
-        exchange: this.dexKey,
-        gasCost: BALANCER_SWAP_GAS_COST,
-        poolIdentifier: `${this.dexKey}_${p.poolInfo.id}`,
-      };
-    });
+    return [
+      ...invalidPoolsPrices,
+      ...pools.map(p => {
+        const rates = p.calcPrices(
+          from,
+          to,
+          amountsWithUnit,
+          side,
+          blockNumber,
+        );
+
+        return {
+          poolId: `${this.dexKey}_${p.poolInfo.id}`,
+          prices: {
+            unit: rates[0],
+            prices: [0n, ...rates.slice(1)],
+            data: {
+              poolId: p.poolInfo.id,
+            },
+            poolAddresses: [p.poolInfo.id],
+            exchange: this.dexKey,
+            gasCost: BALANCER_SWAP_GAS_COST,
+            poolIdentifier: `${this.dexKey}_${p.poolInfo.id}`,
+          },
+        };
+      }),
+    ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
