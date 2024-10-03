@@ -25,6 +25,8 @@ import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-build
 import { AddressOrSymbol } from '@paraswap/sdk';
 import { ParaSwapVersion } from '@paraswap/core';
 import { TransactionBuilder } from '../transaction-builder';
+import { Dexalot } from '../dex/dexalot/dexalot';
+import { SwaapV2 } from '../dex/swaap-v2/swaap-v2';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -253,6 +255,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                   const dex = this.dexAdapterService.getTxBuilderDexByKey(
                     se.exchange,
                   );
+
+                  // const swaap = dexLibExchange as SwaapV2;
+                  // swaap.tokensMap = (await swaap.getCachedTokens()) || {};
 
                   if (dexLibExchange && dexLibExchange.preProcessTransaction) {
                     if (!dexLibExchange.getTokenFromAddress) {

@@ -112,6 +112,44 @@ describe('SwaapV2 E2E', () => {
         });
       }),
     );
+
+    describe('MegaSwap', () => {
+      it('100 ETH -> USDC', async () => {
+        const dexKeys = ['SwaapV2'];
+        const provider = new StaticJsonRpcProvider(
+          generateConfig(network).privateHttpProvider,
+          network,
+        );
+        const slippage = undefined;
+
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'USDC';
+
+        const tokenAAmount: string = '100000000000000000000';
+
+        const tokens = Tokens[network];
+        const holders = Holders[network];
+        const contractMethod = ContractMethod.swapExactAmountIn;
+        const side = SwapSide.SELL;
+
+        await testE2E(
+          tokens[tokenASymbol],
+          tokens[tokenBSymbol],
+          holders[tokenASymbol],
+          tokenAAmount,
+          side,
+          dexKeys,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          10000,
+          sleepMs,
+        );
+      });
+    });
   });
 
   describe('Polygon_V6', () => {
