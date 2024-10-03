@@ -315,6 +315,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       side == SwapSide.SELL ? srcToken.decimals : destToken.decimals;
     const outputDecimals =
       side == SwapSide.SELL ? destToken.decimals : srcToken.decimals;
+
     for (const amount of amounts) {
       if (amount == 0n) {
         outputs.push(0n);
@@ -330,14 +331,15 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           output.gt(0) ? output : amountDecimals,
         );
         if (output.eq(0)) {
-          outputs.push(0n); // No liquidity at this size
-          continue;
+          break;
         }
       }
       if (output.gt(0)) {
         outputs.push(
           BigInt(output.times(getBigNumberPow(outputDecimals)).toFixed(0)),
         );
+      } else {
+        outputs.push(0n);
       }
     }
     return outputs;
