@@ -3,15 +3,15 @@ import _ from 'lodash';
 import {
   Token,
   Address,
-  ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   DexExchangeParam,
+  ImprovedExchangePrices,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, ALL_POOLS_IDENTIFIER } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow, isTruthy } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
@@ -209,13 +209,18 @@ export class MaverickV1
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<MaverickV1Data>> {
+  ): Promise<ImprovedExchangePrices<MaverickV1Data>> {
     try {
       const from = this.dexHelper.config.wrapETH(srcToken);
       const to = this.dexHelper.config.wrapETH(destToken);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
-        return null;
+        return [
+          {
+            poolId: ALL_POOLS_IDENTIFIER,
+            prices: null,
+          },
+        ];
       }
 
       const allPools = await this.getPools(from, to);
@@ -225,68 +230,73 @@ export class MaverickV1
             limitPools.includes(`${this.dexKey}_${pool.address.toLowerCase()}`),
           )
         : allPools;
-      if (!allowedPools.length) return null;
+
+      if (!allowedPools.length) return [];
 
       const unitAmount = getBigIntPow(
         side == SwapSide.BUY ? to.decimals : from.decimals,
       );
 
-      return (
-        await Promise.all(
-          allowedPools.map(async (pool: MaverickV1EventPool) => {
-            try {
-              let state = pool.getState(blockNumber);
-              if (state === null) {
-                state = await pool.generateState(blockNumber);
-                pool.setState(state, blockNumber);
-              }
-              if (state === null) {
-                this.logger.debug(
-                  `Received null state for pool ${pool.address}`,
-                );
-                return null;
-              }
+      return await Promise.all(
+        allowedPools.map(async (pool: MaverickV1EventPool) => {
+          try {
+            let state = pool.getState(blockNumber);
+            const poolId = `${this.dexKey}_${pool.address.toLowerCase()}`;
 
-              const [unit] = pool.swap(
-                unitAmount,
-                from,
-                to,
-                side == SwapSide.BUY,
-              );
-              // We stop iterating if it becomes 0n at some point
-              let lastOutput = 1n;
-              let dataList: [bigint, number][] = await Promise.all(
-                amounts.map(amount => {
-                  if (amount === 0n) {
-                    return [0n, 0];
-                  }
-                  // We don't want to proceed with calculations if lower amount was not fillable
-                  if (lastOutput === 0n) {
-                    return [0n, 0];
-                  }
-                  const output = pool.swap(
-                    amount,
-                    from,
-                    to,
-                    side == SwapSide.BUY,
-                  );
-                  lastOutput = output[0];
-                  return output;
-                }),
-              );
-
-              let prices = dataList.map(d => d[0]);
-              let gasCosts: number[] = dataList.map(
-                ([d, t]: [BigInt, number]) => {
-                  if (d == 0n) return 0;
-                  // I think it is reasonable estimation assuming "kind" gas cost is almost everytime around 1
-                  return (
-                    MAV_V1_BASE_GAS_COST +
-                    (MAV_V1_TICK_GAS_COST + MAV_V1_KIND_GAS_COST) * t
-                  );
-                },
-              );
+            if (state === null) {
+              state = await pool.generateState(blockNumber);
+              pool.setState(state, blockNumber);
+            }
+            if (state === null) {
+              this.logger.debug(`Received null state for pool ${pool.address}`);
               return {
+                poolId,
+                prices: null,
+              };
+            }
+
+            const [unit] = pool.swap(
+              unitAmount,
+              from,
+              to,
+              side == SwapSide.BUY,
+            );
+            // We stop iterating if it becomes 0n at some point
+            let lastOutput = 1n;
+            let dataList: [bigint, number][] = await Promise.all(
+              amounts.map(amount => {
+                if (amount === 0n) {
+                  return [0n, 0];
+                }
+                // We don't want to proceed with calculations if lower amount was not fillable
+                if (lastOutput === 0n) {
+                  return [0n, 0];
+                }
+                const output = pool.swap(
+                  amount,
+                  from,
+                  to,
+                  side == SwapSide.BUY,
+                );
+                lastOutput = output[0];
+                return output;
+              }),
+            );
+
+            let prices = dataList.map(d => d[0]);
+            let gasCosts: number[] = dataList.map(
+              ([d, t]: [BigInt, number]) => {
+                if (d == 0n) return 0;
+                // I think it is reasonable estimation assuming "kind" gas cost is almost everytime around 1
+                return (
+                  MAV_V1_BASE_GAS_COST +
+                  (MAV_V1_TICK_GAS_COST + MAV_V1_KIND_GAS_COST) * t
+                );
+              },
+            );
+            return {
+              poolId,
+              prices: {
                 prices: prices,
                 unit: BigInt(unit),
                 data: {
@@ -303,17 +313,20 @@ export class MaverickV1
                 poolIdentifier: pool.name,
                 gasCost: gasCosts,
                 poolAddresses: [pool.address],
-              };
-            } catch (e) {
-              this.logger.debug(
-                `Failed to get prices for pool ${pool.address}, from=${from.address}, to=${to.address}`,
-                e,
-              );
-              return null;
-            }
-          }),
-        )
-      ).filter(isTruthy);
+              },
+            };
+          } catch (e) {
+            this.logger.debug(
+              `Failed to get prices for pool ${pool.address}, from=${from.address}, to=${to.address}`,
+              e,
+            );
+            return {
+              poolId: `${this.dexKey}_${pool.address.toLowerCase()}`,
+              prices: null,
+            };
+          }
+        }),
+      );
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.symbol || srcToken.address}, ${
@@ -321,7 +334,12 @@ export class MaverickV1
         }, ${side}:`,
         e,
       );
-      return null;
+      return [
+        {
+          poolId: ALL_POOLS_IDENTIFIER,
+          prices: null,
+        },
+      ];
     }
   }
 
