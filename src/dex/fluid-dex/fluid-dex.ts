@@ -54,7 +54,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   protected adapters;
 
-  FEE_100_PERCENT = 1000000n;
+  FEE_100_PERCENT = BigInt(1000000);
 
   constructor(
     readonly network: Network,
@@ -181,6 +181,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       const prices = amounts.map(amount =>
         // this.calcPrice(pool, state, srcToken, amount, side),
+
         this.swapIn(
           swap0To1,
           amount,
@@ -191,9 +192,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
           0n,
         ),
       );
-
-      // console.log('these are the prices : ' + prices);
-      // console.log('hehe' + swap0To1);
 
       return [
         {
@@ -408,23 +406,25 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     outDecimals: number,
     fee: bigint,
   ): bigint {
+    // console.log('swapIn Param : ' + amountIn);
+
     if (amountIn === 0n) {
       return 0n; // Return 0 if input amount is 0
     }
-    // console.log('amountIn : ' + amountIn);
     const amountInAdjusted =
       (((amountIn * (this.FEE_100_PERCENT - fee)) / this.FEE_100_PERCENT) *
         BigInt(10 ** 12)) /
-      BigInt(inDecimals);
-    // console.log('amountInAdjusted : ' + amountInAdjusted);
+      BigInt(10 ** inDecimals);
+
     const amountOut = this.swapInAdjusted(
       swap0To1,
       amountInAdjusted, // Convert back to number for internal calculations
       colReserves,
       debtReserves,
     );
-    // console.log('amountOut : ' + amountOut);
-    return amountOut * BigInt(10 ** (outDecimals - 12));
+    const result = (amountOut * BigInt(10 ** outDecimals)) / BigInt(10 ** 12);
+    // console.log('this is result : ' + result);
+    return result;
   }
 
   /**
@@ -529,7 +529,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveOut,
       );
     }
-
+    // console.log('this is a : ' + a);
     const totalAmountOut = amountOutCollateral + amountOutDebt;
 
     return totalAmountOut;
@@ -553,6 +553,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
     // Using the swap formula: (AmountIn * iReserveY) / (iReserveX + AmountIn)
     // We use division with rounding down, which is the default for bigint division
+
     return numerator / denominator;
   }
 
@@ -632,34 +633,34 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       throw new Error('No pools are enabled');
     }
 
-    let amountInCollateral = BigInt(0);
-    let amountInDebt = BigInt(0);
+    let amountOutCollateral = BigInt(0);
+    let amountOutDebt = BigInt(0);
 
     if (a <= 0) {
       // Entire trade routes through debt pool
-      amountInDebt = this.getAmountIn(
+      amountOutDebt = this.getAmountIn(
         amountOut,
         debtIReserveIn,
         debtIReserveOut,
       );
     } else if (a >= amountOut) {
       // Entire trade routes through collateral pool
-      amountInCollateral = this.getAmountIn(
+      amountOutCollateral = this.getAmountIn(
         amountOut,
         colIReserveIn,
         colIReserveOut,
       );
     } else {
       // Trade routes through both pools
-      amountInCollateral = this.getAmountIn(a, colIReserveIn, colIReserveOut);
-      amountInDebt = this.getAmountIn(
+      amountOutCollateral = this.getAmountIn(a, colIReserveIn, colIReserveOut);
+      amountOutDebt = this.getAmountIn(
         amountOut - a,
         debtIReserveIn,
         debtIReserveOut,
       );
     }
 
-    const totalAmountIn = amountInCollateral + amountInDebt;
+    const totalAmountIn = amountOutCollateral + amountOutDebt;
 
     return totalAmountIn;
   }
@@ -741,14 +742,27 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     y2: bigint,
   ): bigint {
     // Adding 1e18 precision
+
+    // console.log('params of sri : ', t, x, y, x2, y2, 'prince');
+
     const xyRoot = BigInt(Math.floor(Math.sqrt(Number(x * y * BigInt(1e18)))));
     const x2y2Root = BigInt(
       Math.floor(Math.sqrt(Number(x2 * y2 * BigInt(1e18)))),
     );
 
     // Calculating 'a' using the given formula
-    const a = (y2 * xyRoot + t * xyRoot - y * x2y2Root) / (xyRoot + x2y2Root);
+    const a =
+      (Number(y2) * Number(xyRoot) +
+        Number(t) * Number(xyRoot) -
+        Number(y) * Number(x2y2Root)) /
+      (Number(xyRoot) + Number(x2y2Root));
 
-    return a;
+    // console.log(
+    // 'before values : ' + (y2 * xyRoot + t * xyRoot - y * x2y2Root),
+    // xyRoot + x2y2Root,
+    // );
+
+    // console.log('sri values : ', xyRoot, x2y2Root, a);
+    return BigInt(Math.floor(a));
   }
 }
