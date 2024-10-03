@@ -12,6 +12,9 @@ export type SparkParams = {
     topic: string;
   };
   poolInterface: Interface;
+  exchangeInterface: Interface;
+  swapFunctions: typeof SparkSDaiFunctions | typeof SparkSUSDSFunctions;
+  referralCode: null | string;
 };
 
 export enum SparkSDaiFunctions {
@@ -19,6 +22,13 @@ export enum SparkSDaiFunctions {
   redeem = 'redeem',
   withdraw = 'withdraw',
   mint = 'mint',
+}
+
+export enum SparkSUSDSFunctions {
+  deposit = 'deposit(uint256,address,uint16)',
+  redeem = 'redeem',
+  withdraw = 'withdraw',
+  mint = 'mint(uint256,address,uint16)',
 }
 
 export type SparkSDaiPoolState = {
