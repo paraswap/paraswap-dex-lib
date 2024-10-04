@@ -417,6 +417,100 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingBlocksBackToTriggerUpdate: 3,
     forceRpcFallbackDexs: [],
   },
+  [Network.SEPOLIA]: {
+    network: Network.SEPOLIA,
+    networkName: 'Sepolia',
+    isTestnet: false,
+    nativeTokenName: 'Ether',
+    nativeTokenSymbol: 'ETH',
+    wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    hasEIP1559: true,
+    augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+    augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
+    tokenTransferProxyAddress: '0x216b4b4ba9f3e719726886d34a177484278bfcae',
+    multicallV2Address: '0xcA11bde05977b3631167028862bE2a173976CA11',
+    privateHttpProvider: process.env.HTTP_PROVIDER_11155111,
+    augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
+    executorsAddresses: {
+      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
+      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
+    },
+    adapterAddresses: {
+      Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
+      Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
+      Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
+      Adapter04: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
+      Adapter05: '0x3329dfa55A40B450952FBE0203167Ae6908E656d',
+      Adapter06: '0xAeb7B3688a658C3f3B1AEd94d69b7b8045D64B57',
+      BuyAdapter: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
+      BuyAdapter02: '0x2299568c3299e7420033deA9009233FF89F5C485',
+    },
+    uniswapV2ExchangeRouterAddress:
+      '0xF9234CB08edb93c0d4a4d4c70cC3FfD070e78e07',
+    rpcPollingMaxAllowedStateDelayInBlocks: 0,
+    rpcPollingBlocksBackToTriggerUpdate: 0,
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
+    hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
+    idleDaoAuthToken: process.env.API_KEY_IDLEDAO_AUTH_TOKEN || '',
+    hashFlowDisabledMMs:
+      process.env[`HASHFLOW_DISABLED_MMS_1`]?.split(',') || [],
+    uniswapV3EventLoggingSampleRate: 0,
+    rfqConfigs: {
+      DummyParaSwapPool: {
+        maker: process.env.TEST_ADDRESS!,
+        tokensConfig: {
+          reqParams: {
+            url: `http://localhost:${PORT_TEST_SERVER}/tokens`,
+            method: 'GET',
+          },
+          secret: {
+            domain: 'paraswap-test',
+            accessKey: 'access',
+            secretKey: 'secret',
+          },
+          intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+          dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+        },
+        pairsConfig: {
+          reqParams: {
+            url: `http://localhost:${PORT_TEST_SERVER}/pairs`,
+            method: 'GET',
+          },
+          secret: {
+            domain: 'paraswap-test',
+            accessKey: 'access',
+            secretKey: 'secret',
+          },
+          intervalMs: 1000 * 60 * 60 * 10, // every 10 minutes
+          dataTTLS: 1000 * 60 * 60 * 11, // ttl 11 minutes
+        },
+        rateConfig: {
+          reqParams: {
+            url: `http://localhost:${PORT_TEST_SERVER}/prices`,
+            method: 'GET',
+          },
+          secret: {
+            domain: 'paraswap-test',
+            accessKey: 'access',
+            secretKey: 'secret',
+          },
+          intervalMs: 1000 * 60 * 60 * 1, // every 1 minute
+          dataTTLS: 1000 * 60 * 60 * 1, // ttl 1 minute
+        },
+        firmRateConfig: {
+          url: `http://localhost:${PORT_TEST_SERVER}/firm`,
+          method: 'POST',
+          secret: {
+            domain: 'paraswap-test',
+            accessKey: 'access',
+            secretKey: 'secret',
+          },
+        },
+      },
+    },
+    forceRpcFallbackDexs: [],
+  },
 };
 
 // Should not be used, except by internal test code
