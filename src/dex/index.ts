@@ -89,6 +89,7 @@ import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
 import { StkGHO } from './stkgho/stkgho';
+import { BalancerV3 } from './balancer-v3/balancer-v3';
 
 const LegacyDexes = [
   CurveV2,
@@ -114,6 +115,7 @@ const Dexes = [
   Swerve,
   BalancerV1,
   BalancerV2,
+  BalancerV3,
   UniswapV2,
   UniswapV3,
   Algebra,
