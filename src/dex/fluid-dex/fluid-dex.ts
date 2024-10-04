@@ -22,6 +22,7 @@ import {
   FluidDexData,
   FluidDexPool,
   FluidDexPoolState,
+  Pool,
 } from './types';
 import {
   SimpleExchange,
@@ -33,6 +34,10 @@ import { FluidDexEventPool } from './fluid-dex-pool';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
+import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
+import { BytesLike } from 'ethers/lib/utils';
+import { generalDecoder, extractSuccessAndValue } from '../../lib/decoders';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   readonly eventPools: { [id: string]: FluidDexEventPool } = {};
@@ -51,6 +56,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   readonly pools: [FluidDexPool];
 
   readonly iFluidDexPool: Interface;
+
+  // readonly liquidityProxy: '0x52aa899454998be5b000ad077a46bbe360f4e497';
+
+  // readonly resolver: '0x278166a9b88f166eb170d55801be1b1d1e576330';
 
   protected adapters;
 
@@ -82,7 +91,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    // TODO: complete me!
+    Object.entries(this.eventPools).forEach(([id, eventPool]) => {
+      eventPool.getStateOrGenerate(blockNumber, false);
+    });
   }
 
   // Returns the list of contract adapters (name and index)
@@ -90,6 +101,39 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return this.adapters[side] ? this.adapters[side] : null;
   }
+
+  // async getPoolsFromResolver(){
+  //   const resolverAbi = new Interface(ResolverABI);
+  //   const callData: MultiCallParams<Pool[]>[] = [
+  //     {
+  //       target: this.resolver,
+  //       callData: resolverAbi.encodeFunctionData('getAllPools', []),
+  //       decodeFunction: await this.decodePools,
+  //     },
+  //   ];
+
+  //   const results: Pool[] =
+  //     await this.dexHelper.multiWrapper.aggregate<Pool>(
+  //       callData,
+  //       await this.dexHelper.provider.getBlockNumber(),
+  //       this.dexHelper.multiWrapper.defaultBatchSize,
+  //     );
+  // }
+
+  decodePools = (result: MultiResult<BytesLike> | BytesLike): Pool[] => {
+    return generalDecoder(
+      result,
+      ['tuple(address pool, address token0, address token1)[]'],
+      undefined,
+      decoded => {
+        return decoded.map((decodedPool: any) => ({
+          address: decodedPool.pool,
+          token0: decodedPool.token0,
+          token1: decodedPool.token1,
+        }));
+      },
+    );
+  };
 
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
@@ -103,29 +147,11 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ): Promise<string[]> {
     // TODO: complete me!
     // return [];
-    const pool = this.getPoolByTokenPair(srcToken, destToken);
+    const pool = this.getPoolByTokenPair(srcToken.address, destToken.address);
     return pool ? [pool.id] : [];
   }
 
-  getPoolByTokenPair(srcToken: Token, destToken: Token): FluidDexPool | null {
-    const srcAddress = srcToken.address.toLowerCase();
-    const destAddress = destToken.address.toLowerCase();
-
-    // A pair must have 2 different tokens.
-    if (srcAddress === destAddress) return null;
-
-    for (const pool of this.pools) {
-      if (
-        (srcAddress === pool.token0 && destAddress === pool.token1) ||
-        (srcAddress === pool.token1 && destAddress === pool.token0)
-      ) {
-        return pool;
-      }
-    }
-    return null;
-  }
-
-  getPoolByTokenPairAddress(
+  getPoolByTokenPair(
     srcToken: Address,
     destToken: Address,
   ): FluidDexPool | null {
@@ -160,7 +186,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ): Promise<null | ExchangePrices<FluidDexData>> {
     try {
       // Get the pool to use.
-      const pool = this.getPoolByTokenPair(srcToken, destToken);
+      const pool = this.getPoolByTokenPair(srcToken.address, destToken.address);
       if (!pool) return null;
 
       // Make sure the pool meets the optional limitPools filter.
@@ -191,21 +217,23 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             BigInt(state.fee),
           );
         } else {
-          return this.swapOut(
-            !(srcToken.address.toLowerCase() === pool.token0.toLowerCase()),
-            amount,
-            state.collateralReserves,
-            state.debtReserves,
-            srcToken.decimals,
-            destToken.decimals,
-            BigInt(state.fee),
-          );
+          return null;
+
+          // return this.swapOut(
+          //   !(srcToken.address.toLowerCase() === pool.token0.toLowerCase()),
+          //   amount,
+          //   state.collateralReserves,
+          //   state.debtReserves,
+          //   srcToken.decimals,
+          //   destToken.decimals,
+          //   BigInt(state.fee),
+          // );
         }
       });
 
       return [
         {
-          prices: prices, // to be done
+          prices: prices.filter((price): price is bigint => price !== null), // to be done
           unit: getBigIntPow(
             (side === SwapSide.SELL ? destToken : srcToken).decimals,
           ), // to be done
@@ -269,7 +297,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    this.initializePricing(await this.dexHelper.provider.getBlockNumber());
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -322,11 +350,29 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       const pool = this.pools.find(p => p.id === id);
       if (!pool) continue; // Skip if pool not found
 
+      const state: FluidDexPoolState = await this.eventPools[
+        pool.id
+      ].getStateOrGenerate(
+        await this.dexHelper.provider.getBlockNumber(),
+        false,
+      );
+
+      const usd0 = await this.dexHelper.getTokenUSDPrice(
+        { address: pool.token0, decimals: 18 },
+        state.collateralReserves.token0RealReserves +
+          state.debtReserves.token0RealReserves,
+      );
+      const usd1 = await this.dexHelper.getTokenUSDPrice(
+        { address: pool.token1, decimals: 18 },
+        state.collateralReserves.token1RealReserves +
+          state.debtReserves.token1RealReserves,
+      );
+
       poolLiquidities.push({
         exchange: 'FluidDex',
         address: pool.address,
         connectorTokens: [],
-        liquidityUSD: Number(amount), // converted to number
+        liquidityUSD: Number(usd0 + usd1), // converted to number
       });
     }
     return poolLiquidities;
@@ -349,40 +395,49 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     context: Context,
     executorAddress: Address,
   ): AsyncOrSync<DexExchangeParam> {
-    let method: string;
-    let args: any;
-    let returnAmountPos: number | undefined = undefined;
-
-    const deadline = getLocalDeadlineAsFriendlyPlaceholder();
-
-    method = 'swapIn';
-    returnAmountPos = extractReturnAmountPosition(
-      this.iFluidDexPool,
-      method,
-      'amountOut_',
-      1,
-    );
-
-    const pool = this.getPoolByTokenPairAddress(srcToken, destToken);
-
     if (srcToken == '0xEeeeeEeeeeeeEeeeeeeEeeeeEeeeeeEeeeeEeeeE') {
       throw new Error(
         'srcToken can not be Native ETH, try exchanging tokens and swapSide',
       );
     }
 
+    let method: string;
+    let args: any;
+    let returnAmountPos: number | undefined = undefined;
+
+    const deadline = getLocalDeadlineAsFriendlyPlaceholder();
+
+    method = side == SwapSide.SELL ? 'swapIn' : 'swapOut';
+
+    returnAmountPos = extractReturnAmountPosition(
+      this.iFluidDexPool,
+      method,
+      side == SwapSide.SELL ? 'amountOut_' : 'amountIn_',
+      1,
+    );
+
+    const pool = this.getPoolByTokenPair(srcToken, destToken);
+
     if (side == SwapSide.SELL) {
       if (pool!.token0.toLowerCase() != srcToken.toLowerCase()) {
-        args = [false, BigInt(srcAmount), BigInt(0), recipient];
+        args = [false, BigInt(srcAmount), BigInt(destAmount), recipient];
       } else {
-        args = [true, BigInt(srcAmount), BigInt(0), recipient];
+        args = [true, BigInt(srcAmount), BigInt(destAmount), recipient];
       }
     } else {
-      if (pool!.token0.toLowerCase() != srcToken.toLowerCase()) {
-        args = [true, BigInt(srcAmount), BigInt(0), recipient];
-      } else {
-        args = [false, BigInt(srcAmount), BigInt(0), recipient];
-      }
+      return {
+        needWrapNative: false,
+        exchangeData: '',
+        targetExchange: 'Invalid',
+        dexFuncHasRecipient: false,
+        returnAmountPos: undefined,
+      };
+
+      // if (pool!.token0.toLowerCase() != srcToken.toLowerCase()) {
+      //   args = [true, BigInt(srcAmount), 2n * BigInt(srcAmount), recipient];
+      // } else {
+      //   args = [false, BigInt(srcAmount), 2n * BigInt(srcAmount), recipient];
+      // }
     }
 
     const swapData = this.iFluidDexPool.encodeFunctionData(method, args);
@@ -391,8 +446,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData: swapData,
-      targetExchange: this.getPoolByTokenPairAddress(srcToken, destToken)!
-        .address,
+      targetExchange: pool!.address,
       returnAmountPos,
     };
   }
@@ -416,8 +470,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     outDecimals: number,
     fee: bigint,
   ): bigint {
-    // console.log('swapIn Param : ' + amountIn);
-
     if (amountIn === 0n) {
       return 0n; // Return 0 if input amount is 0
     }
@@ -433,7 +485,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       debtReserves,
     );
     const result = (amountOut * BigInt(10 ** outDecimals)) / BigInt(10 ** 12);
-    // console.log('this is result : ' + result);
     return result;
   }
 
@@ -539,7 +590,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveOut,
       );
     }
-    // console.log('this is a : ' + a);
     const totalAmountOut = amountOutCollateral + amountOutDebt;
 
     return totalAmountOut;
@@ -644,7 +694,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     y2: bigint,
   ): bigint {
     // Adding 1e18 precision
-    // console.log('params of sri : ', t, x, y, x2, y2);
 
     const xyRoot = BigInt(Math.floor(Math.sqrt(Number(x * y * BigInt(1e18)))));
     const x2y2Root = BigInt(
@@ -657,15 +706,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         Number(t) * Number(xyRoot) -
         Number(y) * Number(x2y2Root)) /
       (Number(xyRoot) + Number(x2y2Root));
-
-    // console.log(
-    //   'indepth value of a : ',
-    //   Number(y2) * Number(xyRoot),
-    //   Number(t) * Number(xyRoot),
-    //   Number(y) * Number(x2y2Root),
-    //   Number(xyRoot) + Number(x2y2Root),
-    // );
-    // console.log('xy, x2y2, a values : ', xyRoot, x2y2Root, a);
     return BigInt(Math.floor(a));
   }
 
@@ -689,14 +729,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     outDecimals: number,
     fee: bigint,
   ): bigint {
-    // console.log(
-    //   'this function is called ',
-    //   swap0to1,
-    //   amountOut,
-    //   inDecimals,
-    //   outDecimals,
-    //   fee,
-    // );
     const amountOutAdjusted =
       (amountOut * BigInt(10 ** 12)) / BigInt(10 ** outDecimals);
     const amountIn = this.swapOutAdjusted(
@@ -711,8 +743,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     const result =
       ((amountIn * FEE_100_PERCENT) / (FEE_100_PERCENT - fee)) *
       BigInt(10 ** (inDecimals - 12));
-
-    // console.log('this is result ' + result);
 
     return result;
   }

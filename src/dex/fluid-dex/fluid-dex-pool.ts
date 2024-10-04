@@ -4,17 +4,15 @@ import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import { FluidDexPool, FluidDexPoolState, PoolWithReserves } from './types';
 import { ethers } from 'ethers';
 import { eachOfSeries } from 'async';
-import { USD_PRECISION } from '../woo-fi-v2/constants';
 import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
-import { BytesLike, defaultAbiCoder } from 'ethers/lib/utils';
+import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '../../types';
-import { generalDecoder } from '../../lib/decoders';
+import { generalDecoder, extractSuccessAndValue } from '../../lib/decoders';
 
 export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState> {
   handlers: {
@@ -42,7 +40,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
 
     // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.liquidityIface.parseLog(log);
-    this.addressesSubscribed = [pool.liquidityUserModule];
+    this.addressesSubscribed = [pool.liquidityProxy];
 
     // Add handlers
     this.handlers['LogOperate'] = this.handleOperate.bind(this);
@@ -56,24 +54,14 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     state: DeepReadonly<FluidDexPoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<FluidDexPoolState> | null> {
-    const ResolverAbi = new Interface(ResolverABI);
-    if (
-      !(
-        event.args.user in
-        [
-          this.pool.address,
-          this.pool.colOperations,
-          this.pool.debtOperations,
-          this.pool.perfectOperationsAndSwapOut,
-        ]
-      )
-    ) {
+    const resolverAbi = new Interface(ResolverABI);
+    if (!(event.args.user in [this.pool.address])) {
       return null;
     }
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
         target: this.pool.resolver,
-        callData: ResolverAbi.encodeFunctionData('getPoolReserves', [
+        callData: resolverAbi.encodeFunctionData('getPoolReserves', [
           this.pool.address,
         ]),
         decodeFunction: await this.decodePoolWithReserves,
@@ -87,11 +75,18 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
         this.dexHelper.multiWrapper.defaultBatchSize,
       );
 
-    return {
+    const generatedState = {
       collateralReserves: results[0].collateralReserves,
       debtReserves: results[0].debtReserves,
       fee: results[0].fee,
     };
+
+    this.setState(
+      generatedState,
+      await this.dexHelper.provider.getBlockNumber(),
+    );
+
+    return generatedState;
   }
 
   decodePoolWithReserves = (
@@ -147,14 +142,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     );
   };
 
-  extractSuccessAndValue = (
-    result: MultiResult<BytesLike> | BytesLike,
-  ): [boolean, BytesLike] => {
-    return this.isMultiResult(result)
-      ? [result.success, result.returnData]
-      : [true, result];
-  };
-
   isMultiResult = (
     result: MultiResult<BytesLike> | BytesLike,
   ): result is MultiResult<BytesLike> => {
@@ -200,7 +187,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
       state = await this.generateState(blockNumber);
       if (!readonly) this.setState(state, blockNumber);
     }
-    // console.log('fluidDexPool - getStateOrGenerate : ' + state);
     return state;
   }
 
@@ -216,11 +202,11 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   async generateState(
     blockNumber: number,
   ): Promise<DeepReadonly<FluidDexPoolState>> {
-    const ResolverAbi = new Interface(ResolverABI);
+    const resolverAbi = new Interface(ResolverABI);
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
         target: this.pool.resolver,
-        callData: ResolverAbi.encodeFunctionData('getPoolReserves', [
+        callData: resolverAbi.encodeFunctionData('getPoolReserves', [
           this.pool.address,
         ]),
         decodeFunction: await this.decodePoolWithReserves,
