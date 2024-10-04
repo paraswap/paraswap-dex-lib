@@ -94,6 +94,7 @@ export class CurveV2
   exchangeRouterInterface: Interface;
   genericFactoryZapIface: Interface;
   minConversionRate = '1';
+  // the dex supports native ETH and WETH pool, but wrapping/unwrapping is handled on dex level, we can always send WETH event for native ETH pools
   needWrapNative = true;
   logger: Logger;
 
