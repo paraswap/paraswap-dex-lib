@@ -94,7 +94,6 @@ export class CurveV2
   exchangeRouterInterface: Interface;
   genericFactoryZapIface: Interface;
   minConversionRate = '1';
-  // TODO: it's wrong, cause some pools can have eth and others can have weth
   needWrapNative = true;
   logger: Logger;
 
