@@ -33,7 +33,6 @@ import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 import { IDexTxBuilder } from './dex/idex';
 import { ParaSwapVersion, SwapSide } from '@paraswap/core';
-import { clear } from 'console';
 
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
@@ -254,7 +253,6 @@ export class GenericSwapTransactionBuilder {
         priceRoute.destToken,
         isSell ? priceRoute.srcAmount : minMaxAmount,
         isSell ? minMaxAmount : priceRoute.destAmount,
-        // minMaxAmount,
         isSell ? priceRoute.destAmount : priceRoute.srcAmount,
         hexConcat([
           hexZeroPad(uuidToBytes16(uuid), 16),

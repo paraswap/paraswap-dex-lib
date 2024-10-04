@@ -25,7 +25,6 @@ import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-build
 import { AddressOrSymbol } from '@paraswap/sdk';
 import { ParaSwapVersion } from '@paraswap/core';
 import { TransactionBuilder } from '../transaction-builder';
-import { QuickPerps } from '../dex/quick-perps/quick-perps';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -97,9 +96,6 @@ export class LocalParaswapSDK implements IParaSwapSDK {
         delete this.dexKeys[this.dexKeys.indexOf(dexKey)];
       }
     });
-
-    // Remove the null entries
-    this.dexKeys = this.dexKeys.filter(key => key !== null);
   }
 
   async initializePricing() {
@@ -132,8 +128,6 @@ export class LocalParaswapSDK implements IParaSwapSDK {
         this.dexKeys,
       ));
 
-    // console.log("this is pool identifiers" + JSON.stringify(poolIdentifiers, null, 2));
-
     const amounts = _.range(0, chunks + 1).map(
       i => (amount * BigInt(i)) / BigInt(chunks),
     );
@@ -153,7 +147,6 @@ export class LocalParaswapSDK implements IParaSwapSDK {
 
     const finalPrice = poolPrices[0];
     const quoteAmount = finalPrice.prices[chunks];
-
     const srcAmount = (
       side === SwapSide.SELL ? amount : quoteAmount
     ).toString();
@@ -289,6 +282,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         {
                           slippageFactor,
                           txOrigin: userAddress,
+                          userAddress,
                           executionContractAddress,
                           isDirectMethod: DirectContractMethods.includes(
                             contractMethod as ContractMethod,
@@ -328,7 +322,6 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       partnerFeePercent: '0',
       deadline: deadline.toString(),
       uuid: uuid(),
-      beneficiary: '0x5F4e77A22e394B51dC7Efb8e3C78121e489E78cD', // @(to be changed)
     });
   }
 }
