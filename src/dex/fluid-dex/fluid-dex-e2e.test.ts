@@ -89,19 +89,19 @@ function testForNetwork(
                 provider,
               );
             });
-            // it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenASymbol],
-            //     tokens[nativeTokenSymbol],
-            //     holders[tokenASymbol],
-            //     tokenAAmount,
-            //     SwapSide.SELL,
-            //     dexKey,
-            //     contractMethod as ContractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                tokenAAmount,
+                SwapSide.SELL,
+                dexKey,
+                contractMethod as ContractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),
