@@ -102,22 +102,23 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     return this.adapters[side] ? this.adapters[side] : null;
   }
 
-  // async getPoolsFromResolver(){
+  // async getPoolsFromResolver() {
   //   const resolverAbi = new Interface(ResolverABI);
   //   const callData: MultiCallParams<Pool[]>[] = [
   //     {
   //       target: this.resolver,
   //       callData: resolverAbi.encodeFunctionData('getAllPools', []),
-  //       decodeFunction: await this.decodePools,
+  //       decodeFunction: this.decodePools,
   //     },
   //   ];
 
-  //   const results: Pool[] =
-  //     await this.dexHelper.multiWrapper.aggregate<Pool>(
+  //   const results: Pool[][] =
+  //     await this.dexHelper.multiWrapper.aggregate<Pool[]>(
   //       callData,
   //       await this.dexHelper.provider.getBlockNumber(),
   //       this.dexHelper.multiWrapper.defaultBatchSize,
   //     );
+
   // }
 
   decodePools = (result: MultiResult<BytesLike> | BytesLike): Pool[] => {
