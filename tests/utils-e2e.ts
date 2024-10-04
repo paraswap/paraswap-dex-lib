@@ -501,8 +501,6 @@ export async function testE2E(
       forceRoute,
     );
 
-    console.log('price route : ' + priceRoute);
-
     console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
     expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
 

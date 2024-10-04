@@ -7,6 +7,7 @@ export type FluidDexPoolState = {
   // pool prices. Complete me!
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
+  fee: number;
 };
 
 export type CollateralReserves = {
@@ -29,6 +30,7 @@ export interface PoolWithReserves {
   pool: string;
   token0_: string;
   token1_: string;
+  fee: number;
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
 }

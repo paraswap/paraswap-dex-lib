@@ -45,7 +45,7 @@ function getReaderCalldata(
       '0x6d83f60eeac0e50a1250760151e81db2a278e03a',
       funcName == 'estimateSwapIn' ? true : false,
       amount,
-      funcName == 'estimateSwapIn' ? 0 : 10 ** 30,
+      funcName == 'estimateSwapIn' ? 0 : 2n * amount,
     ]),
   }));
 }
@@ -221,19 +221,19 @@ describe('FluidDex', function () {
       );
     });
 
-    // it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-    //   await testPricingOnNetwork(
-    //     fluidDex,
-    //     network,
-    //     dexKey,
-    //     blockNumber,
-    //     srcTokenSymbol,
-    //     destTokenSymbol,
-    //     SwapSide.BUY,
-    //     amountsForBuy,
-    //     'estimateSwapOut', // TODO: Put here proper function name to check pricing
-    //   );
-    // });
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        fluidDex,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        'estimateSwapOut', // TODO: Put here proper function name to check pricing
+      );
+    });
 
     it('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because

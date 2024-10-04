@@ -189,7 +189,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
           state.debtReserves,
           srcToken.decimals,
           destToken.decimals,
-          0n,
+          BigInt(state.fee),
         ),
       );
 
@@ -742,8 +742,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     y2: bigint,
   ): bigint {
     // Adding 1e18 precision
-
-    // console.log('params of sri : ', t, x, y, x2, y2, 'prince');
+    // console.log('params of sri : ', t, x, y, x2, y2);
 
     const xyRoot = BigInt(Math.floor(Math.sqrt(Number(x * y * BigInt(1e18)))));
     const x2y2Root = BigInt(
@@ -758,11 +757,13 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       (Number(xyRoot) + Number(x2y2Root));
 
     // console.log(
-    // 'before values : ' + (y2 * xyRoot + t * xyRoot - y * x2y2Root),
-    // xyRoot + x2y2Root,
+    //   'indepth value of a : ',
+    //   Number(y2) * Number(xyRoot),
+    //   Number(t) * Number(xyRoot),
+    //   Number(y) * Number(x2y2Root),
+    //   Number(xyRoot) + Number(x2y2Root),
     // );
-
-    // console.log('sri values : ', xyRoot, x2y2Root, a);
+    // console.log('xy, x2y2, a values : ', xyRoot, x2y2Root, a);
     return BigInt(Math.floor(a));
   }
 }

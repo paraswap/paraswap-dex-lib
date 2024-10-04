@@ -73,7 +73,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
         target: this.pool.resolver,
-        callData: ResolverAbi.encodeFunctionData('getCollateralReserves', [
+        callData: ResolverAbi.encodeFunctionData('getPoolReserves', [
           this.pool.address,
         ]),
         decodeFunction: await this.decodePoolWithReserves,
@@ -90,6 +90,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     return {
       collateralReserves: results[0].collateralReserves,
       debtReserves: results[0].debtReserves,
+      fee: results[0].fee,
     };
   }
 
@@ -99,7 +100,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     return generalDecoder(
       result,
       [
-        'tuple(address pool, address token0_, address token1_, ' +
+        'tuple(address pool, address token0_, address token1_, uint256 fee,' +
           'tuple(uint256 token0RealReserves, uint256 token1RealReserves, uint256 token0ImaginaryReserves, uint256 token1ImaginaryReserves) collateralReserves, ' +
           'tuple(uint256 token0Debt, uint256 token1Debt, uint256 token0RealReserves, uint256 token1RealReserves, uint256 token0ImaginaryReserves, uint256 token1ImaginaryReserves) debtReserves)',
       ],
@@ -110,6 +111,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
           pool: decodedResult.pool,
           token0_: decodedResult.token0_,
           token1_: decodedResult.token1_,
+          fee: decodedResult.fee,
           collateralReserves: {
             token0RealReserves: BigInt(
               decodedResult.collateralReserves.token0RealReserves,
@@ -232,11 +234,10 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
         this.dexHelper.multiWrapper.defaultBatchSize,
       );
 
-    // console.log('fluidDexpool - generateState results: ' + results);
-
     return {
       collateralReserves: results[0].collateralReserves,
       debtReserves: results[0].debtReserves,
+      fee: results[0].fee,
     };
   }
 }
