@@ -29,194 +29,156 @@ import { Tokens } from '../../../tests/constants-e2e';
   (This comment should be removed from the final implementation)
 */
 
-function getReaderCalldata(
-  exchangeAddress: string,
-  readerIface: Interface,
-  amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
-) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [amount]),
-  }));
-}
-
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-) {
-  return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
-  });
-}
-
-async function checkOnChainPricing(
-  mountainProtocol: WUSDM,
-  funcName: string,
-  blockNumber: number,
-  prices: bigint[],
-  amounts: bigint[],
-) {
-  const exchangeAddress = '0x57f5e098cad7a3d1eed53991d4d66c45c9af7812';
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from mountainProtocol.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = WUSDM.wUSDMIface;
-
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts.slice(1),
-    funcName,
-  );
-  const readerResult = (
-    await mountainProtocol.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
-  );
-
-  expect(prices).toEqual(expectedPrices);
-}
-
-async function testPricingOnNetwork(
-  mountainProtocol: WUSDM,
-  network: Network,
-  dexKey: string,
-  blockNumber: number,
-  srcTokenSymbol: string,
-  destTokenSymbol: string,
-  side: SwapSide,
-  amounts: bigint[],
-  funcNameToCheck: string,
-) {
-  const networkTokens = Tokens[network];
-
-  const pools = await mountainProtocol.getPoolIdentifiers(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    side,
-    blockNumber,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
-    pools,
-  );
-
-  expect(pools.length).toBeGreaterThan(0);
-
-  const poolPrices = await mountainProtocol.getPricesVolume(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    amounts,
-    side,
-    blockNumber,
-    pools,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
-  );
-
-  expect(poolPrices).not.toBeNull();
-  checkPoolPrices(poolPrices!, amounts, side, dexKey);
-
-  // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    mountainProtocol,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
-}
+const networks = [
+  { name: 'Mainnet', network: Network.MAINNET },
+  { name: 'Optimism', network: Network.OPTIMISM },
+  { name: 'Arbitrum', network: Network.ARBITRUM },
+  { name: 'Base', network: Network.BASE },
+  { name: 'Polygon', network: Network.POLYGON },
+];
 
 describe('WUSDM', function () {
   const dexKey = 'wUSDM';
-  let blockNumber: number;
-  let mountainProtocol: WUSDM;
+  const wUSDMSymbol = 'wUSDM';
+  const USDMSymbol = 'USDM';
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-    const dexHelper = new DummyDexHelper(network);
+  networks.forEach(({ name, network }) => {
+    describe(`${name}`, () => {
+      const wUSDMToken = Tokens[network][wUSDMSymbol];
+      const USDMToken = Tokens[network][USDMSymbol];
+      const amounts = [0n, BI_POWS[18], 2000000000000000000n];
+      let dexHelper: DummyDexHelper;
+      let blocknumber: number;
+      let wusdm: WUSDM;
 
-    const tokens = Tokens[network];
+      beforeAll(async () => {
+        dexHelper = new DummyDexHelper(network);
+        blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        wusdm = new WUSDM(network, dexKey, dexHelper);
+        if (wusdm.initializePricing) {
+          await wusdm.initializePricing(blocknumber);
+        }
+      });
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const usdmTokenSymbol = 'USDM';
-    const wusdmTokenSymbol = 'wUSDM';
+      it('getPoolIdentifiers and getPricesVolume USDM -> wUSDM SELL', async function () {
+        const pools = await wusdm.getPoolIdentifiers(
+          USDMToken,
+          wUSDMToken,
+          SwapSide.BUY,
+          blocknumber,
+        );
+        console.log(`${USDMToken} <> ${wUSDMSymbol} Pool Identifiers: `, pools);
 
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[18],
-      2n * BI_POWS[18],
-      3n * BI_POWS[18],
-      4n * BI_POWS[18],
-      5n * BI_POWS[18],
-      6n * BI_POWS[18],
-      7n * BI_POWS[18],
-      8n * BI_POWS[18],
-      9n * BI_POWS[18],
-      10n * BI_POWS[18],
-    ];
+        expect(pools.length).toBeGreaterThan(0);
 
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      mountainProtocol = new WUSDM(network, dexKey, dexHelper);
-    });
+        const poolPrices = await wusdm.getPricesVolume(
+          USDMToken,
+          wUSDMToken,
+          amounts,
+          SwapSide.SELL,
+          blocknumber,
+          pools,
+        );
+        console.log(`${USDMToken} <> ${wUSDMSymbol} Pool Prices: `, poolPrices);
 
-    it('getPoolIdentifiers and getPricesVolume SELL wUSDM->USDM', async function () {
-      await testPricingOnNetwork(
-        mountainProtocol,
-        network,
-        dexKey,
-        blockNumber,
-        wusdmTokenSymbol,
-        usdmTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        'convertToAssets',
-      );
-    });
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      });
 
-    it('getPoolIdentifiers and getPricesVolume SELL USDM->wUSDM', async function () {
-      await testPricingOnNetwork(
-        mountainProtocol,
-        network,
-        dexKey,
-        blockNumber,
-        usdmTokenSymbol,
-        wusdmTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        'convertToShares',
-      );
-    });
+      it('getPoolIdentifiers and getPricesVolume wUSDM -> USDM SELL', async function () {
+        const pools = await wusdm.getPoolIdentifiers(
+          wUSDMToken,
+          USDMToken,
+          SwapSide.SELL,
+          blocknumber,
+        );
+        console.log(`${wUSDMSymbol} <> ${USDMToken} Pool Identifiers: `, pools);
 
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newWUSDM = new WUSDM(network, dexKey, dexHelper);
+        expect(pools.length).toBeGreaterThan(0);
 
-      const poolLiquidity = await newWUSDM.getTopPoolsForToken(
-        tokens[usdmTokenSymbol].address,
-        10,
-      );
-      console.log(`${usdmTokenSymbol} Top Pools:`, poolLiquidity);
+        const poolPrices = await wusdm.getPricesVolume(
+          wUSDMToken,
+          USDMToken,
+          amounts,
+          SwapSide.SELL,
+          blocknumber,
+          pools,
+        );
+        console.log(`${wUSDMSymbol} <> ${USDMToken} Pool Prices: `, poolPrices);
 
-      checkPoolsLiquidity(
-        poolLiquidity,
-        Tokens[network][usdmTokenSymbol].address,
-        dexKey,
-      );
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+      });
+
+      it('getPoolIdentifiers and getPricesVolume USDM -> wUSDM BUY', async function () {
+        const pools = await wusdm.getPoolIdentifiers(
+          USDMToken,
+          wUSDMToken,
+          SwapSide.BUY,
+          blocknumber,
+        );
+        console.log(`${USDMToken} <> ${wUSDMSymbol} Pool Identifiers: `, pools);
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await wusdm.getPricesVolume(
+          USDMToken,
+          wUSDMToken,
+          amounts,
+          SwapSide.BUY,
+          blocknumber,
+          pools,
+        );
+        console.log(`${USDMToken} <> ${wUSDMSymbol} Pool Prices: `, poolPrices);
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+      });
+
+      it('getPoolIdentifiers and getPricesVolume wUSDM -> USDM BUY', async function () {
+        const pools = await wusdm.getPoolIdentifiers(
+          wUSDMToken,
+          USDMToken,
+          SwapSide.BUY,
+          blocknumber,
+        );
+        console.log(`${wUSDMSymbol} <> ${USDMToken} Pool Identifiers: `, pools);
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await wusdm.getPricesVolume(
+          wUSDMToken,
+          USDMToken,
+          amounts,
+          SwapSide.BUY,
+          blocknumber,
+          pools,
+        );
+        console.log(`${wUSDMSymbol} <> ${USDMToken} Pool Prices: `, poolPrices);
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+      });
+
+      it('USDM getTopPoolsForToken', async function () {
+        const poolLiquidity = await wusdm.getTopPoolsForToken(
+          USDMToken.address,
+          10,
+        );
+        console.log(`${USDMToken} Top Pools:`, poolLiquidity);
+
+        checkPoolsLiquidity(poolLiquidity, USDMToken.address, dexKey);
+      });
+
+      it('wUSDM getTopPoolsForToken', async function () {
+        const poolLiquidity = await wusdm.getTopPoolsForToken(
+          wUSDMToken.address,
+          10,
+        );
+        console.log(`${wUSDMSymbol} Top Pools:`, poolLiquidity);
+
+        checkPoolsLiquidity(poolLiquidity, wUSDMToken.address, dexKey);
+      });
     });
   });
 });

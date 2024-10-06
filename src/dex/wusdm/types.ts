@@ -1,13 +1,22 @@
 import { Address } from '../../types';
 
-export type PoolState = {
+export type WusdmPoolState = {
   totalShares: bigint;
   totalAssets: bigint;
 };
 
-export type WUSDMData = {};
+export type WUSDMData = {
+  exchange: string;
+};
 
-export type DexParams = {
+export enum WUSDMFunctions {
+  deposit = 'deposit',
+  redeem = 'redeem',
+  withdraw = 'withdraw',
+  mint = 'mint',
+}
+
+export type WusdmParams = {
   wUSDMAddress: Address;
   USDMAddress: Address;
 };

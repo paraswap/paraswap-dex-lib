@@ -1,8 +1,8 @@
-import { DexParams } from './types';
+import { WusdmParams } from './types';
 import { DexConfigMap } from '../../types';
 import { Network } from '../../constants';
 
-export const WUSDMConfig: DexConfigMap<DexParams> = {
+export const WUSDMConfig: DexConfigMap<WusdmParams> = {
   wUSDM: {
     [Network.MAINNET]: {
       wUSDMAddress: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
