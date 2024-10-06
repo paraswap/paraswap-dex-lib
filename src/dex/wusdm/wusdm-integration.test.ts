@@ -2,32 +2,12 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { WUSDM } from './wusdm';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for WUSDM general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover WUSDM specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
 
 const networks = [
   { name: 'Mainnet', network: Network.MAINNET },

@@ -42,10 +42,6 @@ describe('Wusdm', function () {
     [Network.MAINNET]: {
       deposit: [20808811, 20692902, 20685702],
       withdraw: [20873278, 20869272, 20862960],
-      // TODO: no matching logs, you have to manually call "file"
-      // from "0xbe8e3e3618f7474f8cb1d074a26affef007e98fb" address
-      // https://etherscan.io/advanced-filter?fadd=0x197e90f9fad81970ba7976f33cbd77088e5d7cf7&tadd=0x197e90f9fad81970ba7976f33cbd77088e5d7cf7&mtd=0x29ae8114%7eFile
-      // file: [19831086]
     },
     [Network.ARBITRUM]: {
       deposit: [259463653, 259456755, 259448821],

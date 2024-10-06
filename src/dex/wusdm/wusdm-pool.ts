@@ -1,9 +1,8 @@
-import { BI_POWS } from '../../bigint-constants';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { Interface } from '@ethersproject/abi';
 
 import type { IDexHelper } from '../../dex-helper';
-import type { AsyncOrSync, DeepReadonly } from 'ts-essentials';
+import type { DeepReadonly } from 'ts-essentials';
 import type { Address, BlockHeader, Log, Logger } from '../../types';
 import type { WusdmPoolState } from './types';
 import { uint256ToBigInt } from '../../lib/decoders';
