@@ -7,7 +7,6 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { FluidDex } from './fluid-dex';
-import { CollateralReserves, DebtReserves } from './types';
 import {
   checkPoolPrices,
   checkPoolsLiquidity,
@@ -54,8 +53,6 @@ function decodeReaderResult(
   funcName: string,
 ) {
   return results.map(result => {
-    // const parsed = readerIface.decodeFunctionResult(funcName, result);
-    // console.log("result is " + BigInt(result));
     return BigInt(result);
   });
 }
@@ -86,21 +83,6 @@ async function checkOnChainPricing(
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
-
-  console.log('prices from getPricesVolume : ' + prices);
-  console.log('prices fetched from reserves : ' + expectedPrices);
-
-  // expect(prices).toEqual(expectedPrices);
-  // expect(prices).toEqual(
-  //   expect.arrayContaining(
-  //     expectedPrices.map(expected => ({
-  //       asymmetricMatch: (actual: bigint) => {
-  //         const diff = (actual - expected) * 100n / expected;
-  //         return diff >= -1n && diff <= 1n;
-  //       }
-  //     }))
-  //   )
-  // );
 }
 
 async function testPricingOnNetwork(
@@ -242,6 +224,7 @@ describe('FluidDex', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newFluidDex = new FluidDex(network, dexKey, dexHelper);
+      await newFluidDex.initializePricing(blockNumber);
       if (newFluidDex.updatePoolState) {
         await newFluidDex.updatePoolState();
       }
@@ -249,7 +232,6 @@ describe('FluidDex', function () {
         tokens[srcTokenSymbol].address,
         1,
       );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
 
       if (!newFluidDex.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(

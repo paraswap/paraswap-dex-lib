@@ -6,13 +6,16 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
-import { FluidDexPool, FluidDexPoolState, PoolWithReserves } from './types';
-import { ethers } from 'ethers';
-import { eachOfSeries } from 'async';
+import {
+  commonAddresses,
+  FluidDexPool,
+  FluidDexPoolState,
+  PoolWithReserves,
+} from './types';
 import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
 import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '../../types';
-import { generalDecoder, extractSuccessAndValue } from '../../lib/decoders';
+import { generalDecoder } from '../../lib/decoders';
 
 export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState> {
   handlers: {
@@ -31,6 +34,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   constructor(
     readonly parentName: string,
     readonly pool: FluidDexPool,
+    readonly commonAddresses: commonAddresses,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -38,7 +42,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     super(parentName, pool.id, dexHelper, logger);
 
     this.logDecoder = (log: Log) => this.liquidityIface.parseLog(log);
-    this.addressesSubscribed = [pool.liquidityProxy];
+    this.addressesSubscribed = [commonAddresses.liquidityProxy];
 
     // Add handlers
     this.handlers['LogOperate'] = this.handleOperate.bind(this);
@@ -58,7 +62,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     }
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
-        target: this.pool.resolver,
+        target: this.commonAddresses.resolver,
         callData: resolverAbi.encodeFunctionData('getPoolReserves', [
           this.pool.address,
         ]),
@@ -140,17 +144,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     );
   };
 
-  isMultiResult = (
-    result: MultiResult<BytesLike> | BytesLike,
-  ): result is MultiResult<BytesLike> => {
-    return (
-      typeof result === 'object' &&
-      result !== null &&
-      'success' in result &&
-      'returnData' in result
-    );
-  };
-
   /**
    * The function is called every time any of the subscribed
    * addresses release log. The function accepts the current
@@ -178,7 +171,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
 
   async getStateOrGenerate(
     blockNumber: number,
-    readonly: boolean = true,
+    readonly: boolean = false,
   ): Promise<FluidDexPoolState> {
     let state = this.getState(blockNumber);
     if (!state) {
@@ -203,7 +196,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     const resolverAbi = new Interface(ResolverABI);
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
-        target: this.pool.resolver,
+        target: this.commonAddresses.resolver,
         callData: resolverAbi.encodeFunctionData('getPoolReserves', [
           this.pool.address,
         ]),

@@ -49,7 +49,6 @@ async function fetchPoolState(
   fluidDexPool: FluidDexEventPool,
   blockNumber: number,
 ): Promise<FluidDexPoolState> {
-  // TODO: complete me!
   return fluidDexPool.generateState(blockNumber);
 }
 
@@ -62,26 +61,28 @@ describe('FluidDex EventPool Mainnet', function () {
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
   const fluidDexPool: FluidDexPool = FluidDexConfig[dexKey][network].pools[0];
+  const liquidityProxy: Address = '0x93dd426446b5370f094a1e31f19991aaa6ac0be0';
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    [fluidDexPool.liquidityProxy]: {
-      LogOperate: [18917344],
+    [liquidityProxy]: {
+      DexDeployed: [20776998],
     },
   };
 
   let fluidDexEventPool: FluidDexEventPool;
+  let fluidDexCommonAddress;
 
-  beforeEach(async () => {
-    fluidDexEventPool = new FluidDexEventPool(
-      'FluidDex',
-      fluidDexPool,
-      network,
-      dexHelper,
-      logger,
-      /* TODO: Put here additional constructor arguments if needed */
-    );
-  });
+  // beforeEach(async () => {
+  //   fluidDexEventPool = new FluidDexEventPool(
+  //     'FluidDex',
+  //     fluidDexPool,
+  //     network,
+  //     dexHelper,
+  //     logger,
+  //   );
+
+  // });
 
   Object.entries(eventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {

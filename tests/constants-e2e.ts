@@ -7,6 +7,7 @@ import {
   allowedFn,
   _balancesFn,
   _allowancesFn,
+  // @ts-ignore
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';

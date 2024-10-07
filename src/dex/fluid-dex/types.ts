@@ -41,14 +41,22 @@ export type FluidDexData = {
 export type FluidDexPool = {
   id: string;
   address: Address;
-  liquidityProxy: Address;
-  resolver: Address;
   token0: Address;
   token1: Address;
 };
 
 export type DexParams = {
-  pools: [FluidDexPool];
+  // TODO: DexParams is set of parameters the can
+  // be used to initiate a DEX fork.
+  // Complete me!
+  commonAddresses: commonAddresses;
+  pools: FluidDexPool[];
+};
+
+export type commonAddresses = {
+  liquidityProxy: Address;
+  resolver: Address;
+  dexFactory: Address;
 };
 
 export type Pool = {
