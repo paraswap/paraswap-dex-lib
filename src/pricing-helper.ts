@@ -368,7 +368,9 @@ export class PricingHelper {
           this.logger.error(
             `Error_getPoolPrices: ${p.prices.exchange} returned all 0n prices`,
           );
-          return false;
+          // TODO-rec: ignore for now as we return all available prices & pools
+          // it's filtered later in API
+          return true;
         }
         return true;
       });
