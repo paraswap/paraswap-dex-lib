@@ -36,12 +36,10 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
       '0x6d83f60eeac0e50a1250760151e81db2a278e03a',
       funcName == 'estimateSwapIn' ? true : false,
       amount,
@@ -55,7 +53,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     // const parsed = readerIface.decodeFunctionResult(funcName, result);
     // console.log("result is " + BigInt(result));
@@ -70,11 +67,8 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const resolverAddress = '0x278166a9b88f166eb170d55801be1b1d1e576330'; // TODO: Put here the real exchange address
+  const resolverAddress = '0x278166a9b88f166eb170d55801be1b1d1e576330';
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from fluidDex.Iface or from eventPool.
-  // It depends on your implementation
   const readerIface = new Interface(ResolverABI);
 
   const readerCallData = getReaderCalldata(
@@ -176,7 +170,6 @@ describe('FluidDex', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
     // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'wstETH';
     const destTokenSymbol = 'ETH';
@@ -227,7 +220,7 @@ describe('FluidDex', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        'estimateSwapIn', // TODO: Put here proper function name to check pricing
+        'estimateSwapIn',
       );
     });
 
@@ -241,7 +234,7 @@ describe('FluidDex', function () {
     //     destTokenSymbol,
     //     SwapSide.BUY,
     //     amountsForBuy,
-    //     'estimateSwapOut', // TODO: Put here proper function name to check pricing
+    //     'estimateSwapOut',
     //   );
     // });
 

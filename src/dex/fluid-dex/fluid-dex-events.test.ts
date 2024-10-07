@@ -65,8 +65,7 @@ describe('FluidDex EventPool Mainnet', function () {
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
-    [fluidDexPool.liquidityUserModule]: {
+    [fluidDexPool.liquidityProxy]: {
       LogOperate: [18917344],
     },
   };

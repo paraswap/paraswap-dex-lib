@@ -68,7 +68,6 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([[SwapSide.SELL, ['swapIn']]]);
 
   describe(`${network}`, () => {
@@ -115,7 +114,6 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
     const tokenASymbol: string = 'wstETH';
     const tokenBSymbol: string = 'ETH';
 
@@ -132,7 +130,5 @@ describe('FluidDex E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
-
-    // TODO: Add any additional test cases required to test FluidDex
   });
 });

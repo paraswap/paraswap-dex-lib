@@ -41,13 +41,9 @@ import { generalDecoder, extractSuccessAndValue } from '../../lib/decoders';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   readonly eventPools: { [id: string]: FluidDexEventPool } = {};
-
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = false;
-
   readonly isFeeOnTransferSupported = false;
-
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(FluidDexConfig);
 
@@ -73,7 +69,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.pools = FluidDexConfig['FluidDex'][network].pools;
-    this.adapters = Adapters[network] || {}; // TODO: add any additional optional params to support other fork DEXes
+    this.adapters = Adapters[network] || {};
     this.iFluidDexPool = new Interface(FluidDexPoolABI);
     for (const pool of this.pools) {
       this.eventPools[pool.id] = new FluidDexEventPool(
@@ -146,8 +142,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    // return [];
     const pool = this.getPoolByTokenPair(srcToken.address, destToken.address);
     return pool ? [pool.id] : [];
   }
@@ -263,7 +257,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
   getCalldataGasCost(poolPrices: PoolPrices<FluidDexData>): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
@@ -279,7 +272,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     data: FluidDexData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
     const { exchange } = data;
 
     // Encode here the payload for adapter
@@ -307,7 +299,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
     let liquidityAmounts: { [id: string]: bigint } = {};
     for (const pool of this.pools) {
       if (
@@ -377,12 +368,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       });
     }
     return poolLiquidities;
-  }
-
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
   }
 
   getDexParam(

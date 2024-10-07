@@ -1,10 +1,6 @@
 import { Address } from '../../types';
 
 export type FluidDexPoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
   fee: number;
@@ -36,10 +32,6 @@ export interface PoolWithReserves {
 }
 
 export type FluidDexData = {
-  // TODO: FluidDexData is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
   colReserves: CollateralReserves;
   debtReserves: DebtReserves;
   exchange: Address;
@@ -56,9 +48,6 @@ export type FluidDexPool = {
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
   pools: [FluidDexPool];
 };
 

@@ -26,7 +26,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   logDecoder: (log: Log) => any;
 
   addressesSubscribed: Address[];
-  protected liquidityIface = new Interface(LiquidityABI); // TODO: add any additional params required for event subscriber
+  protected liquidityIface = new Interface(LiquidityABI);
 
   constructor(
     readonly parentName: string,
@@ -35,10 +35,8 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    // TODO: Add pool name
     super(parentName, pool.id, dexHelper, logger);
 
-    // TODO: make logDecoder decode logs that
     this.logDecoder = (log: Log) => this.liquidityIface.parseLog(log);
     this.addressesSubscribed = [pool.liquidityProxy];
 
