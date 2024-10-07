@@ -288,7 +288,7 @@ export type Config = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
-  augustusV6Address?: Address;
+  augustusV6Address: Address;
   augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
