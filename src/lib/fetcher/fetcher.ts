@@ -3,7 +3,7 @@ import { Logger } from 'log4js';
 import { IRequestWrapper } from '../../dex-helper';
 import { RequestConfig, Response } from '../../dex-helper/irequest-wrapper';
 
-const FETCH_TIMEOUT_MS = 20 * 1000;
+const FETCH_TIMEOUT_MS = 10 * 1000;
 const FETCH_FAIL_MAX_ATTEMPT = 5;
 const FETCH_FAIL_RETRY_TIMEOUT_MS = 60 * 1000;
 
