@@ -60,11 +60,11 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-      Adapter03: '0xBAEeb4540f59d30E567a5B563CC0c4587eDd9366',
+      Adapter03: '0xA2Da54121562bf849cf1F73bB957A180fa1E99B9',
       Adapter04: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       Adapter05: '0x3329dfa55A40B450952FBE0203167Ae6908E656d',
       Adapter06: '0xAeb7B3688a658C3f3B1AEd94d69b7b8045D64B57',
-      BuyAdapter: '0x84bEF12C9931cE12662cc9F2366b6a5029E4BD29',
+      BuyAdapter: '0xaD262F2ba47Ab3bb450e2a2abDCD7505e448d00a',
       BuyAdapter02: '0x2299568c3299e7420033deA9009233FF89F5C485',
     },
     uniswapV2ExchangeRouterAddress:
