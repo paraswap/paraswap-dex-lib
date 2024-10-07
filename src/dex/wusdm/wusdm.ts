@@ -258,7 +258,7 @@ export class WUSDM
     }
 
     return {
-      needWrapNative: this.needWrapNative,
+      needWrapNative: false,
       dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: exchange,
