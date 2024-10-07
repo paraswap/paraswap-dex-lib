@@ -7,6 +7,7 @@ import {
   allowedFn,
   _balancesFn,
   _allowancesFn,
+  balanceAndBlacklistStatesFn,
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
@@ -1127,7 +1128,7 @@ export const Tokens: {
       address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       decimals: 6,
       symbol: 'USDC',
-      addBalance: balancesFn,
+      addBalance: balanceAndBlacklistStatesFn,
       addAllowance: allowedFn,
     },
     SUSHI: {
