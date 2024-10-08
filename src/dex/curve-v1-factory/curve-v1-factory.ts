@@ -128,10 +128,12 @@ export class CurveV1Factory
     const swapSrc = swap.srcToken;
     const swapDest = swap.destToken;
 
+    const path = se.data.path;
+
     const wethAddr =
       this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-    const tokenIn = se.data.tokenIn.toLowerCase();
-    const tokenOut = se.data.tokenOut.toLowerCase();
+    const tokenIn = se.data.path[0].tokenIn.toLowerCase();
+    const tokenOut = se.data.path[path.length - 1].tokenOut.toLowerCase();
 
     if (swapSrc === ETHER_ADDRESS.toLowerCase() && tokenIn === wethAddr) {
       return true; // ETH is src but WETH pool is used, we need wrap native in this case
@@ -833,6 +835,10 @@ export class CurveV1Factory
         return null;
       }
 
+      const ethAddress = ETHER_ADDRESS.toLowerCase();
+      const wethAddress =
+        this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+
       let pools: PoolPollingBase[] = [];
       if (limitPools !== undefined) {
         pools = limitPools
@@ -842,11 +848,35 @@ export class CurveV1Factory
               _isSrcTokenTransferFeeToBeExchanged,
             ),
           )
-          .filter(
-            (pool): pool is PoolPollingBase =>
+          .filter((pool): pool is PoolPollingBase => {
+            const isPoolWithData =
               pool !== null &&
-              pool.getPoolData(srcTokenAddress, destTokenAddress) !== null,
-          );
+              pool.getPoolData(srcTokenAddress, destTokenAddress) !== null;
+
+            if (
+              !this.needWrapNativeForPricing &&
+              srcTokenAddress.toLowerCase() === ethAddress
+            ) {
+              return (
+                isPoolWithData ||
+                (pool !== null &&
+                  pool.getPoolData(wethAddress, destTokenAddress) !== null)
+              );
+            }
+
+            if (
+              !this.needWrapNativeForPricing &&
+              destTokenAddress.toLowerCase() === ethAddress
+            ) {
+              return (
+                isPoolWithData ||
+                (pool !== null &&
+                  pool.getPoolData(srcTokenAddress, wethAddress) !== null)
+              );
+            }
+
+            return isPoolWithData;
+          });
       } else {
         pools = this.poolManager.getPoolsForPair(
           srcTokenAddress,
@@ -854,9 +884,6 @@ export class CurveV1Factory
           _isSrcTokenTransferFeeToBeExchanged,
         );
 
-        const ethAddress = ETHER_ADDRESS.toLowerCase();
-        const wethAddress =
-          this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
         if (
           !this.needWrapNativeForPricing &&
           _srcToken.address.toLowerCase() === ethAddress
@@ -936,10 +963,15 @@ export class CurveV1Factory
               return null;
             }
 
-            const poolData = pool.getPoolData(
-              srcTokenAddress,
-              destTokenAddress,
-            );
+            let poolData = pool.getPoolData(srcTokenAddress, destTokenAddress);
+
+            if (poolData === null && !this.needWrapNativeForPricing) {
+              if (srcTokenAddress.toLowerCase() === ethAddress) {
+                poolData = pool.getPoolData(wethAddress, destTokenAddress);
+              } else if (destTokenAddress.toLowerCase() === ethAddress) {
+                poolData = pool.getPoolData(srcTokenAddress, wethAddress);
+              }
+            }
 
             if (poolData === null) {
               this.logger.error(
