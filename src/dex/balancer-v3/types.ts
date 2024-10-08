@@ -2,12 +2,13 @@ import { Address } from '../../types';
 
 // Immutable data types available on all pools (Available from API)
 export type CommonImmutablePoolState = {
+  address: string;
   poolType: string;
   tokens: string[];
   weights: bigint[];
   // TODO re-introduce this once added to API
   // scalingFactors: bigint[];
-  hookType: string;
+  hookType: string | undefined;
 };
 
 // Mutable data types available on all pools (Available via onchain calls/events)
@@ -26,13 +27,17 @@ export interface CommonMutableState {
 
 type CommonPoolState = CommonImmutablePoolState & CommonMutableState;
 
+export type PoolState =
+  | CommonPoolState
+  | (CommonPoolState & StableMutableState);
+
 // Stable Pool specific mutable data
 export interface StableMutableState {
   amp: bigint;
 }
 
 export type PoolStateMap = {
-  [address: string]: CommonPoolState | (CommonPoolState & StableMutableState);
+  [address: string]: PoolState;
 };
 
 export type ImmutablePoolStateMap = {

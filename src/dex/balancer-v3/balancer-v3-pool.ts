@@ -5,11 +5,12 @@ import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolStateMap } from './types';
+import { PoolState, PoolStateMap } from './types';
 import { getPoolsApi } from './getPoolsApi';
 import { vaultExtensionAbi_V3 } from './abi/vaultExtension.V3';
 import { getOnChainState } from './getOnChainState';
 import { BalancerV3Config } from './config';
+import { SwapKind, Vault } from '@balancer-labs/balancer-maths';
 
 export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
@@ -27,6 +28,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   interfaces: {
     [name: string]: Interface;
   };
+
+  vault: Vault;
 
   constructor(
     readonly parentName: string,
@@ -56,6 +59,9 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // Add handlers
     this.handlers['PoolBalanceChanged'] =
       this.poolBalanceChangedEvent.bind(this);
+
+    // replicates V3 maths with fees, pool and hook logic
+    this.vault = new Vault();
   }
 
   /**
@@ -139,5 +145,46 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       );
     }
     return newState;
+  }
+
+  getMaxSwapAmount(
+    pool: PoolState,
+    tokenIn: string,
+    tokenOut: string,
+    swapKind: SwapKind,
+  ): bigint {
+    const tokenInIndex = pool.tokens.indexOf(tokenIn);
+    const tokenOutIndex = pool.tokens.indexOf(tokenOut);
+    // Find the maximum swap amount the pool will support
+    const maxSwapAmount = this.vault.getMaxSwapAmount(
+      {
+        swapKind,
+        balancesLiveScaled18: pool.balancesLiveScaled18,
+        tokenRates: pool.tokenRates,
+        scalingFactors: pool.scalingFactors,
+        indexIn: tokenInIndex,
+        indexOut: tokenOutIndex,
+      },
+      pool,
+    );
+    return maxSwapAmount;
+  }
+
+  getSwapResult(
+    pool: PoolState,
+    amountRaw: bigint,
+    tokenIn: string,
+    tokenOut: string,
+    swapKind: SwapKind,
+  ): bigint {
+    return this.vault.swap(
+      {
+        amountRaw,
+        tokenIn,
+        tokenOut,
+        swapKind,
+      },
+      pool,
+    );
   }
 }

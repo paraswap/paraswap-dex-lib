@@ -49,6 +49,7 @@ function createQuery(
 function toImmutablePoolStateMap(pools: Pool[]): ImmutablePoolStateMap {
   return pools.reduce((map, pool) => {
     const immutablePoolState: CommonImmutablePoolState = {
+      address: pool.id,
       tokens: pool.poolTokens.map(t => t.address),
       weights: pool.poolTokens.map(t =>
         t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,
@@ -56,7 +57,8 @@ function toImmutablePoolStateMap(pools: Pool[]): ImmutablePoolStateMap {
       poolType: pool.type,
       // TODO add scalingFactors once API provides them
       // scalingFactors: pool.poolTokens.map(t => parseUnits('1', 18).toBigInt()),
-      hookType: 'Unsupported',
+      // TODO Hook support will be added in future PR
+      hookType: undefined,
     };
 
     map[pool.id] = immutablePoolState;

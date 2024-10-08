@@ -11,13 +11,18 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { BalancerV3Data, PoolStateMap } from './types';
+import { BalancerV3Data, PoolState, PoolStateMap } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerV3Config, Adapters } from './config';
 import { BalancerV3EventPool } from './balancer-v3-pool';
+import { SwapKind } from '@balancer-labs/balancer-maths';
+
+type DeepMutable<T> = {
+  -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : T[P];
+};
 
 export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   protected eventPools: BalancerV3EventPool;
@@ -98,6 +103,30 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       .map(([address]) => address);
   }
 
+  /**
+   * Filter pools that have tokens from/to and are in limitPool list
+   * @param pools
+   * @param from
+   * @param to
+   * @param limitPools
+   * @returns Array of PoolState
+   */
+  filterPools(
+    pools: DeepReadonly<PoolStateMap>,
+    from: string,
+    to: string,
+    limitPools?: string[],
+  ): PoolState[] {
+    return Object.entries(pools)
+      .filter(([address, poolState]) => {
+        const hasRequiredTokens =
+          poolState.tokens.includes(from) && poolState.tokens.includes(to);
+        const isAllowedPool = !limitPools || limitPools.includes(address);
+        return hasRequiredTokens && isAllowedPool;
+      })
+      .map(([_, poolState]) => poolState as DeepMutable<typeof poolState>);
+  }
+
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
@@ -110,8 +139,107 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BalancerV3Data>> {
-    // TODO: complete me!
+    try {
+      const _from = this.dexHelper.config.wrapETH(srcToken);
+      const _to = this.dexHelper.config.wrapETH(destToken);
+      if (_from.address === _to.address) {
+        return null;
+      }
+
+      // get up to date pools and state
+      const allPoolState = this.eventPools.getState(blockNumber);
+      if (allPoolState === null) {
+        this.logger.error(`getState returned null`);
+        return null;
+      }
+
+      // filter for pools with tokens and to only use limit pools
+      const allowedPools = this.filterPools(
+        allPoolState,
+        _from.address,
+        _to.address,
+        limitPools,
+      );
+
+      if (!allowedPools.length) return null;
+
+      const swapKind = SwapSide.SELL ? SwapKind.GivenIn : SwapKind.GivenOut;
+      const tokenIn = _from.address;
+      const tokenOut = _to.address;
+
+      // Gets the single unit amount based off token decimals, e.g. for USDC its 1e6
+      const unitAmount = getBigIntPow(
+        (side === SwapSide.SELL ? _from : _to).decimals,
+      );
+
+      const poolPrices: ExchangePrices<BalancerV3Data> = [];
+      // For each pool we calculate swap result using balancer maths
+      for (let i = 0; i < allowedPools.length; i++) {
+        const pool = {
+          ...allowedPools[i],
+          // TODO - Remove mapping once maths updated to same poolType convention
+          poolType: this.mapToPoolType(allowedPools[i].poolType),
+        };
+
+        try {
+          // This is the max amount the pool can swap
+          const maxSwapAmount = this.eventPools.getMaxSwapAmount(
+            pool,
+            tokenIn,
+            tokenOut,
+            swapKind,
+          );
+
+          let unit = 0n;
+          if (unitAmount < maxSwapAmount)
+            unit = this.eventPools.getSwapResult(
+              pool,
+              unitAmount,
+              tokenIn,
+              tokenOut,
+              swapKind,
+            );
+
+          const exchangePrice: PoolPrices<BalancerV3Data> = {
+            prices: new Array(amounts.length).fill(0n),
+            unit,
+            data: {
+              exchange: this.dexKey, // TODO is this needed?
+            },
+            exchange: this.dexKey,
+            gasCost: 1, // TODO - this will be updated once final profiles done
+            poolAddresses: [allowedPools[i].address],
+            poolIdentifier: `${this.dexKey}_${allowedPools[i].address}`,
+          };
+
+          for (let j = 0; j < amounts.length; j++) {
+            if (amounts[j] < maxSwapAmount) {
+              // Uses balancer maths to calculate swap
+              exchangePrice.prices[j] = this.eventPools.getSwapResult(
+                pool,
+                amounts[j],
+                tokenIn,
+                tokenOut,
+                swapKind,
+              );
+            }
+          }
+          poolPrices.push(exchangePrice);
+        } catch (err) {
+          this.logger.error(`error fetching prices for pool`);
+          this.logger.error(err);
+        }
+      }
+
+      return poolPrices;
+    } catch (err) {}
     return null;
+  }
+
+  private mapToPoolType(apiPoolType: string): string {
+    if (apiPoolType === 'STABLE') return 'Stable';
+    else if (apiPoolType === 'WEIGHTED') return 'Weighted';
+    else return apiPoolType;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
