@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -65,16 +66,17 @@ function testForNetwork(
   });
 }
 
-describe('Spark E2E', () => {
-  describe('sDai', () => {
-    const dexKey = 'Spark';
+describe('MountainProtocol E2E', () => {
+  const dexKey = 'wUSDM';
+
+  describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'DAI';
-    const tokenBSymbol: string = 'sDAI';
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
 
     testForNetwork(
       network,
@@ -86,15 +88,71 @@ describe('Spark E2E', () => {
     );
   });
 
-  describe('sUSDS', () => {
-    const dexKey = 'sUSDS';
-    const network = Network.MAINNET;
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
 
-    const tokenASymbol: string = 'USDS';
-    const tokenBSymbol: string = 'sUSDS';
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
+
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
+
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    const tokenASymbol: string = 'wUSDM';
+    const tokenBSymbol: string = 'USDM';
+
+    const tokenAAmount: string = '500';
+    const tokenBAmount: string = '500';
 
     testForNetwork(
       network,

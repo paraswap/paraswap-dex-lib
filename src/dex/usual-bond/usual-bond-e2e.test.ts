@@ -1,8 +1,13 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
+import {
+  Tokens,
+  Holders,
+  NativeTokenSymbols,
+} from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -24,7 +29,6 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -45,19 +49,6 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
           });
         });
       }),
@@ -65,36 +56,17 @@ function testForNetwork(
   });
 }
 
-describe('Spark E2E', () => {
-  describe('sDai', () => {
-    const dexKey = 'Spark';
+describe('UsualBond E2E', () => {
+  const dexKey = 'UsualBond';
+
+  describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'DAI';
-    const tokenBSymbol: string = 'sDAI';
+    const tokenASymbol: string = 'USD0';
+    const tokenBSymbol: string = 'USD0++';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
-
-  describe('sUSDS', () => {
-    const dexKey = 'sUSDS';
-    const network = Network.MAINNET;
-
-    const tokenASymbol: string = 'USDS';
-    const tokenBSymbol: string = 'sUSDS';
-
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '100000';
+    const tokenBAmount: string = '100000';
 
     testForNetwork(
       network,

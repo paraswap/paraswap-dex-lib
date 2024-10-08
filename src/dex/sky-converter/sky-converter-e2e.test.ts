@@ -1,8 +1,13 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
+import {
+  Tokens,
+  Holders,
+  NativeTokenSymbols,
+} from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -65,16 +70,16 @@ function testForNetwork(
   });
 }
 
-describe('Spark E2E', () => {
-  describe('sDai', () => {
-    const dexKey = 'Spark';
+describe('SkyConverter E2E', () => {
+  describe('USDS - DAI', () => {
+    const dexKey = 'DaiUsds';
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'DAI';
-    const tokenBSymbol: string = 'sDAI';
+    const tokenBSymbol: string = 'USDS';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '10000000000000000000';
+    const tokenBAmount: string = '10000000000000000000';
 
     testForNetwork(
       network,
@@ -86,15 +91,15 @@ describe('Spark E2E', () => {
     );
   });
 
-  describe('sUSDS', () => {
-    const dexKey = 'sUSDS';
+  describe('MKR - SKY', () => {
+    const dexKey = 'MkrSky';
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USDS';
-    const tokenBSymbol: string = 'sUSDS';
+    const tokenASymbol: string = 'MKR';
+    const tokenBSymbol: string = 'SKY';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '10000000000000000000';
+    const tokenBAmount: string = '10000000000000000000';
 
     testForNetwork(
       network,

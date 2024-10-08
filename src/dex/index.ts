@@ -58,6 +58,7 @@ import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
 import { curveV1Merge } from './curve-v1-factory/optimizer';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
+import { WUSDM } from './wusdm/wusdm';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { Infusion } from './infusion/infusion';
@@ -88,7 +89,9 @@ import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
+import { UsualBond } from './usual-bond/usual-bond';
 import { StkGHO } from './stkgho/stkgho';
+import { SkyConverter } from './sky-converter/sky-converter';
 
 const LegacyDexes = [
   CurveV2,
@@ -151,6 +154,7 @@ const Dexes = [
   CurveV1Factory,
   CurveV1StableNg,
   WstETH,
+  WUSDM,
   Hashflow,
   Infusion,
   MaverickV1,
@@ -172,7 +176,9 @@ const Dexes = [
   FxProtocolRusd,
   AaveGsm,
   LitePsm,
+  UsualBond,
   StkGHO,
+  SkyConverter,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
