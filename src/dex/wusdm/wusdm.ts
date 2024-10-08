@@ -267,7 +267,7 @@ export class WUSDM
               : WUSDMFunctions.redeem,
           )
         : undefined,
-      skipApproval: isSell && this.isUSDM(destToken),
+      skipApproval: this.isUSDM(destToken),
     };
   }
 
