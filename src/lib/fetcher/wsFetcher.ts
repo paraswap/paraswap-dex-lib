@@ -46,15 +46,27 @@ export class WebSocketFetcher<T> {
   }
 
   private connectFailed(error: any) {
-    this.logger.error(`Connect Error: ${error.toString()}`);
+    this.logger.error(`Connect Error: ${error.toString()}. Reconnecting...`);
+    // reconnect on errors / failures
+    setTimeout(() => {
+      this.startPolling();
+    }, 3000);
   }
 
   private onClose() {
-    this.logger.info(`Connection closed`);
+    this.logger.info(`Connection closed. Reconnecting...`);
+    // reconnect on errors / failures
+    setTimeout(() => {
+      this.startPolling();
+    }, 3000);
   }
 
   private onError(error: any) {
-    this.logger.error(`Connection Error: ${error.toString()}`);
+    this.logger.error(`Connection Error: ${error.toString()}. Reconnecting...`);
+    // reconnect on errors / failures
+    setTimeout(() => {
+      this.startPolling();
+    }, 3000);
   }
 
   private onMessage(message: any) {

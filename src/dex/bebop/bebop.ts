@@ -546,18 +546,27 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         liquidityUSD = liquidityInBase * baseTokenUsd;
       }
       if (liquidityUSD) {
-        pools.push({
-          exchange: this.dexKey,
-          address: this.settlementAddress,
-          connectorTokens: [
-            {
-              address: quote,
-              decimals: this.tokensMap[quote.toLowerCase()].decimals,
-              symbol: this.tokensMap[quote.toLowerCase()].ticker,
-            },
-          ],
-          liquidityUSD,
-        });
+        if (pools.length === 0) {
+          pools.push({
+            exchange: this.dexKey,
+            address: this.settlementAddress,
+            connectorTokens: [
+              {
+                address: quote,
+                decimals: this.tokensMap[quote.toLowerCase()].decimals,
+                symbol: this.tokensMap[quote.toLowerCase()].ticker,
+              },
+            ],
+            liquidityUSD,
+          });
+        } else {
+          pools[0].liquidityUSD += liquidityUSD;
+          pools[0].connectorTokens.push({
+            address: quote,
+            decimals: this.tokensMap[quote.toLowerCase()].decimals,
+            symbol: this.tokensMap[quote.toLowerCase()].ticker,
+          });
+        }
       }
     }
 
