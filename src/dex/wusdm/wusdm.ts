@@ -31,7 +31,6 @@ import { Interface } from '@ethersproject/abi';
 import wUSDM_ABI from '../../abi/wUSDM.json';
 import { DEPOSIT_TOPIC, WITHDRAW_TOPIC } from './constants';
 import { extractReturnAmountPosition } from '../../executor/utils';
-import { uint256ToBigInt } from '../../lib/decoders';
 
 export class WUSDM
   extends SimpleExchange
@@ -75,10 +74,8 @@ export class WUSDM
 
   isAppropriatePair(srcToken: Token, destToken: Token): boolean {
     return (
-      (srcToken.address.toLowerCase() === this.wUSDMAddress.toLowerCase() &&
-        destToken.address.toLowerCase() === this.USDMAddress.toLowerCase()) ||
-      (srcToken.address.toLowerCase() === this.USDMAddress.toLowerCase() &&
-        destToken.address.toLowerCase() === this.wUSDMAddress.toLowerCase())
+      (this.isUSDM(srcToken.address) && this.isWUSDM(destToken.address)) ||
+      (this.isWUSDM(srcToken.address) && this.isUSDM(destToken.address))
     );
   }
 
@@ -304,12 +301,6 @@ export class WUSDM
       payload,
       networkFee: '0',
     };
-  }
-
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
   }
 
   previewRedeem(shares: bigint, state: WusdmPoolState) {
