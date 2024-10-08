@@ -22,6 +22,8 @@ export class Smoothy
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
+  needWrapNative = false;
+
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'smoothy');
     this.exchangeRouterInterface = new Interface(SmoothyABI);

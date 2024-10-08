@@ -148,6 +148,9 @@ export class GenericSwapTransactionBuilder {
                 isGlobalDestToken:
                   priceRoute.destToken.toLowerCase() ===
                   destToken.toLowerCase(),
+                priceRoute: priceRoute,
+                swap: swap,
+                swapExchange: se,
               },
               executorAddress,
             );
@@ -633,7 +636,12 @@ export class GenericSwapTransactionBuilder {
     // should work if the final slippage check passes.
     const _destAmount = side === SwapSide.SELL ? '1' : se.destAmount;
 
-    if (isETHAddress(swap.srcToken) && dex.needWrapNative) {
+    const dexNeedWrapNative =
+      typeof dex.needWrapNative === 'function'
+        ? dex.needWrapNative(priceRoute, swap, se)
+        : dex.needWrapNative;
+
+    if (isETHAddress(swap.srcToken) && dexNeedWrapNative) {
       _src = wethAddress;
       wethDeposit = BigInt(_srcAmount);
     }
@@ -641,11 +649,11 @@ export class GenericSwapTransactionBuilder {
     const forceUnwrap =
       isETHAddress(swap.destToken) &&
       (isMultiSwap || isMegaSwap) &&
-      !dex.needWrapNative &&
+      !dexNeedWrapNative &&
       !isLastSwap;
 
-    if ((isETHAddress(swap.destToken) && dex.needWrapNative) || forceUnwrap) {
-      _dest = forceUnwrap && !dex.needWrapNative ? _dest : wethAddress;
+    if ((isETHAddress(swap.destToken) && dexNeedWrapNative) || forceUnwrap) {
+      _dest = forceUnwrap && !dexNeedWrapNative ? _dest : wethAddress;
       wethWithdraw = BigInt(se.destAmount);
     }
 

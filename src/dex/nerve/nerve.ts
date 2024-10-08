@@ -46,6 +46,8 @@ export class Nerve
 
   readonly minConversionRate = '1';
 
+  needWrapNative = false;
+
   public static dexKeysWithNetwork: {
     key: string;
     networks: Network[];

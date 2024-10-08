@@ -56,6 +56,8 @@ export class LitePsm
 {
   protected eventPools: { [gemAddress: string]: LitePsmEventPool };
 
+  needWrapNative = false;
+
   // warning: There is limit on swap
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;

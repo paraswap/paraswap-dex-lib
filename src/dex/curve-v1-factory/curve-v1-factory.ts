@@ -1,6 +1,12 @@
 import _ from 'lodash';
 import { AbiItem } from 'web3-utils';
-import { NumberAsString, OptimalSwapExchange, SwapSide } from '@paraswap/core';
+import {
+  NumberAsString,
+  OptimalRate,
+  OptimalSwap,
+  OptimalSwapExchange,
+  SwapSide,
+} from '@paraswap/core';
 import { assert, AsyncOrSync } from 'ts-essentials';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import {
@@ -19,6 +25,7 @@ import {
   TxInfo,
 } from '../../types';
 import {
+  ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
   SRC_TOKEN_PARASWAP_TRANSFERS,
@@ -31,7 +38,7 @@ import {
   isSrcTokenTransferFeeToBeExchanged,
   uuidToBytes16,
 } from '../../utils';
-import { IDex } from '../idex';
+import { Context, IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CurveRouterPoolType,
@@ -112,7 +119,32 @@ export class CurveV1Factory
     IDex<CurveV1FactoryData, DirectCurveV1Param | CurveV1FactoryDirectSwap>
 {
   readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative: boolean = false;
+
+  needWrapNative = (
+    priceRoute: OptimalRate,
+    swap: OptimalSwap,
+    se: OptimalSwapExchange<any>,
+  ) => {
+    const swapSrc = swap.srcToken;
+    const swapDest = swap.destToken;
+
+    const wethAddr =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const tokenIn = se.data.tokenIn.toLowerCase();
+    const tokenOut = se.data.tokenOut.toLowerCase();
+
+    if (swapSrc === ETHER_ADDRESS.toLowerCase() && tokenIn === wethAddr) {
+      return true; // ETH is src but WETH pool is used, we need wrap native in this case
+    }
+
+    if (swapDest === ETHER_ADDRESS.toLowerCase() && tokenOut === wethAddr) {
+      return true; // ETH is dest but WETH pool is used, we need wrap native in this case
+    }
+
+    return false;
+  };
+
+  needWrapNativeForPricing = false;
 
   readonly isFeeOnTransferSupported = true;
   readonly isStatePollingDex = true;
@@ -717,10 +749,10 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const _srcToken = this.needWrapNative
+    const _srcToken = this.needWrapNativeForPricing
       ? this.dexHelper.config.wrapETH(srcToken)
       : srcToken;
-    const _destToken = this.needWrapNative
+    const _destToken = this.needWrapNativeForPricing
       ? this.dexHelper.config.wrapETH(destToken)
       : destToken;
 
@@ -735,6 +767,27 @@ export class CurveV1Factory
       srcTokenAddress,
       destTokenAddress,
     );
+
+    const ethAddress = ETHER_ADDRESS.toLowerCase();
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    if (
+      !this.needWrapNativeForPricing &&
+      _srcToken.address.toLowerCase() === ethAddress
+    ) {
+      pools = pools.concat(
+        this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
+      ); // discover WETH pools for ETH src
+    }
+
+    if (
+      !this.needWrapNativeForPricing &&
+      _destToken.address.toLowerCase() === ethAddress
+    ) {
+      pools = pools.concat(
+        this.poolManager.getPoolsForPair(srcTokenAddress, wethAddress),
+      ); // discover WETH pools for ETH dest
+    }
 
     if (side === SwapSide.BUY) {
       pools = pools.filter(pool =>
@@ -765,10 +818,11 @@ export class CurveV1Factory
       const _isSrcTokenTransferFeeToBeExchanged =
         isSrcTokenTransferFeeToBeExchanged(transferFees);
 
-      const _srcToken = this.needWrapNative
+      const _srcToken = this.needWrapNativeForPricing
         ? this.dexHelper.config.wrapETH(srcToken)
         : srcToken;
-      const _destToken = this.needWrapNative
+
+      const _destToken = this.needWrapNativeForPricing
         ? this.dexHelper.config.wrapETH(destToken)
         : destToken;
 
@@ -799,6 +853,27 @@ export class CurveV1Factory
           destTokenAddress,
           _isSrcTokenTransferFeeToBeExchanged,
         );
+
+        const ethAddress = ETHER_ADDRESS.toLowerCase();
+        const wethAddress =
+          this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+        if (
+          !this.needWrapNativeForPricing &&
+          _srcToken.address.toLowerCase() === ethAddress
+        ) {
+          pools = pools.concat(
+            this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
+          ); // discover WETH pools for ETH src
+        }
+
+        if (
+          !this.needWrapNativeForPricing &&
+          _destToken.address.toLowerCase() === ethAddress
+        ) {
+          pools = pools.concat(
+            this.poolManager.getPoolsForPair(srcTokenAddress, wethAddress),
+          ); // discover WETH pools for ETH dest
+        }
       }
 
       if (side === SwapSide.BUY) {
@@ -952,6 +1027,22 @@ export class CurveV1Factory
       pools,
     } = this.getMultihopParam(srcAmount, destAmount, data, side);
 
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const ethAddress = ETHER_ADDRESS.toLowerCase();
+    const tokenIn = data.path[0].tokenIn;
+    const tokenOut = data.path[0].tokenOut;
+
+    let needWrapNative = false;
+    if (
+      (srcToken.toLowerCase() === ethAddress &&
+        tokenIn.toLowerCase() === wethAddress) ||
+      (destToken.toLowerCase() === ethAddress &&
+        tokenOut.toLowerCase() === wethAddress)
+    ) {
+      needWrapNative = true;
+    }
+
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -966,8 +1057,8 @@ export class CurveV1Factory
         },
       },
       {
-        needWrap: this.needWrapNative,
-        needUnwrap: this.needWrapNative,
+        needWrap: needWrapNative,
+        needUnwrap: needWrapNative,
         route: path,
         swap_params: swapParams,
         amount,
@@ -1070,6 +1161,22 @@ export class CurveV1Factory
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const ethAddress = ETHER_ADDRESS.toLowerCase();
+    const tokenIn = data.path[0].tokenIn;
+    const tokenOut = data.path[0].tokenOut;
+
+    let needWrapNative = false;
+    if (
+      (srcToken.toLowerCase() === ethAddress &&
+        tokenIn.toLowerCase() === wethAddress) ||
+      (destToken.toLowerCase() === ethAddress &&
+        tokenOut.toLowerCase() === wethAddress)
+    ) {
+      needWrapNative = true;
+    }
+
     const swapParams: DirectCurveV1Param = [
       srcToken,
       destToken,
@@ -1087,7 +1194,7 @@ export class CurveV1Factory
         : CurveV1SwapType.EXCHANGE,
       beneficiary,
       // For CurveV1 we work as it is, without wrapping and unwrapping
-      this.needWrapNative,
+      needWrapNative,
       permit,
       uuidToBytes16(uuid),
     ];
@@ -1137,11 +1244,27 @@ export class CurveV1Factory
 
     let wrapFlag = 0;
 
-    if (this.needWrapNative && isETHAddress(srcToken)) {
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const ethAddress = ETHER_ADDRESS.toLowerCase();
+    const tokenIn = data.path[0].tokenIn;
+    const tokenOut = data.path[0].tokenOut;
+
+    let needWrapNative = false;
+    if (
+      (srcToken.toLowerCase() === ethAddress &&
+        tokenIn.toLowerCase() === wethAddress) ||
+      (destToken.toLowerCase() === ethAddress &&
+        tokenOut.toLowerCase() === wethAddress)
+    ) {
+      needWrapNative = true;
+    }
+
+    if (needWrapNative && isETHAddress(srcToken)) {
       wrapFlag = 1; // wrap src eth
-    } else if (!this.needWrapNative && isETHAddress(srcToken)) {
+    } else if (!needWrapNative && isETHAddress(srcToken)) {
       wrapFlag = 3; // add msg.value to router call
-    } else if (this.needWrapNative && isETHAddress(destToken)) {
+    } else if (needWrapNative && isETHAddress(destToken)) {
       wrapFlag = 2; // unwrap dest eth
     }
 
@@ -1288,6 +1411,7 @@ export class CurveV1Factory
     recipient: Address,
     data: CurveV1FactoryData,
     side: SwapSide,
+    conext: Context,
   ): DexExchangeParam {
     if (data.path.length === 1) {
       // Single pool encoding
@@ -1308,7 +1432,11 @@ export class CurveV1Factory
 
       return {
         exchangeData,
-        needWrapNative: this.needWrapNative,
+        needWrapNative: this.needWrapNative(
+          conext.priceRoute,
+          conext.swap,
+          conext.swapExchange,
+        ),
         sendEthButSupportsInsertFromAmount: true,
         dexFuncHasRecipient: false,
         targetExchange: exchange,
@@ -1332,7 +1460,11 @@ export class CurveV1Factory
 
     return {
       exchangeData,
-      needWrapNative: this.needWrapNative,
+      needWrapNative: this.needWrapNative(
+        conext.priceRoute,
+        conext.swap,
+        conext.swapExchange,
+      ),
       sendEthButSupportsInsertFromAmount: true,
       dexFuncHasRecipient: true,
       targetExchange: this.config.router,

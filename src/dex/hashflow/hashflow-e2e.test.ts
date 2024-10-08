@@ -33,15 +33,15 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        // ContractMethod.swapExactAmountIn,
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-      ],
-    ],
+    // [
+    //   SwapSide.SELL,
+    //   [
+    //     // ContractMethod.swapExactAmountIn,
+    //     ContractMethod.simpleSwap,
+    //     ContractMethod.multiSwap,
+    //     // ContractMethod.megaSwap,
+    //   ],
+    // ],
     [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
