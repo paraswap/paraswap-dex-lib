@@ -155,7 +155,7 @@ describe('Bebop', function () {
       );
       console.log(
         `${srcTokenSymbol} Top Pools:`,
-        JSON.stringify(poolLiquidity),
+        JSON.stringify(poolLiquidity, null, 2),
       );
 
       if (!newBebop.hasConstantPriceLargeAmounts) {
