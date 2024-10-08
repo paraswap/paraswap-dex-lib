@@ -58,6 +58,7 @@ import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
 import { curveV1Merge } from './curve-v1-factory/optimizer';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
+import { WUSDM } from './wusdm/wusdm';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { Infusion } from './infusion/infusion';
@@ -155,6 +156,7 @@ const Dexes = [
   CurveV1Factory,
   CurveV1StableNg,
   WstETH,
+  WUSDM,
   Hashflow,
   Infusion,
   MaverickV1,
