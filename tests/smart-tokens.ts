@@ -43,6 +43,9 @@ const constructAddBAllowanceFn = (varName: string): AddAllowanceFn => {
 
 export const balanceOfFn = constructAddBalanceFn('balanceOf');
 export const balancesFn = constructAddBalanceFn('balances');
+export const balanceAndBlacklistStatesFn = constructAddBalanceFn(
+  'balanceAndBlacklistStates',
+);
 export const _balancesFn = constructAddBalanceFn('_balances');
 export const allowanceFn = constructAddBAllowanceFn('allowance');
 export const _allowancesFn = constructAddBAllowanceFn('_allowances');
