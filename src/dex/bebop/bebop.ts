@@ -52,6 +52,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
+  readonly isStatePollingDex = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BebopConfig);
