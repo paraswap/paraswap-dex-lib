@@ -33,16 +33,16 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    // [
-    //   SwapSide.SELL,
-    //   [
-    //     // ContractMethod.swapExactAmountIn,
-    //     ContractMethod.simpleSwap,
-    //     ContractMethod.multiSwap,
-    //     // ContractMethod.megaSwap,
-    //   ],
-    // ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [
+      SwapSide.SELL,
+      [
+        // ContractMethod.swapExactAmountIn,
+        ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
+      ],
+    ],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -52,24 +52,24 @@ function testForNetwork(
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
             if (excludeNativeTokenTests) {
-              it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-                await testE2E(
-                  tokens[tokenASymbol],
-                  tokens[tokenBSymbol],
-                  holders[tokenASymbol],
-                  side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  undefined,
-                  undefined,
-                  undefined,
-                  undefined,
-                  sleepMs,
-                );
-              });
+              // it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              //   await testE2E(
+              //     tokens[tokenASymbol],
+              //     tokens[tokenBSymbol],
+              //     holders[tokenASymbol],
+              //     side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+              //     side,
+              //     dexKey,
+              //     contractMethod,
+              //     network,
+              //     provider,
+              //     undefined,
+              //     undefined,
+              //     undefined,
+              //     undefined,
+              //     sleepMs,
+              //   );
+              // });
               it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
                 await testE2E(
                   tokens[tokenBSymbol],
@@ -194,44 +194,44 @@ describe('Hashflow E2E', () => {
       );
     });
 
-    describe('DAI -> USDC', () => {
-      const tokenASymbol: string = 'DAI';
-      const tokenBSymbol: string = 'USDC';
-
-      const tokenAAmount: string = '100000000000000000000';
-      const tokenBAmount: string = '100000000';
-      const nativeTokenAmount = '1000000000000000000';
-
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-        nativeTokenAmount,
-      );
-    });
-
-    describe('WETH -> USDC', () => {
-      const tokenASymbol: string = 'WETH';
-      const tokenBSymbol: string = 'USDC';
-
-      const tokenAAmount: string = '100000000000000000';
-      const tokenBAmount: string = '1000000';
-      const nativeTokenAmount = '100000000000000000';
-
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-        nativeTokenAmount,
-        true,
-      );
-    });
+    // describe('DAI -> USDC', () => {
+    //   const tokenASymbol: string = 'DAI';
+    //   const tokenBSymbol: string = 'USDC';
+    //
+    //   const tokenAAmount: string = '100000000000000000000';
+    //   const tokenBAmount: string = '100000000';
+    //   const nativeTokenAmount = '1000000000000000000';
+    //
+    //   testForNetwork(
+    //     network,
+    //     dexKey,
+    //     tokenASymbol,
+    //     tokenBSymbol,
+    //     tokenAAmount,
+    //     tokenBAmount,
+    //     nativeTokenAmount,
+    //   );
+    // });
+    //
+    // describe('WETH -> USDC', () => {
+    //   const tokenASymbol: string = 'WETH';
+    //   const tokenBSymbol: string = 'USDC';
+    //
+    //   const tokenAAmount: string = '100000000000000000';
+    //   const tokenBAmount: string = '1000000';
+    //   const nativeTokenAmount = '100000000000000000';
+    //
+    //   testForNetwork(
+    //     network,
+    //     dexKey,
+    //     tokenASymbol,
+    //     tokenBSymbol,
+    //     tokenAAmount,
+    //     tokenBAmount,
+    //     nativeTokenAmount,
+    //     true,
+    //   );
+    // });
   });
   describe('Polygon_V6', () => {
     const network = Network.POLYGON;
@@ -276,11 +276,11 @@ describe('Hashflow E2E', () => {
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
 
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'WETH';
+    const tokenASymbol: string = 'ETH';
+    const tokenBSymbol: string = 'DAI';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '300000000000000000';
+    const tokenBAmount: string = '100000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

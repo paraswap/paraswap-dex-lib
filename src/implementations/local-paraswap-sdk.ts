@@ -200,12 +200,12 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       others: [],
       side,
       // For V5 tests, put Augustus V5 address here
-      // contractAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
-      contractAddress: '',
+      contractAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+      // contractAddress: '',
       tokenTransferProxy: '',
       // For V5 tests, put V5 version here
-      // version: ParaSwapVersion.V5,
-      version: ParaSwapVersion.V6,
+      version: ParaSwapVersion.V5,
+      // version: ParaSwapVersion.V6,
     };
 
     const optimizedRate = this.pricingHelper.optimizeRate(unoptimizedRate);

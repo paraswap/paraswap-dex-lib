@@ -1,4 +1,4 @@
-import { ChainId, ZERO_ADDRESS } from '@hashflow/sdk';
+import { ChainId } from '@hashflow/sdk';
 import { Chain, ChainType, HashflowApi } from '@hashflow/taker-js';
 import {
   MarketMakersResponse,
@@ -12,12 +12,7 @@ import routerAbi from '../../abi/hashflow/HashflowRouter.abi.json';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import {
-  CACHE_PREFIX,
-  ETHER_ADDRESS,
-  Network,
-  SwapSide,
-} from '../../constants';
+import { CACHE_PREFIX, Network, NULL_ADDRESS, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { IDex } from '../../dex/idex';
 import {
@@ -211,8 +206,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         const pairs = levels[m]?.map(entry => entry.pair) ?? [];
         return pairs.some(
           p =>
-            _srcToken.address === p.baseToken.toLowerCase() &&
-            _destToken.address === p.quoteToken.toLowerCase(),
+            _srcToken.address.toLowerCase() === p.baseToken.toLowerCase() &&
+            _destToken.address.toLowerCase() === p.quoteToken.toLowerCase(),
         );
       })
       .map(m =>
@@ -561,18 +556,22 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     );
     const chainId = this.network as ChainId;
     let chainType: ChainType = 'evm';
-    const chain: Chain = { chainType, chainId };
+    const chain = { chainType, chainId } as Chain;
 
     const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
 
+    const _srcTokenAddress = _srcToken.address.toLowerCase();
+    const _destTokenAddress = _destToken.address.toLowerCase();
+
     let rfq: RfqResponse;
+
     try {
       rfq = await this.api.requestQuote({
         // sender is not passed, so for now ignore executionContractAddress
         baseChain: chain,
-        baseToken: _srcToken.address,
-        quoteToken: _destToken.address,
+        baseToken: _srcTokenAddress,
+        quoteToken: _destTokenAddress,
         ...(side === SwapSide.SELL
           ? {
               baseTokenAmount: optimalSwapExchange.srcAmount,
@@ -588,8 +587,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         const message = `${this.dexKey}-${
           this.network
         }: Failed to fetch RFQ for ${this.getPairName(
-          _srcToken.address,
-          _destToken.address,
+          _srcTokenAddress,
+          _destTokenAddress,
         )}: ${JSON.stringify(rfq)}`;
         this.logger.warn(message);
         throw new RfqError(message, `${rfq?.error?.code}` as ErrorCode);
@@ -597,8 +596,8 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         const message = `${this.dexKey}-${
           this.network
         }: Failed to fetch RFQ for ${this.getPairName(
-          _srcToken.address,
-          _destToken.address,
+          _srcTokenAddress,
+          _destTokenAddress,
         )}. Missing quote data`;
         this.logger.warn(message);
         throw new RfqError(message, 'MISSING_QUOTE_DATA');
@@ -606,20 +605,20 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         const message = `${this.dexKey}-${
           this.network
         }: Failed to fetch RFQ for ${this.getPairName(
-          _srcToken.address,
-          _destToken.address,
+          _srcTokenAddress,
+          _destTokenAddress,
         )}. Missing signature`;
         this.logger.warn(message);
         throw new RfqError(message, 'MISSING_SIGNATURE_DATA');
       }
 
       assert(
-        rfq.quotes[0].quoteData.baseToken === _srcToken.address,
-        `QuoteData baseToken=${rfq.quotes[0].quoteData.baseToken} is different from srcToken=${_srcToken.address}`,
+        rfq.quotes[0].quoteData.baseToken === _srcTokenAddress,
+        `QuoteData baseToken=${rfq.quotes[0].quoteData.baseToken} is different from srcToken=${_srcTokenAddress}`,
       );
       assert(
-        rfq.quotes[0].quoteData.quoteToken === _destToken.address,
-        `QuoteData baseToken=${rfq.quotes[0].quoteData.quoteToken} is different from srcToken=${_destToken.address}`,
+        rfq.quotes[0].quoteData.quoteToken === _destTokenAddress,
+        `QuoteData baseToken=${rfq.quotes[0].quoteData.quoteToken} is different from srcToken=${_destTokenAddress}`,
       );
 
       const expiryAsBigInt = BigInt(rfq.quotes[0].quoteData.quoteExpiry);
@@ -894,7 +893,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         {
           pool: quoteData.pool,
           quoteToken: quoteData.quoteToken,
-          externalAccount: quoteData.externalAccount ?? ZERO_ADDRESS,
+          externalAccount: quoteData.externalAccount ?? NULL_ADDRESS,
           baseTokenAmount: quoteData.baseTokenAmount,
           quoteTokenAmount: quoteData.quoteTokenAmount,
           quoteExpiry: quoteData.quoteExpiry,
@@ -958,7 +957,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const swapData = this.routerInterface.encodeFunctionData('tradeRFQT', [
       [
         quoteData.pool,
-        quoteData.externalAccount ?? ZERO_ADDRESS,
+        quoteData.externalAccount ?? NULL_ADDRESS,
         quoteData.trader,
         quoteData.effectiveTrader ?? quoteData.trader,
         quoteData.baseToken,
@@ -1003,7 +1002,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const exchangeData = this.routerInterface.encodeFunctionData('tradeRFQT', [
       [
         quoteData.pool,
-        quoteData.externalAccount ?? ZERO_ADDRESS,
+        quoteData.externalAccount ?? NULL_ADDRESS,
         quoteData.trader,
         quoteData.effectiveTrader ?? quoteData.trader,
         quoteData.baseToken,
