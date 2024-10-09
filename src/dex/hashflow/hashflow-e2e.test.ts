@@ -12,7 +12,7 @@ import { generateConfig } from '../../config';
 import { ContractMethod, Network, SwapSide } from '../../constants';
 
 // Give time for rate fetcher to fill the cache
-const sleepMs = 5000;
+const sleepMs = 7000;
 
 function testForNetwork(
   network: Network,
@@ -38,11 +38,11 @@ function testForNetwork(
       [
         // ContractMethod.swapExactAmountIn,
         ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
     // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -52,24 +52,24 @@ function testForNetwork(
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
             if (excludeNativeTokenTests) {
-              // it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              //   await testE2E(
-              //     tokens[tokenASymbol],
-              //     tokens[tokenBSymbol],
-              //     holders[tokenASymbol],
-              //     side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-              //     side,
-              //     dexKey,
-              //     contractMethod,
-              //     network,
-              //     provider,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     undefined,
-              //     sleepMs,
-              //   );
-              // });
+              it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[tokenBSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  sleepMs,
+                );
+              });
               it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
                 await testE2E(
                   tokens[tokenBSymbol],
@@ -233,14 +233,14 @@ describe('Hashflow E2E', () => {
     //   );
     // });
   });
-  describe('Polygon_V6', () => {
+  describe('Polygon', () => {
     const network = Network.POLYGON;
 
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'DAI';
+    const tokenASymbol: string = 'USDCn';
+    const tokenBSymbol: string = 'TRYB';
 
-    const tokenAAmount: string = '1000000000';
-    const tokenBAmount: string = '1000000000000000000000';
+    const tokenAAmount: string = '1000000';
+    const tokenBAmount: string = '1000000';
     const nativeTokenAmount = '100000000000000000000';
 
     testForNetwork(
@@ -251,6 +251,7 @@ describe('Hashflow E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
+      true,
     );
   });
   describe('BSC', () => {
@@ -259,8 +260,8 @@ describe('Hashflow E2E', () => {
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000';
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
@@ -297,11 +298,11 @@ describe('Hashflow E2E', () => {
   describe('Optimism', () => {
     const network = Network.OPTIMISM;
 
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'USDT';
+    const tokenASymbol: string = 'ETH';
+    const tokenBSymbol: string = 'DAI';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '100000000';
+    const tokenAAmount: string = '10000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(
       network,
@@ -317,11 +318,11 @@ describe('Hashflow E2E', () => {
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 
-    const tokenASymbol: string = 'WAVAX';
+    const tokenASymbol: string = 'AVAX';
     const tokenBSymbol: string = 'USDC';
 
     const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000';
+    const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
