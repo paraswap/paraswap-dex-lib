@@ -19,12 +19,12 @@ export function testForNetwork(
     [
       SwapSide.SELL,
       [
-        // ContractMethod.swapExactAmountIn,
-        // ContractMethod.swapExactAmountInOnCurveV1,
+        ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountInOnCurveV1,
         // ContractMethod.simpleSwap,
-        ContractMethod.directCurveV1Swap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.directCurveV1Swap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
   ]),
@@ -180,21 +180,40 @@ describe('CurveV1Factory E2E', () => {
   describe('Mainnet ng pool', () => {
     const network = Network.MAINNET;
 
-    describe('ETH -> STETH', () => {
-      const tokenASymbol: string = 'ETH';
-      const tokenBSymbol: string = 'STETH';
+    describe('Dynamic needWrapNative', () => {
+      describe('ETH -> STETH', () => {
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'STETH';
 
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '1000000000000000000';
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '1000000000000000000';
 
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-      );
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+
+      describe('WETH -> STETH', () => {
+        const tokenASymbol: string = 'WETH';
+        const tokenBSymbol: string = 'STETH';
+
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '1000000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
     });
 
     describe('crvUSD -> USDT', () => {
