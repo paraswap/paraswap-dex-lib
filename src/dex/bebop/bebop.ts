@@ -357,12 +357,13 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BebopData>> {
-    this.tokensMap = (await this.getCachedTokens()) || {};
-
     try {
-      const pools =
-        limitPools ??
-        (await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber));
+      let pools = limitPools
+        ? limitPools.filter(
+            p =>
+              p === this.getPoolIdentifier(srcToken.address, destToken.address),
+          )
+        : await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber);
 
       if (pools.length === 0) {
         return null;
@@ -485,11 +486,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(): Promise<void> {
     const tokens = await this.getCachedTokens();
 
