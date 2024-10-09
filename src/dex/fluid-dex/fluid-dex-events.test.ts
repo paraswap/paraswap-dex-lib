@@ -4,6 +4,7 @@ dotenv.config();
 
 import { FluidDexEventPool } from './fluid-dex-pool';
 import { FluidDexCommonAddresses } from './fluid-dex-generate-pool';
+import { FluidDex } from './fluid-dex';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
@@ -66,6 +67,23 @@ async function fetchTotalPools(
   return await fluidCommonAddresses.generateState(blockNumber);
 }
 
+function stringifyCircular(obj: any, space?: number): string {
+  const seen = new WeakSet();
+  return JSON.stringify(
+    obj,
+    (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      return value;
+    },
+    space,
+  );
+}
+
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
@@ -79,28 +97,23 @@ describe('FluidDex EventPool Mainnet', function () {
   const liquidityProxy: Address = '0x52aa899454998be5b000ad077a46bbe360f4e497';
   const dexFactory: Address = '0x93dd426446b5370f094a1e31f19991aaa6ac0be0';
 
-  // poolAddress -> EventMappings
-  const eventsToTest: Record<Address, EventMappings> = {
+  const poolFetchEventsToTest: Record<Address, EventMappings> = {
     [dexFactory]: {
       DexDeployed: [20825862],
-      // DexDeployed: [20776998],
+    },
+  };
+
+  // poolAddress -> EventMappings
+  const poolUpdateEventsToTest: Record<Address, EventMappings> = {
+    [dexFactory]: {
+      LogOperate: [20825862],
     },
   };
 
   let fluidDexEventPool: FluidDexEventPool;
   let fluidDexCommonAddress: FluidDexCommonAddresses;
 
-  beforeEach(async () => {
-    fluidDexCommonAddress = new FluidDexCommonAddresses(
-      'FluidDex',
-      fluidDexCommonAddressStruct,
-      network,
-      dexHelper,
-      logger,
-    );
-  });
-
-  Object.entries(eventsToTest).forEach(
+  Object.entries(poolUpdateEventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {
       describe(`Events for ${poolAddress}`, () => {
         Object.entries(events).forEach(
@@ -108,17 +121,26 @@ describe('FluidDex EventPool Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
-                  // console.log("test1", await fetchTotalPools(fluidDexCommonAddress, 20776997));
-                  // const latestBlockNumber_ = (await dexHelper.web3Provider.eth.getBlockNumber()) - 102774;
-                  // console.log(latestBlockNumber_);
-                  // console.log("test10", await fluidDexCommonAddress.generateState(blockNumber));
-                  // console.log("test100", await fluidDexCommonAddress.generateState(await dexHelper.web3Provider.eth.getBlockNumber()));
+                  const fluidDex = new FluidDex(network, dexKey, dexHelper);
+
+                  // const latestBlockNumber_ = await dexHelper.web3Provider.eth.getBlockNumber();
+
+                  await fluidDex.initializePricing(blockNumber);
+
+                  // console.log(stringifyCircular(Object.keys(fluidDex.eventPools).length));
+
+                  fluidDexEventPool =
+                    fluidDex.eventPools[
+                      'FluidDex_0x6d83f60eeac0e50a1250760151e81db2a278e03a'
+                    ];
+
+                  console.log(fluidDexEventPool);
 
                   await testEventSubscriber(
-                    fluidDexCommonAddress,
-                    fluidDexCommonAddress.addressesSubscribed,
+                    fluidDexEventPool,
+                    fluidDexEventPool.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchTotalPools(fluidDexCommonAddress, _blockNumber),
+                      fetchPoolState(fluidDexEventPool, _blockNumber),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
@@ -131,4 +153,40 @@ describe('FluidDex EventPool Mainnet', function () {
       });
     },
   );
+
+  // Object.entries(poolFetchEventsToTest).forEach(
+  //   ([poolAddress, events]: [string, EventMappings]) => {
+  //     describe(`Events for ${poolAddress}`, () => {
+  //       Object.entries(events).forEach(
+  //         ([eventName, blockNumbers]: [string, number[]]) => {
+  //           describe(`${eventName}`, () => {
+  //             blockNumbers.forEach((blockNumber: number) => {
+  //               it(`State after ${blockNumber}`, async function () {
+
+  //                 fluidDexCommonAddress = new FluidDexCommonAddresses(
+  //                   'FluidDex',
+  //                   fluidDexCommonAddressStruct,
+  //                   network,
+  //                   dexHelper,
+  //                   logger,
+  //                 );
+
+  //                 await testEventSubscriber(
+  //                   fluidDexCommonAddress,
+  //                   fluidDexCommonAddress.addressesSubscribed,
+  //                   (_blockNumber: number) =>
+  //                     fetchTotalPools(fluidDexCommonAddress, _blockNumber),
+  //                   blockNumber,
+  //                   `${dexKey}_${poolAddress}`,
+  //                   dexHelper.provider,
+  //                 );
+
+  //               });
+  //             });
+  //           });
+  //         },
+  //       );
+  //     });
+  //   },
+  // );
 });

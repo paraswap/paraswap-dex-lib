@@ -104,7 +104,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       if (!this.eventPools[pool.id]) {
         this.eventPools[pool.id] = new FluidDexEventPool(
           'FluidDex',
-          pool,
+          pool.address,
           this.FluidCommonAddresses.commonAddresses,
           this.network,
           this.dexHelper,

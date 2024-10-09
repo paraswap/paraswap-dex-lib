@@ -33,13 +33,13 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
 
   constructor(
     readonly parentName: string,
-    readonly pool: FluidDexPool,
+    readonly pool: Address,
     readonly commonAddresses: commonAddresses,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, pool.id, dexHelper, logger);
+    super(parentName, 'FluidDex_' + pool, dexHelper, logger);
 
     this.logDecoder = (log: Log) => this.liquidityIface.parseLog(log);
     this.addressesSubscribed = [commonAddresses.liquidityProxy];
@@ -57,14 +57,14 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     log: Readonly<Log>,
   ): Promise<DeepReadonly<FluidDexPoolState> | null> {
     const resolverAbi = new Interface(ResolverABI);
-    if (!(event.args.user in [this.pool.address])) {
+    if (!(event.args.user in [this.pool])) {
       return null;
     }
     const callData: MultiCallParams<PoolWithReserves>[] = [
       {
         target: this.commonAddresses.resolver,
         callData: resolverAbi.encodeFunctionData('getPoolReserves', [
-          this.pool.address,
+          this.pool,
         ]),
         decodeFunction: await this.decodePoolWithReserves,
       },
@@ -198,7 +198,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
       {
         target: this.commonAddresses.resolver,
         callData: resolverAbi.encodeFunctionData('getPoolReserves', [
-          this.pool.address,
+          this.pool,
         ]),
         decodeFunction: await this.decodePoolWithReserves,
       },
