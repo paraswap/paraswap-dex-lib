@@ -127,7 +127,7 @@ describe('FluidDex EventPool Mainnet', function () {
 
                   await fluidDex.initializePricing(blockNumber);
 
-                  // console.log(stringifyCircular(Object.keys(fluidDex.eventPools).length));
+                  // console.log(stringifyCircular(Object.keys(fluidDex.eventPools).length))
 
                   fluidDexEventPool =
                     fluidDex.eventPools[
@@ -154,39 +154,37 @@ describe('FluidDex EventPool Mainnet', function () {
     },
   );
 
-  // Object.entries(poolFetchEventsToTest).forEach(
-  //   ([poolAddress, events]: [string, EventMappings]) => {
-  //     describe(`Events for ${poolAddress}`, () => {
-  //       Object.entries(events).forEach(
-  //         ([eventName, blockNumbers]: [string, number[]]) => {
-  //           describe(`${eventName}`, () => {
-  //             blockNumbers.forEach((blockNumber: number) => {
-  //               it(`State after ${blockNumber}`, async function () {
+  Object.entries(poolFetchEventsToTest).forEach(
+    ([poolAddress, events]: [string, EventMappings]) => {
+      describe(`Events for ${poolAddress}`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async function () {
+                  fluidDexCommonAddress = new FluidDexCommonAddresses(
+                    'FluidDex',
+                    fluidDexCommonAddressStruct,
+                    network,
+                    dexHelper,
+                    logger,
+                  );
 
-  //                 fluidDexCommonAddress = new FluidDexCommonAddresses(
-  //                   'FluidDex',
-  //                   fluidDexCommonAddressStruct,
-  //                   network,
-  //                   dexHelper,
-  //                   logger,
-  //                 );
-
-  //                 await testEventSubscriber(
-  //                   fluidDexCommonAddress,
-  //                   fluidDexCommonAddress.addressesSubscribed,
-  //                   (_blockNumber: number) =>
-  //                     fetchTotalPools(fluidDexCommonAddress, _blockNumber),
-  //                   blockNumber,
-  //                   `${dexKey}_${poolAddress}`,
-  //                   dexHelper.provider,
-  //                 );
-
-  //               });
-  //             });
-  //           });
-  //         },
-  //       );
-  //     });
-  //   },
-  // );
+                  await testEventSubscriber(
+                    fluidDexCommonAddress,
+                    fluidDexCommonAddress.addressesSubscribed,
+                    (_blockNumber: number) =>
+                      fetchTotalPools(fluidDexCommonAddress, _blockNumber),
+                    blockNumber,
+                    `${dexKey}_${poolAddress}`,
+                    dexHelper.provider,
+                  );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
 });
