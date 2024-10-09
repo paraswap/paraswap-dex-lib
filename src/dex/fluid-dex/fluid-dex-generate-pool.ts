@@ -59,7 +59,7 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
     state: DeepReadonly<Pool[]>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<Pool[]> | null> {
-    const blockNumber_ = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber_ = await this.dexHelper.web3Provider.eth.getBlockNumber();
     const resolverAbi = new Interface(ResolverABI);
     const callData: MultiCallParams<Pool>[] = [
       {
@@ -179,6 +179,9 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
   }
 
   decodePools = (result: MultiResult<BytesLike> | BytesLike): Pool[] => {
+    if (result === '0x') {
+      return []; // Return an empty array since there are no pools to decode
+    }
     return generalDecoder(
       result,
       ['tuple(address pool, address token0, address token1)[]'],

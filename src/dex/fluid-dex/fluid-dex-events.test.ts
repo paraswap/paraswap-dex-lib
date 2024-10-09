@@ -3,12 +3,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { FluidDexEventPool } from './fluid-dex-pool';
+import { FluidDexCommonAddresses } from './fluid-dex-generate-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { FluidDexPool, FluidDexPoolState } from './types';
+import {
+  commonAddresses,
+  FluidDexPool,
+  FluidDexPoolState,
+  Pool,
+} from './types';
 import { FluidDexConfig } from './config';
+import { DeepReadonly } from 'ts-essentials';
 
 /*
   README
@@ -49,7 +56,14 @@ async function fetchPoolState(
   fluidDexPool: FluidDexEventPool,
   blockNumber: number,
 ): Promise<FluidDexPoolState> {
-  return fluidDexPool.generateState(blockNumber);
+  return await fluidDexPool.generateState(blockNumber);
+}
+
+async function fetchTotalPools(
+  fluidCommonAddresses: FluidDexCommonAddresses,
+  blockNumber: number,
+): Promise<DeepReadonly<Pool[]>> {
+  return await fluidCommonAddresses.generateState(blockNumber);
 }
 
 // eventName -> blockNumbers
@@ -60,29 +74,31 @@ describe('FluidDex EventPool Mainnet', function () {
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  const fluidDexPool: FluidDexPool = FluidDexConfig[dexKey][network].pools[0];
-  const liquidityProxy: Address = '0x93dd426446b5370f094a1e31f19991aaa6ac0be0';
+  const fluidDexCommonAddressStruct: commonAddresses =
+    FluidDexConfig[dexKey][network].commonAddresses;
+  const liquidityProxy: Address = '0x52aa899454998be5b000ad077a46bbe360f4e497';
+  const dexFactory: Address = '0x93dd426446b5370f094a1e31f19991aaa6ac0be0';
 
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
-    [liquidityProxy]: {
-      DexDeployed: [20776998],
+    [dexFactory]: {
+      DexDeployed: [20825862],
+      // DexDeployed: [20776998],
     },
   };
 
   let fluidDexEventPool: FluidDexEventPool;
-  let fluidDexCommonAddress;
+  let fluidDexCommonAddress: FluidDexCommonAddresses;
 
-  // beforeEach(async () => {
-  //   fluidDexEventPool = new FluidDexEventPool(
-  //     'FluidDex',
-  //     fluidDexPool,
-  //     network,
-  //     dexHelper,
-  //     logger,
-  //   );
-
-  // });
+  beforeEach(async () => {
+    fluidDexCommonAddress = new FluidDexCommonAddresses(
+      'FluidDex',
+      fluidDexCommonAddressStruct,
+      network,
+      dexHelper,
+      logger,
+    );
+  });
 
   Object.entries(eventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {
@@ -92,11 +108,17 @@ describe('FluidDex EventPool Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
+                  // console.log("test1", await fetchTotalPools(fluidDexCommonAddress, 20776997));
+                  // const latestBlockNumber_ = (await dexHelper.web3Provider.eth.getBlockNumber()) - 102774;
+                  // console.log(latestBlockNumber_);
+                  // console.log("test10", await fluidDexCommonAddress.generateState(blockNumber));
+                  // console.log("test100", await fluidDexCommonAddress.generateState(await dexHelper.web3Provider.eth.getBlockNumber()));
+
                   await testEventSubscriber(
-                    fluidDexEventPool,
-                    fluidDexEventPool.addressesSubscribed,
+                    fluidDexCommonAddress,
+                    fluidDexCommonAddress.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(fluidDexEventPool, _blockNumber),
+                      fetchTotalPools(fluidDexCommonAddress, _blockNumber),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
