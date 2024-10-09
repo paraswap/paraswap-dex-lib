@@ -128,24 +128,8 @@ export class CurveV1Factory
     const swapSrc = swap.srcToken;
     const swapDest = swap.destToken;
 
-    const path = se.data.path;
-
-    const wethAddr =
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-    const tokenIn = se.data.path[0].tokenIn.toLowerCase();
-    const tokenOut = se.data.path[path.length - 1].tokenOut.toLowerCase();
-
-    if (swapSrc === ETHER_ADDRESS.toLowerCase() && tokenIn === wethAddr) {
-      return true; // ETH is src but WETH pool is used, we need wrap native in this case
-    }
-
-    if (swapDest === ETHER_ADDRESS.toLowerCase() && tokenOut === wethAddr) {
-      return true; // ETH is dest but WETH pool is used, we need wrap native in this case
-    }
-
-    return false;
+    return this._needWrapNative(swapSrc, swapDest, se.data);
   };
-
   needWrapNativeForPricing = false;
 
   readonly isFeeOnTransferSupported = true;
@@ -237,6 +221,33 @@ export class CurveV1Factory
       allPriceHandlers,
       this.config.stateUpdatePeriodMs,
     );
+  }
+
+  private _needWrapNative(
+    srcToken: Address,
+    destToken: Address,
+    data: CurveV1FactoryData,
+  ): boolean {
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const ethAddress = ETHER_ADDRESS.toLowerCase();
+
+    const path = data.path;
+
+    const tokenIn = data.path[0].tokenIn;
+    const tokenOut = data.path[path.length - 1].tokenOut;
+
+    let needWrapNative = false;
+    if (
+      (srcToken.toLowerCase() === ethAddress &&
+        tokenIn.toLowerCase() === wethAddress) ||
+      (destToken.toLowerCase() === ethAddress &&
+        tokenOut.toLowerCase() === wethAddress)
+    ) {
+      needWrapNative = true;
+    }
+
+    return needWrapNative;
   }
 
   async initializePricing(blockNumber: number) {
@@ -1059,22 +1070,7 @@ export class CurveV1Factory
       pools,
     } = this.getMultihopParam(srcAmount, destAmount, data, side);
 
-    const wethAddress =
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-    const ethAddress = ETHER_ADDRESS.toLowerCase();
-    const tokenIn = data.path[0].tokenIn;
-    const tokenOut = data.path[0].tokenOut;
-
-    let needWrapNative = false;
-    if (
-      (srcToken.toLowerCase() === ethAddress &&
-        tokenIn.toLowerCase() === wethAddress) ||
-      (destToken.toLowerCase() === ethAddress &&
-        tokenOut.toLowerCase() === wethAddress)
-    ) {
-      needWrapNative = true;
-    }
-
+    const needWrapNative = this._needWrapNative(srcToken, destToken, data);
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
@@ -1193,21 +1189,7 @@ export class CurveV1Factory
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
-    const wethAddress =
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-    const ethAddress = ETHER_ADDRESS.toLowerCase();
-    const tokenIn = data.path[0].tokenIn;
-    const tokenOut = data.path[0].tokenOut;
-
-    let needWrapNative = false;
-    if (
-      (srcToken.toLowerCase() === ethAddress &&
-        tokenIn.toLowerCase() === wethAddress) ||
-      (destToken.toLowerCase() === ethAddress &&
-        tokenOut.toLowerCase() === wethAddress)
-    ) {
-      needWrapNative = true;
-    }
+    const needWrapNative = this._needWrapNative(srcToken, destToken, data);
 
     const swapParams: DirectCurveV1Param = [
       srcToken,
@@ -1275,22 +1257,7 @@ export class CurveV1Factory
     ]);
 
     let wrapFlag = 0;
-
-    const wethAddress =
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-    const ethAddress = ETHER_ADDRESS.toLowerCase();
-    const tokenIn = data.path[0].tokenIn;
-    const tokenOut = data.path[0].tokenOut;
-
-    let needWrapNative = false;
-    if (
-      (srcToken.toLowerCase() === ethAddress &&
-        tokenIn.toLowerCase() === wethAddress) ||
-      (destToken.toLowerCase() === ethAddress &&
-        tokenOut.toLowerCase() === wethAddress)
-    ) {
-      needWrapNative = true;
-    }
+    const needWrapNative = this._needWrapNative(srcToken, destToken, data);
 
     if (needWrapNative && isETHAddress(srcToken)) {
       wrapFlag = 1; // wrap src eth
