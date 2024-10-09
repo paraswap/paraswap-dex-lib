@@ -997,7 +997,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       `${this.dexKey}-${this.network}: quoteData undefined`,
     );
 
-    const swapFunction = 'partialSwap';
+    const swapFunction = 'simpleSwap';
     const swapFunctionParams = [
       [
         quoteData.nonceAndMeta,
@@ -1010,8 +1010,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         quoteData.takerAmount,
       ],
       quoteData.signature,
-      // might be overwritten on Executors
-      quoteData.takerAmount,
     ];
 
     const exchangeData = this.rfqInterface.encodeFunctionData(
