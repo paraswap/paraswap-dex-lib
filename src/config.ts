@@ -60,11 +60,11 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
       Adapter02: '0xFC2Ba6E830a04C25e207B8214b26d8C713F6881F',
-      Adapter03: '0x19C491D0E3E5D03eb54fe0C5f7657f73b803aA00',
+      Adapter03: '0x80F5509eDD9A7AAfd14Cf2B0436dC23385F760d7',
       Adapter04: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       Adapter05: '0x3329dfa55A40B450952FBE0203167Ae6908E656d',
       Adapter06: '0xAeb7B3688a658C3f3B1AEd94d69b7b8045D64B57',
-      BuyAdapter: '0x4768B8F0425764498aB10B9aBa26888dB9e8f9A0',
+      BuyAdapter: '0x736518161516c1cfBD5bf5e7049FCBDC9b933987',
       BuyAdapter02: '0x2299568c3299e7420033deA9009233FF89F5C485',
     },
     uniswapV2ExchangeRouterAddress:
@@ -157,7 +157,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       BscAdapter01: '0xA31d9C571DF00e0F428B0bD24c34D103E8112222',
       BscAdapter02: '0xb9768a1C6e4917E30927beeC4b2874d45fD333Cf',
-      BscBuyAdapter: '0x06158216cFf091ADc7340441717edd8Ebd7A54d7',
+      BscAdapter03: '0x34D41cE301257a4615D4F5AD260FA91D03925243',
+      BscBuyAdapter: '0x56cc27eCfb42E22a413E785086E708dA87aF8103',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 1,
     rpcPollingBlocksBackToTriggerUpdate: 1,
@@ -190,9 +191,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_137`]?.split(',') || [],
     adapterAddresses: {
       PolygonAdapter01: '0xE44769f42E1e9592f86B82f206407a8f7C84b4ed',
-      PolygonAdapter02: '0xE7d4CC1589311BD7Bb58739269748a20DAAD755D',
+      PolygonAdapter02: '0xC5A6637aA6D3E0fCBE870c2B5a5377988097f3F4',
       PolygonAdapter03: '0x5A9037E0DCa7a8f30C1E6925e92eb402B7F6250E',
-      PolygonBuyAdapter: '0x60577C58F46AD63f36607541b86011c19B2033Fe',
+      PolygonBuyAdapter: '0xb96aB183767219d3b5B72D0f8DC96e2201653fB0',
     },
     uniswapV2ExchangeRouterAddress:
       '0xf3938337F7294fEf84e9B2c6D548A93F956Cc281',
@@ -228,8 +229,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
-      AvalancheAdapter02: '0xf34974E9E4A8F07C23062716ff15201Fb97ab595',
-      AvalancheBuyAdapter: '0x392BbDb4fFe2F6620F0d40b53A50E1c724fA5499',
+      AvalancheAdapter02: '0x5FC6a951c5e279d77c4d37F4aa14DaE0187BFD2A',
+      AvalancheBuyAdapter: '0x40D9aF198DbfA04734558d53831362059f7Bdcb5',
     },
     uniswapV2ExchangeRouterAddress:
       '0x53e693c6C7FFC4446c53B205Cf513105Bf140D7b',
@@ -299,8 +300,9 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
       ArbitrumAdapter02: '0x58a5f0b73969800FAFf8556cD2187E3FCE71A6cb',
-      ArbitrumAdapter03: '0x8119ea49712ee6Ba420C9E503B6fF594e71d9AB2',
+      ArbitrumAdapter03: '0x033683deBC0860AbF6F502E1b5F381CFc11C7615',
       ArbitrumBuyAdapter: '0x23A85545632C7f11A53d64AaB532dc06c5731278',
+      ArbitrumBuyAdapter02: '0x78A7BcEFc470b7070E03684E567c43Af97487443',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
@@ -335,8 +337,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       process.env[`HASHFLOW_DISABLED_MMS_10`]?.split(',') || [],
     adapterAddresses: {
       OptimismAdapter01: '0x5dcf544b0c9689fa67dcb713fd2656d217e25a59',
-      OptimismAdapter02: '0xFec367A0ae3294550123333A05410379D8C59Ec5',
-      OptimismBuyAdapter: '0x40B9CcB57Ed0629C1d7183f1e6F7f351bc9e0F96',
+      OptimismAdapter02: '0xb569288D1aC6B4914e0a9F556c8B4a9d52149BD6',
+      OptimismBuyAdapter: '0xC1ad83d2DE4799C9b0175468ba69305f4e22EAbb',
     },
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',

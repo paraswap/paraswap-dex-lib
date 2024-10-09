@@ -19,8 +19,12 @@ export function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.swapExactAmountIn,
-        ContractMethod.swapExactAmountInOnCurveV1,
+        // ContractMethod.swapExactAmountIn,
+        // ContractMethod.swapExactAmountInOnCurveV1,
+        // ContractMethod.simpleSwap,
+        ContractMethod.directCurveV1Swap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
       ],
     ],
   ]),
