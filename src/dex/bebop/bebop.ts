@@ -124,6 +124,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       this.rateFetcher.start();
       await sleep(BEBOP_INIT_TIMEOUT_MS);
     }
+
+    await this.setTokensMap();
   }
 
   // Returns the list of contract adapters (name and index)
@@ -487,6 +489,10 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async updatePoolState(): Promise<void> {
+    await this.setTokensMap();
+  }
+
+  async setTokensMap() {
     const tokens = await this.getCachedTokens();
 
     if (tokens) {
@@ -725,8 +731,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     };
   }
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     if (!this.dexHelper.config.isSlave) {
       this.rateFetcher.stop();

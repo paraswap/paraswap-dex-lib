@@ -62,7 +62,11 @@ export class WebSocketFetcher<T> {
   }
 
   private onError(error: any) {
-    this.logger.error(`Connection Error: ${error.toString()}. Reconnecting...`);
+    this.logger.error(
+      `Connection Error: ${error.toString()}. Stopping & Reconnecting...`,
+    );
+    this.stopPolling();
+
     // reconnect on errors / failures
     setTimeout(() => {
       this.startPolling();
@@ -103,6 +107,9 @@ export class WebSocketFetcher<T> {
     if (typeof name !== 'string') {
       throw new Error('Name header is not a string');
     }
+    this.logger.info(
+      `Connecting to ${this.requests.info.requestOptions.url}...`,
+    );
     this.ws.connect(
       this.requests.info.requestOptions.url!,
       undefined,
