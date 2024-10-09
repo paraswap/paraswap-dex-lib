@@ -312,7 +312,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    this.initializePricing(await this.dexHelper.provider.getBlockNumber());
+    this.initializePricing(
+      await this.dexHelper.web3Provider.eth.getBlockNumber(),
+    );
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -321,9 +323,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    await this.updatePoolAndEventPool(
-      await this.dexHelper.provider.getBlockNumber(),
-    );
+    const latestBlockNumber_ =
+      await this.dexHelper.web3Provider.eth.getBlockNumber();
     let liquidityAmounts: { [id: string]: bigint } = {};
     for (const pool of this.pools) {
       if (
@@ -332,10 +333,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       ) {
         const state: FluidDexPoolState = await this.eventPools[
           pool.id
-        ].getStateOrGenerate(
-          await this.dexHelper.provider.getBlockNumber(),
-          false,
-        );
+        ].getStateOrGenerate(latestBlockNumber_, false);
 
         liquidityAmounts[pool.id] =
           pool.token0 === tokenAddress
@@ -369,10 +367,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       const state: FluidDexPoolState = await this.eventPools[
         pool.id
-      ].getStateOrGenerate(
-        await this.dexHelper.provider.getBlockNumber(),
-        false,
-      );
+      ].getStateOrGenerate(latestBlockNumber_, false);
 
       let token0decimals: number;
       for (const [networkStr, symbolMapping] of Object.entries(Tokens)) {
@@ -432,8 +427,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     context: Context,
     executorAddress: Address,
   ): Promise<DexExchangeParam> {
-    const latestBlockNumber = await this.dexHelper.provider.getBlockNumber();
-    await this.updatePoolAndEventPool(latestBlockNumber);
+    const latestBlockNumber_ =
+      await this.dexHelper.web3Provider.eth.getBlockNumber();
+    await this.updatePoolAndEventPool(latestBlockNumber_);
 
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 

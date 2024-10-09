@@ -59,6 +59,7 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
     state: DeepReadonly<Pool[]>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<Pool[]> | null> {
+    const blockNumber_ = await this.dexHelper.provider.getBlockNumber();
     const resolverAbi = new Interface(ResolverABI);
     const callData: MultiCallParams<Pool>[] = [
       {
@@ -70,7 +71,7 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
 
     const results: Pool[] = await this.dexHelper.multiWrapper.aggregate<Pool>(
       callData,
-      await this.dexHelper.provider.getBlockNumber(),
+      blockNumber_,
       this.dexHelper.multiWrapper.defaultBatchSize,
     );
 
@@ -84,7 +85,7 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
     currentPool = currentPool == null ? [] : currentPool;
     currentPool = [...currentPool, generatedPool];
 
-    this.setState(currentPool, await this.dexHelper.provider.getBlockNumber());
+    this.setState(currentPool, blockNumber_);
 
     return currentPool;
   }
