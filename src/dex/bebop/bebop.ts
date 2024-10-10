@@ -13,7 +13,7 @@ import {
   NumberAsString,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, ETHER_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -605,7 +605,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     return {
       exchangeData: tx.data,
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
+      dexFuncHasRecipient: srcToken.toLowerCase() !== ETHER_ADDRESS,
       targetExchange: this.settlementAddress,
       returnAmountPos: undefined,
     };
@@ -631,7 +631,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       sell_amounts: isSell ? optimalSwapExchange.srcAmount : undefined,
       buy_amounts: isBuy ? optimalSwapExchange.destAmount : undefined,
       taker_address: utils.getAddress(options.executionContractAddress),
-      receiver_address: utils.getAddress(options.recipient),
+      receiver_address: utils.getAddress(
+        srcToken.address.toLowerCase() === ETHER_ADDRESS
+          ? options.executionContractAddress
+          : options.recipient,
+      ),
       gasless: false,
       skip_validation: true,
       source: BEBOP_AUTH_NAME,
