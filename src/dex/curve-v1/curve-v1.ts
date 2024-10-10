@@ -108,8 +108,6 @@ export class CurveV1
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  needWrapNative = false;
-
   eventPools = new Array<CurvePool | CurveMetapool>();
   public poolInterface: Interface;
 

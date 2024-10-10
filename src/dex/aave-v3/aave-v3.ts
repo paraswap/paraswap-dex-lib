@@ -34,8 +34,6 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;
 
-  needWrapNative = false;
-
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(Config);
 

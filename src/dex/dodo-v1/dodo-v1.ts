@@ -22,8 +22,6 @@ export class DodoV1
   static dexKeys = ['dodov1'];
   dodoV2Proxy: Interface;
 
-  needWrapNative = false;
-
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'dodov1');
     this.dodoV2Proxy = new Interface(DodoV2ProxyABI as JsonFragment[]);

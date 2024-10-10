@@ -28,8 +28,6 @@ export class BaseTraderJoeV2
 {
   exchangeRouterInterface: Interface;
 
-  needWrapNative = false;
-
   constructor(
     dexHelper: IDexHelper,
     dexKey: string,

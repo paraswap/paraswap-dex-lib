@@ -2,6 +2,7 @@ import {
   Address,
   DexExchangeBuildParam,
   DexExchangeParam,
+  DexExchangeParamWithBooleanNeedWrapNative,
   OptimalRate,
   OptimalSwap,
   OptimalSwapExchange,
@@ -134,7 +135,7 @@ export class GenericSwapTransactionBuilder {
               executorAddress,
             );
 
-            const dexParams = await dex.getDexParam!(
+            let dexParams = await dex.getDexParam!(
               srcToken,
               destToken,
               side === SwapSide.BUY ? se.srcAmount : srcAmount, // in other case we would not be able to make insert from amount on Ex3
@@ -155,8 +156,16 @@ export class GenericSwapTransactionBuilder {
               executorAddress,
             );
 
+            if (typeof dexParams.needWrapNative === 'function') {
+              dexParams.needWrapNative = dexParams.needWrapNative(
+                priceRoute,
+                swap,
+                se,
+              );
+            }
+
             return {
-              dexParams,
+              dexParams: <DexExchangeParamWithBooleanNeedWrapNative>dexParams,
               wethDeposit,
               wethWithdraw,
             };
@@ -167,7 +176,7 @@ export class GenericSwapTransactionBuilder {
 
     const { exchangeParams, srcAmountWethToDeposit, destAmountWethToWithdraw } =
       await rawDexParams.reduce<{
-        exchangeParams: DexExchangeParam[];
+        exchangeParams: DexExchangeParamWithBooleanNeedWrapNative[];
         srcAmountWethToDeposit: bigint;
         destAmountWethToWithdraw: bigint;
       }>(
@@ -676,7 +685,7 @@ export class GenericSwapTransactionBuilder {
   private async addDexExchangeApproveParams(
     bytecodeBuilder: ExecutorBytecodeBuilder,
     priceRoute: OptimalRate,
-    dexExchangeParams: DexExchangeParam[],
+    dexExchangeParams: DexExchangeParamWithBooleanNeedWrapNative[],
     maybeWethCallData?: DepositWithdrawReturn,
   ): Promise<DexExchangeBuildParam[]> {
     const spender = bytecodeBuilder.getAddress();

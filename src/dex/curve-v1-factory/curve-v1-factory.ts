@@ -1431,11 +1431,7 @@ export class CurveV1Factory
 
       return {
         exchangeData,
-        needWrapNative: this.needWrapNative(
-          conext.priceRoute,
-          conext.swap,
-          conext.swapExchange,
-        ),
+        needWrapNative: this.needWrapNative,
         sendEthButSupportsInsertFromAmount: true,
         dexFuncHasRecipient: false,
         targetExchange: exchange,

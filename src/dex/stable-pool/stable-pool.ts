@@ -22,8 +22,6 @@ export class StablePool
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
 
-  needWrapNative = false;
-
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'stablePool');
     this.exchangeRouterInterface = new Interface(StablePoolABI);

@@ -22,8 +22,6 @@ export class Bancor
   static dexKeys = ['bancor'];
   exchangeRouterInterface: Interface;
 
-  needWrapNative = false;
-
   constructor(dexHelper: IDexHelper) {
     super(dexHelper, 'bancor');
     this.exchangeRouterInterface = new Interface(BancorABI as JsonFragment[]);
