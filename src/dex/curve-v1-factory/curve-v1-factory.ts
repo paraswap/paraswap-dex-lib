@@ -230,7 +230,6 @@ export class CurveV1Factory
   ): boolean {
     const wethAddress =
       this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-    const ethAddress = ETHER_ADDRESS.toLowerCase();
 
     const path = data.path;
 
@@ -239,9 +238,9 @@ export class CurveV1Factory
 
     let needWrapNative = false;
     if (
-      (srcToken.toLowerCase() === ethAddress &&
+      (srcToken.toLowerCase() === ETHER_ADDRESS &&
         tokenIn.toLowerCase() === wethAddress) ||
-      (destToken.toLowerCase() === ethAddress &&
+      (destToken.toLowerCase() === ETHER_ADDRESS &&
         tokenOut.toLowerCase() === wethAddress)
     ) {
       needWrapNative = true;
@@ -781,12 +780,11 @@ export class CurveV1Factory
       destTokenAddress,
     );
 
-    const ethAddress = ETHER_ADDRESS.toLowerCase();
     const wethAddress =
       this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     if (
       !this.needWrapNativeForPricing &&
-      _srcToken.address.toLowerCase() === ethAddress
+      _srcToken.address.toLowerCase() === ETHER_ADDRESS
     ) {
       pools = pools.concat(
         this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
@@ -795,7 +793,7 @@ export class CurveV1Factory
 
     if (
       !this.needWrapNativeForPricing &&
-      _destToken.address.toLowerCase() === ethAddress
+      _destToken.address.toLowerCase() === ETHER_ADDRESS
     ) {
       pools = pools.concat(
         this.poolManager.getPoolsForPair(srcTokenAddress, wethAddress),
@@ -846,7 +844,6 @@ export class CurveV1Factory
         return null;
       }
 
-      const ethAddress = ETHER_ADDRESS.toLowerCase();
       const wethAddress =
         this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
 
@@ -866,7 +863,7 @@ export class CurveV1Factory
 
             if (
               !this.needWrapNativeForPricing &&
-              srcTokenAddress.toLowerCase() === ethAddress
+              srcTokenAddress.toLowerCase() === ETHER_ADDRESS
             ) {
               return (
                 isPoolWithData ||
@@ -877,7 +874,7 @@ export class CurveV1Factory
 
             if (
               !this.needWrapNativeForPricing &&
-              destTokenAddress.toLowerCase() === ethAddress
+              destTokenAddress.toLowerCase() === ETHER_ADDRESS
             ) {
               return (
                 isPoolWithData ||
@@ -897,7 +894,7 @@ export class CurveV1Factory
 
         if (
           !this.needWrapNativeForPricing &&
-          _srcToken.address.toLowerCase() === ethAddress
+          _srcToken.address.toLowerCase() === ETHER_ADDRESS
         ) {
           pools = pools.concat(
             this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
@@ -906,7 +903,7 @@ export class CurveV1Factory
 
         if (
           !this.needWrapNativeForPricing &&
-          _destToken.address.toLowerCase() === ethAddress
+          _destToken.address.toLowerCase() === ETHER_ADDRESS
         ) {
           pools = pools.concat(
             this.poolManager.getPoolsForPair(srcTokenAddress, wethAddress),
