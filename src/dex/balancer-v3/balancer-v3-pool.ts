@@ -8,7 +8,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState, PoolStateMap } from './types';
 import { getPoolsApi } from './getPoolsApi';
 import { vaultExtensionAbi_V3 } from './abi/vaultExtension.V3';
-import { getOnChainState } from './getOnChainState';
+import { decodeThrowError, getOnChainState } from './getOnChainState';
 import { BalancerV3Config } from './config';
 import { SwapKind, Vault } from '@balancer-labs/balancer-maths';
 
@@ -232,5 +232,76 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       },
       pool,
     );
+  }
+
+  /**
+   * Retrieves any new pools via API/multicall and adds to state
+   */
+  async updateStatePools(): Promise<void> {
+    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    // We just want the current saved state
+    const currentState = this.getStaleState() || {};
+    const updatedPoolState = await this.getUpdatedPoolState(currentState);
+    if (updatedPoolState) this.setState(updatedPoolState, blockNumber);
+  }
+
+  /**
+   * Uses multicall to get onchain token rate for each pool then updates pool state
+   */
+  async updateStatePoolRates(): Promise<void> {
+    // Get existing state
+    const poolState = _.cloneDeep(this.getStaleState()) as PoolStateMap;
+    if (!poolState) return;
+
+    // Fetch onchain pool rates
+    const poolRates = await this.getPoolRates(Object.keys(poolState));
+
+    // Update each pools rate
+    poolRates.forEach(({ poolAddress, tokenRates }, i) => {
+      poolState[poolAddress].tokenRates = tokenRates;
+    });
+
+    // Update state
+    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    this.setState(poolState, blockNumber);
+  }
+
+  private async getPoolRates(poolAddresses: string[]) {
+    // For each pool make the getPoolTokenRates call
+    const multiCallData = poolAddresses.map(address => {
+      return {
+        target: BalancerV3Config.BalancerV3[this.network].vaultAddress,
+        callData: this.interfaces['VAULT'].encodeFunctionData(
+          'getPoolTokenRates',
+          [address],
+        ),
+      };
+    });
+    // 500 is an arbitrary number chosen based on the blockGasLimit
+    const slicedMultiCallData = _.chunk(multiCallData, 500);
+
+    // Make the multicall
+    const multicallData = (
+      await Promise.all(
+        slicedMultiCallData.map(async _multiCallData =>
+          this.dexHelper.multiContract.methods
+            .tryAggregate(false, _multiCallData)
+            .call({}),
+        ),
+      )
+    ).flat();
+
+    return poolAddresses.map((address, i) => {
+      const tokenRateResult = decodeThrowError(
+        this.interfaces['VAULT'],
+        'getPoolTokenRates',
+        multicallData[i],
+        address,
+      );
+      return {
+        poolAddress: address,
+        tokenRates: tokenRateResult.tokenRates.map((r: string) => BigInt(r)),
+      };
+    });
   }
 }

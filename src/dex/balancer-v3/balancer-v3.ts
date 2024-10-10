@@ -5,7 +5,6 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   DexExchangeParam,
@@ -27,7 +26,8 @@ import { extractReturnAmountPosition } from '../../executor/utils';
 
 const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
-const POOL_UPDATE_TTL = 10;
+const POOL_UPDATE_TTL = 5 * 60; // 5mins
+const RATE_UPDATE_TTL = 30 * 60; // 30mins
 
 type DeepMutable<T> = {
   -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : T[P];
@@ -48,6 +48,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   logger: Logger;
   balancerRouter: Interface;
   updateNewPoolsTimer?: NodeJS.Timer;
+  updateRatesTimer?: NodeJS.Timer;
 
   constructor(
     readonly network: Network,
@@ -72,8 +73,9 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   // implement this function
   async initializePricing(blockNumber: number) {
     await this.eventPools.initialize(blockNumber);
+
+    // This will periodically query API and add any new pools to pool state
     if (!this.updateNewPoolsTimer) {
-      // This will periodically query API and add any new pools to pool state
       this.updateNewPoolsTimer = setInterval(async () => {
         try {
           await this.updatePoolState();
@@ -81,6 +83,17 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
           this.logger.error(`${this.dexKey}: Failed to update pool state:`, e);
         }
       }, POOL_UPDATE_TTL * 1000);
+    }
+
+    // This will periodically refresh tokenRates with onchain state
+    if (!this.updateRatesTimer) {
+      this.updateRatesTimer = setInterval(async () => {
+        try {
+          await this.updateStatePoolRates();
+        } catch (e) {
+          this.logger.error(`${this.dexKey}: Failed to update pool rates:`, e);
+        }
+      }, RATE_UPDATE_TTL * 1000);
     }
   }
 
@@ -366,20 +379,20 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     }
   }
 
+  /**
+   * Uses multicall to get onchain token rate for each pool then updates pool state
+   */
+  async updateStatePoolRates(): Promise<void> {
+    await this.eventPools.updateStatePoolRates();
+  }
+
   // This is called once before getTopPoolsForToken is
   // called for multiple tokens. This can be helpful to
   // update common state required for calculating
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
-    // We just want the current saved state
-    const currentState = this.eventPools.getState(1) || {};
-    const updatedPoolState = await this.eventPools.getUpdatedPoolState(
-      currentState,
-    );
-    if (updatedPoolState)
-      this.eventPools.setState(updatedPoolState, blockNumber);
+    await this.eventPools.updateStatePools();
   }
 
   // Returns list of top pools based on liquidity. Max
