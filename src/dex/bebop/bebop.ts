@@ -724,7 +724,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       BEBOP_ERRORS_CACHE_KEY,
     );
 
-    const errorsData: RestrictData = Utils.Parse(errorsDataRaw) || {};
+    const errorsData: RestrictData = Utils.Parse(errorsDataRaw);
+    const ERRORS_TTL_S = Math.floor(BEBOP_RESTRICT_CHECK_INTERVAL_MS / 1000);
 
     if (
       !errorsData ||
@@ -742,7 +743,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         this.dexKey,
         this.network,
         BEBOP_ERRORS_CACHE_KEY,
-        BEBOP_RESTRICT_CHECK_INTERVAL_MS,
+        ERRORS_TTL_S,
         Utils.Serialize(data),
       );
       return;
@@ -772,7 +773,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           this.dexKey,
           this.network,
           BEBOP_ERRORS_CACHE_KEY,
-          BEBOP_RESTRICT_CHECK_INTERVAL_MS,
+          ERRORS_TTL_S,
           Utils.Serialize(data),
         );
       }
