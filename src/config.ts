@@ -55,7 +55,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
       Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
-      Executor03: '0x7775a7d31fd8df4f16febe1b49ca8541783fd00f',
+      Executor03: '0xe009F00e200A090090fC70e02d70B232000c0802',
     },
     adapterAddresses: {
       Adapter01: '0x9bE264469eF954c139Da4A45Cf76CbCC5e3A6A73',
@@ -148,7 +148,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
       Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
-      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
+      Executor03: '0xe009F00e200A090090fC70e02d70B232000c0802',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
@@ -184,7 +184,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
       Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
-      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
+      Executor03: '0xe009F00e200A090090fC70e02d70B232000c0802',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
@@ -225,7 +225,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
       Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
-      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
+      Executor03: '0xe009F00e200A090090fC70e02d70B232000c0802',
     },
     adapterAddresses: {
       AvalancheAdapter01: '0x745Ec73855CeC7249E5fF4c9DD81cc65b4D297a9',
@@ -294,7 +294,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
       Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
-      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
+      Executor03: '0xe009F00e200A090090fC70e02d70B232000c0802',
     },
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     adapterAddresses: {
@@ -329,7 +329,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
       Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
-      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
+      Executor03: '0xe009F00e200A090090fC70e02d70B232000c0802',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
@@ -404,7 +404,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
       Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
-      Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
+      Executor03: '0xe009F00e200A090090fC70e02d70B232000c0802',
     },
     adapterAddresses: {
       BaseAdapter01: '0xe53d24CD81cC81bbf271AD7B02D0d67f851D727c',
