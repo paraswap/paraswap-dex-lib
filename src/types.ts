@@ -305,6 +305,7 @@ export type Config = {
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
   idleDaoAuthToken?: string;
+  rubiconRfqAuthToken?: string;
   forceRpcFallbackDexs: string[];
   apiKeyTheGraph: string;
 };
