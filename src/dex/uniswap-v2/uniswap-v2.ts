@@ -580,13 +580,7 @@ export class UniswapV2
     }
 
     const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-    if (limitPools && limitPools.every(p => p !== poolIdentifier))
-      return [
-        {
-          poolId: poolIdentifier,
-          prices: null,
-        },
-      ];
+    if (limitPools && limitPools.every(p => p !== poolIdentifier)) return [];
 
     try {
       await this.batchCatchUpPairs([[from, to]], blockNumber);
