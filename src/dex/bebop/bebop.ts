@@ -611,10 +611,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     };
   }
 
-  getRestrictedPoolKey(): string {
-    return `${this.dexKey}-${this.network}-${BEBOP_RESTRICTED_CACHE_KEY}`;
-  }
-
   async preProcessTransaction(
     optimalSwapExchange: OptimalSwapExchange<BebopData>,
     srcToken: Token,
