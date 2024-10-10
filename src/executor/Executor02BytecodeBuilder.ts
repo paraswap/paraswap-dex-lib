@@ -5,7 +5,11 @@ import {
   OptimalSwap,
   OptimalSwapExchange,
 } from '@paraswap/core';
-import { DexExchangeBuildParam, DexExchangeParam } from '../types';
+import {
+  DexExchangeBuildParam,
+  DexExchangeParam,
+  DexExchangeParamWithBooleanNeedWrapNative,
+} from '../types';
 import { Executors, Flag, SpecialDex } from './types';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
@@ -1220,7 +1224,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
 
   private doesRouteNeedsRootUnwrapEth(
     priceRoute: OptimalRate,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeParamWithBooleanNeedWrapNative[],
   ): boolean {
     if (!isETHAddress(priceRoute.destToken)) {
       return false;

@@ -16,6 +16,7 @@ import { OptimalRate } from '@paraswap/core';
 import BigNumber from 'bignumber.js';
 import { RFQConfig } from './dex/generic-rfq/types';
 import { Executors, Flag, SpecialDex } from './executor/types';
+import { NeedWrapNativeFunc } from './dex/idex';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -158,7 +159,7 @@ export type AdapterExchangeParam = {
 };
 
 export type DexExchangeParam = {
-  needWrapNative: boolean;
+  needWrapNative: boolean | NeedWrapNativeFunc;
   skipApproval?: boolean;
   wethAddress?: string;
   exchangeData: string;
@@ -174,12 +175,17 @@ export type DexExchangeParam = {
   returnAmountPos: number | undefined;
 };
 
-export type DexExchangeBuildParam = DexExchangeParam & {
-  approveData?: {
-    target: Address;
-    token: Address;
-  };
+export type DexExchangeParamWithBooleanNeedWrapNative = DexExchangeParam & {
+  needWrapNative: boolean;
 };
+
+export type DexExchangeBuildParam =
+  DexExchangeParamWithBooleanNeedWrapNative & {
+    approveData?: {
+      target: Address;
+      token: Address;
+    };
+  };
 
 export type AdapterMappings = {
   [side: string]: { name: string; index: number }[];

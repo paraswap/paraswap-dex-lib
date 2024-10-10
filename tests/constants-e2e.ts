@@ -757,6 +757,10 @@ export const Tokens: {
       address: '0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a',
       decimals: 18,
     },
+    TRYB: {
+      address: '0x4fb71290ac171e1d144f7221d882becac7196eb5',
+      decimals: 6,
+    },
   },
   [Network.FANTOM]: {
     FTM: { address: ETHER_ADDRESS, decimals: 18 },
@@ -1708,6 +1712,7 @@ export const Holders: {
     USDCn: '0x4B6f17856215eab57c29ebfA18B0a0F74A3627bb',
     USDM: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     wUSDM: '0x76272a79F7e529247b663fC8857BD69244b0d412',
+    TRYB: '0xD05007f1BD1304bFAEb370Ec5EbD18fD02a581e6',
   },
   [Network.FANTOM]: {
     DAI: '0x370f4b2dcf75c94d8d4450b493661a9c6170d0b5',
@@ -1772,7 +1777,7 @@ export const Holders: {
     BETS: '0x8cc2284c90d05578633418f9cde104f402375a65',
     HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
     USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
-    USDC: '0x187b6Ab771482CCFEE7cD2C35176080631082368',
+    USDC: '0xcc2da711D621A4491b338CAC88B9C0954db3e75B',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
     WETHe: '0x9bdB521a97E95177BF252C253E256A60C3e14447',
     POPS: '0x5268c2331658cb0b2858cfa9db27d8f22f5434bc',
