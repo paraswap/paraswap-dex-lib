@@ -79,3 +79,12 @@ export type RoutingInstruction = {
   pair: string;
   targetQuote: boolean;
 };
+
+export class SlippageError extends Error {
+  isSlippageError = true;
+}
+
+export type RestrictData = {
+  count: number;
+  addedDatetimeMs: number;
+} | null;

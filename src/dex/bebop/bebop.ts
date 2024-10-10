@@ -15,7 +15,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -23,7 +23,9 @@ import {
   BebopLevel,
   BebopPair,
   BebopPricingResponse,
+  RestrictData,
   RoutingInstruction,
+  SlippageError,
   TokenDataMap,
 } from './types';
 import settlementABI from '../../abi/bebop/BebopSettlement.abi.json';
@@ -34,10 +36,15 @@ import { RateFetcher } from './rate-fetcher';
 import {
   BEBOP_API_URL,
   BEBOP_AUTH_NAME,
+  BEBOP_ERRORS_CACHE_KEY,
   BEBOP_GAS_COST,
   BEBOP_INIT_TIMEOUT_MS,
   BEBOP_PRICES_CACHE_TTL,
   BEBOP_QUOTE_TIMEOUT_MS,
+  BEBOP_RESTRICTED_CACHE_KEY,
+  BEBOP_RESTRICT_CHECK_INTERVAL_MS,
+  BEBOP_RESTRICT_COUNT_THRESHOLD,
+  BEBOP_RESTRICT_TTL_S,
   BEBOP_TOKENS_CACHE_TTL,
   BEBOP_TOKENS_POLLING_INTERVAL_MS,
   BEBOP_WS_API_URL,
@@ -359,6 +366,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<BebopData>> {
+    const isRestricted = await this.isRestricted();
+    if (isRestricted) {
+      return null;
+    }
+
     try {
       let pools = limitPools
         ? limitPools.filter(
@@ -593,10 +605,14 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     return {
       exchangeData: tx.data,
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
+      dexFuncHasRecipient: true,
       targetExchange: this.settlementAddress,
       returnAmountPos: undefined,
     };
+  }
+
+  getRestrictedPoolKey(): string {
+    return `${this.dexKey}-${this.network}-${BEBOP_RESTRICTED_CACHE_KEY}`;
   }
 
   async preProcessTransaction(
@@ -656,7 +672,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           .times(options.slippageFactor)
           .toFixed(0);
         if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
-          throw new Error(
+          throw new SlippageError(
             `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
           );
         }
@@ -671,7 +687,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           .times(options.slippageFactor)
           .toFixed(0);
         if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
-          throw new Error(
+          throw new SlippageError(
             `Slipped, factor: ${
               options.slippageFactor
             } ${quoteAmount.toString()} > ${requiredAmountWithSlippage}`,
@@ -687,11 +703,86 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         },
         { deadline: BigInt(response.expiry) },
       ];
-    } catch (e) {
+    } catch (e: any) {
       const message = `${this.dexKey}-${this.network}: ${e}`;
       this.logger.error(message);
+      if (!e?.isSlippageError) {
+        this.restrict();
+      }
       throw new Error(message);
     }
+  }
+
+  async restrict() {
+    const errorsDataRaw = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      BEBOP_ERRORS_CACHE_KEY,
+    );
+
+    const errorsData: RestrictData = Utils.Parse(errorsDataRaw) || {};
+
+    if (
+      !errorsData ||
+      errorsData?.addedDatetimeMs + BEBOP_RESTRICT_CHECK_INTERVAL_MS <
+        Date.now()
+    ) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: First encounter of error OR error ocurred outside of threshold, setting up counter`,
+      );
+      const data: RestrictData = {
+        count: 1,
+        addedDatetimeMs: Date.now(),
+      };
+      await this.dexHelper.cache.setex(
+        this.dexKey,
+        this.network,
+        BEBOP_ERRORS_CACHE_KEY,
+        BEBOP_RESTRICT_CHECK_INTERVAL_MS,
+        Utils.Serialize(data),
+      );
+      return;
+    } else {
+      if (errorsData.count + 1 >= BEBOP_RESTRICT_COUNT_THRESHOLD) {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: Restricting due to error count=${
+            errorsData.count + 1
+          } within ${BEBOP_RESTRICT_CHECK_INTERVAL_MS / 1000 / 60} minutes`,
+        );
+        await this.dexHelper.cache.setex(
+          this.dexKey,
+          this.network,
+          BEBOP_RESTRICTED_CACHE_KEY,
+          BEBOP_RESTRICT_TTL_S,
+          'true',
+        );
+      } else {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: Error count increased`,
+        );
+        const data: RestrictData = {
+          count: errorsData.count + 1,
+          addedDatetimeMs: errorsData.addedDatetimeMs,
+        };
+        await this.dexHelper.cache.setex(
+          this.dexKey,
+          this.network,
+          BEBOP_ERRORS_CACHE_KEY,
+          BEBOP_RESTRICT_CHECK_INTERVAL_MS,
+          Utils.Serialize(data),
+        );
+      }
+    }
+  }
+
+  async isRestricted(): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      BEBOP_RESTRICTED_CACHE_KEY,
+    );
+
+    return result === 'true';
   }
 
   async getCachedPrices(): Promise<BebopPricingResponse | null> {
