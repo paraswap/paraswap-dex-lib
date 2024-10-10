@@ -168,38 +168,20 @@ describe('FluidDex EventPool Mainnet', function () {
                     data: '0xe3ead59e000000000000000000000000a600910b670804230e00a100000d28000ae005c00000000000000000000000007f39c581f595b53c5cb19bd0b3f8da6c935e2ca0000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000103ab964e9ceb0100000000000000000000000000000000000000000000000001064b0ec65b454c0ae160924eed54e7abfa6d4ced59c2447000000000000000000000000013f7447000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000180000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001807f39c581f595b53c5cb19bd0b3f8da6c935e2ca00000006000000044ff00000000000000000000000000000000000000000000000000000000000000095ea7b30000000000000000000000006d83f60eeac0e50a1250760151e81db2a278e03affffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6d83f60eeac0e50a1250760151e81db2a278e03a000000a00024000000000007000000000000000000000000000000000000000000000000000000002668dfaa00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006a000f20005980200259b80c5102003040001068',
                   });
 
-                  // console.log(swapTxn);
+                  console.log(swapTxn);
 
                   const txnBlockNumber = swapTxn.transaction.block_number;
 
+                  const txnhash =
+                    swapTxn.transaction.transaction_info.transaction_id;
+                  console.log(txnhash);
+
                   console.log(
-                    'old values : ' +
+                    'retreiving txn : ' +
                       JSON.stringify(
-                        await fluidDexEventPool.generateState(
-                          txnBlockNumber - 4,
+                        await dexHelper.web3Provider.eth.getTransaction(
+                          txnhash,
                         ),
-                        replacer,
-                        2,
-                      ),
-                  );
-                  console.log(
-                    'old values : ' +
-                      JSON.stringify(
-                        await fluidDexEventPool.generateState(
-                          txnBlockNumber - 3,
-                        ),
-                        replacer,
-                        2,
-                      ),
-                  );
-                  console.log(
-                    'old values : ' +
-                      JSON.stringify(
-                        await fluidDexEventPool.generateState(
-                          txnBlockNumber - 2,
-                        ),
-                        replacer,
-                        2,
                       ),
                   );
                   // console.log(fluidDexEventPool);
@@ -222,37 +204,37 @@ describe('FluidDex EventPool Mainnet', function () {
     },
   );
 
-  // Object.entries(poolFetchEventsToTest).forEach(
-  //   ([poolAddress, events]: [string, EventMappings]) => {
-  //     describe(`Events for ${poolAddress}`, () => {
-  //       Object.entries(events).forEach(
-  //         ([eventName, blockNumbers]: [string, number[]]) => {
-  //           describe(`${eventName}`, () => {
-  //             blockNumbers.forEach((blockNumber: number) => {
-  //               it(`State after ${blockNumber}`, async function () {
-  //                 fluidDexCommonAddress = new FluidDexCommonAddresses(
-  //                   'FluidDex',
-  //                   fluidDexCommonAddressStruct,
-  //                   network,
-  //                   dexHelper,
-  //                   logger,
-  //                 );
+  Object.entries(poolFetchEventsToTest).forEach(
+    ([poolAddress, events]: [string, EventMappings]) => {
+      describe(`Events for ${poolAddress}`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async function () {
+                  fluidDexCommonAddress = new FluidDexCommonAddresses(
+                    'FluidDex',
+                    fluidDexCommonAddressStruct,
+                    network,
+                    dexHelper,
+                    logger,
+                  );
 
-  //                 await testEventSubscriber(
-  //                   fluidDexCommonAddress,
-  //                   fluidDexCommonAddress.addressesSubscribed,
-  //                   (_blockNumber: number) =>
-  //                     fetchTotalPools(fluidDexCommonAddress, _blockNumber),
-  //                   blockNumber,
-  //                   `${dexKey}_${poolAddress}`,
-  //                   dexHelper.provider,
-  //                 );
-  //               });
-  //             });
-  //           });
-  //         },
-  //       );
-  //     });
-  //   },
-  // );
+                  await testEventSubscriber(
+                    fluidDexCommonAddress,
+                    fluidDexCommonAddress.addressesSubscribed,
+                    (_blockNumber: number) =>
+                      fetchTotalPools(fluidDexCommonAddress, _blockNumber),
+                    blockNumber,
+                    `${dexKey}_${poolAddress}`,
+                    dexHelper.provider,
+                  );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
 });
