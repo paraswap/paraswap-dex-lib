@@ -27,6 +27,7 @@ import { extractReturnAmountPosition } from '../../executor/utils';
 
 const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
+const POOL_UPDATE_TTL = 10;
 
 type DeepMutable<T> = {
   -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : T[P];
@@ -46,6 +47,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
 
   logger: Logger;
   balancerRouter: Interface;
+  updateNewPoolsTimer?: NodeJS.Timer;
 
   constructor(
     readonly network: Network,
@@ -70,6 +72,16 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   // implement this function
   async initializePricing(blockNumber: number) {
     await this.eventPools.initialize(blockNumber);
+    if (!this.updateNewPoolsTimer) {
+      // This will periodically query API and add any new pools to pool state
+      this.updateNewPoolsTimer = setInterval(async () => {
+        try {
+          await this.updatePoolState();
+        } catch (e) {
+          this.logger.error(`${this.dexKey}: Failed to update pool state:`, e);
+        }
+      }, POOL_UPDATE_TTL * 1000);
+    }
   }
 
   // Returns the list of contract adapters (name and index)
@@ -360,7 +372,14 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    // TODO: complete me!
+    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    // We just want the current saved state
+    const currentState = this.eventPools.getState(1) || {};
+    const updatedPoolState = await this.eventPools.getUpdatedPoolState(
+      currentState,
+    );
+    if (updatedPoolState)
+      this.eventPools.setState(updatedPoolState, blockNumber);
   }
 
   // Returns list of top pools based on liquidity. Max

@@ -245,7 +245,7 @@ export async function getOnChainState(
   interfaces: {
     [name: string]: Interface;
   },
-  blockNumber: number,
+  blockNumber?: number,
 ): Promise<PoolStateMap> {
   const multiCallData = Object.entries(immutablePoolStateMap)
     .map(([address, pool]) => {

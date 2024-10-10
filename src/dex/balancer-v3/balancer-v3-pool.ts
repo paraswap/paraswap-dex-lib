@@ -124,6 +124,52 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return filteredPools;
   }
 
+  async getUpdatedPoolState(
+    existingPoolState: DeepReadonly<PoolStateMap>,
+  ): Promise<DeepReadonly<PoolStateMap> | null> {
+    // Get all latest pools from API
+    const apiPoolStateMap = await getPoolsApi(this.network);
+
+    // Filter out pools that already exist in existing state
+    const newApiPools = Object.entries(apiPoolStateMap).reduce(
+      (acc, [address, pool]) => {
+        if (!existingPoolState[address]) {
+          acc[address] = pool;
+        }
+        return acc;
+      },
+      {} as typeof apiPoolStateMap,
+    );
+
+    // If no new pools return
+    if (Object.keys(newApiPools).length === 0) {
+      return null;
+    }
+
+    // Only get on-chain state for new pools
+    const newOnChainPools = await getOnChainState(
+      this.network,
+      newApiPools,
+      this.dexHelper,
+      this.interfaces,
+    );
+
+    // Filter out pools with hooks and paused pools from new state
+    // TODO this won't be necessary once API has this filter option
+    const filteredNewPools = Object.entries(newOnChainPools)
+      .filter(([_, pool]) => !(pool.hasHook || pool.isPoolPaused))
+      .reduce((acc, [address, pool]) => {
+        acc[address] = pool;
+        return acc;
+      }, {} as PoolStateMap);
+
+    // Merge existing pools with new pools
+    return {
+      ...existingPoolState,
+      ...filteredNewPools,
+    };
+  }
+
   poolBalanceChangedEvent(
     event: any,
     state: DeepReadonly<PoolStateMap>,

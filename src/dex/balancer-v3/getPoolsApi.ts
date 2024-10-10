@@ -24,15 +24,28 @@ interface QueryResponse {
 
 function createQuery(
   networkId: number,
-  timestamp: number,
   poolTypes: SUPPORTED_POOLS[],
+  timestamp?: number,
 ): string {
   const poolTypesString = poolTypes.map(type => `${type}`).join(', ');
   const networkString = BalancerV3Config.BalancerV3[networkId].apiNetworkName;
+  // Build the where clause conditionally
+  const whereClause = {
+    chainIn: networkString,
+    protocolVersionIn: 3,
+    hasHook: false,
+    poolTypeIn: `[${poolTypesString}]`,
+    ...(timestamp && { createTime: `{lt: ${timestamp}}` }),
+  };
+
+  // Convert where clause to string, filtering out undefined values
+  const whereString = Object.entries(whereClause)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(', ');
   return `
     query MyQuery {
       poolGetAggregatorPools(
-        where: {chainIn: ${networkString}, protocolVersionIn: 3, poolTypeIn: [${poolTypesString}], createTime: {lt: ${timestamp}}}
+        where: {${whereString}}
       ) {
         id
         type
@@ -69,13 +82,13 @@ function toImmutablePoolStateMap(pools: Pool[]): ImmutablePoolStateMap {
 // Any data from API will be immutable. Mutable data such as balances, etc will be fetched via onchain/event state.
 export async function getPoolsApi(
   network: number,
-  timestamp: number,
+  timestamp?: number,
 ): Promise<ImmutablePoolStateMap> {
   try {
     const query = createQuery(
       network,
-      timestamp,
       Object.values(SUPPORTED_POOLS),
+      timestamp,
     );
     const response = await axios.post<QueryResponse>(
       apiUrl,
