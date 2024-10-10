@@ -2,7 +2,12 @@ import { Interface, AbiCoder } from '@ethersproject/abi';
 import { SimpleExchange } from '../simple-exchange';
 import { IDex } from '../idex';
 import _ from 'lodash';
-import { Network, SUBGRAPH_TIMEOUT, SwapSide } from '../../constants';
+import {
+  ALL_POOLS_IDENTIFIER,
+  Network,
+  SUBGRAPH_TIMEOUT,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { PRECISION } from './fee-formula';
 import {
@@ -22,6 +27,7 @@ import {
   NumberAsString,
   Address,
   DexExchangeParam,
+  ImprovedExchangePrices,
 } from '../../types';
 import {
   KyberDmmData,
@@ -309,23 +315,39 @@ export class KyberDmm
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<ExchangePrices<KyberDmmData> | null> {
+  ): Promise<ImprovedExchangePrices<KyberDmmData>> {
     try {
       if (!this.factory) {
-        return null;
+        return [
+          {
+            prices: null,
+            poolId: ALL_POOLS_IDENTIFIER,
+          },
+        ];
       }
 
       from = this.dexHelper.config.wrapETH(from);
       to = this.dexHelper.config.wrapETH(to);
 
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
-        return null;
+        return [
+          {
+            prices: null,
+            poolId: ALL_POOLS_IDENTIFIER,
+          },
+        ];
       }
 
       await this.catchUpPair(from, to, blockNumber);
       const pairParam = await this.getPairOrderedParams(from, to, blockNumber);
 
-      if (!pairParam) return null;
+      if (!pairParam)
+        return [
+          {
+            prices: null,
+            poolId: ALL_POOLS_IDENTIFIER,
+          },
+        ];
 
       pairParam.poolData = pairParam.poolData.filter(pool => {
         const poolIdentifier = `${
@@ -334,9 +356,9 @@ export class KyberDmm
         return !limitPools || limitPools.includes(poolIdentifier);
       });
 
-      if (!pairParam.poolData.length) return null;
+      if (!pairParam.poolData.length) return [];
 
-      return Promise.all(
+      const prices = await Promise.all(
         pairParam.poolData.map(pool => {
           return this.getPoolPrice(
             from,
@@ -350,13 +372,24 @@ export class KyberDmm
           );
         }),
       );
+
+      return prices.map(p => ({
+        poolId: p.poolIdentifier,
+        prices: p,
+      }));
     } catch (e) {
       if (blockNumber === 0)
         this.logger.error(
           `${this.dexKey}_getPricesVolume: Aurelius block manager not yet instantiated`,
         );
       this.logger.error(`${this.dexKey}_getPrices`, e);
-      return null;
+
+      return [
+        {
+          prices: null,
+          poolId: ALL_POOLS_IDENTIFIER,
+        },
+      ];
     }
   }
 
@@ -384,7 +417,7 @@ export class KyberDmm
     direction: boolean,
     poolIdentifier: string,
     blockNumber: number,
-  ): Promise<any> {
+  ) {
     // const [tokenA] = [
     //   from.address.toLowerCase(),
     //   to.address.toLowerCase(),
@@ -424,14 +457,14 @@ export class KyberDmm
         pools: [
           {
             address: pool.poolAddress,
-            fee: tradeInfo.feeInPrecision.toString(),
+            fee: Number(tradeInfo.feeInPrecision),
             direction,
           },
         ],
       },
       exchange: this.dexKey,
       poolIdentifier,
-      gasCost: this.config.poolGasCost,
+      gasCost: this.config.poolGasCost ?? 0,
       poolAddresses: [pool.poolAddress],
     };
   }
