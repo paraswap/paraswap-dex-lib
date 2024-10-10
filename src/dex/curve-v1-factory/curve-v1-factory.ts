@@ -25,7 +25,6 @@ import {
   TxInfo,
 } from '../../types';
 import {
-  ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
   SRC_TOKEN_PARASWAP_TRANSFERS,
@@ -238,10 +237,8 @@ export class CurveV1Factory
 
     let needWrapNative = false;
     if (
-      (srcToken.toLowerCase() === ETHER_ADDRESS &&
-        tokenIn.toLowerCase() === wethAddress) ||
-      (destToken.toLowerCase() === ETHER_ADDRESS &&
-        tokenOut.toLowerCase() === wethAddress)
+      (isETHAddress(srcToken) && tokenIn.toLowerCase() === wethAddress) ||
+      (isETHAddress(destToken) && tokenOut.toLowerCase() === wethAddress)
     ) {
       needWrapNative = true;
     }
@@ -782,19 +779,13 @@ export class CurveV1Factory
 
     const wethAddress =
       this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-    if (
-      !this.needWrapNativeForPricing &&
-      _srcToken.address.toLowerCase() === ETHER_ADDRESS
-    ) {
+    if (!this.needWrapNativeForPricing && isETHAddress(_srcToken.address)) {
       pools = pools.concat(
         this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
       ); // discover WETH pools for ETH src
     }
 
-    if (
-      !this.needWrapNativeForPricing &&
-      _destToken.address.toLowerCase() === ETHER_ADDRESS
-    ) {
+    if (!this.needWrapNativeForPricing && isETHAddress(_destToken.address)) {
       pools = pools.concat(
         this.poolManager.getPoolsForPair(srcTokenAddress, wethAddress),
       ); // discover WETH pools for ETH dest
@@ -863,7 +854,7 @@ export class CurveV1Factory
 
             if (
               !this.needWrapNativeForPricing &&
-              srcTokenAddress.toLowerCase() === ETHER_ADDRESS
+              isETHAddress(srcTokenAddress)
             ) {
               return (
                 isPoolWithData ||
@@ -874,7 +865,7 @@ export class CurveV1Factory
 
             if (
               !this.needWrapNativeForPricing &&
-              destTokenAddress.toLowerCase() === ETHER_ADDRESS
+              isETHAddress(destTokenAddress)
             ) {
               return (
                 isPoolWithData ||
@@ -892,10 +883,7 @@ export class CurveV1Factory
           _isSrcTokenTransferFeeToBeExchanged,
         );
 
-        if (
-          !this.needWrapNativeForPricing &&
-          _srcToken.address.toLowerCase() === ETHER_ADDRESS
-        ) {
+        if (!this.needWrapNativeForPricing && isETHAddress(_srcToken.address)) {
           pools = pools.concat(
             this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
           ); // discover WETH pools for ETH src
@@ -903,7 +891,7 @@ export class CurveV1Factory
 
         if (
           !this.needWrapNativeForPricing &&
-          _destToken.address.toLowerCase() === ETHER_ADDRESS
+          isETHAddress(_destToken.address)
         ) {
           pools = pools.concat(
             this.poolManager.getPoolsForPair(srcTokenAddress, wethAddress),
@@ -974,9 +962,9 @@ export class CurveV1Factory
             let poolData = pool.getPoolData(srcTokenAddress, destTokenAddress);
 
             if (poolData === null && !this.needWrapNativeForPricing) {
-              if (srcTokenAddress.toLowerCase() === ethAddress) {
+              if (isETHAddress(srcTokenAddress)) {
                 poolData = pool.getPoolData(wethAddress, destTokenAddress);
-              } else if (destTokenAddress.toLowerCase() === ethAddress) {
+              } else if (isETHAddress(destTokenAddress)) {
                 poolData = pool.getPoolData(srcTokenAddress, wethAddress);
               }
             }
