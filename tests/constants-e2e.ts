@@ -1482,6 +1482,21 @@ export const Tokens: {
       decimals: 6,
     },
   },
+  [Network.SEPOLIA]: {
+    ETH: { address: ETHER_ADDRESS, decimals: 18 },
+    WETH: {
+      address: '0x7b79995e5f793a07bc00c21412e50ecae098e7f9',
+      decimals: 18,
+    },
+    bal: {
+      address: `0xb19382073c7a0addbb56ac6af1808fa49e377b75`,
+      decimals: 18,
+    },
+    daiAave: {
+      address: `0xff34b3d4aee8ddcd6f9afffb6fe49bd371b8a357`,
+      decimals: 18,
+    },
+  },
 };
 
 export const Holders: {
@@ -1831,6 +1846,11 @@ export const Holders: {
     crvUSD: '0xBbAbDB1385deA5285113581A7024d6DC04131101',
     cbETH: '0x50e011dD1e2b4906F1534623cD134B30422bb11E',
   },
+  [Network.SEPOLIA]: {
+    bal: '0xDb4ff41B4C1222c2b1869A67Be115070688989a2',
+    daiAave: '0xbB0bc84687fFb642fd90a3D12215e7eC16352A49',
+    WETH: '0x546e37DAA15cdb82fd1a717E5dEEa4AF08D4349A',
+  },
 };
 
 export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
@@ -1856,6 +1876,7 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
   [Network.BASE]: 'ETH',
+  [Network.SEPOLIA]: 'ETH',
 };
 
 export const WrappedNativeTokenSymbols: { [network: number]: string } = {
@@ -1867,4 +1888,5 @@ export const WrappedNativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'WETH',
   [Network.OPTIMISM]: 'WETH',
   [Network.BASE]: 'WETH',
+  [Network.SEPOLIA]: 'WETH',
 };

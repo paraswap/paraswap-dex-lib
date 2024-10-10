@@ -17,6 +17,7 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
     [Network.SEPOLIA]: {
       vaultAddress: '0x0EF1c156a7986F394d90eD1bEeA6483Cc435F542',
       apiNetworkName: 'SEPOLIA',
+      balancerRouterAddress: '0xDd10aDF05379D7C0Ee4bC9c72ecc5C01c40E25b8',
     },
   },
 };

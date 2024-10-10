@@ -71,7 +71,6 @@ function testForNetwork(
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    // TODO: If buy is not supported remove the buy contract methods
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -130,15 +129,14 @@ describe('BalancerV3 E2E', () => {
   const dexKey = 'BalancerV3';
 
   describe('Mainnet', () => {
-    const network = Network.MAINNET;
+    const network = Network.SEPOLIA;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'bal';
+    const tokenBSymbol: string = 'daiAave';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
-    const nativeTokenAmount = '1000000000000000000';
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '100000000000000';
 
     testForNetwork(
       network,
@@ -149,7 +147,5 @@ describe('BalancerV3 E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
-
-    // TODO: Add any additional test cases required to test BalancerV3
   });
 });

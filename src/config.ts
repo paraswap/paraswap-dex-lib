@@ -423,7 +423,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     isTestnet: false,
     nativeTokenName: 'Ether',
     nativeTokenSymbol: 'ETH',
-    wrappedNativeTokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    wrappedNativeTokenAddress: '0x7b79995e5f793a07bc00c21412e50ecae098e7f9',
     hasEIP1559: true,
     augustusAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     augustusRFQAddress: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',

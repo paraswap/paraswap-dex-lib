@@ -8,6 +8,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -18,7 +19,14 @@ import { BalancerV3Data, PoolState, PoolStateMap } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { BalancerV3Config, Adapters } from './config';
 import { BalancerV3EventPool } from './balancer-v3-pool';
+import { NumberAsString } from '@paraswap/core';
 import { SwapKind } from '@balancer-labs/balancer-maths';
+import { Interface } from '@ethersproject/abi';
+import { balancerRouterAbi } from './abi/balancerRouter';
+import { extractReturnAmountPosition } from '../../executor/utils';
+
+const MAX_UINT256 =
+  '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
 type DeepMutable<T> = {
   -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : T[P];
@@ -28,7 +36,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   protected eventPools: BalancerV3EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: set true here if protocols works only with wrapped asset
+  // TODO: vault can handle native
   readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
@@ -37,6 +45,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     getDexKeysWithNetwork(BalancerV3Config);
 
   logger: Logger;
+  balancerRouter: Interface;
 
   constructor(
     readonly network: Network,
@@ -52,6 +61,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       dexHelper,
       this.logger,
     );
+    this.balancerRouter = new Interface(balancerRouterAbi);
   }
 
   // Initialize pricing is called once in the start of
@@ -78,14 +88,14 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // const _from = this.dexHelper.config.wrapETH(from);
-    // const _to = this.dexHelper.config.wrapETH(to);
+    const _from = this.dexHelper.config.wrapETH(srcToken);
+    const _to = this.dexHelper.config.wrapETH(destToken);
     const poolState = this.eventPools.getState(blockNumber);
     if (poolState === null) return [];
     return this.findPoolAddressesWithTokens(
       poolState,
-      srcToken.address,
-      destToken.address,
+      _from.address,
+      _to.address,
     );
   }
 
@@ -163,7 +173,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
 
       if (!allowedPools.length) return null;
 
-      const swapKind = SwapSide.SELL ? SwapKind.GivenIn : SwapKind.GivenOut;
+      const swapKind =
+        side === SwapSide.SELL ? SwapKind.GivenIn : SwapKind.GivenOut;
       const tokenIn = _from.address;
       const tokenOut = _to.address;
 
@@ -200,22 +211,22 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
               swapKind,
             );
 
-          const exchangePrice: PoolPrices<BalancerV3Data> = {
+          const poolExchangePrice: PoolPrices<BalancerV3Data> = {
             prices: new Array(amounts.length).fill(0n),
             unit,
             data: {
-              exchange: this.dexKey, // TODO is this needed?
+              poolAddress: pool.address,
             },
             exchange: this.dexKey,
             gasCost: 1, // TODO - this will be updated once final profiles done
-            poolAddresses: [allowedPools[i].address],
-            poolIdentifier: `${this.dexKey}_${allowedPools[i].address}`,
+            poolAddresses: [pool.address],
+            poolIdentifier: `${this.dexKey}_${pool.address}`,
           };
 
           for (let j = 0; j < amounts.length; j++) {
             if (amounts[j] < maxSwapAmount) {
               // Uses balancer maths to calculate swap
-              exchangePrice.prices[j] = this.eventPools.getSwapResult(
+              poolExchangePrice.prices[j] = this.eventPools.getSwapResult(
                 pool,
                 amounts[j],
                 tokenIn,
@@ -224,7 +235,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
               );
             }
           }
-          poolPrices.push(exchangePrice);
+          poolPrices.push(poolExchangePrice);
         } catch (err) {
           this.logger.error(`error fetching prices for pool`);
           this.logger.error(err);
@@ -262,17 +273,85 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     data: BalancerV3Data,
     side: SwapSide,
   ): AdapterExchangeParam {
+    console.log(`!!!!!!!!!!!! getAdapterParam is being hit !!!!!!`);
     // TODO: complete me!
-    const { exchange } = data;
+    const { poolAddress } = data;
 
     // Encode here the payload for adapter
     const payload = '';
 
     return {
-      targetExchange: exchange,
+      targetExchange:
+        BalancerV3Config.BalancerV3[this.network].balancerRouterAddress,
       payload,
       networkFee: '0',
     };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: BalancerV3Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.SELL) {
+      const exchangeData = this.balancerRouter.encodeFunctionData(
+        'swapSingleTokenExactIn',
+        [
+          data.poolAddress,
+          srcToken,
+          destToken,
+          srcAmount,
+          '0', // This should be limit for min amount out. Assume this is set elsewhere via Paraswap contract.
+          MAX_UINT256,
+          this.needWrapNative, // TODO vault can handle native assets
+          '0x',
+        ],
+      );
+
+      return {
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: false,
+        exchangeData,
+        // This router handles single swaps
+        targetExchange:
+          BalancerV3Config.BalancerV3[this.network].balancerRouterAddress,
+        returnAmountPos: extractReturnAmountPosition(
+          this.balancerRouter,
+          'swapSingleTokenExactIn',
+        ),
+      };
+    } else {
+      const exchangeData = this.balancerRouter.encodeFunctionData(
+        'swapSingleTokenExactOut',
+        [
+          data.poolAddress,
+          srcToken,
+          destToken,
+          srcAmount,
+          MAX_UINT256, // This should be limit for max amount in. Assume this is set elsewhere via Paraswap contract.
+          MAX_UINT256,
+          this.needWrapNative, // TODO vault can handle native assets
+          '0x',
+        ],
+      );
+
+      return {
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: false,
+        exchangeData,
+        // Single swaps are submitted via Balancer Router
+        targetExchange:
+          BalancerV3Config.BalancerV3[this.network].balancerRouterAddress,
+        returnAmountPos: extractReturnAmountPosition(
+          this.balancerRouter,
+          'swapSingleTokenExactOut',
+        ),
+      };
+    }
   }
 
   // This is called once before getTopPoolsForToken is

@@ -45,15 +45,14 @@ export type ImmutablePoolStateMap = {
 };
 
 export type BalancerV3Data = {
-  // TODO: BalancerV3Data is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
-  exchange: Address;
+  poolAddress: string;
 };
 
 export type DexParams = {
   // Used to map network > API Name, e.g. 11155111>SEPOLIA
   apiNetworkName: string;
   vaultAddress: string;
+  // This router handles single swaps
+  // https://github.com/balancer/balancer-v3-monorepo/blob/main/pkg/interfaces/contracts/vault/IRouter.sol
+  balancerRouterAddress: string;
 };
