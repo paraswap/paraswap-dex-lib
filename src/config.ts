@@ -146,8 +146,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
-      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
+      Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
       Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
@@ -182,8 +182,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_137,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
-      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
+      Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
       Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
@@ -223,8 +223,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
-      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
+      Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
       Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     adapterAddresses: {
@@ -327,8 +327,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     privateHttpProvider: process.env.HTTP_PROVIDER_10,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
-      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
+      Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
       Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
@@ -402,8 +402,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs: [],
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0xa600910B670804230E00A100000D28000AE005C0',
-      Executor02: '0x3800091020a00290f20606b000000000E38c33Ef',
+      Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
+      Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
       Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     adapterAddresses: {
