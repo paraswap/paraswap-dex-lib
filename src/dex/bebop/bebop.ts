@@ -536,7 +536,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       let liquidityUSD = 0;
       let token;
       const [base, quote] = pair.split('/');
-      if (base.toLowerCase() == tokenAddress.toLowerCase()) {
+
+      const isBase = base.toLowerCase() == tokenAddress.toLowerCase();
+      const isQuote = quote.toLowerCase() == tokenAddress.toLowerCase();
+
+      if (isBase) {
         const liquidityInQuote = this.getMaxLiquidity(pairData.bids);
         token = {
           address: quote,
@@ -547,7 +551,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           BigInt(Math.round(liquidityInQuote)),
         );
         liquidityUSD = liquidityInQuote * quoteTokenUsd;
-      } else if (quote.toLowerCase() == tokenAddress.toLowerCase()) {
+      } else if (isQuote) {
         const liquidityInBase = this.getMaxLiquidity(pairData.asks);
         token = {
           address: base,
@@ -559,16 +563,20 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         );
         liquidityUSD = liquidityInBase * baseTokenUsd;
       }
+
       if (liquidityUSD) {
+        assert(token, 'Token not found');
+        const address = token.address.toLowerCase();
+
         if (pools.length === 0) {
           pools.push({
             exchange: this.dexKey,
             address: this.settlementAddress,
             connectorTokens: [
               {
-                address: quote,
-                decimals: this.tokensMap[quote.toLowerCase()].decimals,
-                symbol: this.tokensMap[quote.toLowerCase()].ticker,
+                address: address,
+                decimals: this.tokensMap[address].decimals,
+                symbol: this.tokensMap[address].ticker,
               },
             ],
             liquidityUSD,
@@ -576,9 +584,9 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         } else {
           pools[0].liquidityUSD += liquidityUSD;
           pools[0].connectorTokens.push({
-            address: quote,
-            decimals: this.tokensMap[quote.toLowerCase()].decimals,
-            symbol: this.tokensMap[quote.toLowerCase()].ticker,
+            address: address,
+            decimals: this.tokensMap[address].decimals,
+            symbol: this.tokensMap[address].ticker,
           });
         }
       }
