@@ -88,7 +88,7 @@ function testForNetwork(
 describe('Bebop E2E', () => {
   const dexKey = 'Bebop';
 
-  describe('Mainnet', () => {
+  describe('Mainnetx', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'USDC';

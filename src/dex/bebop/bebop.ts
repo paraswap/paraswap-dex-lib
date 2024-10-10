@@ -631,7 +631,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       sell_amounts: isSell ? optimalSwapExchange.srcAmount : undefined,
       buy_amounts: isBuy ? optimalSwapExchange.destAmount : undefined,
       taker_address: utils.getAddress(options.executionContractAddress),
-      receiver_address: utils.getAddress(options.executionContractAddress),
+      receiver_address: utils.getAddress(options.recipient),
       gasless: false,
       skip_validation: true,
       source: BEBOP_AUTH_NAME,
