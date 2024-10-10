@@ -366,7 +366,11 @@ export class PricingHelper {
 
         if (p.prices.prices.every(pi => pi === 0n)) {
           this.logger.error(
-            `Error_getPoolPrices: ${p.prices.exchange} returned all 0n prices`,
+            `Error_getPoolPrices: '${p.prices.exchange}' '${
+              p.prices.poolIdentifier ?? ' '
+            }' returned all 0n prices for '${token_key}' '${
+              amounts[amounts.length - 1]
+            }'`,
           );
           // TODO-rec: ignore for now as we return all available prices & pools
           // it's filtered later in API
