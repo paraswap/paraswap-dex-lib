@@ -37,7 +37,7 @@ import {
   isSrcTokenTransferFeeToBeExchanged,
   uuidToBytes16,
 } from '../../utils';
-import { Context, IDex } from '../idex';
+import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CurveRouterPoolType,
@@ -848,8 +848,9 @@ export class CurveV1Factory
             ),
           )
           .filter((pool): pool is PoolPollingBase => {
+            if (pool === null) return false;
+
             const isPoolWithData =
-              pool !== null &&
               pool.getPoolData(srcTokenAddress, destTokenAddress) !== null;
 
             if (
@@ -858,8 +859,7 @@ export class CurveV1Factory
             ) {
               return (
                 isPoolWithData ||
-                (pool !== null &&
-                  pool.getPoolData(wethAddress, destTokenAddress) !== null)
+                pool.getPoolData(wethAddress, destTokenAddress) !== null
               );
             }
 
@@ -869,8 +869,7 @@ export class CurveV1Factory
             ) {
               return (
                 isPoolWithData ||
-                (pool !== null &&
-                  pool.getPoolData(srcTokenAddress, wethAddress) !== null)
+                pool.getPoolData(srcTokenAddress, wethAddress) !== null
               );
             }
 
