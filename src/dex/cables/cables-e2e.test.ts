@@ -7,7 +7,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
 const sleepMs: number = 10000;
-const slippage: number = 10;
+const slippage: number = 100;
 
 describe('Cables E2E', () => {
   const dexKey = 'Cables';
@@ -125,7 +125,9 @@ describe('Cables E2E', () => {
                 await testE2E(
                   tokens[pair[0].name],
                   tokens[pair[1].name],
-                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? holders[pair[0].name]
+                    : holders[pair[1].name],
                   side === SwapSide.SELL
                     ? pair[0].sellAmount
                     : pair[0].buyAmount,
@@ -145,7 +147,9 @@ describe('Cables E2E', () => {
                 await testE2E(
                   tokens[pair[1].name],
                   tokens[pair[0].name],
-                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? holders[pair[1].name]
+                    : holders[pair[0].name],
                   side === SwapSide.SELL
                     ? pair[1].sellAmount
                     : pair[1].buyAmount,

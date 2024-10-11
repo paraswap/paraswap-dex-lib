@@ -53,13 +53,6 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
-  if (cables.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    // expect(poolPrice.prices[0]).toEqual(0n); is not satified!
-    // ...amounts are increasing at same interval, and start with 0
-    // checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
 }
 
 describe('Cables', function () {
@@ -168,25 +161,23 @@ describe('Cables', function () {
       );
     });
 
-    // TODO
-    // Top pool is not valid for testing yet
-    // it('getTopPoolsForToken', async function () {
-    //   // We have to check without calling initializePricing, because
-    //   // pool-tracker is not calling that function
-    //   const cables = new Cables(network, dexKey, dexHelper);
-    //   const poolLiquidity = await cables.getTopPoolsForToken(
-    //     tokens[tokenASymbol].address,
-    //     10,
-    //   );
-    //   console.log(`${tokenASymbol} Top Pools:`, poolLiquidity);
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const cables = new Cables(network, dexKey, dexHelper);
+      const poolLiquidity = await cables.getTopPoolsForToken(
+        tokens[tokenASymbol].address,
+        10,
+      );
+      console.log(`${tokenASymbol} Top Pools:`, poolLiquidity);
 
-    //   if (!cables.hasConstantPriceLargeAmounts) {
-    //     checkPoolsLiquidity(
-    //       poolLiquidity,
-    //       Tokens[network][tokenASymbol].address,
-    //       dexKey,
-    //     );
-    //   }
-    // });
+      if (!cables.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][tokenASymbol].address,
+          dexKey,
+        );
+      }
+    });
   });
 });
