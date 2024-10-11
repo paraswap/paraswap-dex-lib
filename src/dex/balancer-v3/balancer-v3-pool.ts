@@ -223,6 +223,14 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     tokenOut: string,
     swapKind: SwapKind,
   ): bigint {
+    if (pool.poolType === 'Stable' && 'amp' in pool) {
+      if (pool.ampIsUpdating) {
+        console.log(`!!!!!!! need to handle this correctly once SC updated`);
+        /*
+        Will be able to calculate current amp using pool amp start/stop time & values
+        */
+      }
+    }
     return this.vault.swap(
       {
         amountRaw,

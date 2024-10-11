@@ -34,6 +34,11 @@ export type PoolState =
 // Stable Pool specific mutable data
 export interface StableMutableState {
   amp: bigint;
+  ampIsUpdating: boolean;
+  ampStartValue: bigint;
+  ampEndValue: bigint;
+  ampStartTime: bigint;
+  ampStopTime: bigint;
 }
 
 export type PoolStateMap = {
