@@ -153,7 +153,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Executor03: '0x20004f017a0bC0050bc004d9C500a7A089800000',
     },
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
-    bebopAuthToken: process.env.API_KEY_BEBOP_AUTH_TOKEN || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_56`]?.split(',') || [],
