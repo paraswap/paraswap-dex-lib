@@ -59,6 +59,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // Add handlers
     this.handlers['PoolBalanceChanged'] =
       this.poolBalanceChangedEvent.bind(this);
+    this.handlers['AggregateSwapFeePercentageChanged'] =
+      this.poolAggregateSwapFeePercentageEvent.bind(this);
+    this.handlers['SwapFeePercentageChanged'] =
+      this.poolSwapFeePercentageChangedEvent.bind(this);
 
     // replicates V3 maths with fees, pool and hook logic
     this.vault = new Vault();
@@ -176,7 +180,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     log: Readonly<Log>,
   ): DeepReadonly<PoolStateMap> | null {
     const poolAddress = event.args.pool.toLowerCase();
-    // Vault will send events from any pools, some of which are not officially supported by Balancer
+    // Vault will send events from all pools, some of which are not officially supported by Balancer
     if (!state[poolAddress]) {
       return null;
     }
@@ -190,6 +194,38 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         event.args.deltas[i],
       );
     }
+    return newState;
+  }
+
+  poolAggregateSwapFeePercentageEvent(
+    event: any,
+    state: DeepReadonly<PoolStateMap>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolStateMap> | null {
+    const poolAddress = event.args.pool.toLowerCase();
+    // Vault will send events from all pools, some of which are not officially supported by Balancer
+    if (!state[poolAddress]) {
+      return null;
+    }
+    const newState = _.cloneDeep(state) as PoolStateMap;
+    newState[poolAddress].aggregateSwapFee = BigInt(
+      event.args.aggregateSwapFeePercentage,
+    );
+    return newState;
+  }
+
+  poolSwapFeePercentageChangedEvent(
+    event: any,
+    state: DeepReadonly<PoolStateMap>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolStateMap> | null {
+    const poolAddress = event.args.pool.toLowerCase();
+    // Vault will send events from all pools, some of which are not officially supported by Balancer
+    if (!state[poolAddress]) {
+      return null;
+    }
+    const newState = _.cloneDeep(state) as PoolStateMap;
+    newState[poolAddress].swapFee = BigInt(event.args.swapFeePercentage);
     return newState;
   }
 
