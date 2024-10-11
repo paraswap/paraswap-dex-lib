@@ -22,9 +22,6 @@ export const HashflowConfig: DexConfigMap<DexParams> = {
     [Network.OPTIMISM]: {
       routerAddress: '0xCa310B1B942A30Ff4b40a5E1b69AB4607eC79Bc1',
     },
-    [Network.BASE]: {
-      routerAddress: '0xCa310B1B942A30Ff4b40a5E1b69AB4607eC79Bc1',
-    },
   },
 };
 
