@@ -817,6 +817,11 @@
           },
           {
             "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
             "name": "taker",
             "type": "address"
           },
@@ -968,6 +973,11 @@
           {
             "internalType": "address",
             "name": "takerAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
             "type": "address"
           },
           {
