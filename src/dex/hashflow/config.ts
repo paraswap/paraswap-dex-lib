@@ -31,7 +31,7 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.BUY]: [{ name: 'BuyAdapter', index: 7 }],
   },
   [Network.BSC]: {
-    [SwapSide.SELL]: [{ name: 'BscAdapter02', index: 2 }],
+    [SwapSide.SELL]: [{ name: 'BscAdapter03', index: 1 }],
     [SwapSide.BUY]: [{ name: 'BscBuyAdapter', index: 3 }],
   },
   [Network.POLYGON]: {
@@ -39,11 +39,11 @@ export const Adapters: Record<number, AdapterMappings> = {
     [SwapSide.BUY]: [{ name: 'PolygonBuyAdapter', index: 5 }],
   },
   [Network.ARBITRUM]: {
-    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter01', index: 14 }],
-    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter', index: 4 }],
+    [SwapSide.SELL]: [{ name: 'ArbitrumAdapter03', index: 5 }],
+    [SwapSide.BUY]: [{ name: 'ArbitrumBuyAdapter02', index: 1 }],
   },
   [Network.OPTIMISM]: {
-    [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 10 }],
+    [SwapSide.SELL]: [{ name: 'OptimismAdapter02', index: 5 }],
     [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 4 }],
   },
   [Network.AVALANCHE]: {
