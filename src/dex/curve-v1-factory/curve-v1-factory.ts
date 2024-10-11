@@ -759,8 +759,8 @@ export class CurveV1Factory
     blockNumber: number,
   ): Promise<string[]> {
     if (
-      this.dexHelper.config.wrapETH(srcToken).address ===
-      this.dexHelper.config.wrapETH(destToken).address
+      this.dexHelper.config.wrapETH(srcToken).address.toLowerCase() ===
+      this.dexHelper.config.wrapETH(destToken).address.toLowerCase()
     ) {
       return [];
     }
@@ -821,8 +821,8 @@ export class CurveV1Factory
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     try {
       if (
-        this.dexHelper.config.wrapETH(srcToken).address ===
-        this.dexHelper.config.wrapETH(destToken).address
+        this.dexHelper.config.wrapETH(srcToken).address.toLowerCase() ===
+        this.dexHelper.config.wrapETH(destToken).address.toLowerCase()
       ) {
         return [];
       }
