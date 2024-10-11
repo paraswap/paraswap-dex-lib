@@ -758,6 +758,13 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (
+      this.dexHelper.config.wrapETH(srcToken).address.toLowerCase() ===
+      this.dexHelper.config.wrapETH(destToken).address.toLowerCase()
+    ) {
+      return [];
+    }
+
     const _srcToken = this.needWrapNativeForPricing
       ? this.dexHelper.config.wrapETH(srcToken)
       : srcToken;
@@ -767,18 +774,14 @@ export class CurveV1Factory
 
     const srcTokenAddress = _srcToken.address.toLowerCase();
     const destTokenAddress = _destToken.address.toLowerCase();
-
-    if (srcTokenAddress === destTokenAddress) {
-      return [];
-    }
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
 
     let pools = this.poolManager.getPoolsForPair(
       srcTokenAddress,
       destTokenAddress,
     );
 
-    const wethAddress =
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     if (!this.needWrapNativeForPricing && isETHAddress(_srcToken.address)) {
       pools = pools.concat(
         this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
@@ -817,6 +820,13 @@ export class CurveV1Factory
     },
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     try {
+      if (
+        this.dexHelper.config.wrapETH(srcToken).address.toLowerCase() ===
+        this.dexHelper.config.wrapETH(destToken).address.toLowerCase()
+      ) {
+        return [];
+      }
+
       const _isSrcTokenTransferFeeToBeExchanged =
         isSrcTokenTransferFeeToBeExchanged(transferFees);
 
@@ -828,15 +838,10 @@ export class CurveV1Factory
         ? this.dexHelper.config.wrapETH(destToken)
         : destToken;
 
-      const srcTokenAddress = _srcToken.address.toLowerCase();
-      const destTokenAddress = _destToken.address.toLowerCase();
-
-      if (srcTokenAddress === destTokenAddress) {
-        return null;
-      }
-
       const wethAddress =
         this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+      const srcTokenAddress = _srcToken.address.toLowerCase();
+      const destTokenAddress = _destToken.address.toLowerCase();
 
       let pools: PoolPollingBase[] = [];
       if (limitPools !== undefined) {
