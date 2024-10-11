@@ -772,8 +772,6 @@ export class CurveV1Factory
       ? this.dexHelper.config.wrapETH(destToken)
       : destToken;
 
-    const wethAddress =
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     const srcTokenAddress = _srcToken.address.toLowerCase();
     const destTokenAddress = _destToken.address.toLowerCase();
 
@@ -782,6 +780,8 @@ export class CurveV1Factory
       destTokenAddress,
     );
 
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     if (!this.needWrapNativeForPricing && isETHAddress(_srcToken.address)) {
       pools = pools.concat(
         this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
