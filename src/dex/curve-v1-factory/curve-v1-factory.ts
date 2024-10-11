@@ -758,6 +758,13 @@ export class CurveV1Factory
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (
+      this.dexHelper.config.wrapETH(srcToken).address ===
+      this.dexHelper.config.wrapETH(destToken).address
+    ) {
+      return [];
+    }
+
     const _srcToken = this.needWrapNativeForPricing
       ? this.dexHelper.config.wrapETH(srcToken)
       : srcToken;
@@ -769,14 +776,6 @@ export class CurveV1Factory
       this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     const srcTokenAddress = _srcToken.address.toLowerCase();
     const destTokenAddress = _destToken.address.toLowerCase();
-
-    if (
-      srcTokenAddress === destTokenAddress ||
-      (isETHAddress(srcTokenAddress) && destTokenAddress === wethAddress) ||
-      (srcTokenAddress === wethAddress && isETHAddress(destTokenAddress))
-    ) {
-      return [];
-    }
 
     let pools = this.poolManager.getPoolsForPair(
       srcTokenAddress,
@@ -821,6 +820,13 @@ export class CurveV1Factory
     },
   ): Promise<null | ExchangePrices<CurveV1FactoryData>> {
     try {
+      if (
+        this.dexHelper.config.wrapETH(srcToken).address ===
+        this.dexHelper.config.wrapETH(destToken).address
+      ) {
+        return [];
+      }
+
       const _isSrcTokenTransferFeeToBeExchanged =
         isSrcTokenTransferFeeToBeExchanged(transferFees);
 
@@ -836,14 +842,6 @@ export class CurveV1Factory
         this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
       const srcTokenAddress = _srcToken.address.toLowerCase();
       const destTokenAddress = _destToken.address.toLowerCase();
-
-      if (
-        srcTokenAddress === destTokenAddress ||
-        (isETHAddress(srcTokenAddress) && destTokenAddress === wethAddress) ||
-        (srcTokenAddress === wethAddress && isETHAddress(destTokenAddress))
-      ) {
-        return [];
-      }
 
       let pools: PoolPollingBase[] = [];
       if (limitPools !== undefined) {
