@@ -23,6 +23,7 @@ import { SwapKind } from '@balancer-labs/balancer-maths';
 import { Interface } from '@ethersproject/abi';
 import { balancerRouterAbi } from './abi/balancerRouter';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { getTopPoolsApi } from './getTopPoolsApi';
 
 const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
@@ -400,10 +401,26 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   // limit number pools should be returned.
   async getTopPoolsForToken(
     tokenAddress: Address,
-    limit: number,
+    count: number,
   ): Promise<PoolLiquidity[]> {
-    //TODO: complete me!
-    return [];
+    const poolsWithToken = Object.entries(this.eventPools.getStaleState() || {})
+      .filter(([, poolState]) => {
+        return poolState.tokens.includes(tokenAddress);
+      })
+      .map(([address]) => address);
+
+    const topPools = await getTopPoolsApi(this.network, poolsWithToken, count);
+
+    return topPools.map(pool => {
+      return {
+        exchange: this.dexKey,
+        address: pool.address,
+        liquidityUSD: parseFloat(pool.dynamicData.totalLiquidity),
+        connectorTokens: pool.poolTokens.filter(
+          t => t.address !== tokenAddress,
+        ),
+      };
+    });
   }
 
   releaseResources(): AsyncOrSync<void> {
