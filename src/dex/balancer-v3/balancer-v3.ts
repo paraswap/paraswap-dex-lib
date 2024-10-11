@@ -272,6 +272,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     return null;
   }
 
+  // This is a temp helper until we change maths library type to match
   private mapToPoolType(apiPoolType: string): string {
     if (apiPoolType === 'STABLE') return 'Stable';
     else if (apiPoolType === 'WEIGHTED') return 'Weighted';
@@ -405,9 +406,20 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     return [];
   }
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
+    if (this.updateNewPoolsTimer) {
+      clearInterval(this.updateNewPoolsTimer);
+      this.updateNewPoolsTimer = undefined;
+      this.logger.info(
+        `${this.dexKey}: cleared updateNewPoolsTimer before shutting down`,
+      );
+    }
+    if (this.updateRatesTimer) {
+      clearInterval(this.updateRatesTimer);
+      this.updateRatesTimer = undefined;
+      this.logger.info(
+        `${this.dexKey}: cleared updateRatesTimer before shutting down`,
+      );
+    }
   }
 }
