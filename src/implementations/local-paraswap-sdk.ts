@@ -330,7 +330,6 @@ export class LocalParaswapSDK implements IParaSwapSDK {
         : this.transactionBuilder;
 
     return await txBuilder.build({
-      // return await this.transactionBuilder.build({
       priceRoute,
       minMaxAmount: minMaxAmount.toString(),
       userAddress,
