@@ -1395,7 +1395,6 @@ export class CurveV1Factory
     recipient: Address,
     data: CurveV1FactoryData,
     side: SwapSide,
-    conext: Context,
   ): DexExchangeParam {
     if (data.path.length === 1) {
       // Single pool encoding
@@ -1440,11 +1439,7 @@ export class CurveV1Factory
 
     return {
       exchangeData,
-      needWrapNative: this.needWrapNative(
-        conext.priceRoute,
-        conext.swap,
-        conext.swapExchange,
-      ),
+      needWrapNative: this.needWrapNative,
       sendEthButSupportsInsertFromAmount: true,
       dexFuncHasRecipient: true,
       targetExchange: this.config.router,

@@ -23,9 +23,6 @@ import { OptimalRate, OptimalSwap } from '@paraswap/core';
 export type Context = {
   isGlobalSrcToken: boolean;
   isGlobalDestToken: boolean;
-  swapExchange: OptimalSwapExchange<any>;
-  swap: OptimalSwap;
-  priceRoute: OptimalRate;
 };
 
 export type NeedWrapNativeFunc = (
