@@ -774,14 +774,14 @@ export class CurveV1Factory
 
     const srcTokenAddress = _srcToken.address.toLowerCase();
     const destTokenAddress = _destToken.address.toLowerCase();
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
 
     let pools = this.poolManager.getPoolsForPair(
       srcTokenAddress,
       destTokenAddress,
     );
 
-    const wethAddress =
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     if (!this.needWrapNativeForPricing && isETHAddress(_srcToken.address)) {
       pools = pools.concat(
         this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
