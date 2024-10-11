@@ -7,7 +7,7 @@ import {
 import { AsyncOrSync } from 'ts-essentials';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { assert } from 'ts-essentials';
-import { Network } from '../../constants';
+import { Network, ETHER_ADDRESS, NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import {
   AdapterExchangeParam,
@@ -40,10 +40,6 @@ import { Interface } from 'ethers/lib/utils';
 import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
-import {
-  SlippageCheckError,
-  TooStrictSlippageCheckError,
-} from '../generic-rfq/types';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -113,16 +109,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
   hasConstantPriceLargeAmounts: boolean = false;
 
   needsSequentialPreprocessing?: boolean | undefined;
-  getNetworkFee?(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    data: CablesData,
-    side: SwapSide,
-  ): NumberAsString {
-    throw new Error('Method not implemented.');
-  }
+
   async preProcessTransaction?(
     optimalSwapExchange: OptimalSwapExchange<CablesData>,
     srcToken: Token,
@@ -145,13 +132,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const isSell = side === SwapSide.SELL;
       const isBuy = side === SwapSide.BUY;
 
-      const slippageBps = isSell
-        ? BigNumber(1)
-            .minus(options.slippageFactor)
-            .multipliedBy(10000)
-            .toFixed(0)
-        : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
-
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
@@ -165,7 +145,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
         `${CABLES_API_URL}/quote`,
         rfqParams,
         CABLES_FIRM_QUOTE_TIMEOUT_MS,
-        { 'x-apikey': 'TODO - API KEY' },
       );
 
       if (!rfq) {
@@ -201,6 +180,16 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const expiryAsBigInt = BigInt(order.expiry);
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
 
+      // Correction of the srcAmount
+      // because flag specialDexSupportsInsertFromAmount: false
+      // is not working for Buy in test
+      if (isBuy) {
+        optimalSwapExchange.srcAmount = BigNumber(
+          (Number(optimalSwapExchange.srcAmount) * 10000) /
+            (10000 + Number(options.slippageFactor)),
+        ).toFixed(0);
+      }
+
       return [
         {
           ...optimalSwapExchange,
@@ -213,9 +202,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     } catch (e) {
       throw e;
     }
-  }
-  getTokenFromAddress(address: Address): Token {
-    return this.tokensMap[this.normalizeTokenAddress(address)];
   }
 
   getDexParam(
@@ -241,6 +227,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         quoteData.expiry,
         quoteData.makerAsset,
         quoteData.takerAsset,
+        quoteData.maker,
         quoteData.taker,
         quoteData.makerAmount,
         quoteData.takerAmount,
@@ -259,6 +246,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
       dexFuncHasRecipient: false,
       targetExchange: this.mainnetRFQAddress,
       returnAmountPos: undefined,
+      // cannot modify amount due to signature checks
+      specialDexSupportsInsertFromAmount: false,
     };
   }
 
@@ -283,6 +272,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         expiry: quoteData.expiry,
         makerAsset: quoteData.makerAsset,
         takerAsset: quoteData.takerAsset,
+        maker: quoteData.maker,
         taker: quoteData.taker,
         makerAmount: quoteData.makerAmount,
         takerAmount: quoteData.takerAmount,
@@ -298,6 +288,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
             expiry: 'uint128',
             makerAsset: 'address',
             takerAsset: 'address',
+            maker: 'address',
             taker: 'address',
             makerAmount: 'uint256',
             takerAmount: 'uint256',
@@ -326,6 +317,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
   }
   normalizeTokenAddress(address: Address): Address {
     return address.toLowerCase();
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    return this.tokensMap[this.normalizeAddress(address)];
   }
 
   /**
@@ -507,28 +502,69 @@ export class Cables extends SimpleExchange implements IDex<any> {
       this.rateFetcher.stop();
     }
   }
-  addMasterPool?(poolKey: string, blockNumber: number): AsyncOrSync<boolean> {
-    throw new Error('Method not implemented.');
+  normalizeAddress(address: string): string {
+    return address.toLowerCase() === ETHER_ADDRESS
+      ? NULL_ADDRESS
+      : address.toLowerCase();
   }
 
-  /**
-   * Blacklist
-   */
-  isBlacklisted?(userAddress?: Address): AsyncOrSync<boolean> {
-    throw new Error('Method not implemented.');
-  }
-  setBlacklist?(userAddress?: Address): AsyncOrSync<boolean> {
-    throw new Error('Method not implemented.');
-  }
-
-  updatePoolState?(): AsyncOrSync<void> {
-    throw new Error('Method not implemented.');
-  }
-  getTopPoolsForToken(
+  async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
-  ): AsyncOrSync<PoolLiquidity[]> {
-    throw new Error('Method not implemented.');
+  ): Promise<PoolLiquidity[]> {
+    const tokens = (await this.getCachedTokens()) as { [key: string]: Token };
+    const token = Object.values(tokens).find(
+      token => token.address.toLowerCase() === tokenAddress.toLowerCase(),
+    );
+
+    if (!token) {
+      return [];
+    }
+
+    const tokenSymbol = token.symbol?.toLowerCase() || '';
+
+    const tokenPriceUsd = await this.dexHelper.getTokenUSDPrice(
+      token,
+      BigInt(10 ** token.decimals),
+    );
+
+    const erc20BalanceCalldata = this.erc20Interface.encodeFunctionData(
+      'balanceOf',
+      [this.mainnetRFQAddress],
+    );
+    const tokenBalanceMultiCall = [
+      {
+        target: token.address,
+        callData: erc20BalanceCalldata,
+      },
+    ];
+    const res = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(tokenBalanceMultiCall)
+        .call()
+    ).returnData[0];
+
+    let tokenLiquidity = BigInt(res);
+
+    let tokenLiquidityUsd =
+      (tokenLiquidity * BigInt(tokenPriceUsd * 1_000_000)) /
+      BigInt(1_000_000 * 10 ** token.decimals);
+
+    let tokenWithLiquidity = [];
+
+    tokenWithLiquidity.push({
+      exchange: this.dexKey,
+      address: this.mainnetRFQAddress,
+      connectorTokens: [
+        {
+          address: token.address,
+          decimals: token.decimals,
+        },
+      ],
+      liquidityUSD: Number(tokenLiquidityUsd),
+    });
+
+    return tokenWithLiquidity;
   }
 
   /**
