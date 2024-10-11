@@ -75,6 +75,7 @@ describe('BalancerV3 EventPool', function () {
   let balancerV3Pool: BalancerV3EventPool;
 
   // vault -> EventMappings
+  // TODO once we have a new test deployment add tests for: AggregateSwapFeePercentageChanged, SwapFeePercentageChanged, PoolPausedStateChanged
   const eventsToTest: Record<Address, EventMappings> = {
     [BalancerV3Config.BalancerV3[network].vaultAddress]: {
       // 6806714:

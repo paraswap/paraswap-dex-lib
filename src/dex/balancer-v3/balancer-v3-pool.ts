@@ -63,6 +63,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.poolAggregateSwapFeePercentageEvent.bind(this);
     this.handlers['SwapFeePercentageChanged'] =
       this.poolSwapFeePercentageChangedEvent.bind(this);
+    this.handlers['PoolPausedStateChanged'] =
+      this.poolPausedStateChanged.bind(this);
 
     // replicates V3 maths with fees, pool and hook logic
     this.vault = new Vault();
@@ -226,6 +228,24 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
     const newState = _.cloneDeep(state) as PoolStateMap;
     newState[poolAddress].swapFee = BigInt(event.args.swapFeePercentage);
+    return newState;
+  }
+
+  poolPausedStateChanged(
+    event: any,
+    state: DeepReadonly<PoolStateMap>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolStateMap> | null {
+    // Unpaused pools will be added with correct state during updateStatePools
+    if (event.args.paused === false) return null;
+    const poolAddress = event.args.pool.toLowerCase();
+    // Vault will send events from all pools, some of which are not officially supported by Balancer
+    if (!state[poolAddress]) {
+      return null;
+    }
+    // Remove paused pool from state as it can't be swapped against
+    const newState = _.cloneDeep(state) as PoolStateMap;
+    delete newState[poolAddress];
     return newState;
   }
 
