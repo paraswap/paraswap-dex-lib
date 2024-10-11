@@ -92,6 +92,7 @@ import { LitePsm } from './lite-psm/lite-psm';
 import { UsualBond } from './usual-bond/usual-bond';
 import { StkGHO } from './stkgho/stkgho';
 import { SkyConverter } from './sky-converter/sky-converter';
+import { Yieldnest } from './yieldnest/yieldnest';
 
 const LegacyDexes = [
   CurveV2,
@@ -179,6 +180,7 @@ const Dexes = [
   UsualBond,
   StkGHO,
   SkyConverter,
+  Yieldnest,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
