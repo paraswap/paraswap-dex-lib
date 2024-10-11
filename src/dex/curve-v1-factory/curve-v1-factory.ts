@@ -855,7 +855,8 @@ export class CurveV1Factory
 
             if (
               !this.needWrapNativeForPricing &&
-              isETHAddress(srcTokenAddress)
+              isETHAddress(srcTokenAddress) &&
+              destTokenAddress !== wethAddress
             ) {
               return (
                 isPoolWithData ||
@@ -865,7 +866,8 @@ export class CurveV1Factory
 
             if (
               !this.needWrapNativeForPricing &&
-              isETHAddress(destTokenAddress)
+              isETHAddress(destTokenAddress) &&
+              srcTokenAddress !== wethAddress
             ) {
               return (
                 isPoolWithData ||
@@ -882,7 +884,11 @@ export class CurveV1Factory
           _isSrcTokenTransferFeeToBeExchanged,
         );
 
-        if (!this.needWrapNativeForPricing && isETHAddress(_srcToken.address)) {
+        if (
+          !this.needWrapNativeForPricing &&
+          isETHAddress(srcTokenAddress) &&
+          destTokenAddress !== wethAddress
+        ) {
           pools = pools.concat(
             this.poolManager.getPoolsForPair(wethAddress, destTokenAddress),
           ); // discover WETH pools for ETH src
@@ -890,7 +896,8 @@ export class CurveV1Factory
 
         if (
           !this.needWrapNativeForPricing &&
-          isETHAddress(_destToken.address)
+          isETHAddress(_destToken.address) &&
+          srcTokenAddress !== wethAddress
         ) {
           pools = pools.concat(
             this.poolManager.getPoolsForPair(srcTokenAddress, wethAddress),
