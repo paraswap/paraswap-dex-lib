@@ -18,7 +18,8 @@ export const FluidDexConfig: DexConfigMap<DexParams> = {
 export const FLUID_DEX_GAS_COST = 160_000;
 
 export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain
-  // This is an example to copy
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
+  [Network.MAINNET]: {
+    // TODO: set index?
+    [SwapSide.SELL]: [{ name: 'Adapter03', index: 0 }],
+  },
 };

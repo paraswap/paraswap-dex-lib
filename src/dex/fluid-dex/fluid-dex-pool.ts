@@ -1,5 +1,6 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
+import { BytesLike } from 'ethers/lib/utils';
 import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
@@ -7,14 +8,13 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import {
-  commonAddresses,
+  CommonAddresses,
   FluidDexPoolState,
   PoolWithReserves,
   CollateralReserves,
   DebtReserves,
 } from './types';
-import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
-import { BytesLike } from 'ethers/lib/utils';
+import { MultiResult } from '../../lib/multi-wrapper';
 import { Address } from '../../types';
 import { generalDecoder } from '../../lib/decoders';
 import { Contract } from 'ethers';
@@ -36,7 +36,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   constructor(
     readonly parentName: string,
     readonly pool: Address,
-    readonly commonAddresses: commonAddresses,
+    readonly commonAddresses: CommonAddresses,
     protected network: number,
     readonly dexHelper: IDexHelper,
     logger: Logger,
@@ -58,7 +58,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     state: DeepReadonly<FluidDexPoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<FluidDexPoolState> | null> {
-    const resolverAbi = new Interface(ResolverABI);
     if (!(event.args.user in [this.pool])) {
       return null;
     }
@@ -70,7 +69,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     const rawResult = await resolverContract.callStatic.getPoolReserves(
       this.pool,
       {
-        blockTag: await this.dexHelper.provider,
+        blockTag: this.dexHelper.provider,
       },
     );
 
@@ -83,59 +82,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
 
     return generatedState;
   }
-
-  decodePoolWithReserves = (
-    result: MultiResult<BytesLike> | BytesLike,
-  ): PoolWithReserves => {
-    return generalDecoder(
-      result,
-      [
-        'tuple(address pool, address token0_, address token1_, uint256 fee,' +
-          'tuple(uint256 token0RealReserves, uint256 token1RealReserves, uint256 token0ImaginaryReserves, uint256 token1ImaginaryReserves) collateralReserves, ' +
-          'tuple(uint256 token0Debt, uint256 token1Debt, uint256 token0RealReserves, uint256 token1RealReserves, uint256 token0ImaginaryReserves, uint256 token1ImaginaryReserves) debtReserves)',
-      ],
-      undefined,
-      decoded => {
-        const [decodedResult] = decoded;
-        return {
-          pool: decodedResult.pool,
-          token0_: decodedResult.token0_,
-          token1_: decodedResult.token1_,
-          fee: decodedResult.fee,
-          collateralReserves: {
-            token0RealReserves: BigInt(
-              decodedResult.collateralReserves.token0RealReserves,
-            ),
-            token1RealReserves: BigInt(
-              decodedResult.collateralReserves.token1RealReserves,
-            ),
-            token0ImaginaryReserves: BigInt(
-              decodedResult.collateralReserves.token0ImaginaryReserves,
-            ),
-            token1ImaginaryReserves: BigInt(
-              decodedResult.collateralReserves.token1ImaginaryReserves,
-            ),
-          },
-          debtReserves: {
-            token0Debt: BigInt(decodedResult.debtReserves.token0Debt),
-            token1Debt: BigInt(decodedResult.debtReserves.token1Debt),
-            token0RealReserves: BigInt(
-              decodedResult.debtReserves.token0RealReserves,
-            ),
-            token1RealReserves: BigInt(
-              decodedResult.debtReserves.token1RealReserves,
-            ),
-            token0ImaginaryReserves: BigInt(
-              decodedResult.debtReserves.token0ImaginaryReserves,
-            ),
-            token1ImaginaryReserves: BigInt(
-              decodedResult.debtReserves.token1ImaginaryReserves,
-            ),
-          },
-        };
-      },
-    );
-  };
 
   /**
    * The function is called every time any of the subscribed
@@ -174,13 +120,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     return state;
   }
 
-  replacer(key: string, value: any) {
-    if (typeof value === 'bigint') {
-      return value.toString();
-    }
-    return value;
-  }
-
   /**
    * The function generates state using on-chain calls. This
    * function is called to regenerate state if the event based
@@ -210,12 +149,11 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     return convertedResult;
   }
 
-  convertToFluidDexPoolState(input: any[]): FluidDexPoolState {
+  private convertToFluidDexPoolState(input: any[]): FluidDexPoolState {
     // Ignore the first three addresses
     const [, , , feeHex, collateralReservesHex, debtReservesHex] = input;
-    //   // Convert fee from hex to number
+    //  Convert fee from hex to number
     const fee = feeHex;
-    //   console.log("converted fee : " + fee);
 
     // Convert collateral reserves
     const collateralReserves: CollateralReserves = {
