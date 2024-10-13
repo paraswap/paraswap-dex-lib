@@ -10,7 +10,6 @@ export type PoolState = {
 
 export type LitePsmData = {
   psmAddress: Address;
-  gemJoinAddress: Address;
   gemDecimals: number;
   toll: string;
   isApproved?: boolean;
@@ -18,7 +17,6 @@ export type LitePsmData = {
 
 export type PoolConfig = {
   gem: Token;
-  gemJoinAddress: Address; // dai liquidity
   pocketAddress: Address; // gem liquidity
   psmAddress: Address;
   identifier: string; // bytes32 of pool identifier (Eg. bytes32("PSM-USDC-A"))
@@ -26,6 +24,8 @@ export type PoolConfig = {
 
 export type DexParams = {
   dai: Token;
+  usds: Token;
+  usdsPsmAddress: Address;
   vatAddress: Address;
   pools: PoolConfig[];
 };
@@ -38,6 +38,7 @@ export type LitePsmParams = [
   toll: NumberAsString,
   to18ConversionFactor: NumberAsString,
   exchange: Address,
+  // psm (exchange) is the join for both dai and usds
   gemJoinAddress: Address,
   metadata: string,
   beneficiaryDirectionApproveFlag: NumberAsString,

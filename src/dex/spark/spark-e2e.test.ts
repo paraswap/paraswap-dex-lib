@@ -23,23 +23,8 @@ function testForNetwork(
   const holders = Holders[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-        ContractMethod.swapExactAmountIn,
-      ],
-    ],
-    [
-      SwapSide.BUY,
-      [
-        ContractMethod.simpleBuy,
-        ContractMethod.buy,
-        ContractMethod.swapExactAmountOut,
-      ],
-    ],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -80,14 +65,33 @@ function testForNetwork(
   });
 }
 
-describe('sDAI E2E', () => {
-  const dexKey = 'Spark';
-
-  describe('Mainnet', () => {
+describe('Spark E2E', () => {
+  describe('sDai', () => {
+    const dexKey = 'Spark';
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'DAI';
     const tokenBSymbol: string = 'sDAI';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+
+  describe('sUSDS', () => {
+    const dexKey = 'sUSDS';
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'USDS';
+    const tokenBSymbol: string = 'sUSDS';
 
     const tokenAAmount: string = '1000000000000000000';
     const tokenBAmount: string = '1000000000000000000';
