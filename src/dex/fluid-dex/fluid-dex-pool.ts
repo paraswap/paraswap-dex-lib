@@ -8,14 +8,16 @@ import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import {
   commonAddresses,
-  FluidDexPool,
   FluidDexPoolState,
   PoolWithReserves,
+  CollateralReserves,
+  DebtReserves,
 } from './types';
 import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
 import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '../../types';
 import { generalDecoder } from '../../lib/decoders';
+import { Contract } from 'ethers';
 
 export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState> {
   handlers: {
@@ -36,7 +38,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     readonly pool: Address,
     readonly commonAddresses: commonAddresses,
     protected network: number,
-    protected dexHelper: IDexHelper,
+    readonly dexHelper: IDexHelper,
     logger: Logger,
   ) {
     super(parentName, 'FluidDex_' + pool, dexHelper, logger);
@@ -60,28 +62,19 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     if (!(event.args.user in [this.pool])) {
       return null;
     }
-    const callData: MultiCallParams<PoolWithReserves>[] = [
+    const resolverContract = new Contract(
+      this.commonAddresses.resolver,
+      ResolverABI,
+      this.dexHelper.provider,
+    );
+    const rawResult = await resolverContract.callStatic.getPoolReserves(
+      this.pool,
       {
-        target: this.commonAddresses.resolver,
-        callData: resolverAbi.encodeFunctionData('getPoolReserves', [
-          this.pool,
-        ]),
-        decodeFunction: await this.decodePoolWithReserves,
+        blockTag: await this.dexHelper.provider,
       },
-    ];
+    );
 
-    const results: PoolWithReserves[] =
-      await this.dexHelper.multiWrapper.aggregate<PoolWithReserves>(
-        callData,
-        await this.dexHelper.provider.getBlockNumber(),
-        this.dexHelper.multiWrapper.defaultBatchSize,
-      );
-
-    const generatedState = {
-      collateralReserves: results[0].collateralReserves,
-      debtReserves: results[0].debtReserves,
-      fee: results[0].fee,
-    };
+    const generatedState = this.convertToFluidDexPoolState(rawResult);
 
     this.setState(
       generatedState,
@@ -181,6 +174,13 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     return state;
   }
 
+  replacer(key: string, value: any) {
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    return value;
+  }
+
   /**
    * The function generates state using on-chain calls. This
    * function is called to regenerate state if the event based
@@ -193,28 +193,52 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   async generateState(
     blockNumber: number,
   ): Promise<DeepReadonly<FluidDexPoolState>> {
-    const resolverAbi = new Interface(ResolverABI);
-    const callData: MultiCallParams<PoolWithReserves>[] = [
+    const resolverContract = new Contract(
+      this.commonAddresses.resolver,
+      ResolverABI,
+      this.dexHelper.provider,
+    );
+    const rawResult = await resolverContract.callStatic.getPoolReserves(
+      this.pool,
       {
-        target: this.commonAddresses.resolver,
-        callData: resolverAbi.encodeFunctionData('getPoolReserves', [
-          this.pool,
-        ]),
-        decodeFunction: await this.decodePoolWithReserves,
+        blockTag: blockNumber,
       },
-    ];
+    );
 
-    const results: PoolWithReserves[] =
-      await this.dexHelper.multiWrapper.aggregate<PoolWithReserves>(
-        callData,
-        blockNumber,
-        this.dexHelper.multiWrapper.defaultBatchSize,
-      );
+    const convertedResult = this.convertToFluidDexPoolState(rawResult);
+
+    return convertedResult;
+  }
+
+  convertToFluidDexPoolState(input: any[]): FluidDexPoolState {
+    // Ignore the first three addresses
+    const [, , , feeHex, collateralReservesHex, debtReservesHex] = input;
+    //   // Convert fee from hex to number
+    const fee = feeHex;
+    //   console.log("converted fee : " + fee);
+
+    // Convert collateral reserves
+    const collateralReserves: CollateralReserves = {
+      token0RealReserves: collateralReservesHex[0],
+      token1RealReserves: collateralReservesHex[1],
+      token0ImaginaryReserves: collateralReservesHex[2],
+      token1ImaginaryReserves: collateralReservesHex[3],
+    };
+
+    // Convert debt reserves
+    const debtReserves: DebtReserves = {
+      token0Debt: debtReservesHex[0],
+      token1Debt: debtReservesHex[1],
+      token0RealReserves: debtReservesHex[2],
+      token1RealReserves: debtReservesHex[3],
+      token0ImaginaryReserves: debtReservesHex[4],
+      token1ImaginaryReserves: debtReservesHex[5],
+    };
 
     return {
-      collateralReserves: results[0].collateralReserves,
-      debtReserves: results[0].debtReserves,
-      fee: results[0].fee,
+      collateralReserves,
+      debtReserves,
+      fee,
     };
   }
 }

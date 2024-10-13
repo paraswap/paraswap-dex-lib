@@ -137,60 +137,30 @@ describe('FluidDex EventPool Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
-                  // const forkProvider = new ethers.JsonRpcProvider('https://mainnet.gateway.tenderly.co/5aa2627c-c6b9-4aa7-beec-a7352f78726b')
-
                   const fluidDex = new FluidDex(network, dexKey, dexHelper);
-
-                  // const latestBlockNumber_ = await dexHelper.web3Provider.eth.getBlockNumber();
 
                   await fluidDex.initializePricing(blockNumber);
 
-                  // console.log(stringifyCircular(Object.keys(fluidDex.eventPools).length))
-
                   const ts: TenderlySimulation = new TenderlySimulation(
                     network,
-                    '5aa2627c-c6b9-4aa7-beec-a7352f78726b',
                   );
 
                   await ts.setup();
 
                   const forkId = ts.forkId;
-                  console.log('this is ts fork id : ' + forkId);
                   dexHelper.replaceProviderWithRPC(
                     `https://rpc.tenderly.co/fork/${forkId}`,
                   );
-                  // console.log("this is fork id : ", dexHelper.web3Provider, null, 2);
-                  console.log(
-                    'this is fork id : ',
-                    JSON.stringify(dexHelper.provider, null, 2),
-                  );
+
+                  console.log(forkId);
 
                   fluidDexEventPool =
                     fluidDex.eventPools[
                       'FluidDex_0x6d83f60eeac0e50a1250760151e81db2a278e03a'
                     ];
 
-                  // console.log("eth balance before sned : " + await dexHelper.provider.getBalance('0x1928347619834761983764191827346198723646'));
+                  console.log(fluidDexEventPool.dexHelper.provider);
 
-                  // const senddTxn = await ts.simulate({
-                  //   from: '0x3c22ec75ea5d745c78fc84762f7f1e6d82a2c5bf',
-                  //   to: '0x1928347619834761983764191827346198723646', // undefined in case of contract deployment
-                  //   value: '1234',
-                  //   data: '',
-                  // });
-
-                  // const senddTxn2 = await ts.simulate({
-                  //   from: '0x3c22ec75ea5d745c78fc84762f7f1e6d82a2c5bf',
-                  //   to: '0x1928347619834761983764191827346198723646', // undefined in case of contract deployment
-                  //   value: '1234',
-                  //   data: '',
-                  // });
-
-                  // // console.log(JSON.stringify(senddTxn));
-
-                  // console.log(JSON.stringify(ts));
-
-                  // console.log("eth balance after sned : " + await dexHelper.provider.getBalance('0x1928347619834761983764191827346198723646'));
                   console.log(
                     'eth balance before : ' +
                       (await dexHelper.provider.getBalance(
@@ -198,12 +168,6 @@ describe('FluidDex EventPool Mainnet', function () {
                       )),
                   );
 
-                  // const allowanceTxn = await ts.simulate({
-                  //   from: '0x3c22ec75ea5d745c78fc84762f7f1e6d82a2c5bf',
-                  //   to: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', // undefined in case of contract deployment
-                  //   value: '0',
-                  //   data: '0x095ea7b30000000000000000000000006d83f60eeac0e50a1250760151e81db2a278e03a0000000000000000000000000000000000000000000000056bc75e2d63100000',
-                  // });
                   const allowanceTxn = await ts.simulate({
                     from: '0x3c22ec75ea5d745c78fc84762f7f1e6d82a2c5bf',
                     to: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', // undefined in case of contract deployment
@@ -211,14 +175,10 @@ describe('FluidDex EventPool Mainnet', function () {
                     data: '0x095ea7b30000000000000000000000006a000f20005980200259b80c51020030400010680000000000000000000000000000000000000000000000056bc75e2d63100000',
                   });
 
-                  console.log(allowanceTxn);
+                  console.log(
+                    'allowance txn (isSuccess?) : ' + allowanceTxn.success,
+                  );
 
-                  // const swapTxn = await ts.simulate({
-                  //   from: '0x3c22ec75ea5d745c78fc84762f7f1e6d82a2c5bf',
-                  //   to: '0x6d83f60eeac0e50a1250760151e81db2a278e03a', // undefined in case of contract deployment
-                  //   value: '0',
-                  //   data: '0xba98fa1c00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000003c22ec75ea5d745c78fc84762f7f1e6d82a2c5bf',
-                  // });
                   const swapTxn = await ts.simulate({
                     from: '0x3c22ec75ea5d745c78fc84762f7f1e6d82a2c5bf',
                     to: '0x6a000f20005980200259b80c5102003040001068', // undefined in case of contract deployment
@@ -226,7 +186,7 @@ describe('FluidDex EventPool Mainnet', function () {
                     data: '0xe3ead59e000000000000000000000000a600910b670804230e00a100000d28000ae005c00000000000000000000000007f39c581f595b53c5cb19bd0b3f8da6c935e2ca0000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000103ab964e9ceb0100000000000000000000000000000000000000000000000001064b0ec65b454c0ae160924eed54e7abfa6d4ced59c2447000000000000000000000000013f7447000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000180000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001807f39c581f595b53c5cb19bd0b3f8da6c935e2ca00000006000000044ff00000000000000000000000000000000000000000000000000000000000000095ea7b30000000000000000000000006d83f60eeac0e50a1250760151e81db2a278e03affffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6d83f60eeac0e50a1250760151e81db2a278e03a000000a00024000000000007000000000000000000000000000000000000000000000000000000002668dfaa00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006a000f20005980200259b80c5102003040001068',
                   });
 
-                  console.log(swapTxn);
+                  console.log('swap txn (isSuccess?) : ' + swapTxn.success);
 
                   console.log(
                     'eth balance after : ' +
@@ -237,45 +197,9 @@ describe('FluidDex EventPool Mainnet', function () {
 
                   const txnBlockNumber = swapTxn.transaction.block_number;
 
-                  // const txnhash =
-                  //   swapTxn.transaction.transaction_info.transaction_id;
-                  // console.log(txnhash);
-
-                  // console.log(
-                  //   'retreiving txn : ' +
-                  //     JSON.stringify(
-                  //       await dexHelper.provider.getTransaction(
-                  //         txnhash,
-                  //       ),
-                  //     ),
-                  // );
-
-                  console.log(fluidDexEventPool);
-
-                  console.log(txnBlockNumber);
-
+                  await delay(30000);
                   console.log(
-                    'state 3 blocks before : ' +
-                      JSON.stringify(
-                        await fluidDexEventPool.generateState(
-                          txnBlockNumber - 4,
-                        ),
-                        replacer,
-                        2,
-                      ),
-                  );
-                  console.log(
-                    'state 2 blocks before : ' +
-                      JSON.stringify(
-                        await fluidDexEventPool.generateState(
-                          txnBlockNumber - 3,
-                        ),
-                        replacer,
-                        2,
-                      ),
-                  );
-                  console.log(
-                    'state 1 block before : ' +
+                    'state 1 block after : ' +
                       JSON.stringify(
                         await fluidDexEventPool.generateState(
                           txnBlockNumber - 2,
@@ -284,24 +208,47 @@ describe('FluidDex EventPool Mainnet', function () {
                         2,
                       ),
                   );
-
-                  await delay(10000);
-
                   console.log(
                     'state 1 block after : ' +
                       JSON.stringify(
-                        await fluidDexEventPool.generateState(txnBlockNumber),
+                        await fluidDexEventPool.generateState(
+                          await dexHelper.provider.getBlockNumber(),
+                        ),
                         replacer,
                         2,
                       ),
                   );
+                });
+              });
+            });
+          },
+        );
+      });
+    },
+  );
+
+  Object.entries(poolFetchEventsToTest).forEach(
+    ([poolAddress, events]: [string, EventMappings]) => {
+      describe(`Events for ${poolAddress}`, () => {
+        Object.entries(events).forEach(
+          ([eventName, blockNumbers]: [string, number[]]) => {
+            describe(`${eventName}`, () => {
+              blockNumbers.forEach((blockNumber: number) => {
+                it(`State after ${blockNumber}`, async function () {
+                  fluidDexCommonAddress = new FluidDexCommonAddresses(
+                    'FluidDex',
+                    fluidDexCommonAddressStruct,
+                    network,
+                    dexHelper,
+                    logger,
+                  );
 
                   await testEventSubscriber(
-                    fluidDexEventPool,
-                    fluidDexEventPool.addressesSubscribed,
+                    fluidDexCommonAddress,
+                    fluidDexCommonAddress.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchPoolState(fluidDexEventPool, _blockNumber),
-                    txnBlockNumber,
+                      fetchTotalPools(fluidDexCommonAddress, _blockNumber),
+                    blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
                   );
@@ -313,38 +260,4 @@ describe('FluidDex EventPool Mainnet', function () {
       });
     },
   );
-
-  // Object.entries(poolFetchEventsToTest).forEach(
-  //   ([poolAddress, events]: [string, EventMappings]) => {
-  //     describe(`Events for ${poolAddress}`, () => {
-  //       Object.entries(events).forEach(
-  //         ([eventName, blockNumbers]: [string, number[]]) => {
-  //           describe(`${eventName}`, () => {
-  //             blockNumbers.forEach((blockNumber: number) => {
-  //               it(`State after ${blockNumber}`, async function () {
-  //                 fluidDexCommonAddress = new FluidDexCommonAddresses(
-  //                   'FluidDex',
-  //                   fluidDexCommonAddressStruct,
-  //                   network,
-  //                   dexHelper,
-  //                   logger,
-  //                 );
-
-  //                 await testEventSubscriber(
-  //                   fluidDexCommonAddress,
-  //                   fluidDexCommonAddress.addressesSubscribed,
-  //                   (_blockNumber: number) =>
-  //                     fetchTotalPools(fluidDexCommonAddress, _blockNumber),
-  //                   blockNumber,
-  //                   `${dexKey}_${poolAddress}`,
-  //                   dexHelper.provider,
-  //                 );
-  //               });
-  //             });
-  //           });
-  //         },
-  //       );
-  //     });
-  //   },
-  // );
 });
