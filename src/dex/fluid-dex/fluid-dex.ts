@@ -48,7 +48,7 @@ import {
 import { Tokens } from '../../../tests/constants-e2e';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
-  readonly eventPools: { [id: string]: FluidDexEventPool } = {};
+  eventPools: { [id: string]: FluidDexEventPool } = {};
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
@@ -119,9 +119,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    Object.entries(this.eventPools).forEach(([id, eventPool]) => {
-      eventPool.getStateOrGenerate(blockNumber, false);
-    });
+    // Object.entries(this.eventPools).forEach(([id, eventPool]) => {
+    //   eventPool.getStateOrGenerate(blockNumber, false);
+    // });
     await this.updatePoolAndEventPool(blockNumber);
   }
 
@@ -249,7 +249,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       return [
         {
-          prices: prices.filter((price): price is bigint => price !== null), // to be done
+          prices: prices,
           unit: getBigIntPow(
             (side === SwapSide.SELL ? destToken : srcToken).decimals,
           ), // to be done
@@ -312,9 +312,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    this.initializePricing(
-      await this.dexHelper.web3Provider.eth.getBlockNumber(),
-    );
+    this.initializePricing(await this.dexHelper.provider.getBlockNumber());
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -400,6 +398,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         state.collateralReserves.token0RealReserves +
           state.debtReserves.token0RealReserves,
       );
+
       const usd1 = await this.dexHelper.getTokenUSDPrice(
         { address: pool.token1, decimals: token1decimals! },
         state.collateralReserves.token1RealReserves +

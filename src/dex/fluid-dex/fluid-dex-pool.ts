@@ -214,25 +214,24 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     // Ignore the first three addresses
     const [, , , feeHex, collateralReservesHex, debtReservesHex] = input;
     //   // Convert fee from hex to number
-    const fee = feeHex;
-    //   console.log("converted fee : " + fee);
+    const fee = Number(feeHex.toString());
 
     // Convert collateral reserves
     const collateralReserves: CollateralReserves = {
-      token0RealReserves: collateralReservesHex[0],
-      token1RealReserves: collateralReservesHex[1],
-      token0ImaginaryReserves: collateralReservesHex[2],
-      token1ImaginaryReserves: collateralReservesHex[3],
+      token0RealReserves: BigInt(collateralReservesHex[0].toString()),
+      token1RealReserves: BigInt(collateralReservesHex[1].toString()),
+      token0ImaginaryReserves: BigInt(collateralReservesHex[2].toString()),
+      token1ImaginaryReserves: BigInt(collateralReservesHex[3].toString()),
     };
 
     // Convert debt reserves
     const debtReserves: DebtReserves = {
-      token0Debt: debtReservesHex[0],
-      token1Debt: debtReservesHex[1],
-      token0RealReserves: debtReservesHex[2],
-      token1RealReserves: debtReservesHex[3],
-      token0ImaginaryReserves: debtReservesHex[4],
-      token1ImaginaryReserves: debtReservesHex[5],
+      token0Debt: BigInt(debtReservesHex[0].toString()),
+      token1Debt: BigInt(debtReservesHex[1].toString()),
+      token0RealReserves: BigInt(debtReservesHex[2].toString()),
+      token1RealReserves: BigInt(debtReservesHex[3].toString()),
+      token0ImaginaryReserves: BigInt(debtReservesHex[4].toString()),
+      token1ImaginaryReserves: BigInt(debtReservesHex[5].toString()),
     };
 
     return {
@@ -241,4 +240,34 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
       fee,
     };
   }
+  // convertToFluidDexPoolState(input: any[]): FluidDexPoolState {
+  //   // Ignore the first three addresses
+  //   const [, , , feeHex, collateralReservesHex, debtReservesHex] = input;
+  //   //   // Convert fee from hex to number
+  //   const fee = feeHex;
+
+  //   // Convert collateral reserves
+  //   const collateralReserves: CollateralReserves = {
+  //     token0RealReserves: collateralReservesHex[0],
+  //     token1RealReserves: collateralReservesHex[1],
+  //     token0ImaginaryReserves: collateralReservesHex[2],
+  //     token1ImaginaryReserves: collateralReservesHex[3],
+  //   };
+
+  //   // Convert debt reserves
+  //   const debtReserves: DebtReserves = {
+  //     token0Debt: debtReservesHex[0],
+  //     token1Debt: debtReservesHex[1],
+  //     token0RealReserves: debtReservesHex[2],
+  //     token1RealReserves: debtReservesHex[3],
+  //     token0ImaginaryReserves: debtReservesHex[4],
+  //     token1ImaginaryReserves: debtReservesHex[5],
+  //   };
+
+  //   return {
+  //     collateralReserves,
+  //     debtReserves,
+  //     fee,
+  //   };
+  // }
 }
