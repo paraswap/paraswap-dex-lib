@@ -9,19 +9,10 @@ import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import {
-  commonAddresses,
-  FluidDexPool,
-  FluidDexPoolState,
-  Pool,
-} from './types';
+import { CommonAddresses, FluidDexPoolState, Pool } from './types';
 import { FluidDexConfig } from './config';
 import { DeepReadonly } from 'ts-essentials';
-import {
-  EstimateGasSimulation,
-  TenderlySimulation,
-  TransactionSimulator,
-} from '../../../tests/tenderly-simulation';
+import { TenderlySimulation } from '../../../tests/tenderly-simulation';
 
 /*
   README
@@ -108,7 +99,7 @@ describe('FluidDex EventPool Mainnet', function () {
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  const fluidDexCommonAddressStruct: commonAddresses =
+  const fluidDexCommonAddressStruct: CommonAddresses =
     FluidDexConfig[dexKey][network].commonAddresses;
   const liquidityProxy: Address = '0x52aa899454998be5b000ad077a46bbe360f4e497';
   const dexFactory: Address = '0x93dd426446b5370f094a1e31f19991aaa6ac0be0';

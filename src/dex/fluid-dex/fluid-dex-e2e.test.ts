@@ -2,6 +2,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
+
 import { testE2E } from '../../../tests/utils-e2e';
 import {
   Tokens,
@@ -9,7 +11,6 @@ import {
   NativeTokenSymbols,
 } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 
 /*
