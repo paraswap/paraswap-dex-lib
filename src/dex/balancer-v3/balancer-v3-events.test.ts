@@ -78,12 +78,10 @@ describe('BalancerV3 EventPool', function () {
   // TODO once we have a new test deployment add tests for: AggregateSwapFeePercentageChanged, SwapFeePercentageChanged, PoolPausedStateChanged
   const eventsToTest: Record<Address, EventMappings> = {
     [BalancerV3Config.BalancerV3[network].vaultAddress]: {
-      // 6806714:
-      // - https://eth-sepolia.blockscout.com/tx/0x831ef55d8c697f5e603174373e3fbe388def01944a3f73b4c90e6f1775d6e49f?tab=logs
-      // - has swap for pool : 0x3e8b62395aea51c3d7bdfeb8cde7d4a272c34750
+      // - https://eth-sepolia.blockscout.com/tx/0x6c2a7a38fd469779269f11ff8366ef01de0977219972cbe2eaa3c9a0a9a91d1e
       PoolBalanceChanged: {
-        blockNumbers: [6806714],
-        poolAddress: ['0x3e8b62395aea51c3d7bdfeb8cde7d4a272c34750'],
+        blockNumbers: [6839703],
+        poolAddress: ['0xd71958aed5e2e835a648ff832a181f7bdabbaf13'],
       },
     },
   };

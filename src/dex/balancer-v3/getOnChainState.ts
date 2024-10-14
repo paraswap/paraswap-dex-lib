@@ -104,7 +104,7 @@ const poolOnChain: Record<
       );
       if (!resultLiveBalances)
         throw new Error(
-          `Failed to get result for getPoolTokenRates for ${poolAddress}`,
+          `Failed to get result for getCurrentLiveBalances for ${poolAddress}`,
         );
       const resultGetPoolConfig = decodeThrowError(
         contractInterface,

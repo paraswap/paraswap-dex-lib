@@ -196,6 +196,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         event.args.deltas[i],
       );
     }
+    newState[poolAddress].totalSupply = BigInt(event.args.totalSupply);
     return newState;
   }
 
