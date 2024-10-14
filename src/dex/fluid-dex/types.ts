@@ -46,9 +46,6 @@ export type FluidDexPool = {
 };
 
 export type DexParams = {
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
   commonAddresses: commonAddresses;
   pools: FluidDexPool[];
 };

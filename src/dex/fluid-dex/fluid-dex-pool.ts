@@ -9,14 +9,10 @@ import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import {
   commonAddresses,
   FluidDexPoolState,
-  PoolWithReserves,
   CollateralReserves,
   DebtReserves,
 } from './types';
-import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
-import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '../../types';
-import { generalDecoder } from '../../lib/decoders';
 import { Contract } from 'ethers';
 
 export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState> {
@@ -48,6 +44,15 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
 
     // Add handlers
     this.handlers['LogOperate'] = this.handleOperate.bind(this);
+  }
+
+  private padHexTo32Bytes(hex: string): string {
+    const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
+    if (cleanHex.length !== 40) {
+      throw new Error('Input must be 20 bytes (40 hexadecimal characters)');
+    }
+    const paddedHex = cleanHex.padStart(64, '0');
+    return '0x' + paddedHex;
   }
 
   /**
@@ -83,59 +88,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
 
     return generatedState;
   }
-
-  decodePoolWithReserves = (
-    result: MultiResult<BytesLike> | BytesLike,
-  ): PoolWithReserves => {
-    return generalDecoder(
-      result,
-      [
-        'tuple(address pool, address token0_, address token1_, uint256 fee,' +
-          'tuple(uint256 token0RealReserves, uint256 token1RealReserves, uint256 token0ImaginaryReserves, uint256 token1ImaginaryReserves) collateralReserves, ' +
-          'tuple(uint256 token0Debt, uint256 token1Debt, uint256 token0RealReserves, uint256 token1RealReserves, uint256 token0ImaginaryReserves, uint256 token1ImaginaryReserves) debtReserves)',
-      ],
-      undefined,
-      decoded => {
-        const [decodedResult] = decoded;
-        return {
-          pool: decodedResult.pool,
-          token0_: decodedResult.token0_,
-          token1_: decodedResult.token1_,
-          fee: decodedResult.fee,
-          collateralReserves: {
-            token0RealReserves: BigInt(
-              decodedResult.collateralReserves.token0RealReserves,
-            ),
-            token1RealReserves: BigInt(
-              decodedResult.collateralReserves.token1RealReserves,
-            ),
-            token0ImaginaryReserves: BigInt(
-              decodedResult.collateralReserves.token0ImaginaryReserves,
-            ),
-            token1ImaginaryReserves: BigInt(
-              decodedResult.collateralReserves.token1ImaginaryReserves,
-            ),
-          },
-          debtReserves: {
-            token0Debt: BigInt(decodedResult.debtReserves.token0Debt),
-            token1Debt: BigInt(decodedResult.debtReserves.token1Debt),
-            token0RealReserves: BigInt(
-              decodedResult.debtReserves.token0RealReserves,
-            ),
-            token1RealReserves: BigInt(
-              decodedResult.debtReserves.token1RealReserves,
-            ),
-            token0ImaginaryReserves: BigInt(
-              decodedResult.debtReserves.token0ImaginaryReserves,
-            ),
-            token1ImaginaryReserves: BigInt(
-              decodedResult.debtReserves.token1ImaginaryReserves,
-            ),
-          },
-        };
-      },
-    );
-  };
 
   /**
    * The function is called every time any of the subscribed
