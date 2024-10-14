@@ -35,6 +35,7 @@ export type TokenState = {
   price: bigint;
   spread: bigint;
   coeff: bigint;
+  woFeasible: boolean;
 };
 
 export type DecimalInfo = {

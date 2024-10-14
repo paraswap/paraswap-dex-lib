@@ -598,7 +598,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         takerAsset: ethers.utils.getAddress(takerToken.address),
         makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
         takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
-        userAddress: options.txOrigin,
+        userAddress: options.userAddress,
         chainid: this.network,
         executor: options.executionContractAddress,
         partner: options.partner,
@@ -725,11 +725,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         const errorData = e.response.data as RFQResponseError;
         if (errorData.ReasonCode === 'FQ-009') {
           this.logger.warn(
-            `${this.dexKey}-${this.network}: Encountered rate limited user=${options.txOrigin}. Adding to local rate limit cache`,
+            `${this.dexKey}-${this.network}: Encountered rate limited user=${options.userAddress}. Adding to local rate limit cache`,
           );
-          await this.setRateLimited(options.txOrigin, errorData.RetryAfter);
+          await this.setRateLimited(options.userAddress, errorData.RetryAfter);
         } else {
-          await this.setBlacklist(options.txOrigin);
+          await this.setBlacklist(options.userAddress);
           this.logger.error(
             `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}: ${errorData.Reason}`,
           );
@@ -997,7 +997,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       `${this.dexKey}-${this.network}: quoteData undefined`,
     );
 
-    const swapFunction = 'simpleSwap';
+    const swapFunction = 'partialSwap';
     const swapFunctionParams = [
       [
         quoteData.nonceAndMeta,
@@ -1010,6 +1010,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         quoteData.takerAmount,
       ],
       quoteData.signature,
+      // might be overwritten on Executors
+      quoteData.takerAmount,
     ];
 
     const exchangeData = this.rfqInterface.encodeFunctionData(

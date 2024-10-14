@@ -4,9 +4,7 @@ import {
   Address,
   ExchangePrices,
   PoolPrices,
-  Log,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   NumberAsString,
@@ -32,7 +30,8 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { LitePsmConfig } from './config';
-import PsmABI from '../../abi/lite-psm/psm.json';
+import DaiPsmABI from '../../abi/lite-psm/psm.json';
+import UsdsPsmABI from '../../abi/lite-psm/usdsPsm.json';
 import { BI_POWS } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
 import { hexConcat, hexZeroPad, hexlify } from '@ethersproject/bytes';
@@ -45,7 +44,8 @@ import { BigNumber } from 'ethers';
 import { LitePsmEventPool, getOnChainState } from './lite-psm-event-pool';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
-const psmInterface = new Interface(PsmABI);
+const daiPsmInterface = new Interface(DaiPsmABI);
+const usdsPsmInterface = new Interface(UsdsPsmABI);
 const WAD = BI_POWS[18];
 
 const ceilDiv = (a: bigint, b: bigint) => (a + b - 1n) / b;
@@ -70,6 +70,8 @@ export class LitePsm
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected dai: Token = LitePsmConfig[dexKey][network].dai,
+    protected usds: Token = LitePsmConfig[dexKey][network].usds,
+    protected usdsPsm: Address = LitePsmConfig[dexKey][network].usdsPsmAddress,
     protected vatAddress: Address = LitePsmConfig[dexKey][network].vatAddress,
     protected poolConfigs: PoolConfig[] = LitePsmConfig[dexKey][network].pools,
   ) {
@@ -123,6 +125,8 @@ export class LitePsm
     return (
       (srcAddress === this.dai.address && this.eventPools[destAddress]) ||
       (destAddress === this.dai.address && this.eventPools[srcAddress]) ||
+      (srcAddress === this.usds.address && this.eventPools[destAddress]) ||
+      (destAddress === this.usds.address && this.eventPools[srcAddress]) ||
       null
     );
   }
@@ -153,7 +157,7 @@ export class LitePsm
   }
 
   computePrices(
-    isSrcDai: boolean,
+    isDestGem: boolean,
     to18ConversionFactor: bigint,
     side: SwapSide,
     amounts: bigint[],
@@ -168,7 +172,7 @@ export class LitePsm
 
     return amounts.map(a => {
       if (side === SwapSide.SELL) {
-        if (isSrcDai) {
+        if (isDestGem) {
           const gemAmt18 = (a * WAD) / (WAD + poolState.tout);
           if (buyGemCheck(gemAmt18)) return gemAmt18 / to18ConversionFactor;
         } else {
@@ -177,7 +181,7 @@ export class LitePsm
             return gemAmt18 - (gemAmt18 * poolState.tin) / WAD;
         }
       } else {
-        if (isSrcDai) {
+        if (isDestGem) {
           const gemAmt18 = to18ConversionFactor * a;
           if (buyGemCheck(gemAmt18))
             return gemAmt18 + (gemAmt18 * poolState.tout) / WAD;
@@ -214,33 +218,39 @@ export class LitePsm
       (side === SwapSide.SELL ? srcToken : destToken).decimals,
     );
 
-    const isSrcDai = srcToken.address.toLowerCase() === this.dai.address;
-    const gem = isSrcDai ? destToken : srcToken;
+    const srcLower = srcToken.address.toLowerCase();
+    const isSrcDai = srcLower === this.dai.address;
+    const isDaiSwap =
+      isSrcDai || destToken.address.toLowerCase() === this.dai.address;
+
+    const isDestGem = isSrcDai || srcLower === this.usds.address;
+
+    const gem = isDestGem ? destToken : srcToken;
     const toll =
-      (side === SwapSide.SELL && isSrcDai) ||
-      (side === SwapSide.BUY && !isSrcDai)
+      (side === SwapSide.SELL && isDestGem) ||
+      (side === SwapSide.BUY && !isDestGem)
         ? poolState.tout
         : poolState.tin;
 
     const [unit, ...prices] = this.computePrices(
-      isSrcDai,
+      isDestGem,
       eventPool.to18ConversionFactor,
       side,
       [unitVolume, ...amounts],
       poolState,
     );
 
+    const psm = isDaiSwap ? eventPool.poolConfig.psmAddress : this.usdsPsm;
     return [
       {
         prices,
         unit,
         data: {
           toll: toll.toString(),
-          psmAddress: eventPool.poolConfig.psmAddress,
-          gemJoinAddress: eventPool.poolConfig.gemJoinAddress,
+          psmAddress: psm,
           gemDecimals: gem.decimals,
         },
-        poolAddresses: [eventPool.poolConfig.psmAddress],
+        poolAddresses: [psm],
         exchange: this.dexKey,
         gasCost: 50000,
         poolIdentifier,
@@ -270,10 +280,12 @@ export class LitePsm
     data: LitePsmData,
     side: SwapSide,
   ): { isGemSell: boolean; gemAmount: string } {
-    const isSrcDai = srcToken.toLowerCase() === this.dai.address;
+    const isDestGem =
+      srcToken.toLowerCase() === this.dai.address ||
+      srcToken.toLowerCase() === this.usds.address;
     const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
     if (side === SwapSide.SELL) {
-      if (isSrcDai) {
+      if (isDestGem) {
         const gemAmt18 = (BigInt(srcAmount) * WAD) / (WAD + BigInt(data.toll));
         return {
           isGemSell: false,
@@ -283,7 +295,7 @@ export class LitePsm
         return { isGemSell: true, gemAmount: srcAmount };
       }
     } else {
-      if (isSrcDai) {
+      if (isDestGem) {
         return { isGemSell: false, gemAmount: destAmount };
       } else {
         const gemAmt = ceilDiv(
@@ -338,9 +350,7 @@ export class LitePsm
       isApproved = await this.dexHelper.augustusApprovals.hasApproval(
         options.executionContractAddress,
         srcToken.address,
-        srcToken.address.toLowerCase() === this.dai.address.toLowerCase()
-          ? optimalSwapExchange.data.psmAddress
-          : optimalSwapExchange.data.gemJoinAddress,
+        optimalSwapExchange.data.psmAddress,
       );
     }
 
@@ -370,10 +380,16 @@ export class LitePsm
       side,
     );
 
-    let exchangeData = psmInterface.encodeFunctionData(
-      isGemSell ? 'sellGem' : 'buyGem',
-      [recipient, gemAmount],
-    );
+    const isDaiSwap =
+      destToken.toLowerCase() === this.dai.address ||
+      srcToken.toLowerCase() === this.dai.address;
+
+    let exchangeData = (
+      isDaiSwap ? daiPsmInterface : usdsPsmInterface
+    ).encodeFunctionData(isGemSell ? 'sellGem' : 'buyGem', [
+      recipient,
+      gemAmount,
+    ]);
 
     // append toll and to18ConversionFactor & set specialDexFlag = SWAP_ON_MAKER_PSM to
     // - `buyGem` on Ex1 & Ex2
@@ -397,10 +413,14 @@ export class LitePsm
       exchangeData,
       targetExchange: data.psmAddress,
       specialDexFlag,
-      spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
+      spender: data.psmAddress, // psm is the join for both dai and usds
       returnAmountPos:
         side === SwapSide.SELL && isGemSell
-          ? extractReturnAmountPosition(psmInterface, 'sellGem', 'daiOutWad')
+          ? extractReturnAmountPosition(
+              isDaiSwap ? daiPsmInterface : usdsPsmInterface,
+              'sellGem',
+              isDaiSwap ? 'daiOutWad' : 'usdsOutWad',
+            )
           : undefined,
     };
   }
@@ -453,7 +473,7 @@ export class LitePsm
       data.toll,
       to18ConversionFactor.toString(),
       data.psmAddress,
-      data.gemJoinAddress,
+      data.psmAddress,
       metadata,
       beneficiaryDirectionApproveFlag.toString(),
     ];
@@ -492,9 +512,10 @@ export class LitePsm
       );
     };
 
-    const isDai = _tokenAddress === this.dai.address;
+    const isDaiOrUsds =
+      _tokenAddress === this.dai.address || _tokenAddress === this.usds.address;
 
-    const validPoolConfigs = isDai
+    const validPoolConfigs = isDaiOrUsds
       ? this.poolConfigs
       : this.eventPools[_tokenAddress]
       ? [this.eventPools[_tokenAddress].poolConfig]
@@ -513,7 +534,7 @@ export class LitePsm
       exchange: this.dexKey,
       address: p.psmAddress,
       liquidityUSD: minLiq(poolStates[i], p.gem.decimals),
-      connectorTokens: [isDai ? p.gem : this.dai],
+      connectorTokens: isDaiOrUsds ? [p.gem] : [this.dai, this.usds],
     }));
   }
 }
