@@ -240,34 +240,4 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
       fee,
     };
   }
-  // convertToFluidDexPoolState(input: any[]): FluidDexPoolState {
-  //   // Ignore the first three addresses
-  //   const [, , , feeHex, collateralReservesHex, debtReservesHex] = input;
-  //   //   // Convert fee from hex to number
-  //   const fee = feeHex;
-
-  //   // Convert collateral reserves
-  //   const collateralReserves: CollateralReserves = {
-  //     token0RealReserves: collateralReservesHex[0],
-  //     token1RealReserves: collateralReservesHex[1],
-  //     token0ImaginaryReserves: collateralReservesHex[2],
-  //     token1ImaginaryReserves: collateralReservesHex[3],
-  //   };
-
-  //   // Convert debt reserves
-  //   const debtReserves: DebtReserves = {
-  //     token0Debt: debtReservesHex[0],
-  //     token1Debt: debtReservesHex[1],
-  //     token0RealReserves: debtReservesHex[2],
-  //     token1RealReserves: debtReservesHex[3],
-  //     token0ImaginaryReserves: debtReservesHex[4],
-  //     token1ImaginaryReserves: debtReservesHex[5],
-  //   };
-
-  //   return {
-  //     collateralReserves,
-  //     debtReserves,
-  //     fee,
-  //   };
-  // }
 }
