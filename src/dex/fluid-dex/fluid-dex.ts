@@ -321,8 +321,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const latestBlockNumber_ =
-      await this.dexHelper.web3Provider.eth.getBlockNumber();
+    const latestBlockNumber_ = await this.dexHelper.provider.getBlockNumber();
     let liquidityAmounts: { [id: string]: bigint } = {};
     for (const pool of this.pools) {
       if (
@@ -426,8 +425,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     context: Context,
     executorAddress: Address,
   ): Promise<DexExchangeParam> {
-    const latestBlockNumber_ =
-      await this.dexHelper.web3Provider.eth.getBlockNumber();
+    const latestBlockNumber_ = await this.dexHelper.provider.getBlockNumber();
     await this.updatePoolAndEventPool(latestBlockNumber_);
 
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);

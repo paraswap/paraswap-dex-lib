@@ -185,7 +185,7 @@ describe('FluidDex', function () {
     // ];
 
     beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      blockNumber = await dexHelper.provider.getBlockNumber();
       fluidDex = new FluidDex(network, dexKey, dexHelper);
       if (fluidDex.initializePricing) {
         await fluidDex.initializePricing(blockNumber);

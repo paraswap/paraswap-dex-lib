@@ -59,7 +59,7 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
     state: DeepReadonly<Pool[]>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<Pool[]> | null> {
-    const blockNumber_ = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    const blockNumber_ = await this.dexHelper.provider.getBlockNumber();
     const resolverAbi = new Interface(ResolverABI);
     const callData: MultiCallParams<Pool>[] = [
       {
