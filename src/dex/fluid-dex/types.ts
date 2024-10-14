@@ -7,25 +7,25 @@ export type FluidDexPoolState = {
 };
 
 export type CollateralReserves = {
-  token0RealReserves: bigint; // Changed from uint to bigint
-  token1RealReserves: bigint; // Changed from uint to bigint
-  token0ImaginaryReserves: bigint; // Changed from uint to bigint
-  token1ImaginaryReserves: bigint; // Changed from uint to bigint
+  token0RealReserves: bigint;
+  token1RealReserves: bigint;
+  token0ImaginaryReserves: bigint;
+  token1ImaginaryReserves: bigint;
 };
 
 export type DebtReserves = {
-  token0Debt: bigint; // Changed from uint to bigint
-  token1Debt: bigint; // Changed from uint to bigint
-  token0RealReserves: bigint; // Changed from uint to bigint
-  token1RealReserves: bigint; // Changed from uint to bigint
-  token0ImaginaryReserves: bigint; // Changed from uint to bigint
-  token1ImaginaryReserves: bigint; // Changed from uint to bigint
+  token0Debt: bigint;
+  token1Debt: bigint;
+  token0RealReserves: bigint;
+  token1RealReserves: bigint;
+  token0ImaginaryReserves: bigint;
+  token1ImaginaryReserves: bigint;
 };
 
 export interface PoolWithReserves {
   pool: string;
-  token0_: string;
-  token1_: string;
+  token0: string;
+  token1: string;
   fee: number;
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
@@ -46,11 +46,11 @@ export type FluidDexPool = {
 };
 
 export type DexParams = {
-  commonAddresses: commonAddresses;
+  commonAddresses: CommonAddresses;
   pools: FluidDexPool[];
 };
 
-export type commonAddresses = {
+export type CommonAddresses = {
   liquidityProxy: Address;
   resolver: Address;
   dexFactory: Address;

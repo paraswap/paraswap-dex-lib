@@ -1,4 +1,4 @@
-import { AsyncOrSync } from 'ts-essentials';
+import { BytesLike } from 'ethers/lib/utils';
 import { Interface } from '@ethersproject/abi';
 import {
   Token,
@@ -6,7 +6,6 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   DexExchangeParam,
   Logger,
@@ -18,32 +17,20 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   CollateralReserves,
   DebtReserves,
-  DexParams,
   FluidDexData,
   FluidDexPool,
   FluidDexPoolState,
   Pool,
-  commonAddresses,
 } from './types';
-import {
-  SimpleExchange,
-  getLocalDeadlineAsFriendlyPlaceholder,
-} from '../simple-exchange';
+import { SimpleExchange } from '../simple-exchange';
 import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
 import { FluidDexConfig, Adapters, FLUID_DEX_GAS_COST } from './config';
 import { FluidDexEventPool } from './fluid-dex-pool';
 import { FluidDexCommonAddresses } from './fluid-dex-generate-pool';
-import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
-import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
-import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
-import { BytesLike } from 'ethers/lib/utils';
-import {
-  generalDecoder,
-  extractSuccessAndValue,
-  addressDecode,
-} from '../../lib/decoders';
+import { MultiResult } from '../../lib/multi-wrapper';
+import { generalDecoder } from '../../lib/decoders';
 // @ts-ignore
 import { Tokens } from '../../../tests/constants-e2e';
 
@@ -59,9 +46,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   pools: FluidDexPool[];
 
-  readonly FluidCommonAddresses: FluidDexCommonAddresses;
+  readonly fluidCommonAddresses: FluidDexCommonAddresses;
 
-  readonly iFluidDexPool: Interface;
+  readonly fluidDexPoolIface: Interface;
 
   protected adapters;
 
@@ -74,7 +61,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.FluidCommonAddresses = new FluidDexCommonAddresses(
+    this.fluidCommonAddresses = new FluidDexCommonAddresses(
       'FluidDex',
       FluidDexConfig['FluidDex'][network].commonAddresses,
       network,
@@ -83,12 +70,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     );
     this.pools = FluidDexConfig['FluidDex'][network].pools;
     this.adapters = Adapters[network] || {};
-    this.iFluidDexPool = new Interface(FluidDexPoolABI);
+    this.fluidDexPoolIface = new Interface(FluidDexPoolABI);
   }
 
-  async fetchFluidDexPools(blockNumber: number): Promise<FluidDexPool[]> {
+  private async fetchFluidDexPools(
+    blockNumber: number,
+  ): Promise<FluidDexPool[]> {
     const poolsFromResolver =
-      await this.FluidCommonAddresses.getStateOrGenerate(blockNumber, false);
+      await this.fluidCommonAddresses.getStateOrGenerate(blockNumber, false);
     return poolsFromResolver.map(pool => ({
       id: `FluidDex_${pool.address.toLowerCase()}`,
       address: pool.address.toLowerCase(),
@@ -104,7 +93,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         this.eventPools[pool.id] = new FluidDexEventPool(
           'FluidDex',
           pool.address,
-          this.FluidCommonAddresses.commonAddresses,
+          this.fluidCommonAddresses.commonAddresses,
           this.network,
           this.dexHelper,
           this.logger,
@@ -214,33 +203,18 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         return null;
       }
 
-      // const state = await eventPool.generateState(blockNumber);
       const state = await eventPool.getStateOrGenerate(blockNumber);
 
-      const swap0To1: boolean = side === SwapSide.SELL;
-
       const prices = amounts.map(amount => {
-        if (side === SwapSide.SELL) {
-          return this.swapIn(
-            srcToken.address.toLowerCase() === pool.token0.toLowerCase(),
-            amount,
-            state.collateralReserves,
-            state.debtReserves,
-            srcToken.decimals,
-            destToken.decimals,
-            BigInt(state.fee),
-          );
-        } else {
-          return this.swapOut(
-            !(srcToken.address.toLowerCase() === pool.token0.toLowerCase()),
-            amount,
-            state.collateralReserves,
-            state.debtReserves,
-            srcToken.decimals,
-            destToken.decimals,
-            BigInt(state.fee),
-          );
-        }
+        return this.swapIn(
+          srcToken.address.toLowerCase() === pool.token0.toLowerCase(),
+          amount,
+          state.collateralReserves,
+          state.debtReserves,
+          srcToken.decimals,
+          destToken.decimals,
+          BigInt(state.fee),
+        );
       });
 
       return [
@@ -426,38 +400,27 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
 
-    let method: string;
     let args: any;
     let returnAmountPos: number | undefined = undefined;
 
-    const deadline = getLocalDeadlineAsFriendlyPlaceholder();
-
-    method = side == SwapSide.SELL ? 'swapIn' : 'swapOut';
+    const method = 'swapIn';
 
     returnAmountPos = extractReturnAmountPosition(
-      this.iFluidDexPool,
+      this.fluidDexPoolIface,
       method,
-      side == SwapSide.SELL ? 'amountOut_' : 'amountIn_',
+      'amountOut_',
       1,
     );
 
     const pool = await this.getPoolByTokenPair(srcToken, destToken);
 
-    if (side == SwapSide.SELL) {
-      if (pool!.token0.toLowerCase() != srcToken.toLowerCase()) {
-        args = [false, BigInt(srcAmount), BigInt(destAmount), recipient];
-      } else {
-        args = [true, BigInt(srcAmount), BigInt(destAmount), recipient];
-      }
+    if (pool!.token0.toLowerCase() != srcToken.toLowerCase()) {
+      args = [false, BigInt(srcAmount), BigInt(destAmount), recipient];
     } else {
-      if (pool!.token0.toLowerCase() != srcToken.toLowerCase()) {
-        args = [true, BigInt(srcAmount), 2n * BigInt(srcAmount), recipient];
-      } else {
-        args = [false, BigInt(srcAmount), 2n * BigInt(srcAmount), recipient];
-      }
+      args = [true, BigInt(srcAmount), BigInt(destAmount), recipient];
     }
 
-    const swapData = this.iFluidDexPool.encodeFunctionData(method, args);
+    const swapData = this.fluidDexPoolIface.encodeFunctionData(method, args);
 
     return {
       needWrapNative: this.needWrapNative,
@@ -478,7 +441,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param outDecimals - The number of decimals for the output token.
    * @returns The calculated output amount (as a BigInt).
    */
-  swapIn(
+  private swapIn(
     swap0To1: boolean,
     amountIn: bigint,
     colReserves: CollateralReserves,
@@ -703,7 +666,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @note If a > t then entire trade route through col pool and col pool arbitrage with debt pool.
    * @note If a > 0 & a < t then swap will route through both pools.
    */
-  swapRoutingIn(
+  private swapRoutingIn(
     t: bigint,
     x: bigint,
     y: bigint,
@@ -737,7 +700,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param {number} fee - The fee for the swap. 1e4 = 1%
    * @returns {bigint} amountIn - The calculated input amount required for the swap.
    */
-  swapOut(
+  private swapOut(
     swap0to1: boolean,
     amountOut: bigint,
     colReserves: CollateralReserves,
@@ -772,7 +735,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param {DebtReserves} debtReserves - The reserves of the debt pool.
    * @returns {bigint} The calculated input amount required for the swap.
    */
-  swapOutAdjusted(
+  private swapOutAdjusted(
     swap0to1: boolean,
     amountOut: bigint,
     colReserves: CollateralReserves,
