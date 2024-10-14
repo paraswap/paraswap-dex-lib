@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import { BytesLike } from 'ethers/lib/utils';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
@@ -6,19 +7,10 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import DexFactoryABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
-import {
-  commonAddresses,
-  FluidDexPool,
-  FluidDexPoolState,
-  PoolWithReserves,
-  Pool,
-} from './types';
-import { ethers } from 'ethers';
-import { eachOfSeries } from 'async';
+import { CommonAddresses, Pool } from './types';
 import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
-import { BytesLike } from 'ethers/lib/utils';
 import { Address } from '../../types';
-import { generalDecoder, extractSuccessAndValue } from '../../lib/decoders';
+import { generalDecoder } from '../../lib/decoders';
 
 export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
   handlers: {
@@ -33,11 +25,11 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
 
   addressesSubscribed: Address[];
   protected dexFactoryIface = new Interface(DexFactoryABI);
+  protected resolverIface = new Interface(ResolverABI);
 
   constructor(
     readonly parentName: string,
-    // readonly pool: FluidDexPool,
-    readonly commonAddresses: commonAddresses,
+    readonly commonAddresses: CommonAddresses,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
@@ -60,12 +52,13 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
     log: Readonly<Log>,
   ): Promise<DeepReadonly<Pool[]> | null> {
     const blockNumber_ = await this.dexHelper.web3Provider.eth.getBlockNumber();
-    const resolverAbi = new Interface(ResolverABI);
     const callData: MultiCallParams<Pool>[] = [
       {
         target: this.commonAddresses.resolver,
-        callData: resolverAbi.encodeFunctionData('getPool', [event.args.dexId]),
-        decodeFunction: await this.decodePool,
+        callData: this.resolverIface.encodeFunctionData('getPool', [
+          event.args.dexId,
+        ]),
+        decodeFunction: this.decodePool,
       },
     ];
 
@@ -81,13 +74,13 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
       token1: results[0].token1,
     };
 
-    let currentPool = this.getState(0);
-    currentPool = currentPool == null ? [] : currentPool;
-    currentPool = [...currentPool, generatedPool];
+    let currentPools = this.getState(0);
+    currentPools = currentPools == null ? [] : currentPools;
+    currentPools = [...currentPools, generatedPool];
 
-    this.setState(currentPool, blockNumber_);
+    this.setState(currentPools, blockNumber_);
 
-    return currentPool;
+    return currentPools;
   }
 
   decodePool = (result: MultiResult<BytesLike> | BytesLike): Pool => {
