@@ -1,5 +1,6 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
+import { BytesLike } from 'ethers/lib/utils';
 import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
@@ -7,7 +8,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import {
-  commonAddresses,
+  CommonAddresses,
   FluidDexPoolState,
   CollateralReserves,
   DebtReserves,
@@ -32,7 +33,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   constructor(
     readonly parentName: string,
     readonly pool: Address,
-    readonly commonAddresses: commonAddresses,
+    readonly commonAddresses: CommonAddresses,
     protected network: number,
     readonly dexHelper: IDexHelper,
     logger: Logger,
@@ -63,7 +64,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     state: DeepReadonly<FluidDexPoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<FluidDexPoolState> | null> {
-    const resolverAbi = new Interface(ResolverABI);
     if (!(event.args.user in [this.pool])) {
       return null;
     }
@@ -75,7 +75,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     const rawResult = await resolverContract.callStatic.getPoolReserves(
       this.pool,
       {
-        blockTag: await this.dexHelper.provider,
+        blockTag: this.dexHelper.provider,
       },
     );
 
@@ -126,13 +126,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     return state;
   }
 
-  replacer(key: string, value: any) {
-    if (typeof value === 'bigint') {
-      return value.toString();
-    }
-    return value;
-  }
-
   /**
    * The function generates state using on-chain calls. This
    * function is called to regenerate state if the event based
@@ -162,10 +155,10 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
     return convertedResult;
   }
 
-  convertToFluidDexPoolState(input: any[]): FluidDexPoolState {
+  private convertToFluidDexPoolState(input: any[]): FluidDexPoolState {
     // Ignore the first three addresses
     const [, , , feeHex, collateralReservesHex, debtReservesHex] = input;
-    //   // Convert fee from hex to number
+    // Convert fee from hex to number
     const fee = Number(feeHex.toString());
 
     // Convert collateral reserves

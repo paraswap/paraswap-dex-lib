@@ -1,4 +1,5 @@
 import { Interface } from '@ethersproject/abi';
+import { BytesLike } from 'ethers/lib/utils';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
@@ -6,11 +7,10 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import DexFactoryABI from '../../abi/fluid-dex/dexFactory.abi.json';
-import { commonAddresses, Pool } from './types';
-import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
-import { BytesLike } from 'ethers/lib/utils';
+import { CommonAddresses, Pool } from './types';
+import { MultiResult } from '../../lib/multi-wrapper';
 import { Address } from '../../types';
-import { generalDecoder, extractSuccessAndValue } from '../../lib/decoders';
+import { generalDecoder } from '../../lib/decoders';
 import { Contract } from 'ethers';
 
 export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
@@ -26,11 +26,11 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
 
   addressesSubscribed: Address[];
   protected dexFactoryIface = new Interface(DexFactoryABI);
+  protected resolverIface = new Interface(ResolverABI);
 
   constructor(
     readonly parentName: string,
-    // readonly pool: FluidDexPool,
-    readonly commonAddresses: commonAddresses,
+    readonly commonAddresses: CommonAddresses,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
