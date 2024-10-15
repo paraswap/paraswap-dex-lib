@@ -1,0 +1,42 @@
+import BigNumber from 'bignumber.js';
+
+// TODO: update
+export const RUBICON_RFQ_API_URL = 'https://rfq.rubicon.finance';
+export const RUBICON_RFQ_CLIENT_TAG = 'paraswap';
+
+export const RUBICON_RFQ_MARKETS_ENDPOINT = '/markets';
+export const RUBICON_RFQ_LIQ_ENDPOINT = '/liquidity';
+export const RUBICON_RFQ_MARKET_MATCH_ENDPOINT = '/market-match';
+export const RUBICON_RFQ_MARKET_MATCH_TIMEOUT_MS = 3_228;
+
+export const RUBICON_RFQ_PARTIAL_FILL = 'partial';
+export const RUBICON_RFQ_FULL_FILL = 'full';
+
+export const RUBICON_RFQ_MARKETS_CACHE_TTL_S = 3;
+export const RUBICON_RFQ_MARKETS_POLL_INTERVAL_MS = 1000;
+
+export const RUBICON_RFQ_LIQ_CACHE_TTL_S = 8;
+export const RUBICON_RFQ_LIQ_POLL_INTERVAL_MS = 5 * 1000;
+
+export const RUBICON_RFQ_GAS_COST = 550_000;
+export const MARKET_SPLIT = '_';
+
+export const RUBICON_RFQ_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION =
+  new BigNumber('0.001');
+
+export const RESTRICT_UNKNOWN_TTL_MS = 60 * 60 * 1000; // 60 mins
+export const RESTRICT_INTERNAL_SERVER_ERR = 60 * 20 * 1000; // 20 mins
+export const RESTRICT_NO_SIGNATURE_TTL_MS = 60 * 10 * 1000; // 10 mins
+export const RESTRICT_NO_MATCH_TTL_MS = 60 * 10 * 1000; // 10 mins
+export const RESTRICT_SLIPPAGE_TTL_MS = 60 * 30 * 1000; // 10 mins
+export const RESTRICT_PARTIAL_FLL_TTL_MS = 1 * 30 * 1000; // 1 min.
+
+export const UNKNOWN_ERROR_CODE = 'UNKNOWN';
+export const ERROR_CODE_TO_RESTRICT_TTL = {
+  [UNKNOWN_ERROR_CODE]: RESTRICT_UNKNOWN_TTL_MS,
+  ERR_NO_SIGNATURE: RESTRICT_NO_SIGNATURE_TTL_MS,
+  ERR_NO_MATCH: RESTRICT_NO_MATCH_TTL_MS,
+  ERR_PARTIAL_FILL: RESTRICT_PARTIAL_FLL_TTL_MS,
+  ERR_BAD_SERVER: RESTRICT_INTERNAL_SERVER_ERR,
+  SLIPPAGE: RESTRICT_SLIPPAGE_TTL_MS,
+};
