@@ -1,6 +1,5 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
-import { BytesLike } from 'ethers/lib/utils';
 import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
@@ -45,15 +44,6 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
 
     // Add handlers
     this.handlers['LogOperate'] = this.handleOperate.bind(this);
-  }
-
-  private padHexTo32Bytes(hex: string): string {
-    const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
-    if (cleanHex.length !== 40) {
-      throw new Error('Input must be 20 bytes (40 hexadecimal characters)');
-    }
-    const paddedHex = cleanHex.padStart(64, '0');
-    return '0x' + paddedHex;
   }
 
   /**
