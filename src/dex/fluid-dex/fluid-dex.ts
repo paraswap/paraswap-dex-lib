@@ -35,7 +35,7 @@ import { generalDecoder } from '../../lib/decoders';
 import { Tokens } from '../../../tests/constants-e2e';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
-  readonly eventPools: { [id: string]: FluidDexEventPool } = {};
+  eventPools: { [id: string]: FluidDexEventPool } = {};
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
@@ -78,12 +78,11 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ): Promise<FluidDexPool[]> {
     const poolsFromResolver =
       await this.fluidCommonAddresses.getStateOrGenerate(blockNumber, false);
-
     return poolsFromResolver.map(pool => ({
-      id: `FluidDex_${pool.address}`,
-      address: pool.address,
-      token0: pool.token0,
-      token1: pool.token1,
+      id: `FluidDex_${pool.address.toLowerCase()}`,
+      address: pool.address.toLowerCase(),
+      token0: pool.token0.toLowerCase(),
+      token1: pool.token1.toLowerCase(),
     }));
   }
 
@@ -108,9 +107,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
-    Object.entries(this.eventPools).forEach(([id, eventPool]) => {
-      eventPool.getStateOrGenerate(blockNumber, false);
-    });
     await this.updatePoolAndEventPool(blockNumber);
   }
 
@@ -223,8 +219,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       return [
         {
-          prices: prices.filter((price): price is bigint => price !== null), // to be done
-          unit: getBigIntPow(destToken.decimals),
+          prices: prices,
+          unit: getBigIntPow(
+            (side === SwapSide.SELL ? destToken : srcToken).decimals,
+          ),
           data: {
             colReserves: state.collateralReserves,
             debtReserves: state.debtReserves,
@@ -232,7 +230,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
           },
           exchange: this.dexKey,
           poolIdentifier: pool.id,
-          gasCost: FLUID_DEX_GAS_COST, // to be done
+          gasCost: FLUID_DEX_GAS_COST,
           poolAddresses: [pool.address],
         },
       ];
@@ -284,9 +282,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
   async updatePoolState(): Promise<void> {
-    this.initializePricing(
-      await this.dexHelper.web3Provider.eth.getBlockNumber(),
-    );
+    this.initializePricing(await this.dexHelper.provider.getBlockNumber());
   }
 
   // Returns list of top pools based on liquidity. Max
@@ -295,8 +291,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const latestBlockNumber_ =
-      await this.dexHelper.web3Provider.eth.getBlockNumber();
+    const latestBlockNumber_ = await this.dexHelper.provider.getBlockNumber();
     let liquidityAmounts: { [id: string]: bigint } = {};
     for (const pool of this.pools) {
       if (
@@ -372,6 +367,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         state.collateralReserves.token0RealReserves +
           state.debtReserves.token0RealReserves,
       );
+
       const usd1 = await this.dexHelper.getTokenUSDPrice(
         { address: pool.token1, decimals: token1decimals! },
         state.collateralReserves.token1RealReserves +
@@ -399,8 +395,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     context: Context,
     executorAddress: Address,
   ): Promise<DexExchangeParam> {
-    const latestBlockNumber_ =
-      await this.dexHelper.web3Provider.eth.getBlockNumber();
+    const latestBlockNumber_ = await this.dexHelper.provider.getBlockNumber();
     await this.updatePoolAndEventPool(latestBlockNumber_);
 
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);

@@ -106,7 +106,7 @@ describe('FluidDex EventPool Mainnet', function () {
 
   const poolFetchEventsToTest: Record<Address, EventMappings> = {
     [dexFactory]: {
-      DexDeployed: [20825862],
+      DexDeployed: [20776998],
     },
   };
 
