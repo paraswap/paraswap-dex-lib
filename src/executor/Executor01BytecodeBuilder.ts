@@ -418,8 +418,6 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       maybeWethCallData,
     );
 
-    console.log('FLAGS: ', flags);
-
     let swapsCalldata = exchangeParams.reduce<string>(
       (acc, ep, index) =>
         hexConcat([
