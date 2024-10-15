@@ -6,11 +6,12 @@ import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
-import DexFactoryABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
+import DexFactoryABI from '../../abi/fluid-dex/dexFactory.abi.json';
 import { CommonAddresses, Pool } from './types';
-import { MultiResult, MultiCallParams } from '../../lib/multi-wrapper';
+import { MultiResult } from '../../lib/multi-wrapper';
 import { Address } from '../../types';
 import { generalDecoder } from '../../lib/decoders';
+import { Contract } from 'ethers';
 
 export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
   handlers: {
@@ -51,36 +52,8 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
     state: DeepReadonly<Pool[]>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<Pool[]> | null> {
-    const blockNumber_ = await this.dexHelper.web3Provider.eth.getBlockNumber();
-    const callData: MultiCallParams<Pool>[] = [
-      {
-        target: this.commonAddresses.resolver,
-        callData: this.resolverIface.encodeFunctionData('getPool', [
-          event.args.dexId,
-        ]),
-        decodeFunction: this.decodePool,
-      },
-    ];
-
-    const results: Pool[] = await this.dexHelper.multiWrapper.aggregate<Pool>(
-      callData,
-      blockNumber_,
-      this.dexHelper.multiWrapper.defaultBatchSize,
-    );
-
-    const generatedPool = {
-      address: results[0].address,
-      token0: results[0].token0,
-      token1: results[0].token1,
-    };
-
-    let currentPools = this.getState(0);
-    currentPools = currentPools == null ? [] : currentPools;
-    currentPools = [...currentPools, generatedPool];
-
-    this.setState(currentPools, blockNumber_);
-
-    return currentPools;
+    const blockNumber_ = await this.dexHelper.provider.getBlockNumber();
+    return this.getStateOrGenerate(blockNumber_, false);
   }
 
   decodePool = (result: MultiResult<BytesLike> | BytesLike): Pool => {
@@ -112,7 +85,12 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
     log: Readonly<Log>,
   ): Promise<DeepReadonly<Pool[]> | null> {
     try {
-      const event = this.logDecoder(log);
+      let event;
+      try {
+        event = this.logDecoder(log);
+      } catch (e) {
+        return null;
+      }
       if (event.name in this.handlers) {
         return await this.handlers[event.name](event, state, log);
       }
@@ -145,47 +123,21 @@ export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
    * @returns state of the event subscriber at blocknumber
    */
   async generateState(blockNumber: number): Promise<DeepReadonly<Pool[]>> {
-    // Flatten the array of arrays into a single array
-    const flattenedResults: Pool[] = (
-      await this.getPoolsFromResolver(blockNumber)
-    ).flat();
-
-    // Cast the result to DeepReadonly<Pool[]>
-    return flattenedResults as DeepReadonly<Pool[]>;
-  }
-
-  async getPoolsFromResolver(blockNumber: number): Promise<Pool[]> {
-    const resolverAbi = new Interface(ResolverABI);
-    const callData: MultiCallParams<Pool[]>[] = [
-      {
-        target: this.commonAddresses.resolver,
-        callData: resolverAbi.encodeFunctionData('getAllPools', []),
-        decodeFunction: this.decodePools,
-      },
-    ];
-
-    const results: Pool[][] = await this.dexHelper.multiWrapper.aggregate<
-      Pool[]
-    >(callData, blockNumber, this.dexHelper.multiWrapper.defaultBatchSize);
-
-    return results[0];
-  }
-
-  decodePools = (result: MultiResult<BytesLike> | BytesLike): Pool[] => {
-    if (result === '0x') {
-      return []; // Return an empty array since there are no pools to decode
-    }
-    return generalDecoder(
-      result,
-      ['tuple(address pool, address token0, address token1)[]'],
-      undefined,
-      decoded => {
-        return decoded.map((decodedPool: any) => ({
-          address: decodedPool[0][0].toLowerCase(),
-          token0: decodedPool[0][1].toLowerCase(),
-          token1: decodedPool[0][2].toLowerCase(),
-        }));
-      },
+    const resolverContract = new Contract(
+      this.commonAddresses.resolver,
+      ResolverABI,
+      this.dexHelper.provider,
     );
-  };
+    const rawResult = await resolverContract.callStatic.getAllPools({
+      blockTag: blockNumber,
+    });
+
+    const pools: Pool[] = rawResult.map((result: any) => ({
+      address: result[0],
+      token0: result[1],
+      token1: result[2],
+    }));
+
+    return pools;
+  }
 }
