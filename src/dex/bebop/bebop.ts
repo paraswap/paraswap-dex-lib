@@ -57,7 +57,6 @@ import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
 import { utils } from 'ethers';
 import qs from 'qs';
-import { BATCH_SWAP_SELECTOR } from '../swaap-v2/constants';
 
 export class Bebop extends SimpleExchange implements IDex<BebopData> {
   readonly hasConstantPriceLargeAmounts = false;
