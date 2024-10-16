@@ -7,6 +7,7 @@ import {
   allowedFn,
   _balancesFn,
   _allowancesFn,
+  // @ts-ignore
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
@@ -1584,7 +1585,7 @@ export const Holders: {
     BADGER: '0x34e2741a3f8483dbe5231f61c005110ff4b9f50a',
     STETH: '0x6663613FbD927cE78abBF7F5Ca7e2c3FE0d96d18',
     SUSHI: '0x8a108e4761386c94b8d2f98A5fFe13E472cFE76a',
-    wstETH: '0x5fEC2f34D80ED82370F733043B6A536d7e9D7f8d',
+    wstETH: '0x3c22ec75ea5D745c78fc84762F7F1E6D82a2c5BF',
     WETH: '0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44',
     USDT: '0xAf64555DDD61FcF7D094824dd9B4eBea165aFc5b',
     XAUT: '0xc4e161e8d8a4bc4ac762ab33a28bbac5474203d7',
@@ -1836,7 +1837,7 @@ export const Holders: {
     LINK: '0x7f1fa204bb700853d36994da19f830b6ad18455c',
     DMT: '0x40414f138eb2ef938e6c3629897ef99d4464d4e8',
     PENDLE: '0x5bdf85216ec1e38d6458c870992a69e38e03f7ef',
-    wstETH: '0x27edc7700f1820cb38ec3bbb84c542945f21b5a1',
+    wstETH: '0x3c22ec75ea5D745c78fc84762F7F1E6D82a2c5BF',
     EURA: '0x6dd7b830896b56812aa667bdd14b71c8b3252f8e',
     stEUR: '0xE588611e7A2392507879E3be80531654b85C16aA',
     USDA: '0xa86ff337db9107b54862d30d1a598f8be847b05e',
