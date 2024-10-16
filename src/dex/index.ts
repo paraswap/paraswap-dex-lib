@@ -77,6 +77,7 @@ import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
+import { Bebop } from './bebop/bebop';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
@@ -111,6 +112,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Bebop,
   Dexalot,
   CurveV1,
   CurveFork,
