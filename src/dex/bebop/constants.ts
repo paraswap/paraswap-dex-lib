@@ -13,3 +13,9 @@ export const BEBOP_RESTRICTED_CACHE_KEY = 'restricted';
 export const BEBOP_RESTRICT_TTL_S = 10 * 60; // 10 min
 export const BEBOP_RESTRICT_CHECK_INTERVAL_MS = 1000 * 60 * 3; // 3 min
 export const BEBOP_RESTRICT_COUNT_THRESHOLD = 3;
+
+export const SWAP_SINGLE_METHOD = 'swapSingle';
+export const SWAP_AGGREGATE_METHOD = 'swapAggregate';
+
+export const SWAP_SINGLE_METHOD_SELECTOR = '0x4dcebcba';
+export const SWAP_AGGREGATE_METHOD_SELECTOR = '0xa2f74893';

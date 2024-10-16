@@ -48,11 +48,16 @@ import {
   BEBOP_TOKENS_CACHE_TTL,
   BEBOP_TOKENS_POLLING_INTERVAL_MS,
   BEBOP_WS_API_URL,
+  SWAP_SINGLE_METHOD_SELECTOR,
+  SWAP_AGGREGATE_METHOD_SELECTOR,
+  SWAP_SINGLE_METHOD,
+  SWAP_AGGREGATE_METHOD,
 } from './constants';
 import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
 import { utils } from 'ethers';
 import qs from 'qs';
+import { BATCH_SWAP_SELECTOR } from '../swaap-v2/constants';
 
 export class Bebop extends SimpleExchange implements IDex<BebopData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -610,13 +615,34 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
 
     assert(tx !== undefined, `${this.dexKey}-${this.network}: tx undefined`);
 
-    return {
-      exchangeData: tx.data,
-      needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: true,
-      targetExchange: this.settlementAddress,
-      returnAmountPos: undefined,
-    };
+    const isSwapSingle = tx.data.slice(0, 10) === SWAP_SINGLE_METHOD_SELECTOR;
+    const isSwapAggregate =
+      tx.data.slice(0, 10) === SWAP_AGGREGATE_METHOD_SELECTOR;
+
+    if (isSwapSingle || isSwapAggregate) {
+      const method = isSwapSingle ? SWAP_SINGLE_METHOD : SWAP_AGGREGATE_METHOD;
+
+      const decodedParam = this.settlementInterface.decodeFunctionData(
+        method,
+        tx.data,
+      );
+
+      const exchangeData = this.settlementInterface.encodeFunctionData(method, [
+        decodedParam[0],
+        decodedParam[1],
+        srcAmount, // modify filledTakerAmount to make insertFromAmount work
+      ]);
+
+      return {
+        exchangeData: exchangeData,
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: true,
+        targetExchange: this.settlementAddress,
+        returnAmountPos: undefined,
+      };
+    } else {
+      throw new Error('Not supported method');
+    }
   }
 
   async preProcessTransaction(
