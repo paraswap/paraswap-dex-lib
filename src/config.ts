@@ -223,7 +223,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     hashFlowDisabledMMs:
       process.env[`HASHFLOW_DISABLED_MMS_43114`]?.split(',') || [],
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
-    bebopAuthToken: process.env.API_KEY_BEBOP_AUTH_TOKEN || '',
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
