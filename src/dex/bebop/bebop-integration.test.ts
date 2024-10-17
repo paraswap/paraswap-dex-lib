@@ -166,5 +166,17 @@ describe('Bebop', function () {
         );
       }
     });
+
+    it('getPoolIdentifiers returns no liquidity for Wrapped -> Native', async function () {
+      const pools = await bebop.getPoolIdentifiers(
+        tokens['WETH'],
+        tokens['ETH'],
+        SwapSide.SELL,
+        blockNumber,
+      );
+      console.log('WETH -> ETH Pool Identifiers: ', pools);
+
+      expect(pools.length).toBe(0);
+    });
   });
 });
