@@ -18,6 +18,7 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
       vaultAddress: '0x30AF3689547354f82C70256894B07C9D0f067BB6',
       apiNetworkName: 'SEPOLIA',
       balancerRouterAddress: '0x77eDc69766409C599F06Ef0B551a0990CBfe13A7',
+      balancerBatchRouterAddress: '0x16Cf31c5c4f92ad6185D583080C84FEeb6074c78',
     },
   },
 };

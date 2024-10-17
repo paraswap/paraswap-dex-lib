@@ -24,6 +24,7 @@ import { Interface } from '@ethersproject/abi';
 import { balancerRouterAbi } from './abi/balancerRouter';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { getTopPoolsApi } from './getTopPoolsApi';
+import { balancerBatchRouterAbi } from './abi/balancerBatchRouter';
 
 const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
@@ -48,6 +49,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
 
   logger: Logger;
   balancerRouter: Interface;
+  balancerBatchRouter: Interface;
   updateNewPoolsTimer?: NodeJS.Timer;
   updateRatesTimer?: NodeJS.Timer;
 
@@ -66,6 +68,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       this.logger,
     );
     this.balancerRouter = new Interface(balancerRouterAbi);
+    this.balancerBatchRouter = new Interface(balancerBatchRouterAbi);
   }
 
   // Initialize pricing is called once in the start of
@@ -132,9 +135,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   ): string[] {
     return Object.entries(pools)
       .filter(([, poolState]) => {
-        return (
-          poolState.tokens.includes(tokenA) && poolState.tokens.includes(tokenB)
-        );
+        return this.hasTokens(poolState, [tokenA, tokenB]);
       })
       .map(([address]) => address);
   }
@@ -155,12 +156,18 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   ): PoolState[] {
     return Object.entries(pools)
       .filter(([address, poolState]) => {
-        const hasRequiredTokens =
-          poolState.tokens.includes(from) && poolState.tokens.includes(to);
+        const hasRequiredTokens = this.hasTokens(poolState, [from, to]);
         const isAllowedPool = !limitPools || limitPools.includes(address);
         return hasRequiredTokens && isAllowedPool;
       })
       .map(([_, poolState]) => poolState as DeepMutable<typeof poolState>);
+  }
+
+  hasTokens(pool: DeepReadonly<PoolState>, tokens: string[]): boolean {
+    return tokens.every(
+      token =>
+        pool.tokens.includes(token) || pool.tokensUnderlying.includes(token),
+    );
   }
 
   // Returns pool prices for amounts.
@@ -214,34 +221,34 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       for (let i = 0; i < allowedPools.length; i++) {
         const pool = {
           ...allowedPools[i],
-          // TODO - Remove mapping once maths updated to same poolType convention
-          poolType: this.mapToPoolType(allowedPools[i].poolType),
         };
+
+        const tokenInInfo = this.eventPools.getTokenInfo(pool, tokenIn);
+        const tokenOutInfo = this.eventPools.getTokenInfo(pool, tokenOut);
+        if (!tokenInInfo || !tokenOutInfo) {
+          continue;
+        }
+
+        const steps = this.eventPools.getSteps(pool, tokenInInfo, tokenOutInfo);
 
         try {
           // This is the max amount the pool can swap
           const maxSwapAmount = this.eventPools.getMaxSwapAmount(
             pool,
-            tokenIn,
-            tokenOut,
+            tokenInInfo,
+            tokenOutInfo,
             swapKind,
           );
 
           let unit = 0n;
           if (unitAmount < maxSwapAmount)
-            unit = this.eventPools.getSwapResult(
-              pool,
-              unitAmount,
-              tokenIn,
-              tokenOut,
-              swapKind,
-            );
+            unit = this.eventPools.getSwapResult(steps, unitAmount, swapKind);
 
           const poolExchangePrice: PoolPrices<BalancerV3Data> = {
             prices: new Array(amounts.length).fill(0n),
             unit,
             data: {
-              poolAddress: pool.address,
+              steps: steps,
             },
             exchange: this.dexKey,
             gasCost: 1, // TODO - this will be updated once final profiles done
@@ -253,10 +260,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
             if (amounts[j] < maxSwapAmount) {
               // Uses balancer maths to calculate swap
               poolExchangePrice.prices[j] = this.eventPools.getSwapResult(
-                pool,
+                steps,
                 amounts[j],
-                tokenIn,
-                tokenOut,
                 swapKind,
               );
             }
@@ -271,13 +276,6 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       return poolPrices;
     } catch (err) {}
     return null;
-  }
-
-  // This is a temp helper until we change maths library type to match
-  private mapToPoolType(apiPoolType: string): string {
-    if (apiPoolType === 'STABLE') return 'Stable';
-    else if (apiPoolType === 'WEIGHTED') return 'Weighted';
-    else return apiPoolType;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -302,7 +300,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   ): AdapterExchangeParam {
     console.log(`!!!!!!!!!!!! getAdapterParam is being hit !!!!!!`);
     // TODO: complete me!
-    const { poolAddress } = data;
+    const { steps } = data;
 
     // Encode here the payload for adapter
     const payload = '';
@@ -325,20 +323,32 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     side: SwapSide,
   ): DexExchangeParam {
     if (side === SwapSide.SELL) {
+      return this.getExactInParam(srcToken, destToken, srcAmount, data);
+    } else {
+      return this.getExactOutParam(srcToken, destToken, destAmount, data);
+    }
+  }
+
+  getExactInParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    data: BalancerV3Data,
+  ): DexExchangeParam {
+    if (data.steps.length === 1) {
       const exchangeData = this.balancerRouter.encodeFunctionData(
         'swapSingleTokenExactIn',
         [
-          data.poolAddress,
+          data.steps[0].pool,
           srcToken,
           destToken,
           srcAmount,
           '0', // This should be limit for min amount out. Assume this is set elsewhere via Paraswap contract.
-          MAX_UINT256,
+          MAX_UINT256, // Deadline
           this.needWrapNative, // TODO vault can handle native assets
           '0x',
         ],
       );
-
       return {
         needWrapNative: this.needWrapNative,
         dexFuncHasRecipient: false,
@@ -352,15 +362,61 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         ),
       };
     } else {
+      // for each step:
+      // if tokenIn == pool router uses removeLiquidity SINGLE_TOKEN_EXACT_IN
+      // if tokenOut == pool router uses addLiquidity UNBALANCED
+      const exchangeData = this.balancerBatchRouter.encodeFunctionResult(
+        'swapExactIn',
+        [
+          [
+            {
+              tokenIn: srcToken,
+              steps: data.steps.map(step => ({
+                pool: step.pool,
+                tokenOut: step.tokenOut,
+                isBuffer: step.isBuffer,
+              })),
+              exactAmountIn: srcAmount,
+              minAmountOut: '0', // This should be limit for min amount out. Assume this is set elsewhere via Paraswap contract.
+            },
+          ],
+          MAX_UINT256, // Deadline
+          this.needWrapNative, // TODO vault can handle native assets
+          '0x',
+        ],
+      );
+
+      return {
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: false,
+        exchangeData,
+        // This router handles single swaps
+        targetExchange:
+          BalancerV3Config.BalancerV3[this.network].balancerBatchRouterAddress,
+        returnAmountPos: extractReturnAmountPosition(
+          this.balancerBatchRouter,
+          'swapExactIn',
+        ),
+      };
+    }
+  }
+
+  getExactOutParam(
+    srcToken: Address,
+    destToken: Address,
+    destAmount: NumberAsString,
+    data: BalancerV3Data,
+  ): DexExchangeParam {
+    if (data.steps.length === 1) {
       const exchangeData = this.balancerRouter.encodeFunctionData(
         'swapSingleTokenExactOut',
         [
-          data.poolAddress,
+          data.steps[0].pool,
           srcToken,
           destToken,
-          srcAmount,
+          destAmount,
           MAX_UINT256, // This should be limit for max amount in. Assume this is set elsewhere via Paraswap contract.
-          MAX_UINT256,
+          MAX_UINT256, // Deadline
           this.needWrapNative, // TODO vault can handle native assets
           '0x',
         ],
@@ -376,6 +432,43 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         returnAmountPos: extractReturnAmountPosition(
           this.balancerRouter,
           'swapSingleTokenExactOut',
+        ),
+      };
+    } else {
+      // for each step:
+      // if tokenIn == pool use removeLiquidity SINGLE_TOKEN_EXACT_OUT
+      // if tokenOut == pool use addLiquidity SINGLE_TOKEN_EXACT_OUT
+      const exchangeData = this.balancerBatchRouter.encodeFunctionResult(
+        'swapExactOut',
+        [
+          [
+            {
+              tokenIn: srcToken,
+              steps: data.steps.map(step => ({
+                pool: step.pool,
+                tokenOut: step.tokenOut,
+                isBuffer: step.isBuffer,
+              })),
+              exactAmountOut: destAmount,
+              maxAmountIn: MAX_UINT256, // This should be limit for min amount out. Assume this is set elsewhere via Paraswap contract.
+            },
+          ],
+          MAX_UINT256, // Deadline
+          this.needWrapNative, // TODO vault can handle native assets
+          '0x',
+        ],
+      );
+
+      return {
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: false,
+        exchangeData,
+        // This router handles single swaps
+        targetExchange:
+          BalancerV3Config.BalancerV3[this.network].balancerBatchRouterAddress,
+        returnAmountPos: extractReturnAmountPosition(
+          this.balancerBatchRouter,
+          'swapExactIn',
         ),
       };
     }
@@ -405,7 +498,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   ): Promise<PoolLiquidity[]> {
     const poolsWithToken = Object.entries(this.eventPools.getStaleState() || {})
       .filter(([, poolState]) => {
-        return poolState.tokens.includes(tokenAddress);
+        return this.hasTokens(poolState, [tokenAddress]);
       })
       .map(([address]) => address);
 

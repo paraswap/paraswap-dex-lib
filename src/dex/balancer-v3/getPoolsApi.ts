@@ -7,13 +7,16 @@ import { parseUnits } from 'ethers/lib/utils';
 interface PoolToken {
   address: string;
   weight: string | null;
+  isErc4626: boolean;
+  underlyingToken: {
+    address: string;
+  } | null;
 }
 
 interface Pool {
   id: string;
   type: string;
   poolTokens: PoolToken[];
-  factory: string;
 }
 
 interface QueryResponse {
@@ -52,8 +55,11 @@ function createQuery(
         poolTokens {
           address
           weight
+          isErc4626
+          underlyingToken {
+            address
+          }
         }
-        factory
       }
     }
   `;
@@ -64,6 +70,9 @@ function toImmutablePoolStateMap(pools: Pool[]): ImmutablePoolStateMap {
     const immutablePoolState: CommonImmutablePoolState = {
       address: pool.id,
       tokens: pool.poolTokens.map(t => t.address),
+      tokensUnderlying: pool.poolTokens.map(t =>
+        t.underlyingToken ? t.underlyingToken.address : null,
+      ),
       weights: pool.poolTokens.map(t =>
         t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,
       ),

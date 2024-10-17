@@ -59,6 +59,7 @@ function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   nativeTokenAmount: string,
+  testNative: boolean,
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -79,32 +80,34 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            if (testNative) {
+              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[nativeTokenSymbol],
+                  tokens[tokenASymbol],
+                  holders[nativeTokenSymbol],
+                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[nativeTokenSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                );
+              });
+            }
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -125,10 +128,11 @@ function testForNetwork(
   });
 }
 
+// TODO - these tests dont currently run without full PS setup on Sepolia
 describe('BalancerV3 E2E', () => {
   const dexKey = 'BalancerV3';
 
-  describe('Mainnet', () => {
+  describe('Mainnet, Weighted Path', () => {
     const network = Network.SEPOLIA;
 
     const tokenASymbol: string = 'bal';
@@ -146,6 +150,51 @@ describe('BalancerV3 E2E', () => {
       tokenAAmount,
       tokenBAmount,
       nativeTokenAmount,
+      true,
+    );
+  });
+
+  describe('Mainnet, Stable Path', () => {
+    const network = Network.SEPOLIA;
+
+    const tokenASymbol: string = 'aUsdcAave';
+    const tokenBSymbol: string = 'aDaiAave';
+
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '0';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+      false,
+    );
+  });
+
+  describe('Mainnet, Boosted Path', () => {
+    const network = Network.SEPOLIA;
+
+    const tokenASymbol: string = 'usdcAave';
+    const tokenBSymbol: string = 'daiAave';
+
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '0';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+      false,
     );
   });
 });

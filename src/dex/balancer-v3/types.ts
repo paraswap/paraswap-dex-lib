@@ -1,10 +1,14 @@
+import { BufferState } from '@balancer-labs/balancer-maths';
 import { Address } from '../../types';
 
 // Immutable data types available on all pools (Available from API)
 export type CommonImmutablePoolState = {
   address: string;
   poolType: string;
+  // For boosted pools tokens is the actual pool token wrapped, e.g. aUSDC/aDAI
   tokens: string[];
+  // For boosted pools underlying is the unwrapped token, e.g. USDC/DAI
+  tokensUnderlying: (string | null)[];
   weights: bigint[];
   // TODO re-introduce this once added to API
   // scalingFactors: bigint[];
@@ -49,8 +53,19 @@ export type ImmutablePoolStateMap = {
   [address: string]: CommonImmutablePoolState;
 };
 
+export type Step = {
+  pool: Address;
+  tokenOut: Address;
+  isBuffer: boolean;
+  swapInput: {
+    tokenIn: Address;
+    tokenOut: Address;
+  };
+  poolState: PoolState | BufferState;
+};
+
 export type BalancerV3Data = {
-  poolAddress: string;
+  steps: Step[];
 };
 
 export type DexParams = {
@@ -60,4 +75,13 @@ export type DexParams = {
   // This router handles single swaps
   // https://github.com/balancer/balancer-v3-monorepo/blob/main/pkg/interfaces/contracts/vault/IRouter.sol
   balancerRouterAddress: string;
+  balancerBatchRouterAddress: string;
+};
+
+export type TokenInfo = {
+  isBoosted: boolean;
+  underlyingToken: string | null;
+  mainToken: string;
+  index: number;
+  rate: bigint;
 };

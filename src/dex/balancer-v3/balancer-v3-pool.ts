@@ -5,7 +5,7 @@ import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState, PoolStateMap } from './types';
+import { PoolState, PoolStateMap, Step, TokenInfo } from './types';
 import { getPoolsApi } from './getPoolsApi';
 import { vaultExtensionAbi_V3 } from './abi/vaultExtension.V3';
 import { decodeThrowError, getOnChainState } from './getOnChainState';
@@ -117,10 +117,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       blockNumber,
     );
 
-    // Filter out all pools with hooks and paused pools
+    // Filter out all paused pools
     const filteredPools = Object.entries(allOnChainPools)
       .filter(([address, pool]) => {
-        return !(pool.hasHook || pool.isPoolPaused);
+        return !pool.isPoolPaused;
       })
       .reduce((acc, [address, pool]) => {
         acc[address] = pool;
@@ -252,12 +252,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   getMaxSwapAmount(
     pool: PoolState,
-    tokenIn: string,
-    tokenOut: string,
+    tokenIn: TokenInfo,
+    tokenOut: TokenInfo,
     swapKind: SwapKind,
   ): bigint {
-    const tokenInIndex = pool.tokens.indexOf(tokenIn);
-    const tokenOutIndex = pool.tokens.indexOf(tokenOut);
     // Find the maximum swap amount the pool will support
     const maxSwapAmount = this.vault.getMaxSwapAmount(
       {
@@ -265,38 +263,33 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         balancesLiveScaled18: pool.balancesLiveScaled18,
         tokenRates: pool.tokenRates,
         scalingFactors: pool.scalingFactors,
-        indexIn: tokenInIndex,
-        indexOut: tokenOutIndex,
+        indexIn: tokenIn.index,
+        indexOut: tokenOut.index,
       },
       pool,
     );
     return maxSwapAmount;
   }
 
-  getSwapResult(
-    pool: PoolState,
-    amountRaw: bigint,
-    tokenIn: string,
-    tokenOut: string,
-    swapKind: SwapKind,
-  ): bigint {
-    if (pool.poolType === 'Stable' && 'amp' in pool) {
-      if (pool.ampIsUpdating) {
-        console.log(`!!!!!!! need to handle this correctly once SC updated`);
-        /*
-        Will be able to calculate current amp using pool amp start/stop time & values
-        */
-      }
+  getSwapResult(steps: Step[], amountRaw: bigint, swapKind: SwapKind): bigint {
+    if (amountRaw === 0n) return 0n;
+    let amount = amountRaw;
+    let outputAmountRaw = 0n;
+    // Simulates the result of a multi-step swap path
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      outputAmountRaw = this.vault.swap(
+        {
+          ...step.swapInput,
+          amountRaw: amount,
+          swapKind,
+        },
+        step.poolState,
+      );
+      // Next step uses output from previous step as input
+      amount = outputAmountRaw;
     }
-    return this.vault.swap(
-      {
-        amountRaw,
-        tokenIn,
-        tokenOut,
-        swapKind,
-      },
-      pool,
-    );
+    return outputAmountRaw;
   }
 
   /**
@@ -368,5 +361,146 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         tokenRates: tokenRateResult.tokenRates.map((r: string) => BigInt(r)),
       };
     });
+  }
+
+  // If a token is "boosted" it can be auto wrapped/unwrapped by Vault, e.g. aDAI<>DAI
+  // mainToken is the actual token the pool would contain, e.g. in a bbausd type setup it would be aDAI/aUSDC/aUSDT
+  // underlyingToken would be the unwrapped, e.g. DAI/USDC/USDT
+  // need rate info to calculate wrap/unwrap
+  getTokenInfo(poolState: PoolState, tokenAddress: string): TokenInfo | null {
+    // Check in main tokens
+    let tokenIndex = poolState.tokens.indexOf(tokenAddress);
+    if (tokenIndex !== -1) {
+      return {
+        isBoosted: false,
+        mainToken: tokenAddress,
+        underlyingToken: null,
+        index: tokenIndex,
+        rate: poolState.tokenRates[tokenIndex],
+      };
+    }
+
+    // Check in underlying tokens if available
+    if (poolState.tokensUnderlying) {
+      tokenIndex = poolState.tokensUnderlying.indexOf(tokenAddress);
+      if (tokenIndex !== -1) {
+        return {
+          isBoosted: true,
+          mainToken: poolState.tokens[tokenIndex],
+          underlyingToken: tokenAddress,
+          index: tokenIndex,
+          rate: poolState.tokenRates[tokenIndex],
+        };
+      }
+    }
+
+    // Token not found
+    this.logger.error(`getTokenInfo token not found`);
+    return null;
+  }
+
+  /**
+   * Prepares all the step data required to simulate maths and construct swap transaction.
+   * Balancer V3 has the concepts of Boosted Pools and ERC4626 Liquidity Buffers.
+   * These enable highly capital efficient pools and gas efficient swaps.
+   * To swap via a buffer we must provide the correct ""steps" to the router transaction.
+   * Wrap: e.g. USDC>aUSDC
+   * Unwrap: e.g. aUSDC>USDC
+   * A full swap between USDC>DAI for an example bbausd pool consisting of aDAI/aUSDC/aUSDT would look like:
+   * USDC[wrap-buffer]aUSDC[swap-pool]aDAI[unwrap-buffer]USDC
+   * See docs for further info:
+   * https://docs-v3.balancer.fi/concepts/explore-available-balancer-pools/boosted-pool.html
+   * https://docs-v3.balancer.fi/concepts/vault/buffer.html
+   */
+  getSteps(pool: PoolState, tokenIn: TokenInfo, tokenOut: TokenInfo): Step[] {
+    if (tokenIn.isBoosted && tokenOut.isBoosted) {
+      return [
+        // Wrap tokenIn underlying to main token
+        this.getWrapStep(tokenIn),
+        // Swap main > main
+        this.getSwapStep(pool, tokenIn, tokenOut),
+        // Unwrap tokenOut main to underlying token
+        this.getUnwrapStep(tokenOut),
+      ];
+    } else if (tokenIn.isBoosted) {
+      return [
+        // Wrap tokenIn underlying to main token
+        this.getWrapStep(tokenIn),
+        // Swap main > main
+        this.getSwapStep(pool, tokenIn, tokenOut),
+      ];
+    } else if (tokenOut.isBoosted) {
+      return [
+        // Swap main > main
+        this.getSwapStep(pool, tokenIn, tokenOut),
+        // Unwrap tokenOut main to underlying token
+        this.getUnwrapStep(tokenOut),
+      ];
+    } else {
+      return [
+        // Swap main > main
+        this.getSwapStep(pool, tokenIn, tokenOut),
+      ];
+    }
+  }
+
+  getWrapStep(token: TokenInfo): Step {
+    if (!token.underlyingToken)
+      throw new Error(
+        `Buffer wrap: token has no underlying. ${token.mainToken}`,
+      );
+    // Vault expects pool to be the ERC4626 wrapped token, e.g. aUSDC
+    return {
+      pool: token.mainToken,
+      tokenOut: token.mainToken,
+      isBuffer: true,
+      swapInput: {
+        tokenIn: token.underlyingToken,
+        tokenOut: token.mainToken,
+      },
+      poolState: {
+        poolType: 'Buffer',
+        rate: token.rate,
+        poolAddress: token.mainToken,
+        tokens: [token.mainToken, token.underlyingToken], // staticToken & underlying
+      },
+    };
+  }
+
+  getUnwrapStep(token: TokenInfo): Step {
+    if (!token.underlyingToken)
+      throw new Error(
+        `Buffer unwrap: token has no underlying. ${token.mainToken}`,
+      );
+    // Vault expects pool to be the ERC4626 wrapped token, e.g. aUSDC
+    return {
+      pool: token.mainToken,
+      tokenOut: token.underlyingToken,
+      isBuffer: true,
+      swapInput: {
+        tokenIn: token.mainToken,
+        tokenOut: token.underlyingToken,
+      },
+      poolState: {
+        poolType: 'Buffer',
+        rate: token.rate,
+        poolAddress: token.mainToken,
+        tokens: [token.mainToken, token.underlyingToken], // staticToken & underlying
+      },
+    };
+  }
+
+  getSwapStep(pool: PoolState, tokenIn: TokenInfo, tokenOut: TokenInfo): Step {
+    // A normal swap between two tokens in a pool
+    return {
+      pool: pool.address,
+      tokenOut: tokenOut.mainToken,
+      isBuffer: false,
+      swapInput: {
+        tokenIn: tokenIn.mainToken,
+        tokenOut: tokenOut.mainToken,
+      },
+      poolState: pool,
+    };
   }
 }

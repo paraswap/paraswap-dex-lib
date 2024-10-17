@@ -1496,6 +1496,18 @@ export const Tokens: {
       address: `0xff34b3d4aee8ddcd6f9afffb6fe49bd371b8a357`,
       decimals: 18,
     },
+    usdcAave: {
+      address: `0x94a9d9ac8a22534e3faca9f4e7f2e2cf85d5e4c8`,
+      decimals: 6,
+    },
+    aDaiAave: {
+      address: `0xde46e43f46ff74a23a65ebb0580cbe3dfe684a17`,
+      decimals: 18,
+    },
+    aUsdcAave: {
+      address: `0x8a88124522dbbf1e56352ba3de1d9f78c143751e`,
+      decimals: 6,
+    },
   },
 };
 
