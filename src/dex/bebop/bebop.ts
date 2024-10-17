@@ -687,7 +687,16 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         !response.sellTokens ||
         !response.expiry
       ) {
-        throw new Error('Failed to get quote. No tx info');
+        const baseMessage = `Bebop quote failed on chain ${this.network} Sell: ${params.sell_tokens}. Buy: ${params.buy_tokens}.`;
+        if (response.error) {
+          const errorMessage = `${baseMessage} Code: ${response.error.errorCode}, Message: ${response.error.message}`;
+          throw new Error(errorMessage);
+        } else {
+          const errorMessage = `${baseMessage} Response: ${JSON.stringify(
+            response,
+          )}`;
+          throw new Error(errorMessage);
+        }
       }
 
       if (side == SwapSide.SELL) {
