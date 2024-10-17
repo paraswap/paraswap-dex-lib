@@ -13,7 +13,7 @@ import {
   NumberAsString,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, ETHER_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -57,6 +57,7 @@ import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
 import { utils } from 'ethers';
 import qs from 'qs';
+import { isEqual } from 'lodash';
 
 export class Bebop extends SimpleExchange implements IDex<BebopData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -170,6 +171,19 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     destToken: Token,
     side: SwapSide,
   ): Promise<RoutingInstruction[]> {
+    // Gaurd against same token and wrapping/unwrapping
+    const tokensSet = new Set([
+      srcToken.address.toLowerCase(),
+      destToken.address.toLowerCase(),
+    ]);
+    const nativeWrappedSet = new Set([
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
+      ETHER_ADDRESS.toLowerCase(),
+    ]);
+    if (tokensSet.size < 2 || isEqual(tokensSet, nativeWrappedSet)) {
+      return [];
+    }
+
     const prices = await this.getCachedPrices();
     if (!prices) {
       throw new Error('No prices available');
@@ -544,6 +558,16 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       const isBase = base.toLowerCase() == tokenAddress.toLowerCase();
       const isQuote = quote.toLowerCase() == tokenAddress.toLowerCase();
 
+      // There is pricing for token is not enabled at the moment
+      if (
+        !(
+          quote.toLowerCase() in this.tokensMap &&
+          base.toLowerCase() in this.tokensMap
+        )
+      ) {
+        continue;
+      }
+
       if (isBase) {
         const liquidityInQuote = this.getMaxLiquidity(pairData.bids);
         token = {
@@ -687,7 +711,16 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         !response.sellTokens ||
         !response.expiry
       ) {
-        throw new Error('Failed to get quote. No tx info');
+        const baseMessage = `Bebop quote failed on chain ${this.network} Sell: ${params.sell_tokens}. Buy: ${params.buy_tokens}.`;
+        if (response.error) {
+          const errorMessage = `${baseMessage} Code: ${response.error.errorCode}, Message: ${response.error.message}`;
+          throw new Error(errorMessage);
+        } else {
+          const errorMessage = `${baseMessage} Response: ${JSON.stringify(
+            response,
+          )}`;
+          throw new Error(errorMessage);
+        }
       }
 
       if (side == SwapSide.SELL) {

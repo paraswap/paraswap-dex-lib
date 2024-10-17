@@ -59,12 +59,17 @@ export type BebopTokenAmount = {
   priceUsd: number;
 };
 
-// For now nothing but we may have to add something
+export type BebopError = {
+  errorCode: number;
+  message: string;
+};
+
 export type BebopData = {
   expiry?: number;
   buyTokens?: { [address: string]: BebopTokenAmount };
   sellTokens?: { [address: string]: BebopTokenAmount };
   tx?: BebopTx;
+  error?: BebopError;
 };
 
 export type DexParams = {
