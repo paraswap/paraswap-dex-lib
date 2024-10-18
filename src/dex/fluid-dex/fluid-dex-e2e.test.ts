@@ -117,9 +117,9 @@ describe('FluidDex E2E', () => {
     const tokenASymbol: string = 'wstETH';
     const tokenBSymbol: string = 'ETH';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '1000000000000000000';
+    const tokenAAmount: string = '100000000000000';
+    const tokenBAmount: string = '100000000000000';
+    const nativeTokenAmount = '100000000000000';
 
     testForNetwork(
       network,
