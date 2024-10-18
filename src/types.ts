@@ -310,6 +310,7 @@ export type Config = {
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
+  bebopAuthToken?: string;
   idleDaoAuthToken?: string;
   forceRpcFallbackDexs: string[];
   apiKeyTheGraph: string;
