@@ -453,6 +453,12 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     if (amountIn === 0n) {
       return 0n; // Return 0 if input amount is 0
     }
+    if (
+      colReserves.token0RealReserves + debtReserves.token0RealReserves == 0n &&
+      colReserves.token1RealReserves + debtReserves.token1RealReserves == 0n
+    ) {
+      return 0n;
+    }
     const amountInAdjusted =
       (((amountIn * (this.FEE_100_PERCENT - fee)) / this.FEE_100_PERCENT) *
         BigInt(10 ** 12)) /
