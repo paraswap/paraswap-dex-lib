@@ -10,3 +10,9 @@ tests/configs.json
 .idea/
 local-scripts
 tests/debug-price-route.json
+tests/constants-e2e.d.ts
+tests/constants-e2e.js
+tests/constants-e2e.js.map
+tests/smart-tokens.d.ts
+tests/smart-tokens.js
+tests/smart-tokens.js.map
