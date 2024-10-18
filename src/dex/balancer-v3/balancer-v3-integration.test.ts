@@ -9,85 +9,193 @@ import { BI_POWS } from '../../bigint-constants';
 import { BalancerV3 } from './balancer-v3';
 import {
   checkPoolPrices,
-  checkPoolsLiquidity,
   checkConstantPoolPrices,
+  checkPoolsLiquidity,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { BalancerV3Config } from './config';
+import { balancerRouterAbi } from './abi/balancerRouter';
+import { BalancerV3Data, Step } from './types';
+import { Address, ExchangePrices, PoolPrices } from '../../types';
+import { balancerBatchRouterAbi } from './abi/balancerBatchRouter';
 
-/*
-  README
-  ======
-
-  This test script adds tests for BalancerV3 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover BalancerV3 specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
-function getReaderCalldata(
-  exchangeAddress: string,
-  readerIface: Interface,
+function getQuerySwapSingleTokenCalldata(
+  routerAddress: Address,
+  routerInterface: Interface,
   amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
+  step: Step,
+  side: SwapSide,
 ) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
+  return amounts
+    .filter(amount => amount !== 0n)
+    .map(amount => {
+      return {
+        target: routerAddress,
+        callData: routerInterface.encodeFunctionData(
+          side === SwapSide.SELL
+            ? `querySwapSingleTokenExactIn`
+            : `querySwapSingleTokenExactOut`,
+          [
+            step.pool,
+            step.swapInput.tokenIn,
+            step.swapInput.tokenOut,
+            amount,
+            '0x',
+          ],
+        ),
+      };
+    });
+}
+
+function getQuerySwapMultiTokenCalldata(
+  routerAddress: Address,
+  routerInterface: Interface,
+  amounts: bigint[],
+  steps: Step[],
+  side: SwapSide,
+) {
+  const tokenIn = steps[0].swapInput.tokenIn;
+  const stepsNew = steps.map(s => ({
+    pool: s.pool,
+    tokenOut: s.tokenOut,
+    isBuffer: s.isBuffer,
   }));
+  return amounts
+    .filter(amount => amount !== 0n)
+    .map(amount => {
+      let args: any[] = [];
+      if (side === SwapSide.SELL)
+        args = [
+          {
+            tokenIn,
+            steps: stepsNew,
+            exactAmountIn: amount,
+            minAmountOut: 0n,
+          },
+        ];
+      else
+        args = [
+          {
+            tokenIn,
+            steps: stepsNew,
+            exactAmountOut: amount,
+            maxAmountIn: 0n,
+          },
+        ];
+      return {
+        target: routerAddress,
+        callData: routerInterface.encodeFunctionData(
+          side === SwapSide.SELL ? `querySwapExactIn` : `querySwapExactOut`,
+          [args, '0x'],
+        ),
+      };
+    });
 }
 
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
-  });
-}
-
-async function checkOnChainPricing(
+async function querySinglePathPrices(
+  network: number,
+  side: SwapSide,
   balancerV3: BalancerV3,
-  funcName: string,
   blockNumber: number,
-  prices: bigint[],
+  price: PoolPrices<BalancerV3Data>,
   amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
-
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from balancerV3.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
-
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts.slice(1),
-    funcName,
-  );
-  const readerResult = (
-    await balancerV3.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
-
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
+  const balancerRouter = new Interface(balancerRouterAbi);
+  const readerCallData = getQuerySwapSingleTokenCalldata(
+    BalancerV3Config.BalancerV3[network].balancerRouterAddress,
+    balancerRouter,
+    amounts,
+    price.data.steps[0],
+    side,
   );
 
-  expect(prices).toEqual(expectedPrices);
+  const expectedPrices = [0n];
+  for (const call of readerCallData) {
+    const result = await balancerV3.dexHelper.provider.call(
+      {
+        to: call.target,
+        data: call.callData,
+      },
+      blockNumber,
+    );
+    const parsed = balancerRouter.decodeFunctionResult(
+      side === SwapSide.SELL
+        ? `querySwapSingleTokenExactIn`
+        : `querySwapSingleTokenExactOut`,
+      result,
+    );
+    expectedPrices.push(BigInt(parsed[0]._hex));
+  }
+  return expectedPrices;
+}
+
+async function queryMultiPathPrices(
+  network: number,
+  side: SwapSide,
+  balancerV3: BalancerV3,
+  blockNumber: number,
+  price: PoolPrices<BalancerV3Data>,
+  amounts: bigint[],
+) {
+  const balancerBatchRouter = new Interface(balancerBatchRouterAbi);
+  const readerCallData = getQuerySwapMultiTokenCalldata(
+    BalancerV3Config.BalancerV3[network].balancerBatchRouterAddress,
+    balancerBatchRouter,
+    amounts,
+    price.data.steps,
+    side,
+  );
+
+  const expectedPrices = [0n];
+  for (const call of readerCallData) {
+    const result = await balancerV3.dexHelper.provider.call(
+      {
+        to: call.target,
+        data: call.callData,
+      },
+      blockNumber,
+    );
+    const parsed = balancerBatchRouter.decodeFunctionResult(
+      side === SwapSide.SELL ? `querySwapExactIn` : `querySwapExactOut`,
+      result,
+    );
+    expectedPrices.push(BigInt(parsed[2][0]._hex));
+  }
+  return expectedPrices;
+}
+
+// Note - this is currently needed because queries won't work with multicall but should be updated in future
+async function checkOnChainPricingNonMulti(
+  network: number,
+  side: SwapSide,
+  balancerV3: BalancerV3,
+  blockNumber: number,
+  prices: ExchangePrices<BalancerV3Data>,
+  amounts: bigint[],
+) {
+  // test match for each returned price
+  for (const price of prices) {
+    let expectedPrices: bigint[] = [];
+    if (price.data.steps.length === 1)
+      expectedPrices = await querySinglePathPrices(
+        network,
+        side,
+        balancerV3,
+        blockNumber,
+        price,
+        amounts,
+      );
+    else
+      expectedPrices = await queryMultiPathPrices(
+        network,
+        side,
+        balancerV3,
+        blockNumber,
+        price,
+        amounts,
+      );
+    expect(price.prices).toEqual(expectedPrices);
+  }
 }
 
 async function testPricingOnNetwork(
@@ -99,7 +207,6 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
-  funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
 
@@ -137,11 +244,12 @@ async function testPricingOnNetwork(
   }
 
   // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
+  await checkOnChainPricingNonMulti(
+    network,
+    side,
     balancerV3,
-    funcNameToCheck,
     blockNumber,
-    poolPrices![0].prices,
+    poolPrices!,
     amounts,
   );
 }
@@ -151,16 +259,13 @@ describe('BalancerV3', function () {
   let blockNumber: number;
   let balancerV3: BalancerV3;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Weighted Pool', () => {
+    const network = Network.SEPOLIA;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
-
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'bal';
+    const destTokenSymbol = 'daiAave';
 
     const amountsForSell = [
       0n,
@@ -208,7 +313,6 @@ describe('BalancerV3', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
       );
     });
 
@@ -222,7 +326,99 @@ describe('BalancerV3', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
+      if (newBalancerV3.updatePoolState) {
+        await newBalancerV3.updatePoolState();
+      }
+      const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+      if (!newBalancerV3.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+
+  describe('Boosted Pool', () => {
+    const network = Network.SEPOLIA;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+    const srcTokenSymbol = 'usdcAave';
+    const destTokenSymbol = 'daiAave';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+      if (balancerV3.initializePricing) {
+        await balancerV3.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+      await testPricingOnNetwork(
+        balancerV3,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+      await testPricingOnNetwork(
+        balancerV3,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
       );
     });
 
@@ -249,3 +445,47 @@ describe('BalancerV3', function () {
     });
   });
 });
+
+// Add back once multicall queries are working
+/*
+function decodeQuerySwapSingleTokenResult(results: Result, side: SwapSide) {
+  const balancerRouter = new Interface(balancerRouterAbi);
+  return results.map(result => {
+    const parsed = balancerRouter.decodeFunctionResult(
+      side === SwapSide.SELL
+        ? `querySwapSingleTokenExactIn`
+        : `querySwapSingleTokenExactOut`,
+      result,
+    );
+    return BigInt(parsed[0]._hex);
+  });
+}
+
+async function checkOnChainPricing(
+  network: number,
+  side: SwapSide,
+  balancerV3: BalancerV3,
+  blockNumber: number,
+  prices: ExchangePrices<BalancerV3Data>,
+  amounts: bigint[],
+) {
+  // test match for each returned price
+  for (const price of prices) {
+    const readerCallData = getQuerySwapSingleTokenCalldata(
+      network,
+      amounts,
+      price.data.steps[0],
+      side,
+    );
+    const readerResult = (
+      await balancerV3.dexHelper.multiContract.methods
+        .aggregate(readerCallData)
+        .call({}, blockNumber)
+    ).returnData;
+    const expectedPrices = [0n].concat(
+      decodeQuerySwapSingleTokenResult(readerResult, side),
+    );
+    expect(price.prices).toEqual(expectedPrices);
+  }
+}
+  */
