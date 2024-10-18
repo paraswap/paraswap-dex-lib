@@ -64,7 +64,7 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const resolverAddress = '0x278166a9b88f166eb170d55801be1b1d1e576330';
+  const resolverAddress = '0x90bFebd5Ac2d6787028DC8A58d0b5EE07b16E06F';
 
   const readerIface = new Interface(ResolverABI);
 

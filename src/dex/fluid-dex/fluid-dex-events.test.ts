@@ -102,7 +102,7 @@ describe('FluidDex EventPool Mainnet', function () {
   const fluidDexCommonAddressStruct: CommonAddresses =
     FluidDexConfig[dexKey][network].commonAddresses;
   const liquidityProxy: Address = '0x52aa899454998be5b000ad077a46bbe360f4e497';
-  const dexFactory: Address = '0x93dd426446b5370f094a1e31f19991aaa6ac0be0';
+  const dexFactory: Address = '0xF9b539Cd37Fc81bBEA1F078240d16b988BBae073';
 
   const poolFetchEventsToTest: Record<Address, EventMappings> = {
     [dexFactory]: {
