@@ -399,13 +399,12 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xca11bde05977b3631167028862be2a173976ca11',
     privateHttpProvider: process.env.HTTP_PROVIDER_100,
     adapterAddresses: {},
-    augustusRFQAddress: '0x0000000000000000000000000000000000000000',
-    // TODO-gnosis: deploy contacts
+    augustusRFQAddress: '0x92EaD5bACf6F0E995FA46Ad8215A9b11f67ca241',
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
     executorsAddresses: {
-      Executor01: '0x5f0000d4780a00d2dce0a00004000800cb0e5041',
-      Executor02: '0xd08d0006f00040b400180f9500b00c5026ac0900',
-      Executor03: '0x5006860a0906b0d8c9c050200947000030081006',
+      Executor01: '0x000010036c0190e009a000d0fc3541100a07380a',
+      Executor02: '0x00c600b30fb0400701010f4b080409018b9006e0',
+      Executor03: '0xe009f00e200a090090fc70e02d70b232000c0802',
     },
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
