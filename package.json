@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "3.8.27",
+  "version": "3.9.4",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -19,6 +19,7 @@
     "@types/lodash": "4.14.178",
     "@types/node": "^17.0.21",
     "@types/uuid": "^9.0.1",
+    "@types/websocket": "^1.0.10",
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
     "change-case": "^4.1.2",
@@ -54,8 +55,8 @@
     "@balancer-labs/sor": "4.1.1-beta.4",
     "@bgd-labs/aave-address-book": "2.21.1",
     "@ethersproject/abi": "^5.7.0",
-    "@hashflow/sdk": "1.2.4",
-    "@hashflow/taker-js": "0.3.4",
+    "@hashflow/sdk": "^2.2.7",
+    "@hashflow/taker-js": "^0.3.7",
     "@paraswap/core": "2.4.0",
     "async": "^3.2.4",
     "axios": "0.27.2",
@@ -75,7 +76,8 @@
     "web3-eth": "1.6.0",
     "web3-eth-abi": "1.4.0",
     "web3-eth-contract": "1.6.0",
-    "web3-utils": "1.6.0"
+    "web3-utils": "1.6.0",
+    "websocket": "1.0.35"
   },
   "sideEffects": false
 }

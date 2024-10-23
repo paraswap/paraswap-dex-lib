@@ -58,6 +58,7 @@ import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
 import { curveV1Merge } from './curve-v1-factory/optimizer';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
+import { WUSDM } from './wusdm/wusdm';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { Infusion } from './infusion/infusion';
@@ -76,6 +77,7 @@ import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
+import { Bebop } from './bebop/bebop';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
@@ -86,7 +88,11 @@ import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 import { OSwap } from './oswap/oswap';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
+import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
+import { UsualBond } from './usual-bond/usual-bond';
+import { StkGHO } from './stkgho/stkgho';
+import { SkyConverter } from './sky-converter/sky-converter';
 
 const LegacyDexes = [
   CurveV2,
@@ -106,6 +112,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Bebop,
   Dexalot,
   CurveV1,
   CurveFork,
@@ -149,6 +156,7 @@ const Dexes = [
   CurveV1Factory,
   CurveV1StableNg,
   WstETH,
+  WUSDM,
   Hashflow,
   Infusion,
   MaverickV1,
@@ -168,7 +176,11 @@ const Dexes = [
   OSwap,
   ConcentratorArusd,
   FxProtocolRusd,
+  AaveGsm,
   LitePsm,
+  UsualBond,
+  StkGHO,
+  SkyConverter,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

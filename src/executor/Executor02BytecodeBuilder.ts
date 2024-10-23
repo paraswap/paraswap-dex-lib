@@ -5,7 +5,11 @@ import {
   OptimalSwap,
   OptimalSwapExchange,
 } from '@paraswap/core';
-import { DexExchangeBuildParam, DexExchangeParam } from '../types';
+import {
+  DexExchangeBuildParam,
+  DexExchangeParam,
+  DexExchangeParamWithBooleanNeedWrapNative,
+} from '../types';
 import { Executors, Flag, SpecialDex } from './types';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
@@ -103,8 +107,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
     if (isEthSrc && !needWrap) {
-      dexFlag =
-        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
+      dexFlag = dexFuncHasRecipient
+        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
+        : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
       dexFlag = forcePreventInsertFromAmount
         ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP
@@ -1220,7 +1225,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
 
   private doesRouteNeedsRootUnwrapEth(
     priceRoute: OptimalRate,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeParamWithBooleanNeedWrapNative[],
   ): boolean {
     if (!isETHAddress(priceRoute.destToken)) {
       return false;

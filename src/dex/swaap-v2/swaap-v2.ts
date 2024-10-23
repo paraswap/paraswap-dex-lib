@@ -524,7 +524,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         normalizedDestToken,
         isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
         isSell ? SWAAP_ORDER_TYPE_SELL : SWAAP_ORDER_TYPE_BUY,
-        options.txOrigin,
+        options.userAddress,
         options.executionContractAddress,
         options.recipient,
         tolerance,
@@ -636,14 +636,14 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       ];
     } catch (e) {
       if (isAxiosError(e) && e.response?.status === 403) {
-        await this.setBlacklist(options.txOrigin, SWAAP_403_TTL_S);
+        await this.setBlacklist(options.userAddress, SWAAP_403_TTL_S);
         this.logger.warn(
-          `${this.dexKey}-${this.network}: Encountered blacklisted user=${options.txOrigin}. Adding to local blacklist cache`,
+          `${this.dexKey}-${this.network}: Encountered blacklisted user=${options.userAddress}. Adding to local blacklist cache`,
         );
       } else if (isAxiosError(e) && e.response?.status === 429) {
-        await this.setBlacklist(options.txOrigin, SWAAP_429_TTL_S);
+        await this.setBlacklist(options.userAddress, SWAAP_429_TTL_S);
         this.logger.warn(
-          `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
+          `${this.dexKey}-${this.network}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
         );
       } else {
         if (e instanceof TooStrictSlippageCheckError) {
