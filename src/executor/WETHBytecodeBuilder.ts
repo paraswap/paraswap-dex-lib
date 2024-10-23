@@ -1,9 +1,9 @@
 import { DexExchangeBuildParam } from '../types';
-import { OptimalRate, SwapSide } from '@paraswap/core';
+import { OptimalRate } from '@paraswap/core';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
 import { WethConfig } from '../dex/weth/config';
-import { Executors, Flag, SpecialDex } from './types';
+import { Executors } from './types';
 import { ExecutorBytecodeBuilder } from './ExecutorBytecodeBuilder';
 import { Network } from '../constants';
 
@@ -15,7 +15,7 @@ const SUPPORTED_NETWORKS = [
   Network.POLYGON,
   Network.OPTIMISM,
   Network.ZKEVM,
-  Network.X_LAYER,
+  Network.GNOSIS,
 ];
 const SUPPORTED_EXCHANGES = Object.keys(WethConfig);
 

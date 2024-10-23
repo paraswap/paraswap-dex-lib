@@ -1459,29 +1459,29 @@ export const Tokens: {
       decimals: 6,
     },
   },
-  [Network.X_LAYER]: {
-    OKB: {
+  [Network.GNOSIS]: {
+    XDAI: {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
     WETH: {
-      address: '0x5a77f1443d16ee5761d310e38b62f77f726bc71c',
+      address: '0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1',
       decimals: 18,
     },
     WBTC: {
-      address: '0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1',
+      address: '0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252',
       decimals: 8,
     },
     USDC: {
-      address: '0x74b7f16337b8972027f6196a17a631ac6de26d22',
+      address: '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',
       decimals: 6,
     },
     USDT: {
-      address: '0x1e4a5963abfd975d8c9021ce480b42188849d41d',
+      address: '0x4ECaBa5870353805a9F068101A40E0f32ed605C6',
       decimals: 6,
     },
-    WOKB: {
-      address: '0xe538905cf8410324e03a5a23c1c177a474d59b2b',
+    WXDAI: {
+      address: '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d',
       decimals: 18,
     },
   },
@@ -1922,12 +1922,13 @@ export const Holders: {
     WBTC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
   },
-  [Network.X_LAYER]: {
-    OKB: '0x5a77f1443d16ee5761d310e38b62f77f726bc71c',
-    WOKB: '0x5a77f1443d16ee5761d310e38b62f77f726bc71c',
-    USDT: '0x1e4a5963abfd975d8c9021ce480b42188849d41d',
-    WBTC: '0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1',
-    USDC: '0x74b7f16337b8972027f6196a17a631ac6de26d22',
+  [Network.GNOSIS]: {
+    XDAI: '0x56CF0ff00fd6CfB23ce964C6338B228B0FA76640',
+    WXDAI: '0x56CF0ff00fd6CfB23ce964C6338B228B0FA76640',
+    WETH: '0xD692Fd2D0b2Fbd2e52CFa5B5b9424bC981C30696',
+    USDT: '0x1098503a90c3224F0e6BE7c124a337888C0BA564',
+    WBTC: '0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252',
+    USDC: '0xd4A39d219ADB43aB00739DC5D876D98Fdf0121Bf',
   },
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',

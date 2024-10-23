@@ -46,8 +46,8 @@ export const WethConfig: DexConfigMap<DexParams> = {
       poolGasCost: WethGasCost,
     },
   },
-  Wokb: {
-    [Network.X_LAYER]: {
+  Wxdai: {
+    [Network.GNOSIS]: {
       poolGasCost: WethGasCost,
     },
   },
