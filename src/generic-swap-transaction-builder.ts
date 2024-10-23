@@ -2,24 +2,25 @@ import {
   Address,
   DexExchangeBuildParam,
   DexExchangeParam,
+  DexExchangeParamWithBooleanNeedWrapNative,
   OptimalRate,
   OptimalSwap,
   OptimalSwapExchange,
   TxObject,
 } from './types';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import {
   ETHER_ADDRESS,
   FEE_PERCENT_IN_BASIS_POINTS_MASK,
   IS_CAP_SURPLUS_MASK,
+  IS_DIRECT_TRANSFER_MASK,
   IS_REFERRAL_MASK,
   IS_SKIP_BLACKLIST_MASK,
   IS_TAKE_SURPLUS_MASK,
+  IS_USER_SURPLUS_MASK,
   NULL_ADDRESS,
-  SwapSide,
 } from './constants';
 import { AbiCoder, Interface } from '@ethersproject/abi';
-import { ethers } from 'ethers';
 import AugustusV6ABI from './abi/augustus-v6/ABI.json';
 import { isETHAddress, uuidToBytes16 } from './utils';
 import {
@@ -32,7 +33,7 @@ import ERC20ABI from './abi/erc20.json';
 import { ExecutorDetector } from './executor/ExecutorDetector';
 import { ExecutorBytecodeBuilder } from './executor/ExecutorBytecodeBuilder';
 import { IDexTxBuilder } from './dex/idex';
-import { ParaSwapVersion } from '@paraswap/core';
+import { ParaSwapVersion, SwapSide } from '@paraswap/core';
 
 const {
   utils: { hexlify, hexConcat, hexZeroPad },
@@ -43,6 +44,8 @@ interface FeeParams {
   feePercent: string;
   isTakeSurplus: boolean;
   isCapSurplus: boolean;
+  isSurplusToUser: boolean;
+  isDirectFeeTransfer: boolean;
   isReferral: boolean;
   isSkipBlacklist: boolean;
 }
@@ -132,10 +135,10 @@ export class GenericSwapTransactionBuilder {
               executorAddress,
             );
 
-            const dexParams = await dex.getDexParam!(
+            let dexParams = await dex.getDexParam!(
               srcToken,
               destToken,
-              srcAmount,
+              side === SwapSide.BUY ? se.srcAmount : srcAmount, // in other case we would not be able to make insert from amount on Ex3
               destAmount,
               recipient,
               se.data,
@@ -150,8 +153,16 @@ export class GenericSwapTransactionBuilder {
               executorAddress,
             );
 
+            if (typeof dexParams.needWrapNative === 'function') {
+              dexParams.needWrapNative = dexParams.needWrapNative(
+                priceRoute,
+                swap,
+                se,
+              );
+            }
+
             return {
-              dexParams,
+              dexParams: <DexExchangeParamWithBooleanNeedWrapNative>dexParams,
               wethDeposit,
               wethWithdraw,
             };
@@ -162,7 +173,7 @@ export class GenericSwapTransactionBuilder {
 
     const { exchangeParams, srcAmountWethToDeposit, destAmountWethToWithdraw } =
       await rawDexParams.reduce<{
-        exchangeParams: DexExchangeParam[];
+        exchangeParams: DexExchangeParamWithBooleanNeedWrapNative[];
         srcAmountWethToDeposit: bigint;
         destAmountWethToWithdraw: bigint;
       }>(
@@ -209,6 +220,8 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent: string,
     takeSurplus: boolean,
     isCapSurplus: boolean,
+    isSurplusToUser: boolean,
+    isDirectFeeTransfer: boolean,
     beneficiary: Address,
     permit: string,
     deadline: string,
@@ -237,6 +250,8 @@ export class GenericSwapTransactionBuilder {
       partnerFeePercent,
       takeSurplus,
       isCapSurplus,
+      isSurplusToUser,
+      isDirectFeeTransfer,
       priceRoute,
     });
 
@@ -280,6 +295,8 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent: string,
     takeSurplus: boolean,
     isCapSurplus: boolean,
+    isSurplusToUser: boolean,
+    isDirectFeeTransfer: boolean,
     permit: string,
     uuid: string,
     beneficiary: Address,
@@ -324,6 +341,8 @@ export class GenericSwapTransactionBuilder {
       partnerFeePercent,
       takeSurplus,
       isCapSurplus,
+      isSurplusToUser,
+      isDirectFeeTransfer,
       priceRoute,
     });
 
@@ -349,6 +368,8 @@ export class GenericSwapTransactionBuilder {
     priceRoute,
     takeSurplus,
     isCapSurplus,
+    isSurplusToUser,
+    isDirectFeeTransfer,
     partnerAddress,
     partnerFeePercent,
     skipBlacklist = false,
@@ -358,6 +379,8 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent: string;
     takeSurplus: boolean;
     isCapSurplus: boolean;
+    isSurplusToUser: boolean;
+    isDirectFeeTransfer: boolean;
     priceRoute: OptimalRate;
     skipBlacklist?: boolean;
   }) {
@@ -367,6 +390,8 @@ export class GenericSwapTransactionBuilder {
           feePercent: '0',
           isTakeSurplus: takeSurplus,
           isCapSurplus,
+          isSurplusToUser,
+          isDirectFeeTransfer,
           isReferral: true,
           isSkipBlacklist: skipBlacklist,
         })
@@ -375,6 +400,8 @@ export class GenericSwapTransactionBuilder {
           feePercent: partnerFeePercent,
           isTakeSurplus: takeSurplus,
           isCapSurplus,
+          isSurplusToUser,
+          isDirectFeeTransfer,
           isSkipBlacklist: skipBlacklist,
           isReferral: false,
         });
@@ -391,6 +418,8 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent,
     takeSurplus,
     isCapSurplus,
+    isSurplusToUser,
+    isDirectFeeTransfer,
     gasPrice,
     maxFeePerGas,
     maxPriorityFeePerGas,
@@ -408,6 +437,8 @@ export class GenericSwapTransactionBuilder {
     partnerFeePercent: string;
     takeSurplus?: boolean;
     isCapSurplus?: boolean;
+    isSurplusToUser?: boolean;
+    isDirectFeeTransfer?: boolean;
     gasPrice?: string;
     maxFeePerGas?: string;
     maxPriorityFeePerGas?: string;
@@ -438,6 +469,8 @@ export class GenericSwapTransactionBuilder {
         partnerFeePercent,
         takeSurplus ?? false,
         isCapSurplus ?? true,
+        isSurplusToUser ?? false,
+        isDirectFeeTransfer ?? false,
         permit || '0x',
         uuid,
         _beneficiary,
@@ -452,6 +485,8 @@ export class GenericSwapTransactionBuilder {
         partnerFeePercent,
         takeSurplus ?? false,
         isCapSurplus ?? true,
+        isSurplusToUser ?? false,
+        isDirectFeeTransfer ?? false,
         _beneficiary,
         permit || '0x',
         deadline,
@@ -485,6 +520,8 @@ export class GenericSwapTransactionBuilder {
     feePercent,
     isTakeSurplus,
     isCapSurplus,
+    isSurplusToUser,
+    isDirectFeeTransfer,
     isReferral,
     isSkipBlacklist,
   }: FeeParams): string {
@@ -522,6 +559,16 @@ export class GenericSwapTransactionBuilder {
         partialFeeCodeWithBitFlags.or(IS_CAP_SURPLUS_MASK);
     }
 
+    if (isSurplusToUser) {
+      partialFeeCodeWithBitFlags =
+        partialFeeCodeWithBitFlags.or(IS_USER_SURPLUS_MASK);
+    }
+
+    if (isDirectFeeTransfer) {
+      partialFeeCodeWithBitFlags = partialFeeCodeWithBitFlags.or(
+        IS_DIRECT_TRANSFER_MASK,
+      );
+    }
     // Combine partnerBigInt and feePercentBigInt
     const feeCode = partialFeeCodeWithPartnerAddress.or(
       partialFeeCodeWithBitFlags,
@@ -583,9 +630,7 @@ export class GenericSwapTransactionBuilder {
     // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
     // Also that it is a direct swap.
     const _srcAmount =
-      swapIndex > 0 ||
-      side === SwapSide.SELL ||
-      this.dexAdapterService.getDexKeySpecial(se.exchange) === 'zerox'
+      swapIndex > 0 || side === SwapSide.SELL
         ? se.srcAmount
         : (
             (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /
@@ -597,7 +642,12 @@ export class GenericSwapTransactionBuilder {
     // should work if the final slippage check passes.
     const _destAmount = side === SwapSide.SELL ? '1' : se.destAmount;
 
-    if (isETHAddress(swap.srcToken) && dex.needWrapNative) {
+    const dexNeedWrapNative =
+      typeof dex.needWrapNative === 'function'
+        ? dex.needWrapNative(priceRoute, swap, se)
+        : dex.needWrapNative;
+
+    if (isETHAddress(swap.srcToken) && dexNeedWrapNative) {
       _src = wethAddress;
       wethDeposit = BigInt(_srcAmount);
     }
@@ -605,11 +655,11 @@ export class GenericSwapTransactionBuilder {
     const forceUnwrap =
       isETHAddress(swap.destToken) &&
       (isMultiSwap || isMegaSwap) &&
-      !dex.needWrapNative &&
+      !dexNeedWrapNative &&
       !isLastSwap;
 
-    if ((isETHAddress(swap.destToken) && dex.needWrapNative) || forceUnwrap) {
-      _dest = forceUnwrap && !dex.needWrapNative ? _dest : wethAddress;
+    if ((isETHAddress(swap.destToken) && dexNeedWrapNative) || forceUnwrap) {
+      _dest = forceUnwrap && !dexNeedWrapNative ? _dest : wethAddress;
       wethWithdraw = BigInt(se.destAmount);
     }
 
@@ -632,7 +682,7 @@ export class GenericSwapTransactionBuilder {
   private async addDexExchangeApproveParams(
     bytecodeBuilder: ExecutorBytecodeBuilder,
     priceRoute: OptimalRate,
-    dexExchangeParams: DexExchangeParam[],
+    dexExchangeParams: DexExchangeParamWithBooleanNeedWrapNative[],
     maybeWethCallData?: DepositWithdrawReturn,
   ): Promise<DexExchangeBuildParam[]> {
     const spender = bytecodeBuilder.getAddress();

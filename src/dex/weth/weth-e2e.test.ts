@@ -874,12 +874,12 @@ describe('Weth E2E', () => {
     });
   });
 
-  describe('Wokb XLayer', () => {
-    const dexKey = 'Wokb';
-    const network = Network.X_LAYER;
+  describe('Weth ZKEvm', () => {
+    const dexKey = 'Weth';
+    const network = Network.ZKEVM;
 
-    const nativeTokenSymbol = 'OKB';
-    const wrappedTokenSymbol = 'WOKB';
+    const nativeTokenSymbol = 'ETH';
+    const wrappedTokenSymbol = 'WETH';
 
     const nativeAmount = '1000000000000000000';
     const wrappedAmount = '1000000000000000000';
@@ -897,8 +897,96 @@ describe('Weth E2E', () => {
     const nativeHolder = holders[nativeTokenSymbol];
     const wrappedHolder = holders[wrappedTokenSymbol];
 
-    describe('swapExactAmountIn SELL', () => {
-      const contractMethod = ContractMethod.swapExactAmountIn;
+    describe('SimpleSwap SELL', () => {
+      const contractMethod = ContractMethod.simpleSwap;
+      const side = SwapSide.SELL;
+
+      it('native -> wrapped', async () => {
+        await testE2E(
+          nativeToken,
+          wrappedToken,
+          nativeHolder,
+          nativeAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+      });
+      it('wrapped -> native', async () => {
+        await testE2E(
+          wrappedToken,
+          nativeToken,
+          wrappedHolder,
+          wrappedAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+      });
+    });
+
+    describe('MultiSwap SELL', () => {
+      const contractMethod = ContractMethod.multiSwap;
+      const side = SwapSide.SELL;
+
+      it('native -> wrapped', async () => {
+        await testE2E(
+          nativeToken,
+          wrappedToken,
+          nativeHolder,
+          nativeAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+      });
+      it('wrapped -> native', async () => {
+        await testE2E(
+          wrappedToken,
+          nativeToken,
+          wrappedHolder,
+          wrappedAmount,
+          side,
+          dexKey,
+          contractMethod,
+          network,
+          provider,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+      });
+    });
+
+    describe('MegaSwap SELL', () => {
+      const contractMethod = ContractMethod.megaSwap;
       const side = SwapSide.SELL;
 
       it('native -> wrapped', async () => {

@@ -290,7 +290,7 @@ describe('SwaapV2 E2E', () => {
     );
   });
 
-  describe.only('Base', () => {
+  describe('Base', () => {
     const network = Network.BASE;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
@@ -302,14 +302,14 @@ describe('SwaapV2 E2E', () => {
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
       [
         {
-          name: 'AERO',
-          sellAmount: '100000000000000000000',
-          buyAmount: '100000000',
+          name: 'WETH',
+          sellAmount: '100000000000000000',
+          buyAmount: '1000000000000000',
         },
         {
           name: 'USDC',
-          sellAmount: '100000000',
-          buyAmount: '100000000000000000000',
+          sellAmount: '10000000',
+          buyAmount: '1000000',
         },
       ],
     ];
@@ -366,7 +366,7 @@ describe('SwaapV2 E2E', () => {
     );
   });
 
-  describe.only('BSC', () => {
+  describe('BSC', () => {
     const network = Network.BSC;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,
@@ -442,7 +442,7 @@ describe('SwaapV2 E2E', () => {
     );
   });
 
-  describe.only('Optimism', () => {
+  describe('Optimism', () => {
     const network = Network.OPTIMISM;
     const provider = new StaticJsonRpcProvider(
       generateConfig(network).privateHttpProvider,

@@ -19,6 +19,7 @@ import { AbiItem } from 'web3-utils';
 import { ParaSwapVersion } from '@paraswap/core';
 import augustusV6ABI from '../abi/augustus-v6/ABI.json';
 import { AugustusApprovals } from './augustus-approvals';
+import { NeedWrapNativeFunc } from './idex';
 
 /*
  * Context: Augustus routers have all a deadline protection logic implemented globally.
@@ -38,7 +39,7 @@ export class SimpleExchange {
   erc20Interface: Interface;
   erc20Contract: Contract;
 
-  needWrapNative = false;
+  needWrapNative: boolean | NeedWrapNativeFunc = false;
   isFeeOnTransferSupported = false;
 
   protected augustusAddress: Address;
@@ -110,12 +111,12 @@ export class SimpleExchange {
     spender?: Address,
     networkFee: NumberAsString = '0',
     preCalls?: Omit<SimpleExchangeParam, 'networkFee'>,
+    skipApproval?: boolean,
   ): Promise<SimpleExchangeParam> {
-    const approveParam = await this.getApproveSimpleParam(
-      src,
-      spender || swapCallee,
-      srcAmount,
-    );
+    const approveParam = skipApproval
+      ? { callees: [], calldata: [], values: [], networkFee: '0' }
+      : await this.getApproveSimpleParam(src, spender || swapCallee, srcAmount);
+
     const swapValue = (
       BigInt(networkFee) + (isETHAddress(src) ? BigInt(srcAmount) : 0n)
     ).toString();

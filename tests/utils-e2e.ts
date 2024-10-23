@@ -43,6 +43,7 @@ import {
   constructSimpleSDK,
   SimpleFetchSDK,
 } from '@paraswap/sdk';
+import { ParaSwapVersion } from '@paraswap/core';
 import axios from 'axios';
 import { SmartToken, StateOverrides } from './smart-tokens';
 import {
@@ -127,6 +128,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   ) {
     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.paraSwap = constructSimpleSDK({
+      version: ParaSwapVersion.V6,
       chainId: network,
       axios,
       apiURL: testingEndpoint,
@@ -473,7 +475,7 @@ export async function testE2E(
     ? new APIParaswapSDK(network, dexKeys, '')
     : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
 
-  if (paraswap.initializePricing) await paraswap.initializePricing();
+  await paraswap.initializePricing?.();
 
   if (sleepMs) {
     await sleep(sleepMs);
@@ -775,7 +777,9 @@ export async function newTestE2E({
           .addBalance(senderAddress, twiceAmount.toString())
           .addAllowance(
             senderAddress,
-            config.tokenTransferProxyAddress,
+            priceRoute.version === ParaSwapVersion.V5
+              ? config.tokenTransferProxyAddress
+              : config.augustusV6Address,
             amount.toString(),
           );
       } else {
@@ -783,7 +787,9 @@ export async function newTestE2E({
           .addBalance(senderAddress, MAX_UINT)
           .addAllowance(
             senderAddress,
-            config.tokenTransferProxyAddress,
+            priceRoute.version === ParaSwapVersion.V5
+              ? config.tokenTransferProxyAddress
+              : config.augustusV6Address,
             (BigInt(MAX_UINT) / 8n).toString(),
           );
       }

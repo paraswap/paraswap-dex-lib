@@ -10,7 +10,6 @@ import {
   ExecutorBytecodeBuilder,
   SingleSwapCallDataParams,
 } from './ExecutorBytecodeBuilder';
-import { assert } from 'ts-essentials';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -81,8 +80,9 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
     if (isEthSrc && !needWrap) {
-      dexFlag =
-        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
+      dexFlag = dexFuncHasRecipient
+        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
+        : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
       dexFlag = forcePreventInsertFromAmount
         ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP
@@ -268,6 +268,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       (!isETHAddress(swap.srcToken) ||
         (isETHAddress(swap.srcToken) && index !== 0)) &&
       !curExchangeParam.transferSrcTokenBeforeSwap &&
+      !curExchangeParam.skipApproval &&
       curExchangeParam.approveData
     ) {
       const approveCallData = this.buildApproveCallData(
@@ -290,7 +291,8 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
           let approveWethCalldata = '0x';
           if (
             curExchangeParam.approveData &&
-            !curExchangeParam.transferSrcTokenBeforeSwap
+            !curExchangeParam.transferSrcTokenBeforeSwap &&
+            !curExchangeParam.skipApproval
           ) {
             approveWethCalldata = this.buildApproveCallData(
               curExchangeParam.approveData.target,
@@ -342,6 +344,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
       routeIndex,
       swapIndex,
       flag,
+      swapExchangeIndex,
     } = params;
 
     const dontCheckBalanceAfterSwap = flag % 3 === 0;
@@ -376,19 +379,15 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (insertFromAmount) {
       const fromAmount = ethers.utils.defaultAbiCoder.encode(
         ['uint256'],
-        [swap.swapExchanges[0].srcAmount],
+        [swap.swapExchanges[swapExchangeIndex].srcAmount],
       );
 
       const fromAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(fromAmount.replace('0x', ''));
 
-      assert(
-        fromAmountIndex !== -1,
-        'Encoding error: could not resolve position of fromAmount in exchangeData',
-      );
-
-      fromAmountPos = fromAmountIndex / 2;
+      fromAmountPos =
+        (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
     }
 
     return this.buildCallData(

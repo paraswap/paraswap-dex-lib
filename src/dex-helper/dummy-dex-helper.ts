@@ -146,7 +146,7 @@ class DummyCache implements ICache {
   }
 
   async hget(mapKey: string, key: string): Promise<string | null> {
-    return this.hashStorage[mapKey][key];
+    return this.hashStorage[mapKey]?.[key] ?? null;
   }
 
   async hmget(mapKey: string, keys: string[]): Promise<(string | null)[]> {
@@ -261,7 +261,7 @@ export class DummyRequestWrapper implements IRequestWrapper {
 }
 
 class DummyBlockManager implements IBlockManager {
-  constructor(public _blockNumber: number = 42) {}
+  constructor(public _blockNumber: number = 20569333) {}
 
   subscribeToLogs(
     subscriber: EventSubscriber,

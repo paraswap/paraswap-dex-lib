@@ -94,7 +94,7 @@ export class CurveV2
   exchangeRouterInterface: Interface;
   genericFactoryZapIface: Interface;
   minConversionRate = '1';
-  // TODO: it's wrong, cause some pools can have eth and others can have weth
+  // the dex supports native ETH and WETH pools and handles wrapping/unwrapping on their smart contract level, we can always send WETH even for native ETH pools
   needWrapNative = true;
   logger: Logger;
 
@@ -213,7 +213,7 @@ export class CurveV2
     _0: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectCurveV2Param> {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -272,7 +272,7 @@ export class CurveV2
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (contractMethod !== DIRECT_METHOD_NAME_V6) {
       throw new Error(`Invalid contract method ${contractMethod}`);

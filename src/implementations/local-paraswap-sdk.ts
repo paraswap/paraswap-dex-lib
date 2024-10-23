@@ -24,6 +24,7 @@ import {
 import { GenericSwapTransactionBuilder } from '../generic-swap-transaction-builder';
 import { AddressOrSymbol } from '@paraswap/sdk';
 import { ParaSwapVersion } from '@paraswap/core';
+import { TransactionBuilder } from '../transaction-builder';
 
 export interface IParaSwapSDK {
   getPrices(
@@ -60,6 +61,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
   pricingHelper: PricingHelper;
   dexKeys: string[];
   transactionBuilder: GenericSwapTransactionBuilder;
+  transactionBuilderV5: TransactionBuilder;
 
   constructor(
     protected network: number,
@@ -79,6 +81,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     this.transactionBuilder = new GenericSwapTransactionBuilder(
       this.dexAdapterService,
     );
+    this.transactionBuilderV5 = new TransactionBuilder(this.dexAdapterService);
 
     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.dexKeys.map(dexKey => {
@@ -196,8 +199,12 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       gasCost: '0',
       others: [],
       side,
-      contractAddress: '',
+      // For V5 tests, put Augustus V5 address here
+      // contractAddress: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+      contractAddress: '0x6a000f20005980200259b80c5102003040001068',
       tokenTransferProxy: '',
+      // For V5 tests, put V5 version here
+      // version: ParaSwapVersion.V5,
       version: ParaSwapVersion.V6,
     };
 
@@ -256,16 +263,27 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                     }
 
                     const { recipient } =
-                      this.transactionBuilder.getDexCallsParams(
-                        priceRoute,
-                        routeIndex,
-                        swap,
-                        swapIndex,
-                        se,
-                        minMaxAmount.toString(),
-                        dex,
-                        executionContractAddress,
-                      );
+                      priceRoute.version === ParaSwapVersion.V5
+                        ? this.transactionBuilderV5.getDexCallsParams(
+                            priceRoute,
+                            routeIndex,
+                            swap,
+                            swapIndex,
+                            se,
+                            minMaxAmount.toString(),
+                            dex,
+                            executionContractAddress,
+                          )
+                        : this.transactionBuilder.getDexCallsParams(
+                            priceRoute,
+                            routeIndex,
+                            swap,
+                            swapIndex,
+                            se,
+                            minMaxAmount.toString(),
+                            dex,
+                            executionContractAddress,
+                          );
 
                     const [preprocessedRoute, txInfo] =
                       await dexLibExchange.preProcessTransaction(
@@ -276,6 +294,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
                         {
                           slippageFactor,
                           txOrigin: userAddress,
+                          userAddress,
                           executionContractAddress,
                           isDirectMethod: DirectContractMethods.includes(
                             contractMethod as ContractMethod,
@@ -305,7 +324,12 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       throw e;
     }
 
-    return await this.transactionBuilder.build({
+    const txBuilder: TransactionBuilder | GenericSwapTransactionBuilder =
+      priceRoute.version === ParaSwapVersion.V5
+        ? this.transactionBuilderV5
+        : this.transactionBuilder;
+
+    return await txBuilder.build({
       priceRoute,
       minMaxAmount: minMaxAmount.toString(),
       userAddress,

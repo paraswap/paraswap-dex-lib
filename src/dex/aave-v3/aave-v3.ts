@@ -10,7 +10,12 @@ import {
   Logger,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
+import {
+  SwapSide,
+  Network,
+  NULL_ADDRESS,
+  ETHER_ADDRESS,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, isETHAddress, getBigIntPow } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -246,6 +251,8 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
       exchangeData,
       targetExchange: swapCallee,
       returnAmountPos: undefined,
+      skipApproval:
+        !data.fromAToken && srcToken.toLowerCase() === ETHER_ADDRESS,
     };
   }
 
@@ -308,6 +315,10 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
       destAmount,
       swapData,
       swapCallee,
+      undefined,
+      undefined,
+      undefined,
+      data.fromAToken,
     );
   }
 

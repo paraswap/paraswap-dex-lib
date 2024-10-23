@@ -49,6 +49,21 @@ export class ChainLinkSubscriber<State> extends PartialEventSubscriber<
     )[0];
   }
 
+  static getReadDecimal(proxy: Address): MultiCallInput {
+    return {
+      target: proxy,
+      callData:
+        ChainLinkSubscriber.proxyInterface.encodeFunctionData('decimals'),
+    };
+  }
+
+  static readDecimals(multicallOutput: MultiCallOutput): Address {
+    return ChainLinkSubscriber.proxyInterface.decodeFunctionResult(
+      'decimals',
+      multicallOutput,
+    )[0];
+  }
+
   public processLog(
     state: DeepReadonly<ChainLinkState>,
     log: Readonly<Log>,

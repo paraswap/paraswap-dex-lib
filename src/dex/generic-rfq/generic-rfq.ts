@@ -84,8 +84,19 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const _destToken = this.dexHelper.config.wrapETH(destToken);
-    return [this.getIdentifier(srcToken.address, _destToken.address)];
+    const _destToken = this.dexHelper.config
+      .wrapETH(destToken)
+      .address.toLowerCase();
+    const _srcToken = this.dexHelper.config
+      .wrapETH(srcToken)
+      .address.toLowerCase();
+
+    const currentPair = `${_srcToken}_${_destToken}`;
+    const availablePairs = await this.rateFetcher.getAvailablePairs();
+
+    return availablePairs
+      .filter(p => p === currentPair)
+      .map(_ => this.getIdentifier(_srcToken, _destToken));
   }
 
   calcOutsFromAmounts(
@@ -221,7 +232,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     partnerAndFee: string,
     beneficiary: string,
     blockNumber: number,
-    contractMethod?: string,
+    contractMethod: string,
   ) {
     if (!contractMethod) throw new Error(`contractMethod need to be passed`);
     if (!GenericRFQ.getDirectFunctionNameV6().includes(contractMethod!)) {
@@ -313,6 +324,27 @@ export class GenericRFQ extends ParaSwapLimitOrders {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<ParaSwapLimitOrdersData>, ExchangeTxInfo]> {
+    if (await this.isBlacklisted(options.txOrigin)) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
+      );
+      throw new Error(
+        `${this.dexKey}-${this.network}: user=${options.txOrigin} is blacklisted`,
+      );
+    }
+
+    if (
+      options.userAddress !== options.txOrigin &&
+      (await this.isBlacklisted(options.userAddress))
+    ) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: blacklisted user address '${options.userAddress}' trying to build a transaction. Bailing...`,
+      );
+      throw new Error(
+        `${this.dexKey}-${this.network}: user=${options.userAddress} is blacklisted`,
+      );
+    }
+
     const isSell = side === SwapSide.SELL;
 
     const order = await this.rateFetcher.getFirmRate(
@@ -323,7 +355,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         : overOrder(optimalSwapExchange.destAmount, 1),
       side,
       options.executionContractAddress,
-      options.txOrigin,
+      options.userAddress,
       options.partner,
       options.special,
     );
