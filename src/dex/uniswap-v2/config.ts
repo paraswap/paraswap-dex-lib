@@ -435,6 +435,15 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  HoneySwap: {
+    [Network.GNOSIS]: {
+      subgraphURL: '7vjh6q6gj6M1bhRNgkKZmWqd5jot79kV84BiQtUDQSdV',
+      factoryAddress: '0xa818b4f111ccac7aa31d0bcc0806d64f2e0737d7',
+      initCode:
+        '0xdbd265d4828759db2a0351a7b97180bcc41449a038bcd08a45afe937147f6267',
+      feeCode: 30,
+    },
+  },
   Zyberswap: {
     [Network.ARBITRUM]: {
       subgraphURL: '3g83GYhbyHtjy581vpTmN1AP9cB9MjWMh5TiuNpvTU4R',
