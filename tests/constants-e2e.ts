@@ -1484,6 +1484,26 @@ export const Tokens: {
       address: '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d',
       decimals: 18,
     },
+    aGnoWETH: {
+      address: '0xa818f1b57c201e092c4a2017a91815034326efd1',
+      decimals: 18,
+    },
+    aGnowstETH: {
+      address: '0x23e4e76d01b2002be436ce8d6044b0aa2f68b68a',
+      decimals: 18,
+    },
+    aGnoUSDC: {
+      address: '0xc6b7aca6de8a6044e0e32d0c841a89244a10d284',
+      decimals: 6,
+    },
+    wstETH: {
+      address: '0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6',
+      decimals: 18,
+    },
+    aGnoWXDAI: {
+      address: '0xd0dd6cef72143e22cced4867eb0d5f2328715533',
+      decimals: 18,
+    },
   },
   [Network.BASE]: {
     wstETH: {
@@ -1929,6 +1949,10 @@ export const Holders: {
     USDT: '0x1098503a90c3224F0e6BE7c124a337888C0BA564',
     WBTC: '0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252',
     USDC: '0xd4A39d219ADB43aB00739DC5D876D98Fdf0121Bf',
+    aGnoWXDAI: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
+    aGnoUSDC: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
+    wstETH: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
+    aGnowstETH: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
   },
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
