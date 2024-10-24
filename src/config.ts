@@ -413,7 +413,8 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     forceRpcFallbackDexs: [],
     // FIXME: Not set properly
-    uniswapV2ExchangeRouterAddress: '',
+    uniswapV2ExchangeRouterAddress:
+      '0xfa39c1c670b48956eeF9fd0BbD0E81A290326330',
   },
   [Network.BASE]: {
     network: Network.BASE,
