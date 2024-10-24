@@ -1949,7 +1949,7 @@ export const Holders: {
   [Network.GNOSIS]: {
     XDAI: '0x56CF0ff00fd6CfB23ce964C6338B228B0FA76640',
     WXDAI: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-    WETH: '0xD692Fd2D0b2Fbd2e52CFa5B5b9424bC981C30696',
+    WETH: '0x800e12aF6c96790EDDdc5B3f3302899e27B2A918',
     USDT: '0x1098503a90c3224F0e6BE7c124a337888C0BA564',
     WBTC: '0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252',
     USDC: '0xd4A39d219ADB43aB00739DC5D876D98Fdf0121Bf',
@@ -2010,6 +2010,7 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
   [Network.BASE]: 'ETH',
+  [Network.GNOSIS]: 'XDAI',
 };
 
 export const WrappedNativeTokenSymbols: { [network: number]: string } = {
@@ -2021,4 +2022,5 @@ export const WrappedNativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'WETH',
   [Network.OPTIMISM]: 'WETH',
   [Network.BASE]: 'WETH',
+  [Network.GNOSIS]: 'WXDAI',
 };
