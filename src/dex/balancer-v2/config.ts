@@ -25,6 +25,10 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
         'https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
+    [Network.GNOSIS]: {
+      subgraphURL: 'EJezH1Cp31QkKPaBDerhVPRWsKVZLrDfzjrLqpmv6cGg',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    },
   },
   BeetsFi: {
     [Network.FANTOM]: {

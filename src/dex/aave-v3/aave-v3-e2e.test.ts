@@ -506,4 +506,73 @@ describe('AaveV3 E2E', () => {
       );
     });
   });
+
+  describe('AaveV3 GNOSIS', () => {
+    const network = Network.GNOSIS;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const pairs = [
+      {
+        tokenSymbol: 'XDAI',
+        aTokenSymbol: 'aGnoWXDAI',
+        amount: '1000000000000000000',
+      },
+      {
+        tokenSymbol: 'USDC',
+        aTokenSymbol: 'aGnoUSDC',
+        amount: '10000000',
+      },
+      {
+        tokenSymbol: 'wstETH',
+        aTokenSymbol: 'aGnowstETH',
+        amount: '1000000000000000000',
+      },
+    ];
+
+    const sideToContractMethods = new Map([
+      [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    ]);
+
+    pairs.forEach(pair => {
+      sideToContractMethods.forEach((contractMethods, side) =>
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(pair.aTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
+              await testE2E(
+                tokens[pair.aTokenSymbol],
+                tokens[pair.tokenSymbol],
+                holders[pair.aTokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it(pair.tokenSymbol + ' -> ' + pair.aTokenSymbol, async () => {
+              await testE2E(
+                tokens[pair.tokenSymbol],
+                tokens[pair.aTokenSymbol],
+                holders[pair.tokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        }),
+      );
+    });
+  });
 });

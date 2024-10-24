@@ -192,6 +192,34 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
       },
       customPools: {},
     },
+    [Network.GNOSIS]: {
+      factories: [
+        {
+          address: '0xbc0797015fcfc47d9c1856639cae50d0e69fbee8',
+          isStableNg: true,
+        },
+      ],
+      router: '0x0dcded3545d565ba3b19e683431381007245d983', // https://github.com/curvefi/curve-router-ng
+      stateUpdatePeriodMs: 5 * 1000,
+      disabledPools: new Set([]),
+      disabledImplementations: new Set([]),
+      factoryPoolImplementations: {
+        // TODO-gnosis: check if there's no missing implementations
+        '0x3d6cb2f6dcf47cdd9c13e4e3beae9af041d8796a': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0x3d6cb2f6dcf47cdd9c13e4e3beae9af041d8796a',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
+        '0xc1b393efef38140662b91441c6710aa704973228': {
+          name: ImplementationNames.FACTORY_STABLE_NG,
+          address: '0xc1b393efef38140662b91441c6710aa704973228',
+          liquidityApiSlug: '/factory-stable-ng',
+          isStoreRateSupported: true,
+        },
+      },
+      customPools: {},
+    },
   },
 };
 

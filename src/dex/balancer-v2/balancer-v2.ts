@@ -789,7 +789,7 @@ export class BalancerV2
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return this.adapters?.[side] ? this.adapters[side] : null;
   }
 
   async getPoolIdentifiers(

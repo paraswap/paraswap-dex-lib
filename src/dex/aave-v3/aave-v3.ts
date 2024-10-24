@@ -60,7 +60,7 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side];
+    return this.adapters?.[side] ?? null;
   }
 
   async initializePricing(blockNumber: number): Promise<void> {

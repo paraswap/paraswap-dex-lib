@@ -1115,6 +1115,42 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
         },
       },
     },
+    [Network.GNOSIS]: {
+      baseTokens: {
+        '0xe91d153e0b41518a2ce8dd3d7944fa863463a97d': {
+          address: '0xe91d153e0b41518a2ce8dd3d7944fa863463a97d',
+          decimals: 18,
+          reasonableVolume: 1000000000000000000000n,
+        },
+        '0xddafbb505ad214d7b80b1f830fccc89b60fb7a83': {
+          address: '0xddafbb505ad214d7b80b1f830fccc89b60fb7a83',
+          decimals: 6,
+          reasonableVolume: 1000000000n,
+        },
+        '0x4ecaba5870353805a9f068101a40e0f32ed605c6': {
+          address: '0x4ecaba5870353805a9f068101a40e0f32ed605c6',
+          decimals: 6,
+          reasonableVolume: 1000000000n,
+        },
+      },
+      eventSupportedPools: [],
+      pools: {
+        '3pool': {
+          underlying: [],
+          coins: [
+            '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d',
+            '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',
+            '0x4ECaBa5870353805a9F068101A40E0f32ed605C6',
+          ],
+          address: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
+          name: '3pool (x3CRV)',
+          type: 1,
+          version: 3,
+          isLending: false,
+          isMetapool: false,
+        },
+      },
+    },
   },
 };
 

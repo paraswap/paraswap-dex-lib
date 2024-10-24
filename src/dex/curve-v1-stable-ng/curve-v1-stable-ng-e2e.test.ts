@@ -196,4 +196,24 @@ describe('CurveV1StableNG E2E', () => {
       sidesToContractMethods,
     );
   });
+
+  describe('Gnosis', () => {
+    const network = Network.GNOSIS;
+
+    const tokenASymbol: string = 'sDAI';
+    const tokenBSymbol: string = 'crvUSD';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      sidesToContractMethods,
+    );
+  });
 });

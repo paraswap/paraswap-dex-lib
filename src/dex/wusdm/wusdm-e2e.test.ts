@@ -163,4 +163,42 @@ describe('MountainProtocol E2E', () => {
       tokenBAmount,
     );
   });
+
+  describe('Gnosis', () => {
+    const network = Network.GNOSIS;
+
+    const tokenASymbol: string = 'sDAI';
+    const tokenBSymbol: string = 'WXDAI';
+
+    const tokenAAmount: string = '500000000000000000';
+    const tokenBAmount: string = '500000000000000000';
+
+    testForNetwork(
+      network,
+      'sDAI',
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+
+  describe('Gnosis with Native', () => {
+    const network = Network.GNOSIS;
+
+    const tokenASymbol: string = 'sDAI';
+    const tokenBSymbol: string = 'XDAI';
+
+    const tokenAAmount: string = '500000000000000000';
+    const tokenBAmount: string = '500000000000000000';
+
+    testForNetwork(
+      network,
+      'sDAI',
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
 });

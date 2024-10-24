@@ -681,7 +681,7 @@ export class UniswapV2
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side];
+    return this.adapters?.[side] ?? null;
   }
 
   async getTopPoolsForToken(

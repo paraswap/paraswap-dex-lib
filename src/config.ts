@@ -375,7 +375,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       PolygonZkEvmAdapter01: '0xd63B7691dD98fa89A2ea5e1604700489c585aa7B',
       PolygonZkEvmBuyAdapter: '0xe2137168CdA486a2555E16c597905854C84F9127',
     },
-
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
@@ -386,6 +385,35 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     forceRpcFallbackDexs: [],
     // FIXME: Not set properly
     uniswapV2ExchangeRouterAddress: '',
+  },
+  [Network.GNOSIS]: {
+    network: Network.GNOSIS,
+    networkName: 'Gnosis',
+    isTestnet: false,
+    nativeTokenName: 'xDAI',
+    nativeTokenSymbol: 'XDAI',
+    wrappedNativeTokenAddress: '0xe91d153e0b41518a2ce8dd3d7944fa863463a97d',
+    hasEIP1559: false,
+    augustusAddress: '0x0000000000000000000000000000000000000000',
+    tokenTransferProxyAddress: '0x0000000000000000000000000000000000000000',
+    multicallV2Address: '0xca11bde05977b3631167028862be2a173976ca11',
+    privateHttpProvider: process.env.HTTP_PROVIDER_100,
+    adapterAddresses: {},
+    augustusRFQAddress: '0x92EaD5bACf6F0E995FA46Ad8215A9b11f67ca241',
+    augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
+    executorsAddresses: {
+      Executor01: '0x000010036c0190e009a000d0fc3541100a07380a',
+      Executor02: '0x00c600b30fb0400701010f4b080409018b9006e0',
+      Executor03: '0xe009f00e200a090090fc70e02d70b232000c0802',
+    },
+    rpcPollingMaxAllowedStateDelayInBlocks: 0,
+    rpcPollingBlocksBackToTriggerUpdate: 0,
+    hashFlowDisabledMMs: [],
+    uniswapV3EventLoggingSampleRate: 0,
+    rfqConfigs: {},
+    forceRpcFallbackDexs: [],
+    uniswapV2ExchangeRouterAddress:
+      '0xfa39c1c670b48956eeF9fd0BbD0E81A290326330',
   },
   [Network.BASE]: {
     network: Network.BASE,
