@@ -1508,6 +1508,10 @@ export const Tokens: {
       address: '0xaf204776c7245bF4147c2612BF6e5972Ee483701',
       decimals: 18,
     },
+    crvUSD: {
+      address: '0xaBEf652195F98A91E490f047A5006B71c85f058d',
+      decimals: 18,
+    },
   },
   [Network.BASE]: {
     wstETH: {
@@ -1958,6 +1962,7 @@ export const Holders: {
     wstETH: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
     aGnowstETH: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
     sDAI: '0x79f08F2e75A8C99428DE4A2e6456c07C99E55da5',
+    crvUSD: '0xE4A982fa1f1E8AD1AF238A7b1226b13b56bf5CcD',
   },
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',

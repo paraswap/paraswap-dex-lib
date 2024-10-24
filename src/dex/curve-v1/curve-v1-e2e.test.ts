@@ -338,6 +338,75 @@ describe('CurveV1 E2E', () => {
       );
     });
   });
+
+  describe('GNOSIS', () => {
+    const network = Network.GNOSIS;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const tokensToTest = [
+      [
+        {
+          symbol: 'WXDAI',
+          amount: (10 ** 18).toString(),
+        },
+        {
+          symbol: 'USDC',
+          amount: (10 ** 6).toString(),
+        },
+      ],
+      [
+        {
+          symbol: 'WXDAI',
+          amount: (10 ** 18).toString(),
+        },
+        {
+          symbol: 'USDT',
+          amount: (10 ** 6).toString(),
+        },
+      ],
+      [
+        {
+          symbol: 'USDC',
+          amount: (10 ** 6).toString(),
+        },
+        {
+          symbol: 'USDT',
+          amount: (10 ** 6).toString(),
+        },
+      ],
+    ];
+
+    const sideToContractMethods = new Map([
+      [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    ]);
+
+    sideToContractMethods.forEach((contractMethods, side) =>
+      contractMethods.forEach((contractMethod: ContractMethod) => {
+        tokensToTest.forEach(pair => {
+          describe(`${contractMethod}`, () => {
+            it(`${pair[0].symbol} -> ${pair[1].symbol}`, async () => {
+              await testE2E(
+                tokens[pair[0].symbol],
+                tokens[pair[1].symbol],
+                holders[pair[0].symbol],
+                side === SwapSide.SELL ? pair[0].amount : pair[1].amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        });
+      }),
+    );
+  });
 });
 
 describe('Acryptos E2E', () => {
