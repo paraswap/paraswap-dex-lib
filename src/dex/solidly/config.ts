@@ -62,10 +62,10 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       initCode:
         '0xc1ac28b1c4ebe53c0cff67bab5878c4eb68759bb1e9f73977cd266b247d149f0',
       // updatable fees on the factory without event
-      stableFee: 2,
-      volatileFee: 2,
+      stableFee: 5,
+      volatileFee: 5,
       poolGasCost: 180 * 1000,
-      feeCode: 2,
+      feeCode: 5,
     },
   },
   VelodromeV2: {
