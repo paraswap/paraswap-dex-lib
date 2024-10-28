@@ -135,6 +135,7 @@ describe('FluidDex EventPool Mainnet', function () {
                   const fluidDex = new FluidDex(network, dexKey, dexHelper);
 
                   await fluidDex.initializePricing(blockNumber);
+                  console.log('hello');
 
                   const ts: TenderlySimulation = new TenderlySimulation(
                     network,
@@ -173,8 +174,6 @@ describe('FluidDex EventPool Mainnet', function () {
                   console.log(
                     `this is the dex key that i fetched from writing the for loop FluidDex_${pool}`,
                   );
-
-                  console.log('this is pool : ' + pool);
 
                   console.log(
                     'eth balance before : ' +

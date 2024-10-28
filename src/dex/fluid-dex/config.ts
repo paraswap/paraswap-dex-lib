@@ -15,7 +15,10 @@ export const FluidDexConfig: DexConfigMap<DexParams> = {
   },
 };
 
-export const FLUID_DEX_GAS_COST = 160_000;
+// Uniswap takes total gas of 125k = 21k base gas & 104k swap (this is when user has token balance)
+// Fluid takes total gas of 175k = 21k base gas & 154k swap (this is when user has token balance),
+// with ETH swaps costing less (because no WETH conversion)
+export const FLUID_DEX_GAS_COST = 154_000;
 
 export const Adapters: Record<number, AdapterMappings> = {
   [Network.MAINNET]: {
