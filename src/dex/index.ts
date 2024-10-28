@@ -58,6 +58,7 @@ import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
 import { curveV1Merge } from './curve-v1-factory/optimizer';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
+import { WUSDM } from './wusdm/wusdm';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { Infusion } from './infusion/infusion';
@@ -76,6 +77,7 @@ import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
+import { Bebop } from './bebop/bebop';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
@@ -111,6 +113,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Bebop,
   Dexalot,
   CurveV1,
   CurveFork,
@@ -154,6 +157,7 @@ const Dexes = [
   CurveV1Factory,
   CurveV1StableNg,
   WstETH,
+  WUSDM,
   Hashflow,
   Infusion,
   MaverickV1,
