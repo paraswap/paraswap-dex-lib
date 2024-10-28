@@ -216,7 +216,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
           BigInt(state.fee),
         );
       });
-
       return [
         {
           prices: prices,
@@ -453,6 +452,12 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     if (amountIn === 0n) {
       return 0n; // Return 0 if input amount is 0
     }
+    if (
+      colReserves.token0RealReserves + debtReserves.token0RealReserves == 0n &&
+      colReserves.token1RealReserves + debtReserves.token1RealReserves == 0n
+    ) {
+      return 0n;
+    }
     const amountInAdjusted =
       (((amountIn * (this.FEE_100_PERCENT - fee)) / this.FEE_100_PERCENT) *
         BigInt(10 ** 12)) /
@@ -510,19 +515,31 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       debtToken0ImaginaryReserves > BigInt(0) &&
       debtToken1ImaginaryReserves > BigInt(0);
 
+    let colReserveIn: bigint,
+      colReserveOut: bigint,
+      debtReserveIn: bigint,
+      debtReserveOut: bigint;
     let colIReserveIn: bigint,
       colIReserveOut: bigint,
       debtIReserveIn: bigint,
       debtIReserveOut: bigint;
 
     if (swap0To1) {
+      colReserveIn = token0RealReserves;
+      colReserveOut = token1RealReserves;
       colIReserveIn = token0ImaginaryReserves;
       colIReserveOut = token1ImaginaryReserves;
+      debtReserveIn = debtToken0RealReserves;
+      debtReserveOut = debtToken1RealReserves;
       debtIReserveIn = debtToken0ImaginaryReserves;
       debtIReserveOut = debtToken1ImaginaryReserves;
     } else {
+      colReserveIn = token1RealReserves;
+      colReserveOut = token0RealReserves;
       colIReserveIn = token1ImaginaryReserves;
       colIReserveOut = token0ImaginaryReserves;
+      debtReserveIn = debtToken1RealReserves;
+      debtReserveOut = debtToken0RealReserves;
       debtIReserveIn = debtToken1ImaginaryReserves;
       debtIReserveOut = debtToken0ImaginaryReserves;
     }
@@ -569,6 +586,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveIn,
         debtIReserveOut,
       );
+    }
+
+    if (amountOutDebt > debtReserveOut) {
+      return 0n;
+    }
+
+    if (amountOutCollateral > colReserveOut) {
+      return 0n;
     }
     const totalAmountOut = amountOutCollateral + amountOutDebt;
 
@@ -769,19 +794,31 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       debtToken0ImaginaryReserves > 0n &&
       debtToken1ImaginaryReserves > 0n;
 
+    let colReserveIn: bigint,
+      colReserveOut: bigint,
+      debtReserveIn: bigint,
+      debtReserveOut: bigint;
     let colIReserveIn: bigint,
       colIReserveOut: bigint,
       debtIReserveIn: bigint,
       debtIReserveOut: bigint;
 
     if (swap0to1) {
+      colReserveIn = token0RealReserves;
+      colReserveOut = token1RealReserves;
       colIReserveIn = token0ImaginaryReserves;
       colIReserveOut = token1ImaginaryReserves;
+      debtReserveIn = debtToken0RealReserves;
+      debtReserveOut = debtToken1RealReserves;
       debtIReserveIn = debtToken0ImaginaryReserves;
       debtIReserveOut = debtToken1ImaginaryReserves;
     } else {
+      colReserveIn = token1RealReserves;
+      colReserveOut = token0RealReserves;
       colIReserveIn = token1ImaginaryReserves;
       colIReserveOut = token0ImaginaryReserves;
+      debtReserveIn = debtToken1RealReserves;
+      debtReserveOut = debtToken0RealReserves;
       debtIReserveIn = debtToken1ImaginaryReserves;
       debtIReserveOut = debtToken0ImaginaryReserves;
     }
@@ -813,6 +850,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveIn,
         debtIReserveOut,
       );
+      if (amountOut > debtReserveOut) {
+        return 2n ** 64n - 1n; // BigInt max value
+      }
     } else if (a >= amountOut) {
       // Entire trade routes through collateral pool
       amountInCollateral = this.getAmountIn(
@@ -820,6 +860,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         colIReserveIn,
         colIReserveOut,
       );
+      if (amountOut > colReserveOut) {
+        return 2n ** 64n - 1n; // BigInt max value
+      }
     } else {
       // Trade routes through both pools
       amountInCollateral = this.getAmountIn(a, colIReserveIn, colIReserveOut);
@@ -828,6 +871,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveIn,
         debtIReserveOut,
       );
+      if (amountOut - a > debtReserveOut || a > debtReserveOut) {
+        return 2n ** 64n - 1n; // BigInt max value
+      }
     }
 
     const totalAmountIn = amountInCollateral + amountInDebt;
