@@ -87,7 +87,7 @@ export class WusdmEventPool extends StatefulEventSubscriber<WusdmPoolState> {
   ): Promise<DeepReadonly<WusdmPoolState>> {
     return {
       totalAssets: state.totalAssets + BigInt(event.args.assets),
-      totalShares: state.totalAssets + BigInt(event.args.assets),
+      totalShares: state.totalShares + BigInt(event.args.shares),
     };
   }
 

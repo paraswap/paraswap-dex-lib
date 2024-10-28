@@ -7,6 +7,7 @@ import {
   allowedFn,
   _balancesFn,
   _allowancesFn,
+  balanceAndBlacklistStatesFn,
   // @ts-ignore
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
@@ -1178,6 +1179,12 @@ export const Tokens: {
       address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       decimals: 6,
       symbol: 'USDC',
+      addBalance: balanceAndBlacklistStatesFn,
+      addAllowance: allowedFn,
+    },
+    SUSHI: {
+      address: '0xd4d42F0b6DEF4CE0383636770eF773390d85c61A',
+      decimals: 18,
     },
     crvUSD: {
       address: '0x498bf2b1e120fed3ad3d42ea2165e9b73f99c1e5',
@@ -1320,6 +1327,8 @@ export const Tokens: {
     WETH: {
       address: '0x4200000000000000000000000000000000000006',
       decimals: 18,
+      addBalance: balanceOfFn,
+      addAllowance: allowanceFn,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
     USDCe: {
