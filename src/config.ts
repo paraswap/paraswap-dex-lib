@@ -240,6 +240,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
     forceRpcFallbackDexs: [],
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
   },
   [Network.FANTOM]: {
     network: Network.FANTOM,
