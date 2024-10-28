@@ -12,6 +12,7 @@ import {
 } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { generateConfig } from '../../config';
+import { DummyDexHelper } from '../../dex-helper';
 
 /*
   README

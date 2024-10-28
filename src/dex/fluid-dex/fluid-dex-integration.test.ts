@@ -39,7 +39,7 @@ function getReaderCalldata(
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      '0x6d83f60eeac0e50a1250760151e81db2a278e03a',
+      '0x0b1a513ee24972daef112bc777a5610d4325c9e7',
       funcName == 'estimateSwapIn' ? true : false,
       amount,
       funcName == 'estimateSwapIn' ? 0 : 2n * amount,
@@ -64,7 +64,7 @@ async function checkOnChainPricing(
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const resolverAddress = '0x90bfebd5ac2d6787028dc8a58d0b5ee07b16e06f';
+  const resolverAddress = '0xE8a07a32489BD9d5a00f01A55749Cf5cB854Fd13';
 
   const readerIface = new Interface(ResolverABI);
 
@@ -123,7 +123,15 @@ async function testPricingOnNetwork(
     `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
     poolPrices,
   );
-
+  console.log(
+    'logged params : ',
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
+    amounts,
+    side,
+    blockNumber,
+    pools,
+  );
   expect(poolPrices).not.toBeNull();
   if (fluidDex.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
@@ -158,16 +166,16 @@ describe('FluidDex', function () {
 
     const amountsForSell = [
       0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals - 10],
     ];
 
     beforeAll(async () => {

@@ -7,8 +7,8 @@ export const FluidDexConfig: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       commonAddresses: {
         liquidityProxy: '0x52aa899454998be5b000ad077a46bbe360f4e497',
-        resolver: '0x90bfebd5ac2d6787028dc8a58d0b5ee07b16e06f',
-        dexFactory: '0xf9b539cd37fc81bbea1f078240d16b988bbae073',
+        resolver: '0xE8a07a32489BD9d5a00f01A55749Cf5cB854Fd13',
+        dexFactory: '0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085',
       },
       pools: [],
     },

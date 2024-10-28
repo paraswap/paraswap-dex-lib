@@ -62,7 +62,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
       ResolverABI,
       this.dexHelper.provider,
     );
-    const rawResult = await resolverContract.callStatic.getPoolReserves(
+    const rawResult = await resolverContract.callStatic.getPoolReservesAdjusted(
       this.pool,
       {
         blockTag: this.dexHelper.provider,
@@ -133,7 +133,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
       ResolverABI,
       this.dexHelper.provider,
     );
-    const rawResult = await resolverContract.callStatic.getPoolReserves(
+    const rawResult = await resolverContract.callStatic.getPoolReservesAdjusted(
       this.pool,
       {
         blockTag: blockNumber,
