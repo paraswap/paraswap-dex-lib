@@ -170,6 +170,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<FluidDexData>> {
     try {
+      if (srcToken.address.toLowerCase() === destToken.address.toLowerCase())
+        return null;
+
       if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
       // Get the pool to use.
       const pool = await this.getPoolByTokenPair(
