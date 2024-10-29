@@ -8,7 +8,6 @@ import {
   _balancesFn,
   _allowancesFn,
   balanceAndBlacklistStatesFn,
-  // @ts-ignore
 } from '../tests/smart-tokens';
 import { Address } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';

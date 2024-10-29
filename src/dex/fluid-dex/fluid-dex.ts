@@ -31,8 +31,6 @@ import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { generalDecoder } from '../../lib/decoders';
-// @ts-ignore
-import { Tokens } from '../../../tests/constants-e2e';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   eventPools: { [id: string]: FluidDexEventPool } = {};
@@ -285,97 +283,99 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const latestBlockNumber_ = await this.dexHelper.provider.getBlockNumber();
-    let liquidityAmounts: { [id: string]: bigint } = {};
-    for (const pool of this.pools) {
-      if (
-        pool.token0 === tokenAddress.toLowerCase() ||
-        pool.token1 === tokenAddress.toLowerCase()
-      ) {
-        const state: FluidDexPoolState = await this.eventPools[
-          pool.id
-        ].getStateOrGenerate(latestBlockNumber_, false);
+    // const latestBlockNumber_ = await this.dexHelper.provider.getBlockNumber();
+    // let liquidityAmounts: { [id: string]: bigint } = {};
+    // for (const pool of this.pools) {
+    //   if (
+    //     pool.token0 === tokenAddress.toLowerCase() ||
+    //     pool.token1 === tokenAddress.toLowerCase()
+    //   ) {
+    //     const state: FluidDexPoolState = await this.eventPools[
+    //       pool.id
+    //     ].getStateOrGenerate(latestBlockNumber_, false);
+    //
+    //     liquidityAmounts[pool.id] =
+    //       pool.token0 === tokenAddress
+    //         ? state.collateralReserves.token0RealReserves +
+    //           state.debtReserves.token0RealReserves
+    //         : state.collateralReserves.token1RealReserves +
+    //           state.debtReserves.token1RealReserves;
+    //   }
+    // }
+    //
+    // const entries = Object.entries(liquidityAmounts);
+    //
+    // // Sort the entries based on the values in descending order
+    // entries.sort((a, b) => {
+    //   if (b[1] > a[1]) return 1;
+    //   if (b[1] < a[1]) return -1;
+    //   return 0;
+    // });
+    //
+    // // Take the top k entries
+    // const topKEntries = entries.slice(0, limit);
+    //
+    // // Convert the array back to an object
+    // const sortedAmounts = Object.fromEntries(topKEntries);
+    //
+    // const poolLiquidities: PoolLiquidity[] = [];
+    //
+    // for (const [id, amount] of Object.entries(sortedAmounts)) {
+    //   const pool = this.pools.find(p => p.id === id);
+    //   if (!pool) continue; // Skip if pool not found
+    //
+    //   const state: FluidDexPoolState = await this.eventPools[
+    //     pool.id
+    //   ].getStateOrGenerate(latestBlockNumber_, false);
+    //
+    //   // let token0decimals: number;
+    //   // for (const [networkStr, symbolMapping] of Object.entries(Tokens)) {
+    //   //   let found = false;
+    //   //   for (const [symbol, tokenParams] of Object.entries(symbolMapping)) {
+    //   //     if (tokenParams.address.toLowerCase() === pool.token0.toLowerCase()) {
+    //   //       token0decimals = tokenParams.decimals;
+    //   //       found = true;
+    //   //       break;
+    //   //     }
+    //   //     if (found) break;
+    //   //   }
+    //   // }
+    //   //
+    //   // let token1decimals: number;
+    //   // for (const [networkStr, symbolMapping] of Object.entries(Tokens)) {
+    //   //   let found = false;
+    //   //   for (const [symbol, tokenParams] of Object.entries(symbolMapping)) {
+    //   //     if (tokenParams.address.toLowerCase() === pool.token1.toLowerCase()) {
+    //   //       token1decimals = tokenParams.decimals;
+    //   //       found = true;
+    //   //       break;
+    //   //     }
+    //   //     if (found) break;
+    //   //   }
+    //   // }
+    //
+    //   const usd0 = await this.dexHelper.getTokenUSDPrice(
+    //     { address: pool.token0, decimals: token0decimals! },
+    //     state.collateralReserves.token0RealReserves +
+    //       state.debtReserves.token0RealReserves,
+    //   );
+    //
+    //   const usd1 = await this.dexHelper.getTokenUSDPrice(
+    //     { address: pool.token1, decimals: token1decimals! },
+    //     state.collateralReserves.token1RealReserves +
+    //       state.debtReserves.token1RealReserves,
+    //   );
+    //
+    //   poolLiquidities.push({
+    //     exchange: 'FluidDex',
+    //     address: pool.address,
+    //     connectorTokens: [],
+    //     liquidityUSD: Number(usd0 + usd1), // converted to number
+    //   });
+    // }
+    // return poolLiquidities;
 
-        liquidityAmounts[pool.id] =
-          pool.token0 === tokenAddress
-            ? state.collateralReserves.token0RealReserves +
-              state.debtReserves.token0RealReserves
-            : state.collateralReserves.token1RealReserves +
-              state.debtReserves.token1RealReserves;
-      }
-    }
-
-    const entries = Object.entries(liquidityAmounts);
-
-    // Sort the entries based on the values in descending order
-    entries.sort((a, b) => {
-      if (b[1] > a[1]) return 1;
-      if (b[1] < a[1]) return -1;
-      return 0;
-    });
-
-    // Take the top k entries
-    const topKEntries = entries.slice(0, limit);
-
-    // Convert the array back to an object
-    const sortedAmounts = Object.fromEntries(topKEntries);
-
-    const poolLiquidities: PoolLiquidity[] = [];
-
-    for (const [id, amount] of Object.entries(sortedAmounts)) {
-      const pool = this.pools.find(p => p.id === id);
-      if (!pool) continue; // Skip if pool not found
-
-      const state: FluidDexPoolState = await this.eventPools[
-        pool.id
-      ].getStateOrGenerate(latestBlockNumber_, false);
-
-      let token0decimals: number;
-      for (const [networkStr, symbolMapping] of Object.entries(Tokens)) {
-        let found = false;
-        for (const [symbol, tokenParams] of Object.entries(symbolMapping)) {
-          if (tokenParams.address.toLowerCase() === pool.token0.toLowerCase()) {
-            token0decimals = tokenParams.decimals;
-            found = true;
-            break;
-          }
-          if (found) break;
-        }
-      }
-
-      let token1decimals: number;
-      for (const [networkStr, symbolMapping] of Object.entries(Tokens)) {
-        let found = false;
-        for (const [symbol, tokenParams] of Object.entries(symbolMapping)) {
-          if (tokenParams.address.toLowerCase() === pool.token1.toLowerCase()) {
-            token1decimals = tokenParams.decimals;
-            found = true;
-            break;
-          }
-          if (found) break;
-        }
-      }
-
-      const usd0 = await this.dexHelper.getTokenUSDPrice(
-        { address: pool.token0, decimals: token0decimals! },
-        state.collateralReserves.token0RealReserves +
-          state.debtReserves.token0RealReserves,
-      );
-
-      const usd1 = await this.dexHelper.getTokenUSDPrice(
-        { address: pool.token1, decimals: token1decimals! },
-        state.collateralReserves.token1RealReserves +
-          state.debtReserves.token1RealReserves,
-      );
-
-      poolLiquidities.push({
-        exchange: 'FluidDex',
-        address: pool.address,
-        connectorTokens: [],
-        liquidityUSD: Number(usd0 + usd1), // converted to number
-      });
-    }
-    return poolLiquidities;
+    return [];
   }
 
   async getDexParam(
