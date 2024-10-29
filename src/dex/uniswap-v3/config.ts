@@ -346,6 +346,20 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL: 'https://api.studio.thegraph.com/query/59130/v3alb/0.3',
     },
   },
+  OkuTradeV3: {
+    [Network.GNOSIS]: {
+      factory: '0xe32f7dd7e3f098d518ff19a22d5f028e076489b1',
+      quoter: '0x7E9cB3499A6cee3baBe5c8a3D328EA7FD36578f4',
+      router: '0xB5253c895361678FF5D0fFDdA81Dd02f1F7a81D6',
+      supportedFees: SUPPORTED_FEES,
+      stateMulticall: '0x35Db9Ac2ff3C5A86fde165Bd26D43d303417942E',
+      uniswapMulticall: '0x4dfa9a980efE4802E969AC33968E3d6E59B8a19e',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
+      subgraphURL: 'Dimv1udMsJu1DqirVM4G2vNRvH8CWzWTn7GffQQCGAaq',
+    },
+  },
   VelodromeSlipstream: {
     [Network.OPTIMISM]: {
       factory: '0x548118C7E0B865C2CfA94D15EC86B666468ac758',
