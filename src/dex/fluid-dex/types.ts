@@ -47,7 +47,6 @@ export type FluidDexPool = {
 
 export type DexParams = {
   commonAddresses: CommonAddresses;
-  pools: FluidDexPool[];
 };
 
 export type CommonAddresses = {

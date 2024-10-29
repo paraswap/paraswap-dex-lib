@@ -60,7 +60,6 @@ function testForNetwork(
   tokenBSymbol: string,
   tokenAAmount: string,
   tokenBAmount: string,
-  nativeTokenAmount: string,
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -79,11 +78,11 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: string) => {
           describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
-                tokens[nativeTokenSymbol],
                 tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
                 tokenBAmount,
                 SwapSide.SELL,
                 dexKey,
@@ -92,12 +91,12 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
               await testE2E(
+                tokens[tokenBSymbol],
                 tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                tokenAAmount,
+                holders[tokenBSymbol],
+                tokenBAmount,
                 SwapSide.SELL,
                 dexKey,
                 contractMethod as ContractMethod,
@@ -118,21 +117,38 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'wstETH';
-    const tokenBSymbol: string = 'ETH';
+    describe('ETH -> wstETH', () => {
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'ETH';
 
-    const tokenAAmount: string = '100000000000000';
-    const tokenBAmount: string = '100000000000000';
-    const nativeTokenAmount = '100000000000000';
+      const tokenAAmount: string = '100000000000000';
+      const tokenBAmount: string = '100000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('USDC -> USDT', () => {
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '1000000';
+      const tokenBAmount: string = '100000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
 });

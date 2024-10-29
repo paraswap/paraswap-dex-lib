@@ -10,7 +10,6 @@ export const FluidDexConfig: DexConfigMap<DexParams> = {
         resolver: '0xE8a07a32489BD9d5a00f01A55749Cf5cB854Fd13',
         dexFactory: '0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085',
       },
-      pools: [],
     },
   },
 };
