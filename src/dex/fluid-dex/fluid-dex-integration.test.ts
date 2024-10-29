@@ -208,28 +208,6 @@ describe('FluidDex', function () {
           'estimateSwapIn',
         );
       });
-
-      it.skip('getTopPoolsForToken', async function () {
-        // We have to check without calling initializePricing, because
-        // pool-tracker is not calling that function
-        const newFluidDex = new FluidDex(network, dexKey, dexHelper);
-        await newFluidDex.initializePricing(blockNumber);
-        if (newFluidDex.updatePoolState) {
-          await newFluidDex.updatePoolState();
-        }
-        const poolLiquidity = await newFluidDex.getTopPoolsForToken(
-          tokens[tokenASymbol].address,
-          1,
-        );
-
-        if (!newFluidDex.hasConstantPriceLargeAmounts) {
-          checkPoolsLiquidity(
-            poolLiquidity,
-            Tokens[network][tokenASymbol].address,
-            dexKey,
-          );
-        }
-      });
     });
 
     describe('USDC -> USDT', () => {
@@ -276,28 +254,6 @@ describe('FluidDex', function () {
           amountsForSell,
           'estimateSwapIn',
         );
-      });
-
-      it.skip('getTopPoolsForToken', async function () {
-        // We have to check without calling initializePricing, because
-        // pool-tracker is not calling that function
-        const newFluidDex = new FluidDex(network, dexKey, dexHelper);
-        await newFluidDex.initializePricing(blockNumber);
-        if (newFluidDex.updatePoolState) {
-          await newFluidDex.updatePoolState();
-        }
-        const poolLiquidity = await newFluidDex.getTopPoolsForToken(
-          tokens[tokenASymbol].address,
-          1,
-        );
-
-        if (!newFluidDex.hasConstantPriceLargeAmounts) {
-          checkPoolsLiquidity(
-            poolLiquidity,
-            Tokens[network][tokenASymbol].address,
-            dexKey,
-          );
-        }
       });
     });
   });

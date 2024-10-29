@@ -26,7 +26,7 @@ import { SimpleExchange } from '../simple-exchange';
 import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
 import { FluidDexConfig, FLUID_DEX_GAS_COST } from './config';
 import { FluidDexEventPool } from './fluid-dex-pool';
-import { FluidDexCommonAddresses } from './fluid-dex-generate-pool';
+import { FluidDexFactory } from './fluid-dex-factory';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { MultiResult } from '../../lib/multi-wrapper';
@@ -44,7 +44,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   pools: FluidDexPool[] = [];
 
-  readonly fluidCommonAddresses: FluidDexCommonAddresses;
+  readonly factory: FluidDexFactory;
 
   readonly fluidDexPoolIface: Interface;
 
@@ -57,7 +57,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.fluidCommonAddresses = new FluidDexCommonAddresses(
+    this.factory = new FluidDexFactory(
       'FluidDex',
       FluidDexConfig['FluidDex'][network].commonAddresses,
       network,
@@ -70,8 +70,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   private async fetchFluidDexPools(
     blockNumber: number,
   ): Promise<FluidDexPool[]> {
-    const poolsFromResolver =
-      await this.fluidCommonAddresses.getStateOrGenerate(blockNumber, false);
+    const poolsFromResolver = await this.factory.getStateOrGenerate(
+      blockNumber,
+      false,
+    );
     return poolsFromResolver.map(pool => ({
       id: `FluidDex_${pool.address.toLowerCase()}`,
       address: pool.address.toLowerCase(),
@@ -85,19 +87,27 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
+    await this.factory.initialize(blockNumber);
     this.pools = await this.fetchFluidDexPools(blockNumber);
+
     for (const pool of this.pools) {
       if (!this.eventPools[pool.id]) {
         this.eventPools[pool.id] = new FluidDexEventPool(
           'FluidDex',
           pool.address,
-          this.fluidCommonAddresses.commonAddresses,
+          this.factory.commonAddresses,
           this.network,
           this.dexHelper,
           this.logger,
         );
       }
     }
+
+    await Promise.all(
+      Object.values(this.eventPools).map(async eventPool => {
+        return eventPool.initialize(blockNumber);
+      }),
+    );
   }
 
   getAdapters(side: SwapSide) {
@@ -192,7 +202,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         return null;
       }
 
-      const state = await eventPool.getStateOrGenerate(blockNumber);
+      const state = await eventPool.getState(blockNumber);
+      if (!state) return null;
 
       const prices = amounts.map(amount => {
         return this.swapIn(
@@ -262,15 +273,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       payload,
       networkFee: '0',
     };
-  }
-
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {
-    this.initializePricing(await this.dexHelper.provider.getBlockNumber());
   }
 
   // Returns list of top pools based on liquidity. Max

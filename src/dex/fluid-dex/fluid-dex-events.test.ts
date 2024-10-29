@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { FluidDexEventPool } from './fluid-dex-pool';
-import { FluidDexCommonAddresses } from './fluid-dex-generate-pool';
+import { FluidDexFactory } from './fluid-dex-factory';
 import { FluidDex } from './fluid-dex';
 import { Network } from '../../constants';
 import { Address } from '../../types';
@@ -57,10 +57,10 @@ async function fetchPoolState(
 }
 
 async function fetchTotalPools(
-  fluidCommonAddresses: FluidDexCommonAddresses,
+  factory: FluidDexFactory,
   blockNumber: number,
 ): Promise<DeepReadonly<Pool[]>> {
-  return await fluidCommonAddresses.generateState(blockNumber);
+  return await factory.generateState(blockNumber);
 }
 
 async function delay(seconds: number): Promise<void> {
@@ -122,7 +122,7 @@ describe('FluidDex EventPool Mainnet', function () {
   };
 
   let fluidDexEventPool: FluidDexEventPool;
-  let fluidDexCommonAddress: FluidDexCommonAddresses;
+  let factory: FluidDexFactory;
 
   Object.entries(poolUpdateEventsToTest).forEach(
     ([poolAddress, events]: [string, EventMappings]) => {
@@ -150,8 +150,7 @@ describe('FluidDex EventPool Mainnet', function () {
 
                   console.log(forkId);
 
-                  const pools =
-                    fluidDex.fluidCommonAddresses.getState(blockNumber);
+                  const pools = fluidDex.factory.getState(blockNumber);
                   let pool: string | undefined;
 
                   if (pools) {
@@ -266,7 +265,7 @@ describe('FluidDex EventPool Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
-                  fluidDexCommonAddress = new FluidDexCommonAddresses(
+                  factory = new FluidDexFactory(
                     'FluidDex',
                     fluidDexCommonAddressStruct,
                     network,
@@ -275,10 +274,10 @@ describe('FluidDex EventPool Mainnet', function () {
                   );
 
                   await testEventSubscriber(
-                    fluidDexCommonAddress,
-                    fluidDexCommonAddress.addressesSubscribed,
+                    factory,
+                    factory.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchTotalPools(fluidDexCommonAddress, _blockNumber),
+                      fetchTotalPools(factory, _blockNumber),
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,

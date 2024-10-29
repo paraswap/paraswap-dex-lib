@@ -13,7 +13,7 @@ import { Address } from '../../types';
 import { generalDecoder } from '../../lib/decoders';
 import { Contract } from 'ethers';
 
-export class FluidDexCommonAddresses extends StatefulEventSubscriber<Pool[]> {
+export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
   handlers: {
     [event: string]: (
       event: any,
