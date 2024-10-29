@@ -70,7 +70,9 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  const sideToContractMethods = new Map([[SwapSide.SELL, ['swapIn']]]);
+  const sideToContractMethods = new Map([
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+  ]);
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>

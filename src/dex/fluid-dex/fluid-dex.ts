@@ -24,7 +24,7 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
-import { FluidDexConfig, Adapters, FLUID_DEX_GAS_COST } from './config';
+import { FluidDexConfig, FLUID_DEX_GAS_COST } from './config';
 import { FluidDexEventPool } from './fluid-dex-pool';
 import { FluidDexCommonAddresses } from './fluid-dex-generate-pool';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
@@ -50,8 +50,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   readonly fluidDexPoolIface: Interface;
 
-  protected adapters;
-
   FEE_100_PERCENT = BigInt(1000000);
 
   constructor(
@@ -69,7 +67,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       this.logger,
     );
     this.pools = FluidDexConfig['FluidDex'][network].pools;
-    this.adapters = Adapters[network] || {};
     this.fluidDexPoolIface = new Interface(FluidDexPoolABI);
   }
 
@@ -110,10 +107,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     await this.updatePoolAndEventPool(blockNumber);
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
-  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+  getAdapters(side: SwapSide) {
+    return null;
   }
 
   decodePools = (result: MultiResult<BytesLike> | BytesLike): Pool[] => {
