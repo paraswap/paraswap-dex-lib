@@ -32,6 +32,7 @@ import { extractReturnAmountPosition } from '../../executor/utils';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { generalDecoder } from '../../lib/decoders';
 import { BigNumber } from 'ethers';
+import { sqrt } from './utils';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   eventPools: { [id: string]: FluidDexEventPool } = {};
@@ -610,18 +611,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ): bigint {
     // Adding 1e18 precision
 
-    const xyRoot = BigInt(Math.floor(Math.sqrt(Number(x * y * BigInt(1e18)))));
-    const x2y2Root = BigInt(
-      Math.floor(Math.sqrt(Number(x2 * y2 * BigInt(1e18)))),
-    );
+    const xyRoot = sqrt(BigNumber.from(x).mul(y).mul(BigInt(1e18))).toBigInt();
+    const x2y2Root = sqrt(
+      BigNumber.from(x2).mul(y2).mul(BigInt(1e18)),
+    ).toBigInt();
 
     // Calculating 'a' using the given formula
-    const a =
-      (Number(y2) * Number(xyRoot) +
-        Number(t) * Number(xyRoot) -
-        Number(y) * Number(x2y2Root)) /
-      (Number(xyRoot) + Number(x2y2Root));
-    return BigInt(Math.floor(a));
+    const a = (y2 * xyRoot + t * xyRoot - y * x2y2Root) / (xyRoot + x2y2Root);
+    return a;
   }
 
   /**
