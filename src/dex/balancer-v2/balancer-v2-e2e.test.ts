@@ -1444,256 +1444,28 @@ describe('BalancerV2 E2E', () => {
     );
   });
 
-  // describe('BeetsFi OPTIMISM', () => {
-  //   const dexKey = 'BeetsFi';
-  //   const network = Network.OPTIMISM;
-  //   const tokens = Tokens[network];
-  //   const holders = Holders[network];
-  //   const provider = new StaticJsonRpcProvider(
-  //     generateConfig(network).privateHttpProvider,
-  //     network,
-  //   );
-  //   const BBAUSD_OP = '0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd';
-  //   const BBAUSDMAI_OP = '0x1f131ec1175f023ee1534b16fa8ab237c00e2381';
-  //   const LIDO_SHUFFLE = '0xde45f101250f2ca1c0f8adfc172576d10c12072d';
-  //   const YELLOW_SUBMARINE = '0x981fb05b738e981ac532a99e77170ecb4bc27aef';
+  describe('BalancerV2_GNOSIS', () => {
+    const dexKey = 'BalancerV2';
+    const network = Network.GNOSIS;
 
-  //   describe('Simpleswap', () => {
-  //     it('ETH -> TOKEN', async () => {
-  //       await testE2E(
-  //         tokens['ETH'],
-  //         tokens['USDC'],
-  //         holders['ETH'],
-  //         '7000000000000000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //       );
-  //     });
-  //     it('TOKEN -> ETH', async () => {
-  //       await testE2E(
-  //         tokens['USDC'],
-  //         tokens['ETH'],
-  //         holders['USDC'],
-  //         '2000000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //       );
-  //     });
-  //     it('TOKEN -> TOKEN', async () => {
-  //       await testE2E(
-  //         tokens['USDC'],
-  //         tokens['WETH'],
-  //         holders['USDC'],
-  //         '20000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //       );
-  //     });
-  //     it('USDC -> DAI using bbaUSD', async () => {
-  //       await testE2E(
-  //         tokens['USDC'],
-  //         tokens['DAI'],
-  //         holders['USDC'],
-  //         '20000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${BBAUSD_OP}`],
-  //       );
-  //     });
-  //     it('DAI -> USDT using bbaUSD', async () => {
-  //       await testE2E(
-  //         tokens['DAI'],
-  //         tokens['USDT'],
-  //         holders['DAI'],
-  //         '1000000000000000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${BBAUSD_OP}`],
-  //       );
-  //     });
-  //     it('USDC -> MAI through bbaUSD-MAI', async () => {
-  //       await testE2E(
-  //         tokens['USDC'],
-  //         tokens['MAI'],
-  //         holders['USDC'],
-  //         '20000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${BBAUSDMAI_OP}`],
-  //       );
-  //     });
-  //     it('wstETH -> WETH through composable stable', async () => {
-  //       await testE2E(
-  //         tokens['wstETH'],
-  //         tokens['WETH'],
-  //         holders['wstETH'],
-  //         '10000000000000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${LIDO_SHUFFLE}`],
-  //       );
-  //     });
-  //     it('wstETH -> ETH through composable stable', async () => {
-  //       await testE2E(
-  //         tokens['wstETH'],
-  //         tokens['ETH'],
-  //         holders['wstETH'],
-  //         '10000000000000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${LIDO_SHUFFLE}`],
-  //       );
-  //     });
-  //     it('ETH -> wstETH through composable stable', async () => {
-  //       await testE2E(
-  //         tokens['ETH'],
-  //         tokens['wstETH'],
-  //         holders['ETH'],
-  //         '10000000000000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${LIDO_SHUFFLE}`],
-  //       );
-  //     });
-  //     it('wstETH -> WBTC through boosted weighted', async () => {
-  //       await testE2E(
-  //         tokens['wstETH'],
-  //         tokens['WBTC'],
-  //         holders['wstETH'],
-  //         '25000000000000000', //1e18
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${YELLOW_SUBMARINE}`],
-  //       );
-  //     });
-  //     it('USDC -> WBTC through boosted weighted', async () => {
-  //       await testE2E(
-  //         tokens['USDC'],
-  //         tokens['WBTC'],
-  //         holders['USDC'],
-  //         '1000000', //1e6
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${YELLOW_SUBMARINE}`],
-  //       );
-  //     });
-  //     it('wstETH -> USDC  through boosted weighted', async () => {
-  //       await testE2E(
-  //         tokens['wstETH'],
-  //         tokens['USDC'],
-  //         holders['wstETH'],
-  //         '1000000000000000000', //1e18
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.simpleSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${YELLOW_SUBMARINE}`],
-  //       );
-  //     });
-  //   });
+    testForNetwork(
+      network,
+      dexKey,
+      'USDC',
+      'USDT',
+      '11110010',
+      '21000000',
+      '100000000000000000',
+    );
 
-  //   describe('Multiswap', () => {
-  //     it('ETH -> TOKEN', async () => {
-  //       await testE2E(
-  //         tokens['ETH'],
-  //         tokens['USDC'],
-  //         holders['ETH'],
-  //         '7000000000000000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.multiSwap,
-  //         network,
-  //         provider,
-  //       );
-  //     });
-  //     it('TOKEN -> ETH', async () => {
-  //       await testE2E(
-  //         tokens['USDC'],
-  //         tokens['ETH'],
-  //         holders['USDC'],
-  //         '2000000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.multiSwap,
-  //         network,
-  //         provider,
-  //       );
-  //     });
-  //     it('TOKEN -> TOKEN', async () => {
-  //       await testE2E(
-  //         tokens['USDC'],
-  //         tokens['WETH'],
-  //         holders['USDC'],
-  //         '20000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.multiSwap,
-  //         network,
-  //         provider,
-  //       );
-  //     });
-  //     it('USDC -> DAI using bbaUSD', async () => {
-  //       await testE2E(
-  //         tokens['USDC'],
-  //         tokens['DAI'],
-  //         holders['USDC'],
-  //         '20000000',
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.multiSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${BBAUSD_OP}`],
-  //       );
-  //     });
-  //     it('wstETH -> USDC  through boosted weighted', async () => {
-  //       await testE2E(
-  //         tokens['wstETH'],
-  //         tokens['USDC'],
-  //         holders['wstETH'],
-  //         '1000000000000000000', //1e18
-  //         SwapSide.SELL,
-  //         dexKey,
-  //         ContractMethod.multiSwap,
-  //         network,
-  //         provider,
-  //         [`${dexKey}_${YELLOW_SUBMARINE}`],
-  //       );
-  //     });
-  //   });
-  // });
+    testForNetwork(
+      network,
+      dexKey,
+      'WETH',
+      'WXDAI',
+      '1000000000000000000',
+      '1000000000000000000',
+      '1000000000000000000',
+    );
+  });
 });

@@ -7,7 +7,7 @@ import {
   AaveV3BNB,
   AaveV3Base,
   AaveV3Ethereum,
-  // AaveV3Gnosis,
+  AaveV3Gnosis,
   // AaveV3Metis,
   AaveV3Optimism,
   AaveV3Polygon,
@@ -37,9 +37,9 @@ export const AaveV3StataConfig: DexConfigMap<DexParams> = {
     [Network.BSC]: {
       factoryAddress: AaveV3BNB.STATIC_A_TOKEN_FACTORY,
     },
-    // [Network.Gnosis]: {
-    //   factoryAddress: AaveV3Gnosis.STATIC_A_TOKEN_FACTORY,
-    // },
+    [Network.GNOSIS]: {
+      factoryAddress: AaveV3Gnosis.STATIC_A_TOKEN_FACTORY,
+    },
     // [Network.Scroll]: {
     //   factoryAddress: AaveV3Scroll.STATIC_A_TOKEN_FACTORY,
     // },

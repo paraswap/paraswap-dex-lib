@@ -115,6 +115,7 @@ export class UniswapV3
         'BaseswapV3',
         'PharaohV2',
         'AlienBaseV3',
+        'OkuTradeV3',
       ]),
     );
 
