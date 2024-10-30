@@ -31,6 +31,7 @@ import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { generalDecoder } from '../../lib/decoders';
+import { BigNumber } from 'ethers';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   eventPools: { [id: string]: FluidDexEventPool } = {};
@@ -360,15 +361,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       return 0n;
     }
     const amountInAdjusted =
-      (((amountIn * (this.FEE_100_PERCENT - fee)) / this.FEE_100_PERCENT) *
-        BigInt(10 ** 12)) /
-      BigInt(10 ** inDecimals);
+      (amountIn * BigInt(10 ** 12)) / BigInt(10 ** inDecimals);
 
     const amountOut = this.swapInAdjusted(
       swap0To1,
       amountInAdjusted, // Convert back to number for internal calculations
       colReserves,
       debtReserves,
+      fee,
     );
     const result = (amountOut * BigInt(10 ** outDecimals)) / BigInt(10 ** 12);
     return result;
@@ -387,6 +387,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     amountToSwap: bigint,
     colReserves: CollateralReserves,
     debtReserves: DebtReserves,
+    fee: bigint,
   ): bigint {
     const {
       token0RealReserves,
@@ -468,22 +469,26 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     if (a <= BigInt(0)) {
       // Entire trade routes through debt pool
       amountOutDebt = this.getAmountOut(
-        amountToSwap,
+        this.applyFee(amountToSwap, fee),
         debtIReserveIn,
         debtIReserveOut,
       );
     } else if (a >= amountToSwap) {
       // Entire trade routes through collateral pool
       amountOutCollateral = this.getAmountOut(
-        amountToSwap,
+        this.applyFee(amountToSwap, fee),
         colIReserveIn,
         colIReserveOut,
       );
     } else {
       // Trade routes through both pools
-      amountOutCollateral = this.getAmountOut(a, colIReserveIn, colIReserveOut);
+      amountOutCollateral = this.getAmountOut(
+        this.applyFee(a, fee),
+        colIReserveIn,
+        colIReserveOut,
+      );
       amountOutDebt = this.getAmountOut(
-        amountToSwap - a,
+        this.applyFee(amountToSwap - a, fee),
         debtIReserveIn,
         debtIReserveOut,
       );
@@ -499,6 +504,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     const totalAmountOut = amountOutCollateral + amountOutDebt;
 
     return totalAmountOut;
+  }
+
+  applyFee(amount: bigint, fee: bigint): bigint {
+    return (amount * (this.FEE_100_PERCENT - fee)) / this.FEE_100_PERCENT;
   }
 
   /**
