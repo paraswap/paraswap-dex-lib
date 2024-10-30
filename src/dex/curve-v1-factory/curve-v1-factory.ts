@@ -605,7 +605,8 @@ export class CurveV1Factory
           const allResultsFromFactory = (
             await this.dexHelper.multiWrapper.tryAggregate<
               string[] | number[] | string
-            >(true, callDataFromFactoryPools)
+              // decrease batch size to 450 to avoid 'out-of-limit' error on gnosis
+            >(true, callDataFromFactoryPools, undefined, 450)
           ).map(r => r.returnData);
 
           const resultsFromFactory = allResultsFromFactory.slice(

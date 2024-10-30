@@ -38,6 +38,7 @@ export class WUSDM
 {
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;
+  readonly needWrapNative: boolean = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(WUSDMConfig);
@@ -89,7 +90,10 @@ export class WUSDM
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    return this.isAppropriatePair(srcToken, destToken)
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
+
+    return this.isAppropriatePair(_srcToken, _destToken)
       ? [`${this.dexKey}_${this.wUSDMAddress}`]
       : [];
   }
@@ -121,13 +125,16 @@ export class WUSDM
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<WUSDMData>> {
-    if (!this.isAppropriatePair(srcToken, destToken)) return null;
+    const _srcToken = this.dexHelper.config.wrapETH(srcToken);
+    const _destToken = this.dexHelper.config.wrapETH(destToken);
+
+    if (!this.isAppropriatePair(_srcToken, _destToken)) return null;
     const state = this.eventPool.getState(blockNumber);
     if (!state) return null;
 
-    const isSrcAsset = this.isUSDM(srcToken.address);
+    const isSrcAsset = this.isUSDM(_srcToken.address);
 
-    const isWrap = this.isWrap(srcToken, destToken, side);
+    const isWrap = this.isWrap(_srcToken, _destToken, side);
 
     let calcFunction: Function;
 

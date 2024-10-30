@@ -1364,4 +1364,28 @@ describe('UniswapV3 E2E', () => {
       });
     });
   });
+
+  describe('OkuTradeV3 E2E', () => {
+    const dexKey = 'OkuTradeV3';
+    describe('Gnosis', () => {
+      const network = Network.GNOSIS;
+
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'sDAI';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+      );
+    });
+  });
 });
