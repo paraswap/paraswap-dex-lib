@@ -14,6 +14,8 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
+import { Contract } from 'ethers';
+import { Pool } from './types';
 
 /*
   README
@@ -36,12 +38,18 @@ function getReaderCalldata(
   poolAddress: string,
   amounts: bigint[],
   funcName: string,
+  pools: { address: string; token0: string; token1: string }[],
+  srcToken: string,
 ) {
+  const pool = pools.find(
+    item => item.address.toLowerCase() === poolAddress.toLowerCase(),
+  );
+
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
       poolAddress,
-      funcName == 'estimateSwapIn' ? true : false,
+      pool!.token0.toLowerCase() === srcToken.toLowerCase() ? true : false,
       amount,
       funcName == 'estimateSwapIn' ? 0 : 2n * amount,
     ]),
@@ -65,10 +73,27 @@ async function checkOnChainPricing(
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  dexHelper: DummyDexHelper,
+  srcToken: string,
 ) {
   const resolverAddress = '0xE8a07a32489BD9d5a00f01A55749Cf5cB854Fd13';
 
   const readerIface = new Interface(ResolverABI);
+
+  const resolverContract = new Contract(
+    resolverAddress,
+    ResolverABI,
+    dexHelper.provider,
+  );
+  const rawResult = await resolverContract.callStatic.getAllPools({
+    blockTag: blockNumber,
+  });
+
+  const pools: Pool[] = rawResult.map((result: any) => ({
+    address: result[0],
+    token0: result[1],
+    token1: result[2],
+  }));
 
   const readerCallData = getReaderCalldata(
     resolverAddress,
@@ -76,6 +101,8 @@ async function checkOnChainPricing(
     poolAddress,
     amounts.slice(1),
     funcName,
+    pools,
+    srcToken,
   );
 
   const readerResult = (
@@ -101,6 +128,7 @@ async function testPricingOnNetwork(
   side: SwapSide,
   amounts: bigint[],
   funcNameToCheck: string,
+  dexHelper: DummyDexHelper,
 ) {
   const networkTokens = Tokens[network];
 
@@ -148,6 +176,8 @@ async function testPricingOnNetwork(
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    dexHelper,
+    networkTokens[srcTokenSymbol].address,
   );
 }
 
@@ -197,6 +227,7 @@ describe('FluidDex', function () {
           SwapSide.SELL,
           amountsForSell,
           'estimateSwapIn',
+          dexHelper,
         );
       });
 
@@ -211,6 +242,7 @@ describe('FluidDex', function () {
           SwapSide.SELL,
           amountsForSell,
           'estimateSwapIn',
+          dexHelper,
         );
       });
     });
@@ -244,6 +276,7 @@ describe('FluidDex', function () {
           SwapSide.SELL,
           amountsForSell,
           'estimateSwapIn',
+          dexHelper,
         );
       });
 
@@ -258,6 +291,7 @@ describe('FluidDex', function () {
           SwapSide.SELL,
           amountsForSell,
           'estimateSwapIn',
+          dexHelper,
         );
       });
     });
