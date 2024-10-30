@@ -139,6 +139,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+
     const pool = await this.getPoolByTokenPair(
       srcToken.address,
       destToken.address,
@@ -183,7 +185,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       if (srcToken.address.toLowerCase() === destToken.address.toLowerCase())
         return null;
 
-      if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+      if (side === SwapSide.BUY) return null;
       // Get the pool to use.
       const pool = await this.getPoolByTokenPair(
         srcToken.address,

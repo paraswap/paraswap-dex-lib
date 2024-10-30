@@ -33,13 +33,14 @@ import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
+  poolAddress: string,
   amounts: bigint[],
   funcName: string,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      '0x0b1a513ee24972daef112bc777a5610d4325c9e7',
+      poolAddress,
       funcName == 'estimateSwapIn' ? true : false,
       amount,
       funcName == 'estimateSwapIn' ? 0 : 2n * amount,
@@ -60,6 +61,7 @@ function decodeReaderResult(
 async function checkOnChainPricing(
   fluidDex: FluidDex,
   funcName: string,
+  poolAddress: string,
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
@@ -71,9 +73,11 @@ async function checkOnChainPricing(
   const readerCallData = getReaderCalldata(
     resolverAddress,
     readerIface,
+    poolAddress,
     amounts.slice(1),
     funcName,
   );
+
   const readerResult = (
     await fluidDex.dexHelper.multiContract.methods
       .aggregate(readerCallData)
@@ -83,6 +87,8 @@ async function checkOnChainPricing(
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
+
+  expect(prices).toEqual(expectedPrices);
 }
 
 async function testPricingOnNetwork(
@@ -138,6 +144,7 @@ async function testPricingOnNetwork(
   await checkOnChainPricing(
     fluidDex,
     funcNameToCheck,
+    poolPrices![0].poolAddresses![0],
     blockNumber,
     poolPrices![0].prices,
     amounts,
@@ -153,8 +160,6 @@ describe('FluidDex', function () {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
-    const tokens = Tokens[network];
-
     beforeAll(async () => {
       blockNumber = await dexHelper.provider.getBlockNumber();
       fluidDex = new FluidDex(network, dexKey, dexHelper);
@@ -169,16 +174,16 @@ describe('FluidDex', function () {
 
       const amountsForSell = [
         0n,
-        1n * BI_POWS[8],
-        2n * BI_POWS[8],
-        3n * BI_POWS[8],
-        4n * BI_POWS[8],
-        5n * BI_POWS[8],
-        6n * BI_POWS[8],
-        7n * BI_POWS[8],
-        8n * BI_POWS[8],
-        9n * BI_POWS[8],
-        10n * BI_POWS[8],
+        1n * BI_POWS[18],
+        2n * BI_POWS[18],
+        3n * BI_POWS[18],
+        4n * BI_POWS[18],
+        5n * BI_POWS[18],
+        6n * BI_POWS[18],
+        7n * BI_POWS[18],
+        8n * BI_POWS[18],
+        9n * BI_POWS[18],
+        10n * BI_POWS[18],
       ];
 
       it('wstETH -> ETH, getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -216,16 +221,16 @@ describe('FluidDex', function () {
 
       const amountsForSell = [
         0n,
-        1n * BI_POWS[6],
-        2n * BI_POWS[6],
-        3n * BI_POWS[6],
-        4n * BI_POWS[6],
-        5n * BI_POWS[6],
-        6n * BI_POWS[6],
-        7n * BI_POWS[6],
-        8n * BI_POWS[6],
-        9n * BI_POWS[6],
         10n * BI_POWS[6],
+        20n * BI_POWS[6],
+        30n * BI_POWS[6],
+        40n * BI_POWS[6],
+        50n * BI_POWS[6],
+        60n * BI_POWS[6],
+        70n * BI_POWS[6],
+        80n * BI_POWS[6],
+        90n * BI_POWS[6],
+        100n * BI_POWS[6],
       ];
 
       it('USDC -> USDT getPoolIdentifiers and getPricesVolume SELL', async function () {
