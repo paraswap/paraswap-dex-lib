@@ -86,6 +86,7 @@ import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 import { OSwap } from './oswap/oswap';
+import { FluidDex } from './fluid-dex/fluid-dex';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
@@ -181,6 +182,7 @@ const Dexes = [
   UsualBond,
   StkGHO,
   SkyConverter,
+  FluidDex,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
