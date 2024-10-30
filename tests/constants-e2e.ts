@@ -546,6 +546,10 @@ export const Tokens: {
       decimals: 18,
       symbol: 'USD0++',
     },
+    ynETH: {
+      address: '0x14dc3d915107dca9ed39e29e14fbdfe4358a1346',
+      decimals: 18,
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
