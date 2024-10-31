@@ -22,36 +22,60 @@ export type RequestInfoWithHandler<T> = {
 
 export class WebSocketFetcher<T> {
   private requests: RequestInfoWithHandler<T>;
+  // Time to wait before declaring connection as broken and restarting it
+  private timeoutInterval: number;
+  // Time to wait after disconnection before reconnecting
+  private reconnectDelay: number;
+  private pingTimeout: NodeJS.Timeout | undefined = undefined;
   public lastFetchSucceeded: boolean = false;
   private stop: boolean = true;
   private connection: WebSocket | null = null;
 
-  constructor(requestsInfo: RequestInfoWithHandler<T>, private logger: Logger) {
+  constructor(
+    requestsInfo: RequestInfoWithHandler<T>,
+    private logger: Logger,
+    timeoutInterval: number = 10000,
+    reconnectDelay: number = 5000,
+  ) {
     this.requests = requestsInfo;
+    this.timeoutInterval = timeoutInterval;
+    this.reconnectDelay = reconnectDelay;
   }
 
   private connected() {
     this.logger.info(`Connected to ${this.requests.info.requestOptions.url}`);
+    this.heartbeat();
+  }
+
+  private heartbeat() {
+    clearTimeout(this.pingTimeout);
+    this.pingTimeout = setTimeout(() => {
+      this.logger.warn('No heartbeat. Terminating Connection...');
+      this?.connection?.terminate();
+    }, this.timeoutInterval);
   }
 
   private onClose() {
+    this.logger.info(`Connection closed.`);
     // Do not reconnect if polling is stopped
-    if (this.stop) return;
+    if (this.stop) {
+      clearTimeout(this.pingTimeout);
+      return;
+    }
 
-    this.logger.info(`Connection closed. Reconnecting...`);
-    // reconnect on errors / failures
-    setTimeout(() => {
-      this.startPolling();
-    }, 3000);
+    this.logger.info(`Unexpected closure, Reconnecting...`);
+    this.reconnectWithDelay();
   }
 
   private onError(error: any) {
     this.logger.error(
       `Websocket Error: ${error.toString()}. Stopping & Reconnecting...`,
     );
+    this?.connection?.terminate();
   }
 
   private onMessage(data: WebSocket.RawData) {
+    this.heartbeat();
     const reqInfo = this.requests;
     const info = reqInfo.info;
     const options = reqInfo.info.requestOptions;
@@ -99,19 +123,30 @@ export class WebSocketFetcher<T> {
     this.connection = ws;
   }
 
-  startPolling(): void {
-    this.stop = false;
+  reconnectWithDelay() {
+    this.logger.info(`Waiting ${this.reconnectDelay}ms before reconnecting...`);
+    clearTimeout(this.pingTimeout);
+    setTimeout(() => {
+      this.reconnect();
+    }, this.reconnectDelay);
+  }
+
+  reconnect() {
+    clearTimeout(this.pingTimeout);
     this.connect();
     this.logger.info(
       `Connection started for ${this.requests.info.requestOptions.url}`,
     );
   }
 
+  startPolling(): void {
+    this.stop = false;
+    this.reconnect();
+  }
+
   stopPolling() {
     this.stop = true;
-    if (this.connection) {
-      this.connection.close();
-    }
+    this.connection?.terminate();
     this.logger.info(
       `Connection stopped for ${this.requests.info.requestOptions.url}`,
     );
