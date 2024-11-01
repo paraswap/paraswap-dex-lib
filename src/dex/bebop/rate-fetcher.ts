@@ -59,27 +59,7 @@ export class RateFetcher {
             const updateObject = BebopPricingUpdate.toObject(update, {
               longs: Number,
             });
-            const pricingResponse: BebopPricingResponse = {};
-            for (const pairBook of updateObject.pairs) {
-              const pair =
-                utils.getAddress('0x' + pairBook.base.toString('hex')) +
-                '/' +
-                utils.getAddress('0x' + pairBook.quote.toString('hex'));
-              const lastUpdateTs = pairBook.lastUpdateTs;
-              const bids = pairBook.bids
-                ? levels_from_flat_array(pairBook.bids)
-                : [];
-              const asks = pairBook.asks
-                ? levels_from_flat_array(pairBook.asks)
-                : [];
-              const bebopPair: BebopPair = {
-                bids,
-                asks,
-                last_update_ts: lastUpdateTs,
-              };
-              pricingResponse[pair] = bebopPair;
-            }
-            return pricingResponse;
+            return this.parsePricingUpdate(updateObject);
           },
         },
         handler: this.handlePricesResponse.bind(this),
@@ -107,6 +87,30 @@ export class RateFetcher {
       config.rateConfig.tokensIntervalMs,
       logger,
     );
+  }
+
+  parsePricingUpdate(updateObject: any): BebopPricingResponse {
+    const pricingResponse: BebopPricingResponse = {};
+    if (!updateObject.pairs || !updateObject.pairs.length) {
+      this.logger.warn('Update message did not include pairs', updateObject);
+      return pricingResponse;
+    }
+    for (const pairBook of updateObject.pairs) {
+      const pair =
+        utils.getAddress('0x' + pairBook.base.toString('hex')) +
+        '/' +
+        utils.getAddress('0x' + pairBook.quote.toString('hex'));
+      const lastUpdateTs = pairBook.lastUpdateTs;
+      const bids = pairBook.bids ? levels_from_flat_array(pairBook.bids) : [];
+      const asks = pairBook.asks ? levels_from_flat_array(pairBook.asks) : [];
+      const bebopPair: BebopPair = {
+        bids,
+        asks,
+        last_update_ts: lastUpdateTs,
+      };
+      pricingResponse[pair] = bebopPair;
+    }
+    return pricingResponse;
   }
 
   start() {
