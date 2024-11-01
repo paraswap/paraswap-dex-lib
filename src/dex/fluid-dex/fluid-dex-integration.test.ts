@@ -263,6 +263,7 @@ describe('FluidDex', function () {
         80n * BI_POWS[6],
         90n * BI_POWS[6],
         100n * BI_POWS[6],
+        1000000n * BI_POWS[6],
       ];
 
       it('USDC -> USDT getPoolIdentifiers and getPricesVolume SELL', async function () {

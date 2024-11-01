@@ -35,7 +35,7 @@ export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
     protected dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, 'getAllPools', dexHelper, logger);
+    super(parentName, 'factory', dexHelper, logger);
 
     this.logDecoder = (log: Log) => this.dexFactoryIface.parseLog(log);
     this.addressesSubscribed = [commonAddresses.dexFactory];

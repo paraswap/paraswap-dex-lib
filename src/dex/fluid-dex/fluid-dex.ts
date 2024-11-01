@@ -19,13 +19,12 @@ import {
   DebtReserves,
   FluidDexData,
   FluidDexPool,
-  FluidDexPoolState,
+  // FluidDexPoolState,
   Pool,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
 import { FluidDexConfig, FLUID_DEX_GAS_COST } from './config';
-import { FluidDexEventPool } from './fluid-dex-pool';
 import { FluidDexFactory } from './fluid-dex-factory';
 import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
@@ -33,9 +32,9 @@ import { MultiResult } from '../../lib/multi-wrapper';
 import { generalDecoder } from '../../lib/decoders';
 import { BigNumber } from 'ethers';
 import { sqrt } from './utils';
+import { FluidDexLiquidityProxy } from './fluid-dex-liquidity-proxy';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
-  eventPools: { [id: string]: FluidDexEventPool } = {};
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = false;
   readonly isFeeOnTransferSupported = false;
@@ -47,6 +46,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   pools: FluidDexPool[] = [];
 
   readonly factory: FluidDexFactory;
+
+  readonly liquidityProxy: FluidDexLiquidityProxy;
 
   readonly fluidDexPoolIface: Interface;
 
@@ -60,12 +61,21 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
     this.factory = new FluidDexFactory(
-      'FluidDex',
-      FluidDexConfig['FluidDex'][network].commonAddresses,
+      dexKey,
+      FluidDexConfig[dexKey][network].commonAddresses,
       network,
       dexHelper,
       this.logger,
     );
+
+    this.liquidityProxy = new FluidDexLiquidityProxy(
+      dexKey,
+      this.factory.commonAddresses,
+      this.network,
+      this.dexHelper,
+      this.logger,
+    );
+
     this.fluidDexPoolIface = new Interface(FluidDexPoolABI);
   }
 
@@ -92,24 +102,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     await this.factory.initialize(blockNumber);
     this.pools = await this.fetchFluidDexPools(blockNumber);
 
-    for (const pool of this.pools) {
-      if (!this.eventPools[pool.id]) {
-        this.eventPools[pool.id] = new FluidDexEventPool(
-          'FluidDex',
-          pool.address,
-          this.factory.commonAddresses,
-          this.network,
-          this.dexHelper,
-          this.logger,
-        );
-      }
-    }
-
-    await Promise.all(
-      Object.values(this.eventPools).map(async eventPool => {
-        return eventPool.initialize(blockNumber);
-      }),
-    );
+    await this.liquidityProxy.initialize(blockNumber);
   }
 
   getAdapters(side: SwapSide) {
@@ -198,26 +191,28 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       // Make sure the pool meets the optional limitPools filter.
       if (limitPools && !limitPools.includes(pool.id)) return null;
 
-      const eventPool = this.eventPools[pool.id];
-
-      if (!eventPool) {
-        this.logger.error(`fluid-dex pool ${pool.id}: No EventPool found.`);
+      const liquidityProxyState = this.liquidityProxy.getState(blockNumber);
+      if (!liquidityProxyState) {
+        this.logger.error(`${this.dexKey} liquidity proxy is missing state`);
 
         return null;
       }
 
-      const state = await eventPool.getState(blockNumber);
-      if (!state) return null;
+      const currentPoolReserves = liquidityProxyState.poolsReserves.find(
+        poolReserve =>
+          poolReserve.pool.toLowerCase() === pool.address.toLowerCase(),
+      );
+      if (!currentPoolReserves) return null;
 
       const prices = amounts.map(amount => {
         return this.swapIn(
           srcToken.address.toLowerCase() === pool.token0.toLowerCase(),
           amount,
-          state.collateralReserves,
-          state.debtReserves,
+          currentPoolReserves.collateralReserves,
+          currentPoolReserves.debtReserves,
           srcToken.decimals,
           destToken.decimals,
-          BigInt(state.fee),
+          BigInt(currentPoolReserves.fee),
         );
       });
       return [
@@ -227,8 +222,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             (side === SwapSide.SELL ? destToken : srcToken).decimals,
           ),
           data: {
-            colReserves: state.collateralReserves,
-            debtReserves: state.debtReserves,
+            colReserves: currentPoolReserves.collateralReserves,
+            debtReserves: currentPoolReserves.debtReserves,
             exchange: this.dexKey,
           },
           exchange: this.dexKey,
