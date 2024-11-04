@@ -19,7 +19,6 @@ import {
   DebtReserves,
   FluidDexData,
   FluidDexPool,
-  // FluidDexPoolState,
   Pool,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -33,7 +32,6 @@ import { generalDecoder } from '../../lib/decoders';
 import { BigNumber } from 'ethers';
 import { sqrt } from './utils';
 import { FluidDexLiquidityProxy } from './fluid-dex-liquidity-proxy';
-import { OnPoolCreatedCallback } from '../fluid-dex/fluid-dex-factory';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -67,7 +65,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       network,
       dexHelper,
       this.logger,
-      this.onPoolCreatedUpdatePools().bind(this),
+      this.onPoolCreatedUpdatePools.bind(this),
     );
 
     this.liquidityProxy = new FluidDexLiquidityProxy(
@@ -117,11 +115,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     return null;
   }
 
-  protected onPoolCreatedUpdatePools(): OnPoolCreatedCallback {
-    return (poolsFromFactory: readonly Pool[]) => {
-      this.pools = this.generateFluidDexPoolsFromPoolsFactory(poolsFromFactory);
-      this.logger.info(`${this.dexKey}: pools list was updated ...`);
-    };
+  protected onPoolCreatedUpdatePools(poolsFromFactory: readonly Pool[]) {
+    this.pools = this.generateFluidDexPoolsFromPoolsFactory(poolsFromFactory);
+    this.logger.info(`${this.dexKey}: pools list was updated ...`);
   }
 
   decodePools = (result: MultiResult<BytesLike> | BytesLike): Pool[] => {

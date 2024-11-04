@@ -13,7 +13,7 @@ import { Address } from '../../types';
 import { generalDecoder } from '../../lib/decoders';
 import { Contract } from 'ethers';
 
-export type OnPoolCreatedCallback = (pools: readonly Pool[]) => void;
+type OnPoolCreatedCallback = (pools: readonly Pool[]) => void;
 
 export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
   handlers: {
