@@ -192,4 +192,28 @@ describe('Bebop E2E', () => {
       nativeTokenAmount,
     );
   });
+
+  describe('BSC', () => {
+    const network = Network.BSC;
+
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'ETH';
+
+    const tokenAAmount: string = '10000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    // Skip tests converting to tokenB because these do not currently have liquidity on bebop.
+    const skipToTokenB = true;
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
 });
