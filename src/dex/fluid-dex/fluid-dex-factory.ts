@@ -44,7 +44,7 @@ export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
     this.addressesSubscribed = [commonAddresses.dexFactory];
 
     // Add handlers
-    this.handlers['DexDeployed'] = this.handleDexDeployed.bind(this);
+    this.handlers['LogDexDeployed'] = this.handleDexDeployed.bind(this);
   }
 
   /**
