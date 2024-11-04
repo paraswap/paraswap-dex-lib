@@ -57,20 +57,7 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
     state: DeepReadonly<FluidDexLiquidityProxyState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<FluidDexLiquidityProxyState> | null> {
-    const resolverContract = new Contract(
-      this.commonAddresses.resolver,
-      ResolverABI,
-      this.dexHelper.provider,
-    );
-
-    const rawResult =
-      await resolverContract.callStatic.getAllPoolsReservesAdjusted({
-        blockTag: log.blockNumber,
-      });
-
-    const generatedState = this.convertToFluidDexPoolState(rawResult);
-
-    return generatedState;
+    return this.generateState(log.blockNumber);
   }
 
   /**
