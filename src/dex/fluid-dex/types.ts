@@ -1,9 +1,26 @@
 import { Address } from '../../types';
+import { BigNumber } from 'ethers';
 
-export type FluidDexPoolState = {
+export type PoolReserve = {
+  pool: string;
+  token0: string;
+  token1: string;
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
   fee: number;
+};
+
+export type PoolReserveResponse = [
+  string,
+  string,
+  string,
+  BigNumber,
+  BigNumber[],
+  BigNumber[],
+];
+
+export type FluidDexLiquidityProxyState = {
+  poolsReserves: readonly PoolReserve[];
 };
 
 export type CollateralReserves = {

@@ -13,6 +13,8 @@ import { Address } from '../../types';
 import { generalDecoder } from '../../lib/decoders';
 import { Contract } from 'ethers';
 
+type OnPoolCreatedCallback = (pools: readonly Pool[]) => void;
+
 export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
   handlers: {
     [event: string]: (
@@ -34,14 +36,15 @@ export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
+    protected readonly onPoolCreated: OnPoolCreatedCallback,
   ) {
-    super(parentName, 'getAllPools', dexHelper, logger);
+    super(parentName, 'factory', dexHelper, logger);
 
     this.logDecoder = (log: Log) => this.dexFactoryIface.parseLog(log);
     this.addressesSubscribed = [commonAddresses.dexFactory];
 
     // Add handlers
-    this.handlers['DexDeployed'] = this.handleDexDeployed.bind(this);
+    this.handlers['LogDexDeployed'] = this.handleDexDeployed.bind(this);
   }
 
   /**
@@ -53,7 +56,12 @@ export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
     log: Readonly<Log>,
   ): Promise<DeepReadonly<Pool[]> | null> {
     const blockNumber_ = await this.dexHelper.provider.getBlockNumber();
-    return this.getStateOrGenerate(blockNumber_, false);
+
+    const pools = await this.getStateOrGenerate(blockNumber_, false);
+
+    this.onPoolCreated(pools);
+
+    return pools;
   }
 
   decodePool = (result: MultiResult<BytesLike> | BytesLike): Pool => {

@@ -7,11 +7,6 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { FluidDex } from './fluid-dex';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import { Contract } from 'ethers';
@@ -263,6 +258,7 @@ describe('FluidDex', function () {
         80n * BI_POWS[6],
         90n * BI_POWS[6],
         100n * BI_POWS[6],
+        1000000n * BI_POWS[6],
       ];
 
       it('USDC -> USDT getPoolIdentifiers and getPricesVolume SELL', async function () {

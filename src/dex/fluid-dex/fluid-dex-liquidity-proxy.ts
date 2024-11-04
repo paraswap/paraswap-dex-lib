@@ -1,45 +1,56 @@
 import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
-import { catchParseLogError } from '../../utils';
+import { bigIntify, catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import {
   CommonAddresses,
-  FluidDexPoolState,
-  CollateralReserves,
-  DebtReserves,
+  FluidDexLiquidityProxyState,
+  PoolReserve,
+  PoolReserveResponse,
 } from './types';
 import { Address } from '../../types';
 import { Contract } from 'ethers';
 
-export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState> {
+export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiquidityProxyState> {
   handlers: {
     [event: string]: (
       event: any,
-      state: DeepReadonly<FluidDexPoolState>,
+      state: DeepReadonly<FluidDexLiquidityProxyState>,
       log: Readonly<Log>,
-    ) => Promise<DeepReadonly<FluidDexPoolState> | null>;
+    ) => Promise<DeepReadonly<FluidDexLiquidityProxyState> | null>;
   } = {};
 
   logDecoder: (log: Log) => any;
 
   addressesSubscribed: Address[];
+
   protected liquidityIface = new Interface(LiquidityABI);
+
+  readonly resolverIface = new Interface(ResolverABI);
+
+  resolverContract: Contract;
 
   constructor(
     readonly parentName: string,
-    readonly pool: Address,
     readonly commonAddresses: CommonAddresses,
     protected network: number,
     readonly dexHelper: IDexHelper,
     logger: Logger,
   ) {
-    super(parentName, 'FluidDex_' + pool, dexHelper, logger);
+    super(parentName, 'liquidity proxy', dexHelper, logger);
 
     this.logDecoder = (log: Log) => this.liquidityIface.parseLog(log);
+
+    this.resolverContract = new Contract(
+      this.commonAddresses.resolver,
+      ResolverABI,
+      this.dexHelper.provider,
+    );
+
     this.addressesSubscribed = [commonAddresses.liquidityProxy];
 
     // Add handlers
@@ -51,32 +62,10 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
    */
   async handleOperate(
     event: any,
-    state: DeepReadonly<FluidDexPoolState>,
+    state: DeepReadonly<FluidDexLiquidityProxyState>,
     log: Readonly<Log>,
-  ): Promise<DeepReadonly<FluidDexPoolState> | null> {
-    if (!(event.args.user in [this.pool])) {
-      return null;
-    }
-    const resolverContract = new Contract(
-      this.commonAddresses.resolver,
-      ResolverABI,
-      this.dexHelper.provider,
-    );
-    const rawResult = await resolverContract.callStatic.getPoolReservesAdjusted(
-      this.pool,
-      {
-        blockTag: this.dexHelper.provider,
-      },
-    );
-
-    const generatedState = this.convertToFluidDexPoolState(rawResult);
-
-    this.setState(
-      generatedState,
-      await this.dexHelper.provider.getBlockNumber(),
-    );
-
-    return generatedState;
+  ): Promise<DeepReadonly<FluidDexLiquidityProxyState> | null> {
+    return this.generateState(log.blockNumber);
   }
 
   /**
@@ -89,9 +78,9 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
    * @returns Updates state of the event subscriber after the log
    */
   async processLog(
-    state: DeepReadonly<FluidDexPoolState>,
+    state: DeepReadonly<FluidDexLiquidityProxyState>,
     log: Readonly<Log>,
-  ): Promise<DeepReadonly<FluidDexPoolState> | null> {
+  ): Promise<DeepReadonly<FluidDexLiquidityProxyState> | null> {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
@@ -107,7 +96,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
   async getStateOrGenerate(
     blockNumber: number,
     readonly: boolean = false,
-  ): Promise<FluidDexPoolState> {
+  ): Promise<FluidDexLiquidityProxyState> {
     let state = this.getState(blockNumber);
     if (!state) {
       state = await this.generateState(blockNumber);
@@ -127,52 +116,60 @@ export class FluidDexEventPool extends StatefulEventSubscriber<FluidDexPoolState
    */
   async generateState(
     blockNumber: number,
-  ): Promise<DeepReadonly<FluidDexPoolState>> {
-    const resolverContract = new Contract(
-      this.commonAddresses.resolver,
-      ResolverABI,
-      this.dexHelper.provider,
-    );
-    const rawResult = await resolverContract.callStatic.getPoolReservesAdjusted(
-      this.pool,
-      {
+  ): Promise<DeepReadonly<FluidDexLiquidityProxyState>> {
+    const rawResult =
+      await this.resolverContract.callStatic.getAllPoolsReservesAdjusted({
         blockTag: blockNumber,
-      },
-    );
+      });
 
     const convertedResult = this.convertToFluidDexPoolState(rawResult);
+
+    this.logger.info(`${this.parentName}: ${this.name}: generating state...`);
 
     return convertedResult;
   }
 
-  private convertToFluidDexPoolState(input: any[]): FluidDexPoolState {
-    // Ignore the first three addresses
-    const [, , , feeHex, collateralReservesHex, debtReservesHex] = input;
-    // Convert fee from hex to number
-    const fee = Number(feeHex.toString());
+  private convertToFluidDexPoolState(
+    poolReserves: PoolReserveResponse[],
+  ): FluidDexLiquidityProxyState {
+    const result: PoolReserve[] = poolReserves.map(poolReserve => {
+      const [
+        pool,
+        token0,
+        token1,
+        feeHex,
+        collateralReservesHex,
+        debtReservesHex,
+      ] = poolReserve;
 
-    // Convert collateral reserves
-    const collateralReserves: CollateralReserves = {
-      token0RealReserves: BigInt(collateralReservesHex[0].toString()),
-      token1RealReserves: BigInt(collateralReservesHex[1].toString()),
-      token0ImaginaryReserves: BigInt(collateralReservesHex[2].toString()),
-      token1ImaginaryReserves: BigInt(collateralReservesHex[3].toString()),
-    };
+      const fee = Number(feeHex.toString());
 
-    // Convert debt reserves
-    const debtReserves: DebtReserves = {
-      token0Debt: BigInt(debtReservesHex[0].toString()),
-      token1Debt: BigInt(debtReservesHex[1].toString()),
-      token0RealReserves: BigInt(debtReservesHex[2].toString()),
-      token1RealReserves: BigInt(debtReservesHex[3].toString()),
-      token0ImaginaryReserves: BigInt(debtReservesHex[4].toString()),
-      token1ImaginaryReserves: BigInt(debtReservesHex[5].toString()),
-    };
+      const collateralReserves = {
+        token0RealReserves: bigIntify(collateralReservesHex[0]),
+        token1RealReserves: bigIntify(collateralReservesHex[1]),
+        token0ImaginaryReserves: bigIntify(collateralReservesHex[2]),
+        token1ImaginaryReserves: bigIntify(collateralReservesHex[3]),
+      };
 
-    return {
-      collateralReserves,
-      debtReserves,
-      fee,
-    };
+      const debtReserves = {
+        token0Debt: bigIntify(debtReservesHex[0]),
+        token1Debt: bigIntify(debtReservesHex[1]),
+        token0RealReserves: bigIntify(debtReservesHex[2]),
+        token1RealReserves: bigIntify(debtReservesHex[3]),
+        token0ImaginaryReserves: bigIntify(debtReservesHex[4]),
+        token1ImaginaryReserves: bigIntify(debtReservesHex[5]),
+      };
+
+      return {
+        pool,
+        token0,
+        token1,
+        fee,
+        collateralReserves,
+        debtReserves,
+      };
+    });
+
+    return { poolsReserves: result };
   }
 }
