@@ -203,9 +203,6 @@ describe('Bebop E2E', () => {
     const tokenBAmount: string = '1000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
-    // Skip tests converting to tokenB because these do not currently have liquidity on bebop.
-    const skipToTokenB = true;
-
     testForNetwork(
       network,
       dexKey,
