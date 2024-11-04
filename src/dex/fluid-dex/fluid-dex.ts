@@ -191,12 +191,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       // Make sure the pool meets the optional limitPools filter.
       if (limitPools && !limitPools.includes(pool.id)) return null;
 
-      const liquidityProxyState = this.liquidityProxy.getState(blockNumber);
-      if (!liquidityProxyState) {
-        this.logger.error(`${this.dexKey} liquidity proxy is missing state`);
-
-        return null;
-      }
+      const liquidityProxyState = await this.liquidityProxy.getStateOrGenerate(
+        blockNumber,
+      );
 
       const currentPoolReserves = liquidityProxyState.poolsReserves.find(
         poolReserve =>

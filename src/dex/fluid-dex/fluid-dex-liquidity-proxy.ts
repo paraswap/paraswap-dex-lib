@@ -124,6 +124,8 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
 
     const convertedResult = this.convertToFluidDexPoolState(rawResult);
 
+    this.logger.info(`${this.parentName}: ${this.name}: generating state...`);
+
     return convertedResult;
   }
 
