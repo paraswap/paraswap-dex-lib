@@ -32,6 +32,8 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
 
   readonly resolverIface = new Interface(ResolverABI);
 
+  resolverContract: Contract;
+
   constructor(
     readonly parentName: string,
     readonly commonAddresses: CommonAddresses,
@@ -42,6 +44,12 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
     super(parentName, 'liquidity proxy', dexHelper, logger);
 
     this.logDecoder = (log: Log) => this.liquidityIface.parseLog(log);
+
+    this.resolverContract = new Contract(
+      this.commonAddresses.resolver,
+      ResolverABI,
+      this.dexHelper.provider,
+    );
 
     this.addressesSubscribed = [commonAddresses.liquidityProxy];
 
@@ -109,13 +117,8 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
   async generateState(
     blockNumber: number,
   ): Promise<DeepReadonly<FluidDexLiquidityProxyState>> {
-    const resolverContract = new Contract(
-      this.commonAddresses.resolver,
-      ResolverABI,
-      this.dexHelper.provider,
-    );
     const rawResult =
-      await resolverContract.callStatic.getAllPoolsReservesAdjusted({
+      await this.resolverContract.callStatic.getAllPoolsReservesAdjusted({
         blockTag: blockNumber,
       });
 
