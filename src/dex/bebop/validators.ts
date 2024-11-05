@@ -29,5 +29,10 @@ export const blacklistResponseValidator = joi.object({
   blacklist: joi.array().items(joi.string().min(1)).required(),
 });
 
-const root = protobuf.loadSync('src/dex/bebop/bebop.proto');
+// Original .proto def
+// const root = protobuf.loadSync(__dirname + '/bebop.proto');
+// Use .json to not include .proto files
+// console.log(JSON.stringify(root.toJSON(), null, 4));
+
+const root = protobuf.loadSync(__dirname + '/bebop.json');
 export const BebopPricingUpdate = root.lookupType('bebop.BebopPricingUpdate');
