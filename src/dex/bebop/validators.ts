@@ -1,4 +1,5 @@
 import joi from 'joi';
+import protobuf from 'protobufjs';
 
 const levelValidator = joi.array().items(joi.number()).length(2);
 
@@ -27,3 +28,6 @@ export const tokensResponseValidator = joi.object({
 export const blacklistResponseValidator = joi.object({
   blacklist: joi.array().items(joi.string().min(1)).required(),
 });
+
+const root = protobuf.loadSync('src/dex/bebop/bebop.proto');
+export const BebopPricingUpdate = root.lookupType('bebop.BebopPricingUpdate');
