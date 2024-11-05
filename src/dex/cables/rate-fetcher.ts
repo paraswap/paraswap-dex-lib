@@ -147,9 +147,6 @@ export class CablesRateFetcher {
     const networkId = String(this.network);
     const pairs = res.pairs[networkId];
 
-    // console.log("===> pairs DEBUG:", pairs);
-    // process.exit(0);
-
     let normalized_pairs: { [token: string]: PairData } = {};
     Object.keys(pairs).forEach(key => {
       normalized_pairs[key.toLowerCase()] = pairs[key];
@@ -165,16 +162,8 @@ export class CablesRateFetcher {
   }
 
   private handlePricesResponse(res: CablesPricesResponse): void {
-    // console.log('PRICES RESPONSE', res);
-    // console.log(JSON.stringify(res))
-    // console.log('Network:', this.network);
-    // process.exit(0);
-
     const networkId = String(this.network);
     const prices = res.prices[networkId];
-
-    // console.log("===> prices DEBUG:", prices);
-    // process.exit(0);
 
     this.dexHelper.cache.setex(
       this.dexKey,
@@ -210,12 +199,7 @@ export class CablesRateFetcher {
     const networkId = String(this.network);
     const tokens = res.tokens[networkId];
 
-    // console.log("===> tokens DEBUG:", tokens);
-
     const normalized_tokens = this.normalizeAddressesToLowerCase(tokens);
-
-    // console.log("===> tokens DEBUG:", normalized_tokens);
-    // process.exit(0);
 
     this.dexHelper.cache.setex(
       this.dexKey,
