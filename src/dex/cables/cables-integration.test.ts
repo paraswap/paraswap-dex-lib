@@ -169,7 +169,10 @@ describe('Cables', function () {
         tokens[tokenASymbol].address,
         10,
       );
-      console.log(`${tokenASymbol} Top Pools:`, poolLiquidity);
+      console.log(
+        `${tokenASymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
 
       if (!cables.hasConstantPriceLargeAmounts) {
         checkPoolsLiquidity(
