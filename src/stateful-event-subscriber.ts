@@ -137,23 +137,27 @@ export abstract class StatefulEventSubscriber<State>
           // to blockNumber
           this.setState(state.state, blockNumber);
         } else {
-          // if no state found in cache generate new state using rpc
-          this.logger.info(
-            `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
-          );
-          const state = await this.generateState(blockNumber);
-          this.setState(state, blockNumber);
+          try {
+            // if no state found in cache generate new state using rpc
+            this.logger.info(
+              `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
+            );
+            const state = await this.generateState(blockNumber);
+            this.setState(state, blockNumber);
 
-          // we should publish only if generateState succeeded
-          const data = this.getPoolIdentifierData();
+            // we should publish only if generateState succeeded
+            const data = this.getPoolIdentifierData();
 
-          this.dexHelper.cache.publish(
-            'new_pools',
-            JSON.stringify({
-              key: this.cacheName,
-              value: data,
-            }),
-          );
+            this.dexHelper.cache.publish(
+              'new_pools',
+              JSON.stringify({
+                key: this.cacheName,
+                value: data,
+              }),
+            );
+          } catch (error) {
+            this.logger.error(`EE: Failed to initialize pool error: ${error}`);
+          }
         }
       } else {
         // if you are not a slave instance always generate new state
