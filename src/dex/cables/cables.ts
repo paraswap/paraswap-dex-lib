@@ -40,6 +40,7 @@ import { Interface } from 'ethers/lib/utils';
 import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { B } from '@bgd-labs/aave-address-book/dist/AaveGovernanceV2-WaqoK4ZA';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -356,6 +357,98 @@ export class Cables extends SimpleExchange implements IDex<any> {
     ];
   }
 
+  calculateOrderPrice(
+    amounts: bigint[],
+    orderbook: string[][],
+    baseToken: Token,
+    quoteToken: Token,
+    isInputQuote: boolean,
+  ) {
+    let result = [];
+
+    for (let i = 0; i < amounts.length; i++) {
+      let amt = amounts[i];
+      if (amt === 0n) {
+        result.push(amt);
+        continue;
+      }
+
+      let decimals = baseToken.decimals;
+      if (isInputQuote) {
+        decimals = quoteToken.decimals;
+      }
+      let price = this.calculatePriceVwap(
+        orderbook,
+        Number(amt) / 10 ** decimals,
+        isInputQuote,
+      );
+      result.push(BigInt(price * 10 ** decimals));
+    }
+    return result;
+  }
+
+  calculatePriceVwap(
+    prices: string[][],
+    requiredQty: number,
+    qtyMode: Boolean,
+  ) {
+    let sumBaseQty = 0;
+    let sumQuoteQty = 0;
+    const selectedRows: string[][] = [];
+
+    const isBase = !qtyMode;
+    const isQuote = qtyMode;
+
+    for (const [price, volume] of prices) {
+      if (isBase) {
+        if (sumBaseQty >= requiredQty) {
+          break;
+        }
+      }
+
+      if (isQuote) {
+        if (sumQuoteQty >= requiredQty) {
+          break;
+        }
+      }
+
+      let currentBaseQty = Number(volume);
+      let currentQuoteQty = Number(volume) * Number(price);
+
+      const overQty = isBase
+        ? currentBaseQty + sumBaseQty > requiredQty
+        : currentQuoteQty + sumQuoteQty > requiredQty;
+
+      if (overQty) {
+        if (isBase) {
+          currentBaseQty = requiredQty - sumBaseQty;
+          currentQuoteQty = currentBaseQty * Number(price);
+        }
+
+        if (isQuote) {
+          currentQuoteQty = requiredQty - sumQuoteQty;
+          currentBaseQty =
+            currentQuoteQty *
+            new BigNumber(1).dividedBy(new BigNumber(price)).toNumber();
+        }
+      }
+
+      sumBaseQty += currentBaseQty;
+      sumQuoteQty += currentQuoteQty;
+      selectedRows.push([price, currentBaseQty.toString()]);
+    }
+
+    const vSumBase = selectedRows.reduce((sum: number, [price, volume]) => {
+      return sum + Number(price) * Number(volume);
+    }, 0);
+
+    if (isBase) {
+      return sumBaseQty;
+    } else {
+      return sumQuoteQty;
+    }
+  }
+
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -403,12 +496,12 @@ export class Cables extends SimpleExchange implements IDex<any> {
       if (pools.length === 0) return null;
 
       // ---------- Prices ----------
-      const prices = await this.getCachedPrices();
+      const priceMap = await this.getCachedPrices();
 
-      if (!prices) return null;
+      if (!priceMap) return null;
 
       let pairKey = `${normalizedSrcToken.symbol}/${normalizedDestToken.symbol}`;
-      const pairsKeys = Object.keys(prices);
+      const pairsKeys = Object.keys(priceMap);
 
       if (!pairsKeys.includes(pairKey)) {
         // Revert
@@ -421,7 +514,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       /**
        * Orderbook
        */
-      const priceData = prices[pairKey];
+      const priceData = priceMap[pairKey];
 
       let orderbook: any[] = [];
       if (side === SwapSide.BUY) {
@@ -433,15 +526,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
         throw new Error(`Empty orderbook for ${pairKey}`);
       }
 
-      const orderPrice = 0;
-      const calculatedPrices = amounts.map(amount => {
-        // TOB OF BOOK FOR NOW
-        const price = (
-          orderbook[0][0] *
-          10 ** normalizedDestToken.decimals
-        ).toFixed();
-        return BigInt(price);
-      });
+      const isInputQuote = side === SwapSide.BUY;
+
+      const prices = this.calculateOrderPrice(
+        amounts,
+        orderbook,
+        srcToken,
+        destToken,
+        isInputQuote,
+      );
 
       const outDecimals =
         side === SwapSide.BUY
@@ -449,11 +542,11 @@ export class Cables extends SimpleExchange implements IDex<any> {
           : normalizedDestToken.decimals;
       const result = [
         {
-          prices: calculatedPrices,
+          prices: prices,
           unit: BigInt(outDecimals),
           exchange: this.dexKey,
           gasCost: CABLES_GAS_COST,
-          orderPrice,
+          poolAddresses: [this.mainnetRFQAddress],
           data: {},
         },
       ];

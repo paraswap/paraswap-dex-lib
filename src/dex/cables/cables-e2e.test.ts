@@ -29,13 +29,13 @@ describe('Cables E2E', () => {
       [
         {
           name: 'USDC',
-          sellAmount: '1000000',
-          buyAmount: '1000000',
+          sellAmount: '500000',
+          buyAmount: '700000',
         },
         {
           name: 'USDT',
-          sellAmount: '1000000',
-          buyAmount: '1000000',
+          sellAmount: '600000',
+          buyAmount: '850000',
         },
       ],
     ];

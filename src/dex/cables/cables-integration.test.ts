@@ -53,6 +53,11 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
+  if (cables.hasConstantPriceLargeAmounts) {
+    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+  } else {
+    checkPoolPrices(poolPrices!, amounts, side, dexKey);
+  }
 }
 
 describe('Cables', function () {
