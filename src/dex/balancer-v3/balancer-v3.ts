@@ -16,7 +16,7 @@ import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { BalancerV3Data, PoolState, PoolStateMap } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { BalancerV3Config, Adapters } from './config';
+import { BalancerV3Config } from './config';
 import { BalancerV3EventPool } from './balancer-v3-pool';
 import { NumberAsString } from '@paraswap/core';
 import { SwapKind } from '@balancer-labs/balancer-maths';
@@ -57,7 +57,6 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    protected adapters = Adapters[network] || {},
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
@@ -101,10 +100,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     }
   }
 
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
-  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+  getAdapters(side: SwapSide): null {
+    return null;
   }
 
   // Returns list of pool identifiers that can be used
@@ -286,29 +283,11 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // Encode params required by the exchange adapter
-  // V5: Used for multiSwap, buy & megaSwap
-  // V6: Not used, can be left blank
-  // Hint: abiCoder.encodeParameter() could be useful
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: BalancerV3Data,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    console.log(`!!!!!!!!!!!! getAdapterParam is being hit !!!!!!`);
-    // TODO: complete me!
-    const { steps } = data;
-
-    // Encode here the payload for adapter
-    const payload = '';
-
+  // Not used for V6
+  getAdapterParam(): AdapterExchangeParam {
     return {
-      targetExchange:
-        BalancerV3Config.BalancerV3[this.network].balancerRouterAddress,
-      payload,
+      targetExchange: '0x',
+      payload: '0x',
       networkFee: '0',
     };
   }
