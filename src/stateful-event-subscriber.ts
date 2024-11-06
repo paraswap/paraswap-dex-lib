@@ -171,6 +171,12 @@ export abstract class StatefulEventSubscriber<State>
                 );
               }
 
+              this.logger.info(
+                `EE: Publish new pool: key: ${
+                  this.cacheName
+                }, value: ${JSON.stringify(data)}`,
+              );
+
               this.dexHelper.cache.publish(
                 'new_pools',
                 JSON.stringify({
