@@ -87,124 +87,137 @@ export abstract class StatefulEventSubscriber<State>
     blockNumber: number,
     options?: InitializeStateOptions<State>,
   ) {
-    let masterBn: undefined | number = undefined;
-    if (options && options.state) {
-      this.setState(options.state, blockNumber);
-    } else if (options && options.forceRegenerate) {
-      // ZkEVM forces to always regenerate state when it is old
-      this.logger.debug(
-        `${this.parentName}: ${this.name}: forced to regenerate state`,
-      );
-      const state = await this.generateState(blockNumber);
-      this.setState(state, blockNumber);
-    } else {
-      if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
-        let stateAsString = await this.dexHelper.cache.hget(
-          this.mapKey,
-          this.name,
-        );
-
-        // if there is a state in cache
-        if (stateAsString) {
-          const state: StateCache<State> = Utils.Parse(stateAsString);
-
-          if (state.state === null) {
-            this.logger.warn(
-              `${this.parentName}: ${this.name}: found null state in cache generate new one`,
-            );
-            state.state = await this.generateState(blockNumber);
-          } else {
-            this.logger.info(
-              `${this.parentName}: ${this.name}: found state from cache`,
-            );
-            blockNumber = state.bn;
-
-            const _masterBn = await this.dexHelper.cache.rawget(
-              this.dexHelper.config.masterBlockNumberCacheKey,
-            );
-            if (_masterBn) {
-              masterBn = parseInt(_masterBn, 10);
-              this.logger.info(
-                `${this.dexHelper.config.data.network} found master blockNumber ${blockNumber}`,
-              );
-            } else {
-              this.logger.error(
-                `${this.dexHelper.config.data.network} did not found blockNumber in cache`,
-              );
-            }
-          }
-          // set state and the according blockNumber. state.bn can be smaller, greater or equal
-          // to blockNumber
-          this.setState(state.state, blockNumber);
-        } else {
-          try {
-            // if no state found in cache generate new state using rpc
-            this.logger.info(
-              `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
-            );
-            const state = await this.generateState(blockNumber);
-            this.setState(state, blockNumber);
-
-            // we should publish only if generateState succeeded
-            const data = this.getPoolIdentifierData() as unknown as Record<
-              string,
-              unknown
-            >;
-
-            if (
-              typeof data === 'object' &&
-              Object.values(data).some(v => v === undefined)
-            ) {
-              let poolData = { ...data };
-              // replace all undefined values with null
-              // to show empty fields in the log
-              for (const key of Object.keys(poolData)) {
-                if (poolData[key] === undefined) {
-                  poolData[key] = null;
-                }
-              }
-              this.logger.error(
-                `EE: Found empty field on pool identifier new_pools name: '${
-                  this.cacheName
-                }', poolData: '${JSON.stringify(data)}'`,
-              );
-            }
-
-            this.dexHelper.cache.publish(
-              'new_pools',
-              JSON.stringify({
-                key: this.cacheName,
-                value: data,
-              }),
-            );
-          } catch (error) {
-            this.logger.error(`EE: Failed to initialize pool error: ${error}`);
-          }
-        }
-      } else {
-        // if you are not a slave instance always generate new state
-        this.logger.info(
-          `${this.parentName}: ${this.name}: cache generating state`,
+    try {
+      let masterBn: undefined | number = undefined;
+      if (options && options.state) {
+        this.setState(options.state, blockNumber);
+      } else if (options && options.forceRegenerate) {
+        // ZkEVM forces to always regenerate state when it is old
+        this.logger.debug(
+          `${this.parentName}: ${this.name}: forced to regenerate state`,
         );
         const state = await this.generateState(blockNumber);
         this.setState(state, blockNumber);
+      } else {
+        if (this.dexHelper.config.isSlave && this.masterPoolNeeded) {
+          let stateAsString = await this.dexHelper.cache.hget(
+            this.mapKey,
+            this.name,
+          );
+
+          // if there is a state in cache
+          if (stateAsString) {
+            const state: StateCache<State> = Utils.Parse(stateAsString);
+
+            if (state.state === null) {
+              this.logger.warn(
+                `${this.parentName}: ${this.name}: found null state in cache generate new one`,
+              );
+              state.state = await this.generateState(blockNumber);
+            } else {
+              this.logger.info(
+                `${this.parentName}: ${this.name}: found state from cache`,
+              );
+              blockNumber = state.bn;
+
+              const _masterBn = await this.dexHelper.cache.rawget(
+                this.dexHelper.config.masterBlockNumberCacheKey,
+              );
+              if (_masterBn) {
+                masterBn = parseInt(_masterBn, 10);
+                this.logger.info(
+                  `${this.dexHelper.config.data.network} found master blockNumber ${blockNumber}`,
+                );
+              } else {
+                this.logger.error(
+                  `${this.dexHelper.config.data.network} did not found blockNumber in cache`,
+                );
+              }
+            }
+            // set state and the according blockNumber. state.bn can be smaller, greater or equal
+            // to blockNumber
+            this.setState(state.state, blockNumber);
+          } else {
+            try {
+              // if no state found in cache generate new state using rpc
+              this.logger.info(
+                `${this.parentName}: ${this.name}: did not found state on cache generating new one`,
+              );
+              const state = await this.generateState(blockNumber);
+              this.setState(state, blockNumber);
+
+              // we should publish only if generateState succeeded
+              const data = this.getPoolIdentifierData() as unknown as Record<
+                string,
+                unknown
+              >;
+
+              if (
+                typeof data === 'object' &&
+                Object.values(data).some(v => v === undefined)
+              ) {
+                let poolData = { ...data };
+                // replace all undefined values with null
+                // to show empty fields in the log
+                for (const key of Object.keys(poolData)) {
+                  if (poolData[key] === undefined) {
+                    poolData[key] = null;
+                  }
+                }
+                this.logger.error(
+                  `EE: Found empty field on pool identifier new_pools name: '${
+                    this.cacheName
+                  }', poolData: '${JSON.stringify(data)}'`,
+                );
+              }
+
+              this.dexHelper.cache.publish(
+                'new_pools',
+                JSON.stringify({
+                  key: this.cacheName,
+                  value: data,
+                }),
+              );
+            } catch (error) {
+              this.logger.error(
+                `EE: Failed to initialize pool error in new_pools: ${error}`,
+              );
+            }
+          }
+        } else {
+          // if you are not a slave instance always generate new state
+          this.logger.info(
+            `${this.parentName}: ${this.name}: cache generating state`,
+          );
+          const state = await this.generateState(blockNumber);
+          this.setState(state, blockNumber);
+        }
+      }
+
+      // apply a callback on the state
+      if (options && options.initCallback) {
+        if (this.state) {
+          options.initCallback(this.state);
+        }
+      }
+
+      // always subscribeToLogs
+      this.dexHelper.blockManager.subscribeToLogs(
+        this,
+        this.addressesSubscribed,
+        masterBn || blockNumber,
+      );
+      this.isInitialized = true;
+    } catch (error) {
+      this.logger.error(
+        `EE: Failed to initialize pool, name: '${this.cacheName}', error: ${error}`,
+      );
+      if (error instanceof Error) {
+        throw new Error(error.message);
+      } else {
+        throw new Error(`Failed to initialize pool: ${error}`);
       }
     }
-
-    // apply a callback on the state
-    if (options && options.initCallback) {
-      if (this.state) {
-        options.initCallback(this.state);
-      }
-    }
-
-    // always subscribeToLogs
-    this.dexHelper.blockManager.subscribeToLogs(
-      this,
-      this.addressesSubscribed,
-      masterBn || blockNumber,
-    );
-    this.isInitialized = true;
   }
 
   protected getPoolIdentifierData() {
