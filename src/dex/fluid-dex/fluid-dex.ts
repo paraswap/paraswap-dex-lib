@@ -314,7 +314,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       this.fluidDexPoolIface,
       method,
       'amountOut_',
-      1,
     );
 
     const pool = await this.getPoolByTokenPair(srcToken, destToken);
