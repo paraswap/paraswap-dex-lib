@@ -651,11 +651,7 @@ class AlgebraMathClass {
       }
 
       // check stop condition
-      if (
-        amountRequired == 0n ||
-        currentPrice == newSqrtPriceX96 ||
-        currentTick === newTick // deviation from contract
-      ) {
+      if (amountRequired == 0n || currentPrice == newSqrtPriceX96) {
         break;
       }
     }
