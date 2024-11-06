@@ -146,7 +146,29 @@ export abstract class StatefulEventSubscriber<State>
             this.setState(state, blockNumber);
 
             // we should publish only if generateState succeeded
-            const data = this.getPoolIdentifierData();
+            const data = this.getPoolIdentifierData() as unknown as Record<
+              string,
+              unknown
+            >;
+
+            if (
+              typeof data === 'object' &&
+              Object.values(data).some(v => v === undefined)
+            ) {
+              let poolData = { ...data };
+              // replace all undefined values with null
+              // to show empty fields in the log
+              for (const key of Object.keys(poolData)) {
+                if (poolData[key] === undefined) {
+                  poolData[key] = null;
+                }
+              }
+              this.logger.error(
+                `EE: Found empty field on pool identifier new_pools name: '${
+                  this.cacheName
+                }', poolData: '${JSON.stringify(data)}'`,
+              );
+            }
 
             this.dexHelper.cache.publish(
               'new_pools',
