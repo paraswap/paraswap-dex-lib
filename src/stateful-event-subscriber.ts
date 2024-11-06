@@ -161,7 +161,7 @@ export abstract class StatefulEventSubscriber<State>
                 // to show empty fields in the log
                 for (const key of Object.keys(poolData)) {
                   if (poolData[key] === undefined) {
-                    poolData[key] = null;
+                    poolData[key] = 'empty_field';
                   }
                 }
                 this.logger.error(
@@ -180,8 +180,13 @@ export abstract class StatefulEventSubscriber<State>
               );
             } catch (error) {
               this.logger.error(
-                `EE: Failed to initialize pool error in new_pools: ${error}`,
+                `EE: Failed to initialize pool error in new_pools, name: ${this.cacheName}, error: ${error}`,
               );
+              if (error instanceof Error) {
+                throw new Error(error.message);
+              } else {
+                throw new Error(`Failed to initialize pool: ${error}`);
+              }
             }
           }
         } else {
