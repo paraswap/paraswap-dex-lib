@@ -167,7 +167,7 @@ export abstract class StatefulEventSubscriber<State>
                 this.logger.error(
                   `EE: Found empty field on pool identifier new_pools name: '${
                     this.cacheName
-                  }', poolData: '${JSON.stringify(data)}'`,
+                  }', poolData: '${JSON.stringify(poolData)}'`,
                 );
               }
 
