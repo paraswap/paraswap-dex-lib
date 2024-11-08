@@ -1,4 +1,6 @@
 import joi from 'joi';
+import protobuf from 'protobufjs';
+import JSONDescriptor from './bebop.json';
 
 const levelValidator = joi.array().items(joi.number()).length(2);
 
@@ -27,3 +29,11 @@ export const tokensResponseValidator = joi.object({
 export const blacklistResponseValidator = joi.object({
   blacklist: joi.array().items(joi.string().min(1)).required(),
 });
+
+// Original .proto def
+// const root = protobuf.loadSync(__dirname + '/bebop.proto');
+// Use .json to not change build step to include .proto files
+// console.log(JSON.stringify(root.toJSON(), null, 4));
+
+const root = protobuf.Root.fromJSON(JSONDescriptor);
+export const BebopPricingUpdate = root.lookupType('bebop.BebopPricingUpdate');
