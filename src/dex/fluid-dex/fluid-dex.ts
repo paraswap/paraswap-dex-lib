@@ -147,17 +147,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    const pool = await this.getPoolByTokenPair(
-      srcToken.address,
-      destToken.address,
-    );
+    const pool = this.getPoolByTokenPair(srcToken.address, destToken.address);
     return pool ? [pool.id] : [];
   }
 
-  async getPoolByTokenPair(
+  getPoolByTokenPair(
     srcToken: Address,
     destToken: Address,
-  ): Promise<FluidDexPool | null> {
+  ): FluidDexPool | null {
     const srcAddress = srcToken.toLowerCase();
     const destAddress = destToken.toLowerCase();
 
@@ -193,10 +190,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       if (side === SwapSide.BUY) return null;
       // Get the pool to use.
-      const pool = await this.getPoolByTokenPair(
-        srcToken.address,
-        destToken.address,
-      );
+      const pool = this.getPoolByTokenPair(srcToken.address, destToken.address);
       if (!pool) return null;
 
       // Make sure the pool meets the optional limitPools filter.
@@ -229,11 +223,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
           unit: getBigIntPow(
             (side === SwapSide.SELL ? destToken : srcToken).decimals,
           ),
-          data: {
-            colReserves: currentPoolReserves.collateralReserves,
-            debtReserves: currentPoolReserves.debtReserves,
-            exchange: this.dexKey,
-          },
+          data: {},
           exchange: this.dexKey,
           poolIdentifier: pool.id,
           gasCost: FLUID_DEX_GAS_COST,
@@ -270,13 +260,13 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     side: SwapSide,
   ): AdapterExchangeParam {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
-    const { exchange } = data;
 
     // Encode here the payload for adapter
     const payload = '';
+    const pool = this.getPoolByTokenPair(srcToken, destToken);
 
     return {
-      targetExchange: exchange,
+      targetExchange: pool!.address,
       payload,
       networkFee: '0',
     };
@@ -316,7 +306,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       'amountOut_',
     );
 
-    const pool = await this.getPoolByTokenPair(srcToken, destToken);
+    const pool = this.getPoolByTokenPair(srcToken, destToken);
 
     if (pool!.token0.toLowerCase() !== srcToken.toLowerCase()) {
       args = [false, BigInt(srcAmount), BigInt(destAmount), recipient];
