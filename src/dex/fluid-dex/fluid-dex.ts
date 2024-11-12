@@ -147,10 +147,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    const pool = await this.getPoolByTokenPair(
-      srcToken.address,
-      destToken.address,
-    );
+    const pool = this.getPoolByTokenPair(srcToken.address, destToken.address);
     return pool ? [pool.id] : [];
   }
 
