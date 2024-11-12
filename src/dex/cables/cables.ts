@@ -68,23 +68,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
         rateConfig: {
           pairsReqParams: {
             url: CABLES_API_URL + '/pairs',
-            // headers?: RequestHeaders;
-            // params?: any;
           },
           pricesReqParams: {
             url: CABLES_API_URL + '/prices',
-            // headers?: RequestHeaders;
-            // params?: any;
           },
           blacklistReqParams: {
             url: CABLES_API_URL + '/blacklist',
-            // headers?: RequestHeaders;
-            // params?: any;
           },
           tokensReqParams: {
             url: CABLES_API_URL + '/tokens',
-            // headers: undefined,
-            // params: undefined,
           },
 
           pricesIntervalMs: 2000,
@@ -246,8 +238,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
       dexFuncHasRecipient: false,
       targetExchange: this.mainnetRFQAddress,
       returnAmountPos: undefined,
-      // cannot modify amount due to signature checks
-      specialDexSupportsInsertFromAmount: false,
     };
   }
 
@@ -315,6 +305,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       address: this.normalizeTokenAddress(token.address),
     };
   }
+
   normalizeTokenAddress(address: Address): Address {
     return address.toLowerCase();
   }
@@ -340,6 +331,11 @@ export class Cables extends SimpleExchange implements IDex<any> {
     if (!srcToken || !destToken) {
       return [];
     }
+
+    if (srcToken.address.toLowerCase() === destToken.address.toLowerCase()) {
+      return [];
+    }
+
     const pairData = await this.getPairData(srcToken, destToken);
 
     if (!pairData) {
@@ -370,7 +366,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const normalizedSrcToken = this.normalizeToken(srcToken);
       const normalizedDestToken = this.normalizeToken(destToken);
       // If: same token, return null
-      if (normalizedSrcToken.address === normalizedDestToken.address) {
+      if (
+        normalizedSrcToken.address.toLowerCase() ===
+        normalizedDestToken.address.toLowerCase()
+      ) {
         return null;
       }
 
@@ -494,14 +493,17 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
     return;
   }
+
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
     return null;
   }
+
   releaseResources?(): AsyncOrSync<void> {
     if (this.rateFetcher) {
       this.rateFetcher.stop();
     }
   }
+
   normalizeAddress(address: string): string {
     return address.toLowerCase() === ETHER_ADDRESS
       ? NULL_ADDRESS
@@ -579,6 +581,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
     return cachedTokens ? JSON.parse(cachedTokens) : {};
   }
+
   async getCachedPairs(): Promise<any> {
     const cachedPairs = await this.dexHelper.cache.get(
       this.dexKey,
@@ -588,6 +591,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
     return cachedPairs ? JSON.parse(cachedPairs) : {};
   }
+
   async getCachedPrices(): Promise<any> {
     const cachedPrices = await this.dexHelper.cache.get(
       this.dexKey,
@@ -597,6 +601,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
     return cachedPrices ? JSON.parse(cachedPrices) : {};
   }
+
   async getCachedTokensAddr(): Promise<any> {
     const tokens = await this.getCachedTokens();
     const tokensAddr: Record<string, Address> = {};
