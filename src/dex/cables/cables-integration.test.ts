@@ -183,4 +183,130 @@ describe('Cables', function () {
       }
     });
   });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const tokenASymbol = 'USDC';
+    const tokenBSymbol = 'USDT';
+
+    const amountsForTokenA = [
+      0n,
+      1n * BI_POWS[tokens[tokenASymbol].decimals],
+      2n * BI_POWS[tokens[tokenASymbol].decimals],
+      3n * BI_POWS[tokens[tokenASymbol].decimals],
+      4n * BI_POWS[tokens[tokenASymbol].decimals],
+      5n * BI_POWS[tokens[tokenASymbol].decimals],
+      6n * BI_POWS[tokens[tokenASymbol].decimals],
+      7n * BI_POWS[tokens[tokenASymbol].decimals],
+      8n * BI_POWS[tokens[tokenASymbol].decimals],
+      9n * BI_POWS[tokens[tokenASymbol].decimals],
+      10n * BI_POWS[tokens[tokenASymbol].decimals],
+    ];
+
+    const amountsForTokenB = [
+      0n,
+      1n * BI_POWS[tokens[tokenBSymbol].decimals],
+      2n * BI_POWS[tokens[tokenBSymbol].decimals],
+      3n * BI_POWS[tokens[tokenBSymbol].decimals],
+      4n * BI_POWS[tokens[tokenBSymbol].decimals],
+      5n * BI_POWS[tokens[tokenBSymbol].decimals],
+      6n * BI_POWS[tokens[tokenBSymbol].decimals],
+      7n * BI_POWS[tokens[tokenBSymbol].decimals],
+      8n * BI_POWS[tokens[tokenBSymbol].decimals],
+      9n * BI_POWS[tokens[tokenBSymbol].decimals],
+      10n * BI_POWS[tokens[tokenBSymbol].decimals],
+    ];
+
+    beforeEach(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      cables = new Cables(network, dexKey, dexHelper);
+      await cables.initializePricing(blockNumber);
+      await sleep(5000);
+    });
+
+    afterEach(async () => {
+      if (cables.releaseResources) cables.releaseResources();
+      await sleep(5000);
+    });
+
+    it(`getPoolIdentifiers and getPricesVolume SELL ${tokenASymbol} ${tokenBSymbol}`, async function () {
+      console.log('amountsForTokenA: ', amountsForTokenA);
+
+      await testPricingOnNetwork(
+        cables,
+        network,
+        dexKey,
+        blockNumber,
+        tokenASymbol,
+        tokenBSymbol,
+        SwapSide.SELL,
+        amountsForTokenA,
+      );
+    });
+
+    it(`getPoolIdentifiers and getPricesVolume BUY ${tokenASymbol} ${tokenBSymbol}`, async function () {
+      await testPricingOnNetwork(
+        cables,
+        network,
+        dexKey,
+        blockNumber,
+        tokenASymbol,
+        tokenBSymbol,
+        SwapSide.BUY,
+        amountsForTokenB,
+      );
+    });
+
+    it(`getPoolIdentifiers and getPricesVolume SELL ${tokenBSymbol} ${tokenASymbol}`, async function () {
+      await testPricingOnNetwork(
+        cables,
+        network,
+        dexKey,
+        blockNumber,
+        tokenBSymbol,
+        tokenASymbol,
+        SwapSide.SELL,
+        amountsForTokenB,
+      );
+    });
+
+    it(`getPoolIdentifiers and getPricesVolume BUY ${tokenBSymbol} ${tokenASymbol}`, async function () {
+      await testPricingOnNetwork(
+        cables,
+        network,
+        dexKey,
+        blockNumber,
+        tokenBSymbol,
+        tokenASymbol,
+        SwapSide.BUY,
+        amountsForTokenA,
+      );
+    });
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const cables = new Cables(network, dexKey, dexHelper);
+      const poolLiquidity = await cables.getTopPoolsForToken(
+        tokens[tokenASymbol].address,
+        10,
+      );
+      console.log(
+        `${tokenASymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      if (!cables.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][tokenASymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
 });

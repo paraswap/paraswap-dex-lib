@@ -18,20 +18,17 @@ import {
   PoolLiquidity,
   PoolPrices,
   PreprocessTransactionOptions,
-  SimpleExchangeParam,
   Token,
   TransferFeeParams,
-  TxInfo,
 } from '../../types';
 import { getDexKeysWithNetwork } from '../../utils';
-import { Context, IDex } from '../idex';
+import { IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
 import { CablesConfig } from './config';
 import {
   CABLES_API_URL,
   CABLES_FIRM_QUOTE_TIMEOUT_MS,
   CABLES_GAS_COST,
-  CABLES_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
 } from './constants';
 import { CablesRateFetcher } from './rate-fetcher';
 import { CablesData, CablesRFQResponse } from './types';

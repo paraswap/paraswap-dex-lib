@@ -16,6 +16,7 @@ describe('Cables E2E', () => {
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
+
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
     const provider = new StaticJsonRpcProvider(
