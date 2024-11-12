@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import { testE2E, newTestE2E } from '../../../tests/utils-e2e';
+import { testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
@@ -30,13 +30,13 @@ describe('Cables E2E', () => {
       [
         {
           name: 'USDC',
-          sellAmount: '1000000',
-          buyAmount: '1000000',
+          sellAmount: '500000',
+          buyAmount: '700000',
         },
         {
           name: 'USDT',
-          sellAmount: '1000000',
-          buyAmount: '1000000',
+          sellAmount: '600000',
+          buyAmount: '850000',
         },
       ],
     ];

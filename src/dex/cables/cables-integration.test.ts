@@ -53,6 +53,11 @@ async function testPricingOnNetwork(
   );
 
   expect(poolPrices).not.toBeNull();
+  if (cables.hasConstantPriceLargeAmounts) {
+    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+  } else {
+    checkPoolPrices(poolPrices!, amounts, side, dexKey);
+  }
 }
 
 describe('Cables', function () {
@@ -168,6 +173,10 @@ describe('Cables', function () {
       const poolLiquidity = await cables.getTopPoolsForToken(
         tokens[tokenASymbol].address,
         10,
+      );
+      console.log(
+        `${tokenASymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
       );
       console.log(
         `${tokenASymbol} Top Pools:`,
