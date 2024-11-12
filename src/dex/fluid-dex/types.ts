@@ -48,11 +48,7 @@ export interface PoolWithReserves {
   debtReserves: DebtReserves;
 }
 
-export type FluidDexData = {
-  colReserves: CollateralReserves;
-  debtReserves: DebtReserves;
-  exchange: Address;
-};
+export type FluidDexData = {};
 
 // Each pool has a contract address and token pairs.
 export type FluidDexPool = {
