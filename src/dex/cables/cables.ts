@@ -370,7 +370,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       if (isInputQuote) {
         decimals = quoteToken.decimals;
       }
-      let price = this.calculatePriceVwap(
+      let price = this.calculatePriceSwap(
         orderbook,
         Number(amt) / 10 ** decimals,
         isInputQuote,
@@ -380,7 +380,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return result;
   }
 
-  calculatePriceVwap(
+  calculatePriceSwap(
     prices: string[][],
     requiredQty: number,
     qtyMode: Boolean,
@@ -695,8 +695,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
   async getCachedTokensAddr(): Promise<any> {
     const tokens = await this.getCachedTokens();
     const tokensAddr: Record<string, Address> = {};
-    for (const addr of Object.keys(tokens)) {
-      tokensAddr[tokens[addr].symbol.toLowerCase()] = addr;
+    for (const key of Object.keys(tokens)) {
+      tokensAddr[tokens[key].symbol.toLowerCase()] = tokens[key].address;
     }
     return tokensAddr;
   }

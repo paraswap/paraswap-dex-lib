@@ -243,8 +243,6 @@ describe('Cables', function () {
     });
 
     it(`getPoolIdentifiers and getPricesVolume SELL ${tokenASymbol} ${tokenBSymbol}`, async function () {
-      console.log('amountsForTokenA: ', amountsForTokenA);
-
       await testPricingOnNetwork(
         cables,
         network,
