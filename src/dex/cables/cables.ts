@@ -375,7 +375,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         Number(amt) / 10 ** decimals,
         isInputQuote,
       );
-      result.push(BigInt(price * 10 ** decimals));
+      result.push(BigInt(Math.round(price * 10 ** decimals)));
     }
     return result;
   }
