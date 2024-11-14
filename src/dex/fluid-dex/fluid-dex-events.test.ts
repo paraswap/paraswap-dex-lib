@@ -86,7 +86,7 @@ describe('FluidDex EventPool Mainnet', function () {
 
     const eventsToTest: Record<Address, EventMappings> = {
       '0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085': {
-        LogDexDeployed: [21105297, 21105362, 21105366, 21105370],
+        LogDexDeployed: [21105298, 21105363, 21105367, 21105371],
       },
     };
 

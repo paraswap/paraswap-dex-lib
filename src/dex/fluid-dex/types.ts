@@ -5,9 +5,10 @@ export type PoolReserve = {
   pool: string;
   token0: string;
   token1: string;
+  fee: number;
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
-  fee: number;
+  dexLimits: DexLimits;
 };
 
 export type PoolReserveResponse = [
@@ -17,7 +18,30 @@ export type PoolReserveResponse = [
   BigNumber,
   BigNumber[],
   BigNumber[],
+  dexLimitResponse,
 ];
+
+export type DexLimits = {
+  withdrawableToken0: TokenLimit;
+  withdrawableToken1: TokenLimit;
+  borrowableToken0: TokenLimit;
+  borrowableToken1: TokenLimit;
+};
+
+export type dexLimitResponse = [
+  tokenLimitResponse,
+  tokenLimitResponse,
+  tokenLimitResponse,
+  tokenLimitResponse,
+];
+
+export type TokenLimit = {
+  available: bigint;
+  expandsTo: bigint;
+  expandsDuration: bigint;
+};
+
+export type tokenLimitResponse = [bigint, bigint, bigint];
 
 export type FluidDexLiquidityProxyState = {
   poolsReserves: readonly PoolReserve[];
