@@ -37,14 +37,19 @@ import { Interface } from 'ethers/lib/utils';
 import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
-import { B } from '@bgd-labs/aave-address-book/dist/AaveGovernanceV2-WaqoK4ZA';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CablesConfig);
+
   private rateFetcher: CablesRateFetcher;
+
   logger: Logger;
   private tokensMap: { [address: string]: Token } = {};
+
+  hasConstantPriceLargeAmounts: boolean = false;
+
+  needsSequentialPreprocessing?: boolean | undefined;
 
   constructor(
     readonly network: Network,
@@ -95,10 +100,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
       },
     );
   }
-
-  hasConstantPriceLargeAmounts: boolean = false;
-
-  needsSequentialPreprocessing?: boolean | undefined;
 
   async preProcessTransaction?(
     optimalSwapExchange: OptimalSwapExchange<CablesData>,
@@ -169,16 +170,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
       const expiryAsBigInt = BigInt(order.expiry);
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
-
-      // Correction of the srcAmount
-      // because flag specialDexSupportsInsertFromAmount: false
-      // is not working for Buy in test
-      if (isBuy) {
-        optimalSwapExchange.srcAmount = BigNumber(
-          (Number(optimalSwapExchange.srcAmount) * 10000) /
-            (10000 + Number(options.slippageFactor)),
-        ).toFixed(0);
-      }
 
       return [
         {
@@ -312,9 +303,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return this.tokensMap[this.normalizeAddress(address)];
   }
 
-  /**
-   * POOLS
-   */
   getPoolIdentifier(srcAddress: Address, destAddress: Address, mm?: string) {
     return `${this.dexKey}_${srcAddress}_${destAddress}`.toLowerCase();
     return `${this.dexKey}_${srcAddress}_${destAddress}_${mm}`.toLowerCase();
@@ -612,8 +600,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     if (!token) {
       return [];
     }
-
-    const tokenSymbol = token.symbol?.toLowerCase() || '';
 
     const tokenPriceUsd = await this.dexHelper.getTokenUSDPrice(
       token,
