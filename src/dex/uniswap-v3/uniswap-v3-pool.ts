@@ -144,6 +144,18 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return newState;
   }
 
+  async getStateOrGenerate(
+    blockNumber: number,
+    readonly: boolean = false,
+  ): Promise<PoolState> {
+    let state = this.getState(blockNumber);
+    if (!state) {
+      state = await this.generateState(blockNumber);
+      if (!readonly) this.setState(state, blockNumber);
+    }
+    return state;
+  }
+
   protected processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,

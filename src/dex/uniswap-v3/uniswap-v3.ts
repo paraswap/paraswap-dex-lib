@@ -715,9 +715,10 @@ export class UniswapV3
 
       if (selectedPools.length === 0) return null;
 
-      const poolsToUse = selectedPools.reduce(
-        (acc, pool) => {
-          let state = pool.getState(blockNumber);
+      const poolsToUse = await selectedPools.reduce(
+        async (accP, pool) => {
+          const acc = await accP;
+          let state = await pool.getStateOrGenerate(blockNumber);
           if (state === null) {
             this.logger.trace(
               `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
@@ -728,10 +729,10 @@ export class UniswapV3
           }
           return acc;
         },
-        {
+        Promise.resolve({
           poolWithState: [] as UniswapV3EventPool[],
           poolWithoutState: [] as UniswapV3EventPool[],
-        },
+        }),
       );
 
       const states = poolsToUse.poolWithState.map(
