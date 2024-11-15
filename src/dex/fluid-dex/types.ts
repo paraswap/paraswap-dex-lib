@@ -18,7 +18,7 @@ export type PoolReserveResponse = [
   BigNumber,
   BigNumber[],
   BigNumber[],
-  dexLimitResponse,
+  DexLimitResponse,
 ];
 
 export type DexLimits = {
@@ -28,11 +28,11 @@ export type DexLimits = {
   borrowableToken1: TokenLimit;
 };
 
-export type dexLimitResponse = [
-  tokenLimitResponse,
-  tokenLimitResponse,
-  tokenLimitResponse,
-  tokenLimitResponse,
+export type DexLimitResponse = [
+  TokenLimitResponse,
+  TokenLimitResponse,
+  TokenLimitResponse,
+  TokenLimitResponse,
 ];
 
 export type TokenLimit = {
@@ -41,7 +41,7 @@ export type TokenLimit = {
   expandsDuration: bigint;
 };
 
-export type tokenLimitResponse = [bigint, bigint, bigint];
+export type TokenLimitResponse = [bigint, bigint, bigint];
 
 export type FluidDexLiquidityProxyState = {
   poolsReserves: readonly PoolReserve[];

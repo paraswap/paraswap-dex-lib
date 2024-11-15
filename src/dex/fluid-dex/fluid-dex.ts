@@ -322,9 +322,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       }
     } else {
       if (pool!.token0.toLowerCase() !== srcToken.toLowerCase()) {
-        args = [false, BigInt(destAmount), 2n * BigInt(srcAmount), recipient];
+        args = [false, BigInt(destAmount), BigInt(srcAmount), recipient];
       } else {
-        args = [true, BigInt(destAmount), 2n * BigInt(srcAmount), recipient];
+        args = [true, BigInt(destAmount), BigInt(srcAmount), recipient];
       }
     }
     const swapData = this.fluidDexPoolIface.encodeFunctionData(method, args);
@@ -589,7 +589,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   private getExpandedLimit(syncTime: number, limit: TokenLimit): bigint {
     const currentTime = Math.floor(Date.now() / 1000); // convert milliseconds to seconds
     const elapsedTime = currentTime - syncTime;
-    limit.expandsDuration = limit.expandsDuration || 0n; // convert minutes to seconds
+    limit.expandsDuration = limit.expandsDuration || 0n;
     if (elapsedTime < 10n) {
       // if almost no time has elapsed, return available amount
       return limit.available;
