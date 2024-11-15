@@ -81,6 +81,22 @@ export const PancakeswapV3Config: DexConfigMap<DexParams> = {
         'https://api.studio.thegraph.com/query/50473/exchange-clmm/version/latest',
     },
   },
+  NinemmSwapV3: {
+    [Network.BASE]: {
+      factory: '0x7b72C4002EA7c276dd717B96b20f4956c5C904E7',
+      quoter: '0xF26600E17728F41AdFb73D986E3deaf6Df29F1c4',
+      deployer: '0x1Ac8FabC977426Ae83F5a17d9AF100b5BF09a429',
+      router: '0xa07d063b595168e081B51280ada5fc8e11cDE52B',
+      supportedFees: [20000n, 10000n, 2500n, 500n, 100n],
+      stateMulticall: '0xeBF40A40CA3D4310Bf53048F48e860656e1D7C81',
+      uniswapMulticall: '0x091e99cb1C49331a94dD62755D168E941AbD0693',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      initHash: `0x887e50d42dcb6a574db66ced616a242eca42118fbff64e82ba1c850489afa6f6`,
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/80328/9mmbasev3/version/latest',
+    },
+  },
   SwapBasedV3: {
     [Network.BASE]: {
       factory: '0xb5620f90e803c7f957a9ef351b8db3c746021bea',
