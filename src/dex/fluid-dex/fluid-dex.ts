@@ -347,7 +347,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param outDecimals - The number of decimals for the output token.
    * @returns The calculated output amount (as a BigInt).
    */
-  private swapIn(
+  public swapIn(
     swap0To1: boolean,
     amountIn: bigint,
     colReserves: CollateralReserves,
@@ -391,7 +391,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param debtReserves - The reserves of the debt pool.
    * @returns The calculated output amount.
    */
-  private swapInAdjusted(
+  public swapInAdjusted(
     swap0To1: boolean,
     amountToSwap: bigint,
     colReserves: CollateralReserves,
@@ -586,7 +586,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param limit - token limit object containing available amount, expandsTo amount, and expandDuration
    * @returns The calculated available swappable amount (borrowable or withdrawable)
    */
-  private getExpandedLimit(syncTime: number, limit: TokenLimit): bigint {
+  public getExpandedLimit(syncTime: number, limit: TokenLimit): bigint {
     const currentTime = Math.floor(Date.now() / 1000); // convert milliseconds to seconds
     const elapsedTime = currentTime - syncTime;
     limit.expandsDuration = limit.expandsDuration || 0n;
@@ -619,7 +619,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param iReserveOut - Imaginary token reserve of output amount.
    * @returns The maximum output amount of the other asset.
    */
-  private getAmountOut(
+  public getAmountOut(
     amountIn: bigint,
     iReserveIn: bigint,
     iReserveOut: bigint,
@@ -641,7 +641,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param iReserveOut - Imaginary token reserve of output amount.
    * @returns The input amount of the other asset.
    */
-  private getAmountIn(
+  public getAmountIn(
     amountOut: bigint,
     iReserveIn: bigint,
     iReserveOut: bigint,
@@ -666,7 +666,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @note If a > t then entire trade route through col pool and col pool arbitrage with debt pool.
    * @note If a > 0 & a < t then swap will route through both pools.
    */
-  private swapRoutingOut(
+  public swapRoutingOut(
     t: bigint,
     x: bigint,
     y: bigint,
@@ -703,7 +703,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @note If a > t then entire trade route through col pool and col pool arbitrage with debt pool.
    * @note If a > 0 & a < t then swap will route through both pools.
    */
-  private swapRoutingIn(
+  public swapRoutingIn(
     t: bigint,
     x: bigint,
     y: bigint,
@@ -733,7 +733,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param {number} fee - The fee for the swap. 1e4 = 1%
    * @returns {bigint} amountIn - The calculated input amount required for the swap.
    */
-  private swapOut(
+  public swapOut(
     swap0to1: boolean,
     amountOut: bigint,
     colReserves: CollateralReserves,
@@ -770,7 +770,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
    * @param {DebtReserves} debtReserves - The reserves of the debt pool.
    * @returns {bigint} The calculated input amount required for the swap.
    */
-  private swapOutAdjusted(
+  public swapOutAdjusted(
     swap0to1: boolean,
     amountOut: bigint,
     colReserves: CollateralReserves,
