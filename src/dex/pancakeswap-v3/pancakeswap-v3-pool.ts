@@ -144,6 +144,21 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return newState;
   }
 
+  async getStateOrGenerate(
+    blockNumber: number,
+    readonly: boolean = false,
+  ): Promise<PoolState> {
+    let state = this.getState(blockNumber);
+    if (!state) {
+      state = await this.generateState(blockNumber);
+      this.logger.warn(
+        `${this.parentName}: Pool ${this.poolAddress} on ${this.dexHelper.config.data.network} re-generates state blockNumber=${blockNumber}`,
+      );
+      if (!readonly) this.setState(state, blockNumber);
+    }
+    return state;
+  }
+
   protected processLog(
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
