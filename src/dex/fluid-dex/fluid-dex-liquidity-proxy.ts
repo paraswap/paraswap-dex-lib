@@ -140,6 +140,7 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
         feeHex,
         collateralReservesHex,
         debtReservesHex,
+        dexLimitsHex,
       ] = poolReserve;
 
       const fee = Number(feeHex.toString());
@@ -160,6 +161,37 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
         token1ImaginaryReserves: bigIntify(debtReservesHex[5]),
       };
 
+      const withdrawableToken0 = {
+        available: bigIntify(dexLimitsHex[0][0]),
+        expandsTo: bigIntify(dexLimitsHex[0][1]),
+        expandsDuration: bigIntify(dexLimitsHex[0][2]),
+      };
+
+      const withdrawableToken1 = {
+        available: bigIntify(dexLimitsHex[1][0]),
+        expandsTo: bigIntify(dexLimitsHex[1][1]),
+        expandsDuration: bigIntify(dexLimitsHex[1][2]),
+      };
+
+      const borrowableToken0 = {
+        available: bigIntify(dexLimitsHex[2][0]),
+        expandsTo: bigIntify(dexLimitsHex[2][1]),
+        expandsDuration: bigIntify(dexLimitsHex[2][2]),
+      };
+
+      const borrowableToken1 = {
+        available: bigIntify(dexLimitsHex[3][0]),
+        expandsTo: bigIntify(dexLimitsHex[3][1]),
+        expandsDuration: bigIntify(dexLimitsHex[3][2]),
+      };
+
+      const dexLimits = {
+        withdrawableToken0,
+        withdrawableToken1,
+        borrowableToken0,
+        borrowableToken1,
+      };
+
       return {
         pool,
         token0,
@@ -167,6 +199,7 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
         fee,
         collateralReserves,
         debtReserves,
+        dexLimits,
       };
     });
 
