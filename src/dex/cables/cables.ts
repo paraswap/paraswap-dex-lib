@@ -21,21 +21,40 @@ import {
   Token,
   TransferFeeParams,
 } from '../../types';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
 import { CablesConfig } from './config';
 import {
+  CABLES_API_BLACKLIST_POLLING_INTERVAL_MS,
+  CABLES_API_PAIRS_POLLING_INTERVAL_MS,
+  CABLES_API_PRICES_POLLING_INTERVAL_MS,
+  CABLES_API_TOKENS_POLLING_INTERVAL_MS,
   CABLES_API_URL,
+  CABLES_BLACKLIST_CACHE_KEY,
+  CABLES_BLACKLIST_CACHES_TTL_S,
+  CABLES_ERRORS_CACHE_KEY,
   CABLES_FIRM_QUOTE_TIMEOUT_MS,
   CABLES_GAS_COST,
+  CABLES_PAIRS_CACHES_TTL_S,
+  CABLES_PRICES_CACHES_TTL_S,
+  CABLES_RESTRICT_CHECK_INTERVAL_MS,
+  CABLES_RESTRICT_COUNT_THRESHOLD,
+  CABLES_RESTRICT_TTL_S,
+  CABLES_RESTRICTED_CACHE_KEY,
+  CABLES_TOKENS_CACHES_TTL_S,
 } from './constants';
 import { CablesRateFetcher } from './rate-fetcher';
-import { CablesData, CablesRFQResponse } from './types';
+import {
+  CablesData,
+  CablesRFQResponse,
+  RestrictData,
+  SlippageError,
+} from './types';
 import mainnetRFQAbi from '../../abi/cables/CablesMainnetRFQ.json';
 import { Interface } from 'ethers/lib/utils';
 import BigNumber from 'bignumber.js';
-import { ethers } from 'ethers';
+import { ethers, utils } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
 export class Cables extends SimpleExchange implements IDex<any> {
@@ -82,20 +101,21 @@ export class Cables extends SimpleExchange implements IDex<any> {
             url: CABLES_API_URL + '/tokens',
           },
 
-          pricesIntervalMs: 2000,
-          pairsIntervalMs: 10000,
-          blacklistIntervalMs: 30000,
-          tokensIntervalMs: 30000,
-
-          pairsCacheKey: 'cablesPairsCacheKey',
+          pricesIntervalMs: CABLES_API_PRICES_POLLING_INTERVAL_MS,
+          pricesCacheTTLSecs: CABLES_PRICES_CACHES_TTL_S,
           pricesCacheKey: 'cablesPricesCacheKey',
-          tokensCacheKey: 'cablesTokensCacheKey',
-          blacklistCacheKey: 'cablesBlacklistCacheKey',
 
-          pairsCacheTTLSecs: 2,
-          pricesCacheTTLSecs: 10,
-          blacklistCacheTTLSecs: 30,
-          tokensCacheTTLSecs: 30,
+          pairsIntervalMs: CABLES_API_PAIRS_POLLING_INTERVAL_MS,
+          pairsCacheTTLSecs: CABLES_PAIRS_CACHES_TTL_S,
+          pairsCacheKey: 'cablesPairsCacheKey',
+
+          tokensIntervalMs: CABLES_API_TOKENS_POLLING_INTERVAL_MS,
+          tokensCacheTTLSecs: CABLES_TOKENS_CACHES_TTL_S,
+          tokensCacheKey: 'cablesTokensCacheKey',
+
+          blacklistIntervalMs: CABLES_API_BLACKLIST_POLLING_INTERVAL_MS,
+          blacklistCacheTTLSecs: CABLES_BLACKLIST_CACHES_TTL_S,
+          blacklistCacheKey: CABLES_BLACKLIST_CACHE_KEY,
         },
       },
     );
@@ -108,6 +128,17 @@ export class Cables extends SimpleExchange implements IDex<any> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<CablesData>, ExchangeTxInfo]> {
+    if (await this.isBlacklisted(options.txOrigin)) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
+      );
+      throw new Error(
+        `${this.dexKey}-${
+          this.network
+        }: user=${options.txOrigin.toLowerCase()} is blacklisted`,
+      );
+    }
+
     if (BigInt(optimalSwapExchange.srcAmount) === 0n) {
       throw new Error('getFirmRate failed with srcAmount === 0');
     }
@@ -171,6 +202,36 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const expiryAsBigInt = BigInt(order.expiry);
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
 
+      if (side === SwapSide.SELL) {
+        const requiredAmount = BigInt(optimalSwapExchange.destAmount);
+        const quoteAmount = BigInt(order.makerAmount);
+        const requiredAmountWithSlippage = new BigNumber(
+          requiredAmount.toString(),
+        )
+          .times(options.slippageFactor)
+          .toFixed(0);
+        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
+          throw new SlippageError(
+            `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
+          );
+        }
+      } else {
+        const requiredAmount = BigInt(optimalSwapExchange.srcAmount);
+        const quoteAmount = BigInt(order.takerAmount);
+        const requiredAmountWithSlippage = new BigNumber(
+          requiredAmount.toString(),
+        )
+          .times(options.slippageFactor)
+          .toFixed(0);
+        if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
+          throw new SlippageError(
+            `Slipped, factor: ${
+              options.slippageFactor
+            } ${quoteAmount.toString()} > ${requiredAmountWithSlippage}`,
+          );
+        }
+      }
+
       return [
         {
           ...optimalSwapExchange,
@@ -180,8 +241,13 @@ export class Cables extends SimpleExchange implements IDex<any> {
         },
         { deadline: minDeadline },
       ];
-    } catch (e) {
-      throw e;
+    } catch (e: any) {
+      const message = `${this.dexKey}-${this.network}: ${e}`;
+      this.logger.error(message);
+      if (!e?.isSlippageError) {
+        this.restrict();
+      }
+      throw new Error(message);
     }
   }
 
@@ -440,6 +506,11 @@ export class Cables extends SimpleExchange implements IDex<any> {
     transferFees?: TransferFeeParams,
     isFirstSwap?: boolean,
   ): Promise<ExchangePrices<CablesData> | null> {
+    const isRestricted = await this.isRestricted();
+    if (isRestricted) {
+      return null;
+    }
+
     try {
       const normalizedSrcToken = this.normalizeToken(srcToken);
       const normalizedDestToken = this.normalizeToken(destToken);
@@ -748,5 +819,93 @@ export class Cables extends SimpleExchange implements IDex<any> {
       }
     }
     return null;
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    const cachedBlacklist = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      CABLES_BLACKLIST_CACHE_KEY,
+    );
+
+    if (cachedBlacklist) {
+      const blacklist = JSON.parse(cachedBlacklist) as string[];
+      return blacklist.includes(txOrigin.toLowerCase());
+    }
+
+    return false;
+  }
+
+  async isRestricted(): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      CABLES_RESTRICTED_CACHE_KEY,
+    );
+
+    return result === 'true';
+  }
+
+  async restrict() {
+    const errorsDataRaw = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      CABLES_ERRORS_CACHE_KEY,
+    );
+
+    const errorsData: RestrictData = Utils.Parse(errorsDataRaw);
+    const ERRORS_TTL_S = Math.floor(CABLES_RESTRICT_CHECK_INTERVAL_MS / 1000);
+
+    if (
+      !errorsData ||
+      errorsData?.addedDatetimeMs + CABLES_RESTRICT_CHECK_INTERVAL_MS <
+        Date.now()
+    ) {
+      this.logger.warn(
+        `${this.dexKey}-${this.network}: First encounter of error OR error ocurred outside of threshold, setting up counter`,
+      );
+      const data: RestrictData = {
+        count: 1,
+        addedDatetimeMs: Date.now(),
+      };
+      await this.dexHelper.cache.setex(
+        this.dexKey,
+        this.network,
+        CABLES_ERRORS_CACHE_KEY,
+        ERRORS_TTL_S,
+        Utils.Serialize(data),
+      );
+      return;
+    } else {
+      if (errorsData.count + 1 >= CABLES_RESTRICT_COUNT_THRESHOLD) {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: Restricting due to error count=${
+            errorsData.count + 1
+          } within ${CABLES_RESTRICT_CHECK_INTERVAL_MS / 1000 / 60} minutes`,
+        );
+        await this.dexHelper.cache.setex(
+          this.dexKey,
+          this.network,
+          CABLES_RESTRICTED_CACHE_KEY,
+          CABLES_RESTRICT_TTL_S,
+          'true',
+        );
+      } else {
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: Error count increased`,
+        );
+        const data: RestrictData = {
+          count: errorsData.count + 1,
+          addedDatetimeMs: errorsData.addedDatetimeMs,
+        };
+        await this.dexHelper.cache.setex(
+          this.dexKey,
+          this.network,
+          CABLES_RESTRICTED_CACHE_KEY,
+          ERRORS_TTL_S,
+          Utils.Serialize(data),
+        );
+      }
+    }
   }
 }
