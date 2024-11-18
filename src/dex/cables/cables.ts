@@ -61,6 +61,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CablesConfig);
 
+  readonly isStatePollingDex = true;
+
   private rateFetcher: CablesRateFetcher;
 
   logger: Logger;
