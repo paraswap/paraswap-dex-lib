@@ -70,8 +70,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
   hasConstantPriceLargeAmounts: boolean = false;
 
-  needsSequentialPreprocessing?: boolean | undefined;
-
   constructor(
     readonly network: Network,
     readonly dexKey: string,
