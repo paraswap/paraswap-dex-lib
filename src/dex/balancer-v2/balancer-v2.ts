@@ -268,6 +268,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     BalancerPoolTypes.GyroE,
   ]);
 
+  buySupportedPoolAddresses: Partial<Record<number, Set<Address>>> = {
+    [Network.MAINNET]: new Set([
+      '0x8353157092ed8be69a9df8f95af097bbf33cb2af', // ComposableStable USDC - USDT - GHO
+    ]),
+  };
+
   eventSupportedPoolTypes: BalancerPoolTypes[] = [
     BalancerPoolTypes.Stable,
     BalancerPoolTypes.Weighted,
@@ -511,7 +517,12 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     if (
       side === SwapSide.BUY &&
-      !this.buySupportedPoolTypes.has(subgraphPool.poolType)
+      !(
+        this.buySupportedPoolTypes.has(subgraphPool.poolType) ||
+        this.buySupportedPoolAddresses[this.network]?.has(
+          subgraphPool.address.toLowerCase(),
+        )
+      )
     ) {
       return null;
     }

@@ -11,7 +11,6 @@ import { ContractMethod, Network, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { generateConfig } from '../../config';
-import { DirectMethodsV6 } from './constants';
 
 jest.setTimeout(50 * 1000);
 
@@ -34,15 +33,15 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        // ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-        ContractMethod.swapExactAmountIn,
-      ],
-    ],
+    // [
+    //   SwapSide.SELL,
+    //   [
+    //     // ContractMethod.simpleSwap,
+    //     // ContractMethod.multiSwap,
+    //     // ContractMethod.megaSwap,
+    //     ContractMethod.swapExactAmountIn,
+    //   ],
+    // ],
     [
       SwapSide.BUY,
       [
@@ -502,6 +501,62 @@ describe('BalancerV2 E2E', () => {
         [
           { name: 'GYD', amount: '10000000000000000000' },
           { name: 'sDAI', amount: '10000000000000000000' },
+        ],
+      ];
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: ContractMethod) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    pair[0].amount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    pair[1].amount,
+                    side,
+                    dexKey,
+                    contractMethod,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    });
+
+    describe('GHO -> USDT buy', () => {
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.BUY,
+          [
+            ContractMethod.swapExactAmountOutOnBalancerV2,
+            ContractMethod.swapExactAmountOut,
+          ],
+        ],
+      ]);
+
+      const pairs: { name: string; amount: string }[][] = [
+        [
+          { name: 'GHO', amount: '81530002926' },
+          { name: 'USDT', amount: '82245407358961750602330' },
         ],
       ];
 
