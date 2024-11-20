@@ -315,6 +315,21 @@ describe('FluidDex', function () {
         );
       });
 
+      it('USDC -> USDT getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          fluidDex,
+          network,
+          dexKey,
+          blockNumber,
+          tokenASymbol,
+          tokenBSymbol,
+          SwapSide.BUY,
+          amountsForSwap,
+          'estimateSwapOut',
+          dexHelper,
+        );
+      });
+
       it('USDT -> USDC getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           fluidDex,
@@ -326,6 +341,21 @@ describe('FluidDex', function () {
           SwapSide.SELL,
           amountsForSwap,
           'estimateSwapIn',
+          dexHelper,
+        );
+      });
+
+      it('USDT -> USDC getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          fluidDex,
+          network,
+          dexKey,
+          blockNumber,
+          tokenBSymbol,
+          tokenASymbol,
+          SwapSide.BUY,
+          amountsForSwap,
+          'estimateSwapOut',
           dexHelper,
         );
       });
