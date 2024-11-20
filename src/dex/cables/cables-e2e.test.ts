@@ -27,16 +27,28 @@ describe('Cables E2E', () => {
     const holders = Holders[network];
 
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
+      // [
+      //   {
+      //     name: 'USDC',
+      //     sellAmount: '500000',
+      //     buyAmount: '700000',
+      //   },
+      //   {
+      //     name: 'USDT',
+      //     sellAmount: '600000',
+      //     buyAmount: '850000',
+      //   },
+      // ],
       [
         {
-          name: 'USDC',
-          sellAmount: '500000',
-          buyAmount: '700000',
+          name: 'WETH',
+          sellAmount: '1000000000000000000',
+          buyAmount: '1000000000000000000',
         },
         {
           name: 'USDT',
-          sellAmount: '600000',
-          buyAmount: '850000',
+          sellAmount: '6000000',
+          buyAmount: '6000000',
         },
       ],
     ];
