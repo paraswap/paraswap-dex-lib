@@ -4,10 +4,9 @@ import {
   OptimalSwapExchange,
   SwapSide,
 } from '@paraswap/core';
-import { AsyncOrSync } from 'ts-essentials';
+import { assert, AsyncOrSync } from 'ts-essentials';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { assert } from 'ts-essentials';
-import { Network, ETHER_ADDRESS, NULL_ADDRESS } from '../../constants';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import {
   AdapterExchangeParam,
@@ -54,7 +53,7 @@ import {
 import mainnetRFQAbi from '../../abi/cables/CablesMainnetRFQ.json';
 import { Interface } from 'ethers/lib/utils';
 import BigNumber from 'bignumber.js';
-import { ethers, utils } from 'ethers';
+import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 
 export class Cables extends SimpleExchange implements IDex<any> {
@@ -232,6 +231,16 @@ export class Cables extends SimpleExchange implements IDex<any> {
         }
       }
 
+      // Correction of the srcAmount
+      // because flag specialDexSupportsInsertFromAmount: false
+      // is not working for Buy in test
+      if (isBuy) {
+        optimalSwapExchange.srcAmount = BigNumber(
+          (Number(optimalSwapExchange.srcAmount) * 10000) /
+            (10000 + Number(options.slippageFactor)),
+        ).toFixed(0);
+      }
+
       return [
         {
           ...optimalSwapExchange,
@@ -267,7 +276,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       `${this.dexKey}-${this.network}: quoteData undefined`,
     );
 
-    const swapFunction = 'simpleSwap';
+    const swapFunction = 'partialSwap';
     const swapFunctionParams = [
       [
         quoteData.nonceAndMeta,
@@ -280,6 +289,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         quoteData.takerAmount,
       ],
       quoteData.signature,
+      quoteData.takerAmount,
     ];
 
     const exchangeData = this.rfqInterface.encodeFunctionData(
