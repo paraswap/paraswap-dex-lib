@@ -5,6 +5,16 @@
         "internalType": "address",
         "name": "factory_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "liquidity_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "liquidityResolver_",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -16,6 +26,32 @@
     "outputs": [
       {
         "internalType": "contract IFluidDexFactory",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "LIQUIDITY",
+    "outputs": [
+      {
+        "internalType": "contract IFluidLiquidity",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "LIQUIDITY_RESOLVER",
+    "outputs": [
+      {
+        "internalType": "contract IFluidLiquidityResolver",
         "name": "",
         "type": "address"
       }
@@ -228,6 +264,101 @@
             "internalType": "struct IFluidDexT1.DebtReserves",
             "name": "debtReserves",
             "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken1",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken1",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct Structs.DexLimits",
+            "name": "limits",
+            "type": "tuple"
           }
         ],
         "internalType": "struct Structs.PoolWithReserves[]",
@@ -326,6 +457,101 @@
             ],
             "internalType": "struct IFluidDexT1.DebtReserves",
             "name": "debtReserves",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken1",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken1",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct Structs.DexLimits",
+            "name": "limits",
             "type": "tuple"
           }
         ],
@@ -519,6 +745,115 @@
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "dex_",
+        "type": "address"
+      }
+    ],
+    "name": "getDexLimits",
+    "outputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "available",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expandsTo",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expandDuration",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Structs.TokenLimit",
+            "name": "withdrawableToken0",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "available",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expandsTo",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expandDuration",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Structs.TokenLimit",
+            "name": "withdrawableToken1",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "available",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expandsTo",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expandDuration",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Structs.TokenLimit",
+            "name": "borrowableToken0",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "available",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expandsTo",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expandDuration",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Structs.TokenLimit",
+            "name": "borrowableToken1",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct Structs.DexLimits",
+        "name": "limits_",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -920,6 +1255,101 @@
             "internalType": "struct IFluidDexT1.DebtReserves",
             "name": "debtReserves",
             "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken1",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken1",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct Structs.DexLimits",
+            "name": "limits",
+            "type": "tuple"
           }
         ],
         "internalType": "struct Structs.PoolWithReserves",
@@ -931,7 +1361,13 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "pool_",
+        "type": "address"
+      }
+    ],
     "name": "getPoolReservesAdjusted",
     "outputs": [
       {
@@ -1019,11 +1455,106 @@
             "internalType": "struct IFluidDexT1.DebtReserves",
             "name": "debtReserves",
             "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken1",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken1",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct Structs.DexLimits",
+            "name": "limits",
+            "type": "tuple"
           }
         ],
-        "internalType": "struct Structs.PoolWithReserves[]",
+        "internalType": "struct Structs.PoolWithReserves",
         "name": "poolReserves_",
-        "type": "tuple[]"
+        "type": "tuple"
       }
     ],
     "stateMutability": "nonpayable",
@@ -1148,6 +1679,101 @@
             "internalType": "struct IFluidDexT1.DebtReserves",
             "name": "debtReserves",
             "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken1",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken1",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct Structs.DexLimits",
+            "name": "limits",
+            "type": "tuple"
           }
         ],
         "internalType": "struct Structs.PoolWithReserves[]",
@@ -1159,7 +1785,13 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "pools_",
+        "type": "address[]"
+      }
+    ],
     "name": "getPoolsReservesAdjusted",
     "outputs": [
       {
@@ -1246,6 +1878,101 @@
             ],
             "internalType": "struct IFluidDexT1.DebtReserves",
             "name": "debtReserves",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "withdrawableToken1",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken0",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandsTo",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "expandDuration",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct Structs.TokenLimit",
+                "name": "borrowableToken1",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct Structs.DexLimits",
+            "name": "limits",
             "type": "tuple"
           }
         ],

@@ -38,9 +38,7 @@ describe('FluidDex EventPool Mainnet', function () {
     const eventsToTest: Record<Address, EventMappings> = {
       '0x52aa899454998be5b000ad077a46bbe360f4e497': {
         LogOperate: [
-          21091850, 21091882, 21091897, 21091915, 21092008, 21092022, 21092039,
-          21092142, 21092176, 21092187, 21092230, 21092286, 21092289, 21092295,
-          21092319, 21092352, 21092360, 21092368, 21092378, 21092383,
+          21190399, 21190405, 21190420, 21190452, 21190454, 21190465, 21190506,
         ],
       },
     };
@@ -86,7 +84,7 @@ describe('FluidDex EventPool Mainnet', function () {
 
     const eventsToTest: Record<Address, EventMappings> = {
       '0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085': {
-        LogDexDeployed: [21105297, 21105362, 21105366, 21105370],
+        LogDexDeployed: [21105298, 21105363, 21105367, 21105371],
       },
     };
 
