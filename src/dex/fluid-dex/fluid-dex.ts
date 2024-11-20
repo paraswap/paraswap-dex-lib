@@ -755,11 +755,15 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       currentLimits,
       syncTime,
     );
-    return (
-      ((amountIn * BigInt(this.FEE_100_PERCENT)) /
-        (BigInt(this.FEE_100_PERCENT) - fee)) *
-      BigInt(10) ** BigInt(inDecimals - 12)
-    );
+
+    if (amountIn == 2n ** 256n - 1n) {
+      return amountIn;
+    }
+    const ans =
+      (amountIn * this.FEE_100_PERCENT * BigInt(10 ** inDecimals)) /
+      BigInt(10 ** 12) /
+      (this.FEE_100_PERCENT - fee);
+    return ans;
   }
 
   /**
@@ -892,10 +896,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveOut,
       );
       if (amountOut > debtReserveOut) {
-        return BigInt(Number.MAX_SAFE_INTEGER);
+        return 2n ** 256n - 1n;
       }
       if (amountOut > borrowable) {
-        return BigInt(Number.MAX_SAFE_INTEGER);
+        return 2n ** 256n - 1n;
       }
     } else if (a >= amountOut) {
       // Entire trade routes through collateral pool
@@ -906,10 +910,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         colIReserveOut,
       );
       if (amountOut > colReserveOut) {
-        return BigInt(Number.MAX_SAFE_INTEGER);
+        return 2n ** 256n - 1n;
       }
       if (amountOut > withdrawable) {
-        return BigInt(Number.MAX_SAFE_INTEGER);
+        return 2n ** 256n - 1n;
       }
     } else {
       // Trade routes through both pools
@@ -922,10 +926,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveOut,
       );
       if (amountOutDebt > debtReserveOut || a > colReserveOut) {
-        return BigInt(Number.MAX_SAFE_INTEGER);
+        return 2n ** 256n - 1n;
       }
       if (amountOutDebt > borrowable || a > withdrawable) {
-        return BigInt(Number.MAX_SAFE_INTEGER);
+        return 2n ** 256n - 1n;
       }
     }
 
@@ -962,7 +966,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       (oldPrice / BigInt(100)) * MAX_PRICE_DIFF
     ) {
       // if price diff is > 5% then swap would revert.
-      return BigInt(Number.MAX_SAFE_INTEGER);
+      return 2n ** 256n - 1n;
     }
 
     const totalAmountIn = amountInCollateral + amountInDebt;

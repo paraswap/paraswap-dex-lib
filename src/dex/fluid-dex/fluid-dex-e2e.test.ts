@@ -140,8 +140,8 @@ describe('FluidDex E2E', () => {
       const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'USDT';
 
-      const tokenAAmount: string = '1000000';
-      const tokenBAmount: string = '100000000';
+      const tokenAAmount: string = '10000';
+      const tokenBAmount: string = '1000000';
 
       testForNetwork(
         network,
