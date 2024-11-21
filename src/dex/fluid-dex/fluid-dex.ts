@@ -334,6 +334,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       exchangeData: swapData,
       targetExchange: pool!.address,
       returnAmountPos,
+      sendEthButSupportsInsertFromAmount: true,
     };
   }
 

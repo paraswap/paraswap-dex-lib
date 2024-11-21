@@ -68,7 +68,6 @@ function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
@@ -86,7 +85,7 @@ function testForNetwork(
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
                 tokenBAmount,
-                SwapSide.SELL,
+                side,
                 dexKey,
                 contractMethod as ContractMethod,
                 network,
@@ -99,7 +98,7 @@ function testForNetwork(
                 tokens[tokenASymbol],
                 holders[tokenBSymbol],
                 tokenBAmount,
-                SwapSide.SELL,
+                side,
                 dexKey,
                 contractMethod as ContractMethod,
                 network,
