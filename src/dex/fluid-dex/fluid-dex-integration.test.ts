@@ -116,7 +116,6 @@ async function checkOnChainPricing(
         return price === 0n;
       }
       const percentDiff = ((price - expectedPrice) * 100n) / expectedPrice;
-      console.log('this is percent diff : ', percentDiff);
       return percentDiff <= 0.01 && percentDiff >= -0.01;
     }),
   ).toBe(true);
