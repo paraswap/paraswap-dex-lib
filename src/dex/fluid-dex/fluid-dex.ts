@@ -204,7 +204,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         return null;
       }
       const prices = amounts.map(amount => {
-        if (side == SwapSide.SELL) {
+        if (side === SwapSide.SELL) {
           return this.swapIn(
             srcToken.address.toLowerCase() === pool.token0.toLowerCase(),
             amount,
@@ -304,17 +304,17 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     let args: any;
     let returnAmountPos: number | undefined;
 
-    const method = side == SwapSide.SELL ? 'swapIn' : 'swapOut';
+    const method = side === SwapSide.SELL ? 'swapIn' : 'swapOut';
 
     returnAmountPos = extractReturnAmountPosition(
       this.fluidDexPoolIface,
       method,
-      side == SwapSide.SELL ? 'amountOut_' : 'amountIn_',
+      side === SwapSide.SELL ? 'amountOut_' : 'amountIn_',
     );
 
     const pool = this.getPoolByTokenPair(srcToken, destToken);
 
-    if (side == SwapSide.SELL) {
+    if (side === SwapSide.SELL) {
       if (pool!.token0.toLowerCase() !== srcToken.toLowerCase()) {
         args = [false, BigInt(srcAmount), BigInt(destAmount), recipient];
       } else {
