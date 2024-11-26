@@ -1,0 +1,13 @@
+import { DexParams } from './types';
+import { DexConfigMap } from '../../types';
+import { Network, SwapSide } from '../../constants';
+
+export const UsualMUsd0Config: DexConfigMap<DexParams> = {
+  UsualMUsd0: {
+    [Network.MAINNET]: {
+      usualMAddress: '0x0000000000000000000000000000000000000000', //TODO: replace with actual address
+      usd0Address: '0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5',
+      usualDaoCollateralAddress: '0xde6e1F680C4816446C8D515989E2358636A38b04',
+    },
+  },
+};
