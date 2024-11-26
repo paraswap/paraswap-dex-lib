@@ -110,10 +110,9 @@ export class UsualMSmartM
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UsualMSmartMData>> {
-    // TODO: check is SwapSide is required
-    // if (side === SwapSide.BUY) {
-    //   return null;
-    // }
+    if (side === SwapSide.BUY) {
+      return null;
+    }
 
     const isUsualMSwapToken = this.is_usualM_swap_token(
       srcToken.address,

@@ -110,10 +110,9 @@ export class UsualMUsd0 extends SimpleExchange implements IDex<UsualMUsd0Data> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UsualMUsd0Data>> {
-    // TODO: check is SwapSide is required
-    // if (side === SwapSide.BUY) {
-    //   return null;
-    // }
+    if (side === SwapSide.BUY) {
+      return null;
+    }
 
     const isUsd0SwapToken = this.is_usd0_swap_token(
       srcToken.address,
