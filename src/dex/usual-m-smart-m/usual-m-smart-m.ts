@@ -179,7 +179,7 @@ export class UsualMSmartM
 
       return {
         needWrapNative: false,
-        dexFuncHasRecipient: false,
+        dexFuncHasRecipient: true,
         exchangeData,
         targetExchange: this.config.usualMAddress,
         returnAmountPos: undefined,
