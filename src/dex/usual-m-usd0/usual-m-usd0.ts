@@ -47,6 +47,7 @@ export class UsualMUsd0 extends SimpleExchange implements IDex<UsualMUsd0Data> {
     this.config = {
       usualMAddress: config.usualMAddress.toLowerCase(),
       usd0Address: config.usd0Address.toLowerCase(),
+      usualDaoCollateralAddress: config.usualDaoCollateralAddress.toLowerCase(),
     };
     this.logger = dexHelper.getLogger(dexKey);
   }
