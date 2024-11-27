@@ -53,7 +53,7 @@ function testForNetwork(
 }
 
 describe('UsualM<>Usd0 E2E', () => {
-  const dexKey = 'UsualMSmartM';
+  const dexKey = 'UsualMUsd0';
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;

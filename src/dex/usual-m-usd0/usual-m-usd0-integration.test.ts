@@ -61,7 +61,7 @@ async function testPricingOnNetwork(
 }
 
 describe('UsualM<>USD0', function () {
-  const dexKey = 'UsualMUSD0';
+  const dexKey = 'UsualMUsd0';
   let blockNumber: number;
   let usualMUsd0: UsualMUsd0;
 

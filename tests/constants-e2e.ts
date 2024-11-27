@@ -546,6 +546,16 @@ export const Tokens: {
       decimals: 18,
       symbol: 'USD0++',
     },
+    SmartM: {
+      address: '0x437cc33344a0B27A429f795ff6B469C72698B291',
+      decimals: 6,
+      symbol: 'MSMART,',
+    },
+    UsualM: {
+      address: '0xFe274C305b365dC38e188E8f01c4FAe2171ce927',
+      decimals: 6,
+      symbol: 'USUALM',
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
