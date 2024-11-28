@@ -33,7 +33,7 @@ const usdcAave = {
   decimals: 6,
 };
 
-const amounts = [0n, BI_POWS[19], 20000000000000000000n];
+const amounts = [0n, BI_POWS[18], BI_POWS[19], 20000000000000000000n];
 
 async function main() {
   const dexHelper = new DummyDexHelper(Network.SEPOLIA);

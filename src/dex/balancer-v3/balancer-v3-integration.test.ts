@@ -4,7 +4,7 @@ dotenv.config();
 
 import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
-import { Network, SwapSide } from '../../constants';
+import { Network, NULL_ADDRESS, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { BalancerV3 } from './balancer-v3';
 import {
@@ -40,6 +40,7 @@ function getQuerySwapSingleTokenCalldata(
             step.swapInput.tokenIn,
             step.swapInput.tokenOut,
             amount,
+            NULL_ADDRESS,
             '0x',
           ],
         ),
@@ -86,7 +87,7 @@ function getQuerySwapMultiTokenCalldata(
         target: routerAddress,
         callData: routerInterface.encodeFunctionData(
           side === SwapSide.SELL ? `querySwapExactIn` : `querySwapExactOut`,
-          [args, '0x'],
+          [args, NULL_ADDRESS, '0x'],
         ),
       };
     });
@@ -240,7 +241,7 @@ async function testPricingOnNetwork(
   if (balancerV3.hasConstantPriceLargeAmounts) {
     checkConstantPoolPrices(poolPrices!, amounts, dexKey);
   } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
+    checkPoolPrices(poolPrices!, amounts, side, dexKey, false);
   }
 
   // Check if onchain pricing equals to calculated ones
@@ -352,13 +353,13 @@ describe('BalancerV3', function () {
     });
   });
 
-  describe('Boosted Pool', () => {
+  describe('Stable/Boosted Pool', () => {
     const network = Network.SEPOLIA;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
-    const srcTokenSymbol = 'usdcAave';
-    const destTokenSymbol = 'daiAave';
+    const srcTokenSymbol = 'stataUsdc';
+    const destTokenSymbol = 'stataUsdt';
 
     const amountsForSell = [
       0n,

@@ -249,8 +249,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
             },
             exchange: this.dexKey,
             gasCost: 1, // TODO - this will be updated once final profiles done
-            poolAddresses: [pool.address],
-            poolIdentifier: `${this.dexKey}_${pool.address}`,
+            poolAddresses: [pool.poolAddress],
+            poolIdentifier: `${this.dexKey}_${pool.poolAddress}`,
           };
 
           for (let j = 0; j < amounts.length; j++) {
@@ -265,7 +265,9 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
           }
           poolPrices.push(poolExchangePrice);
         } catch (err) {
-          this.logger.error(`error fetching prices for pool`);
+          this.logger.error(
+            `error fetching prices for pool: ${pool.poolAddress}`,
+          );
           this.logger.error(err);
         }
       }
