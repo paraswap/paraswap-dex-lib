@@ -40,12 +40,6 @@ function getReaderCalldata(
     item => item.address.toLowerCase() === poolAddress.toLowerCase(),
   );
 
-  console.log('amounts: ', amounts);
-  console.log(
-    'pool!.token0.toLowerCase() === srcToken.toLowerCase() ? true : false,: ',
-    pool!.token0.toLowerCase() === srcToken.toLowerCase() ? true : false,
-  );
-
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
@@ -116,21 +110,7 @@ async function checkOnChainPricing(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
 
-  console.log('EXPECTED PRICES: ', expectedPrices);
-  console.log('ACTUAL PRICES: ', prices);
-
   expect(prices).toEqual(expectedPrices);
-
-  // expect(
-  //   prices.every((price, index) => {
-  //     const expectedPrice = expectedPrices[index];
-  //     if (expectedPrice === 0n) {
-  //       return price === 0n;
-  //     }
-  //     const percentDiff = ((price - expectedPrice) * 100n) / expectedPrice;
-  //     return percentDiff <= 0.01 && percentDiff >= -0.01;
-  //   }),
-  // ).toBe(true);
 }
 
 async function testPricingOnNetwork(
