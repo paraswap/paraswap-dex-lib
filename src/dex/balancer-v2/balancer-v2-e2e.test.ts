@@ -41,6 +41,7 @@ function testForNetwork(
         // ContractMethod.multiSwap,
         // ContractMethod.megaSwap,
         ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountInOnBalancerV2,
       ],
     ],
     [
@@ -50,6 +51,7 @@ function testForNetwork(
         // ContractMethod.buy,
         // DirectMethodsV6.directBuy,
         ContractMethod.swapExactAmountOut,
+        ContractMethod.swapExactAmountOutOnBalancerV2,
       ],
     ],
   ]);
@@ -127,6 +129,82 @@ describe('BalancerV2 E2E', () => {
       generateConfig(network).privateHttpProvider,
       network,
     );
+
+    describe.only('GHO -> USDT', () => {
+      const pairs: { name: string; sellAmount: string; buyAmount: string }[][] =
+        [
+          [
+            {
+              name: 'GHO',
+              sellAmount: '1000000000000000000000',
+              buyAmount: '1000000000',
+            },
+            {
+              name: 'USDT',
+              sellAmount: '1000000000',
+              buyAmount: '1000000000000000000000',
+            },
+          ],
+        ];
+
+      const sideToContractMethods = new Map([
+        [
+          SwapSide.SELL,
+          [
+            ContractMethod.swapExactAmountIn,
+            ContractMethod.swapExactAmountInOnBalancerV2,
+          ],
+        ],
+        [
+          SwapSide.BUY,
+          [
+            ContractMethod.swapExactAmountOut,
+            ContractMethod.swapExactAmountOutOnBalancerV2,
+          ],
+        ],
+      ]);
+
+      sideToContractMethods.forEach((contractMethods, side) =>
+        describe(`${side}`, () => {
+          contractMethods.forEach((contractMethod: string) => {
+            pairs.forEach(pair => {
+              describe(`${contractMethod}`, () => {
+                it(`${pair[0].name} -> ${pair[1].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[0].name],
+                    tokens[pair[1].name],
+                    holders[pair[0].name],
+                    side === SwapSide.SELL
+                      ? pair[0].sellAmount
+                      : pair[0].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod as any,
+                    network,
+                    provider,
+                  );
+                });
+                it(`${pair[1].name} -> ${pair[0].name}`, async () => {
+                  await testE2E(
+                    tokens[pair[1].name],
+                    tokens[pair[0].name],
+                    holders[pair[1].name],
+                    side === SwapSide.SELL
+                      ? pair[1].sellAmount
+                      : pair[1].buyAmount,
+                    side,
+                    dexKey,
+                    contractMethod as any,
+                    network,
+                    provider,
+                  );
+                });
+              });
+            });
+          });
+        }),
+      );
+    });
 
     describe('Weighted Pool', () => {
       const sideToContractMethods = new Map([

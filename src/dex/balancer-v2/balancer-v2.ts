@@ -266,6 +266,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   buySupportedPoolTypes: Set<BalancerPoolTypes> = new Set([
     BalancerPoolTypes.Weighted,
     BalancerPoolTypes.GyroE,
+    BalancerPoolTypes.ComposableStable,
   ]);
 
   eventSupportedPoolTypes: BalancerPoolTypes[] = [
@@ -868,6 +869,7 @@ export class BalancerV2
         this.logger.error(`getState returned null`);
       }
       const eventPoolStates = { ...(eventPoolStatesRO || {}) };
+
       for (const addr of this.eventDisabledPools) delete eventPoolStates[addr];
 
       // Fetch previously cached non-event pool states
