@@ -196,6 +196,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       const liquidityProxyState = await this.liquidityProxy.getStateOrGenerate(
         blockNumber,
       );
+
       const currentPoolReserves = liquidityProxyState.poolsReserves.find(
         poolReserve =>
           poolReserve.pool.toLowerCase() === pool.address.toLowerCase(),
@@ -368,15 +369,16 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     ) {
       return 0n;
     }
+
     const amountInAdjusted =
-      (((amountIn * (this.FEE_100_PERCENT - fee)) / this.FEE_100_PERCENT) *
-        BigInt(10 ** 12)) /
-      BigInt(10 ** inDecimals);
+      (amountIn * BigInt(10 ** 12)) / BigInt(10 ** inDecimals);
+
     const amountOut = this.swapInAdjusted(
       swap0To1,
       amountInAdjusted,
       colReserves,
       debtReserves,
+      fee,
       outDecimals,
       currentLimits,
       syncTime,
@@ -397,6 +399,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     amountToSwap: bigint,
     colReserves: CollateralReserves,
     debtReserves: DebtReserves,
+    fee: bigint,
     outDecimals: number,
     currentLimits: DexLimits,
     syncTime: number,
@@ -498,8 +501,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     if (a <= 0n) {
       // Entire trade routes through debt pool
       amountInDebt = amountToSwap;
+
       amountOutDebt = this.getAmountOut(
-        amountToSwap,
+        this.applyFeeForSell(amountToSwap, fee),
         debtIReserveIn,
         debtIReserveOut,
       );
@@ -507,17 +511,21 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       // Entire trade routes through collateral pool
       amountInCollateral = amountToSwap;
       amountOutCollateral = this.getAmountOut(
-        amountToSwap,
+        this.applyFeeForSell(amountToSwap, fee),
         colIReserveIn,
         colIReserveOut,
       );
     } else {
       // Trade routes through both pools
       amountInCollateral = a;
-      amountOutCollateral = this.getAmountOut(a, colIReserveIn, colIReserveOut);
+      amountOutCollateral = this.getAmountOut(
+        this.applyFeeForSell(a, fee),
+        colIReserveIn,
+        colIReserveOut,
+      );
       amountInDebt = amountToSwap - a;
       amountOutDebt = this.getAmountOut(
-        amountInDebt,
+        this.applyFeeForSell(amountInDebt, fee),
         debtIReserveIn,
         debtIReserveOut,
       );
@@ -675,12 +683,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     y2: bigint,
   ): bigint {
     // Adding 1e18 precision
-    const xyRoot = BigInt(
-      Math.floor(Math.sqrt(Number(x * y * BigInt(10n ** 18n)))),
-    );
-    const x2y2Root = BigInt(
-      Math.floor(Math.sqrt(Number(x2 * y2 * BigInt(10n ** 18n)))),
-    );
+    const xyRoot = sqrt(BigNumber.from(x).mul(y).mul(BigInt(1e18))).toBigInt();
+    const x2y2Root = sqrt(
+      BigNumber.from(x2).mul(y2).mul(BigInt(1e18)),
+    ).toBigInt();
 
     // 1e18 precision gets cancelled out in division
     const numerator = t * xyRoot + y * x2y2Root - y2 * xyRoot;
@@ -747,11 +753,13 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ): bigint {
     const amountOutAdjusted =
       (amountOut * BigInt(10 ** 12)) / BigInt(10 ** outDecimals);
+
     const amountIn = this.swapOutAdjusted(
       swap0to1,
       amountOutAdjusted,
       colReserves,
       debtReserves,
+      fee,
       outDecimals,
       currentLimits,
       syncTime,
@@ -760,10 +768,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     if (amountIn == 2n ** 256n - 1n) {
       return amountIn;
     }
-    const ans =
-      (amountIn * this.FEE_100_PERCENT * BigInt(10 ** inDecimals)) /
-      BigInt(10 ** 12) /
-      (this.FEE_100_PERCENT - fee);
+    const ans = (amountIn * BigInt(10 ** inDecimals)) / BigInt(10 ** 12);
+
     return ans;
   }
 
@@ -780,6 +786,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     amountOut: bigint,
     colReserves: CollateralReserves,
     debtReserves: DebtReserves,
+    fee: bigint,
     outDecimals: number,
     currentLimits: DexLimits,
     syncTime: number,
@@ -876,26 +883,29 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveOut,
       );
     } else if (debtPoolEnabled) {
-      a = BigInt(-1); // Route from debt pool
+      a = -1n; // Route from debt pool
     } else if (colPoolEnabled) {
-      a = amountOut + BigInt(1); // Route from collateral pool
+      a = amountOut + 1n; // Route from collateral pool
     } else {
       throw new Error('No pools are enabled');
     }
 
-    let amountInCollateral: bigint = BigInt(0);
-    let amountInDebt: bigint = BigInt(0);
-    let amountOutCollateral: bigint = BigInt(0);
-    let amountOutDebt: bigint = BigInt(0);
+    let amountInCollateral: bigint = 0n;
+    let amountInDebt: bigint = 0n;
+    let amountOutCollateral: bigint = 0n;
+    let amountOutDebt: bigint = 0n;
 
-    if (a <= BigInt(0)) {
+    if (a <= 0n) {
       // Entire trade routes through debt pool
+
       amountOutDebt = amountOut;
       amountInDebt = this.getAmountIn(
         amountOut,
         debtIReserveIn,
         debtIReserveOut,
       );
+      // amountInDebt = (amountInDebt * 10n ** 6n) / (10n ** 6n - fee);
+      amountInDebt = this.applyFeeForBuy(amountInDebt, fee);
       if (amountOut > debtReserveOut) {
         return 2n ** 256n - 1n;
       }
@@ -910,6 +920,8 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         colIReserveIn,
         colIReserveOut,
       );
+      // amountInCollateral = (amountInCollateral * 10n ** 6n) / (10n ** 6n - fee);
+      amountInCollateral = this.applyFeeForBuy(amountInCollateral, fee);
       if (amountOut > colReserveOut) {
         return 2n ** 256n - 1n;
       }
@@ -920,12 +932,19 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       // Trade routes through both pools
       amountOutCollateral = a;
       amountInCollateral = this.getAmountIn(a, colIReserveIn, colIReserveOut);
-      amountOutDebt = amountOut - a;
+      const amountOutDebtAdjusted = amountOut - a;
+
+      // amountInCollateral = (amountInCollateral * 10n ** 6n) / (10n ** 6n - fee);
+      amountInCollateral = this.applyFeeForBuy(amountInCollateral, fee);
+
       amountInDebt = this.getAmountIn(
-        amountOutDebt,
+        amountOutDebtAdjusted,
         debtIReserveIn,
         debtIReserveOut,
       );
+
+      // (amountInDebt * 10n ** 6n) / (10n ** 6n - fee);
+      amountInDebt = this.applyFeeForBuy(amountInDebt, fee);
       if (amountOutDebt > debtReserveOut || a > colReserveOut) {
         return 2n ** 256n - 1n;
       }
@@ -973,6 +992,14 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     const totalAmountIn = amountInCollateral + amountInDebt;
 
     return totalAmountIn;
+  }
+
+  private applyFeeForBuy(amount: bigint, fee: bigint): bigint {
+    return (amount * 10n ** 6n) / (10n ** 6n - fee);
+  }
+
+  private applyFeeForSell(amount: bigint, fee: bigint): bigint {
+    return (amount * (10n ** 6n - fee)) / 10n ** 6n;
   }
 
   private abs(value: bigint): bigint {
