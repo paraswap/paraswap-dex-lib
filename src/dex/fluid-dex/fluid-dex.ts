@@ -904,7 +904,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveIn,
         debtIReserveOut,
       );
-      // amountInDebt = (amountInDebt * 10n ** 6n) / (10n ** 6n - fee);
       amountInDebt = this.applyFeeForBuy(amountInDebt, fee);
       if (amountOut > debtReserveOut) {
         return 2n ** 256n - 1n;
@@ -920,7 +919,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         colIReserveIn,
         colIReserveOut,
       );
-      // amountInCollateral = (amountInCollateral * 10n ** 6n) / (10n ** 6n - fee);
       amountInCollateral = this.applyFeeForBuy(amountInCollateral, fee);
       if (amountOut > colReserveOut) {
         return 2n ** 256n - 1n;
@@ -934,7 +932,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       amountInCollateral = this.getAmountIn(a, colIReserveIn, colIReserveOut);
       const amountOutDebtAdjusted = amountOut - a;
 
-      // amountInCollateral = (amountInCollateral * 10n ** 6n) / (10n ** 6n - fee);
       amountInCollateral = this.applyFeeForBuy(amountInCollateral, fee);
 
       amountInDebt = this.getAmountIn(
@@ -943,7 +940,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         debtIReserveOut,
       );
 
-      // (amountInDebt * 10n ** 6n) / (10n ** 6n - fee);
       amountInDebt = this.applyFeeForBuy(amountInDebt, fee);
       if (amountOutDebt > debtReserveOut || a > colReserveOut) {
         return 2n ** 256n - 1n;
