@@ -147,8 +147,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
     const swapIdentifier = `${this.dexKey}_${normalizedSrcToken.address}_${normalizedDestToken.address}_${side}`;
 
     try {
-      const makerToken = normalizedDestToken;
-      const takerToken = normalizedSrcToken;
+      let makerToken = normalizedDestToken;
+      let takerToken = normalizedSrcToken;
 
       const isSell = side === SwapSide.SELL;
       const isBuy = side === SwapSide.BUY;
@@ -201,32 +201,32 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const expiryAsBigInt = BigInt(order.expiry);
       const minDeadline = expiryAsBigInt > 0 ? expiryAsBigInt : BI_MAX_UINT256;
 
-      if (side === SwapSide.SELL) {
-        const requiredAmount = BigInt(optimalSwapExchange.destAmount);
-        const quoteAmount = BigInt(order.makerAmount);
-        const requiredAmountWithSlippage = new BigNumber(
-          requiredAmount.toString(),
-        )
-          .times(options.slippageFactor)
-          .toFixed(0);
-        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
-          throw new SlippageError(
-            `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
-          );
-        }
-      } else {
+      if (side === SwapSide.BUY) {
         const requiredAmount = BigInt(optimalSwapExchange.srcAmount);
         const quoteAmount = BigInt(order.takerAmount);
         const requiredAmountWithSlippage = new BigNumber(
           requiredAmount.toString(),
         )
-          .times(options.slippageFactor)
+          .multipliedBy(options.slippageFactor)
           .toFixed(0);
         if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
           throw new SlippageError(
+            `Slipped, factor: ${quoteAmount.toString()} > ${requiredAmountWithSlippage}`,
+          );
+        }
+      } else {
+        const requiredAmount = BigInt(optimalSwapExchange.destAmount);
+        const quoteAmount = BigInt(order.makerAmount);
+        const requiredAmountWithSlippage = new BigNumber(
+          requiredAmount.toString(),
+        )
+          .multipliedBy(options.slippageFactor)
+          .toFixed(0);
+        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
+          throw new SlippageError(
             `Slipped, factor: ${
               options.slippageFactor
-            } ${quoteAmount.toString()} > ${requiredAmountWithSlippage}`,
+            } ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
           );
         }
       }
@@ -276,7 +276,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       `${this.dexKey}-${this.network}: quoteData undefined`,
     );
 
-    const swapFunction = 'partialSwap';
+    const swapFunction = 'simpleSwap';
     const swapFunctionParams = [
       [
         quoteData.nonceAndMeta,
@@ -289,7 +289,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
         quoteData.takerAmount,
       ],
       quoteData.signature,
-      quoteData.takerAmount,
     ];
 
     const exchangeData = this.rfqInterface.encodeFunctionData(
@@ -431,15 +430,14 @@ export class Cables extends SimpleExchange implements IDex<any> {
       }
 
       let decimals = baseToken.decimals;
-      if (isInputQuote) {
-        decimals = quoteToken.decimals;
-      }
+      let out_decimals = quoteToken.decimals;
+
       let price = this.calculatePriceSwap(
         orderbook,
         Number(amt) / 10 ** decimals,
         isInputQuote,
       );
-      result.push(BigInt(Math.round(price * 10 ** decimals)));
+      result.push(BigInt(Math.round(price * 10 ** out_decimals)));
     }
     return result;
   }
@@ -453,8 +451,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
     let sumQuoteQty = 0;
     const selectedRows: string[][] = [];
 
-    const isBase = !qtyMode;
-    const isQuote = qtyMode;
+    const isBase = qtyMode;
+    const isQuote = !qtyMode;
 
     for (const [price, volume] of prices) {
       if (isBase) {
@@ -499,10 +497,14 @@ export class Cables extends SimpleExchange implements IDex<any> {
       return sum + Number(price) * Number(volume);
     }, 0);
 
+    const price = new BigNumber(vSumBase)
+      .dividedBy(new BigNumber(sumBaseQty))
+      .toNumber();
+
     if (isBase) {
-      return sumBaseQty;
+      return requiredQty / price;
     } else {
-      return sumQuoteQty;
+      return requiredQty * price;
     }
   }
 
@@ -565,11 +567,13 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
       if (!priceMap) return null;
 
+      let isInputQuote = false;
       let pairKey = `${normalizedSrcToken.symbol}/${normalizedDestToken.symbol}`;
       const pairsKeys = Object.keys(priceMap);
 
       if (!pairsKeys.includes(pairKey)) {
         // Revert
+        isInputQuote = true;
         pairKey = `${normalizedDestToken.symbol}/${normalizedSrcToken.symbol}`;
         if (!pairsKeys.includes(pairKey)) {
           return null;
@@ -591,30 +595,25 @@ export class Cables extends SimpleExchange implements IDex<any> {
         throw new Error(`Empty orderbook for ${pairKey}`);
       }
 
-      const isInputQuote = side === SwapSide.BUY;
-
       const prices = this.calculateOrderPrice(
         amounts,
         orderbook,
-        srcToken,
-        destToken,
-        isInputQuote,
+        side === SwapSide.SELL ? srcToken : destToken,
+        side === SwapSide.SELL ? destToken : srcToken,
+        side === SwapSide.SELL ? isInputQuote : !isInputQuote,
       );
 
-      const outDecimals =
-        side === SwapSide.BUY
-          ? normalizedSrcToken.decimals
-          : normalizedDestToken.decimals;
       const result = [
         {
           prices: prices,
-          unit: BigInt(outDecimals),
+          unit: BigInt(normalizedDestToken.decimals),
           exchange: this.dexKey,
           gasCost: CABLES_GAS_COST,
           poolAddresses: [this.mainnetRFQAddress],
           data: {},
         },
       ];
+
       return result;
     } catch (e: unknown) {
       this.logger.error(
