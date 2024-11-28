@@ -810,17 +810,17 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
     // Check if all reserves of collateral pool are greater than 0
     const colPoolEnabled =
-      token0RealReserves > BigInt(0) &&
-      token1RealReserves > BigInt(0) &&
-      token0ImaginaryReserves > BigInt(0) &&
-      token1ImaginaryReserves > BigInt(0);
+      token0RealReserves > 0n &&
+      token1RealReserves > 0n &&
+      token0ImaginaryReserves > 0n &&
+      token1ImaginaryReserves > 0n;
 
     // Check if all reserves of debt pool are greater than 0
     const debtPoolEnabled =
-      debtToken0RealReserves > BigInt(0) &&
-      debtToken1RealReserves > BigInt(0) &&
-      debtToken0ImaginaryReserves > BigInt(0) &&
-      debtToken1ImaginaryReserves > BigInt(0);
+      debtToken0RealReserves > 0n &&
+      debtToken1RealReserves > 0n &&
+      debtToken0ImaginaryReserves > 0n &&
+      debtToken1ImaginaryReserves > 0n;
 
     let colReserveIn: bigint,
       colReserveOut: bigint,

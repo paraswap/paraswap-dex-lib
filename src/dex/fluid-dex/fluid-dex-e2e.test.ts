@@ -201,22 +201,22 @@ const limitsWide: DexLimits = {
   withdrawableToken0: {
     available: BigInt(34242332879776515083099999),
     expandsTo: BigInt(34242332879776515083099999),
-    expandsDuration: BigInt(0),
+    expandsDuration: 0n,
   },
   withdrawableToken1: {
     available: BigInt(34242332879776515083099999),
     expandsTo: BigInt(34242332879776515083099999),
-    expandsDuration: BigInt(22),
+    expandsDuration: 22n,
   },
   borrowableToken0: {
     available: BigInt(34242332879776515083099999),
     expandsTo: BigInt(34242332879776515083099999),
-    expandsDuration: BigInt(0),
+    expandsDuration: 0n,
   },
   borrowableToken1: {
     available: BigInt(34242332879776515083099999),
     expandsTo: BigInt(34242332879776515083099999),
-    expandsDuration: BigInt(308),
+    expandsDuration: 308n,
   },
 };
 
