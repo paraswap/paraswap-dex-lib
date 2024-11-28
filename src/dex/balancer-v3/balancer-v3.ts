@@ -186,6 +186,9 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         return null;
       }
 
+      // This is used to get block timestamp which is needed to calculate Amp if it is updating
+      const block = await this.dexHelper.provider.getBlock(blockNumber);
+
       // get up to date pools and state
       const allPoolState = this.eventPools.getState(blockNumber);
       if (allPoolState === null) {
@@ -239,7 +242,12 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
 
           let unit = 0n;
           if (unitAmount < maxSwapAmount)
-            unit = this.eventPools.getSwapResult(steps, unitAmount, swapKind);
+            unit = this.eventPools.getSwapResult(
+              steps,
+              unitAmount,
+              swapKind,
+              block.timestamp,
+            );
 
           const poolExchangePrice: PoolPrices<BalancerV3Data> = {
             prices: new Array(amounts.length).fill(0n),
@@ -260,6 +268,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
                 steps,
                 amounts[j],
                 swapKind,
+                block.timestamp,
               );
             }
           }

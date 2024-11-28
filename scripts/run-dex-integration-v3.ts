@@ -18,6 +18,11 @@ const stataDAI = {
   decimals: 18,
 };
 
+const stataUSDT = {
+  address: '0x978206fae13faf5a8d293fb614326b237684b750'.toLowerCase(),
+  decimals: 6,
+};
+
 const bal = {
   address: '0xb19382073c7a0addbb56ac6af1808fa49e377b75'.toLowerCase(),
   decimals: 18,
@@ -33,7 +38,7 @@ const usdcAave = {
   decimals: 6,
 };
 
-const amounts = [0n, BI_POWS[18], BI_POWS[19], 20000000000000000000n];
+const amounts = [0n, BI_POWS[6], BI_POWS[7], BI_POWS[8]];
 
 async function main() {
   const dexHelper = new DummyDexHelper(Network.SEPOLIA);
@@ -43,10 +48,10 @@ async function main() {
 
   await balancerV3.initializePricing(blocknumber);
 
-  // const from = stataDAI;
-  // const to = stataUSDC;
-  const from = daiAave;
-  const to = usdcAave;
+  const from = stataUSDC;
+  const to = stataUSDT;
+  // const from = daiAave;
+  // const to = usdcAave;
 
   const pools = await balancerV3.getPoolIdentifiers(
     from,

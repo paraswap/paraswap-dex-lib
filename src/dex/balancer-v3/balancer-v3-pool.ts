@@ -11,6 +11,7 @@ import { vaultExtensionAbi_V3 } from './abi/vaultExtension.V3';
 import { decodeThrowError, getOnChainState } from './getOnChainState';
 import { BalancerV3Config } from './config';
 import { SwapKind, Vault } from '@balancer-labs/balancer-maths';
+import { getAmplificationParameter, isStableMutableState } from './stablePool';
 
 export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
@@ -48,6 +49,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       ['VAULT']: new Interface(vaultExtensionAbi_V3),
       ['STABLE']: new Interface([
         'function getAmplificationParameter() external view returns (uint256 value, bool isUpdating, uint256 precision)',
+        'function getAmplificationState() external view returns (tuple(uint64 startValue, uint64 endValue, uint32 startTime, uint32 endTime) amplificationState, uint256 precision)',
       ]),
     };
 
@@ -271,13 +273,33 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return maxSwapAmount;
   }
 
-  getSwapResult(steps: Step[], amountRaw: bigint, swapKind: SwapKind): bigint {
+  getSwapResult(
+    steps: Step[],
+    amountRaw: bigint,
+    swapKind: SwapKind,
+    timestamp: number,
+  ): bigint {
     if (amountRaw === 0n) return 0n;
     let amount = amountRaw;
     let outputAmountRaw = 0n;
     // Simulates the result of a multi-step swap path
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
+      // If its a Stable Pool with an updating Amp factor calculate current Amp value
+      if (
+        step.poolState.poolType === 'STABLE' &&
+        isStableMutableState(step.poolState)
+      ) {
+        if (step.poolState.ampIsUpdating) {
+          step.poolState.amp = getAmplificationParameter(
+            step.poolState.ampStartValue,
+            step.poolState.ampEndValue,
+            step.poolState.ampStartTime,
+            step.poolState.ampStopTime,
+            BigInt(timestamp),
+          );
+        }
+      }
       outputAmountRaw = this.vault.swap(
         {
           ...step.swapInput,
@@ -493,7 +515,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   getSwapStep(pool: PoolState, tokenIn: TokenInfo, tokenOut: TokenInfo): Step {
     // A normal swap between two tokens in a pool
     return {
-      pool: pool.address,
+      pool: pool.poolAddress,
       tokenOut: tokenOut.mainToken,
       isBuffer: false,
       swapInput: {
