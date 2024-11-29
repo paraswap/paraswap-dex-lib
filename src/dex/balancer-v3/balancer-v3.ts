@@ -25,6 +25,7 @@ import { balancerRouterAbi } from './abi/balancerRouter';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { getTopPoolsApi } from './getTopPoolsApi';
 import { balancerBatchRouterAbi } from './abi/balancerBatchRouter';
+import { getGasCost } from './getGasCost';
 
 const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
@@ -256,7 +257,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
               steps: steps,
             },
             exchange: this.dexKey,
-            gasCost: 1, // TODO - this will be updated once final profiles done
+            gasCost: getGasCost(steps),
             poolAddresses: [pool.poolAddress],
             poolIdentifier: `${this.dexKey}_${pool.poolAddress}`,
           };

@@ -2,6 +2,9 @@ import { defaultAbiCoder } from '@ethersproject/abi';
 import { PoolState } from '@balancer-labs/balancer-maths';
 import { StableMutableState } from './types';
 
+// TODO - Update with more accurate
+export const STABLE_GAS_COST = 155000;
+
 export function isStableMutableState(
   poolState: any,
 ): poolState is StableMutableState {
