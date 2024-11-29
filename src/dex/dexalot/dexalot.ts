@@ -1035,56 +1035,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const normalizedTokenAddress = this.normalizeAddress(tokenAddress);
-    const pairs = (await this.getCachedPairs()) || {};
-    this.tokensMap = (await this.getCachedTokens()) || {};
-    const tokensAddr = (await this.getCachedTokensAddr()) || {};
-    const token = this.getTokenFromAddress(normalizedTokenAddress);
-    if (!token) {
-      return [];
-    }
-
-    const tokenSymbol = token.symbol?.toLowerCase() || '';
-
-    let pairsByLiquidity = [];
-    for (const pairName of Object.keys(pairs)) {
-      if (!pairName.includes(tokenSymbol)) {
-        continue;
-      }
-
-      const tokensInPair = pairName.split('/');
-      if (tokensInPair.length !== 2) {
-        continue;
-      }
-
-      const [baseToken, quoteToken] = tokensInPair;
-      const addr = tokensAddr[baseToken.toLowerCase()];
-      let outputToken = this.getTokenFromAddress(addr);
-      if (baseToken === tokenSymbol) {
-        const addr = tokensAddr[quoteToken.toLowerCase()];
-        outputToken = this.getTokenFromAddress(addr);
-      }
-
-      const denormalizedToken = this.denormalizeToken(outputToken);
-
-      pairsByLiquidity.push({
-        exchange: this.dexKey,
-        address: this.mainnetRFQAddress,
-        connectorTokens: [
-          {
-            address: denormalizedToken.address,
-            decimals: denormalizedToken.decimals,
-          },
-        ],
-        liquidityUSD: pairs[pairName].liquidityUSD,
-      });
-    }
-
-    pairsByLiquidity.sort(
-      (a: PoolLiquidity, b: PoolLiquidity) => b.liquidityUSD - a.liquidityUSD,
-    );
-
-    return pairsByLiquidity.slice(0, limit);
+    return []; // not implemented
   }
 
   getAPIReqParams(endpoint: string, method: Method): DexalotAPIParameters {
