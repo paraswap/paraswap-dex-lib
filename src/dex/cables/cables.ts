@@ -231,16 +231,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
         }
       }
 
-      // Correction of the srcAmount
-      // because flag specialDexSupportsInsertFromAmount: false
-      // is not working for Buy in test
-      if (isBuy) {
-        optimalSwapExchange.srcAmount = BigNumber(
-          (Number(optimalSwapExchange.srcAmount) * 10000) /
-            (10000 + Number(options.slippageFactor)),
-        ).toFixed(0);
-      }
-
       return [
         {
           ...optimalSwapExchange,
@@ -298,6 +288,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
     return {
       exchangeData,
+      swappedAmountNotPresentInExchangeData: true, // to prevent insert from amount
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
       targetExchange: this.mainnetRFQAddress,
