@@ -42,13 +42,13 @@ describe('Cables E2E', () => {
       [
         {
           name: 'WETH',
-          sellAmount: '1000000000000000000',
-          buyAmount: '1000000000000000000',
+          sellAmount: '100000000000000000',
+          buyAmount: '200000000000000000',
         },
         {
           name: 'USDT',
           sellAmount: '6000000',
-          buyAmount: '6000000',
+          buyAmount: '8000000',
         },
       ],
     ];
@@ -60,9 +60,15 @@ describe('Cables E2E', () => {
             describe(`${contractMethod}`, () => {
               it(`${pair[0].name} -> ${pair[1].name}`, async () => {
                 await testE2E(
-                  tokens[pair[0].name],
-                  tokens[pair[1].name],
-                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? tokens[pair[0].name]
+                    : tokens[pair[1].name],
+                  side === SwapSide.SELL
+                    ? tokens[pair[1].name]
+                    : tokens[pair[0].name],
+                  side === SwapSide.SELL
+                    ? holders[pair[0].name]
+                    : holders[pair[1].name],
                   side === SwapSide.SELL
                     ? pair[0].sellAmount
                     : pair[0].buyAmount,
@@ -80,9 +86,15 @@ describe('Cables E2E', () => {
               });
               it(`${pair[1].name} -> ${pair[0].name}`, async () => {
                 await testE2E(
-                  tokens[pair[1].name],
-                  tokens[pair[0].name],
-                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? tokens[pair[1].name]
+                    : tokens[pair[0].name],
+                  side === SwapSide.SELL
+                    ? tokens[pair[0].name]
+                    : tokens[pair[1].name],
+                  side === SwapSide.SELL
+                    ? holders[pair[1].name]
+                    : holders[pair[0].name],
                   side === SwapSide.SELL
                     ? pair[1].sellAmount
                     : pair[1].buyAmount,
@@ -136,9 +148,15 @@ describe('Cables E2E', () => {
             describe(`${contractMethod}`, () => {
               it(`${pair[0].name} -> ${pair[1].name}`, async () => {
                 await testE2E(
-                  tokens[pair[0].name],
-                  tokens[pair[1].name],
-                  holders[pair[0].name],
+                  side === SwapSide.SELL
+                    ? tokens[pair[0].name]
+                    : tokens[pair[1].name],
+                  side === SwapSide.SELL
+                    ? tokens[pair[1].name]
+                    : tokens[pair[0].name],
+                  side === SwapSide.SELL
+                    ? holders[pair[0].name]
+                    : holders[pair[1].name],
                   side === SwapSide.SELL
                     ? pair[0].sellAmount
                     : pair[0].buyAmount,
@@ -156,9 +174,15 @@ describe('Cables E2E', () => {
               });
               it(`${pair[1].name} -> ${pair[0].name}`, async () => {
                 await testE2E(
-                  tokens[pair[1].name],
-                  tokens[pair[0].name],
-                  holders[pair[1].name],
+                  side === SwapSide.SELL
+                    ? tokens[pair[1].name]
+                    : tokens[pair[0].name],
+                  side === SwapSide.SELL
+                    ? tokens[pair[0].name]
+                    : tokens[pair[1].name],
+                  side === SwapSide.SELL
+                    ? holders[pair[1].name]
+                    : holders[pair[0].name],
                   side === SwapSide.SELL
                     ? pair[1].sellAmount
                     : pair[1].buyAmount,
