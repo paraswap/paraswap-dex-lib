@@ -1500,6 +1500,10 @@ export const Tokens: {
       address: `0x94a9d9ac8a22534e3faca9f4e7f2e2cf85d5e4c8`,
       decimals: 6,
     },
+    usdtAave: {
+      address: `0xaa8e23fb1079ea71e0a56f48a2aa51851d8433d0`,
+      decimals: 6,
+    },
     aDaiAave: {
       address: `0xde46e43f46ff74a23a65ebb0580cbe3dfe684a17`,
       decimals: 18,
