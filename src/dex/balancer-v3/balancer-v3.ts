@@ -25,6 +25,7 @@ import { balancerRouterAbi } from './abi/balancerRouter';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { getTopPoolsApi } from './getTopPoolsApi';
 import { balancerBatchRouterAbi } from './abi/balancerBatchRouter';
+import { getGasCost } from './getGasCost';
 
 const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
@@ -186,6 +187,9 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         return null;
       }
 
+      // This is used to get block timestamp which is needed to calculate Amp if it is updating
+      const block = await this.dexHelper.provider.getBlock(blockNumber);
+
       // get up to date pools and state
       const allPoolState = this.eventPools.getState(blockNumber);
       if (allPoolState === null) {
@@ -239,7 +243,12 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
 
           let unit = 0n;
           if (unitAmount < maxSwapAmount)
-            unit = this.eventPools.getSwapResult(steps, unitAmount, swapKind);
+            unit = this.eventPools.getSwapResult(
+              steps,
+              unitAmount,
+              swapKind,
+              block.timestamp,
+            );
 
           const poolExchangePrice: PoolPrices<BalancerV3Data> = {
             prices: new Array(amounts.length).fill(0n),
@@ -248,9 +257,9 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
               steps: steps,
             },
             exchange: this.dexKey,
-            gasCost: 1, // TODO - this will be updated once final profiles done
-            poolAddresses: [pool.address],
-            poolIdentifier: `${this.dexKey}_${pool.address}`,
+            gasCost: getGasCost(steps),
+            poolAddresses: [pool.poolAddress],
+            poolIdentifier: `${this.dexKey}_${pool.poolAddress}`,
           };
 
           for (let j = 0; j < amounts.length; j++) {
@@ -260,12 +269,15 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
                 steps,
                 amounts[j],
                 swapKind,
+                block.timestamp,
               );
             }
           }
           poolPrices.push(poolExchangePrice);
         } catch (err) {
-          this.logger.error(`error fetching prices for pool`);
+          this.logger.error(
+            `error fetching prices for pool: ${pool.poolAddress}`,
+          );
           this.logger.error(err);
         }
       }

@@ -68,7 +68,7 @@ function createQuery(
 function toImmutablePoolStateMap(pools: Pool[]): ImmutablePoolStateMap {
   return pools.reduce((map, pool) => {
     const immutablePoolState: CommonImmutablePoolState = {
-      address: pool.id,
+      poolAddress: pool.id,
       tokens: pool.poolTokens.map(t => t.address),
       tokensUnderlying: pool.poolTokens.map(t =>
         t.underlyingToken ? t.underlyingToken.address : null,

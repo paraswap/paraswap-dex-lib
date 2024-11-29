@@ -3,7 +3,7 @@ import { Address } from '../../types';
 
 // Immutable data types available on all pools (Available from API)
 export type CommonImmutablePoolState = {
-  address: string;
+  poolAddress: string;
   poolType: string;
   // For boosted pools tokens is the actual pool token wrapped, e.g. aUSDC/aDAI
   tokens: string[];

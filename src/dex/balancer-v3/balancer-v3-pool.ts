@@ -1,16 +1,31 @@
 import _ from 'lodash';
-import { Interface } from '@ethersproject/abi';
+import { Interface, defaultAbiCoder } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { PoolState, PoolStateMap, Step, TokenInfo } from './types';
+import {
+  PoolState,
+  PoolStateMap,
+  StableMutableState,
+  Step,
+  TokenInfo,
+} from './types';
 import { getPoolsApi } from './getPoolsApi';
 import { vaultExtensionAbi_V3 } from './abi/vaultExtension.V3';
 import { decodeThrowError, getOnChainState } from './getOnChainState';
 import { BalancerV3Config } from './config';
 import { SwapKind, Vault } from '@balancer-labs/balancer-maths';
+import {
+  ampUpdateStartedEvent,
+  ampUpdateStoppedEvent,
+  getAmplificationParameter,
+  isStableMutableState,
+} from './stablePool';
+import { BI_POWS } from '../../bigint-constants';
+
+const WAD = BI_POWS[18];
 
 export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
@@ -48,6 +63,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       ['VAULT']: new Interface(vaultExtensionAbi_V3),
       ['STABLE']: new Interface([
         'function getAmplificationParameter() external view returns (uint256 value, bool isUpdating, uint256 precision)',
+        'function getAmplificationState() external view returns (tuple(uint64 startValue, uint64 endValue, uint32 startTime, uint32 endTime) amplificationState, uint256 precision)',
       ]),
     };
 
@@ -57,8 +73,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     ];
 
     // Add handlers
-    this.handlers['PoolBalanceChanged'] =
-      this.poolBalanceChangedEvent.bind(this);
+    this.handlers['LiquidityAdded'] = this.liquidityAddedEvent.bind(this);
+    this.handlers['LiquidityRemoved'] = this.liquidityRemovedEvent.bind(this);
+    this.handlers['Swap'] = this.swapEvent.bind(this);
+    this.handlers['VaultAuxiliary'] = this.vaultAuxiliaryEvent.bind(this);
     this.handlers['AggregateSwapFeePercentageChanged'] =
       this.poolAggregateSwapFeePercentageEvent.bind(this);
     this.handlers['SwapFeePercentageChanged'] =
@@ -176,7 +194,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     };
   }
 
-  poolBalanceChangedEvent(
+  liquidityAddedEvent(
     event: any,
     state: DeepReadonly<PoolStateMap>,
     log: Readonly<Log>,
@@ -192,12 +210,101 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       i < newState[poolAddress].balancesLiveScaled18.length;
       i++
     ) {
-      newState[poolAddress].balancesLiveScaled18[i] += BigInt(
-        event.args.deltas[i],
+      newState[poolAddress].balancesLiveScaled18[i] += this.toScaled18(
+        BigInt(event.args.amountsAddedRaw[i]),
+        newState[poolAddress].scalingFactors[i],
       );
     }
     newState[poolAddress].totalSupply = BigInt(event.args.totalSupply);
+
     return newState;
+  }
+
+  liquidityRemovedEvent(
+    event: any,
+    state: DeepReadonly<PoolStateMap>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolStateMap> | null {
+    const poolAddress = event.args.pool.toLowerCase();
+    // Vault will send events from all pools, some of which are not officially supported by Balancer
+    if (!state[poolAddress]) {
+      return null;
+    }
+    const newState = _.cloneDeep(state) as PoolStateMap;
+    for (
+      let i = 0;
+      i < newState[poolAddress].balancesLiveScaled18.length;
+      i++
+    ) {
+      newState[poolAddress].balancesLiveScaled18[i] -= this.toScaled18(
+        BigInt(event.args.amountsRemovedRaw[i]),
+        newState[poolAddress].scalingFactors[i],
+      );
+    }
+    newState[poolAddress].totalSupply = BigInt(event.args.totalSupply);
+
+    return newState;
+  }
+
+  swapEvent(
+    event: any,
+    state: DeepReadonly<PoolStateMap>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolStateMap> | null {
+    const poolAddress = event.args.pool.toLowerCase();
+    // Vault will send events from all pools, some of which are not officially supported by Balancer
+    if (!state[poolAddress]) {
+      return null;
+    }
+    const newState = _.cloneDeep(state) as PoolStateMap;
+    const tokenInIndex = newState[poolAddress].tokens.findIndex(
+      address => address.toLowerCase() === event.args.tokenIn.toLowerCase(),
+    );
+    const tokenOutIndex = newState[poolAddress].tokens.findIndex(
+      address => address.toLowerCase() === event.args.tokenOut.toLowerCase(),
+    );
+    if (tokenInIndex === -1 || tokenOutIndex === -1) {
+      this.logger.error(`swapEvent - token index not found in pool state`);
+      return null;
+    }
+    newState[poolAddress].balancesLiveScaled18[tokenInIndex] += this.toScaled18(
+      BigInt(event.args.amountIn),
+      newState[poolAddress].scalingFactors[tokenInIndex],
+    );
+    newState[poolAddress].balancesLiveScaled18[tokenOutIndex] -=
+      this.toScaled18(
+        BigInt(event.args.amountOut),
+        newState[poolAddress].scalingFactors[tokenOutIndex],
+      );
+
+    return newState;
+  }
+
+  vaultAuxiliaryEvent(
+    event: any,
+    state: DeepReadonly<PoolStateMap>,
+    log: Readonly<Log>,
+  ): DeepReadonly<PoolStateMap> | null {
+    // In SC Pools can use this event to emit event data from the Vault.
+    // Allows us to track pool specific events using only the Vault subscription.
+    // https://github.com/balancer/balancer-v3-monorepo/blob/main/pkg/interfaces/contracts/vault/IVaultExtension.sol
+    const poolAddress = event.args.pool.toLowerCase();
+    // Vault will send events from all pools, some of which are not officially supported by Balancer
+    if (!state[poolAddress]) {
+      return null;
+    }
+
+    const newState = _.cloneDeep(state) as PoolStateMap;
+    switch (event.args.eventKey) {
+      case 'AmpUpdateStarted':
+        ampUpdateStartedEvent(newState[poolAddress], event.args.eventData);
+        return newState;
+      case 'AmpUpdateStopped':
+        ampUpdateStoppedEvent(newState[poolAddress], event.args.eventData);
+        return newState;
+      default:
+        return null;
+    }
   }
 
   poolAggregateSwapFeePercentageEvent(
@@ -271,13 +378,33 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     return maxSwapAmount;
   }
 
-  getSwapResult(steps: Step[], amountRaw: bigint, swapKind: SwapKind): bigint {
+  getSwapResult(
+    steps: Step[],
+    amountRaw: bigint,
+    swapKind: SwapKind,
+    timestamp: number,
+  ): bigint {
     if (amountRaw === 0n) return 0n;
     let amount = amountRaw;
     let outputAmountRaw = 0n;
     // Simulates the result of a multi-step swap path
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
+      // If its a Stable Pool with an updating Amp factor calculate current Amp value
+      if (
+        step.poolState.poolType === 'STABLE' &&
+        isStableMutableState(step.poolState)
+      ) {
+        if (step.poolState.ampIsUpdating) {
+          step.poolState.amp = getAmplificationParameter(
+            step.poolState.ampStartValue,
+            step.poolState.ampEndValue,
+            step.poolState.ampStartTime,
+            step.poolState.ampStopTime,
+            BigInt(timestamp),
+          );
+        }
+      }
       outputAmountRaw = this.vault.swap(
         {
           ...step.swapInput,
@@ -369,7 +496,9 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   // need rate info to calculate wrap/unwrap
   getTokenInfo(poolState: PoolState, tokenAddress: string): TokenInfo | null {
     // Check in main tokens
-    let tokenIndex = poolState.tokens.indexOf(tokenAddress);
+    let tokenIndex = poolState.tokens.findIndex(
+      address => address.toLowerCase() === tokenAddress.toLowerCase(),
+    );
     if (tokenIndex !== -1) {
       return {
         isBoosted: false,
@@ -382,7 +511,9 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
     // Check in underlying tokens if available
     if (poolState.tokensUnderlying) {
-      tokenIndex = poolState.tokensUnderlying.indexOf(tokenAddress);
+      tokenIndex = poolState.tokensUnderlying.findIndex(
+        address => address!.toLowerCase() === tokenAddress.toLowerCase(),
+      );
       if (tokenIndex !== -1) {
         return {
           isBoosted: true,
@@ -493,7 +624,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   getSwapStep(pool: PoolState, tokenIn: TokenInfo, tokenOut: TokenInfo): Step {
     // A normal swap between two tokens in a pool
     return {
-      pool: pool.address,
+      pool: pool.poolAddress,
       tokenOut: tokenOut.mainToken,
       isBuffer: false,
       swapInput: {
@@ -502,5 +633,9 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       },
       poolState: pool,
     };
+  }
+
+  toScaled18(amount: bigint, scalingFactor: bigint): bigint {
+    return (amount * scalingFactor * WAD) / WAD;
   }
 }

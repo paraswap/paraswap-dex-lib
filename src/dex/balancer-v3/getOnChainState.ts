@@ -185,7 +185,7 @@ const poolOnChain: Record<
     },
   },
   ['STABLE']: {
-    count: 1,
+    count: 2,
     ['encode']: (
       network: number,
       contractInterface: Interface,
@@ -196,6 +196,12 @@ const poolOnChain: Record<
           target: address,
           callData: contractInterface.encodeFunctionData(
             'getAmplificationParameter',
+          ),
+        },
+        {
+          target: address,
+          callData: contractInterface.encodeFunctionData(
+            'getAmplificationState',
           ),
         },
       ];
@@ -216,14 +222,24 @@ const poolOnChain: Record<
         throw new Error(
           `Failed to get result for getAmplificationParameter for ${poolAddress}`,
         );
-      // TODO requested SC to add view to stable pool to get amp update state if it is currently updating
+      const resultAmpState = decodeThrowError(
+        contractInterface,
+        'getAmplificationState',
+        data[startIndex++],
+        poolAddress,
+      );
+      if (!resultAmpState)
+        throw new Error(
+          `Failed to get result for getAmplificationState for ${poolAddress}`,
+        );
+
       return {
         amp: resultAmp[0].toBigInt(),
         ampIsUpdating: !!resultAmp[1],
-        ampStartTime: 0n,
-        ampStopTime: 0n,
-        ampStartValue: 0n,
-        ampEndValue: 0n,
+        ampStartValue: resultAmpState[0][0].toBigInt(),
+        ampEndValue: resultAmpState[0][1].toBigInt(),
+        ampStartTime: BigInt(resultAmpState[0][2]),
+        ampStopTime: BigInt(resultAmpState[0][3]),
       };
     },
   },

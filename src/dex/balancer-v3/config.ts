@@ -15,10 +15,10 @@ export const apiUrl = 'https://test-api-v3.balancer.fi/';
 export const BalancerV3Config: DexConfigMap<DexParams> = {
   BalancerV3: {
     [Network.SEPOLIA]: {
-      vaultAddress: '0x30AF3689547354f82C70256894B07C9D0f067BB6',
+      vaultAddress: '0xBC582d2628FcD404254a1e12CB714967Ce428915',
       apiNetworkName: 'SEPOLIA',
-      balancerRouterAddress: '0x77eDc69766409C599F06Ef0B551a0990CBfe13A7',
-      balancerBatchRouterAddress: '0x16Cf31c5c4f92ad6185D583080C84FEeb6074c78',
+      balancerRouterAddress: '0x4D2aA7a3CD7F8dA6feF37578A1881cD63Fd3715E',
+      balancerBatchRouterAddress: '0x4232e5EEaA16Bcf483d93BEA469296B4EeF22503',
     },
   },
 };
