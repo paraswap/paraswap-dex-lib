@@ -663,57 +663,60 @@ export class Cables extends SimpleExchange implements IDex<any> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const tokens = (await this.getCachedTokens()) as { [key: string]: Token };
-    const token = Object.values(tokens).find(
-      token => token.address.toLowerCase() === tokenAddress.toLowerCase(),
-    );
-
-    if (!token) {
-      return [];
-    }
-
-    const tokenPriceUsd = await this.dexHelper.getTokenUSDPrice(
-      token,
-      BigInt(10 ** token.decimals),
-    );
-
-    const erc20BalanceCalldata = this.erc20Interface.encodeFunctionData(
-      'balanceOf',
-      [this.mainnetRFQAddress],
-    );
-    const tokenBalanceMultiCall = [
-      {
-        target: token.address,
-        callData: erc20BalanceCalldata,
-      },
-    ];
-    const res = (
-      await this.dexHelper.multiContract.methods
-        .aggregate(tokenBalanceMultiCall)
-        .call()
-    ).returnData[0];
-
-    let tokenLiquidity = BigInt(res);
-
-    let tokenLiquidityUsd =
-      (tokenLiquidity * BigInt(tokenPriceUsd * 1_000_000)) /
-      BigInt(1_000_000 * 10 ** token.decimals);
-
-    let tokenWithLiquidity = [];
-
-    tokenWithLiquidity.push({
-      exchange: this.dexKey,
-      address: this.mainnetRFQAddress,
-      connectorTokens: [
-        {
-          address: token.address,
-          decimals: token.decimals,
-        },
-      ],
-      liquidityUSD: Number(tokenLiquidityUsd),
-    });
-
-    return tokenWithLiquidity;
+    // const tokens = (await this.getCachedTokens()) as { [key: string]: Token };
+    // const token = Object.values(tokens).find(
+    //   token => token.address.toLowerCase() === tokenAddress.toLowerCase(),
+    // );
+    //
+    // console.log('TOKEN: ', token);
+    //
+    // if (!token) {
+    //   return [];
+    // }
+    //
+    // const tokenPriceUsd = await this.dexHelper.getTokenUSDPrice(
+    //   token,
+    //   BigInt(10 ** token.decimals),
+    // );
+    //
+    // const erc20BalanceCalldata = this.erc20Interface.encodeFunctionData(
+    //   'balanceOf',
+    //   [this.mainnetRFQAddress],
+    // );
+    //
+    // const tokenBalanceMultiCall = [
+    //   {
+    //     target: token.address,
+    //     callData: erc20BalanceCalldata,
+    //   },
+    // ];
+    // const res = (
+    //   await this.dexHelper.multiContract.methods
+    //     .aggregate(tokenBalanceMultiCall)
+    //     .call()
+    // ).returnData[0];
+    //
+    // let tokenLiquidity = BigInt(res);
+    //
+    // let tokenLiquidityUsd =
+    //   (tokenLiquidity * BigInt(tokenPriceUsd * 1_000_000)) /
+    //   BigInt(1_000_000 * 10 ** token.decimals);
+    //
+    // let tokenWithLiquidity = [];
+    //
+    // tokenWithLiquidity.push({
+    //   exchange: this.dexKey,
+    //   address: this.mainnetRFQAddress,
+    //   connectorTokens: [
+    //     {
+    //       address: token.address,
+    //       decimals: token.decimals,
+    //     },
+    //   ],
+    //   liquidityUSD: Number(tokenLiquidityUsd),
+    // });
+    //
+    // return tokenWithLiquidity;
   }
 
   /**
