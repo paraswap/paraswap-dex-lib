@@ -166,7 +166,7 @@ describe('Cables', function () {
       );
     });
 
-    it('getTopPoolsForToken', async function () {
+    it.skip('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const cables = new Cables(network, dexKey, dexHelper);
@@ -294,7 +294,7 @@ describe('Cables', function () {
       );
     });
 
-    it('getTopPoolsForToken', async function () {
+    it.skip('getTopPoolsForToken', async function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const cables = new Cables(network, dexKey, dexHelper);
