@@ -25,6 +25,10 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
         'https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
+    [Network.GNOSIS]: {
+      subgraphURL: 'EJezH1Cp31QkKPaBDerhVPRWsKVZLrDfzjrLqpmv6cGg',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    },
   },
   BeetsFi: {
     [Network.FANTOM]: {
@@ -32,7 +36,7 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
       vaultAddress: '0x20dd72ed959b6147912c2e529f0a0c651c33c9ce',
     },
     [Network.OPTIMISM]: {
-      subgraphURL: 'FsmdxmvBJLGjUQPxKMRtcWKzuCNpomKuMTbSbtRtggZ7',
+      subgraphURL: 'F5jeL2nMXZt5LU6kSway7Vi2PTUcqDbw1gMQEbrmiVdJ',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
   },

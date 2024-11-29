@@ -120,7 +120,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           pricesReqParams: {
             url:
               BEBOP_WS_API_URL +
-              `/pmm/${BebopConfig['Bebop'][network].chainName}/v3/pricing`,
+              `/pmm/${BebopConfig['Bebop'][network].chainName}/v3/pricing?format=protobuf`,
             headers: {
               name: BEBOP_AUTH_NAME,
               authorization: this.bebopAuthToken,

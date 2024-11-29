@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "3.9.6",
+  "version": "3.11.6",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
@@ -58,6 +58,7 @@
     "@hashflow/sdk": "^2.2.7",
     "@hashflow/taker-js": "^0.3.7",
     "@paraswap/core": "2.4.0",
+    "@types/ws": "^8.5.12",
     "async": "^3.2.4",
     "axios": "0.27.2",
     "bignumber.js": "9.1.0",
@@ -69,6 +70,7 @@
     "lodash": "4.17.21",
     "log4js": "6.6.1",
     "node-cache": "^5.1.2",
+    "protobufjs": "^7.4.0",
     "ts-essentials": "9.1.2",
     "uuid": "^9.0.0",
     "web3": "1.6.0",
@@ -77,7 +79,7 @@
     "web3-eth-abi": "1.4.0",
     "web3-eth-contract": "1.6.0",
     "web3-utils": "1.6.0",
-    "websocket": "1.0.35"
+    "ws": "^8.18.0"
   },
   "sideEffects": false
 }

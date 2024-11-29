@@ -1,15 +1,30 @@
 import { ETHER_ADDRESS, Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher } from '../../lib/fetcher/fetcher';
-import { validateAndCast } from '../../lib/validators';
+import { validateAndCast, ValidationError } from '../../lib/validators';
 import { Logger, Token } from '../../types';
 import {
+  BebopLevel,
+  BebopPair,
   BebopPricingResponse,
   BebopRateFetcherConfig,
   BebopTokensResponse,
 } from './types';
-import { pricesResponseValidator, tokensResponseValidator } from './validators';
+import {
+  BebopPricingUpdate,
+  pricesResponseValidator,
+  tokensResponseValidator,
+} from './validators';
 import { WebSocketFetcher } from '../../lib/fetcher/wsFetcher';
+import { utils } from 'ethers';
+
+export function levels_from_flat_array(values: number[]): BebopLevel[] {
+  const levels: BebopLevel[] = [];
+  for (let i = 0; i < values.length; i += 2) {
+    levels.push([values[i], values[i + 1]]);
+  }
+  return levels;
+}
 
 export class RateFetcher {
   private pricesFetcher: WebSocketFetcher<BebopPricingResponse>;
@@ -35,10 +50,16 @@ export class RateFetcher {
         info: {
           requestOptions: config.rateConfig.pricesReqParams,
           caster: (data: unknown) => {
-            return validateAndCast<BebopPricingResponse>(
-              data,
-              pricesResponseValidator,
-            );
+            const dataBuffer = data as any;
+            const invalid = BebopPricingUpdate.verify(dataBuffer);
+            if (invalid) {
+              throw new ValidationError(invalid);
+            }
+            const update = BebopPricingUpdate.decode(dataBuffer);
+            const updateObject = BebopPricingUpdate.toObject(update, {
+              longs: Number,
+            });
+            return this.parsePricingUpdate(updateObject);
           },
         },
         handler: this.handlePricesResponse.bind(this),
@@ -66,6 +87,30 @@ export class RateFetcher {
       config.rateConfig.tokensIntervalMs,
       logger,
     );
+  }
+
+  parsePricingUpdate(updateObject: any): BebopPricingResponse {
+    const pricingResponse: BebopPricingResponse = {};
+    if (!updateObject.pairs || !updateObject.pairs.length) {
+      this.logger.warn('Update message did not include pairs', updateObject);
+      return pricingResponse;
+    }
+    for (const pairBook of updateObject.pairs) {
+      const pair =
+        utils.getAddress('0x' + pairBook.base.toString('hex')) +
+        '/' +
+        utils.getAddress('0x' + pairBook.quote.toString('hex'));
+      const lastUpdateTs = pairBook.lastUpdateTs;
+      const bids = pairBook.bids ? levels_from_flat_array(pairBook.bids) : [];
+      const asks = pairBook.asks ? levels_from_flat_array(pairBook.asks) : [];
+      const bebopPair: BebopPair = {
+        bids,
+        asks,
+        last_update_ts: lastUpdateTs,
+      };
+      pricingResponse[pair] = bebopPair;
+    }
+    return pricingResponse;
   }
 
   start() {
