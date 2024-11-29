@@ -717,6 +717,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
     // });
     //
     // return tokenWithLiquidity;
+    return [];
   }
 
   /**
