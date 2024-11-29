@@ -1,3 +1,5 @@
+import { defaultAbiCoder } from '@ethersproject/abi';
+import { PoolState } from '@balancer-labs/balancer-maths';
 import { StableMutableState } from './types';
 
 export function isStableMutableState(
@@ -40,4 +42,34 @@ export function getAmplificationParameter(
     value = endValue;
   }
   return value;
+}
+
+export function ampUpdateStartedEvent(poolState: PoolState, eventData: any) {
+  // abi.encode(currentValueUint64, endValueUint64, startTimeUint32, endTimeUint32)
+  const decodedParams = defaultAbiCoder.decode(
+    ['uint64', 'uint64', 'uint32', 'uint32'],
+    eventData,
+  );
+  if (isStableMutableState(poolState)) {
+    if (decodedParams[3] > decodedParams[2]) poolState.ampIsUpdating = true;
+    poolState.ampStartValue = decodedParams[0].toBigInt();
+    poolState.ampEndValue = decodedParams[1].toBigInt();
+    poolState.ampStartTime = BigInt(decodedParams[2]);
+    poolState.ampStopTime = BigInt(decodedParams[3]);
+  } else throw new Error("Can't update amp on non-stable pool");
+}
+
+export function ampUpdateStoppedEvent(poolState: PoolState, eventData: any) {
+  // abi.encode(currentValue)
+  const decodedParams = defaultAbiCoder.decode(['uint256'], eventData);
+  if (isStableMutableState(poolState)) {
+    poolState.ampIsUpdating = false;
+    poolState.amp = decodedParams[0].toBigInt();
+    poolState.ampStartValue = decodedParams[0].toBigInt();
+    poolState.ampEndValue = decodedParams[0].toBigInt();
+    // In Contract these are update to timestamp event is called.
+    // There doesn't appear to be a way to easily get timestamp non-async so default to 0n which should have no effect
+    poolState.ampStartTime = BigInt(0n);
+    poolState.ampStopTime = BigInt(0n);
+  } else throw new Error("Can't update amp on non-stable pool");
 }
