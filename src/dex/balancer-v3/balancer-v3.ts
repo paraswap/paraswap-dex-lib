@@ -21,10 +21,10 @@ import { BalancerV3EventPool } from './balancer-v3-pool';
 import { NumberAsString } from '@paraswap/core';
 import { SwapKind } from '@balancer-labs/balancer-maths';
 import { Interface } from '@ethersproject/abi';
-import { balancerRouterAbi } from './abi/balancerRouter';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { getTopPoolsApi } from './getTopPoolsApi';
-import { balancerBatchRouterAbi } from './abi/balancerBatchRouter';
+import balancerRouterAbi from '../../abi/balancer-v3/router.json';
+import balancerBatchRouterAbi from '../../abi/balancer-v3/batch-router.json';
 import { getGasCost } from './getGasCost';
 
 const MAX_UINT256 =

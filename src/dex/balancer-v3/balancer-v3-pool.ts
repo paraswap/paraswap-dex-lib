@@ -13,7 +13,7 @@ import {
   TokenInfo,
 } from './types';
 import { getPoolsApi } from './getPoolsApi';
-import { vaultExtensionAbi_V3 } from './abi/vaultExtension.V3';
+import vaultExtensionAbi_V3 from '../../abi/balancer-v3/vault-extension.json';
 import { decodeThrowError, getOnChainState } from './getOnChainState';
 import { BalancerV3Config } from './config';
 import { SwapKind, Vault } from '@balancer-labs/balancer-maths';

@@ -14,10 +14,10 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 import { BalancerV3Config } from './config';
-import { balancerRouterAbi } from './abi/balancerRouter';
 import { BalancerV3Data, Step } from './types';
 import { Address, ExchangePrices, PoolPrices } from '../../types';
-import { balancerBatchRouterAbi } from './abi/balancerBatchRouter';
+import balancerBatchRouterAbi from '../../abi/balancer-v3/batch-router.json';
+import balancerRouterAbi from '../../abi/balancer-v3/router.json';
 
 function getQuerySwapSingleTokenCalldata(
   routerAddress: Address,
