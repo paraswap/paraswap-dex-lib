@@ -91,11 +91,11 @@ import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
-import { UsualBond } from './usual-bond/usual-bond';
 import { StkGHO } from './stkgho/stkgho';
 import { SkyConverter } from './sky-converter/sky-converter';
-import { UsualMSmartM } from './usual-m-smart-m/usual-m-smart-m';
-import { UsualMUsd0 } from './usual-m-usd0/usual-m-usd0';
+import { UsualBond } from './usual/usual-bond';
+import { UsualMSmartM } from './usual/usual-m-smart-m';
+import { UsualMUsd0 } from './usual/usual-m-usd0';
 
 const LegacyDexes = [
   CurveV2,
