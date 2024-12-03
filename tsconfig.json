@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
-    "lib": ["esnext"],
+    "lib": ["ESNext"],
     "module": "commonjs",
     "noImplicitAny": true,
     "outDir": "build",
@@ -12,7 +12,7 @@
     "sourceMap": true,
     "declaration": true,
     "skipLibCheck": true,
-    "target": "es2022",
+    "target": "ESNext",
     "resolveJsonModule": true,
     "allowJs": true,
     "typeRoots": ["node_modules/@types"],
