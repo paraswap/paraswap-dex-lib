@@ -555,6 +555,11 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         this.getUnwrapStep(tokenOut),
       ];
     } else if (tokenIn.isBoosted) {
+      if (tokenIn.mainToken === tokenOut.mainToken) {
+        // wrap, token > erc4626
+        // tokenIn is boosted, e.g. isn't pool token and must be wrapped
+        return [this.getWrapStep(tokenIn)];
+      }
       return [
         // Wrap tokenIn underlying to main token
         this.getWrapStep(tokenIn),
@@ -562,6 +567,11 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         this.getSwapStep(pool, tokenIn, tokenOut),
       ];
     } else if (tokenOut.isBoosted) {
+      if (tokenIn.mainToken === tokenOut.mainToken) {
+        // unwrap, stata > token
+        // token out is boosted, e.g. isn't pool token
+        return [this.getUnwrapStep(tokenOut)];
+      }
       return [
         // Swap main > main
         this.getSwapStep(pool, tokenIn, tokenOut),
