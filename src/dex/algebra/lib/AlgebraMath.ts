@@ -155,7 +155,7 @@ function _priceComputationCycles(
         ? zeroForOne
           ? poolState.globalState.feeZto
           : poolState.globalState.feeOtz
-        : poolState.globalState.fee,
+        : (poolState.globalState as any).fee,
     );
 
     state.sqrtPriceX96 = swapStepResult.sqrtRatioNextX96;
@@ -541,7 +541,7 @@ class AlgebraMathClass {
       ? zeroToOne
         ? poolState.globalState.feeZto
         : poolState.globalState.feeOtz
-      : poolState.globalState.fee;
+      : (poolState.globalState as any).fee;
     let _communityFeeToken0 = globalState.communityFeeToken0;
     let _communityFeeToken1 = globalState.communityFeeToken1;
 

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
-    "lib": ["es2019"],
+    "lib": ["esnext"],
     "module": "commonjs",
     "noImplicitAny": true,
     "outDir": "build",
@@ -12,11 +12,12 @@
     "sourceMap": true,
     "declaration": true,
     "skipLibCheck": true,
-    "target": "es2020",
+    "target": "es2022",
     "resolveJsonModule": true,
     "allowJs": true,
     "typeRoots": ["node_modules/@types"],
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "moduleResolution": "node"
   },
   "include": ["src/**/*"],
   "exclude": ["**/*.test.ts"]
