@@ -3,11 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -64,6 +60,52 @@ describe('UsualBond E2E', () => {
 
     const tokenASymbol: string = 'USD0';
     const tokenBSymbol: string = 'USD0++';
+
+    const tokenAAmount: string = '100000';
+    const tokenBAmount: string = '100000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+});
+
+describe('UsualMSmartM E2E', () => {
+  const dexKey = 'UsualMSmartM';
+
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'SmartM';
+    const tokenBSymbol: string = 'UsualM';
+
+    const tokenAAmount: string = '100000';
+    const tokenBAmount: string = '100000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
+});
+
+describe('UsualM<>Usd0 E2E', () => {
+  const dexKey = 'UsualMUsd0';
+
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'UsualM';
+    const tokenBSymbol: string = 'USD0';
 
     const tokenAAmount: string = '100000';
     const tokenBAmount: string = '100000';
