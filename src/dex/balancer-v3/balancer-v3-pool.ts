@@ -512,7 +512,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // Check in underlying tokens if available
     if (poolState.tokensUnderlying) {
       tokenIndex = poolState.tokensUnderlying.findIndex(
-        address => address!.toLowerCase() === tokenAddress.toLowerCase(),
+        address =>
+          address && address.toLowerCase() === tokenAddress.toLowerCase(),
       );
       if (tokenIndex !== -1) {
         return {
