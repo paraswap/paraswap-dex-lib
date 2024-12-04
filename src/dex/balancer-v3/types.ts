@@ -55,7 +55,6 @@ export type ImmutablePoolStateMap = {
 
 export type Step = {
   pool: Address;
-  tokenOut: Address;
   isBuffer: boolean;
   swapInput: {
     tokenIn: Address;

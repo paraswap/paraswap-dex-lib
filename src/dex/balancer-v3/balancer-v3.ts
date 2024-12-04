@@ -365,7 +365,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
               tokenIn: srcToken,
               steps: data.steps.map(step => ({
                 pool: step.pool,
-                tokenOut: step.tokenOut,
+                tokenOut: step.swapInput.tokenOut,
                 isBuffer: step.isBuffer,
               })),
               exactAmountIn: srcAmount,
@@ -439,7 +439,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
               tokenIn: srcToken,
               steps: data.steps.map(step => ({
                 pool: step.pool,
-                tokenOut: step.tokenOut,
+                tokenOut: step.swapInput.tokenOut,
                 isBuffer: step.isBuffer,
               })),
               exactAmountOut: destAmount,

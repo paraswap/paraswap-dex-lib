@@ -600,7 +600,6 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // Vault expects pool to be the ERC4626 wrapped token, e.g. aUSDC
     return {
       pool: token.mainToken,
-      tokenOut: token.mainToken,
       isBuffer: true,
       swapInput: {
         tokenIn: token.underlyingToken,
@@ -623,7 +622,6 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // Vault expects pool to be the ERC4626 wrapped token, e.g. aUSDC
     return {
       pool: token.mainToken,
-      tokenOut: token.underlyingToken,
       isBuffer: true,
       swapInput: {
         tokenIn: token.mainToken,
@@ -642,7 +640,6 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     // A normal swap between two tokens in a pool
     return {
       pool: pool.poolAddress,
-      tokenOut: tokenOut.mainToken,
       isBuffer: false,
       swapInput: {
         tokenIn: tokenIn.mainToken,
