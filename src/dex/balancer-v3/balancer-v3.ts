@@ -121,8 +121,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     if (poolState === null) return [];
     return this.findPoolAddressesWithTokens(
       poolState,
-      _from.address,
-      _to.address,
+      _from.address.toLowerCase(),
+      _to.address.toLowerCase(),
     );
   }
 
@@ -200,8 +200,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       // filter for pools with tokens and to only use limit pools
       const allowedPools = this.filterPools(
         allPoolState,
-        _from.address,
-        _to.address,
+        _from.address.toLowerCase(),
+        _to.address.toLowerCase(),
         limitPools,
       );
 
