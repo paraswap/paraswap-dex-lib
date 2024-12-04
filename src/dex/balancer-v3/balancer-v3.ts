@@ -357,7 +357,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       // for each step:
       // if tokenIn == pool router uses removeLiquidity SINGLE_TOKEN_EXACT_IN
       // if tokenOut == pool router uses addLiquidity UNBALANCED
-      const exchangeData = this.balancerBatchRouter.encodeFunctionResult(
+      const exchangeData = this.balancerBatchRouter.encodeFunctionData(
         'swapExactIn',
         [
           [
@@ -432,7 +432,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       // for each step:
       // if tokenIn == pool use removeLiquidity SINGLE_TOKEN_EXACT_OUT
       // if tokenOut == pool use addLiquidity SINGLE_TOKEN_EXACT_OUT
-      const exchangeData = this.balancerBatchRouter.encodeFunctionResult(
+      const exchangeData = this.balancerBatchRouter.encodeFunctionData(
         'swapExactOut',
         [
           [
