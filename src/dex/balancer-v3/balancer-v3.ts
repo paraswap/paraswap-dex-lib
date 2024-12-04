@@ -341,6 +341,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         ],
       );
       return {
+        permit2Approval: true,
         needWrapNative: this.needWrapNative,
         dexFuncHasRecipient: false,
         exchangeData,
@@ -378,6 +379,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       );
 
       return {
+        permit2Approval: true,
         needWrapNative: this.needWrapNative,
         dexFuncHasRecipient: false,
         exchangeData,
