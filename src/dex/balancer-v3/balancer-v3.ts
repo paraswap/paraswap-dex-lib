@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { BalancerV3Data, PoolState, PoolStateMap } from './types';
@@ -40,8 +40,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   protected eventPools: BalancerV3EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
-  // TODO: vault can handle native
-  readonly needWrapNative = true;
+  // Vault can handle native
+  readonly needWrapNative = false;
 
   readonly isFeeOnTransferSupported = false;
 
@@ -331,12 +331,12 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         'swapSingleTokenExactIn',
         [
           data.steps[0].pool,
-          srcToken,
-          destToken,
+          this.dexHelper.config.wrapETH(srcToken),
+          this.dexHelper.config.wrapETH(destToken),
           srcAmount,
           '0', // This should be limit for min amount out. Assume this is set elsewhere via Paraswap contract.
           MAX_UINT256, // Deadline
-          this.needWrapNative, // TODO vault can handle native assets
+          isETHAddress(srcToken) || isETHAddress(destToken),
           '0x',
         ],
       );
@@ -373,7 +373,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
             },
           ],
           MAX_UINT256, // Deadline
-          this.needWrapNative, // TODO vault can handle native assets
+          isETHAddress(srcToken) || isETHAddress(destToken),
           '0x',
         ],
       );
@@ -383,13 +383,10 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         needWrapNative: this.needWrapNative,
         dexFuncHasRecipient: false,
         exchangeData,
-        // This router handles single swaps
+        // This router handles batch swaps
         targetExchange:
           BalancerV3Config.BalancerV3[this.network].balancerBatchRouterAddress,
-        returnAmountPos: extractReturnAmountPosition(
-          this.balancerBatchRouter,
-          'swapExactIn',
-        ),
+        returnAmountPos: undefined,
       };
     }
   }
@@ -405,12 +402,12 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         'swapSingleTokenExactOut',
         [
           data.steps[0].pool,
-          srcToken,
-          destToken,
+          this.dexHelper.config.wrapETH(srcToken),
+          this.dexHelper.config.wrapETH(destToken),
           destAmount,
           MAX_UINT256, // This should be limit for max amount in. Assume this is set elsewhere via Paraswap contract.
           MAX_UINT256, // Deadline
-          this.needWrapNative, // TODO vault can handle native assets
+          isETHAddress(srcToken) || isETHAddress(destToken),
           '0x',
         ],
       );
@@ -423,10 +420,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         // Single swaps are submitted via Balancer Router
         targetExchange:
           BalancerV3Config.BalancerV3[this.network].balancerRouterAddress,
-        returnAmountPos: extractReturnAmountPosition(
-          this.balancerRouter,
-          'swapSingleTokenExactOut',
-        ),
+        returnAmountPos: undefined,
       };
     } else {
       // for each step:
@@ -448,7 +442,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
             },
           ],
           MAX_UINT256, // Deadline
-          this.needWrapNative, // TODO vault can handle native assets
+          isETHAddress(srcToken) || isETHAddress(destToken),
           '0x',
         ],
       );
@@ -458,13 +452,10 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         needWrapNative: this.needWrapNative,
         dexFuncHasRecipient: false,
         exchangeData,
-        // This router handles single swaps
+        // This router handles batch swaps
         targetExchange:
           BalancerV3Config.BalancerV3[this.network].balancerBatchRouterAddress,
-        returnAmountPos: extractReturnAmountPosition(
-          this.balancerBatchRouter,
-          'swapExactIn',
-        ),
+        returnAmountPos: undefined,
       };
     }
   }
