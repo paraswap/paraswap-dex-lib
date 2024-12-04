@@ -157,11 +157,11 @@ describe('BalancerV3 E2E', () => {
   describe('Mainnet, Stable Path', () => {
     const network = Network.SEPOLIA;
 
-    const tokenASymbol: string = 'stataUsdc';
-    const tokenBSymbol: string = 'aDaiAave';
+    const tokenASymbol: string = 'stataUSDT';
+    const tokenBSymbol: string = 'stataUSDC';
 
     const tokenAAmount: string = '10000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '10000000';
     const nativeTokenAmount = '0';
 
     testForNetwork(
