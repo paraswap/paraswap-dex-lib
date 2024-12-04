@@ -608,6 +608,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         curExchangeParam.approveData.target,
         curExchangeParam.approveData.token,
         flags.approves[exchangeParamIndex],
+        curExchangeParam.permit2Approval,
       );
 
       swapExchangeCallData = hexConcat([approveCallData, swapExchangeCallData]);
@@ -625,6 +626,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
             curExchangeParam.approveData.target,
             curExchangeParam.approveData.token,
             flags.approves[exchangeParamIndex],
+            curExchangeParam.permit2Approval,
           );
         }
 

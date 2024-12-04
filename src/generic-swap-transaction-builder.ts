@@ -673,7 +673,7 @@ export class GenericSwapTransactionBuilder {
   ): Promise<DexExchangeBuildParam[]> {
     const spender = bytecodeBuilder.getAddress();
     const tokenTargetMapping: {
-      params: [token: Address, target: Address];
+      params: [token: Address, target: Address, permit2: boolean];
       exchangeParamIndex: number;
     }[] = [];
 
@@ -690,7 +690,11 @@ export class GenericSwapTransactionBuilder {
 
           if (approveParams) {
             tokenTargetMapping.push({
-              params: [approveParams.token, approveParams?.target],
+              params: [
+                approveParams.token,
+                approveParams.target,
+                !!curExchangeParam.permit2Approval,
+              ],
               exchangeParamIndex: currentExchangeParamIndex,
             });
           }
