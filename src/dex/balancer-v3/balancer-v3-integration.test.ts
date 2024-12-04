@@ -504,7 +504,7 @@ describe('BalancerV3', function () {
     });
 
     // TODO 1 WEI rounding issue in maths - investigating
-    it.skip('getPoolIdentifiers and getPricesVolume BUY', async function () {
+    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
       await testPricingOnNetwork(
         balancerV3,
         network,

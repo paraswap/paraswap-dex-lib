@@ -385,10 +385,16 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     timestamp: number,
   ): bigint {
     if (amountRaw === 0n) return 0n;
+
+    // A GivenOut needs to use steps in reverse during calculation
+    const indices =
+      swapKind === SwapKind.GivenIn
+        ? steps.keys()
+        : Array.from(steps.keys()).reverse();
+
     let amount = amountRaw;
     let outputAmountRaw = 0n;
-    // Simulates the result of a multi-step swap path
-    for (let i = 0; i < steps.length; i++) {
+    for (const i of indices) {
       const step = steps[i];
       // If its a Stable Pool with an updating Amp factor calculate current Amp value
       if (
