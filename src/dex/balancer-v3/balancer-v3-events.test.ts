@@ -162,6 +162,22 @@ describe('BalancerV3 EventPool', function () {
           '0xD63dB0B88dca565633fB8d70a70b9b8093d34A7E',
         ],
       },
+      // https://sepolia.etherscan.io/tx/0x71f9879485f4e4cf97aa42381988ffe277f05a872d6b507cfa007cec1239a3f8#eventlog
+      SwapFeePercentageChanged: {
+        blockNumbers: [7206571],
+        poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
+      },
+      // https://sepolia.etherscan.io/tx/0xaf232ca2df59ba5fad38d74e9b54ec2ae1ad2e6abca8348f107cf3fd94c787c7#eventlog
+      // Should remove pool from state as its paused and no longer supports swaps
+      PoolPausedStateChanged: {
+        blockNumbers: [7206586],
+        poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
+      },
+      // https://sepolia.etherscan.io/tx/0xa23dc10bd0fbed7ffffe867766d9b0d7670ca4a0bc352669f547bc7775644349#eventlog
+      AggregateSwapFeePercentageChanged: {
+        blockNumbers: [7206701],
+        poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
+      },
     },
   };
 
