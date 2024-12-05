@@ -16,8 +16,7 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "typeRoots": ["node_modules/@types"],
-    "esModuleInterop": true,
-    "moduleResolution": "node"
+    "esModuleInterop": true
   },
   "include": ["src/**/*"],
   "exclude": ["**/*.test.ts"]
