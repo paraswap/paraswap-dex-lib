@@ -554,4 +554,26 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       this.poolInitCodeHash,
     );
   }
+
+  // todo: remove
+  // nullify the state for specific pool for testing purposes
+  async update(
+    logs: Readonly<Log>[],
+    blockHeaders: Readonly<{ [p: number]: Readonly<BlockHeader> }>,
+  ) {
+    await super.update(logs, blockHeaders);
+
+    // PIRATE - WETH Mainnet UniswapV3 Pool
+    if (this.poolAddress === '0x7f74c86cd8ba48be647d541b3e7f5a2184a3afa4') {
+      const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
+
+      // every 5 blocks on mainnet with 12s block time = every 1 min
+      if (!(blockNumber % 5)) {
+        this.logger.info(
+          `Nullifying state for pool ${this.poolAddress} at block ${blockNumber}`,
+        );
+        this._setState(null, blockNumber);
+      }
+    }
+  }
 }
