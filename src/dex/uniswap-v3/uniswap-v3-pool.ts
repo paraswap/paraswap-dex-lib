@@ -561,18 +561,19 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     logs: Readonly<Log>[],
     blockHeaders: Readonly<{ [p: number]: Readonly<BlockHeader> }>,
   ) {
-    await super.update(logs, blockHeaders);
-
     // USDT - WETH Mainnet UniswapV3 Pool
     if (this.poolAddress === '0x11b815efb8f581194ae79006d24e0d814b7697f6') {
-      const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
-
-      if (!(blockNumber % 2)) {
-        this.logger.info(
-          `Nullifying state for pool ${this.poolAddress} at block ${blockNumber}`,
-        );
+      const blockNumbers = logs.map(log => log.blockNumber);
+      for (const blockNumber of blockNumbers) {
         this._setState(null, blockNumber);
       }
+      this.logger.info(
+        `Nullified state for pool ${
+          this.poolAddress
+        } at blocks ${blockNumbers.join(', ')}`,
+      );
+    } else {
+      await super.update(logs, blockHeaders);
     }
   }
 }
