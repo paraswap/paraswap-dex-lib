@@ -45,7 +45,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   synthetixState: SynthetixState;
 
   // It is intermediate measure before we have event base Oracles
-  statePollingTimer?: NodeJS.Timer;
+  statePollingTimer?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SynthetixConfig);
