@@ -563,12 +563,11 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   ) {
     await super.update(logs, blockHeaders);
 
-    // PIRATE - WETH Mainnet UniswapV3 Pool
-    if (this.poolAddress === '0x7f74c86cd8ba48be647d541b3e7f5a2184a3afa4') {
+    // USDT - WETH Mainnet UniswapV3 Pool
+    if (this.poolAddress === '0x11b815efb8f581194ae79006d24e0d814b7697f6') {
       const blockNumber = this.dexHelper.blockManager.getLatestBlockNumber();
 
-      // every 5 blocks on mainnet with 12s block time = every 1 min
-      if (!(blockNumber % 5)) {
+      if (!(blockNumber % 2)) {
         this.logger.info(
           `Nullifying state for pool ${this.poolAddress} at block ${blockNumber}`,
         );
