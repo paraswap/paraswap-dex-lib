@@ -92,6 +92,10 @@ export const Tokens: {
       address: ETHER_ADDRESS,
       decimals: 18,
     },
+    ETHx: {
+      address: '0xA35b1B31Ce002FBF2058D22F30f95D405200A15b',
+      decimals: 18,
+    },
     SWETH: {
       address: '0xf951e335afb289353dc249e82926178eac7ded78',
       decimals: 18,
@@ -1625,6 +1629,7 @@ export const Holders: {
     sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
     MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
+    ETHx: '0xFCC1A2c71F01B7f58Ed538a6B4AAa5A0724eB5A6',
     // Idle tokens
     AA_wstETH: '0xd7C1b48877A7dFA7D51cf1144c89C0A3F134F935',
     'AA_idle_cpPOR-USDC': '0x085c8eaccA6911fE60aE3f8FbAe5F3012E3A05Ec',
