@@ -11,16 +11,3 @@ export const StaderConfig: DexConfigMap<DexParams> = {
     },
   },
 };
-
-export const Adapters: {
-  [chainId: number]: { [side: string]: { name: string; index: number }[] };
-} = {
-  [Network.MAINNET]: {
-    [SwapSide.SELL]: [
-      {
-        name: 'Adapter05',
-        index: 1,
-      },
-    ],
-  },
-};

@@ -22,7 +22,7 @@ import { BI_POWS } from '../../bigint-constants';
 import { AsyncOrSync } from 'ts-essentials';
 import { ETHxEventPool } from './stader-pool';
 import { StaderData, SSPMFunctions } from './types';
-import { StaderConfig, Adapters } from './config';
+import { StaderConfig } from './config';
 import { WethFunctions } from '../weth/types';
 import ERC20ABI from '../../abi/erc20.json';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -55,7 +55,6 @@ export class Stader
     dexKey: string,
     dexHelper: IDexHelper,
     protected config = StaderConfig[dexKey][network],
-    protected adapters = Adapters[network],
   ) {
     super(dexHelper, 'Stader');
     this.network = dexHelper.config.data.network;
@@ -202,12 +201,12 @@ export class Stader
   ): DexExchangeParam {
     const swapData = this.SSPMInterface.encodeFunctionData(
       SSPMFunctions.deposit,
-      ['0x000010036c0190e009a000d0fc3541100a07380a'],
+      [_recipient],
     );
 
     return {
       needWrapNative: this.needWrapNative,
-      dexFuncHasRecipient: false,
+      dexFuncHasRecipient: true,
       exchangeData: swapData,
       targetExchange: this.config.SSPM.toLowerCase(),
       preSwapUnwrapCalldata: this.isWETH(srcToken)
@@ -241,7 +240,7 @@ export class Stader
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters?.[side] || null;
+    return null;
   }
 
   getTopPoolsForToken(
