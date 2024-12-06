@@ -17,6 +17,7 @@ import {
 import { DexAdapterService } from './dex';
 import { IDex, IRouteOptimizer } from './dex/idex';
 import { isSrcTokenTransferFeeToBeExchanged } from './utils';
+import { performance } from 'perf_hooks';
 
 export class PricingHelper {
   logger: Logger;
@@ -217,6 +218,7 @@ export class PricingHelper {
                 return resolve(null);
               }
 
+              const startTime = performance.now();
               dexInstance
                 .getPricesVolume(
                   from,
@@ -229,6 +231,19 @@ export class PricingHelper {
                 )
                 .then(poolPrices => {
                   try {
+                    const endTime = performance.now();
+                    const duration = endTime - startTime;
+                    this.logger.info(
+                      JSON.stringify({
+                        message: 'Latency.getPricesVolume.dex-lib',
+                        latencyMs: parseFloat(duration.toFixed(2)),
+                        dex: key,
+                        network: this.dexAdapterService.network,
+                        fromToken: from.symbol || from.address,
+                        toToken: to.symbol || to.address,
+                        success: !!poolPrices,
+                      }),
+                    );
                     if (!poolPrices || !rollupL1ToL2GasRatio) {
                       return resolve(poolPrices);
                     }
