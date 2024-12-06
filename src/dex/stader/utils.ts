@@ -1,6 +1,7 @@
 import { Contract } from 'web3-eth-contract';
 import { ETHxPoolState } from './types';
 import { Interface, AbiCoder } from '@ethersproject/abi';
+import { BI_POWS } from '../../bigint-constants';
 
 export async function getOnChainStateETHx(
   multiContract: Contract,
@@ -9,7 +10,6 @@ export async function getOnChainStateETHx(
   blockNumber: number | 'latest',
 ): Promise<ETHxPoolState> {
   const coder = new AbiCoder();
-  const DECIMALS = BigInt(1000000000000000000n);
   const data: { returnData: any[] } = await multiContract.methods
     .aggregate([
       {
@@ -26,9 +26,9 @@ export async function getOnChainStateETHx(
 
   const totalETHBalance = BigInt(decodedData[1].toString());
   const totalETHXSupply = BigInt(decodedData[2].toString());
-  const ETHxToETHRateFixed = (totalETHBalance * DECIMALS) / totalETHXSupply;
 
   return {
-    ETHxToETHRateFixed,
+    totalETHBalance,
+    totalETHXSupply,
   };
 }

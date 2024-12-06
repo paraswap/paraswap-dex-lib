@@ -1,5 +1,6 @@
 export type ETHxPoolState = {
-  ETHxToETHRateFixed: bigint;
+  totalETHBalance: bigint;
+  totalETHXSupply: bigint;
 };
 
 export type StaderData = {};

@@ -34,7 +34,8 @@ export class ETHxEventPool extends StatefulEventSubscriber<ETHxPoolState> {
         const totalEth = BigInt(event.args.totalEth);
         const ethxSupply = BigInt(event.args.ethxSupply);
         return {
-          ETHxToETHRateFixed: BigInt((totalEth * this.DECIMALS) / ethxSupply),
+          totalETHBalance: totalEth,
+          totalETHXSupply: ethxSupply,
         };
       }
     } catch (e) {
@@ -60,9 +61,8 @@ export class ETHxEventPool extends StatefulEventSubscriber<ETHxPoolState> {
   getPrice(blockNumber: number, ethAmount: bigint): bigint {
     const state = this.getState(blockNumber);
     if (!state) throw new Error('Cannot compute price');
-    const { ETHxToETHRateFixed } = state;
+    const { totalETHBalance, totalETHXSupply } = state;
 
-    // calculation in contract are made with UD60x18 precision
-    return (ethAmount * BI_POWS[18]) / ETHxToETHRateFixed;
+    return (ethAmount * totalETHXSupply) / totalETHBalance;
   }
 }

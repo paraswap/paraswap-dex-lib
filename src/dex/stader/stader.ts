@@ -91,51 +91,8 @@ export class Stader
     };
   }
 
-  async getSimpleParam(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    data: StaderData,
-    side: SwapSide,
-  ): Promise<SimpleExchangeParam> {
-    const swapData = this.SSPMInterface.encodeFunctionData(
-      SSPMFunctions.deposit,
-      [NULL_ADDRESS],
-    );
-
-    return {
-      callees: [this.config.SSPM.toLowerCase()],
-      calldata: [swapData],
-      values: [srcAmount],
-      networkFee: '0',
-    };
-  }
-
   async initializePricing(blockNumber: number) {
-    const data: { returnData: any[] } =
-      await this.dexHelper.multiContract.methods
-        .aggregate([
-          {
-            target: this.SSPM_Address,
-            callData: this.SSPMInterface.encodeFunctionData(
-              'getExchangeRate',
-              [],
-            ),
-          },
-        ])
-        .call({}, blockNumber);
-
-    const decodedData = ethers.utils.defaultAbiCoder.decode(
-      ['uint256'],
-      data.returnData[0],
-    );
-
-    const ETHxToETHRateFixed = BigInt(decodedData[0].toString());
-
-    await this.ethxPool.initialize(blockNumber, {
-      state: { ETHxToETHRateFixed },
-    });
+    await this.ethxPool.initialize(blockNumber);
   }
 
   async getPricesVolume(
@@ -247,6 +204,23 @@ export class Stader
     tokenAddress: string,
     limit: number,
   ): AsyncOrSync<PoolLiquidity[]> {
-    return [];
+    if (
+      !(isETHAddress(tokenAddress) || this.isWETH(tokenAddress.toLowerCase()))
+    )
+      return [];
+
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.config.ETHx,
+        connectorTokens: [
+          {
+            decimals: 18,
+            address: this.config.ETHx,
+          },
+        ],
+        liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+      },
+    ];
   }
 }
