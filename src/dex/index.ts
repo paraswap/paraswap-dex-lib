@@ -94,6 +94,7 @@ import { LitePsm } from './lite-psm/lite-psm';
 import { UsualBond } from './usual-bond/usual-bond';
 import { StkGHO } from './stkgho/stkgho';
 import { SkyConverter } from './sky-converter/sky-converter';
+import { Stader } from './stader/stader';
 
 const LegacyDexes = [
   CurveV2,
@@ -113,6 +114,7 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Stader,
   Bebop,
   Dexalot,
   CurveV1,

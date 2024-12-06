@@ -1,0 +1,253 @@
+import { Interface, JsonFragment } from '@ethersproject/abi';
+import { NumberAsString, SwapSide } from '@paraswap/core';
+import {
+  AdapterExchangeParam,
+  Address,
+  DexExchangeParam,
+  ExchangePrices,
+  Logger,
+  PoolLiquidity,
+  PoolPrices,
+  SimpleExchangeParam,
+  Token,
+  TransferFeeParams,
+} from '../../types';
+import { IDexTxBuilder } from '../idex';
+import SSPMAbi from '../../abi/SSPM.json';
+import StadeOracleAbi from '../../abi/StaderOracle.json';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
+import { IDexHelper } from '../../dex-helper';
+import { SimpleExchange } from '../simple-exchange';
+import { BI_POWS } from '../../bigint-constants';
+import { AsyncOrSync } from 'ts-essentials';
+import { ETHxEventPool } from './stader-pool';
+import { StaderData, SSPMFunctions } from './types';
+import { StaderConfig, Adapters } from './config';
+import { WethFunctions } from '../weth/types';
+import ERC20ABI from '../../abi/erc20.json';
+import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
+import _ from 'lodash';
+import { extractReturnAmountPosition } from '../../executor/utils';
+import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
+import { ethers } from 'ethers';
+
+export class Stader
+  extends SimpleExchange
+  implements IDexTxBuilder<StaderData, any>
+{
+  static dexKeys = ['Stader'];
+  ETHxAddress: string;
+  SSPM_Address: string;
+  SSPMInterface: Interface;
+  StaderOracleAddress: string;
+  StaderOracleInterface: Interface;
+  erc20Interface: Interface;
+  needWrapNative = false;
+  ethxPool: ETHxEventPool;
+  logger: Logger;
+  hasConstantPriceLargeAmounts: boolean = true;
+
+  public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
+    getDexKeysWithNetwork(_.pick(StaderConfig, ['Stader']));
+
+  constructor(
+    protected network: Network,
+    dexKey: string,
+    dexHelper: IDexHelper,
+    protected config = StaderConfig[dexKey][network],
+    protected adapters = Adapters[network],
+  ) {
+    super(dexHelper, 'Stader');
+    this.network = dexHelper.config.data.network;
+    this.ETHxAddress = this.config.ETHx.toLowerCase();
+    this.SSPM_Address = this.config.SSPM.toLowerCase();
+    this.SSPMInterface = new Interface(SSPMAbi as JsonFragment[]);
+    this.StaderOracleAddress = this.config.StaderOracle.toLowerCase();
+    this.StaderOracleInterface = new Interface(
+      StadeOracleAbi as JsonFragment[],
+    );
+    this.erc20Interface = new Interface(ERC20ABI);
+    this.logger = dexHelper.getLogger(this.dexKey);
+    this.ethxPool = new ETHxEventPool(
+      this.dexKey,
+      dexHelper,
+      this.StaderOracleAddress,
+      this.StaderOracleInterface,
+      this.logger,
+    );
+  }
+
+  getAdapterParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: StaderData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    return {
+      targetExchange: NULL_ADDRESS,
+      payload: '0x',
+      networkFee: '0',
+    };
+  }
+
+  async getSimpleParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: StaderData,
+    side: SwapSide,
+  ): Promise<SimpleExchangeParam> {
+    const swapData = this.SSPMInterface.encodeFunctionData(
+      SSPMFunctions.deposit,
+      [NULL_ADDRESS],
+    );
+
+    return {
+      callees: [this.config.SSPM.toLowerCase()],
+      calldata: [swapData],
+      values: [srcAmount],
+      networkFee: '0',
+    };
+  }
+
+  async initializePricing(blockNumber: number) {
+    const data: { returnData: any[] } =
+      await this.dexHelper.multiContract.methods
+        .aggregate([
+          {
+            target: this.SSPM_Address,
+            callData: this.SSPMInterface.encodeFunctionData(
+              'getExchangeRate',
+              [],
+            ),
+          },
+        ])
+        .call({}, blockNumber);
+
+    const decodedData = ethers.utils.defaultAbiCoder.decode(
+      ['uint256'],
+      data.returnData[0],
+    );
+
+    const ETHxToETHRateFixed = BigInt(decodedData[0].toString());
+
+    await this.ethxPool.initialize(blockNumber, {
+      state: { ETHxToETHRateFixed },
+    });
+  }
+
+  async getPricesVolume(
+    srcToken: Token,
+    destToken: Token,
+    amountsIn: bigint[],
+    side: SwapSide,
+    blockNumber: number,
+    limitPools?: string[] | undefined,
+    transferFees?: TransferFeeParams | undefined,
+    isFirstSwap?: boolean | undefined,
+  ): Promise<ExchangePrices<StaderData> | null> {
+    const pool = this.ethxPool;
+    if (!pool.getState(blockNumber)) return null;
+
+    const unitIn = BI_POWS[18];
+    const unitOut = pool.getPrice(blockNumber, unitIn);
+    const amountsOut = amountsIn.map(amountIn =>
+      pool.getPrice(blockNumber, amountIn),
+    );
+
+    return [
+      {
+        prices: amountsOut,
+        unit: unitOut,
+        data: {},
+        exchange: this.dexKey,
+        poolIdentifier: `${ETHER_ADDRESS}_${destToken.address}`.toLowerCase(),
+        gasCost: 120_000,
+        poolAddresses: [destToken.address],
+      },
+    ];
+  }
+
+  isEligibleSwap(
+    srcToken: Token | string,
+    destToken: Token | string,
+    side: SwapSide,
+  ): boolean {
+    if (side === SwapSide.BUY) return false;
+
+    const srcTokenAddress = (
+      typeof srcToken === 'string' ? srcToken : srcToken.address
+    ).toLowerCase();
+    const destTokenAddress = (
+      typeof destToken === 'string' ? destToken : destToken.address
+    ).toLowerCase();
+
+    return (
+      (isETHAddress(srcTokenAddress) || this.isWETH(srcTokenAddress)) &&
+      destTokenAddress === this.ETHxAddress
+    );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    _destToken: Address,
+    srcAmount: NumberAsString,
+    _destAmount: NumberAsString,
+    _recipient: Address,
+    _data: StaderData,
+    _side: SwapSide,
+  ): DexExchangeParam {
+    const swapData = this.SSPMInterface.encodeFunctionData(
+      SSPMFunctions.deposit,
+      ['0x000010036c0190e009a000d0fc3541100a07380a'],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: this.config.SSPM.toLowerCase(),
+      preSwapUnwrapCalldata: this.isWETH(srcToken)
+        ? this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+            srcAmount,
+          ])
+        : undefined,
+      returnAmountPos:
+        _side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.SSPMInterface,
+              SSPMFunctions.deposit,
+            )
+          : undefined,
+    };
+  }
+
+  async getPoolIdentifiers(
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    blockNumber: number,
+  ): Promise<string[]> {
+    if (!this.isEligibleSwap(srcToken, destToken, side)) return [];
+
+    return [`${ETHER_ADDRESS}_${destToken.address}`.toLowerCase()];
+  }
+
+  getCalldataGasCost(poolPrices: PoolPrices<StaderData>): number | number[] {
+    return CALLDATA_GAS_COST.DEX_OVERHEAD + CALLDATA_GAS_COST.LENGTH_SMALL;
+  }
+
+  getAdapters(side: SwapSide): { name: string; index: number }[] | null {
+    return this.adapters?.[side] || null;
+  }
+
+  getTopPoolsForToken(
+    tokenAddress: string,
+    limit: number,
+  ): AsyncOrSync<PoolLiquidity[]> {
+    return [];
+  }
+}
