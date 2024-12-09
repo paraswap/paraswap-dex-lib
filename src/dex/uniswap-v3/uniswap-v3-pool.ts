@@ -254,6 +254,36 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
+  async getOrGenerateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const state = this.getState(blockNumber);
+    if (state) {
+      return state;
+    }
+
+    this.logger.error(
+      `UniV3: No state found for ${this.name} ${this.addressesSubscribed[0]}, generating new one`,
+    );
+    try {
+      const newState = await this.generateState(blockNumber);
+
+      if (!newState) {
+        this.logger.error(
+          `UniV3: Could not generate state for ${this.name} ${this.addressesSubscribed[0]}`,
+        );
+        return null;
+      }
+      this.setState(newState, blockNumber);
+      return newState;
+    } catch (error) {
+      this.logger.error(
+        `UniV3: Failed to generate state for ${this.name} ${this.addressesSubscribed[0]}`,
+      );
+      return null;
+    }
+  }
+
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
@@ -523,5 +553,25 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       encodedKey,
       this.poolInitCodeHash,
     );
+  }
+
+  // todo: remove
+  // nullify the state for specific pool for testing purposes
+  async update(
+    logs: Readonly<Log>[],
+    blockHeaders: Readonly<{ [p: number]: Readonly<BlockHeader> }>,
+  ) {
+    // USDT - WETH Mainnet UniswapV3 Pool
+    if (this.poolAddress === '0x11b815efb8f581194ae79006d24e0d814b7697f6') {
+      const blockNumbers = logs.map(log => log.blockNumber);
+      this.logger.info(
+        `Invalidating state for pool ${
+          this.poolAddress
+        } at blocks ${blockNumbers.join(', ')}`,
+      );
+      this.invalidate();
+    } else {
+      await super.update(logs, blockHeaders);
+    }
   }
 }

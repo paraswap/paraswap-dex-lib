@@ -715,6 +715,10 @@ export class UniswapV3
 
       if (selectedPools.length === 0) return null;
 
+      await Promise.all(
+        selectedPools.map(pool => pool.getOrGenerateState(blockNumber)),
+      );
+
       const poolsToUse = selectedPools.reduce(
         (acc, pool) => {
           let state = pool.getState(blockNumber);
@@ -722,6 +726,7 @@ export class UniswapV3
             this.logger.trace(
               `${this.dexKey}: State === null. Fallback to rpc ${pool.name}`,
             );
+            // as we generate state (if nullified) in previous Promise.all, here should only be pools with failed initialization
             acc.poolWithoutState.push(pool);
           } else {
             acc.poolWithState.push(pool);
@@ -733,6 +738,12 @@ export class UniswapV3
           poolWithoutState: [] as UniswapV3EventPool[],
         },
       );
+
+      poolsToUse.poolWithoutState.forEach(pool => {
+        this.logger.warn(
+          `UniV3: Pool ${pool.name} on ${this.dexKey} has no state. Fallback to rpc`,
+        );
+      });
 
       const states = poolsToUse.poolWithState.map(
         p => p.getState(blockNumber)!,
