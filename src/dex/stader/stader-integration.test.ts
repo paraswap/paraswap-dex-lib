@@ -206,25 +206,5 @@ describe('Stader', function () {
         tokens[srcTokenSymbol].address,
       );
     });
-
-    it('ETH getTopPoolsForToken', async function () {
-      const poolLiquidity = await stader.getTopPoolsForToken(
-        tokens['ETH'].address,
-        10,
-      );
-      console.log(`ETH Top Pools:`, poolLiquidity);
-
-      checkPoolsLiquidity(poolLiquidity, tokens['ETH'].address, dexKey);
-    });
-
-    it('WETH getTopPoolsForToken', async function () {
-      const poolLiquidity = await stader.getTopPoolsForToken(
-        tokens['WETH'].address,
-        10,
-      );
-      console.log(`WETH Top Pools:`, poolLiquidity);
-
-      checkPoolsLiquidity(poolLiquidity, tokens['WETH'].address, dexKey);
-    });
   });
 });

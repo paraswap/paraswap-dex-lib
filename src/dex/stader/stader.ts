@@ -203,23 +203,6 @@ export class Stader
     tokenAddress: string,
     limit: number,
   ): AsyncOrSync<PoolLiquidity[]> {
-    if (
-      !(isETHAddress(tokenAddress) || this.isWETH(tokenAddress.toLowerCase()))
-    )
-      return [];
-
-    return [
-      {
-        exchange: this.dexKey,
-        address: this.config.ETHx,
-        connectorTokens: [
-          {
-            decimals: 18,
-            address: this.config.ETHx,
-          },
-        ],
-        liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
-      },
-    ];
+    return [];
   }
 }
