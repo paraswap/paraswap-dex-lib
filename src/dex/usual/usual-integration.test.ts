@@ -12,7 +12,7 @@ import {
   checkPoolsLiquidity,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import { UsualMSmartM } from './usual-m-smart-m';
+import { UsualMWrappedM } from './usual-m-wrapped-m';
 import { UsualMUsd0 } from './usual-m-usd0';
 import { Usual } from './usual';
 import { UsualBond } from './usual-bond';
@@ -152,10 +152,10 @@ describe('UsualBond', function () {
   });
 });
 
-describe('SmartM<>UsualM', function () {
-  const dexKey = 'UsualMSmartM';
+describe('WrappedM<>UsualM', function () {
+  const dexKey = 'UsualMWrappedM';
   let blockNumber: number;
-  let usualMSmartM: UsualMSmartM;
+  let usualMWrappedM: UsualMWrappedM;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -179,19 +179,19 @@ describe('SmartM<>UsualM', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      usualMSmartM = new UsualMSmartM(network, dexKey, dexHelper);
-      if (usualMSmartM.initializePricing) {
-        await usualMSmartM.initializePricing(blockNumber);
+      usualMWrappedM = new UsualMWrappedM(network, dexKey, dexHelper);
+      if (usualMWrappedM.initializePricing) {
+        await usualMWrappedM.initializePricing(blockNumber);
       }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
-        usualMSmartM,
+        usualMWrappedM,
         network,
         dexKey,
         blockNumber,
-        'SmartM',
+        'WrappedM',
         'UsualM',
         SwapSide.SELL,
         amountsForSell,
@@ -199,12 +199,12 @@ describe('SmartM<>UsualM', function () {
       );
     });
 
-    it('getTopPoolsForToken: SmartM', async function () {
-      const tokenA = Tokens[network]['SmartM'];
+    it('getTopPoolsForToken: WrappedM', async function () {
+      const tokenA = Tokens[network]['WrappedM'];
       const dexHelper = new DummyDexHelper(network);
-      const usualMSmartM = new UsualMSmartM(network, dexKey, dexHelper);
+      const usualMWrappedM = new UsualMWrappedM(network, dexKey, dexHelper);
 
-      const poolLiquidity = await usualMSmartM.getTopPoolsForToken(
+      const poolLiquidity = await usualMWrappedM.getTopPoolsForToken(
         tokenA.address,
         10,
       );
@@ -219,9 +219,9 @@ describe('SmartM<>UsualM', function () {
     it('getTopPoolsForToken: UsualM', async function () {
       const tokenA = Tokens[network]['UsualM'];
       const dexHelper = new DummyDexHelper(network);
-      const usualMSmartM = new UsualMSmartM(network, dexKey, dexHelper);
+      const usualMWrappedM = new UsualMWrappedM(network, dexKey, dexHelper);
 
-      const poolLiquidity = await usualMSmartM.getTopPoolsForToken(
+      const poolLiquidity = await usualMWrappedM.getTopPoolsForToken(
         tokenA.address,
         10,
       );
