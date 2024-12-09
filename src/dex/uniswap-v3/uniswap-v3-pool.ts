@@ -254,6 +254,36 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
+  async getOrGenerateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const state = this.getState(blockNumber);
+    if (state) {
+      return state;
+    }
+
+    this.logger.error(
+      `UniV3: No state found for ${this.name} ${this.addressesSubscribed[0]}, generating new one`,
+    );
+    try {
+      const newState = await this.generateState(blockNumber);
+
+      if (!newState) {
+        this.logger.error(
+          `UniV3: Could not generate state for ${this.name} ${this.addressesSubscribed[0]}`,
+        );
+        return null;
+      }
+      this.setState(newState, blockNumber);
+      return newState;
+    } catch (error) {
+      this.logger.error(
+        `UniV3: Failed to generate state for ${this.name} ${this.addressesSubscribed[0]}`,
+      );
+      return null;
+    }
+  }
+
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
