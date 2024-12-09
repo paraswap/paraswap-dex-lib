@@ -104,6 +104,7 @@ export class Stader
     isFirstSwap?: boolean | undefined,
   ): Promise<ExchangePrices<StaderData> | null> {
     if (side === SwapSide.BUY) return null;
+    if (!this.isEligibleSwap(srcToken, destToken)) return null;
 
     const pool = this.ethxPool;
     if (!pool.getState(blockNumber)) return null;
@@ -127,11 +128,7 @@ export class Stader
     ];
   }
 
-  isEligibleSwap(
-    srcToken: Token | string,
-    destToken: Token | string,
-    side: SwapSide,
-  ): boolean {
+  isEligibleSwap(srcToken: Token | string, destToken: Token | string): boolean {
     const srcTokenAddress = (
       typeof srcToken === 'string' ? srcToken : srcToken.address
     ).toLowerCase();
@@ -189,7 +186,7 @@ export class Stader
   ): Promise<string[]> {
     if (side === SwapSide.BUY) return [];
 
-    if (!this.isEligibleSwap(srcToken, destToken, side)) return [];
+    if (!this.isEligibleSwap(srcToken, destToken)) return [];
 
     return [`${ETHER_ADDRESS}_${destToken.address}`.toLowerCase()];
   }
