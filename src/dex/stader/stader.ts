@@ -8,7 +8,6 @@ import {
   Logger,
   PoolLiquidity,
   PoolPrices,
-  SimpleExchangeParam,
   Token,
   TransferFeeParams,
 } from '../../types';
@@ -29,7 +28,6 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import _ from 'lodash';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
-import { ethers } from 'ethers';
 
 export class Stader
   extends SimpleExchange
@@ -105,6 +103,8 @@ export class Stader
     transferFees?: TransferFeeParams | undefined,
     isFirstSwap?: boolean | undefined,
   ): Promise<ExchangePrices<StaderData> | null> {
+    if (side === SwapSide.BUY) return null;
+
     const pool = this.ethxPool;
     if (!pool.getState(blockNumber)) return null;
 
@@ -132,8 +132,6 @@ export class Stader
     destToken: Token | string,
     side: SwapSide,
   ): boolean {
-    if (side === SwapSide.BUY) return false;
-
     const srcTokenAddress = (
       typeof srcToken === 'string' ? srcToken : srcToken.address
     ).toLowerCase();
@@ -156,6 +154,8 @@ export class Stader
     _data: StaderData,
     _side: SwapSide,
   ): DexExchangeParam {
+    if (_side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
     const swapData = this.SSPMInterface.encodeFunctionData(
       SSPMFunctions.deposit,
       [_recipient],
@@ -187,6 +187,8 @@ export class Stader
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    if (side === SwapSide.BUY) return [];
+
     if (!this.isEligibleSwap(srcToken, destToken, side)) return [];
 
     return [`${ETHER_ADDRESS}_${destToken.address}`.toLowerCase()];
