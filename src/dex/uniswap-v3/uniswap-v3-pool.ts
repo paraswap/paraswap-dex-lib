@@ -554,24 +554,4 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
       this.poolInitCodeHash,
     );
   }
-
-  // todo: remove
-  // nullify the state for specific pool for testing purposes
-  async update(
-    logs: Readonly<Log>[],
-    blockHeaders: Readonly<{ [p: number]: Readonly<BlockHeader> }>,
-  ) {
-    // USDT - WETH Mainnet UniswapV3 Pool
-    if (this.poolAddress === '0x11b815efb8f581194ae79006d24e0d814b7697f6') {
-      const blockNumbers = logs.map(log => log.blockNumber);
-      this.logger.info(
-        `Invalidating state for pool ${
-          this.poolAddress
-        } at blocks ${blockNumbers.join(', ')}`,
-      );
-      this.invalidate();
-    } else {
-      await super.update(logs, blockHeaders);
-    }
-  }
 }
