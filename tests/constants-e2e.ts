@@ -546,10 +546,10 @@ export const Tokens: {
       decimals: 18,
       symbol: 'USD0++',
     },
-    SmartM: {
+    WrappedM: {
       address: '0x437cc33344a0B27A429f795ff6B469C72698B291',
       decimals: 6,
-      symbol: 'MSMART,',
+      symbol: 'wM',
     },
     UsualM: {
       address: '0xFe274C305b365dC38e188E8f01c4FAe2171ce927',
@@ -1739,7 +1739,7 @@ export const Holders: {
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
     USD0: '0x224762e69169E425239EeEE0012d1B0e041C123D',
-    SmartM: '0xE0663f2372cAa1459b7ade90812Dc737CE587FA6',
+    WrappedM: '0xE0663f2372cAa1459b7ade90812Dc737CE587FA6',
     'USD0++': '0x2227b6806339906707b43F36a1f07B52FF7Fa776',
     USDM: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     wUSDM: '0x3B95bC951EE0f553ba487327278cAc44f29715E5',

@@ -10,10 +10,10 @@ import { DexParams } from './types';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import { Usual } from './usual';
 import { getDexKeysWithNetwork } from '../../utils';
-import USUALM_ABI from '../../abi/usual-m-smart-m/usualM.abi.json';
+import USUALM_ABI from '../../abi/usual-m-wrapped-m/usualM.abi.json';
 
 const Config: DexConfigMap<DexParams> = {
-  UsualMSmartM: {
+  UsualMWrappedM: {
     [Network.MAINNET]: {
       fromToken: {
         address: '0x437cc33344a0b27a429f795ff6b469c72698b291',
@@ -27,7 +27,7 @@ const Config: DexConfigMap<DexParams> = {
   },
 };
 
-export class UsualMSmartM extends Usual {
+export class UsualMWrappedM extends Usual {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(Config);
 
