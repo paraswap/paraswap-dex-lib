@@ -1,6 +1,6 @@
 import { DexParams } from './types';
 import { DexConfigMap } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { Network } from '../../constants';
 
 export const StaderConfig: DexConfigMap<DexParams> = {
   Stader: {

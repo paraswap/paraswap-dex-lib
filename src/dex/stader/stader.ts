@@ -107,12 +107,12 @@ export class Stader
     if (!this.isEligibleSwap(srcToken, destToken)) return null;
 
     const pool = this.ethxPool;
-    if (!pool.getState(blockNumber)) return null;
+    const state = await pool.getOrGenerateState(blockNumber);
 
     const unitIn = BI_POWS[18];
-    const unitOut = pool.getPrice(blockNumber, unitIn);
+    const unitOut = pool.getPrice(state, unitIn);
     const amountsOut = amountsIn.map(amountIn =>
-      pool.getPrice(blockNumber, amountIn),
+      pool.getPrice(state, amountIn),
     );
 
     return [

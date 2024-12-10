@@ -45,6 +45,17 @@ export class ETHxEventPool extends StatefulEventSubscriber<ETHxPoolState> {
     return null;
   }
 
+  async getOrGenerateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<ETHxPoolState>> {
+    let state = this.getState(blockNumber);
+    if (!state) {
+      state = await this.generateState(blockNumber);
+      this.setState(state, blockNumber);
+    }
+    return state;
+  }
+
   async generateState(
     blockNumber: number,
   ): Promise<DeepReadonly<ETHxPoolState>> {
@@ -58,9 +69,7 @@ export class ETHxEventPool extends StatefulEventSubscriber<ETHxPoolState> {
     return state;
   }
 
-  getPrice(blockNumber: number, ethAmount: bigint): bigint {
-    const state = this.getState(blockNumber);
-    if (!state) throw new Error('Cannot compute price');
+  getPrice(state: ETHxPoolState, ethAmount: bigint): bigint {
     const { totalETHBalance, totalETHXSupply } = state;
 
     return (ethAmount * totalETHXSupply) / totalETHBalance;
