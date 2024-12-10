@@ -1619,6 +1619,41 @@ export const Tokens: {
       decimals: 6,
     },
   },
+  [Network.SEPOLIA]: {
+    ETH: { address: ETHER_ADDRESS, decimals: 18 },
+    WETH: {
+      address: '0x7b79995e5f793a07bc00c21412e50ecae098e7f9',
+      decimals: 18,
+    },
+    bal: {
+      address: `0xb19382073c7a0addbb56ac6af1808fa49e377b75`,
+      decimals: 18,
+    },
+    daiAave: {
+      address: `0xff34b3d4aee8ddcd6f9afffb6fe49bd371b8a357`,
+      decimals: 18,
+    },
+    usdcAave: {
+      address: `0x94a9d9ac8a22534e3faca9f4e7f2e2cf85d5e4c8`,
+      decimals: 6,
+    },
+    usdtAave: {
+      address: `0xaa8e23fb1079ea71e0a56f48a2aa51851d8433d0`,
+      decimals: 6,
+    },
+    aDaiAave: {
+      address: `0xde46e43f46ff74a23a65ebb0580cbe3dfe684a17`,
+      decimals: 18,
+    },
+    stataUSDC: {
+      address: `0x8a88124522dbbf1e56352ba3de1d9f78c143751e`,
+      decimals: 6,
+    },
+    stataUSDT: {
+      address: `0x978206fae13faf5a8d293fb614326b237684b750`,
+      decimals: 6,
+    },
+  },
 };
 
 export const Holders: {
@@ -2000,6 +2035,15 @@ export const Holders: {
     cbETH: '0x50e011dD1e2b4906F1534623cD134B30422bb11E',
     wUSDM: '0xe30965Acd0Ee1CE2e0Cd0AcBFB3596bD6fC78A51',
   },
+  [Network.SEPOLIA]: {
+    bal: '0xDb4ff41B4C1222c2b1869A67Be115070688989a2',
+    daiAave: '0xbB0bc84687fFb642fd90a3D12215e7eC16352A49',
+    WETH: '0x546e37DAA15cdb82fd1a717E5dEEa4AF08D4349A',
+    ETH: '0x2CdA41645F2dBffB852a605E92B185501801FC28',
+    stataUSDC: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
+    stataUSDT: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
+    usdcAave: '0xdD5De55eA6804EFb283f43b0C091C25000a6486c',
+  },
 };
 
 export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
@@ -2025,6 +2069,7 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
   [Network.BASE]: 'ETH',
+  [Network.SEPOLIA]: 'ETH',
   [Network.GNOSIS]: 'XDAI',
 };
 
@@ -2037,5 +2082,6 @@ export const WrappedNativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'WETH',
   [Network.OPTIMISM]: 'WETH',
   [Network.BASE]: 'WETH',
+  [Network.SEPOLIA]: 'WETH',
   [Network.GNOSIS]: 'WXDAI',
 };
