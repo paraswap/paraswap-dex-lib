@@ -267,11 +267,9 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   _setState(state: any, blockNumber: number, reason?: string): void {
     if (this.parentName === 'PancakeswapV3') {
       this.logger.info(
-        `PancakeV3: Setting state: ${!!state ? 'non-empty' : 'empty'} for ${
+        `PancakeV3: Setting state: ${!!state ? 'non-empty' : 'empty'} for '${
           this.name
-        } ${
-          this.addressesSubscribed[0]
-        } for bn: '${blockNumber}' due to reason: '${
+        }' for bn: '${blockNumber}' due to reason: '${
           reason ?? 'outside_of_event_subscriber'
         }'`,
       );
