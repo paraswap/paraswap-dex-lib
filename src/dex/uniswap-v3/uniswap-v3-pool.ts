@@ -267,6 +267,18 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     );
     return null;
   }
+
+  _setState(state: any, blockNumber: number, reason?: string): void {
+    this.logger.info(
+      `UniV3: Setting state: '${!!state ? 'non-empty' : 'empty'}' for ${
+        this.name
+      } ${
+        this.addressesSubscribed[0]
+      } for bn: '${blockNumber}' due to reason: '${
+        reason ?? 'outside_of_event_subscriber'
+      }'`,
+    );
+    super._setState(state, blockNumber);
   }
 
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
