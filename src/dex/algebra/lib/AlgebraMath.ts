@@ -579,7 +579,11 @@ class AlgebraMathClass {
       tickCount: 0,
     };
     // swap until there is remaining input or output tokens or we reach the price limit
+    let iterationsCount = 0;
     while (true) {
+      iterationsCount++;
+      _require(iterationsCount < 100, 'Max iteration reached on AlgebraMath');
+
       step.stepSqrtPrice = currentPrice;
 
       //equivalent of tickTable.nextTickInTheSameRow(currentTick, zeroToOne);
@@ -651,11 +655,7 @@ class AlgebraMathClass {
       }
 
       // check stop condition
-      if (
-        amountRequired == 0n ||
-        currentPrice == newSqrtPriceX96 ||
-        currentTick === newTick // deviation from contract
-      ) {
+      if (amountRequired == 0n || currentPrice == newSqrtPriceX96) {
         break;
       }
     }

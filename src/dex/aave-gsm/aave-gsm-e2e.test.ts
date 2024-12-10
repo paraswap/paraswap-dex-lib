@@ -76,7 +76,8 @@ describe('AaveGsm E2E', () => {
     const tokenBSymbol: string = 'USDT';
 
     const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000';
+    const tokenBAmount: string = '47166262';
+    // const tokenBAmount: string = '47166263';
 
     testForNetwork(
       network,

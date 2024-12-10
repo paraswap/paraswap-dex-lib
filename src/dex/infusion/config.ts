@@ -10,12 +10,12 @@ export const InfusionConfig: DexConfigMap<DexParams> = {
       factoryAddress: '0x2D9A3a2bd6400eE28d770c7254cA840c82faf23f',
       router: '0x1E891C9F96DcA29Da8B97bE3403D16135EBe8028',
       initCode:
-        '0xc1ac28b1c4ebe53c0cff67bab5878c4eb68759bb1e9f73977cd266b247d149f0',
+        '0x219feae2806b91b43e3369a02074b26dde4d33b44972f02d717f37ac78ab0245',
       // updatable fees on the factory without event
-      stableFee: 2,
-      volatileFee: 2,
+      stableFee: 5,
+      volatileFee: 5,
       poolGasCost: 180 * 1000,
-      feeCode: 2,
+      feeCode: 5,
     },
   },
 };

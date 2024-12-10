@@ -777,7 +777,9 @@ export async function newTestE2E({
           .addBalance(senderAddress, twiceAmount.toString())
           .addAllowance(
             senderAddress,
-            config.tokenTransferProxyAddress,
+            priceRoute.version === ParaSwapVersion.V5
+              ? config.tokenTransferProxyAddress
+              : config.augustusV6Address,
             amount.toString(),
           );
       } else {
@@ -785,7 +787,9 @@ export async function newTestE2E({
           .addBalance(senderAddress, MAX_UINT)
           .addAllowance(
             senderAddress,
-            config.tokenTransferProxyAddress,
+            priceRoute.version === ParaSwapVersion.V5
+              ? config.tokenTransferProxyAddress
+              : config.augustusV6Address,
             (BigInt(MAX_UINT) / 8n).toString(),
           );
       }

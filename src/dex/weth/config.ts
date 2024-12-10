@@ -49,6 +49,11 @@ export const WethConfig: DexConfigMap<DexParams> = {
       poolGasCost: WethGasCost,
     },
   },
+  Wxdai: {
+    [Network.GNOSIS]: {
+      poolGasCost: WethGasCost,
+    },
+  },
 };
 
 export const Adapters: {
