@@ -8,6 +8,12 @@ export enum SUPPORTED_POOLS {
   STABLE = 'STABLE',
 }
 
+export const disabledPoolIds: Record<string, Record<number, string[]>> = {
+  BalancerV3: {
+    [Network.SEPOLIA]: ['0x0d7291d8bdc6b376aadacbf05b1ef8a8292ef58a'], // incorrect token rate config for 0x978206fae13faf5a8d293fb614326b237684b750 token
+  },
+};
+
 // Balancer API - aggregatorSpecific query serves all useful static pool data
 export const apiUrl = 'https://test-api-v3.balancer.fi/';
 

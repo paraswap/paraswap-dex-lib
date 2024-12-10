@@ -1,6 +1,10 @@
 import axios from 'axios';
-import { DeepReadonly } from 'ts-essentials';
-import { apiUrl, BalancerV3Config, SUPPORTED_POOLS } from './config';
+import {
+  apiUrl,
+  BalancerV3Config,
+  disabledPoolIds,
+  SUPPORTED_POOLS,
+} from './config';
 import { CommonImmutablePoolState, ImmutablePoolStateMap } from './types';
 import { parseUnits } from 'ethers/lib/utils';
 
@@ -32,6 +36,10 @@ function createQuery(
 ): string {
   const poolTypesString = poolTypes.map(type => `${type}`).join(', ');
   const networkString = BalancerV3Config.BalancerV3[networkId].apiNetworkName;
+  const disabledPoolIdsString = disabledPoolIds.BalancerV3[networkId]
+    ?.map(p => `"${p}"`)
+    .join(', ');
+
   // Build the where clause conditionally
   const whereClause = {
     chainIn: networkString,
@@ -39,6 +47,7 @@ function createQuery(
     hasHook: false,
     poolTypeIn: `[${poolTypesString}]`,
     ...(timestamp && { createTime: `{lt: ${timestamp}}` }),
+    ...(disabledPoolIdsString && { idNotIn: `[${disabledPoolIdsString}]` }),
   };
 
   // Convert where clause to string, filtering out undefined values
