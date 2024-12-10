@@ -203,6 +203,38 @@ export class Stader
     tokenAddress: string,
     limit: number,
   ): AsyncOrSync<PoolLiquidity[]> {
+    if (isETHAddress(tokenAddress) || this.isWETH(tokenAddress.toLowerCase())) {
+      return [
+        {
+          exchange: this.dexKey,
+          address: this.config.ETHx,
+          connectorTokens: [
+            {
+              decimals: 18,
+              address: this.config.ETHx,
+            },
+          ],
+          liquidityUSD: 1000000000,
+        },
+      ];
+    }
+
+    if (tokenAddress.toLowerCase() === this.ETHxAddress.toLowerCase()) {
+      const eth = ETHER_ADDRESS;
+      const weth = this.dexHelper.config.data.wrappedNativeTokenAddress;
+      return [eth, weth].map(t => ({
+        exchange: this.dexKey,
+        address: this.config.ETHx,
+        connectorTokens: [
+          {
+            decimals: 18,
+            address: t,
+          },
+        ],
+        liquidityUSD: 1000000000,
+      }));
+    }
+
     return [];
   }
 }
