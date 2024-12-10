@@ -613,10 +613,6 @@ export class PancakeswapV3
 
       if (selectedPools.length === 0) return null;
 
-      await Promise.all(
-        selectedPools.map(pool => pool.getOrGenerateState(blockNumber)),
-      );
-
       const poolsToUse = selectedPools.reduce(
         (acc, pool) => {
           let state = pool.getState(blockNumber);
@@ -635,12 +631,6 @@ export class PancakeswapV3
           poolWithoutState: [] as PancakeSwapV3EventPool[],
         },
       );
-
-      poolsToUse.poolWithoutState.forEach(pool => {
-        this.logger.warn(
-          `PancakeV3: Pool ${pool.name} on ${this.dexKey} has no state. Fallback to rpc`,
-        );
-      });
 
       const rpcResultsPromise = this.getPricingFromRpc(
         _srcToken,
