@@ -716,7 +716,7 @@ export class UniswapV3
       if (selectedPools.length === 0) return null;
 
       await Promise.all(
-        selectedPools.map(pool => pool.getOrGenerateState(blockNumber)),
+        selectedPools.map(pool => pool.checkState(blockNumber)),
       );
 
       const poolsToUse = selectedPools.reduce(
