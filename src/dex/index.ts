@@ -94,6 +94,7 @@ import { LitePsm } from './lite-psm/lite-psm';
 import { UsualBond } from './usual-bond/usual-bond';
 import { StkGHO } from './stkgho/stkgho';
 import { SkyConverter } from './sky-converter/sky-converter';
+import { Cables } from './cables/cables';
 import { Stader } from './stader/stader';
 
 const LegacyDexes = [
@@ -184,6 +185,7 @@ const Dexes = [
   UsualBond,
   StkGHO,
   SkyConverter,
+  Cables,
   FluidDex,
 ];
 
