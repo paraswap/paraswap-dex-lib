@@ -368,7 +368,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         [
           [
             {
-              tokenIn: srcToken,
+              tokenIn: this.dexHelper.config.wrapETH(srcToken),
               steps: data.steps.map(step => ({
                 pool: step.pool,
                 tokenOut: step.swapInput.tokenOut,
@@ -438,7 +438,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         [
           [
             {
-              tokenIn: srcToken,
+              tokenIn: this.dexHelper.config.wrapETH(srcToken),
               steps: data.steps.map(step => ({
                 pool: step.pool,
                 tokenOut: step.swapInput.tokenOut,
