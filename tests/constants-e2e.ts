@@ -552,7 +552,7 @@ export const Tokens: {
       symbol: 'MSMART,',
     },
     UsualM: {
-      address: '0xFe274C305b365dC38e188E8f01c4FAe2171ce927',
+      address: '0x4Cbc25559DbBD1272EC5B64c7b5F48a2405e6470',
       decimals: 6,
       symbol: 'USUALM',
     },
