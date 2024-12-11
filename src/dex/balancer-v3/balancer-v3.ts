@@ -19,8 +19,7 @@ import { SimpleExchange } from '../simple-exchange';
 import { BalancerV3Config } from './config';
 import { BalancerV3EventPool } from './balancer-v3-pool';
 import { NumberAsString } from '@paraswap/core';
-// TODO: replace @paraswap/balancer-maths to @balancer-labs/balancer-maths after node migration
-import { SwapKind } from '@paraswap/balancer-maths';
+import { SwapKind } from '@balancer-labs/balancer-maths';
 import { Interface } from '@ethersproject/abi';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { getTopPoolsApi } from './getTopPoolsApi';
