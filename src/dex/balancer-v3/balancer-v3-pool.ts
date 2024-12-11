@@ -629,6 +629,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       },
       poolState: {
         poolType: 'Buffer',
+        // TODO: for ERC4626 fetch the wrap/unwrap rate
         rate: token.rate,
         poolAddress: token.mainToken,
         tokens: [token.mainToken, token.underlyingToken], // staticToken & underlying
