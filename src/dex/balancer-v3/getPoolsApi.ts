@@ -123,7 +123,7 @@ export async function getPoolsApi(
     const pools = response.data.data.poolGetAggregatorPools;
     return toImmutablePoolStateMap(pools);
   } catch (error) {
-    console.error('Error executing GraphQL query:', error);
+    // console.error('Error executing GraphQL query:', error);
     throw error;
   }
 }

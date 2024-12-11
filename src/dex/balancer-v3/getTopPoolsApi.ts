@@ -90,7 +90,7 @@ export async function getTopPoolsApi(
     const pools = response.data.data.poolGetAggregatorPools;
     return pools;
   } catch (error) {
-    console.error('Error executing GraphQL query:', error);
+    // console.error('Error executing GraphQL query:', error);
     throw error;
   }
 }
