@@ -316,7 +316,13 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     if (side === SwapSide.SELL) {
       return this.getExactInParam(srcToken, destToken, srcAmount, data);
     } else {
-      return this.getExactOutParam(srcToken, destToken, destAmount, data);
+      return this.getExactOutParam(
+        srcToken,
+        destToken,
+        srcAmount,
+        destAmount,
+        data,
+      );
     }
   }
 
@@ -394,6 +400,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   getExactOutParam(
     srcToken: Address,
     destToken: Address,
+    srcAmount: NumberAsString,
     destAmount: NumberAsString,
     data: BalancerV3Data,
   ): DexExchangeParam {
@@ -438,7 +445,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
                 isBuffer: step.isBuffer,
               })),
               exactAmountOut: destAmount,
-              maxAmountIn: MAX_UINT256, // This should be limit for min amount out. Assume this is set elsewhere via Paraswap contract.
+              maxAmountIn: srcAmount,
             },
           ],
           MAX_UINT256, // Deadline
