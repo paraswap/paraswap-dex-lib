@@ -4,9 +4,13 @@ import { apiUrl, BalancerV3Config } from './config';
 interface PoolToken {
   address: string;
   decimals: number;
+  underlyingToken?: {
+    address: string;
+    decimals: number;
+  };
 }
 
-interface Pool {
+export interface Pool {
   address: string;
   poolTokens: PoolToken[];
   dynamicData: {
@@ -51,6 +55,10 @@ function createQuery(
         poolTokens {
           address
           decimals
+          underlyingToken {
+            address
+            decimals
+          }
         }
         dynamicData {
           totalLiquidity

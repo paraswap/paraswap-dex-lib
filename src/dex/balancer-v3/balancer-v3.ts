@@ -491,20 +491,30 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   ): Promise<PoolLiquidity[]> {
     const poolsWithToken = Object.entries(this.eventPools.getStaleState() || {})
       .filter(([, poolState]) => {
-        return this.hasTokens(poolState, [tokenAddress]);
+        return this.hasTokens(poolState, [tokenAddress.toLowerCase()]);
       })
       .map(([address]) => address);
 
     const topPools = await getTopPoolsApi(this.network, poolsWithToken, count);
 
     return topPools.map(pool => {
+      const tokens = pool.poolTokens
+        .filter(t => t.address !== tokenAddress)
+        .map(t => ({
+          address: t.address,
+          decimals: t.decimals,
+        }));
+
+      const underlyingTokens = pool.poolTokens
+        .map(t => t.underlyingToken)
+        .filter(t => !!t)
+        .filter(t => t?.address !== tokenAddress) as Token[];
+
       return {
         exchange: this.dexKey,
         address: pool.address,
         liquidityUSD: parseFloat(pool.dynamicData.totalLiquidity),
-        connectorTokens: pool.poolTokens.filter(
-          t => t.address !== tokenAddress,
-        ),
+        connectorTokens: tokens.concat(underlyingTokens),
       };
     });
   }
