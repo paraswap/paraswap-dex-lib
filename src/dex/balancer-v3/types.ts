@@ -1,4 +1,4 @@
-import { BufferState } from '@balancer-labs/balancer-maths';
+import { BufferState } from '@paraswap/balancer-maths';
 import { Address } from '../../types';
 
 // Immutable data types available on all pools (Available from API)

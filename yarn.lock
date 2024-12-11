@@ -348,11 +348,6 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/balancer-maths@^0.0.19":
-  version "0.0.19"
-  resolved "https://registry.yarnpkg.com/@balancer-labs/balancer-maths/-/balancer-maths-0.0.19.tgz#d3b92c4b17caca67894806bd7768af1ea31cb956"
-  integrity sha512-x8t17q8fbXYZJSaidr4BWBg3O9jVnF6xoAsoMWWyUd6AnaxPyFnxAGs76+iQln4WEmC7S5G5uufWJ0OefvcqXQ==
-
 "@balancer-labs/sor@4.1.1-beta.4":
   version "4.1.1-beta.4"
   resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.1-beta.4.tgz#9369435f8bbc781e9048f33aa496a484631b56e9"
@@ -1218,6 +1213,11 @@
   version "4.9.5"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.9.5.tgz#1eed23d4844c861a1835b5d33507c1017fa98de8"
   integrity sha512-ZK+W5mVhRppff9BE6YdR8CC52C8zAvsVAiWhEtQ5+oNxFE6h1WdeWo+FJSF8KKvtxxVYZ7MTP/5KoVpAU3aSWg==
+
+"@paraswap/balancer-maths@0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@paraswap/balancer-maths/-/balancer-maths-0.0.1.tgz#592c07db9c65f1b08fbd12461ed60395962c166e"
+  integrity sha512-cjflViyZTo2p0OnDqnBCKPTdTXP0Cah/6kORseNVNxOnkno8pcaCrcZC3yVTJ7ofe9lGDCAZV5/IvS+OSzDIHg==
 
 "@paraswap/core@2.2.0":
   version "2.2.0"
