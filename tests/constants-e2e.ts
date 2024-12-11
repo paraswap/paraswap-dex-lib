@@ -528,6 +528,10 @@ export const Tokens: {
       address: '0x862c57d48becb45583aeba3f489696d22466ca1b',
       decimals: 6,
     },
+    waEthUSDT: {
+      address: '0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8',
+      decimals: 6,
+    },
     aaveUSDT: {
       address: '0x23878914efe38d27c4d67ab83ed1b93a74d4086a',
       decimals: 6,

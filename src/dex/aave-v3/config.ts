@@ -10,7 +10,6 @@ import {
   AaveV3Fantom,
   AaveV3Optimism,
   AaveV3Polygon,
-  AaveV3PolygonZkEvm,
   AaveV3Gnosis,
 } from '@bgd-labs/aave-address-book';
 
@@ -65,12 +64,12 @@ export const Config: DexConfigMap<DexParam> = {
       poolAddress: AaveV3BNB.POOL,
       wethGatewayAddress: AaveV3BNB.WETH_GATEWAY,
     },
-    [Network.ZKEVM]: {
-      ethGasCost: 246 * 100,
-      lendingGasCost: 328 * 1000,
-      poolAddress: AaveV3PolygonZkEvm.POOL,
-      wethGatewayAddress: AaveV3PolygonZkEvm.WETH_GATEWAY,
-    },
+    // [Network.ZKEVM]: {
+    //   ethGasCost: 246 * 100,
+    //   lendingGasCost: 328 * 1000,
+    //   poolAddress: AaveV3PolygonZkEvm.POOL,
+    //   wethGatewayAddress: AaveV3PolygonZkEvm.WETH_GATEWAY,
+    // },
     [Network.GNOSIS]: {
       ethGasCost: 246 * 100,
       lendingGasCost: 328 * 1000,

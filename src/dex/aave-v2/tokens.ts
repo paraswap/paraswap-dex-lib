@@ -1,6 +1,6 @@
 import { aToken, Token } from '../../types';
 import { Network } from '../../constants';
-import { tokenlist } from '@bgd-labs/aave-address-book';
+import tokenlist from '@bgd-labs/aave-address-book/dist/tokenlist';
 import { aaveLendingPool } from './config';
 
 function getTokensForPool(pool: string): aToken[] {

@@ -53,7 +53,7 @@
   "dependencies": {
     "@0x/utils": "^4.5.2",
     "@balancer-labs/sor": "4.1.1-beta.4",
-    "@bgd-labs/aave-address-book": "2.21.1",
+    "@bgd-labs/aave-address-book": "4.7.0",
     "@ethersproject/abi": "^5.7.0",
     "@hashflow/sdk": "^2.2.7",
     "@hashflow/taker-js": "^0.3.7",
