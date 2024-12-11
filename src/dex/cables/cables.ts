@@ -103,15 +103,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
           pricesIntervalMs: CABLES_API_PRICES_POLLING_INTERVAL_MS,
           pricesCacheTTLSecs: CABLES_PRICES_CACHES_TTL_S,
-          pricesCacheKey: 'cablesPricesCacheKey',
+          pricesCacheKey: 'prices',
 
           pairsIntervalMs: CABLES_API_PAIRS_POLLING_INTERVAL_MS,
           pairsCacheTTLSecs: CABLES_PAIRS_CACHES_TTL_S,
-          pairsCacheKey: 'cablesPairsCacheKey',
+          pairsCacheKey: 'pairs',
 
           tokensIntervalMs: CABLES_API_TOKENS_POLLING_INTERVAL_MS,
           tokensCacheTTLSecs: CABLES_TOKENS_CACHES_TTL_S,
-          tokensCacheKey: 'cablesTokensCacheKey',
+          tokensCacheKey: 'tokens',
 
           blacklistIntervalMs: CABLES_API_BLACKLIST_POLLING_INTERVAL_MS,
           blacklistCacheTTLSecs: CABLES_BLACKLIST_CACHES_TTL_S,
@@ -399,6 +399,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    await this.setTokensMap();
+
     if (!srcToken || !destToken) {
       return [];
     }
@@ -532,6 +534,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
     if (isRestricted) {
       return null;
     }
+
+    await this.setTokensMap();
 
     try {
       const normalizedSrcToken = this.normalizeToken(srcToken);
@@ -686,60 +690,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    // const tokens = (await this.getCachedTokens()) as { [key: string]: Token };
-    // const token = Object.values(tokens).find(
-    //   token => token.address.toLowerCase() === tokenAddress.toLowerCase(),
-    // );
-    //
-    // console.log('TOKEN: ', token);
-    //
-    // if (!token) {
-    //   return [];
-    // }
-    //
-    // const tokenPriceUsd = await this.dexHelper.getTokenUSDPrice(
-    //   token,
-    //   BigInt(10 ** token.decimals),
-    // );
-    //
-    // const erc20BalanceCalldata = this.erc20Interface.encodeFunctionData(
-    //   'balanceOf',
-    //   [this.mainnetRFQAddress],
-    // );
-    //
-    // const tokenBalanceMultiCall = [
-    //   {
-    //     target: token.address,
-    //     callData: erc20BalanceCalldata,
-    //   },
-    // ];
-    // const res = (
-    //   await this.dexHelper.multiContract.methods
-    //     .aggregate(tokenBalanceMultiCall)
-    //     .call()
-    // ).returnData[0];
-    //
-    // let tokenLiquidity = BigInt(res);
-    //
-    // let tokenLiquidityUsd =
-    //   (tokenLiquidity * BigInt(tokenPriceUsd * 1_000_000)) /
-    //   BigInt(1_000_000 * 10 ** token.decimals);
-    //
-    // let tokenWithLiquidity = [];
-    //
-    // tokenWithLiquidity.push({
-    //   exchange: this.dexKey,
-    //   address: this.mainnetRFQAddress,
-    //   connectorTokens: [
-    //     {
-    //       address: token.address,
-    //       decimals: token.decimals,
-    //     },
-    //   ],
-    //   liquidityUSD: Number(tokenLiquidityUsd),
-    // });
-    //
-    // return tokenWithLiquidity;
     return [];
   }
 
