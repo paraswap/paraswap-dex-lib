@@ -10,7 +10,7 @@ export enum SUPPORTED_POOLS {
 
 export const disabledPoolIds: Record<string, Record<number, string[]>> = {
   BalancerV3: {
-    [Network.SEPOLIA]: ['0x0d7291d8bdc6b376aadacbf05b1ef8a8292ef58a'], // incorrect token rate config for 0x978206fae13faf5a8d293fb614326b237684b750 token
+    [Network.SEPOLIA]: [], // incorrect token rate config for 0x978206fae13faf5a8d293fb614326b237684b750 token
   },
 };
 
@@ -25,6 +25,12 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
       apiNetworkName: 'SEPOLIA',
       balancerRouterAddress: '0x0BF61f706105EA44694f2e92986bD01C39930280',
       balancerBatchRouterAddress: '0xC85b652685567C1B074e8c0D4389f83a2E458b1C',
+    },
+    [Network.GNOSIS]: {
+      vaultAddress: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
+      apiNetworkName: 'GNOSIS',
+      balancerRouterAddress: '0x84813aA3e079A665C0B80F944427eE83cBA63617',
+      balancerBatchRouterAddress: '0xe2fa4e1d17725e72dcdAfe943Ecf45dF4B9E285b',
     },
   },
 };

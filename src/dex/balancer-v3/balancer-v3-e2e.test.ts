@@ -121,6 +121,19 @@ function testForNetwork(
                 provider,
               );
             });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),
@@ -132,69 +145,131 @@ function testForNetwork(
 describe('BalancerV3 E2E', () => {
   const dexKey = 'BalancerV3';
 
-  describe('Mainnet, Weighted Path', () => {
+  describe('Sepolia', () => {
     const network = Network.SEPOLIA;
 
-    const tokenASymbol: string = 'bal';
-    const tokenBSymbol: string = 'daiAave';
+    describe('Weighted Path', () => {
+      const tokenASymbol: string = 'bal';
+      const tokenBSymbol: string = 'daiAave';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '100000000000000';
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+      const nativeTokenAmount = '100000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-      true,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        true,
+      );
+    });
+
+    describe('Stable Path', () => {
+      const tokenASymbol: string = 'stataUSDT';
+      const tokenBSymbol: string = 'stataUSDC';
+
+      const tokenAAmount: string = '10000000';
+      const tokenBAmount: string = '10000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'usdcAave';
+      const tokenBSymbol: string = 'daiAave';
+
+      const tokenAAmount: string = '10000000';
+      const tokenBAmount: string = '1000000000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
   });
 
-  describe('Mainnet, Stable Path', () => {
-    const network = Network.SEPOLIA;
+  describe('Gnosis', () => {
+    const network = Network.GNOSIS;
 
-    const tokenASymbol: string = 'stataUSDT';
-    const tokenBSymbol: string = 'stataUSDC';
+    describe('Stable Path', () => {
+      const tokenASymbol: string = 'WXDAI';
+      const tokenBSymbol: string = 'COW';
 
-    const tokenAAmount: string = '10000000';
-    const tokenBAmount: string = '10000000';
-    const nativeTokenAmount = '0';
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+      const nativeTokenAmount = '100000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-      false,
-    );
-  });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
 
-  describe('Mainnet, Boosted Path', () => {
-    const network = Network.SEPOLIA;
+    describe('Weighed Path', () => {
+      const tokenASymbol: string = 'USDCe';
+      const tokenBSymbol: string = 'sDAI';
 
-    const tokenASymbol: string = 'usdcAave';
-    const tokenBSymbol: string = 'daiAave';
+      const tokenAAmount: string = '1000000';
+      const tokenBAmount: string = '100000000000000000';
+      const nativeTokenAmount = '0';
 
-    const tokenAAmount: string = '10000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '0';
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-      nativeTokenAmount,
-      false,
-    );
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'waGnoWETH';
+      const tokenBSymbol: string = 'waGnowstETH';
+
+      const tokenAAmount: string = '1000000000000000';
+      const tokenBAmount: string = '1000000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
   });
 });

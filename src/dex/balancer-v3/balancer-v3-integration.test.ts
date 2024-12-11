@@ -270,283 +270,566 @@ describe('BalancerV3', function () {
   let blockNumber: number;
   let balancerV3: BalancerV3;
 
-  describe('Weighted Pool', () => {
+  describe('Sepolia', () => {
     const network = Network.SEPOLIA;
-    const dexHelper = new DummyDexHelper(network);
 
-    const tokens = Tokens[network];
-    const srcTokenSymbol = 'bal';
-    const destTokenSymbol = 'daiAave';
+    describe('Weighted Pool', () => {
+      const dexHelper = new DummyDexHelper(network);
 
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
+      const tokens = Tokens[network];
+      const srcTokenSymbol = 'bal';
+      const destTokenSymbol = 'daiAave';
 
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
 
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      balancerV3 = new BalancerV3(network, dexKey, dexHelper);
-      if (balancerV3.initializePricing) {
-        await balancerV3.initializePricing(blockNumber);
-      }
-    });
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        balancerV3,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-      );
-    });
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (balancerV3.initializePricing) {
+          await balancerV3.initializePricing(blockNumber);
+        }
+      });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        balancerV3,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-      );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
-      if (newBalancerV3.updatePoolState) {
-        await newBalancerV3.updatePoolState();
-      }
-      const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newBalancerV3.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
           dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
         );
-      }
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (newBalancerV3.updatePoolState) {
+          await newBalancerV3.updatePoolState();
+        }
+        const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newBalancerV3.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
+
+    describe('Stable Pool', () => {
+      const dexHelper = new DummyDexHelper(network);
+
+      const tokens = Tokens[network];
+      const srcTokenSymbol = 'stataUSDC';
+      const destTokenSymbol = 'stataUSDT';
+
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (balancerV3.initializePricing) {
+          await balancerV3.initializePricing(blockNumber);
+        }
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (newBalancerV3.updatePoolState) {
+          await newBalancerV3.updatePoolState();
+        }
+        const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newBalancerV3.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
+
+    describe('Boosted Path', () => {
+      const dexHelper = new DummyDexHelper(network);
+
+      const tokens = Tokens[network];
+      const srcTokenSymbol = 'usdcAave';
+      const destTokenSymbol = 'usdtAave';
+
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (balancerV3.initializePricing) {
+          await balancerV3.initializePricing(blockNumber);
+        }
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+        );
+      });
+
+      // TODO 1 WEI rounding issue in maths - investigating
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (newBalancerV3.updatePoolState) {
+          await newBalancerV3.updatePoolState();
+        }
+        const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newBalancerV3.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
     });
   });
 
-  describe('Stable Pool', () => {
-    const network = Network.SEPOLIA;
-    const dexHelper = new DummyDexHelper(network);
+  describe('Gnosis', () => {
+    const network = Network.GNOSIS;
 
-    const tokens = Tokens[network];
-    const srcTokenSymbol = 'stataUsdc';
-    const destTokenSymbol = 'stataUsdt';
+    describe('Weighted Pool', () => {
+      const dexHelper = new DummyDexHelper(network);
 
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
+      const tokens = Tokens[network];
+      const srcTokenSymbol = 'USDCe';
+      const destTokenSymbol = 'sDAI';
 
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
 
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      balancerV3 = new BalancerV3(network, dexKey, dexHelper);
-      if (balancerV3.initializePricing) {
-        await balancerV3.initializePricing(blockNumber);
-      }
-    });
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        balancerV3,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-      );
-    });
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (balancerV3.initializePricing) {
+          await balancerV3.initializePricing(blockNumber);
+        }
+      });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        balancerV3,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-      );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
-      if (newBalancerV3.updatePoolState) {
-        await newBalancerV3.updatePoolState();
-      }
-      const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newBalancerV3.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
           dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
         );
-      }
-    });
-  });
+      });
 
-  describe('Boosted Path', () => {
-    const network = Network.SEPOLIA;
-    const dexHelper = new DummyDexHelper(network);
-
-    const tokens = Tokens[network];
-    const srcTokenSymbol = 'usdcAave';
-    const destTokenSymbol = 'usdtAave';
-
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
-
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
-
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      balancerV3 = new BalancerV3(network, dexKey, dexHelper);
-      if (balancerV3.initializePricing) {
-        await balancerV3.initializePricing(blockNumber);
-      }
-    });
-
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        balancerV3,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-      );
-    });
-
-    // TODO 1 WEI rounding issue in maths - investigating
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        balancerV3,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-      );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
-      if (newBalancerV3.updatePoolState) {
-        await newBalancerV3.updatePoolState();
-      }
-      const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newBalancerV3.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
           dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
         );
-      }
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (newBalancerV3.updatePoolState) {
+          await newBalancerV3.updatePoolState();
+        }
+        const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newBalancerV3.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
+
+    describe('Stable Pool', () => {
+      const dexHelper = new DummyDexHelper(network);
+
+      const tokens = Tokens[network];
+      const srcTokenSymbol = 'WXDAI';
+      const destTokenSymbol = 'COW';
+
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+        6n * BI_POWS[tokens[destTokenSymbol].decimals],
+        7n * BI_POWS[tokens[destTokenSymbol].decimals],
+        8n * BI_POWS[tokens[destTokenSymbol].decimals],
+        9n * BI_POWS[tokens[destTokenSymbol].decimals],
+        10n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (balancerV3.initializePricing) {
+          await balancerV3.initializePricing(blockNumber);
+        }
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (newBalancerV3.updatePoolState) {
+          await newBalancerV3.updatePoolState();
+        }
+        const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newBalancerV3.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
+
+    describe('Boosted Path', () => {
+      const dexHelper = new DummyDexHelper(network);
+
+      const tokens = Tokens[network];
+      const srcTokenSymbol = 'waGnoWETH';
+      const destTokenSymbol = 'waGnowstETH';
+
+      const amountsForSell = [
+        0n,
+        (1n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (2n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (3n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (4n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (5n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (6n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (7n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (8n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (9n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+        (10n * BI_POWS[tokens[srcTokenSymbol].decimals]) / 1000n,
+      ];
+
+      const amountsForBuy = [
+        0n,
+        (1n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (2n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (3n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (4n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (5n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (6n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (7n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (8n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (9n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+        (10n * BI_POWS[tokens[destTokenSymbol].decimals]) / 1000n,
+      ];
+
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (balancerV3.initializePricing) {
+          await balancerV3.initializePricing(blockNumber);
+        }
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+        );
+      });
+
+      // TODO 1 WEI rounding issue in maths - investigating
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newBalancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (newBalancerV3.updatePoolState) {
+          await newBalancerV3.updatePoolState();
+        }
+        const poolLiquidity = await newBalancerV3.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newBalancerV3.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
     });
   });
 });
