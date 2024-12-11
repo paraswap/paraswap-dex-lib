@@ -51,8 +51,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   logger: Logger;
   balancerRouter: Interface;
   balancerBatchRouter: Interface;
-  updateNewPoolsTimer?: NodeJS.Timer;
-  updateRatesTimer?: NodeJS.Timer;
+  updateNewPoolsTimer?: NodeJS.Timeout;
+  updateRatesTimer?: NodeJS.Timeout;
 
   constructor(
     readonly network: Network,
