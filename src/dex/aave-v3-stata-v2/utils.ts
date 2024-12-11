@@ -79,7 +79,7 @@ export const fetchTokenList = async (
           factoryAddress,
         );
 
-        return await factoryContract.methods.getStaticATokens().call();
+        return await factoryContract.methods.getStataTokens().call();
       }),
     )) as string[][]
   ).flat();
