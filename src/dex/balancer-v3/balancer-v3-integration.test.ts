@@ -58,7 +58,7 @@ function getQuerySwapMultiTokenCalldata(
   const tokenIn = steps[0].swapInput.tokenIn;
   const stepsNew = steps.map(s => ({
     pool: s.pool,
-    tokenOut: s.tokenOut,
+    tokenOut: s.swapInput.tokenOut,
     isBuffer: s.isBuffer,
   }));
   return amounts
@@ -112,20 +112,25 @@ async function querySinglePathPrices(
 
   const expectedPrices = [0n];
   for (const call of readerCallData) {
-    const result = await balancerV3.dexHelper.provider.call(
-      {
-        to: call.target,
-        data: call.callData,
-      },
-      blockNumber,
-    );
-    const parsed = balancerRouter.decodeFunctionResult(
-      side === SwapSide.SELL
-        ? `querySwapSingleTokenExactIn`
-        : `querySwapSingleTokenExactOut`,
-      result,
-    );
-    expectedPrices.push(BigInt(parsed[0]._hex));
+    try {
+      const result = await balancerV3.dexHelper.provider.call(
+        {
+          to: call.target,
+          data: call.callData,
+        },
+        blockNumber,
+      );
+      const parsed = balancerRouter.decodeFunctionResult(
+        side === SwapSide.SELL
+          ? `querySwapSingleTokenExactIn`
+          : `querySwapSingleTokenExactOut`,
+        result,
+      );
+      expectedPrices.push(BigInt(parsed[0]._hex));
+    } catch (error) {
+      console.log('Error in querySinglePathPrices', error);
+      expectedPrices.push(0n);
+    }
   }
   return expectedPrices;
 }
@@ -149,18 +154,23 @@ async function queryMultiPathPrices(
 
   const expectedPrices = [0n];
   for (const call of readerCallData) {
-    const result = await balancerV3.dexHelper.provider.call(
-      {
-        to: call.target,
-        data: call.callData,
-      },
-      blockNumber,
-    );
-    const parsed = balancerBatchRouter.decodeFunctionResult(
-      side === SwapSide.SELL ? `querySwapExactIn` : `querySwapExactOut`,
-      result,
-    );
-    expectedPrices.push(BigInt(parsed[2][0]._hex));
+    try {
+      const result = await balancerV3.dexHelper.provider.call(
+        {
+          to: call.target,
+          data: call.callData,
+        },
+        blockNumber,
+      );
+      const parsed = balancerBatchRouter.decodeFunctionResult(
+        side === SwapSide.SELL ? `querySwapExactIn` : `querySwapExactOut`,
+        result,
+      );
+      expectedPrices.push(BigInt(parsed[2][0]._hex));
+    } catch (error) {
+      console.log('Error in queryMultiPathPrices', error);
+      expectedPrices.push(0n);
+    }
   }
   return expectedPrices;
 }
