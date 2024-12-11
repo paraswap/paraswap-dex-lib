@@ -662,7 +662,7 @@ export class BalancerV2
   // In memory pool state for non-event pools
   nonEventPoolStateCache: PoolStateCache;
 
-  eventDisabledPoolsTimer?: NodeJS.Timer;
+  eventDisabledPoolsTimer?: NodeJS.Timeout;
   eventDisabledPools: Address[] = [];
 
   constructor(
