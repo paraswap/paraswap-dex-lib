@@ -329,24 +329,31 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
     let fromAmountPos = 0;
     let toAmountPos = 0;
     if (insertAmount) {
-      const fromAmount = ethers.utils.defaultAbiCoder.encode(
-        ['uint256'],
-        [swap.swapExchanges[swapExchangeIndex].srcAmount],
-      );
+      if (exchangeParam.insertFromAmountPos) {
+        fromAmountPos = exchangeParam.insertFromAmountPos;
+      } else {
+        const fromAmount = ethers.utils.defaultAbiCoder.encode(
+          ['uint256'],
+          [swap.swapExchanges[swapExchangeIndex].srcAmount],
+        );
+
+        const fromAmountIndex = exchangeData
+          .replace('0x', '')
+          .indexOf(fromAmount.replace('0x', ''));
+
+        fromAmountPos =
+          (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
+      }
+
       const toAmount = ethers.utils.defaultAbiCoder.encode(
         ['uint256'],
         [swap.swapExchanges[swapExchangeIndex].destAmount],
       );
 
-      const fromAmountIndex = exchangeData
-        .replace('0x', '')
-        .indexOf(fromAmount.replace('0x', ''));
       const toAmountIndex = exchangeData
         .replace('0x', '')
         .indexOf(toAmount.replace('0x', ''));
 
-      fromAmountPos =
-        (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
       toAmountPos =
         (toAmountIndex !== -1 ? toAmountIndex : exchangeData.length) / 2;
     }

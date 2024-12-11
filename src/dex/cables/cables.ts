@@ -55,6 +55,7 @@ import { Interface } from 'ethers/lib/utils';
 import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { SpecialDex } from '../../executor/types';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -115,6 +116,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
           blacklistIntervalMs: CABLES_API_BLACKLIST_POLLING_INTERVAL_MS,
           blacklistCacheTTLSecs: CABLES_BLACKLIST_CACHES_TTL_S,
           blacklistCacheKey: CABLES_BLACKLIST_CACHE_KEY,
+
+          tokensHandleResponseCallback: async () => {
+            await this.setTokensMap();
+          },
         },
       },
     );
@@ -266,7 +271,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       `${this.dexKey}-${this.network}: quoteData undefined`,
     );
 
-    const swapFunction = 'simpleSwap';
+    const swapFunction = 'partialSwap';
     const swapFunctionParams = [
       [
         quoteData.nonceAndMeta,
@@ -279,6 +284,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
         quoteData.takerAmount,
       ],
       quoteData.signature,
+      // might be overwritten on Executors
+      quoteData.takerAmount,
     ];
 
     const exchangeData = this.rfqInterface.encodeFunctionData(
@@ -286,13 +293,25 @@ export class Cables extends SimpleExchange implements IDex<any> {
       swapFunctionParams,
     );
 
+    const fromAmount = ethers.utils.defaultAbiCoder.encode(
+      ['uint256'],
+      [quoteData.takerAmount],
+    );
+
+    const filledAmountIndex = exchangeData
+      .replace('0x', '')
+      .lastIndexOf(fromAmount.replace('0x', ''));
+
+    const filledAmountPos =
+      (filledAmountIndex !== -1 ? filledAmountIndex : exchangeData.length) / 2;
+
     return {
       exchangeData,
-      swappedAmountNotPresentInExchangeData: true, // to prevent insert from amount
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: false,
       targetExchange: this.mainnetRFQAddress,
       returnAmountPos: undefined,
+      insertFromAmountPos: filledAmountPos,
     };
   }
 
@@ -525,22 +544,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
         return null;
       }
 
-      // Ensure that "symbol" is set
-      const tokens = await this.getCachedTokens();
-      this.tokensMap = Object.keys(tokens).reduce((acc, key) => {
-        //@ts-ignore
-        acc[tokens[key].address.toLowerCase()] = tokens[key];
-        return acc;
-      }, {});
-
-      for (const symbol of Object.keys(tokens)) {
-        const normalizedTokenAddress = tokens[symbol].address.toLowerCase();
+      for (const symbol of Object.keys(this.tokensMap)) {
+        const normalizedTokenAddress =
+          this.tokensMap[symbol].address.toLowerCase();
 
         if (normalizedSrcToken.address === normalizedTokenAddress) {
-          normalizedSrcToken.symbol = tokens[symbol].symbol;
+          normalizedSrcToken.symbol = this.tokensMap[symbol].symbol;
         }
         if (normalizedDestToken.address === normalizedTokenAddress) {
-          normalizedDestToken.symbol = tokens[symbol].symbol;
+          normalizedDestToken.symbol = this.tokensMap[symbol].symbol;
         }
       }
 
@@ -639,7 +651,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     if (!this.dexHelper.config.isSlave) {
       this.rateFetcher.start();
     }
-
     return;
   }
 
@@ -657,6 +668,18 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return address.toLowerCase() === ETHER_ADDRESS
       ? NULL_ADDRESS
       : address.toLowerCase();
+  }
+
+  async setTokensMap() {
+    const tokens = await this.getCachedTokens();
+
+    if (tokens) {
+      this.tokensMap = Object.keys(tokens).reduce((acc, key) => {
+        //@ts-ignore
+        acc[tokens[key].address.toLowerCase()] = tokens[key];
+        return acc;
+      }, {});
+    }
   }
 
   async getTopPoolsForToken(

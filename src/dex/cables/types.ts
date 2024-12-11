@@ -115,6 +115,8 @@ export type CablesRateFetcherConfig = {
     pairsCacheTTLSecs: number;
     pricesCacheTTLSecs: number;
     tokensCacheTTLSecs: number;
+
+    tokensHandleResponseCallback: () => Promise<void>;
   };
 };
 

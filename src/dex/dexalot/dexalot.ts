@@ -593,6 +593,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             .multipliedBy(10000)
             .toFixed(0)
         : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
+
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
