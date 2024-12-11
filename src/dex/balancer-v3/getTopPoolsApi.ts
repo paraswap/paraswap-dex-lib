@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { apiUrl, BalancerV3Config } from './config';
+import { apiUrl, BalancerV3Config, disabledPoolIds } from './config';
 
 interface PoolToken {
   address: string;
@@ -29,6 +29,10 @@ function createQuery(
   poolsFilter: string[],
   count: number,
 ): string {
+  const disabledPoolIdsString = disabledPoolIds.BalancerV3[networkId]
+    ?.map(p => `"${p}"`)
+    .join(', ');
+
   const networkString = BalancerV3Config.BalancerV3[networkId].apiNetworkName;
   const poolIdString = poolsFilter.map(a => `"${a}"`).join(', ');
   // Build the where clause conditionally
@@ -37,6 +41,7 @@ function createQuery(
     protocolVersionIn: 3,
     hasHook: false,
     idIn: `[${poolIdString}]`,
+    ...(disabledPoolIdsString && { idNotIn: `[${disabledPoolIdsString}]` }),
   };
 
   // Convert where clause to string, filtering out undefined values
