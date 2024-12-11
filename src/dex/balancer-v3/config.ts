@@ -32,5 +32,11 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
       balancerRouterAddress: '0x84813aA3e079A665C0B80F944427eE83cBA63617',
       balancerBatchRouterAddress: '0xe2fa4e1d17725e72dcdAfe943Ecf45dF4B9E285b',
     },
+    [Network.MAINNET]: {
+      vaultAddress: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
+      apiNetworkName: 'MAINNET',
+      balancerRouterAddress: '0x5C6fb490BDFD3246EB0bB062c168DeCAF4bD9FDd',
+      balancerBatchRouterAddress: '0x136f1EFcC3f8f88516B9E94110D56FDBfB1778d1',
+    },
   },
 };
