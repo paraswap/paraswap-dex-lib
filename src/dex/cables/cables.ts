@@ -388,9 +388,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return this.tokensMap[this.normalizeAddress(address)];
   }
 
-  getPoolIdentifier(srcAddress: Address, destAddress: Address, mm?: string) {
+  getPoolIdentifier(srcAddress: Address, destAddress: Address) {
     return `${this.dexKey}_${srcAddress}_${destAddress}`.toLowerCase();
-    return `${this.dexKey}_${srcAddress}_${destAddress}_${mm}`.toLowerCase();
   }
 
   async getPoolIdentifiers(
