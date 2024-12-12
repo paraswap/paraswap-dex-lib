@@ -26,6 +26,7 @@ import { getTopPoolsApi } from './getTopPoolsApi';
 import balancerRouterAbi from '../../abi/balancer-v3/router.json';
 import balancerBatchRouterAbi from '../../abi/balancer-v3/batch-router.json';
 import { getGasCost } from './getGasCost';
+import { Block } from '@ethersproject/abstract-provider';
 
 const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
@@ -53,6 +54,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   balancerBatchRouter: Interface;
   updateNewPoolsTimer?: NodeJS.Timeout;
   updateRatesTimer?: NodeJS.Timeout;
+
+  latestBlock?: Block;
 
   constructor(
     readonly network: Network,
@@ -126,6 +129,16 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     );
   }
 
+  async getBlock(blockNumber: number): Promise<Block> {
+    if (this.latestBlock && this.latestBlock.number === blockNumber) {
+      return this.latestBlock;
+    }
+
+    const block = await this.dexHelper.provider.getBlock(blockNumber);
+    this.latestBlock = block;
+    return block;
+  }
+
   findPoolAddressesWithTokens(
     pools: DeepReadonly<PoolStateMap>,
     tokenA: string,
@@ -188,7 +201,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       }
 
       // This is used to get block timestamp which is needed to calculate Amp if it is updating
-      const block = await this.dexHelper.provider.getBlock(blockNumber);
+      const block = await this.getBlock(blockNumber);
 
       // get up to date pools and state
       const allPoolState = this.eventPools.getState(blockNumber);
