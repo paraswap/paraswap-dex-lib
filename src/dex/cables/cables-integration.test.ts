@@ -294,26 +294,98 @@ describe('Cables', function () {
       );
     });
 
-    it.skip('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const cables = new Cables(network, dexKey, dexHelper);
-      const poolLiquidity = await cables.getTopPoolsForToken(
-        tokens[tokenASymbol].address,
-        10,
-      );
-      console.log(
-        `${tokenASymbol} Top Pools:`,
-        JSON.stringify(poolLiquidity, null, 2),
-      );
-
-      if (!cables.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][tokenASymbol].address,
-          dexKey,
+    describe('getTopPoolsForToken', () => {
+      it('USDC getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const tokenSymbol = 'USDC';
+        const cables = new Cables(network, dexKey, dexHelper);
+        const poolLiquidity = await cables.getTopPoolsForToken(
+          tokens[tokenSymbol].address,
+          10,
         );
-      }
+        console.log(
+          `${tokenASymbol} Top Pools:`,
+          JSON.stringify(poolLiquidity, null, 2),
+        );
+
+        if (!cables.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][tokenASymbol].address,
+            dexKey,
+          );
+        }
+      });
+
+      it('WETH getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const tokenSymbol = 'WETH';
+        const cables = new Cables(network, dexKey, dexHelper);
+        const poolLiquidity = await cables.getTopPoolsForToken(
+          tokens[tokenSymbol].address,
+          10,
+        );
+        console.log(
+          `${tokenASymbol} Top Pools:`,
+          JSON.stringify(poolLiquidity, null, 2),
+        );
+
+        if (!cables.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][tokenASymbol].address,
+            dexKey,
+          );
+        }
+      });
+
+      it('ETH getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const tokenSymbol = 'ETH';
+        const cables = new Cables(network, dexKey, dexHelper);
+        const poolLiquidity = await cables.getTopPoolsForToken(
+          tokens[tokenSymbol].address,
+          10,
+        );
+        console.log(
+          `${tokenASymbol} Top Pools:`,
+          JSON.stringify(poolLiquidity, null, 2),
+        );
+
+        if (!cables.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][tokenASymbol].address,
+            dexKey,
+          );
+        }
+      });
+
+      it('ARB getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const tokenSymbol = 'ARB';
+        const cables = new Cables(network, dexKey, dexHelper);
+        const poolLiquidity = await cables.getTopPoolsForToken(
+          tokens[tokenSymbol].address,
+          10,
+        );
+        console.log(
+          `${tokenASymbol} Top Pools:`,
+          JSON.stringify(poolLiquidity, null, 2),
+        );
+
+        if (!cables.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][tokenASymbol].address,
+            dexKey,
+          );
+        }
+      });
     });
   });
 });

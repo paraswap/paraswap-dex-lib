@@ -56,6 +56,8 @@ import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
+import { uin256DecodeToFloat } from '../../lib/decoders';
+import _ from 'lodash';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -690,7 +692,125 @@ export class Cables extends SimpleExchange implements IDex<any> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    return [];
+    const isETH = tokenAddress.toLowerCase() === ETHER_ADDRESS;
+    const denormalizedTokenAddress = isETH ? NULL_ADDRESS : tokenAddress;
+
+    const tokens = (await this.getCachedTokens()) as { [key: string]: Token };
+    const token = Object.values(tokens).find(
+      token =>
+        token.address.toLowerCase() === denormalizedTokenAddress.toLowerCase(),
+    );
+
+    if (!token) {
+      return [];
+    }
+
+    const pairs = (await this.getCachedPairs()) as {
+      [key: string]: { base: string; quote: string };
+    };
+
+    const connectorTokens = Object.keys(pairs)
+      .filter(pairKey => {
+        const { base, quote } = pairs[pairKey];
+
+        if (
+          base.toLowerCase() === token.symbol?.toLowerCase() ||
+          quote.toLowerCase() === token.symbol?.toLowerCase()
+        ) {
+          return true;
+        }
+
+        return false;
+      })
+      .map(pairKey => {
+        const { base, quote } = pairs[pairKey];
+
+        if (base.toLowerCase() === token.symbol?.toLowerCase()) {
+          return tokens[quote];
+        }
+
+        if (quote.toLowerCase() === token.symbol?.toLowerCase()) {
+          return tokens[base];
+        }
+      });
+
+    if (connectorTokens.length === 0) {
+      return [];
+    }
+
+    connectorTokens.push(token);
+
+    const tokensBalanceMultiCall = connectorTokens.map(token => {
+      let erc20BalanceCalldata;
+      if (token?.address.toLowerCase() === NULL_ADDRESS) {
+        erc20BalanceCalldata = this.dexHelper.multiContract.methods
+          .getEthBalance(this.mainnetRFQAddress)
+          .encodeABI();
+      } else {
+        erc20BalanceCalldata = this.erc20Interface.encodeFunctionData(
+          'balanceOf',
+          [this.mainnetRFQAddress],
+        );
+      }
+
+      return {
+        target:
+          token?.address.toLowerCase() === NULL_ADDRESS
+            ? this.dexHelper.config.data.multicallV2Address.toLowerCase()
+            : token?.address,
+        callData: erc20BalanceCalldata,
+      };
+    });
+
+    const res = (
+      await this.dexHelper.multiContract.methods
+        .aggregate(tokensBalanceMultiCall)
+        .call()
+    ).returnData;
+
+    const balances = res.map((item: any) => {
+      if (item === '0x') {
+        return 0n;
+      }
+      return BigInt(item.toString());
+    });
+
+    const connectorsPricesUSD = await Promise.all(
+      connectorTokens.map(async (token, index) =>
+        this.dexHelper.getTokenUSDPrice(token!, balances[index]),
+      ),
+    );
+
+    const extendedConnectors = connectorTokens.map((token, index) => ({
+      ...token,
+      usdPrice: connectorsPricesUSD[index],
+    }));
+
+    const tokenUSDPrice = _.last(extendedConnectors)!.usdPrice;
+    extendedConnectors.pop(); // to remove token which was added before
+
+    const connectors = extendedConnectors.map(connector => {
+      return {
+        exchange: this.dexKey,
+        address: this.mainnetRFQAddress,
+        connectorTokens: [
+          {
+            address:
+              connector.address === NULL_ADDRESS
+                ? ETHER_ADDRESS
+                : connector!.address,
+            decimals: connector!.decimals,
+          },
+        ],
+        liquidityUSD: Number(connector!.usdPrice) + Number(tokenUSDPrice),
+      };
+    });
+
+    return _.slice(
+      _.sortBy(connectors as PoolLiquidity[], [pool => -1 * pool.liquidityUSD]),
+      0,
+      limit,
+    );
   }
 
   /**
