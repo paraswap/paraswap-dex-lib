@@ -1480,9 +1480,17 @@ export const Tokens: {
       address: '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',
       decimals: 6,
     },
+    USDCe: {
+      address: '0x2a22f9c3b484c3629090feed35f17ff8f88f76f0',
+      decimals: 6,
+    },
     USDT: {
       address: '0x4ECaBa5870353805a9F068101A40E0f32ed605C6',
       decimals: 6,
+    },
+    COW: {
+      address: '0x177127622c4A00F3d409B75571e12cB3c8973d3c',
+      decimals: 18,
     },
     WXDAI: {
       address: '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d',
@@ -1492,8 +1500,16 @@ export const Tokens: {
       address: '0xa818f1b57c201e092c4a2017a91815034326efd1',
       decimals: 18,
     },
+    waGnoWETH: {
+      address: '0x57f664882F762FA37903FC864e2B633D384B411A',
+      decimals: 18,
+    },
     aGnowstETH: {
       address: '0x23e4e76d01b2002be436ce8d6044b0aa2f68b68a',
+      decimals: 18,
+    },
+    waGnowstETH: {
+      address: '0x773CDA0CADe2A3d86E6D4e30699d40bB95174ff2',
       decimals: 18,
     },
     aGnoUSDC: {
@@ -1616,6 +1632,41 @@ export const Tokens: {
     },
     aaveUSDC: {
       address: '0x4e65fe4dba92790696d040ac24aa414708f5c0ab',
+      decimals: 6,
+    },
+  },
+  [Network.SEPOLIA]: {
+    ETH: { address: ETHER_ADDRESS, decimals: 18 },
+    WETH: {
+      address: '0x7b79995e5f793a07bc00c21412e50ecae098e7f9',
+      decimals: 18,
+    },
+    bal: {
+      address: `0xb19382073c7a0addbb56ac6af1808fa49e377b75`,
+      decimals: 18,
+    },
+    daiAave: {
+      address: `0xff34b3d4aee8ddcd6f9afffb6fe49bd371b8a357`,
+      decimals: 18,
+    },
+    usdcAave: {
+      address: `0x94a9d9ac8a22534e3faca9f4e7f2e2cf85d5e4c8`,
+      decimals: 6,
+    },
+    usdtAave: {
+      address: `0xaa8e23fb1079ea71e0a56f48a2aa51851d8433d0`,
+      decimals: 6,
+    },
+    aDaiAave: {
+      address: `0xde46e43f46ff74a23a65ebb0580cbe3dfe684a17`,
+      decimals: 18,
+    },
+    stataUSDC: {
+      address: `0x8a88124522dbbf1e56352ba3de1d9f78c143751e`,
+      decimals: 6,
+    },
+    stataUSDT: {
+      address: `0x978206fae13faf5a8d293fb614326b237684b750`,
       decimals: 6,
     },
   },
@@ -1960,6 +2011,7 @@ export const Holders: {
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
   },
   [Network.GNOSIS]: {
+    COW: '0x4fFAD6ac852c0Af0AA301376F4C5Dea3a928b120',
     XDAI: '0x9fc062032d4F2Fe7dAA601bd8B06C45F9c8f17Be',
     WXDAI: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     WETH: '0x800e12aF6c96790EDDdc5B3f3302899e27B2A918',
@@ -1971,8 +2023,11 @@ export const Holders: {
     wstETH: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
     aGnowstETH: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
     sDAI: '0x79f08F2e75A8C99428DE4A2e6456c07C99E55da5',
+    USDCe: '0x555CE236C0220695b68341bc48C68d52210cC35b',
     crvUSD: '0xE4A982fa1f1E8AD1AF238A7b1226b13b56bf5CcD',
     SWPR: '0x9467dcFD4519287e3878C018c02f5670465a9003',
+    waGnoWETH: '0x854B004700885A61107B458f11eCC169A019b764',
+    waGnowstETH: '0x854B004700885A61107B458f11eCC169A019b764',
   },
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
@@ -2000,6 +2055,15 @@ export const Holders: {
     cbETH: '0x50e011dD1e2b4906F1534623cD134B30422bb11E',
     wUSDM: '0xe30965Acd0Ee1CE2e0Cd0AcBFB3596bD6fC78A51',
   },
+  [Network.SEPOLIA]: {
+    bal: '0xDb4ff41B4C1222c2b1869A67Be115070688989a2',
+    daiAave: '0xbB0bc84687fFb642fd90a3D12215e7eC16352A49',
+    WETH: '0x546e37DAA15cdb82fd1a717E5dEEa4AF08D4349A',
+    ETH: '0x2CdA41645F2dBffB852a605E92B185501801FC28',
+    stataUSDC: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
+    stataUSDT: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
+    usdcAave: '0xdD5De55eA6804EFb283f43b0C091C25000a6486c',
+  },
 };
 
 export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
@@ -2025,6 +2089,7 @@ export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'ETH',
   [Network.OPTIMISM]: 'ETH',
   [Network.BASE]: 'ETH',
+  [Network.SEPOLIA]: 'ETH',
   [Network.GNOSIS]: 'XDAI',
 };
 
@@ -2037,5 +2102,6 @@ export const WrappedNativeTokenSymbols: { [network: number]: string } = {
   [Network.ARBITRUM]: 'WETH',
   [Network.OPTIMISM]: 'WETH',
   [Network.BASE]: 'WETH',
+  [Network.SEPOLIA]: 'WETH',
   [Network.GNOSIS]: 'WXDAI',
 };

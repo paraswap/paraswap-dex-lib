@@ -55,8 +55,6 @@ import { Interface } from 'ethers/lib/utils';
 import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
-import { SpecialDex } from '../../executor/types';
-import { uin256DecodeToFloat } from '../../lib/decoders';
 import _ from 'lodash';
 
 export class Cables extends SimpleExchange implements IDex<any> {
