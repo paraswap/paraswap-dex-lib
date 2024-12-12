@@ -291,8 +291,64 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   getCalldataGasCost(
     poolPrices: PoolPrices<BalancerV3Data>,
   ): number | number[] {
-    // TODO: update if there is any payload in getAdapterParam
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    if (poolPrices.data.steps.length === 1) {
+      return (
+        CALLDATA_GAS_COST.DEX_OVERHEAD +
+        // pool
+        CALLDATA_GAS_COST.ADDRESS +
+        // tokenIn
+        CALLDATA_GAS_COST.ADDRESS +
+        // tokenOut
+        CALLDATA_GAS_COST.ADDRESS +
+        // exactAmountOut
+        CALLDATA_GAS_COST.AMOUNT +
+        // maxAmountIn
+        CALLDATA_GAS_COST.AMOUNT +
+        // deadline
+        CALLDATA_GAS_COST.TIMESTAMP +
+        // wethIsEth
+        CALLDATA_GAS_COST.BOOL +
+        // userData
+        CALLDATA_GAS_COST.FULL_WORD
+      );
+    }
+
+    return (
+      CALLDATA_GAS_COST.DEX_OVERHEAD +
+      CALLDATA_GAS_COST.LENGTH_LARGE +
+      // ParentStruct header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> paths[] header
+      CALLDATA_GAS_COST.OFFSET_LARGE +
+      // ParentStruct -> paths[]
+      CALLDATA_GAS_COST.LENGTH_SMALL +
+      // ParentStruct -> paths header
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      // ParentStruct -> paths -> exactAmountIn
+      CALLDATA_GAS_COST.AMOUNT +
+      // ParentStruct -> paths -> minAmountOut
+      CALLDATA_GAS_COST.AMOUNT +
+      // ParentStruct -> paths -> tokenIn
+      CALLDATA_GAS_COST.ADDRESS +
+      poolPrices.data.steps.reduce(step => {
+        return (
+          // ParentStruct -> paths -> step header
+          CALLDATA_GAS_COST.OFFSET_SMALL +
+          // ParentStruct -> paths -> step -> isBuffer
+          CALLDATA_GAS_COST.BOOL +
+          // ParentStruct -> paths -> step -> pool
+          CALLDATA_GAS_COST.ADDRESS +
+          // ParentStruct -> paths -> step -> tokenOut
+          CALLDATA_GAS_COST.ADDRESS
+        );
+      }, 0) +
+      // deadline
+      CALLDATA_GAS_COST.TIMESTAMP +
+      // wethIsEth
+      CALLDATA_GAS_COST.BOOL +
+      // userData
+      CALLDATA_GAS_COST.FULL_WORD
+    );
   }
 
   // Not used for V6
