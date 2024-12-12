@@ -482,13 +482,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     transferFees?: TransferFeeParams,
     isFirstSwap?: boolean,
   ): Promise<ExchangePrices<CablesData> | null> {
-    const isRestricted = await this.isRestricted();
-    if (isRestricted) {
-      return null;
-    }
-
-    await this.setTokensMap();
-
     try {
       const normalizedSrcToken = this.normalizeToken(srcToken);
       const normalizedDestToken = this.normalizeToken(destToken);
@@ -499,6 +492,13 @@ export class Cables extends SimpleExchange implements IDex<any> {
       ) {
         return null;
       }
+
+      const isRestricted = await this.isRestricted();
+      if (isRestricted) {
+        return null;
+      }
+
+      await this.setTokensMap();
 
       for (const symbol of Object.keys(this.tokensMap)) {
         const normalizedTokenAddress =
