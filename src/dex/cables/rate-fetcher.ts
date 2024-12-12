@@ -35,8 +35,6 @@ export class CablesRateFetcher {
   public blacklistCacheKey: string;
   public blacklistCacheTTL: number;
 
-  tokensHandleResponseCallback: () => Promise<void>;
-
   constructor(
     private dexHelper: IDexHelper,
     private dexKey: string,
@@ -55,9 +53,6 @@ export class CablesRateFetcher {
 
     this.blacklistCacheKey = config.rateConfig.blacklistCacheKey;
     this.blacklistCacheTTL = config.rateConfig.blacklistCacheTTLSecs;
-
-    this.tokensHandleResponseCallback =
-      config.rateConfig.tokensHandleResponseCallback;
 
     this.pairsFetcher = new Fetcher<CablesPairsResponse>(
       dexHelper.httpRequest,
@@ -213,7 +208,5 @@ export class CablesRateFetcher {
       this.tokensCacheTTL,
       JSON.stringify(normalizedTokens),
     );
-
-    await this.tokensHandleResponseCallback();
   }
 }

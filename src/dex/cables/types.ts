@@ -11,21 +11,6 @@ export type CablesRFQResponse = {
 export type CablesData = {
   quoteData?: AugustusRFQOrderData;
 };
-
-export enum OrderbookSide {
-  bids = 'bids',
-  asks = 'asks',
-}
-
-/**
- * Utils
- */
-export type CablesAPIParameters = {
-  url: string;
-  method: Method;
-};
-export class CablesRfqError extends Error {}
-
 /**
  * Types
  */
@@ -35,26 +20,26 @@ export type PairData = {
   liquidityUSD: number;
 };
 
-export type PriceAndAmount = [string, string];
+type PriceAndAmount = [string, string];
 
-export type PriceData = {
+type PriceData = {
   bids: PriceAndAmount[];
   asks: PriceAndAmount[];
 };
 
-export type PriceDataMap = {
+type PriceDataMap = {
   [network: string]: {
     [pair: string]: PriceData;
   };
 };
 
-export type TokenDataMap = {
+type TokenDataMap = {
   [network: string]: {
     [token: string]: Token;
   };
 };
 
-export type PairsDataMap = {
+type PairsDataMap = {
   [network: string]: {
     [token: string]: PairData;
   };
@@ -115,8 +100,6 @@ export type CablesRateFetcherConfig = {
     pairsCacheTTLSecs: number;
     pricesCacheTTLSecs: number;
     tokensCacheTTLSecs: number;
-
-    tokensHandleResponseCallback: () => Promise<void>;
   };
 };
 

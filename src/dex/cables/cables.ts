@@ -56,6 +56,7 @@ import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
 import _ from 'lodash';
+import { BebopData } from '../bebop/types';
 
 export class Cables extends SimpleExchange implements IDex<any> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
@@ -116,10 +117,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
           blacklistIntervalMs: CABLES_API_BLACKLIST_POLLING_INTERVAL_MS,
           blacklistCacheTTLSecs: CABLES_BLACKLIST_CACHES_TTL_S,
           blacklistCacheKey: CABLES_BLACKLIST_CACHE_KEY,
-
-          tokensHandleResponseCallback: async () => {
-            await this.setTokensMap();
-          },
         },
       },
     );
@@ -255,6 +252,21 @@ export class Cables extends SimpleExchange implements IDex<any> {
     }
   }
 
+  getAdapterParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    data: BebopData,
+    side: SwapSide,
+  ): AdapterExchangeParam {
+    return {
+      targetExchange: this.mainnetRFQAddress,
+      payload: '0x',
+      networkFee: '0',
+    };
+  }
+
   getDexParam(
     srcToken: Address,
     destToken: Address,
@@ -315,64 +327,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     };
   }
 
-  getAdapterParam(
-    srcToken: string,
-    destToken: string,
-    srcAmount: string,
-    destAmount: string,
-    data: CablesData,
-    side: SwapSide,
-  ): AdapterExchangeParam {
-    const { quoteData } = data;
-
-    assert(
-      quoteData !== undefined,
-      `${this.dexKey}-${this.network}: quoteData undefined`,
-    );
-
-    const params = [
-      {
-        nonceAndMeta: quoteData.nonceAndMeta,
-        expiry: quoteData.expiry,
-        makerAsset: quoteData.makerAsset,
-        takerAsset: quoteData.takerAsset,
-        maker: quoteData.maker,
-        taker: quoteData.taker,
-        makerAmount: quoteData.makerAmount,
-        takerAmount: quoteData.takerAmount,
-      },
-      quoteData.signature,
-    ];
-
-    const payload = this.abiCoder.encodeParameter(
-      {
-        ParentStruct: {
-          order: {
-            nonceAndMeta: 'uint256',
-            expiry: 'uint128',
-            makerAsset: 'address',
-            takerAsset: 'address',
-            maker: 'address',
-            taker: 'address',
-            makerAmount: 'uint256',
-            takerAmount: 'uint256',
-          },
-          signature: 'bytes',
-        },
-      },
-      {
-        order: params[0],
-        signature: params[1],
-      },
-    );
-
-    return {
-      targetExchange: this.mainnetRFQAddress,
-      payload,
-      networkFee: '0',
-    };
-  }
-
   normalizeToken(token: Token): Token {
     return {
       ...token,
@@ -398,8 +352,6 @@ export class Cables extends SimpleExchange implements IDex<any> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    await this.setTokensMap();
-
     if (!srcToken || !destToken) {
       return [];
     }
@@ -414,6 +366,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       return [];
     }
 
+    await this.setTokensMap();
     const tokensAddr = (await this.getCachedTokensAddr()) || {};
 
     return [
@@ -662,7 +615,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
   }
 
   releaseResources?(): AsyncOrSync<void> {
-    if (this.rateFetcher) {
+    if (!this.dexHelper.config.isSlave && this.rateFetcher) {
       this.rateFetcher.stop();
     }
   }
@@ -919,7 +872,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
     const cachedBlacklist = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
-      CABLES_BLACKLIST_CACHE_KEY,
+      this.rateFetcher.blacklistCacheKey,
     );
 
     if (cachedBlacklist) {
