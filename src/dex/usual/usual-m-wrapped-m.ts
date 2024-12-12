@@ -20,7 +20,7 @@ const Config: DexConfigMap<DexParams> = {
         decimals: 6,
       },
       toToken: {
-        address: '0xfe274c305b365dc38e188e8f01c4fae2171ce927',
+        address: '0x4cbc25559dbbd1272ec5b64c7b5f48a2405e6470',
         decimals: 6,
       },
     },

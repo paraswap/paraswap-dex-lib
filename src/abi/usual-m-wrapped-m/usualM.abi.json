@@ -2,6 +2,13 @@
   { "type": "constructor", "inputs": [], "stateMutability": "nonpayable" },
   {
     "type": "function",
+    "name": "DECIMALS_NUMBER",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "DOMAIN_SEPARATOR",
     "inputs": [],
     "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
@@ -74,19 +81,24 @@
         "internalType": "address"
       },
       { "name": "salt", "type": "bytes32", "internalType": "bytes32" },
-      {
-        "name": "extensions",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
+      { "name": "extensions", "type": "uint256[]", "internalType": "uint256[]" }
     ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getWrappableAmount",
+    "inputs": [
+      { "name": "amount", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "initialize",
     "inputs": [
-      { "name": "smartM_", "type": "address", "internalType": "address" },
+      { "name": "wrappedM_", "type": "address", "internalType": "address" },
       {
         "name": "registryAccess_",
         "type": "address",
@@ -103,6 +115,13 @@
       { "name": "account", "type": "address", "internalType": "address" }
     ],
     "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "mintCap",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
@@ -159,10 +178,12 @@
   },
   {
     "type": "function",
-    "name": "smartM",
-    "inputs": [],
-    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
-    "stateMutability": "view"
+    "name": "setMintCap",
+    "inputs": [
+      { "name": "newMintCap", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -227,24 +248,6 @@
   },
   {
     "type": "function",
-    "name": "unwrap",
-    "inputs": [
-      { "name": "recipient", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "wrap",
-    "inputs": [
-      { "name": "recipient", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "wrap",
     "inputs": [
       { "name": "recipient", "type": "address", "internalType": "address" },
@@ -266,6 +269,13 @@
     ],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "wrappedM",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "stateMutability": "view"
   },
   {
     "type": "event",
@@ -320,6 +330,19 @@
         "type": "uint64",
         "indexed": false,
         "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MintCapSet",
+    "inputs": [
+      {
+        "name": "newMintCap",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -473,11 +496,14 @@
       { "name": "currentNonce", "type": "uint256", "internalType": "uint256" }
     ]
   },
+  { "type": "error", "name": "InvalidAmount", "inputs": [] },
   { "type": "error", "name": "InvalidInitialization", "inputs": [] },
+  { "type": "error", "name": "InvalidUInt96", "inputs": [] },
+  { "type": "error", "name": "MintCapExceeded", "inputs": [] },
   { "type": "error", "name": "NotAuthorized", "inputs": [] },
   { "type": "error", "name": "NotInitializing", "inputs": [] },
   { "type": "error", "name": "SameValue", "inputs": [] },
   { "type": "error", "name": "ZeroAddress", "inputs": [] },
   { "type": "error", "name": "ZeroRegistryAccess", "inputs": [] },
-  { "type": "error", "name": "ZeroSmartM", "inputs": [] }
+  { "type": "error", "name": "ZeroWrappedM", "inputs": [] }
 ]

@@ -18,7 +18,7 @@ const Config: DexConfigMap<DexParams & { usualDaoCollateralAddress: Address }> =
       [Network.MAINNET]: {
         usualDaoCollateralAddress: '0xde6e1F680C4816446C8D515989E2358636A38b04',
         fromToken: {
-          address: '0xfe274c305b365dc38e188e8f01c4fae2171ce927',
+          address: '0x4cbc25559dbbd1272ec5b64c7b5f48a2405e6470',
           decimals: 6,
         },
         toToken: {

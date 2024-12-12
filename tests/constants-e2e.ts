@@ -552,7 +552,7 @@ export const Tokens: {
       symbol: 'wM',
     },
     UsualM: {
-      address: '0xFe274C305b365dC38e188E8f01c4FAe2171ce927',
+      address: '0x4cbc25559dbbd1272ec5b64c7b5f48a2405e6470',
       decimals: 6,
       symbol: 'USUALM',
     },
