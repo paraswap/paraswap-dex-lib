@@ -291,7 +291,10 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   getCalldataGasCost(
     poolPrices: PoolPrices<BalancerV3Data>,
   ): number | number[] {
-    if (poolPrices.data.steps.length === 1) {
+    if (
+      poolPrices.data.steps.length === 1 &&
+      !poolPrices.data.steps[0].isBuffer
+    ) {
       return (
         CALLDATA_GAS_COST.DEX_OVERHEAD +
         // pool
