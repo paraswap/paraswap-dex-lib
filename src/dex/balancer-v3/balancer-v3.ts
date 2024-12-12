@@ -388,7 +388,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     srcAmount: NumberAsString,
     data: BalancerV3Data,
   ): DexExchangeParam {
-    if (data.steps.length === 1) {
+    if (data.steps.length === 1 && !data.steps[0].isBuffer) {
       const exchangeData = this.balancerRouter.encodeFunctionData(
         'swapSingleTokenExactIn',
         [
@@ -460,7 +460,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     destAmount: NumberAsString,
     data: BalancerV3Data,
   ): DexExchangeParam {
-    if (data.steps.length === 1) {
+    if (data.steps.length === 1 && !data.steps[0].isBuffer) {
       const exchangeData = this.balancerRouter.encodeFunctionData(
         'swapSingleTokenExactOut',
         [
