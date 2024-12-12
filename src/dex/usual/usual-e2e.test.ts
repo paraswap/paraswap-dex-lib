@@ -75,13 +75,13 @@ describe('UsualBond E2E', () => {
   });
 });
 
-describe('UsualMSmartM E2E', () => {
-  const dexKey = 'UsualMSmartM';
+describe('UsualMWrappedM E2E', () => {
+  const dexKey = 'UsualMWrappedM';
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'SmartM';
+    const tokenASymbol: string = 'WrappedM';
     const tokenBSymbol: string = 'UsualM';
 
     const tokenAAmount: string = '100000';

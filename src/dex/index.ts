@@ -94,7 +94,7 @@ import { LitePsm } from './lite-psm/lite-psm';
 import { StkGHO } from './stkgho/stkgho';
 import { SkyConverter } from './sky-converter/sky-converter';
 import { UsualBond } from './usual/usual-bond';
-import { UsualMSmartM } from './usual/usual-m-smart-m';
+import { UsualMWrappedM } from './usual/usual-m-wrapped-m';
 import { UsualMUsd0 } from './usual/usual-m-usd0';
 
 const LegacyDexes = [
@@ -185,7 +185,7 @@ const Dexes = [
   StkGHO,
   SkyConverter,
   FluidDex,
-  UsualMSmartM,
+  UsualMWrappedM,
   UsualMUsd0,
 ];
 
