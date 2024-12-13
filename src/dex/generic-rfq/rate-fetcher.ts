@@ -483,4 +483,13 @@ export class RateFetcher {
       throw e;
     }
   }
+
+  async setBlacklist(userAddress: string): Promise<boolean> {
+    await this.dexHelper.cache.hset(
+      this.blackListCacheKey,
+      userAddress.toLowerCase(),
+      'true',
+    );
+    return true;
+  }
 }
