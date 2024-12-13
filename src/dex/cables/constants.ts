@@ -20,8 +20,6 @@ export const CABLES_API_TOKENS_POLLING_INTERVAL_MS = 30000; // 30 sec
 
 export const CABLES_FIRM_QUOTE_TIMEOUT_MS = 2000;
 
-export const CABLES_BLACKLIST_CACHE_KEY = 'cablesBlacklistCacheKey';
-
 export const CABLES_RESTRICTED_CACHE_KEY = 'restricted';
 
 export const CABLES_ERRORS_CACHE_KEY = 'errors';

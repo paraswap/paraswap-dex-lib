@@ -30,7 +30,6 @@ import {
   CABLES_API_PRICES_POLLING_INTERVAL_MS,
   CABLES_API_TOKENS_POLLING_INTERVAL_MS,
   CABLES_API_URL,
-  CABLES_BLACKLIST_CACHE_KEY,
   CABLES_BLACKLIST_CACHES_TTL_S,
   CABLES_ERRORS_CACHE_KEY,
   CABLES_FIRM_QUOTE_TIMEOUT_MS,
@@ -116,7 +115,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
           blacklistIntervalMs: CABLES_API_BLACKLIST_POLLING_INTERVAL_MS,
           blacklistCacheTTLSecs: CABLES_BLACKLIST_CACHES_TTL_S,
-          blacklistCacheKey: CABLES_BLACKLIST_CACHE_KEY,
+          blacklistCacheKey: 'blacklist',
         },
       },
     );
