@@ -360,19 +360,22 @@ export class Cables extends SimpleExchange implements IDex<any> {
       return [];
     }
 
-    const pairData = await this.getPairData(srcToken, destToken);
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+
+    const pairData = await this.getPairData(
+      normalizedSrcToken,
+      normalizedDestToken,
+    );
 
     if (!pairData) {
       return [];
     }
 
-    await this.setTokensMap();
-    const tokensAddr = (await this.getCachedTokensAddr()) || {};
-
     return [
       this.getPoolIdentifier(
-        tokensAddr[pairData.base.toLowerCase()],
-        tokensAddr[pairData.quote.toLowerCase()],
+        normalizedSrcToken.address,
+        normalizedDestToken.address,
       ),
     ];
   }
@@ -695,37 +698,28 @@ export class Cables extends SimpleExchange implements IDex<any> {
   };
 
   async getPairData(srcToken: Token, destToken: Token): Promise<any> {
-    const normalizedSrcToken = this.normalizeToken(srcToken);
-    const normalizedDestToken = this.normalizeToken(destToken);
-
-    if (normalizedSrcToken.address === normalizedDestToken.address) {
+    if (srcToken.address === destToken.address) {
       return null;
     }
 
     const cachedTokens = await this.getCachedTokens();
 
-    normalizedSrcToken.symbol = this.findKeyByAddress(
-      cachedTokens,
-      normalizedSrcToken.address,
-    );
-    normalizedDestToken.symbol = this.findKeyByAddress(
-      cachedTokens,
-      normalizedDestToken.address,
-    );
+    srcToken.symbol = this.findKeyByAddress(cachedTokens, srcToken.address);
+    destToken.symbol = this.findKeyByAddress(cachedTokens, destToken.address);
 
     const cachedPairs = await this.getCachedPairs();
 
     const potentialPairs = [
       {
-        base: normalizedSrcToken.symbol,
-        quote: normalizedDestToken.symbol,
-        identifier: this.getPairString(normalizedSrcToken, normalizedDestToken),
+        base: srcToken.symbol,
+        quote: destToken.symbol,
+        identifier: this.getPairString(srcToken, destToken),
         isSrcBase: true,
       },
       {
-        base: normalizedDestToken.symbol,
-        quote: normalizedSrcToken.symbol,
-        identifier: this.getPairString(normalizedDestToken, normalizedSrcToken),
+        base: destToken.symbol,
+        quote: srcToken.symbol,
+        identifier: this.getPairString(destToken, srcToken),
         isSrcBase: false,
       },
     ];
