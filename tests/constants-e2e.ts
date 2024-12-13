@@ -550,6 +550,11 @@ export const Tokens: {
       decimals: 18,
       symbol: 'USD0++',
     },
+    wUSDL: {
+      address: '0x7751e2f4b8ae93ef6b79d86419d42fe3295a4559',
+      decimals: 18,
+      symbol: 'wUSDL',
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
