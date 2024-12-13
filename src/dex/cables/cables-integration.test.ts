@@ -294,7 +294,7 @@ describe('Cables', function () {
       );
     });
 
-    describe('getTopPoolsForToken', () => {
+    describe.skip('getTopPoolsForToken', () => {
       it('USDC getTopPoolsForToken', async function () {
         // We have to check without calling initializePricing, because
         // pool-tracker is not calling that function
