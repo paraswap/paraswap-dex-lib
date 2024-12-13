@@ -5,6 +5,12 @@ export interface ICache {
     cacheKey: string,
   ): Promise<string | null>;
 
+  ttl(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<string | null>;
+
   rawget(key: string): Promise<string | null>;
 
   rawset(key: string, value: string, ttl: number): Promise<string | null>;
@@ -51,6 +57,8 @@ export interface ICache {
   zscore(setKey: string, key: string): Promise<string | null>;
 
   sismember(setKey: string, key: string): Promise<boolean>;
+
+  smembers(setKey: string): Promise<string[]>;
 
   hset(mapKey: string, key: string, value: string): Promise<void>;
 
