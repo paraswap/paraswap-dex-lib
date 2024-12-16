@@ -5,11 +5,7 @@ export interface ICache {
     cacheKey: string,
   ): Promise<string | null>;
 
-  ttl(
-    dexKey: string,
-    network: number,
-    cacheKey: string,
-  ): Promise<string | null>;
+  ttl(dexKey: string, network: number, cacheKey: string): Promise<number>;
 
   rawget(key: string): Promise<string | null>;
 

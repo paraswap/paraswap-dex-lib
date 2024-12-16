@@ -79,11 +79,11 @@ export class JsonPubSub {
       this.dexHelper.cache.ttl(this.dexKey, this.network, key),
     ]);
 
-    if (value) {
+    if (value && ttl > 0) {
       // setting ttl same as in cache
       // TODO-ps: check if ttl is not null
       const parsedValue = JSON.parse(value);
-      this.localCache.set(key, parsedValue, Number(ttl));
+      this.localCache.set(key, parsedValue, ttl);
       return parsedValue;
     }
 
