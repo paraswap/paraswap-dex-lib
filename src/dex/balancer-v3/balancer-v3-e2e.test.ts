@@ -216,8 +216,8 @@ describe('BalancerV3 E2E', () => {
       const tokenASymbol: string = 'WXDAI';
       const tokenBSymbol: string = 'COW';
 
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '1000000000000000000';
+      const tokenAAmount: string = '100000000000000000';
+      const tokenBAmount: string = '100000000000000000';
       const nativeTokenAmount = '100000000000000';
 
       testForNetwork(
@@ -233,12 +233,12 @@ describe('BalancerV3 E2E', () => {
     });
 
     describe('Weighed Path', () => {
-      const tokenASymbol: string = 'USDCe';
-      const tokenBSymbol: string = 'sDAI';
+      const tokenASymbol: string = 'sDAI';
+      const tokenBSymbol: string = 'XDAI';
 
-      const tokenAAmount: string = '1000000';
+      const tokenAAmount: string = '100000000000000000';
       const tokenBAmount: string = '100000000000000000';
-      const nativeTokenAmount = '0';
+      const nativeTokenAmount = '100000000000000000';
 
       testForNetwork(
         network,
@@ -258,6 +258,30 @@ describe('BalancerV3 E2E', () => {
 
       const tokenAAmount: string = '1000000000000000';
       const tokenBAmount: string = '1000000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+  });
+
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+
+    describe('Stable Path', () => {
+      const tokenASymbol: string = 'wUSDL';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '10000000';
       const nativeTokenAmount = '0';
 
       testForNetwork(
