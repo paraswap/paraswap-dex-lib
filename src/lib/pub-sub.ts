@@ -1,6 +1,7 @@
 import NodeCache from 'node-cache';
 import { Network } from '../constants';
 import { IDexHelper } from '../dex-helper';
+import { Logger } from '../types';
 
 type JsonPubSubMsg = {
   expiresAt: number;
@@ -14,6 +15,9 @@ export class JsonPubSub {
   network: Network;
   localCache: NodeCache = new NodeCache();
 
+  // TODO-rfq-ps: temporary logger
+  logger: Logger;
+
   constructor(
     private dexHelper: IDexHelper,
     private dexKey: string,
@@ -21,6 +25,8 @@ export class JsonPubSub {
   ) {
     this.network = this.dexHelper.config.data.network;
     this.channel = `${this.network}_${this.dexKey}_${channel}`;
+
+    this.logger = this.dexHelper.getLogger(`JsonPubSub_${this.channel}`);
   }
 
   initialize() {
@@ -28,6 +34,8 @@ export class JsonPubSub {
   }
 
   subscribe() {
+    this.logger.info(`Subscribing to ${this.channel}`);
+
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
       const decodedMsg = JSON.parse(msg) as JsonPubSubMsg;
       this.handleSubscription(decodedMsg);
@@ -35,6 +43,8 @@ export class JsonPubSub {
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
+    this.logger.info(`Publishing to ${this.channel}`);
+
     const expiresAt = Math.round(Date.now() / 1000) + ttl;
     this.dexHelper.cache.publish(
       this.channel,
@@ -43,6 +53,8 @@ export class JsonPubSub {
   }
 
   handleSubscription(json: JsonPubSubMsg) {
+    this.logger.info(`Received message from ${this.channel}`);
+
     const { expiresAt, data } = json;
 
     const now = Math.round(Date.now() / 1000);
@@ -84,6 +96,9 @@ export class SetPubSub {
   network: Network;
   set = new Set<string>();
 
+  // TODO-rfq-ps: temporary logger
+  logger: Logger;
+
   constructor(
     private dexHelper: IDexHelper,
     private dexKey: string,
@@ -91,6 +106,8 @@ export class SetPubSub {
   ) {
     this.network = this.dexHelper.config.data.network;
     this.channel = `${this.network}_${this.dexKey}_${channel}`;
+
+    this.logger = this.dexHelper.getLogger(`SetPubSub_${this.channel}`);
   }
 
   async initialize(key: string) {
@@ -104,6 +121,8 @@ export class SetPubSub {
   }
 
   subscribe() {
+    this.logger.info(`Subscribing to ${this.channel}`);
+
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
       const decodedMsg = JSON.parse(msg) as SetPubSubMsg;
       this.handleSubscription(decodedMsg);
@@ -111,6 +130,8 @@ export class SetPubSub {
   }
 
   publish(set: SetPubSubMsg) {
+    this.logger.info(`Publishing to ${this.channel}`);
+
     // as there's no lazy load, also store locally
     for (const key of set) {
       this.set.add(key);
@@ -119,6 +140,7 @@ export class SetPubSub {
   }
 
   handleSubscription(set: SetPubSubMsg) {
+    this.logger.info(`Received message from ${this.channel}`);
     for (const key of set) {
       this.set.add(key);
     }
