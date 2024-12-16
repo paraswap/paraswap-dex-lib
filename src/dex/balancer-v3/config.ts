@@ -10,10 +10,7 @@ export enum SUPPORTED_POOLS {
 
 export const disabledPoolIds: Record<string, Record<number, string[]>> = {
   BalancerV3: {
-    [Network.GNOSIS]: [
-      // pools with rate provider that returns nested rate instead of wrap/unwrap rate
-      '0x6e6bb18449fcf15b79efa2cfa70acf7593088029',
-    ],
+    [Network.GNOSIS]: [],
   },
 };
 
