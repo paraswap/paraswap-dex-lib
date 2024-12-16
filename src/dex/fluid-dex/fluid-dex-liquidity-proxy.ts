@@ -5,7 +5,6 @@ import { bigIntify, catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
-import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import {
   CommonAddresses,
@@ -14,7 +13,7 @@ import {
   PoolReserveResponse,
 } from './types';
 import { Address } from '../../types';
-import { Contract, ethers } from 'ethers';
+import { Contract } from 'ethers';
 
 export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiquidityProxyState> {
   handlers: {
@@ -30,8 +29,6 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
   addressesSubscribed: Address[];
 
   readonly liquidityIface = new Interface(LiquidityABI);
-
-  readonly poolIface = new Interface(FluidDexPoolABI);
 
   readonly resolverIface = new Interface(ResolverABI);
 
