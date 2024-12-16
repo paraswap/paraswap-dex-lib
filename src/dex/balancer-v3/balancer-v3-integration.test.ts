@@ -187,7 +187,7 @@ async function checkOnChainPricingNonMulti(
   // test match for each returned price
   for (const price of prices) {
     let expectedPrices: bigint[] = [];
-    if (price.data.steps.length === 1)
+    if (price.data.steps.length === 1 && !price.data.steps[0].isBuffer)
       expectedPrices = await querySinglePathPrices(
         network,
         side,
@@ -829,6 +829,234 @@ describe('BalancerV3', function () {
             dexKey,
           );
         }
+      });
+    });
+
+    describe('Buffer, Nested Rate', () => {
+      /*
+      The Gnosis pool, 0x272d6be442e30d7c87390edeb9b96f1e84cecd8d uses a rate provider that is nested. 
+      So unwrap rate does not equal rate between aave wsteth and eth. 
+      This particular case the rate provider accounts for growth of wsteth in terms of weth and the additional aave yield. 
+      This highlighted that rateProvider can not be used for buffer wrap/unwrap which instead should use erc4626 rate.
+      */
+      const dexHelper = new DummyDexHelper(network);
+
+      const tokens = Tokens[network];
+      const srcTokenSymbol = 'wstETH';
+      const destTokenSymbol = 'waGnowstETH';
+
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        100n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        100n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
+      beforeAll(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+        if (balancerV3.initializePricing) {
+          await balancerV3.initializePricing(blockNumber);
+        }
+      });
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          balancerV3,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+        );
+      });
+    });
+  });
+
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+    describe('Token/Underlying With Different Decimals', () => {
+      /*
+      Mainnet Pool, 0x5dd88b3aa3143173eb26552923922bdf33f50949 has an ERC4626 token with 18 decimals that uses a 6 decimal underlying.
+      Note for maths: Instead of manually adding support for each ERC4626 implementation (e.g. stata with Ray maths) we always use an 
+      18 decimal scaled rate and do 18 decimal maths to convert. We may end up loosing 100% accuracy but thats deemed acceptable.
+      */
+      describe.only('Buffer wrap 6decimal>18decimal', () => {
+        const dexHelper = new DummyDexHelper(network);
+
+        const tokens = Tokens[network];
+        const srcTokenSymbol = 'USDC';
+        const destTokenSymbol = 'steakUSDC';
+
+        const amountsForSell = [
+          0n,
+          1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        ];
+
+        const amountsForBuy = [
+          0n,
+          1n * BI_POWS[tokens[destTokenSymbol].decimals],
+          10n * BI_POWS[tokens[destTokenSymbol].decimals],
+        ];
+
+        beforeAll(async () => {
+          blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+          if (balancerV3.initializePricing) {
+            await balancerV3.initializePricing(blockNumber);
+          }
+        });
+
+        it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.SELL,
+            amountsForSell,
+          );
+        });
+
+        it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.BUY,
+            amountsForBuy,
+          );
+        });
+      });
+      describe('Buffer unwrap 18decimal>6decimal', () => {
+        const dexHelper = new DummyDexHelper(network);
+
+        const tokens = Tokens[network];
+        const srcTokenSymbol = 'steakUSDC';
+        const destTokenSymbol = 'USDC';
+
+        const amountsForSell = [
+          0n,
+          1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        ];
+
+        const amountsForBuy = [
+          0n,
+          1n * BI_POWS[tokens[destTokenSymbol].decimals],
+          10n * BI_POWS[tokens[destTokenSymbol].decimals],
+        ];
+
+        beforeAll(async () => {
+          blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+          if (balancerV3.initializePricing) {
+            await balancerV3.initializePricing(blockNumber);
+          }
+        });
+
+        it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.SELL,
+            amountsForSell,
+          );
+        });
+
+        it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.BUY,
+            amountsForBuy,
+          );
+        });
+      });
+      describe('Full boosted path', () => {
+        const dexHelper = new DummyDexHelper(network);
+
+        const tokens = Tokens[network];
+        const srcTokenSymbol = 'wUSDL';
+        const destTokenSymbol = 'USDC';
+
+        const amountsForSell = [
+          0n,
+          1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        ];
+
+        const amountsForBuy = [
+          0n,
+          1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        ];
+
+        beforeAll(async () => {
+          blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+          if (balancerV3.initializePricing) {
+            await balancerV3.initializePricing(blockNumber);
+          }
+        });
+
+        it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.SELL,
+            amountsForSell,
+          );
+        });
+
+        it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.BUY,
+            amountsForBuy,
+          );
+        });
       });
     });
   });

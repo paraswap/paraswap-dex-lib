@@ -8,6 +8,7 @@ import {
 import { BalancerV3Config } from './config';
 import { Interface, Result } from '@ethersproject/abi';
 import { IDexHelper } from '../../dex-helper';
+import { WAD } from './balancer-v3-pool';
 
 interface callData {
   target: string;
@@ -85,7 +86,7 @@ const poolOnChain: Record<
       poolAddress: string,
       data: any,
       startIndex: number,
-    ): CommonMutableState => {
+    ): Omit<CommonMutableState, 'erc4626Rates'> => {
       const resultTokenRates = decodeThrowError(
         contractInterface,
         'getPoolTokenRates',
@@ -259,6 +260,52 @@ export function decodeThrowError(
   );
 }
 
+export function getErc4626MultiCallData(
+  erc4626Interface: Interface,
+  immutablePoolStateMap: ImmutablePoolStateMap,
+): callData[] {
+  // We want to query rate for each unique ERC4626 token
+  const uniqueErc4626Tokens = Array.from(
+    new Set(
+      Object.values(immutablePoolStateMap).flatMap(pool =>
+        pool.tokens.filter((_, index) => pool.tokensUnderlying[index] !== null),
+      ),
+    ),
+  );
+
+  // query result for 1e18 (this maintains correct scaling for different token decimals in maths)
+  const erc4626MultiCallData: callData[] = uniqueErc4626Tokens.map(token => {
+    return {
+      target: token,
+      callData: erc4626Interface.encodeFunctionData('convertToAssets', [WAD]),
+    };
+  });
+  return erc4626MultiCallData;
+}
+
+export function decodeErc4626MultiCallData(
+  erc4626Interface: Interface,
+  erc4626MultiCallData: callData[],
+  dataResultErc4626: any[],
+) {
+  return Object.fromEntries(
+    erc4626MultiCallData.map((multiCallData, i) => {
+      const rate = decodeThrowError(
+        erc4626Interface,
+        'convertToAssets',
+        dataResultErc4626[i],
+        multiCallData.target,
+      );
+      if (!rate)
+        throw new Error(
+          `Failed to get result for convertToAssets for ${multiCallData.target}`,
+        );
+
+      return [multiCallData.target, BigInt(rate[0])];
+    }),
+  );
+}
+
 // Any data from API will be immutable. Mutable data such as balances, etc will be fetched via onchain/event state.
 export async function getOnChainState(
   network: number,
@@ -269,7 +316,13 @@ export async function getOnChainState(
   },
   blockNumber?: number,
 ): Promise<PoolStateMap> {
-  const multiCallData = Object.entries(immutablePoolStateMap)
+  const erc4626MultiCallData = getErc4626MultiCallData(
+    interfaces['ERC4626'],
+    immutablePoolStateMap,
+  );
+
+  // query pool specific onchain data, e.g. totalSupply, etc
+  const poolsMultiCallData = Object.entries(immutablePoolStateMap)
     .map(([address, pool]) => {
       return [
         ...poolOnChain['COMMON'].encode(network, interfaces['VAULT'], address),
@@ -283,9 +336,12 @@ export async function getOnChainState(
     .flat();
 
   // 500 is an arbitrary number chosen based on the blockGasLimit
-  const slicedMultiCallData = _.chunk(multiCallData, 500);
+  const slicedMultiCallData = _.chunk(
+    [...erc4626MultiCallData, ...poolsMultiCallData],
+    500,
+  );
 
-  const multicallData = (
+  const multicallDataResult = (
     await Promise.all(
       slicedMultiCallData.map(async _multiCallData =>
         dexHelper.multiContract.methods
@@ -295,20 +351,34 @@ export async function getOnChainState(
     )
   ).flat();
 
+  const dataResultErc4626 = multicallDataResult.slice(
+    0,
+    erc4626MultiCallData.length,
+  );
+  const dataResultPools = multicallDataResult.slice(
+    erc4626MultiCallData.length,
+  );
+
+  const tokensWithRates = decodeErc4626MultiCallData(
+    interfaces['ERC4626'],
+    erc4626MultiCallData,
+    dataResultErc4626,
+  );
+
   let i = 0;
   const poolStateMap = Object.fromEntries(
     Object.entries(immutablePoolStateMap).map(([address, pool]) => {
       const commonMutableData = poolOnChain['COMMON'].decode(
         interfaces['VAULT'],
         address,
-        multicallData,
+        dataResultPools,
         i,
       ) as CommonMutableState;
       i = i + poolOnChain['COMMON'].count;
       const poolMutableData = poolOnChain[pool.poolType].decode(
         interfaces[pool.poolType],
         address,
-        multicallData,
+        dataResultPools,
         i,
       );
       i = i + poolOnChain[pool.poolType].count;
@@ -318,6 +388,10 @@ export async function getOnChainState(
           ...pool,
           ...commonMutableData,
           ...poolMutableData,
+          erc4626Rates: pool.tokens.map(t => {
+            if (!tokensWithRates[t]) return null;
+            return tokensWithRates[t];
+          }),
         },
       ];
     }),
