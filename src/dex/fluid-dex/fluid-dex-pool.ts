@@ -131,8 +131,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<PoolState> {
     );
 
     const isSwapAndArbitragePaused =
-      BigInt(storageResults[0].returnData.toString()) >> BigInt(255) ===
-      BigInt(1);
+      BigInt(storageResults[0].returnData.toString()) >> 255n === 1n;
 
     return { isSwapAndArbitragePaused };
   }
