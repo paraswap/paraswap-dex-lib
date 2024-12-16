@@ -18,6 +18,7 @@ export type CommonImmutablePoolState = {
 // Mutable data types available on all pools (Available via onchain calls/events)
 export interface CommonMutableState {
   tokenRates: bigint[];
+  erc4626Rates: (bigint | null)[];
   balancesLiveScaled18: bigint[];
   swapFee: bigint;
   aggregateSwapFee: bigint;

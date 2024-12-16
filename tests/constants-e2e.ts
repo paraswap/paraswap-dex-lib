@@ -550,6 +550,11 @@ export const Tokens: {
       decimals: 18,
       symbol: 'USD0++',
     },
+    wUSDL: {
+      address: '0x7751e2f4b8ae93ef6b79d86419d42fe3295a4559',
+      decimals: 18,
+      symbol: 'wUSDL',
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
@@ -1516,6 +1521,10 @@ export const Tokens: {
       address: '0xc6b7aca6de8a6044e0e32d0c841a89244a10d284',
       decimals: 6,
     },
+    GNO: {
+      address: '0x9c58bacc331c9aa871afd802db6379a98e80cedb',
+      decimals: 18,
+    },
     wstETH: {
       address: '0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6',
       decimals: 18,
@@ -1676,6 +1685,7 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
+    wUSDL: '0x50fc9731dAcE42CaA45D166bfF404bBB7464bF21',
     USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
     sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
@@ -1900,7 +1910,7 @@ export const Holders: {
     BETS: '0x8cc2284c90d05578633418f9cde104f402375a65',
     HATCHY: '0x14ec295ec8def851ec6e2959df872dd24e422631',
     USDCe: '0x3a2434c698f8d79af1f5a9e43013157ca8b11a66',
-    USDC: '0xcc2da711D621A4491b338CAC88B9C0954db3e75B',
+    USDC: '0x64b4dE1b00EF830f3CC2FD68ee056aAD76C45BF6',
     USDTe: '0x84d34f4f83a87596cd3fb6887cff8f17bf5a7b83',
     WETHe: '0x9bdB521a97E95177BF252C253E256A60C3e14447',
     POPS: '0x5268c2331658cb0b2858cfa9db27d8f22f5434bc',
@@ -1916,7 +1926,7 @@ export const Holders: {
     TSD: '0x691A89db352B72dDb249bFe16503494eC0D920A4',
     THO: '0xc40d16c47394a506d451475c8a7c46c1175c1da1',
     aAvaUSDT: '0x50B1Ba98Cf117c9682048D56628B294ebbAA4ec2',
-    USDT: '0x0d0707963952f2fba59dd06f2b425ace40b492fe',
+    USDT: '0xCddc5d0Ebeb71a08ffF26909AA6c0d4e256b4fE1',
     aAvaWAVAX: '0x1B18Df70863636AEe4BfBAb6F7C70ceBCA9bA404',
     oldFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
     newFRAX: '0x4e3376018add04ebe4c46bf6f924ddec8c67aa7b',
@@ -2011,6 +2021,7 @@ export const Holders: {
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
   },
   [Network.GNOSIS]: {
+    GNO: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
     COW: '0x4fFAD6ac852c0Af0AA301376F4C5Dea3a928b120',
     XDAI: '0x9fc062032d4F2Fe7dAA601bd8B06C45F9c8f17Be',
     WXDAI: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
