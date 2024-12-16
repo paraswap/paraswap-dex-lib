@@ -131,6 +131,10 @@ export const Tokens: {
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
+    INST: {
+      address: '0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb',
+      decimals: 18,
+    },
     aEthUSDC: {
       address: '0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c',
       decimals: 6,
@@ -1681,6 +1685,7 @@ export const Holders: {
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
     MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
     ETHx: '0xFCC1A2c71F01B7f58Ed538a6B4AAa5A0724eB5A6',
+    INST: '0xe2Dd506477D4792A7E811D2E93D44CeBa82c668B',
     // Idle tokens
     AA_wstETH: '0xd7C1b48877A7dFA7D51cf1144c89C0A3F134F935',
     'AA_idle_cpPOR-USDC': '0x085c8eaccA6911fE60aE3f8FbAe5F3012E3A05Ec',

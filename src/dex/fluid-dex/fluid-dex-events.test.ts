@@ -10,6 +10,7 @@ import { FluidDexLiquidityProxyState } from './types';
 import { FluidDexConfig } from './config';
 import { FluidDexLiquidityProxy } from './fluid-dex-liquidity-proxy';
 import { FluidDexFactory } from './fluid-dex-factory';
+import { FluidDexEventPool } from './fluid-dex-pool';
 
 jest.setTimeout(50 * 1000);
 
@@ -125,5 +126,16 @@ describe('FluidDex EventPool Mainnet', function () {
         });
       },
     );
+  });
+
+  describe('Pool events', () => {
+    let dexPool: FluidDexEventPool;
+
+    const eventsToTest: Record<Address, EventMappings> = {
+      '0x8710039D5de6840EdE452A85672B32270a709aE2': {
+        LogPauseSwapAndArbitrage: [21337128],
+        LogUnpauseSwapAndArbitrage: [],
+      },
+    };
   });
 });

@@ -5,6 +5,7 @@ import { bigIntify, catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
+import FluidDexPoolABI from '../../abi/fluid-dex/fluid-dex.abi.json';
 import LiquidityABI from '../../abi/fluid-dex/liquidityUserModule.abi.json';
 import {
   CommonAddresses,
@@ -13,7 +14,13 @@ import {
   PoolReserveResponse,
 } from './types';
 import { Address } from '../../types';
-import { Contract } from 'ethers';
+import { Contract, ethers } from 'ethers';
+import { uint256ToBigInt } from '../../lib/decoders';
+import { DecodedStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/types';
+
+const {
+  utils: { hexlify, hexZeroPad },
+} = ethers;
 
 export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiquidityProxyState> {
   handlers: {
@@ -28,7 +35,9 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
 
   addressesSubscribed: Address[];
 
-  protected liquidityIface = new Interface(LiquidityABI);
+  readonly liquidityIface = new Interface(LiquidityABI);
+
+  readonly poolIface = new Interface(FluidDexPoolABI);
 
   readonly resolverIface = new Interface(ResolverABI);
 
@@ -123,7 +132,34 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
       });
 
     const convertedResult = this.convertToFluidDexPoolState(rawResult);
-
+    //
+    // const multicallData = convertedResult.poolsReserves.map(pool => ({
+    //   target: pool.pool,
+    //   callData: this.poolIface.encodeFunctionData('readFromStorage', [
+    //     hexZeroPad(hexlify(1), 32),
+    //   ]),
+    //   decodeFunction: uint256ToBigInt,
+    // }));
+    //
+    // const storageResults = await this.dexHelper.multiWrapper.tryAggregate<
+    //   bigint | DecodedStateMultiCallResultWithRelativeBitmaps
+    // >(
+    //   false,
+    //   multicallData,
+    //   blockNumber,
+    //   this.dexHelper.multiWrapper.defaultBatchSize,
+    //   false,
+    // );
+    //
+    // const poolsReserves = convertedResult.poolsReserves.map(
+    //   (poolReserve, index) => {
+    //     const isSwapAndArbitragePaused =
+    //       BigInt(storageResults[index].returnData.toString()) >> BigInt(255) ===
+    //       BigInt(1);
+    //     return { ...poolReserve, isSwapAndArbitragePaused };
+    //   },
+    // );
+    //
     this.logger.info(`${this.parentName}: ${this.name}: generating state...`);
 
     return convertedResult;
