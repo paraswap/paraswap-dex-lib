@@ -37,14 +37,10 @@ export class JsonPubSub {
   subscribe() {
     this.logger.info(`Subscribing to ${this.channel}`);
 
-    this.dexHelper.cache.subscribe(
-      this.channel,
-      (_, msg) => {
-        const decodedMsg = JSON.parse(msg) as JsonPubSubMsg;
-        this.handleSubscription(decodedMsg);
-      },
-      false,
-    );
+    this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
+      const decodedMsg = JSON.parse(msg) as JsonPubSubMsg;
+      this.handleSubscription(decodedMsg);
+    });
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
@@ -54,7 +50,6 @@ export class JsonPubSub {
     this.dexHelper.cache.publish(
       this.channel,
       JSON.stringify({ expiresAt, data }),
-      false,
     );
   }
 
@@ -136,14 +131,10 @@ export class SetPubSub {
   subscribe() {
     this.logger.info(`Subscribing to ${this.channel}`);
 
-    this.dexHelper.cache.subscribe(
-      this.channel,
-      (_, msg) => {
-        const decodedMsg = JSON.parse(msg) as SetPubSubMsg;
-        this.handleSubscription(decodedMsg);
-      },
-      false,
-    );
+    this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
+      const decodedMsg = JSON.parse(msg) as SetPubSubMsg;
+      this.handleSubscription(decodedMsg);
+    });
   }
 
   publish(set: SetPubSubMsg) {
@@ -153,7 +144,7 @@ export class SetPubSub {
     for (const key of set) {
       this.set.add(key);
     }
-    this.dexHelper.cache.publish(this.channel, JSON.stringify(set), false);
+    this.dexHelper.cache.publish(this.channel, JSON.stringify(set));
   }
 
   handleSubscription(set: SetPubSubMsg) {
