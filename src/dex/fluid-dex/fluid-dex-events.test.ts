@@ -11,14 +11,15 @@ import { FluidDexConfig } from './config';
 import { FluidDexLiquidityProxy } from './fluid-dex-liquidity-proxy';
 import { FluidDexFactory } from './fluid-dex-factory';
 import { FluidDexEventPool } from './fluid-dex-pool';
+import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 
 jest.setTimeout(50 * 1000);
 
-async function fetchLiquidityProxyState(
-  liquidityProxy: FluidDexLiquidityProxy,
+async function fetchState(
+  statefulEventSubscriber: StatefulEventSubscriber<any>,
   blockNumber: number,
-): Promise<FluidDexLiquidityProxyState> {
-  return liquidityProxy.generateState(blockNumber);
+): Promise<any> {
+  return statefulEventSubscriber.generateState(blockNumber);
 }
 
 // eventName -> blockNumbers
@@ -65,7 +66,7 @@ describe('FluidDex EventPool Mainnet', function () {
                       liquidityProxy,
                       liquidityProxy.addressesSubscribed,
                       (_blockNumber: number) =>
-                        fetchLiquidityProxyState(liquidityProxy, _blockNumber),
+                        fetchState(liquidityProxy, _blockNumber),
                       blockNumber,
                       `${dexKey}_${poolAddress}`,
                       dexHelper.provider,
@@ -134,8 +135,45 @@ describe('FluidDex EventPool Mainnet', function () {
     const eventsToTest: Record<Address, EventMappings> = {
       '0x8710039D5de6840EdE452A85672B32270a709aE2': {
         LogPauseSwapAndArbitrage: [21337128],
-        LogUnpauseSwapAndArbitrage: [],
+      },
+      '0x2886a01a0645390872a9eb99dae1283664b0c524': {
+        LogPauseSwapAndArbitrage: [21374547],
       },
     };
+
+    Object.entries(eventsToTest).forEach(
+      ([poolAddress, events]: [string, EventMappings]) => {
+        describe(`Events for ${poolAddress}`, () => {
+          beforeEach(() => {
+            dexPool = new FluidDexEventPool(
+              dexKey,
+              poolAddress,
+              network,
+              dexHelper,
+              logger,
+            );
+          });
+          Object.entries(events).forEach(
+            ([eventName, blockNumbers]: [string, number[]]) => {
+              describe(`${eventName}`, () => {
+                blockNumbers.forEach((blockNumber: number) => {
+                  it(`State after ${blockNumber}`, async function () {
+                    await testEventSubscriber(
+                      dexPool,
+                      dexPool.addressesSubscribed,
+                      (_blockNumber: number) =>
+                        fetchState(dexPool, _blockNumber),
+                      blockNumber,
+                      `${dexKey}_${poolAddress}`,
+                      dexHelper.provider,
+                    );
+                  });
+                });
+              });
+            },
+          );
+        });
+      },
+    );
   });
 });

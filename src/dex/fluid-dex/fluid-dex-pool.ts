@@ -69,6 +69,7 @@ export class FluidDexEventPool extends StatefulEventSubscriber<PoolState> {
       } catch (e) {
         return null;
       }
+
       if (event.name in this.handlers) {
         return this.handlers[event.name](event, state, log);
       }
@@ -79,11 +80,11 @@ export class FluidDexEventPool extends StatefulEventSubscriber<PoolState> {
     return null;
   }
 
-  handleLogPauseSwapAndArbitrage() {
+  handleLogPauseSwapAndArbitrage(): PoolState {
     return { isSwapAndArbitragePaused: true };
   }
 
-  handleLogUnpauseSwapAndArbitrage() {
+  handleLogUnpauseSwapAndArbitrage(): PoolState {
     return { isSwapAndArbitragePaused: false };
   }
 
