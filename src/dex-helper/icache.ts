@@ -68,12 +68,12 @@ export interface ICache {
 
   hgetAll(mapKey: string): Promise<Record<string, string>>;
 
-  // global default to `true`
   publish(channel: string, msg: string, global?: boolean): Promise<void>;
 
   subscribe(
     channel: string,
     cb: (channel: string, msg: string) => void,
+    global?: boolean,
   ): () => void;
 
   addBatchHGet(

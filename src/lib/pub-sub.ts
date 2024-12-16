@@ -37,10 +37,14 @@ export class JsonPubSub {
   subscribe() {
     this.logger.info(`Subscribing to ${this.channel}`);
 
-    this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
-      const decodedMsg = JSON.parse(msg) as JsonPubSubMsg;
-      this.handleSubscription(decodedMsg);
-    });
+    this.dexHelper.cache.subscribe(
+      this.channel,
+      (_, msg) => {
+        const decodedMsg = JSON.parse(msg) as JsonPubSubMsg;
+        this.handleSubscription(decodedMsg);
+      },
+      false,
+    );
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
@@ -132,10 +136,14 @@ export class SetPubSub {
   subscribe() {
     this.logger.info(`Subscribing to ${this.channel}`);
 
-    this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
-      const decodedMsg = JSON.parse(msg) as SetPubSubMsg;
-      this.handleSubscription(decodedMsg);
-    });
+    this.dexHelper.cache.subscribe(
+      this.channel,
+      (_, msg) => {
+        const decodedMsg = JSON.parse(msg) as SetPubSubMsg;
+        this.handleSubscription(decodedMsg);
+      },
+      false,
+    );
   }
 
   publish(set: SetPubSubMsg) {
