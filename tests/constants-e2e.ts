@@ -554,6 +554,11 @@ export const Tokens: {
       decimals: 18,
       symbol: 'USD0++',
     },
+    wUSDL: {
+      address: '0x7751e2f4b8ae93ef6b79d86419d42fe3295a4559',
+      decimals: 18,
+      symbol: 'wUSDL',
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
@@ -1520,6 +1525,10 @@ export const Tokens: {
       address: '0xc6b7aca6de8a6044e0e32d0c841a89244a10d284',
       decimals: 6,
     },
+    GNO: {
+      address: '0x9c58bacc331c9aa871afd802db6379a98e80cedb',
+      decimals: 18,
+    },
     wstETH: {
       address: '0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6',
       decimals: 18,
@@ -1680,6 +1689,7 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
+    wUSDL: '0x50fc9731dAcE42CaA45D166bfF404bBB7464bF21',
     USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
     sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
@@ -2016,6 +2026,7 @@ export const Holders: {
     USDC: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
   },
   [Network.GNOSIS]: {
+    GNO: '0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f',
     COW: '0x4fFAD6ac852c0Af0AA301376F4C5Dea3a928b120',
     XDAI: '0x9fc062032d4F2Fe7dAA601bd8B06C45F9c8f17Be',
     WXDAI: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',

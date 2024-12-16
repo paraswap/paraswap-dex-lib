@@ -14,7 +14,12 @@ import {
 } from './types';
 import { getPoolsApi } from './getPoolsApi';
 import vaultExtensionAbi_V3 from '../../abi/balancer-v3/vault-extension.json';
-import { decodeThrowError, getOnChainState } from './getOnChainState';
+import {
+  decodeErc4626MultiCallData,
+  decodeThrowError,
+  getErc4626MultiCallData,
+  getOnChainState,
+} from './getOnChainState';
 import { BalancerV3Config } from './config';
 import { SwapKind, Vault } from '@balancer-labs/balancer-maths';
 import {
@@ -25,7 +30,7 @@ import {
 } from './stablePool';
 import { BI_POWS } from '../../bigint-constants';
 
-const WAD = BI_POWS[18];
+export const WAD = BI_POWS[18];
 
 export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
@@ -64,6 +69,9 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       ['STABLE']: new Interface([
         'function getAmplificationParameter() external view returns (uint256 value, bool isUpdating, uint256 precision)',
         'function getAmplificationState() external view returns (tuple(uint64 startValue, uint64 endValue, uint32 startTime, uint32 endTime) amplificationState, uint256 precision)',
+      ]),
+      ['ERC4626']: new Interface([
+        'function convertToAssets(uint256 shares) external view returns (uint256 assets)',
       ]),
     };
 
@@ -445,11 +453,12 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     if (!poolState) return;
 
     // Fetch onchain pool rates
-    const poolRates = await this.getPoolRates(Object.keys(poolState));
+    const poolRates = await this.getPoolRates(poolState);
 
     // Update each pools rate
-    poolRates.forEach(({ poolAddress, tokenRates }, i) => {
+    poolRates.forEach(({ poolAddress, tokenRates, erc4626Rates }, i) => {
       poolState[poolAddress].tokenRates = tokenRates;
+      poolState[poolAddress].erc4626Rates = erc4626Rates;
     });
 
     // Update state
@@ -457,9 +466,15 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.setState(poolState, blockNumber);
   }
 
-  private async getPoolRates(poolAddresses: string[]) {
+  private async getPoolRates(poolState: PoolStateMap) {
+    const erc4626MultiCallData = getErc4626MultiCallData(
+      this.interfaces['ERC4626'],
+      poolState,
+    );
+
+    const poolAddresses = Object.keys(poolState);
     // For each pool make the getPoolTokenRates call
-    const multiCallData = poolAddresses.map(address => {
+    const poolsMultiCallData = poolAddresses.map(address => {
       return {
         target: BalancerV3Config.BalancerV3[this.network].vaultAddress,
         callData: this.interfaces['VAULT'].encodeFunctionData(
@@ -469,10 +484,13 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       };
     });
     // 500 is an arbitrary number chosen based on the blockGasLimit
-    const slicedMultiCallData = _.chunk(multiCallData, 500);
+    const slicedMultiCallData = _.chunk(
+      [...erc4626MultiCallData, ...poolsMultiCallData],
+      500,
+    );
 
     // Make the multicall
-    const multicallData = (
+    const multicallDataResult = (
       await Promise.all(
         slicedMultiCallData.map(async _multiCallData =>
           this.dexHelper.multiContract.methods
@@ -482,16 +500,34 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       )
     ).flat();
 
+    const dataResultErc4626 = multicallDataResult.slice(
+      0,
+      erc4626MultiCallData.length,
+    );
+    const dataResultPools = multicallDataResult.slice(
+      erc4626MultiCallData.length,
+    );
+
+    const tokensWithRates = decodeErc4626MultiCallData(
+      this.interfaces['ERC4626'],
+      erc4626MultiCallData,
+      dataResultErc4626,
+    );
+
     return poolAddresses.map((address, i) => {
       const tokenRateResult = decodeThrowError(
         this.interfaces['VAULT'],
         'getPoolTokenRates',
-        multicallData[i],
+        dataResultPools[i],
         address,
       );
       return {
         poolAddress: address,
         tokenRates: tokenRateResult.tokenRates.map((r: string) => BigInt(r)),
+        erc4626Rates: poolState[address].tokens.map(t => {
+          if (!tokensWithRates[t]) return null;
+          return tokensWithRates[t];
+        }),
       };
     });
   }
@@ -522,12 +558,18 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           address && address.toLowerCase() === tokenAddress.toLowerCase(),
       );
       if (tokenIndex !== -1) {
+        if (poolState.erc4626Rates[tokenIndex] === null) {
+          this.logger.error(
+            `missing erc4626 token rate ${poolState.tokens[tokenIndex]}`,
+          );
+          return null;
+        }
         return {
           isBoosted: true,
           mainToken: poolState.tokens[tokenIndex],
           underlyingToken: tokenAddress,
           index: tokenIndex,
-          rate: poolState.tokenRates[tokenIndex],
+          rate: poolState.erc4626Rates[tokenIndex]!,
         };
       }
     }
