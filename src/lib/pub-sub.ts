@@ -2,6 +2,7 @@ import NodeCache from 'node-cache';
 import { Network } from '../constants';
 import { IDexHelper } from '../dex-helper';
 import { Logger } from '../types';
+import _ from 'lodash';
 
 type JsonPubSubMsg = {
   expiresAt: number;
@@ -70,14 +71,20 @@ export class JsonPubSub {
   async getAndCache<T>(key: string): Promise<T | null> {
     const localValue = this.localCache.get<T>(key);
 
-    if (localValue) {
-      return localValue;
-    }
+    // if (localValue) {
+    //   return localValue;
+    // }
 
     const [value, ttl] = await Promise.all([
       this.dexHelper.cache.get(this.dexKey, this.network, key),
       this.dexHelper.cache.ttl(this.dexKey, this.network, key),
     ]);
+
+    // TODO-rfq-ps: compare local and cache value
+    const isEqual = _.isEqual(localValue, value);
+    if (!isEqual) {
+      this.logger.error('Values are not equal', { localValue, value });
+    }
 
     if (value && ttl > 0) {
       // setting ttl same as in cache
@@ -103,6 +110,7 @@ export class SetPubSub {
     private dexHelper: IDexHelper,
     private dexKey: string,
     channel: string,
+    private blackListCacheKey: string,
   ) {
     this.network = this.dexHelper.config.data.network;
     this.channel = `${this.network}_${this.dexKey}_${channel}`;
@@ -147,6 +155,20 @@ export class SetPubSub {
   }
 
   async has(key: string) {
-    return this.set.has(key);
+    const localValue = this.set.has(key);
+
+    const value = await this.dexHelper.cache.sismember(
+      this.blackListCacheKey,
+      key,
+    );
+
+    // TODO-rfq-ps: compare local and cache value
+    const isEqual = localValue === value;
+
+    if (!isEqual) {
+      this.logger.error('Values are not equal', { localValue, value });
+    }
+
+    return value;
   }
 }

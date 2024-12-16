@@ -129,6 +129,7 @@ export class RateFetcher {
 
     this.pricesPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'prices');
 
+    this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (config.blacklistConfig) {
       this.blackListFetcher = new Fetcher<BlackListResponse>(
         dexHelper.httpRequest,
@@ -153,10 +154,10 @@ export class RateFetcher {
         this.dexHelper,
         this.dexKey,
         'blacklist',
+        this.blackListCacheKey,
       );
     }
 
-    this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (this.config.firmRateConfig.secret) {
       this.firmRateAuth = this.authHttp(this.config.firmRateConfig.secret);
     }
