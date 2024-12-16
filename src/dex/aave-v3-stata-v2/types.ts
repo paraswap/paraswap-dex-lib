@@ -26,6 +26,7 @@ export type AaveV3StataData = {
 
 export type DexParams = {
   factoryAddresses: string[];
+  pool: string;
 };
 
 export type StataToken = {

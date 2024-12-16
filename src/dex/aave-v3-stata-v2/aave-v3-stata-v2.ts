@@ -34,6 +34,7 @@ import {
 } from './tokens';
 import { uint256ToBigInt } from '../../lib/decoders';
 import TokenABI from '../../abi/aavev3statav2/Token.json';
+import PoolABI from '../../abi/aavev3statav2/Pool.json';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { RETURN_AMOUNT_POS_32 } from '../../executor/constants';
 // import { IStaticATokenLM_ABI } from '@bgd-labs/aave-address-book';
@@ -60,6 +61,7 @@ export class AaveV3StataV2
 
   // static readonly stata = new Interface(IStaticATokenLM_ABI);
   static readonly stata = new Interface(TokenABI);
+  static readonly pool = new Interface(PoolABI);
 
   private state: Record<string, { blockNumber: number; rate: bigint }> = {};
 
@@ -224,8 +226,11 @@ export class AaveV3StataV2
           true,
           [
             {
-              target: stataToken.address,
-              callData: AaveV3StataV2.stata.encodeFunctionData('rate'),
+              target: this.config.pool,
+              callData: AaveV3StataV2.pool.encodeFunctionData(
+                'getReserveNormalizedIncome',
+                [stataToken.underlying],
+              ),
               decodeFunction: uint256ToBigInt,
             },
           ],
