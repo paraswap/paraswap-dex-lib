@@ -173,6 +173,7 @@ export type DexExchangeParam = {
   swappedAmountNotPresentInExchangeData?: boolean;
   preSwapUnwrapCalldata?: string;
   returnAmountPos: number | undefined;
+  insertFromAmountPos?: number;
   permit2Approval?: boolean;
 };
 
