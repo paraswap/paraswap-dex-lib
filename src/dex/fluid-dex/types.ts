@@ -72,7 +72,9 @@ export interface PoolWithReserves {
   debtReserves: DebtReserves;
 }
 
-export type FluidDexData = {};
+export type FluidDexData = {
+  poolId: string;
+};
 
 // Each pool has a contract address and token pairs.
 export type FluidDexPool = {

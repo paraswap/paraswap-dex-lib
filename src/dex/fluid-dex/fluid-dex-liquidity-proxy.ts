@@ -28,7 +28,7 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
 
   addressesSubscribed: Address[];
 
-  protected liquidityIface = new Interface(LiquidityABI);
+  readonly liquidityIface = new Interface(LiquidityABI);
 
   readonly resolverIface = new Interface(ResolverABI);
 
@@ -123,7 +123,6 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
       });
 
     const convertedResult = this.convertToFluidDexPoolState(rawResult);
-
     this.logger.info(`${this.parentName}: ${this.name}: generating state...`);
 
     return convertedResult;
