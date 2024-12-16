@@ -200,19 +200,13 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         return null;
 
       // Get the pools to use.
-      const pools = this.getPoolsByTokenPair(
-        srcToken.address,
-        destToken.address,
-      );
+      let pools = this.getPoolsByTokenPair(srcToken.address, destToken.address);
+
+      if (limitPools) {
+        pools = pools.filter(pool => limitPools.includes(pool.id));
+      }
 
       if (!pools.length) return null;
-      const poolIds = pools.map(pool => pool.id);
-      // Make sure the pool meets the optional limitPools filter.
-      if (
-        limitPools &&
-        !limitPools.every(limitPool => poolIds.includes(limitPool))
-      )
-        return null;
 
       const liquidityProxyState = await this.liquidityProxy.getStateOrGenerate(
         blockNumber,
