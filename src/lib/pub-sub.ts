@@ -50,6 +50,7 @@ export class JsonPubSub {
     this.dexHelper.cache.publish(
       this.channel,
       JSON.stringify({ expiresAt, data }),
+      false,
     );
   }
 
@@ -144,7 +145,7 @@ export class SetPubSub {
     for (const key of set) {
       this.set.add(key);
     }
-    this.dexHelper.cache.publish(this.channel, JSON.stringify(set));
+    this.dexHelper.cache.publish(this.channel, JSON.stringify(set), false);
   }
 
   handleSubscription(set: SetPubSubMsg) {

@@ -68,7 +68,8 @@ export interface ICache {
 
   hgetAll(mapKey: string): Promise<Record<string, string>>;
 
-  publish(channel: string, msg: string): Promise<void>;
+  // global default to `true`
+  publish(channel: string, msg: string, global?: boolean): Promise<void>;
 
   subscribe(
     channel: string,
