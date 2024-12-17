@@ -29,7 +29,6 @@ import {
 export class RateFetcher {
   private pairsFetcher: Fetcher<DexalotPairsResponse>;
   private pairsCacheKey: string;
-  private pairsCacheTTL: number;
 
   private rateFetcher: Fetcher<DexalotPricesResponse>;
   private pricesCacheKey: string;
@@ -51,7 +50,6 @@ export class RateFetcher {
     config: DexalotRateFetcherConfig,
   ) {
     this.pairsCacheKey = config.rateConfig.pairsCacheKey;
-    this.pairsCacheTTL = config.rateConfig.pairsCacheTTLSecs;
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.pricesCacheTTL = config.rateConfig.pricesCacheTTLSecs;
     this.tokensAddrCacheKey = config.rateConfig.tokensAddrCacheKey;
@@ -154,7 +152,7 @@ export class RateFetcher {
       this.dexKey,
       this.network,
       this.pairsCacheKey,
-      this.pairsCacheTTL,
+      this.tokensCacheTTL,
       JSON.stringify(dexPairs),
     );
 
