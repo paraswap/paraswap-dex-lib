@@ -173,6 +173,8 @@ export type DexExchangeParam = {
   swappedAmountNotPresentInExchangeData?: boolean;
   preSwapUnwrapCalldata?: string;
   returnAmountPos: number | undefined;
+  insertFromAmountPos?: number;
+  permit2Approval?: boolean;
 };
 
 export type DexExchangeParamWithBooleanNeedWrapNative = DexExchangeParam & {

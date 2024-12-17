@@ -27,8 +27,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 3,
       initRetryFrequency: 30,
       algebraStateMulticall: '0xa6bc273A238867dD74F2bBbD5fBbA3c941C939B9',
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/44554/quickswap-v3-02/0.0.7',
+      subgraphURL: '3L5Y5brtgvzDoAFGaPs63xz27KdviCdzRuY12spLSBGU',
       uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
       deployer: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
       version: 'v1.1',

@@ -5,9 +5,10 @@ export type PoolReserve = {
   pool: string;
   token0: string;
   token1: string;
+  fee: number;
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
-  fee: number;
+  dexLimits: DexLimits;
 };
 
 export type PoolReserveResponse = [
@@ -17,7 +18,30 @@ export type PoolReserveResponse = [
   BigNumber,
   BigNumber[],
   BigNumber[],
+  DexLimitResponse,
 ];
+
+export type DexLimits = {
+  withdrawableToken0: TokenLimit;
+  withdrawableToken1: TokenLimit;
+  borrowableToken0: TokenLimit;
+  borrowableToken1: TokenLimit;
+};
+
+export type DexLimitResponse = [
+  TokenLimitResponse,
+  TokenLimitResponse,
+  TokenLimitResponse,
+  TokenLimitResponse,
+];
+
+export type TokenLimit = {
+  available: bigint;
+  expandsTo: bigint;
+  expandsDuration: bigint;
+};
+
+export type TokenLimitResponse = [bigint, bigint, bigint];
 
 export type FluidDexLiquidityProxyState = {
   poolsReserves: readonly PoolReserve[];
@@ -48,7 +72,9 @@ export interface PoolWithReserves {
   debtReserves: DebtReserves;
 }
 
-export type FluidDexData = {};
+export type FluidDexData = {
+  poolId: string;
+};
 
 // Each pool has a contract address and token pairs.
 export type FluidDexPool = {

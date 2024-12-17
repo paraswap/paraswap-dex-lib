@@ -46,7 +46,7 @@ function getReaderCalldata(
       poolAddress,
       pool!.token0.toLowerCase() === srcToken.toLowerCase() ? true : false,
       amount,
-      funcName == 'estimateSwapIn' ? 0 : 2n * amount,
+      0,
     ]),
   }));
 }
@@ -71,7 +71,7 @@ async function checkOnChainPricing(
   dexHelper: DummyDexHelper,
   srcToken: string,
 ) {
-  const resolverAddress = '0xE8a07a32489BD9d5a00f01A55749Cf5cB854Fd13';
+  const resolverAddress = '0x45f4ad57e300da55c33dea579a40fcee000d7b94';
 
   const readerIface = new Interface(ResolverABI);
 
@@ -197,7 +197,7 @@ describe('FluidDex', function () {
       const tokenASymbol = 'wstETH';
       const tokenBSymbol = 'ETH';
 
-      const amountsForSell = [
+      const amountsForSwap = [
         0n,
         1n * BI_POWS[18],
         2n * BI_POWS[18],
@@ -220,8 +220,23 @@ describe('FluidDex', function () {
           tokenASymbol,
           tokenBSymbol,
           SwapSide.SELL,
-          amountsForSell,
+          amountsForSwap,
           'estimateSwapIn',
+          dexHelper,
+        );
+      });
+
+      it('wstETH -> ETH, getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          fluidDex,
+          network,
+          dexKey,
+          blockNumber,
+          tokenASymbol,
+          tokenBSymbol,
+          SwapSide.BUY,
+          amountsForSwap,
+          'estimateSwapOut',
           dexHelper,
         );
       });
@@ -235,8 +250,23 @@ describe('FluidDex', function () {
           tokenBSymbol,
           tokenASymbol,
           SwapSide.SELL,
-          amountsForSell,
+          amountsForSwap,
           'estimateSwapIn',
+          dexHelper,
+        );
+      });
+
+      it('ETH -> wstETH, getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          fluidDex,
+          network,
+          dexKey,
+          blockNumber,
+          tokenBSymbol,
+          tokenASymbol,
+          SwapSide.BUY,
+          amountsForSwap,
+          'estimateSwapOut',
           dexHelper,
         );
       });
@@ -246,7 +276,7 @@ describe('FluidDex', function () {
       const tokenASymbol = 'USDC';
       const tokenBSymbol = 'USDT';
 
-      const amountsForSell = [
+      const amountsForSwap = [
         0n,
         10n * BI_POWS[6],
         20n * BI_POWS[6],
@@ -258,7 +288,7 @@ describe('FluidDex', function () {
         80n * BI_POWS[6],
         90n * BI_POWS[6],
         100n * BI_POWS[6],
-        1000000n * BI_POWS[6],
+        1000n * BI_POWS[6],
       ];
 
       it('USDC -> USDT getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -270,8 +300,23 @@ describe('FluidDex', function () {
           tokenASymbol,
           tokenBSymbol,
           SwapSide.SELL,
-          amountsForSell,
+          amountsForSwap,
           'estimateSwapIn',
+          dexHelper,
+        );
+      });
+
+      it('USDC -> USDT getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          fluidDex,
+          network,
+          dexKey,
+          blockNumber,
+          tokenASymbol,
+          tokenBSymbol,
+          SwapSide.BUY,
+          amountsForSwap,
+          'estimateSwapOut',
           dexHelper,
         );
       });
@@ -285,8 +330,23 @@ describe('FluidDex', function () {
           tokenBSymbol,
           tokenASymbol,
           SwapSide.SELL,
-          amountsForSell,
+          amountsForSwap,
           'estimateSwapIn',
+          dexHelper,
+        );
+      });
+
+      it('USDT -> USDC getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          fluidDex,
+          network,
+          dexKey,
+          blockNumber,
+          tokenBSymbol,
+          tokenASymbol,
+          SwapSide.BUY,
+          amountsForSwap,
+          'estimateSwapOut',
           dexHelper,
         );
       });

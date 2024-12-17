@@ -10,14 +10,16 @@ import { FluidDexLiquidityProxyState } from './types';
 import { FluidDexConfig } from './config';
 import { FluidDexLiquidityProxy } from './fluid-dex-liquidity-proxy';
 import { FluidDexFactory } from './fluid-dex-factory';
+import { FluidDexEventPool } from './fluid-dex-pool';
+import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 
 jest.setTimeout(50 * 1000);
 
-async function fetchLiquidityProxyState(
-  liquidityProxy: FluidDexLiquidityProxy,
+async function fetchState(
+  statefulEventSubscriber: StatefulEventSubscriber<any>,
   blockNumber: number,
-): Promise<FluidDexLiquidityProxyState> {
-  return liquidityProxy.generateState(blockNumber);
+): Promise<any> {
+  return statefulEventSubscriber.generateState(blockNumber);
 }
 
 // eventName -> blockNumbers
@@ -38,9 +40,7 @@ describe('FluidDex EventPool Mainnet', function () {
     const eventsToTest: Record<Address, EventMappings> = {
       '0x52aa899454998be5b000ad077a46bbe360f4e497': {
         LogOperate: [
-          21091850, 21091882, 21091897, 21091915, 21092008, 21092022, 21092039,
-          21092142, 21092176, 21092187, 21092230, 21092286, 21092289, 21092295,
-          21092319, 21092352, 21092360, 21092368, 21092378, 21092383,
+          21190399, 21190405, 21190420, 21190452, 21190454, 21190465, 21190506,
         ],
       },
     };
@@ -66,7 +66,7 @@ describe('FluidDex EventPool Mainnet', function () {
                       liquidityProxy,
                       liquidityProxy.addressesSubscribed,
                       (_blockNumber: number) =>
-                        fetchLiquidityProxyState(liquidityProxy, _blockNumber),
+                        fetchState(liquidityProxy, _blockNumber),
                       blockNumber,
                       `${dexKey}_${poolAddress}`,
                       dexHelper.provider,
@@ -86,7 +86,7 @@ describe('FluidDex EventPool Mainnet', function () {
 
     const eventsToTest: Record<Address, EventMappings> = {
       '0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085': {
-        LogDexDeployed: [21105297, 21105362, 21105366, 21105370],
+        LogDexDeployed: [21199929],
       },
     };
 
@@ -115,6 +115,54 @@ describe('FluidDex EventPool Mainnet', function () {
                       dexFactory.addressesSubscribed,
                       (_blockNumber: number) =>
                         dexFactory.generateState(blockNumber),
+                      blockNumber,
+                      `${dexKey}_${poolAddress}`,
+                      dexHelper.provider,
+                    );
+                  });
+                });
+              });
+            },
+          );
+        });
+      },
+    );
+  });
+
+  describe('Pool events', () => {
+    let dexPool: FluidDexEventPool;
+
+    const eventsToTest: Record<Address, EventMappings> = {
+      '0x8710039D5de6840EdE452A85672B32270a709aE2': {
+        LogPauseSwapAndArbitrage: [21337128],
+      },
+      '0x2886a01a0645390872a9eb99dae1283664b0c524': {
+        LogPauseSwapAndArbitrage: [21374547],
+      },
+    };
+
+    Object.entries(eventsToTest).forEach(
+      ([poolAddress, events]: [string, EventMappings]) => {
+        describe(`Events for ${poolAddress}`, () => {
+          beforeEach(() => {
+            dexPool = new FluidDexEventPool(
+              dexKey,
+              poolAddress,
+              network,
+              dexHelper,
+              logger,
+            );
+          });
+          Object.entries(events).forEach(
+            ([eventName, blockNumbers]: [string, number[]]) => {
+              describe(`${eventName}`, () => {
+                blockNumbers.forEach((blockNumber: number) => {
+                  it(`State after ${blockNumber}`, async function () {
+                    await testEventSubscriber(
+                      dexPool,
+                      dexPool.addressesSubscribed,
+                      (_blockNumber: number) =>
+                        fetchState(dexPool, _blockNumber),
                       blockNumber,
                       `${dexKey}_${poolAddress}`,
                       dexHelper.provider,
