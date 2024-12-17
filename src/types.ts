@@ -173,6 +173,8 @@ export type DexExchangeParam = {
   swappedAmountNotPresentInExchangeData?: boolean;
   preSwapUnwrapCalldata?: string;
   returnAmountPos: number | undefined;
+  insertFromAmountPos?: number;
+  permit2Approval?: boolean;
 };
 
 export type DexExchangeParamWithBooleanNeedWrapNative = DexExchangeParam & {
@@ -294,7 +296,7 @@ export type Config = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
-  augustusV6Address?: Address;
+  augustusV6Address: Address;
   augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;

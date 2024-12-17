@@ -120,7 +120,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           pricesReqParams: {
             url:
               BEBOP_WS_API_URL +
-              `/pmm/${BebopConfig['Bebop'][network].chainName}/v3/pricing`,
+              `/pmm/${BebopConfig['Bebop'][network].chainName}/v3/pricing?format=protobuf`,
             headers: {
               name: BEBOP_AUTH_NAME,
               authorization: this.bebopAuthToken,
@@ -723,7 +723,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         }
       }
 
-      if (side == SwapSide.SELL) {
+      if (side === SwapSide.SELL) {
         const requiredAmount = BigInt(optimalSwapExchange.destAmount);
         const quoteAmount = BigInt(
           response.buyTokens[utils.getAddress(destToken.address)].amount,

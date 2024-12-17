@@ -397,15 +397,18 @@ export async function testE2E(
   await ts.setup();
 
   if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
-    const allowanceTx = await ts.simulate(
-      allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
-    );
+    // check if v5 is available in the config
+    if (generateConfig(network).tokenTransferProxyAddress !== NULL_ADDRESS) {
+      const allowanceTx = await ts.simulate(
+        allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
+      );
+      if (!allowanceTx.success) console.log(allowanceTx.url);
+      expect(allowanceTx!.success).toEqual(true);
+    }
     const augustusV6Allowance = await ts.simulate(
       allowAugustusV6(srcToken.address, senderAddress, network),
     );
-    if (!allowanceTx.success) console.log(allowanceTx.url);
     if (!augustusV6Allowance.success) console.log(augustusV6Allowance.url);
-    expect(allowanceTx!.success).toEqual(true);
     expect(augustusV6Allowance!.success).toEqual(true);
   }
 
@@ -777,7 +780,9 @@ export async function newTestE2E({
           .addBalance(senderAddress, twiceAmount.toString())
           .addAllowance(
             senderAddress,
-            config.tokenTransferProxyAddress,
+            priceRoute.version === ParaSwapVersion.V5
+              ? config.tokenTransferProxyAddress
+              : config.augustusV6Address,
             amount.toString(),
           );
       } else {
@@ -785,7 +790,9 @@ export async function newTestE2E({
           .addBalance(senderAddress, MAX_UINT)
           .addAllowance(
             senderAddress,
-            config.tokenTransferProxyAddress,
+            priceRoute.version === ParaSwapVersion.V5
+              ? config.tokenTransferProxyAddress
+              : config.augustusV6Address,
             (BigInt(MAX_UINT) / 8n).toString(),
           );
       }

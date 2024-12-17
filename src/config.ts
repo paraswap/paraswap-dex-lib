@@ -17,7 +17,7 @@ type BaseConfig = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
-  augustusV6Address?: Address;
+  augustusV6Address: Address;
   augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
@@ -147,6 +147,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
+    bebopAuthToken: process.env.API_KEY_BEBOP_AUTH_TOKEN || '',
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
       Executor02: '0x00C600b30fb0400701010F4b080409018B9006E0',
@@ -240,6 +241,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingMaxAllowedStateDelayInBlocks: 2,
     rpcPollingBlocksBackToTriggerUpdate: 1,
     forceRpcFallbackDexs: [],
+    swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
   },
   [Network.FANTOM]: {
     network: Network.FANTOM,
@@ -375,7 +377,6 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       PolygonZkEvmAdapter01: '0xd63B7691dD98fa89A2ea5e1604700489c585aa7B',
       PolygonZkEvmBuyAdapter: '0xe2137168CdA486a2555E16c597905854C84F9127',
     },
-
     rpcPollingMaxAllowedStateDelayInBlocks: 0,
     rpcPollingBlocksBackToTriggerUpdate: 0,
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
@@ -386,6 +387,35 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     forceRpcFallbackDexs: [],
     // FIXME: Not set properly
     uniswapV2ExchangeRouterAddress: '',
+  },
+  [Network.GNOSIS]: {
+    network: Network.GNOSIS,
+    networkName: 'Gnosis',
+    isTestnet: false,
+    nativeTokenName: 'xDAI',
+    nativeTokenSymbol: 'XDAI',
+    wrappedNativeTokenAddress: '0xe91d153e0b41518a2ce8dd3d7944fa863463a97d',
+    hasEIP1559: false,
+    augustusAddress: '0x0000000000000000000000000000000000000000',
+    tokenTransferProxyAddress: '0x0000000000000000000000000000000000000000',
+    multicallV2Address: '0xca11bde05977b3631167028862be2a173976ca11',
+    privateHttpProvider: process.env.HTTP_PROVIDER_100,
+    adapterAddresses: {},
+    augustusRFQAddress: '0x92EaD5bACf6F0E995FA46Ad8215A9b11f67ca241',
+    augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
+    executorsAddresses: {
+      Executor01: '0x000010036c0190e009a000d0fc3541100a07380a',
+      Executor02: '0x00c600b30fb0400701010f4b080409018b9006e0',
+      Executor03: '0xe009f00e200a090090fc70e02d70b232000c0802',
+    },
+    rpcPollingMaxAllowedStateDelayInBlocks: 0,
+    rpcPollingBlocksBackToTriggerUpdate: 0,
+    hashFlowDisabledMMs: [],
+    uniswapV3EventLoggingSampleRate: 0,
+    rfqConfigs: {},
+    forceRpcFallbackDexs: [],
+    uniswapV2ExchangeRouterAddress:
+      '0xfa39c1c670b48956eeF9fd0BbD0E81A290326330',
   },
   [Network.BASE]: {
     network: Network.BASE,
@@ -422,6 +452,35 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
     rpcPollingBlocksBackToTriggerUpdate: 3,
+    forceRpcFallbackDexs: [],
+  },
+  [Network.SEPOLIA]: {
+    network: Network.SEPOLIA,
+    networkName: 'Sepolia',
+    isTestnet: false,
+    nativeTokenName: 'Ether',
+    nativeTokenSymbol: 'ETH',
+    wrappedNativeTokenAddress: '0x7b79995e5f793a07bc00c21412e50ecae098e7f9',
+    hasEIP1559: true,
+    augustusAddress: '0x0000000000000000000000000000000000000000',
+    augustusRFQAddress: '0xF6322953d6bFcEACf77D90BC9a01B055249D44fE',
+    tokenTransferProxyAddress: '0x0000000000000000000000000000000000000000',
+    multicallV2Address: '0xcA11bde05977b3631167028862bE2a173976CA11',
+    privateHttpProvider: process.env.HTTP_PROVIDER_11155111,
+    augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
+    adapterAddresses: {},
+    rfqConfigs: {},
+    hashFlowDisabledMMs: [],
+    executorsAddresses: {
+      Executor01: '0x000010036c0190e009a000d0fc3541100a07380a',
+      Executor02: '0x00c600b30fb0400701010f4b080409018b9006e0',
+      Executor03: '0xe009f00e200a090090fc70e02d70b232000c0802',
+    },
+    uniswapV2ExchangeRouterAddress:
+      '0x0000000000000000000000000000000000000000',
+    rpcPollingMaxAllowedStateDelayInBlocks: 0,
+    rpcPollingBlocksBackToTriggerUpdate: 0,
+    uniswapV3EventLoggingSampleRate: 0,
     forceRpcFallbackDexs: [],
   },
 };

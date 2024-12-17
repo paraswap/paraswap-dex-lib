@@ -33,5 +33,10 @@ export const BebopConfig: DexConfigMap<DexParams> = {
       chainName: 'optimism',
       middleTokens: ['0x7F5c764cBc14f9669B88837ca1490cCa17c31607'],
     },
+    [Network.BSC]: {
+      settlementAddress: '0xbbbbbBB520d69a9775E85b458C58c648259FAD5F',
+      chainName: 'bsc',
+      middleTokens: ['0x55d398326f99059fF775485246999027B3197955'],
+    },
   },
 };
