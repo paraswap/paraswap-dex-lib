@@ -96,8 +96,12 @@ export class Usual extends SimpleExchange implements IDex<UsualBondData> {
       return null;
     }
 
-    const unitOut = BI_POWS[18]; // 1:1 swap
-    const amountsOut = amounts; // 1:1 swap, so output amounts are the same as input
+    const unitOut = BI_POWS[this.config.toToken.decimals]; // 1:1 swap
+    const amountsOut = amounts.map(
+      amount =>
+        (amount * BI_POWS[this.config.toToken.decimals]) /
+        BI_POWS[this.config.fromToken.decimals],
+    ); // 1:1 swap, so output amounts are the same as input
 
     return [
       {
