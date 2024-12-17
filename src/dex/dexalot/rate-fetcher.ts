@@ -1,7 +1,7 @@
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher } from '../../lib/fetcher/fetcher';
 import { validateAndCast } from '../../lib/validators';
-import { Logger, Token } from '../../types';
+import { Address, Logger, Token } from '../../types';
 import {
   DexalotRateFetcherConfig,
   DexalotPairsResponse,
@@ -9,6 +9,8 @@ import {
   DexalotPricesResponse,
   PriceDataMap,
   DexalotBlacklistResponse,
+  TokenDataMap,
+  TokenAddrDataMap,
 } from './types';
 import {
   pricesResponseValidator,
@@ -16,6 +18,13 @@ import {
   blacklistResponseValidator,
 } from './validators';
 import { Network } from '../../constants';
+import {
+  DEXALOT_BLACKLIST_CACHES_TTL_S,
+  DEXALOT_RATE_LIMITED_TTL_S,
+  DEXALOT_RATELIMIT_CACHE_VALUE,
+  DEXALOT_RESTRICT_TTL_S,
+  DEXALOT_RESTRICTED_CACHE_KEY,
+} from './constants';
 
 export class RateFetcher {
   private pairsFetcher: Fetcher<DexalotPairsResponse>;
@@ -193,5 +202,161 @@ export class RateFetcher {
       this.blacklistCacheTTL,
       JSON.stringify(blacklist.map(item => item.toLowerCase())),
     );
+  }
+
+  async getCachedTokens(): Promise<TokenDataMap | null> {
+    const cachedTokens = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.tokensCacheKey,
+    );
+
+    if (cachedTokens) {
+      return JSON.parse(cachedTokens) as TokenDataMap;
+    }
+
+    return null;
+  }
+
+  async getCachedPairs(): Promise<PairDataMap | null> {
+    const cachedPairs = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.pairsCacheKey,
+    );
+
+    if (cachedPairs) {
+      return JSON.parse(cachedPairs) as PairDataMap;
+    }
+
+    return null;
+  }
+
+  async getCachedTokensAddr(): Promise<TokenAddrDataMap | null> {
+    const cachedTokensAddr = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.tokensAddrCacheKey,
+    );
+
+    if (cachedTokensAddr) {
+      return JSON.parse(cachedTokensAddr) as TokenAddrDataMap;
+    }
+
+    return null;
+  }
+
+  async setBlacklist(
+    txOrigin: Address,
+    ttl: number = DEXALOT_BLACKLIST_CACHES_TTL_S,
+  ): Promise<boolean> {
+    const cachedBlacklist = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.blacklistCacheKey,
+    );
+
+    let blacklist: string[] = [];
+    if (cachedBlacklist) {
+      blacklist = JSON.parse(cachedBlacklist);
+    }
+
+    blacklist.push(txOrigin.toLowerCase());
+
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.blacklistCacheKey,
+      ttl,
+      JSON.stringify(blacklist),
+    );
+
+    return true;
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    const cachedBlacklist = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.blacklistCacheKey,
+    );
+
+    if (cachedBlacklist) {
+      const blacklist = JSON.parse(cachedBlacklist) as string[];
+      return blacklist.includes(txOrigin.toLowerCase());
+    }
+
+    // To not show pricing for rate limited users
+    if (await this.isRateLimited(txOrigin)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  async setRateLimited(txOrigin: Address, ttl = DEXALOT_RATE_LIMITED_TTL_S) {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getRateLimitedKey(txOrigin),
+      ttl,
+      DEXALOT_RATELIMIT_CACHE_VALUE,
+    );
+    return true;
+  }
+
+  async isRateLimited(txOrigin: Address): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.getRateLimitedKey(txOrigin),
+    );
+    return result === DEXALOT_RATELIMIT_CACHE_VALUE;
+  }
+
+  getRateLimitedKey(address: Address) {
+    return `rate_limited_${address}`.toLowerCase();
+  }
+
+  async getCachedPrices(): Promise<PriceDataMap | null> {
+    const cachedPrices = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.pricesCacheKey,
+    );
+
+    if (cachedPrices) {
+      return JSON.parse(cachedPrices) as PriceDataMap;
+    }
+
+    return null;
+  }
+
+  async restrictPool(
+    poolIdentifier: string,
+    ttl: number = DEXALOT_RESTRICT_TTL_S,
+  ): Promise<boolean> {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getRestrictedPoolKey(poolIdentifier),
+      ttl,
+      'true',
+    );
+    return true;
+  }
+
+  async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.getRestrictedPoolKey(poolIdentifier),
+    );
+
+    return result === 'true';
+  }
+
+  getRestrictedPoolKey(poolIdentifier: string): string {
+    return `${DEXALOT_RESTRICTED_CACHE_KEY}-${poolIdentifier}`;
   }
 }
