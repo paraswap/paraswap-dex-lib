@@ -145,7 +145,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             },
             headers: { Authorization: this.hashFlowAuthToken },
           },
-          getCachedMarketMakers: this.getCachedMarketMakers.bind(this),
           filterMarketMakers: this.getFilteredMarketMakers.bind(this),
           pricesCacheKey: this.pricesCacheKey,
           pricesCacheTTLSecs: HASHFLOW_PRICES_CACHES_TTL_S,
@@ -198,7 +197,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       return [];
     }
 
-    const levels = (await this.getCachedLevels()) || {};
+    const levels = (await this.rateFetcher.getCachedLevels()) || {};
     const makers = Object.keys(levels);
 
     return makers
@@ -381,32 +380,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     return undefined;
   }
 
-  async getCachedMarketMakers(): Promise<
-    MarketMakersResponse['marketMakers'] | null
-  > {
-    const cachedMarketMakers = await this.dexHelper.cache.rawget(
-      this.marketMakersCacheKey,
-    );
-
-    if (cachedMarketMakers) {
-      return JSON.parse(
-        cachedMarketMakers,
-      ) as MarketMakersResponse['marketMakers'];
-    }
-
-    return null;
-  }
-
-  async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
-    const cachedLevels = await this.dexHelper.cache.rawget(this.pricesCacheKey);
-
-    if (cachedLevels) {
-      return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
-    }
-
-    return null;
-  }
-
   async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -434,7 +407,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
       const marketMakersToUse = pools.map(p => p.split(`${prefix}_`).pop());
 
-      const levelsMap = (await this.getCachedLevels()) || {};
+      const levelsMap = (await this.rateFetcher.getCachedLevels()) || {};
 
       Object.keys(levelsMap).forEach(mmKey => {
         if (!marketMakersToUse.includes(mmKey)) {
@@ -715,7 +688,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         this.logger.warn(
           `${this.dexKey}-${this.network}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
         );
-        await this.setBlacklist(options.userAddress);
+        await this.rateFetcher.setBlacklist(options.userAddress);
       } else {
         if (e instanceof TooStrictSlippageCheckError) {
           this.logger.warn(
@@ -911,33 +884,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     };
   }
 
-  getBlackListKey(address: Address) {
-    return `blacklist_${address}`.toLowerCase();
-  }
-
-  async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.getBlackListKey(txOrigin),
-    );
-    return result === 'blacklisted';
-  }
-
-  async setBlacklist(
-    txOrigin: Address,
-    ttl: number = HASHFLOW_BLACKLIST_TTL_S,
-  ) {
-    await this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      this.getBlackListKey(txOrigin),
-      ttl,
-      'blacklisted',
-    );
-    return true;
-  }
-
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -1058,9 +1004,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
       .wrapETH(tokenAddress)
       .toLowerCase();
 
-    const makers = (await this.getCachedMarketMakers()) || [];
+    const makers = (await this.rateFetcher.getCachedMarketMakers()) || [];
     const filteredMakers = await this.getFilteredMarketMakers(makers);
-    const pLevels = (await this.getCachedLevels()) || {};
+    const pLevels = (await this.rateFetcher.getCachedLevels()) || {};
 
     let baseToken: Token | undefined = undefined;
     // TODO: Improve efficiency of this part. Quite inefficient way to determine
@@ -1119,5 +1065,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     if (this.rateFetcher) {
       this.rateFetcher.stop();
     }
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    return this.rateFetcher.isBlacklisted(txOrigin);
   }
 }

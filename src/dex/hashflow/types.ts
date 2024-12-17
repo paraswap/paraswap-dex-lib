@@ -64,7 +64,6 @@ export type HashflowRateFetcherConfig = {
     };
     pricesIntervalMs: number;
     markerMakersIntervalMs: number;
-    getCachedMarketMakers: () => Promise<string[] | null>;
     filterMarketMakers: (makers: string[]) => Promise<string[]>;
     pricesCacheKey: string;
     marketMakersCacheKey: string;

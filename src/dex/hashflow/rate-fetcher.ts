@@ -1,14 +1,19 @@
+import {
+  MarketMakersResponse,
+  PriceLevelsResponse,
+} from '@hashflow/taker-js/dist/types/rest';
 import { Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher, SkippingRequest } from '../../lib/fetcher/fetcher';
 import { validateAndCast } from '../../lib/validators';
-import { Logger } from '../../types';
+import { Address, Logger } from '../../types';
 import {
   HashflowMarketMakersResponse,
   HashflowRateFetcherConfig,
   HashflowRatesResponse,
 } from './types';
 import { marketMakersValidator, pricesResponseValidator } from './validators';
+import { HASHFLOW_BLACKLIST_TTL_S } from './constants';
 
 export class RateFetcher {
   private rateFetcher: Fetcher<HashflowRatesResponse>;
@@ -54,10 +59,10 @@ export class RateFetcher {
         info: {
           requestOptions: config.rateConfig.pricesReqParams,
           requestFunc: async options => {
-            const { filterMarketMakers, getCachedMarketMakers } =
-              config.rateConfig;
+            const { filterMarketMakers } = config.rateConfig;
 
-            const cachedMarketMakers = (await getCachedMarketMakers()) || [];
+            const cachedMarketMakers =
+              (await this.getCachedMarketMakers()) || [];
             const filteredMarketMakers = await filterMarketMakers(
               cachedMarketMakers,
             );
@@ -114,5 +119,58 @@ export class RateFetcher {
       JSON.stringify(levels),
       this.pricesCacheTTL,
     );
+  }
+
+  async getCachedMarketMakers(): Promise<
+    MarketMakersResponse['marketMakers'] | null
+  > {
+    const cachedMarketMakers = await this.dexHelper.cache.rawget(
+      this.marketMakersCacheKey,
+    );
+
+    if (cachedMarketMakers) {
+      return JSON.parse(
+        cachedMarketMakers,
+      ) as MarketMakersResponse['marketMakers'];
+    }
+
+    return null;
+  }
+
+  async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
+    const cachedLevels = await this.dexHelper.cache.rawget(this.pricesCacheKey);
+
+    if (cachedLevels) {
+      return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
+    }
+
+    return null;
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+    );
+    return result === 'blacklisted';
+  }
+
+  async setBlacklist(
+    txOrigin: Address,
+    ttl: number = HASHFLOW_BLACKLIST_TTL_S,
+  ) {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+      ttl,
+      'blacklisted',
+    );
+    return true;
+  }
+
+  getBlackListKey(address: Address) {
+    return `blacklist_${address}`.toLowerCase();
   }
 }
