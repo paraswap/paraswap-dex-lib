@@ -26,15 +26,13 @@ export class JsonPubSub {
     private dexHelper: IDexHelper,
     private dexKey: string,
     channel: string,
+    private defaultValue?: any,
+    private defaultTTL?: number,
   ) {
     this.network = this.dexHelper.config.data.network;
     this.channel = `${this.network}_${this.dexKey}_${channel}`;
 
     this.logger = this.dexHelper.getLogger(`JsonPubSub_${this.channel}`);
-  }
-
-  initialize() {
-    this.subscribe();
   }
 
   subscribe() {
@@ -114,6 +112,11 @@ export class JsonPubSub {
       return parsedValue;
     }
 
+    if (this.defaultValue && this.defaultTTL && this.defaultTTL > 0) {
+      this.localCache.set(key, this.defaultValue, this.defaultTTL);
+      return this.defaultValue;
+    }
+
     return null;
   }
 }
@@ -138,7 +141,7 @@ export class SetPubSub {
     this.logger = this.dexHelper.getLogger(`SetPubSub_${this.channel}`);
   }
 
-  async initialize(key: string) {
+  async initializeAndSubscribe(key: string) {
     // as there's no lazy load, we need to initialize the set
     const initSet = await this.dexHelper.cache.smembers(key);
     for (const member of initSet) {
@@ -160,10 +163,11 @@ export class SetPubSub {
   publish(set: SetPubSubMsg) {
     this.logger.info(`Publishing to ${this.channel}`);
 
-    // as there's no lazy load, also store locally
-    for (const key of set) {
-      this.set.add(key);
-    }
+    // should not be a problem, as we also subscribe to the channel on the same instance
+    // // as there's no lazy load, also store locally
+    // for (const key of set) {
+    //   this.set.add(key);
+    // }
     this.dexHelper.cache.publish(this.channel, JSON.stringify(set));
   }
 

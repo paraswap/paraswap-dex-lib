@@ -176,9 +176,9 @@ export class RateFetcher {
     }
 
     if (this.dexHelper.config.isSlave) {
-      this.pricesPubSub.initialize();
+      this.pricesPubSub.subscribe();
       if (this.blacklistPubSub) {
-        this.blacklistPubSub.initialize(this.blackListCacheKey);
+        this.blacklistPubSub.initializeAndSubscribe(this.blackListCacheKey);
       }
     }
   }

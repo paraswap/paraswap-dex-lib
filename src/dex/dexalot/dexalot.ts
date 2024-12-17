@@ -135,10 +135,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
-    if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher.start();
-    }
-
+    this.rateFetcher.start();
     return;
   }
 
@@ -943,5 +940,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     if (this.rateFetcher) {
       this.rateFetcher.stop();
     }
+  }
+
+  async isBlacklisted(userAddress: string): Promise<boolean> {
+    return this.rateFetcher.isBlacklisted(userAddress);
   }
 }

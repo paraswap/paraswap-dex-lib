@@ -25,12 +25,15 @@ import {
   DEXALOT_RESTRICT_TTL_S,
   DEXALOT_RESTRICTED_CACHE_KEY,
 } from './constants';
+import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
 
 export class RateFetcher {
   private pairsFetcher: Fetcher<DexalotPairsResponse>;
+  private tokensPubSub: JsonPubSub;
   private pairsCacheKey: string;
 
   private rateFetcher: Fetcher<DexalotPricesResponse>;
+  private ratePubSub: JsonPubSub;
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
@@ -39,8 +42,11 @@ export class RateFetcher {
   private tokensCacheTTL: number;
 
   private blacklistFetcher: Fetcher<DexalotBlacklistResponse>;
+  private blacklistPubSub: SetPubSub;
   private blacklistCacheKey: string;
   private blacklistCacheTTL: number;
+
+  private restrictedPoolPubSub: JsonPubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -58,6 +64,7 @@ export class RateFetcher {
     this.blacklistCacheKey = config.rateConfig.blacklistCacheKey;
     this.blacklistCacheTTL = config.rateConfig.blacklistCacheTTLSecs;
 
+    this.tokensPubSub = new JsonPubSub(dexHelper, dexKey, 'tokens');
     this.pairsFetcher = new Fetcher<DexalotPairsResponse>(
       dexHelper.httpRequest,
       {
@@ -76,6 +83,7 @@ export class RateFetcher {
       logger,
     );
 
+    this.ratePubSub = new JsonPubSub(dexHelper, dexKey, 'prices');
     this.rateFetcher = new Fetcher<DexalotPricesResponse>(
       dexHelper.httpRequest,
       {
@@ -92,6 +100,13 @@ export class RateFetcher {
       },
       config.rateConfig.pricesIntervalMs,
       logger,
+    );
+
+    this.blacklistPubSub = new SetPubSub(
+      dexHelper,
+      dexKey,
+      'blacklist',
+      this.blacklistCacheKey,
     );
 
     this.blacklistFetcher = new Fetcher<DexalotBlacklistResponse>(
@@ -111,12 +126,29 @@ export class RateFetcher {
       config.rateConfig.blacklistIntervalMs,
       logger,
     );
+
+    this.restrictedPoolPubSub = new JsonPubSub(
+      dexHelper,
+      dexKey,
+      'restricted-pool',
+      // using default value, we can lazy load non-restricted pools
+      // and restrict them by subscribing to this channel
+      'false',
+      DEXALOT_RESTRICT_TTL_S,
+    );
   }
 
   start() {
-    this.pairsFetcher.startPolling();
-    this.rateFetcher.startPolling();
-    this.blacklistFetcher.startPolling();
+    if (!this.dexHelper.config.isSlave) {
+      this.pairsFetcher.startPolling();
+      this.rateFetcher.startPolling();
+      this.blacklistFetcher.startPolling();
+    } else {
+      this.ratePubSub.subscribe();
+      this.tokensPubSub.subscribe();
+      this.restrictedPoolPubSub.subscribe();
+      this.blacklistPubSub.initializeAndSubscribe(this.blacklistCacheKey);
+    }
   }
 
   stop() {
@@ -171,6 +203,15 @@ export class RateFetcher {
       this.tokensCacheTTL,
       JSON.stringify(tokenAddrMap),
     );
+
+    this.tokensPubSub.publish(
+      {
+        [this.pairsCacheKey]: dexPairs,
+        [this.tokensCacheKey]: tokenMap,
+        [this.tokensAddrCacheKey]: tokenAddrMap,
+      },
+      this.tokensCacheTTL,
+    );
   }
 
   private handleRatesResponse(resp: DexalotPricesResponse): void {
@@ -187,58 +228,55 @@ export class RateFetcher {
       this.pricesCacheTTL,
       JSON.stringify(dexPrices),
     );
+
+    this.ratePubSub.publish(dexPrices, this.pricesCacheTTL);
   }
 
   private async handleBlacklistResponse(
     resp: DexalotBlacklistResponse,
   ): Promise<void> {
     const { blacklist } = resp;
+    const data = blacklist.map(item => item.toLowerCase());
     this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
       this.blacklistCacheKey,
       this.blacklistCacheTTL,
-      JSON.stringify(blacklist.map(item => item.toLowerCase())),
+      JSON.stringify(data),
     );
+
+    this.blacklistPubSub.publish(data);
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const cachedTokens = await this.tokensPubSub.getAndCache(
       this.tokensCacheKey,
     );
 
     if (cachedTokens) {
-      return JSON.parse(cachedTokens) as TokenDataMap;
+      return cachedTokens as TokenDataMap;
     }
 
     return null;
   }
 
   async getCachedPairs(): Promise<PairDataMap | null> {
-    const cachedPairs = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.pairsCacheKey,
-    );
+    const cachedPairs = await this.tokensPubSub.getAndCache(this.pairsCacheKey);
 
     if (cachedPairs) {
-      return JSON.parse(cachedPairs) as PairDataMap;
+      return cachedPairs as PairDataMap;
     }
 
     return null;
   }
 
   async getCachedTokensAddr(): Promise<TokenAddrDataMap | null> {
-    const cachedTokensAddr = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const cachedTokensAddr = await this.tokensPubSub.getAndCache(
       this.tokensAddrCacheKey,
     );
 
     if (cachedTokensAddr) {
-      return JSON.parse(cachedTokensAddr) as TokenAddrDataMap;
+      return cachedTokensAddr as TokenAddrDataMap;
     }
 
     return null;
@@ -269,21 +307,21 @@ export class RateFetcher {
       JSON.stringify(blacklist),
     );
 
+    this.blacklistPubSub.publish([txOrigin.toLowerCase()]);
+
     return true;
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const cachedBlacklist = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.blacklistCacheKey,
-    );
+    const blacklisted = await this.blacklistPubSub.has(txOrigin.toLowerCase());
 
-    if (cachedBlacklist) {
-      const blacklist = JSON.parse(cachedBlacklist) as string[];
-      return blacklist.includes(txOrigin.toLowerCase());
-    }
+    return blacklisted;
 
+    /*
+     rate-limit check was only if blacklist data set was not available,
+     in the current implementation it should not be the case,
+     so skip next check
+    */
     // To not show pricing for rate limited users
     if (await this.isRateLimited(txOrigin)) {
       return true;
@@ -317,14 +355,10 @@ export class RateFetcher {
   }
 
   async getCachedPrices(): Promise<PriceDataMap | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.pricesCacheKey,
-    );
+    const cachedPrices = await this.ratePubSub.getAndCache(this.pricesCacheKey);
 
     if (cachedPrices) {
-      return JSON.parse(cachedPrices) as PriceDataMap;
+      return cachedPrices as PriceDataMap;
     }
 
     return null;
@@ -341,13 +375,16 @@ export class RateFetcher {
       ttl,
       'true',
     );
+
+    await this.restrictedPoolPubSub.publish(
+      { [this.getRestrictedPoolKey(poolIdentifier)]: 'true' },
+      ttl,
+    );
     return true;
   }
 
   async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const result = await this.restrictedPoolPubSub.getAndCache(
       this.getRestrictedPoolKey(poolIdentifier),
     );
 
