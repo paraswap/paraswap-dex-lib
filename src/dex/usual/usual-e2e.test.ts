@@ -107,8 +107,8 @@ describe('UsualM<>Usd0 E2E', () => {
     const tokenASymbol: string = 'UsualM';
     const tokenBSymbol: string = 'USD0';
 
-    const tokenAAmount: string = '100000';
-    const tokenBAmount: string = '100000';
+    const tokenAAmount: string = '1000000';
+    const tokenBAmount: string = '1000000';
 
     testForNetwork(
       network,
