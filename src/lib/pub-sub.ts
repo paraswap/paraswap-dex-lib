@@ -3,9 +3,12 @@ import { Network } from '../constants';
 import { IDexHelper } from '../dex-helper';
 import { Logger } from '../types';
 import _ from 'lodash';
+import jsonDiff from 'json-diff';
+import hash from 'object-hash';
 
 type JsonPubSubMsg = {
   expiresAt: number;
+  hash: string;
   data: Record<string, unknown>;
 };
 
@@ -44,27 +47,37 @@ export class JsonPubSub {
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
-    this.logger.info(`Publishing to ${this.channel}`);
+    const hashedData = hash(data);
+    this.logger.info(`Publishing to ${this.channel} with hash ${hashedData}`);
 
     const expiresAt = Math.round(Date.now() / 1000) + ttl;
     this.dexHelper.cache.publish(
       this.channel,
-      JSON.stringify({ expiresAt, data }),
+      JSON.stringify({ expiresAt, data, hash: hashedData }),
     );
   }
 
   handleSubscription(json: JsonPubSubMsg) {
-    this.logger.info(`Received message from ${this.channel}`);
+    const { expiresAt, data, hash } = json;
 
-    const { expiresAt, data } = json;
+    this.logger.info(`Received message from ${this.channel} with hash ${hash}`);
 
     const now = Math.round(Date.now() / 1000);
     // calculating ttl as message might come with the delay
     const ttl = expiresAt - now;
 
-    const keys = Object.keys(data);
-    for (const key of keys) {
-      this.localCache.set(key, data[key], ttl);
+    if (ttl > 0) {
+      const keys = Object.keys(data);
+      for (const key of keys) {
+        this.localCache.set(key, data[key], ttl);
+      }
+    } else {
+      this.logger.error('Message has expired', {
+        now,
+        expiresAt,
+        diffInSeconds: now - expiresAt,
+        keys: Object.keys(data),
+      });
     }
   }
 
@@ -81,9 +94,16 @@ export class JsonPubSub {
     ]);
 
     // TODO-rfq-ps: compare local and cache value
-    const isEqual = _.isEqual(localValue, value);
+    const isEqual = _.isEqual(
+      localValue ?? null,
+      value ? JSON.parse(value) : null,
+    );
     if (!isEqual) {
-      this.logger.error('Values are not equal', { localValue, value });
+      this.logger.info(
+        `Values are not equal for the key ${key}, local: ${JSON.stringify(
+          localValue,
+        )}, cache: ${value}, diff: ${jsonDiff.diffString(localValue, value)}`,
+      );
     }
 
     if (value && ttl > 0) {
