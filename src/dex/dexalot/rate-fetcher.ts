@@ -29,11 +29,10 @@ import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
 
 export class RateFetcher {
   private pairsFetcher: Fetcher<DexalotPairsResponse>;
-  private tokensPubSub: JsonPubSub;
   private pairsCacheKey: string;
 
   private rateFetcher: Fetcher<DexalotPricesResponse>;
-  private ratePubSub: JsonPubSub;
+  private rateTokensPubSub: JsonPubSub;
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
@@ -64,7 +63,8 @@ export class RateFetcher {
     this.blacklistCacheKey = config.rateConfig.blacklistCacheKey;
     this.blacklistCacheTTL = config.rateConfig.blacklistCacheTTLSecs;
 
-    this.tokensPubSub = new JsonPubSub(dexHelper, dexKey, 'tokens');
+    this.rateTokensPubSub = new JsonPubSub(dexHelper, dexKey, 'rateTokens');
+
     this.pairsFetcher = new Fetcher<DexalotPairsResponse>(
       dexHelper.httpRequest,
       {
@@ -83,7 +83,6 @@ export class RateFetcher {
       logger,
     );
 
-    this.ratePubSub = new JsonPubSub(dexHelper, dexKey, 'prices');
     this.rateFetcher = new Fetcher<DexalotPricesResponse>(
       dexHelper.httpRequest,
       {
@@ -144,8 +143,7 @@ export class RateFetcher {
       this.rateFetcher.startPolling();
       this.blacklistFetcher.startPolling();
     } else {
-      this.ratePubSub.subscribe();
-      this.tokensPubSub.subscribe();
+      this.rateTokensPubSub.subscribe();
       this.restrictedPoolPubSub.subscribe();
 
       const initSet = await this.getAllBlacklisted();
@@ -206,7 +204,7 @@ export class RateFetcher {
       JSON.stringify(tokenAddrMap),
     );
 
-    this.tokensPubSub.publish(
+    this.rateTokensPubSub.publish(
       {
         [this.pairsCacheKey]: dexPairs,
         [this.tokensCacheKey]: tokenMap,
@@ -231,7 +229,10 @@ export class RateFetcher {
       JSON.stringify(dexPrices),
     );
 
-    this.ratePubSub.publish(dexPrices, this.pricesCacheTTL);
+    this.rateTokensPubSub.publish(
+      { [this.pricesCacheKey]: dexPrices },
+      this.pricesCacheTTL,
+    );
   }
 
   private async handleBlacklistResponse(
@@ -251,7 +252,7 @@ export class RateFetcher {
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.tokensPubSub.getAndCache(
+    const cachedTokens = await this.rateTokensPubSub.getAndCache(
       this.tokensCacheKey,
     );
 
@@ -263,7 +264,9 @@ export class RateFetcher {
   }
 
   async getCachedPairs(): Promise<PairDataMap | null> {
-    const cachedPairs = await this.tokensPubSub.getAndCache(this.pairsCacheKey);
+    const cachedPairs = await this.rateTokensPubSub.getAndCache(
+      this.pairsCacheKey,
+    );
 
     if (cachedPairs) {
       return cachedPairs as PairDataMap;
@@ -273,7 +276,7 @@ export class RateFetcher {
   }
 
   async getCachedTokensAddr(): Promise<TokenAddrDataMap | null> {
-    const cachedTokensAddr = await this.tokensPubSub.getAndCache(
+    const cachedTokensAddr = await this.rateTokensPubSub.getAndCache(
       this.tokensAddrCacheKey,
     );
 
@@ -362,7 +365,9 @@ export class RateFetcher {
   }
 
   async getCachedPrices(): Promise<PriceDataMap | null> {
-    const cachedPrices = await this.ratePubSub.getAndCache(this.pricesCacheKey);
+    const cachedPrices = await this.rateTokensPubSub.getAndCache(
+      this.pricesCacheKey,
+    );
 
     if (cachedPrices) {
       return cachedPrices as PriceDataMap;

@@ -24,18 +24,17 @@ import {
 } from './validators';
 
 export class CablesRateFetcher {
+  private tokensPairsPricesPubSub: JsonPubSub;
+
   public tokensFetcher: Fetcher<CablesTokensResponse>;
-  private tokensPubSub: JsonPubSub;
   public tokensCacheKey: string;
   public tokensCacheTTL: number;
 
   public pairsFetcher: Fetcher<CablesPairsResponse>;
-  private pairsPubSub: JsonPubSub;
   public pairsCacheKey: string;
   public pairsCacheTTL: number;
 
   public pricesFetcher: Fetcher<CablesPricesResponse>;
-  private pricesPubSub: JsonPubSub;
   public pricesCacheKey: string;
   public pricesCacheTTL: number;
 
@@ -65,7 +64,12 @@ export class CablesRateFetcher {
     this.blacklistCacheKey = config.rateConfig.blacklistCacheKey;
     this.blacklistCacheTTL = config.rateConfig.blacklistCacheTTLSecs;
 
-    this.pairsPubSub = new JsonPubSub(dexHelper, dexKey, 'pairs');
+    this.tokensPairsPricesPubSub = new JsonPubSub(
+      dexHelper,
+      dexKey,
+      'tokensPairsPrices',
+    );
+
     this.pairsFetcher = new Fetcher<CablesPairsResponse>(
       dexHelper.httpRequest,
       {
@@ -84,7 +88,6 @@ export class CablesRateFetcher {
       logger,
     );
 
-    this.pricesPubSub = new JsonPubSub(dexHelper, dexKey, 'prices');
     this.pricesFetcher = new Fetcher<CablesPricesResponse>(
       dexHelper.httpRequest,
       {
@@ -122,7 +125,6 @@ export class CablesRateFetcher {
       logger,
     );
 
-    this.tokensPubSub = new JsonPubSub(dexHelper, dexKey, 'tokens');
     this.tokensFetcher = new Fetcher<CablesTokensResponse>(
       dexHelper.httpRequest,
       {
@@ -160,9 +162,7 @@ export class CablesRateFetcher {
       this.blacklistFetcher.startPolling();
       this.tokensFetcher.startPolling();
     } else {
-      this.pairsPubSub.subscribe();
-      this.tokensPubSub.subscribe();
-      this.pricesPubSub.subscribe();
+      this.tokensPairsPricesPubSub.subscribe();
       this.restrictPubSub.subscribe();
 
       const initBlacklisted = await this.getAllBlacklisted();
@@ -193,7 +193,10 @@ export class CablesRateFetcher {
       JSON.stringify(normalized_pairs),
     );
 
-    this.pairsPubSub.publish(normalized_pairs, this.pairsCacheTTL);
+    this.tokensPairsPricesPubSub.publish(
+      { [this.pairsCacheKey]: normalized_pairs },
+      this.pairsCacheTTL,
+    );
   }
 
   private handlePricesResponse(res: CablesPricesResponse): void {
@@ -208,7 +211,10 @@ export class CablesRateFetcher {
       JSON.stringify(prices),
     );
 
-    this.pricesPubSub.publish(prices, this.pricesCacheTTL);
+    this.tokensPairsPricesPubSub.publish(
+      { [this.pricesCacheKey]: prices },
+      this.pricesCacheTTL,
+    );
   }
 
   private handleBlacklistResponse(res: CablesBlacklistResponse): void {
@@ -249,26 +255,31 @@ export class CablesRateFetcher {
       JSON.stringify(normalizedTokens),
     );
 
-    this.tokensPubSub.publish(normalizedTokens, this.tokensCacheTTL);
+    this.tokensPairsPricesPubSub.publish(
+      { [this.tokensCacheKey]: normalizedTokens },
+      this.tokensCacheTTL,
+    );
   }
 
   /**
    * CACHED UTILS
    */
   async getCachedTokens(): Promise<any> {
-    const cachedTokens = await this.tokensPubSub.getAndCache(
+    const cachedTokens = await this.tokensPairsPricesPubSub.getAndCache(
       this.tokensCacheKey,
     );
     return cachedTokens ?? {};
   }
 
   async getCachedPairs(): Promise<any> {
-    const cachedPairs = await this.pairsPubSub.getAndCache(this.pairsCacheKey);
+    const cachedPairs = await this.tokensPairsPricesPubSub.getAndCache(
+      this.pairsCacheKey,
+    );
     return cachedPairs ?? {};
   }
 
   async getCachedPrices(): Promise<any> {
-    const cachedPrices = await this.pricesPubSub.getAndCache(
+    const cachedPrices = await this.tokensPairsPricesPubSub.getAndCache(
       this.pricesCacheKey,
     );
 

@@ -44,8 +44,7 @@ export class RateFetcher {
   private tokenCacheKey: string;
   private pricesCacheKey: string;
 
-  private ratePubSub: JsonPubSub;
-  private tokensPubSub: JsonPubSub;
+  private rateTokensPubSub: JsonPubSub;
   private restrictedPubSub: JsonPubSub;
   private blacklistPubSub: SetPubSub;
 
@@ -61,7 +60,12 @@ export class RateFetcher {
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.tokenCacheKey = config.tokensConfig.tokensCacheKey;
 
-    this.ratePubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'rates');
+    this.rateTokensPubSub = new JsonPubSub(
+      this.dexHelper,
+      this.dexKey,
+      'rateTokens',
+    );
+
     this.rateFetcher = new Fetcher<SwaapV2PriceLevelsResponse>(
       dexHelper.httpRequest,
       {
@@ -80,7 +84,6 @@ export class RateFetcher {
       logger,
     );
 
-    this.tokensPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'tokens');
     this.tokensFetcher = new Fetcher<SwaapV2TokensResponse>(
       dexHelper.httpRequest,
       {
@@ -120,8 +123,7 @@ export class RateFetcher {
       this.rateFetcher.startPolling();
       this.tokensFetcher.startPolling();
     } else {
-      this.ratePubSub.subscribe();
-      this.tokensPubSub.subscribe();
+      this.rateTokensPubSub.subscribe();
       this.restrictedPubSub.subscribe();
 
       const initSet = await this.getAllBlacklisted();
@@ -152,7 +154,10 @@ export class RateFetcher {
       JSON.stringify(tokensMap),
     );
 
-    this.tokensPubSub.publish(tokensMap, this.tokensCacheTTL);
+    this.rateTokensPubSub.publish(
+      { [this.tokenCacheKey]: tokensMap },
+      this.tokensCacheTTL,
+    );
   }
 
   private handleRatesResponse(resp: SwaapV2PriceLevelsResponse): void {
@@ -191,7 +196,10 @@ export class RateFetcher {
       JSON.stringify(levels),
     );
 
-    this.tokensPubSub.publish(levels, this.pricesCacheTTL);
+    this.rateTokensPubSub.publish(
+      { [this.pricesCacheKey]: levels },
+      this.pricesCacheTTL,
+    );
   }
 
   async getQuote(
@@ -309,8 +317,8 @@ export class RateFetcher {
   }
 
   async getCachedTokens(): Promise<TokensMap | null> {
-    const cachedTokens = await this.tokensPubSub.getAndCache(
-      SWAAP_TOKENS_CACHE_KEY,
+    const cachedTokens = await this.rateTokensPubSub.getAndCache(
+      this.tokenCacheKey,
     );
 
     if (cachedTokens) {
@@ -321,8 +329,8 @@ export class RateFetcher {
   }
 
   async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
-    const cachedLevels = await this.ratePubSub.getAndCache(
-      SWAAP_PRICES_CACHE_KEY,
+    const cachedLevels = await this.rateTokensPubSub.getAndCache(
+      this.pricesCacheKey,
     );
 
     if (cachedLevels) {

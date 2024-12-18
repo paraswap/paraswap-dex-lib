@@ -1,10 +1,6 @@
 import { ChainId } from '@hashflow/sdk';
 import { Chain, ChainType, HashflowApi } from '@hashflow/taker-js';
-import {
-  MarketMakersResponse,
-  PriceLevelsResponse,
-  RfqResponse,
-} from '@hashflow/taker-js/dist/types/rest';
+import { RfqResponse } from '@hashflow/taker-js/dist/types/rest';
 import BigNumber from 'bignumber.js';
 import { Interface } from 'ethers/lib/utils';
 import { assert } from 'ts-essentials';

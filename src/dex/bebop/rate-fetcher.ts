@@ -26,13 +26,13 @@ export function levels_from_flat_array(values: number[]): BebopLevel[] {
 }
 
 export class RateFetcher {
+  private tokensPricesPubSub: JsonPubSub;
+
   private pricesFetcher: WebSocketFetcher<BebopPricingResponse>;
-  private pricesPubSub: JsonPubSub;
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
   private tokensFetcher: Fetcher<BebopTokensResponse>;
-  private tokensPubSub: JsonPubSub;
   private tokensAddrCacheKey: string;
   private tokensCacheTTL: number;
 
@@ -47,7 +47,13 @@ export class RateFetcher {
   ) {
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.pricesCacheTTL = config.rateConfig.pricesCacheTTLSecs;
-    this.pricesPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'prices');
+
+    this.tokensPricesPubSub = new JsonPubSub(
+      this.dexHelper,
+      this.dexKey,
+      'tokensPrices',
+    );
+
     this.pricesFetcher = new WebSocketFetcher<BebopPricingResponse>(
       {
         info: {
@@ -73,7 +79,6 @@ export class RateFetcher {
     this.tokensAddrCacheKey = config.rateConfig.tokensAddrCacheKey;
     this.tokensCacheTTL = config.rateConfig.tokensCacheTTLSecs;
 
-    this.tokensPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'tokens');
     this.tokensFetcher = new Fetcher<BebopTokensResponse>(
       dexHelper.httpRequest,
       {
@@ -130,8 +135,7 @@ export class RateFetcher {
       this.pricesFetcher.startPolling();
       this.tokensFetcher.startPolling();
     } else {
-      this.tokensPubSub.subscribe();
-      this.pricesPubSub.subscribe();
+      this.tokensPricesPubSub.subscribe();
       this.restrictPubSub.subscribe();
     }
   }
@@ -164,7 +168,10 @@ export class RateFetcher {
       JSON.stringify(tokenAddrMap),
     );
 
-    this.tokensPubSub.publish(tokenAddrMap, this.tokensCacheTTL);
+    this.tokensPricesPubSub.publish(
+      { [this.tokensAddrCacheKey]: tokenAddrMap },
+      this.tokensCacheTTL,
+    );
   }
 
   private handlePricesResponse(resp: BebopPricingResponse): void {
@@ -192,11 +199,14 @@ export class RateFetcher {
       JSON.stringify(normalizedPrices),
     );
 
-    this.pricesPubSub.publish(normalizedPrices, this.pricesCacheTTL);
+    this.tokensPricesPubSub.publish(
+      { [this.pricesCacheKey]: normalizedPrices },
+      this.pricesCacheTTL,
+    );
   }
 
   async getCachedPrices(): Promise<BebopPricingResponse | null> {
-    const cachedPrices = await this.pricesPubSub.getAndCache(
+    const cachedPrices = await this.tokensPricesPubSub.getAndCache(
       this.pricesCacheKey,
     );
 
@@ -208,7 +218,7 @@ export class RateFetcher {
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.tokensPubSub.getAndCache(
+    const cachedTokens = await this.tokensPricesPubSub.getAndCache(
       this.tokensAddrCacheKey,
     );
 

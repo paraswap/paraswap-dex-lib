@@ -143,7 +143,10 @@ export class RateFetcher {
       JSON.stringify(levels),
     );
 
-    this.ratePubSub.publish(levels, this.pricesCacheTTL);
+    this.ratePubSub.publish(
+      { [this.pricesCacheKey]: levels },
+      this.pricesCacheTTL,
+    );
   }
 
   async getCachedMarketMakers(): Promise<
