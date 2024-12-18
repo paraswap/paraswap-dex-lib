@@ -28,13 +28,10 @@ import {
   ClobSide,
   DexalotData,
   PairData,
-  PairDataMap,
-  PriceDataMap,
   DexalotRfqError,
   DexalotAPIParameters,
   RFQResponse,
   RFQResponseError,
-  TokenAddrDataMap,
   TokenDataMap,
 } from './types';
 import {
@@ -52,15 +49,10 @@ import {
   DEXALOT_API_PRICES_POLLING_INTERVAL_MS,
   DEXALOT_PRICES_CACHES_TTL_S,
   DEXALOT_GAS_COST,
-  DEXALOT_PAIRS_CACHES_TTL_S,
   DEXALOT_API_PAIRS_POLLING_INTERVAL_MS,
   DEXALOT_TOKENS_CACHES_TTL_S,
   DEXALOT_API_BLACKLIST_POLLING_INTERVAL_MS,
-  DEXALOT_RATE_LIMITED_TTL_S,
   DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
-  DEXALOT_RESTRICTED_CACHE_KEY,
-  DEXALOT_RESTRICT_TTL_S,
-  DEXALOT_RATELIMIT_CACHE_VALUE,
   DEXALOT_BLACKLIST_CACHES_TTL_S,
   DEXALOT_FIRM_QUOTE_TIMEOUT_MS,
 } from './constants';
@@ -130,7 +122,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           pricesReqParams: this.getAPIReqParams('api/rfq/prices', 'GET'),
           blacklistReqParams: this.getAPIReqParams('api/rfq/blacklist', 'GET'),
           pairsCacheKey: this.pairsCacheKey,
-          pairsCacheTTLSecs: DEXALOT_PAIRS_CACHES_TTL_S,
           pricesCacheKey: this.pricesCacheKey,
           pricesCacheTTLSecs: DEXALOT_PRICES_CACHES_TTL_S,
           tokensAddrCacheKey: this.tokensAddrCacheKey,
@@ -144,10 +135,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
-    if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher.start();
-    }
-
+    this.rateFetcher.start();
     return;
   }
 
@@ -169,7 +157,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       return null;
     }
 
-    const cachedTokens = (await this.getCachedTokens()) || {};
+    const cachedTokens = (await this.rateFetcher.getCachedTokens()) || {};
     if (
       !(normalizedSrcToken.address in cachedTokens) ||
       !(normalizedDestToken.address in cachedTokens)
@@ -180,7 +168,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     normalizedDestToken.symbol =
       cachedTokens[normalizedDestToken.address].symbol;
 
-    const cachedPairs = (await this.getCachedPairs()) || {};
+    const cachedPairs = (await this.rateFetcher.getCachedPairs()) || {};
 
     const potentialPairs = [
       {
@@ -228,7 +216,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       return [];
     }
 
-    const tokensAddr = (await this.getCachedTokensAddr()) || {};
+    const tokensAddr = (await this.rateFetcher.getCachedTokensAddr()) || {};
 
     return [
       this.getIdentifier(
@@ -236,62 +224,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         tokensAddr[pairData.quote.toLowerCase()],
       ),
     ];
-  }
-
-  async getCachedPairs(): Promise<PairDataMap | null> {
-    const cachedPairs = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.pairsCacheKey,
-    );
-
-    if (cachedPairs) {
-      return JSON.parse(cachedPairs) as PairDataMap;
-    }
-
-    return null;
-  }
-
-  async getCachedPrices(): Promise<PriceDataMap | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.pricesCacheKey,
-    );
-
-    if (cachedPrices) {
-      return JSON.parse(cachedPrices) as PriceDataMap;
-    }
-
-    return null;
-  }
-
-  async getCachedTokensAddr(): Promise<TokenAddrDataMap | null> {
-    const cachedTokensAddr = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.tokensAddrCacheKey,
-    );
-
-    if (cachedTokensAddr) {
-      return JSON.parse(cachedTokensAddr) as TokenAddrDataMap;
-    }
-
-    return null;
-  }
-
-  async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.tokensCacheKey,
-    );
-
-    if (cachedTokens) {
-      return JSON.parse(cachedTokens) as TokenDataMap;
-    }
-
-    return null;
   }
 
   normalizeAddress(address: string): string {
@@ -439,7 +371,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const normalizedSrcToken = this.normalizeToken(srcToken);
       const normalizedDestToken = this.normalizeToken(destToken);
 
-      this.tokensMap = (await this.getCachedTokens()) || {};
+      this.tokensMap = (await this.rateFetcher.getCachedTokens()) || {};
       if (normalizedSrcToken.address === normalizedDestToken.address) {
         return null;
       }
@@ -456,7 +388,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         : await this.getPoolIdentifiers(srcToken, destToken, side, blockNumber);
 
       pools = await Promise.all(
-        pools.map(async p => !(await this.isRestrictedPool(p))),
+        pools.map(async p => !(await this.rateFetcher.isRestrictedPool(p))),
       ).then(res => pools.filter((_v, i) => res[i]));
       if (pools.length === 0) {
         return null;
@@ -470,12 +402,12 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         return null;
       }
 
-      const priceMap = await this.getCachedPrices();
+      const priceMap = await this.rateFetcher.getCachedPrices();
       if (!priceMap) {
         return null;
       }
 
-      const tokensAddr = (await this.getCachedTokensAddr()) || {};
+      const tokensAddr = (await this.rateFetcher.getCachedTokensAddr()) || {};
       const pairKey = `${pairData.base}/${pairData.quote}`.toLowerCase();
       if (
         !(pairKey in priceMap) ||
@@ -558,7 +490,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<DexalotData>, ExchangeTxInfo]> {
-    if (await this.isBlacklisted(options.txOrigin)) {
+    if (await this.rateFetcher.isBlacklisted(options.txOrigin)) {
       this.logger.warn(
         `${this.dexKey}-${this.network}: blacklisted TX Origin address '${options.txOrigin}' trying to build a transaction. Bailing...`,
       );
@@ -728,9 +660,12 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           this.logger.warn(
             `${this.dexKey}-${this.network}: Encountered rate limited user=${options.userAddress}. Adding to local rate limit cache`,
           );
-          await this.setRateLimited(options.userAddress, errorData.RetryAfter);
+          await this.rateFetcher.setRateLimited(
+            options.userAddress,
+            errorData.RetryAfter,
+          );
         } else {
-          await this.setBlacklist(options.userAddress);
+          await this.rateFetcher.setBlacklist(options.userAddress);
           this.logger.error(
             `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}: ${errorData.Reason}`,
           );
@@ -751,7 +686,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             `${this.dexKey}-${this.network}: protocol is restricted for pools ${poolIdentifiers} due to swap: ${swapIdentifier}`,
           );
           await Promise.all(
-            poolIdentifiers.map(async p => await this.restrictPool(p)),
+            poolIdentifiers.map(
+              async p => await this.rateFetcher.restrictPool(p),
+            ),
           );
         }
       }
@@ -835,106 +772,6 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       payload,
       networkFee: '0',
     };
-  }
-
-  getRestrictedPoolKey(poolIdentifier: string): string {
-    return `${DEXALOT_RESTRICTED_CACHE_KEY}-${poolIdentifier}`;
-  }
-
-  async restrictPool(
-    poolIdentifier: string,
-    ttl: number = DEXALOT_RESTRICT_TTL_S,
-  ): Promise<boolean> {
-    await this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      this.getRestrictedPoolKey(poolIdentifier),
-      ttl,
-      'true',
-    );
-    return true;
-  }
-
-  async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.getRestrictedPoolKey(poolIdentifier),
-    );
-
-    return result === 'true';
-  }
-
-  async setBlacklist(
-    txOrigin: Address,
-    ttl: number = DEXALOT_BLACKLIST_CACHES_TTL_S,
-  ): Promise<boolean> {
-    const cachedBlacklist = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.blacklistCacheKey,
-    );
-
-    let blacklist: string[] = [];
-    if (cachedBlacklist) {
-      blacklist = JSON.parse(cachedBlacklist);
-    }
-
-    blacklist.push(txOrigin.toLowerCase());
-
-    this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      this.blacklistCacheKey,
-      ttl,
-      JSON.stringify(blacklist),
-    );
-
-    return true;
-  }
-
-  async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const cachedBlacklist = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.blacklistCacheKey,
-    );
-
-    if (cachedBlacklist) {
-      const blacklist = JSON.parse(cachedBlacklist) as string[];
-      return blacklist.includes(txOrigin.toLowerCase());
-    }
-
-    // To not show pricing for rate limited users
-    if (await this.isRateLimited(txOrigin)) {
-      return true;
-    }
-
-    return false;
-  }
-
-  getRateLimitedKey(address: Address) {
-    return `rate_limited_${address}`.toLowerCase();
-  }
-
-  async isRateLimited(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.getRateLimitedKey(txOrigin),
-    );
-    return result === DEXALOT_RATELIMIT_CACHE_VALUE;
-  }
-
-  async setRateLimited(txOrigin: Address, ttl = DEXALOT_RATE_LIMITED_TTL_S) {
-    await this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      this.getRateLimitedKey(txOrigin),
-      ttl,
-      DEXALOT_RATELIMIT_CACHE_VALUE,
-    );
-    return true;
   }
 
   async getSimpleParam(
@@ -1037,9 +874,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     const normalizedTokenAddress = this.normalizeAddress(tokenAddress);
-    const pairs = (await this.getCachedPairs()) || {};
-    this.tokensMap = (await this.getCachedTokens()) || {};
-    const tokensAddr = (await this.getCachedTokensAddr()) || {};
+    const pairs = (await this.rateFetcher.getCachedPairs()) || {};
+    this.tokensMap = (await this.rateFetcher.getCachedTokens()) || {};
+    const tokensAddr = (await this.rateFetcher.getCachedTokensAddr()) || {};
     const token = this.getTokenFromAddress(normalizedTokenAddress);
     if (!token) {
       return [];
@@ -1103,5 +940,9 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
     if (this.rateFetcher) {
       this.rateFetcher.stop();
     }
+  }
+
+  async isBlacklisted(userAddress: string): Promise<boolean> {
+    return this.rateFetcher.isBlacklisted(userAddress);
   }
 }

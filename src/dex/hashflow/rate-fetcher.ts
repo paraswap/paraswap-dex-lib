@@ -1,23 +1,32 @@
+import {
+  MarketMakersResponse,
+  PriceLevelsResponse,
+} from '@hashflow/taker-js/dist/types/rest';
 import { Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher, SkippingRequest } from '../../lib/fetcher/fetcher';
 import { validateAndCast } from '../../lib/validators';
-import { Logger } from '../../types';
+import { Address, Logger } from '../../types';
 import {
   HashflowMarketMakersResponse,
   HashflowRateFetcherConfig,
   HashflowRatesResponse,
 } from './types';
 import { marketMakersValidator, pricesResponseValidator } from './validators';
+import { HASHFLOW_BLACKLIST_TTL_S } from './constants';
+import { ExpKeyValuePubSub, NonExpSetPubSub } from '../../lib/pub-sub';
 
 export class RateFetcher {
   private rateFetcher: Fetcher<HashflowRatesResponse>;
+  private ratePubSub: ExpKeyValuePubSub;
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
   private marketMakersFetcher: Fetcher<HashflowMarketMakersResponse>;
   private marketMakersCacheKey: string;
   private marketMakersCacheTTL: number;
+
+  private blacklistedPubSub: NonExpSetPubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -48,16 +57,18 @@ export class RateFetcher {
       logger,
     );
 
+    this.ratePubSub = new ExpKeyValuePubSub(dexHelper, dexKey, 'rates');
+
     this.rateFetcher = new Fetcher<HashflowRatesResponse>(
       dexHelper.httpRequest,
       {
         info: {
           requestOptions: config.rateConfig.pricesReqParams,
           requestFunc: async options => {
-            const { filterMarketMakers, getCachedMarketMakers } =
-              config.rateConfig;
+            const { filterMarketMakers } = config.rateConfig;
 
-            const cachedMarketMakers = (await getCachedMarketMakers()) || [];
+            const cachedMarketMakers =
+              (await this.getCachedMarketMakers()) || [];
             const filteredMarketMakers = await filterMarketMakers(
               cachedMarketMakers,
             );
@@ -86,11 +97,24 @@ export class RateFetcher {
       config.rateConfig.pricesIntervalMs,
       logger,
     );
+
+    this.blacklistedPubSub = new NonExpSetPubSub(
+      dexHelper,
+      dexKey,
+      'blacklisted',
+    );
   }
 
-  start() {
-    this.marketMakersFetcher.startPolling();
-    this.rateFetcher.startPolling();
+  async start() {
+    if (!this.dexHelper.config.isSlave) {
+      this.marketMakersFetcher.startPolling();
+      this.rateFetcher.startPolling();
+    } else {
+      this.ratePubSub.subscribe();
+
+      const allBlacklisted = await this.getAllBlacklisted();
+      this.blacklistedPubSub.initializeAndSubscribe(allBlacklisted);
+    }
   }
 
   stop() {
@@ -109,10 +133,84 @@ export class RateFetcher {
 
   private handleRatesResponse(resp: HashflowRatesResponse): void {
     const { levels } = resp;
-    this.dexHelper.cache.rawset(
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
       this.pricesCacheKey,
+      this.pricesCacheTTL,
       JSON.stringify(levels),
+    );
+
+    this.ratePubSub.publish(
+      { [this.pricesCacheKey]: levels },
       this.pricesCacheTTL,
     );
+  }
+
+  async getCachedMarketMakers(): Promise<
+    MarketMakersResponse['marketMakers'] | null
+  > {
+    const cachedMarketMakers = await this.dexHelper.cache.rawget(
+      this.marketMakersCacheKey,
+    );
+
+    if (cachedMarketMakers) {
+      return JSON.parse(
+        cachedMarketMakers,
+      ) as MarketMakersResponse['marketMakers'];
+    }
+
+    return null;
+  }
+
+  async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
+    const cachedLevels = await this.ratePubSub.getAndCache(this.pricesCacheKey);
+
+    if (cachedLevels) {
+      return cachedLevels as PriceLevelsResponse['levels'];
+    }
+
+    return null;
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    return this.blacklistedPubSub.has(txOrigin.toLowerCase());
+  }
+
+  async setBlacklist(
+    txOrigin: Address,
+    ttl: number = HASHFLOW_BLACKLIST_TTL_S,
+  ) {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+      ttl,
+      'blacklisted',
+    );
+
+    this.blacklistedPubSub.publish([txOrigin.toLowerCase()]);
+
+    return true;
+  }
+
+  async getAllBlacklisted(): Promise<Address[]> {
+    const defaultKey = this.getBlackListKey('');
+    const pattern = `${defaultKey}*`;
+    const allBlacklisted = await this.dexHelper.cache.keys(
+      this.dexKey,
+      this.network,
+      pattern,
+    );
+
+    return allBlacklisted.map(t => this.getAddressFromBlackListKey(t));
+  }
+
+  getBlackListKey(address: Address) {
+    return `blacklist_${address}`.toLowerCase();
+  }
+
+  getAddressFromBlackListKey(key: Address) {
+    return (key.split('blacklist_')[1] ?? '').toLowerCase();
   }
 }
