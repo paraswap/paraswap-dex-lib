@@ -163,14 +163,10 @@ export class RateFetcher {
   }
 
   async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
-    const cachedLevels = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.pricesCacheKey,
-    );
+    const cachedLevels = await this.ratePubSub.getAndCache(this.pricesCacheKey);
 
     if (cachedLevels) {
-      return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
+      return cachedLevels as PriceLevelsResponse['levels'];
     }
 
     return null;
