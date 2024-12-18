@@ -114,7 +114,6 @@ export class RateFetcher {
       this.dexHelper,
       this.dexKey,
       'blacklist',
-      '',
     );
   }
 

@@ -105,13 +105,7 @@ export class RateFetcher {
       logger,
     );
 
-    this.blacklistPubSub = new NonExpSetPubSub(
-      dexHelper,
-      dexKey,
-      'blacklist',
-      this.blacklistCacheKey,
-    );
-
+    this.blacklistPubSub = new NonExpSetPubSub(dexHelper, dexKey, 'blacklist');
     this.blacklistFetcher = new Fetcher<DexalotBlacklistResponse>(
       dexHelper.httpRequest,
       {

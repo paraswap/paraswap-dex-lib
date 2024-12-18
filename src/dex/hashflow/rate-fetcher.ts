@@ -102,8 +102,6 @@ export class RateFetcher {
       dexHelper,
       dexKey,
       'blacklisted',
-      // TODO-rfq-ps: temporary for validation local with cache
-      '',
     );
   }
 

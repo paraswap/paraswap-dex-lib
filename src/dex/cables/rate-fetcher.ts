@@ -106,12 +106,7 @@ export class CablesRateFetcher {
       logger,
     );
 
-    this.blacklistPubSub = new NonExpSetPubSub(
-      dexHelper,
-      dexKey,
-      'blacklist',
-      '',
-    );
+    this.blacklistPubSub = new NonExpSetPubSub(dexHelper, dexKey, 'blacklist');
     this.blacklistFetcher = new Fetcher<CablesBlacklistResponse>(
       dexHelper.httpRequest,
       {
