@@ -2,8 +2,12 @@ import { Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher } from '../../lib/fetcher/fetcher';
 import { validateAndCast } from '../../lib/validators';
-import { Logger, Token } from '../../types';
+import { Address, Logger, Token } from '../../types';
 import { PairData } from '../cables/types';
+import {
+  CABLES_RESTRICT_TTL_S,
+  CABLES_RESTRICTED_CACHE_KEY,
+} from './constants';
 import {
   CablesBlacklistResponse,
   CablesPairsResponse,
@@ -207,6 +211,74 @@ export class CablesRateFetcher {
       this.tokensCacheKey,
       this.tokensCacheTTL,
       JSON.stringify(normalizedTokens),
+    );
+  }
+
+  /**
+   * CACHED UTILS
+   */
+  async getCachedTokens(): Promise<any> {
+    const cachedTokens = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.tokensCacheKey,
+    );
+
+    return cachedTokens ? JSON.parse(cachedTokens) : {};
+  }
+
+  async getCachedPairs(): Promise<any> {
+    const cachedPairs = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.pairsCacheKey,
+    );
+
+    return cachedPairs ? JSON.parse(cachedPairs) : {};
+  }
+
+  async getCachedPrices(): Promise<any> {
+    const cachedPrices = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.pricesCacheKey,
+    );
+
+    return cachedPrices ? JSON.parse(cachedPrices) : {};
+  }
+
+  async isRestricted(): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      CABLES_RESTRICTED_CACHE_KEY,
+    );
+
+    return result === 'true';
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    const cachedBlacklist = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.blacklistCacheKey,
+    );
+
+    if (cachedBlacklist) {
+      const blacklist = JSON.parse(cachedBlacklist) as string[];
+      return blacklist.includes(txOrigin.toLowerCase());
+    }
+
+    return false;
+  }
+
+  async restrict(): Promise<void> {
+    return this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      CABLES_RESTRICTED_CACHE_KEY,
+      CABLES_RESTRICT_TTL_S,
+      'true',
     );
   }
 }
