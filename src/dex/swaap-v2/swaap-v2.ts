@@ -133,9 +133,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
-    if (!this.dexHelper.config.isSlave) {
-      await this.rateFetcher.start();
-    }
+    await this.rateFetcher.start();
 
     return;
   }

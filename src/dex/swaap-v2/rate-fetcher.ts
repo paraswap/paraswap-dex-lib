@@ -16,7 +16,6 @@ import {
 } from './types';
 import {
   priceLevelsResponseValidator,
-  getQuoteResponseValidator,
   getTokensResponseValidator,
   notifyResponseValidator,
   getQuoteResponseWithRecipientValidator,
@@ -32,7 +31,8 @@ import {
   SWAAP_POOL_RESTRICT_TTL_S,
 } from './constants';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
-import { CACHE_PREFIX, Network } from '../../constants';
+import { Network } from '../../constants';
+import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -44,7 +44,10 @@ export class RateFetcher {
   private tokenCacheKey: string;
   private pricesCacheKey: string;
 
-  private runtimeMMsRestrictHashMapKey: string;
+  private ratePubSub: JsonPubSub;
+  private tokensPubSub: JsonPubSub;
+  private restrictedPubSub: JsonPubSub;
+  private blacklistPubSub: SetPubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -58,9 +61,7 @@ export class RateFetcher {
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.tokenCacheKey = config.tokensConfig.tokensCacheKey;
 
-    this.runtimeMMsRestrictHashMapKey =
-      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
-
+    this.ratePubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'rates');
     this.rateFetcher = new Fetcher<SwaapV2PriceLevelsResponse>(
       dexHelper.httpRequest,
       {
@@ -79,6 +80,7 @@ export class RateFetcher {
       logger,
     );
 
+    this.tokensPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'tokens');
     this.tokensFetcher = new Fetcher<SwaapV2TokensResponse>(
       dexHelper.httpRequest,
       {
@@ -96,11 +98,35 @@ export class RateFetcher {
       config.tokensConfig.tokensIntervalMs,
       logger,
     );
+
+    this.restrictedPubSub = new JsonPubSub(
+      this.dexHelper,
+      this.dexKey,
+      'restricted',
+      'pool_is_not_restricted',
+      SWAAP_POOL_RESTRICT_TTL_S,
+    );
+
+    this.blacklistPubSub = new SetPubSub(
+      this.dexHelper,
+      this.dexKey,
+      'blacklist',
+      '',
+    );
   }
 
-  start() {
-    this.rateFetcher.startPolling();
-    this.tokensFetcher.startPolling();
+  async start() {
+    if (!this.dexHelper.config.isSlave) {
+      this.rateFetcher.startPolling();
+      this.tokensFetcher.startPolling();
+    } else {
+      this.ratePubSub.subscribe();
+      this.tokensPubSub.subscribe();
+      this.restrictedPubSub.subscribe();
+
+      const initSet = await this.getAllBlacklisted();
+      this.blacklistPubSub.initializeAndSubscribe(initSet);
+    }
   }
 
   stop() {
@@ -125,6 +151,8 @@ export class RateFetcher {
       this.tokensCacheTTL,
       JSON.stringify(tokensMap),
     );
+
+    this.tokensPubSub.publish(tokensMap, this.tokensCacheTTL);
   }
 
   private handleRatesResponse(resp: SwaapV2PriceLevelsResponse): void {
@@ -162,6 +190,8 @@ export class RateFetcher {
       this.pricesCacheTTL,
       JSON.stringify(levels),
     );
+
+    this.tokensPubSub.publish(levels, this.pricesCacheTTL);
   }
 
   async getQuote(
@@ -279,40 +309,31 @@ export class RateFetcher {
   }
 
   async getCachedTokens(): Promise<TokensMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const cachedTokens = await this.tokensPubSub.getAndCache(
       SWAAP_TOKENS_CACHE_KEY,
     );
 
     if (cachedTokens) {
-      return JSON.parse(cachedTokens) as TokensMap;
+      return cachedTokens as TokensMap;
     }
 
     return null;
   }
 
   async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
-    const cachedLevels = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const cachedLevels = await this.ratePubSub.getAndCache(
       SWAAP_PRICES_CACHE_KEY,
     );
 
     if (cachedLevels) {
-      return JSON.parse(cachedLevels) as Record<string, SwaapV2PriceLevels>;
+      return cachedLevels as Record<string, SwaapV2PriceLevels>;
     }
 
     return null;
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.getBlackListKey(txOrigin),
-    );
-    return result === BLACKLISTED;
+    return this.blacklistPubSub.has(txOrigin.toLowerCase());
   }
 
   getBlackListKey(address: Address) {
@@ -330,29 +351,42 @@ export class RateFetcher {
       ttl,
       BLACKLISTED,
     );
+
+    this.blacklistPubSub.publish([txOrigin.toLowerCase()]);
     return true;
   }
 
-  async restrictPool(poolIdentifier: string): Promise<void> {
-    await this.dexHelper.cache.setex(
+  async getAllBlacklisted(): Promise<Address[]> {
+    const defaultKey = this.getBlackListKey('');
+    const pattern = `${defaultKey}*`;
+    const allBlacklisted = await this.dexHelper.cache.keys(
       this.dexKey,
       this.network,
-      this.getRestrictPoolKey(poolIdentifier),
+      pattern,
+    );
+
+    return allBlacklisted.map(t => this.getAddressFromBlackListKey(t));
+  }
+
+  getAddressFromBlackListKey(key: Address) {
+    return (key.split('blacklist_')[1] ?? '').toLowerCase();
+  }
+
+  async restrictPool(poolIdentifier: string): Promise<void> {
+    await this.restrictedPubSub.publish(
+      { [this.getRestrictPoolKey(poolIdentifier)]: 'restricted' },
       SWAAP_POOL_RESTRICT_TTL_S,
-      'restricted',
     );
   }
 
   async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
-    const restricted = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const restricted = await this.restrictedPubSub.getAndCache(
       this.getRestrictPoolKey(poolIdentifier),
     );
     return restricted === 'restricted';
   }
 
   getRestrictPoolKey(poolIdentifier: string): string {
-    return `${this.runtimeMMsRestrictHashMapKey}_${poolIdentifier}`;
+    return `restricted_mms_${poolIdentifier}`;
   }
 }
