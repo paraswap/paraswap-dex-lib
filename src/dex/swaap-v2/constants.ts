@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-export const SWAAP_RFQ_PRICES_CACHES_TTL_S = 3;
+export const SWAAP_RFQ_PRICES_CACHES_TTL_S = 5;
 
 export const SWAAP_RFQ_QUOTE_TIMEOUT_MS = 2000;
 
-export const SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS = 1000;
+export const SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS = 2000;
 
 export const SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS = 1000 * 60 * 60; // 1 hour
 

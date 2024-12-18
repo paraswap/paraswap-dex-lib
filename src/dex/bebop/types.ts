@@ -16,7 +16,6 @@ export type BebopRateFetcherConfig = {
     tokensIntervalMs: number;
     pricesCacheKey: string;
     tokensAddrCacheKey: string;
-    tokensCacheKey: string;
     pricesCacheTTLSecs: number;
     tokensCacheTTLSecs: number;
   };

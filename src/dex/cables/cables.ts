@@ -495,7 +495,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         return null;
       }
 
-      const isRestricted = await this.isRestricted();
+      const isRestricted = await this.rateFetcher.isRestricted();
       if (isRestricted) {
         return null;
       }
@@ -514,7 +514,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       if (pools.length === 0) return null;
 
       // ---------- Prices ----------
-      const priceMap = await this.getCachedPrices();
+      const priceMap = await this.rateFetcher.getCachedPrices();
 
       if (!priceMap) return null;
 
@@ -619,7 +619,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
   }
 
   async setTokensMap() {
-    const tokens = await this.getCachedTokens();
+    const tokens = await this.rateFetcher.getCachedTokens();
 
     if (tokens) {
       this.tokensMap = Object.keys(tokens).reduce((acc, key) => {
@@ -637,41 +637,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
     return [];
   }
 
-  /**
-   * CACHED UTILS
-   */
-  async getCachedTokens(): Promise<any> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.rateFetcher.tokensCacheKey,
-    );
-
-    return cachedTokens ? JSON.parse(cachedTokens) : {};
-  }
-
-  async getCachedPairs(): Promise<any> {
-    const cachedPairs = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.rateFetcher.pairsCacheKey,
-    );
-
-    return cachedPairs ? JSON.parse(cachedPairs) : {};
-  }
-
-  async getCachedPrices(): Promise<any> {
-    const cachedPrices = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.rateFetcher.pricesCacheKey,
-    );
-
-    return cachedPrices ? JSON.parse(cachedPrices) : {};
-  }
-
   async getCachedTokensAddr(): Promise<any> {
-    const tokens = await this.getCachedTokens();
+    const tokens = await this.rateFetcher.getCachedTokens();
     const tokensAddr: Record<string, Address> = {};
     for (const key of Object.keys(tokens)) {
       tokensAddr[tokens[key].symbol.toLowerCase()] = tokens[key].address;
@@ -701,12 +668,12 @@ export class Cables extends SimpleExchange implements IDex<any> {
       return null;
     }
 
-    const cachedTokens = await this.getCachedTokens();
+    const cachedTokens = await this.rateFetcher.getCachedTokens();
 
     srcToken.symbol = this.findKeyByAddress(cachedTokens, srcToken.address);
     destToken.symbol = this.findKeyByAddress(cachedTokens, destToken.address);
 
-    const cachedPairs = await this.getCachedPairs();
+    const cachedPairs = await this.rateFetcher.getCachedPairs();
 
     const potentialPairs = [
       {
@@ -734,28 +701,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const cachedBlacklist = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.rateFetcher.blacklistCacheKey,
-    );
-
-    if (cachedBlacklist) {
-      const blacklist = JSON.parse(cachedBlacklist) as string[];
-      return blacklist.includes(txOrigin.toLowerCase());
-    }
-
-    return false;
-  }
-
-  async isRestricted(): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      CABLES_RESTRICTED_CACHE_KEY,
-    );
-
-    return result === 'true';
+    return this.rateFetcher.isBlacklisted(txOrigin);
   }
 
   async restrict() {
@@ -795,13 +741,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
             errorsData.count + 1
           } within ${CABLES_RESTRICT_CHECK_INTERVAL_MS / 1000 / 60} minutes`,
         );
-        await this.dexHelper.cache.setex(
-          this.dexKey,
-          this.network,
-          CABLES_RESTRICTED_CACHE_KEY,
-          CABLES_RESTRICT_TTL_S,
-          'true',
-        );
+        this.rateFetcher.restrict();
       } else {
         this.logger.warn(
           `${this.dexKey}-${this.network}: Error count increased`,
@@ -813,7 +753,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         await this.dexHelper.cache.setex(
           this.dexKey,
           this.network,
-          CABLES_RESTRICTED_CACHE_KEY,
+          CABLES_ERRORS_CACHE_KEY,
           ERRORS_TTL_S,
           Utils.Serialize(data),
         );
