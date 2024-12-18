@@ -34,6 +34,8 @@ import { generalDecoder } from '../../lib/decoders';
 import { BigNumber } from 'ethers';
 import { sqrt } from './utils';
 import { FluidDexLiquidityProxy } from './fluid-dex-liquidity-proxy';
+import { FluidDexEventPool } from './fluid-dex-pool';
+import { MIN_SWAP_LIQUIDITY } from './constants';
 
 export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -46,13 +48,13 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   pools: FluidDexPool[] = [];
 
+  eventPools: FluidDexEventPool[] = [];
+
   readonly factory: FluidDexFactory;
 
   readonly liquidityProxy: FluidDexLiquidityProxy;
 
   readonly fluidDexPoolIface: Interface;
-
-  FEE_100_PERCENT = BigInt(1000000);
 
   constructor(
     readonly network: Network,
@@ -110,6 +112,20 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     await this.factory.initialize(blockNumber);
     this.pools = await this.fetchFluidDexPools(blockNumber);
 
+    this.eventPools = await Promise.all(
+      this.pools.map(async pool => {
+        const eventPool = new FluidDexEventPool(
+          this.dexKey,
+          pool.address,
+          this.network,
+          this.dexHelper,
+          this.logger,
+        );
+        await eventPool.initialize(blockNumber);
+        return eventPool;
+      }),
+    );
+
     await this.liquidityProxy.initialize(blockNumber);
   }
 
@@ -147,29 +163,24 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const pool = this.getPoolByTokenPair(srcToken.address, destToken.address);
-    return pool ? [pool.id] : [];
+    const pools = this.getPoolsByTokenPair(srcToken.address, destToken.address);
+    return pools.map(pool => pool.id);
   }
 
-  getPoolByTokenPair(
-    srcToken: Address,
-    destToken: Address,
-  ): FluidDexPool | null {
+  getPoolsByTokenPair(srcToken: Address, destToken: Address): FluidDexPool[] {
     const srcAddress = srcToken.toLowerCase();
     const destAddress = destToken.toLowerCase();
 
     // A pair must have 2 different tokens.
-    if (srcAddress === destAddress) return null;
+    if (srcAddress === destAddress) return [];
 
-    for (const pool of this.pools) {
-      if (
+    const pools = this.pools.filter(
+      pool =>
         (srcAddress === pool.token0 && destAddress === pool.token1) ||
-        (srcAddress === pool.token1 && destAddress === pool.token0)
-      ) {
-        return pool;
-      }
-    }
-    return null;
+        (srcAddress === pool.token1 && destAddress === pool.token0),
+    );
+
+    return pools;
   }
 
   // Returns pool prices for amounts.
@@ -187,61 +198,93 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     try {
       if (srcToken.address.toLowerCase() === destToken.address.toLowerCase())
         return null;
-      // Get the pool to use.
-      const pool = this.getPoolByTokenPair(srcToken.address, destToken.address);
-      if (!pool) return null;
-      // Make sure the pool meets the optional limitPools filter.
-      if (limitPools && !limitPools.includes(pool.id)) return null;
+
+      // Get the pools to use.
+      let pools = this.getPoolsByTokenPair(srcToken.address, destToken.address);
+
+      if (limitPools) {
+        pools = pools.filter(pool => limitPools.includes(pool.id));
+      }
+
+      if (!pools.length) return null;
 
       const liquidityProxyState = await this.liquidityProxy.getStateOrGenerate(
         blockNumber,
       );
 
-      const currentPoolReserves = liquidityProxyState.poolsReserves.find(
-        poolReserve =>
-          poolReserve.pool.toLowerCase() === pool.address.toLowerCase(),
+      const poolsPrices = await Promise.all(
+        pools.map(async pool => {
+          const currentPoolReserves = liquidityProxyState.poolsReserves.find(
+            poolReserve =>
+              poolReserve.pool.toLowerCase() === pool.address.toLowerCase(),
+          );
+
+          const eventPool = this.eventPools.find(
+            eventPool =>
+              eventPool.poolAddress.toLowerCase() ===
+              pool.address.toLowerCase(),
+          );
+
+          if (!eventPool) {
+            this.logger.warn(
+              `${this.dexKey}-${this.network}: Event pool ${pool.address} was not found...`,
+            );
+            return null;
+          }
+
+          const state = await eventPool.getStateOrGenerate(blockNumber);
+
+          if (!currentPoolReserves || state.isSwapAndArbitragePaused === true) {
+            return null;
+          }
+
+          const prices = amounts.map(amount => {
+            if (side === SwapSide.SELL) {
+              return this.swapIn(
+                srcToken.address.toLowerCase() === pool.token0.toLowerCase(),
+                amount,
+                currentPoolReserves.collateralReserves,
+                currentPoolReserves.debtReserves,
+                srcToken.decimals,
+                destToken.decimals,
+                BigInt(currentPoolReserves.fee),
+                currentPoolReserves.dexLimits,
+                Math.floor(Date.now() / 1000),
+              );
+            } else {
+              return this.swapOut(
+                srcToken.address.toLowerCase() === pool.token0.toLowerCase(),
+                amount,
+                currentPoolReserves.collateralReserves,
+                currentPoolReserves.debtReserves,
+                srcToken.decimals,
+                destToken.decimals,
+                BigInt(currentPoolReserves.fee),
+                currentPoolReserves.dexLimits,
+                Math.floor(Date.now() / 1000),
+              );
+            }
+          });
+
+          return {
+            prices: prices,
+            unit: getBigIntPow(destToken.decimals),
+            data: {
+              poolId: pool.id,
+            },
+            exchange: this.dexKey,
+            poolIdentifier: pool.id,
+            gasCost: FLUID_DEX_GAS_COST,
+            poolAddresses: [pool.address],
+          };
+        }),
       );
-      if (!currentPoolReserves) {
-        return null;
-      }
-      const prices = amounts.map(amount => {
-        if (side === SwapSide.SELL) {
-          return this.swapIn(
-            srcToken.address.toLowerCase() === pool.token0.toLowerCase(),
-            amount,
-            currentPoolReserves.collateralReserves,
-            currentPoolReserves.debtReserves,
-            srcToken.decimals,
-            destToken.decimals,
-            BigInt(currentPoolReserves.fee),
-            currentPoolReserves.dexLimits,
-            Math.floor(Date.now() / 1000),
-          );
-        } else {
-          return this.swapOut(
-            srcToken.address.toLowerCase() === pool.token0.toLowerCase(),
-            amount,
-            currentPoolReserves.collateralReserves,
-            currentPoolReserves.debtReserves,
-            srcToken.decimals,
-            destToken.decimals,
-            BigInt(currentPoolReserves.fee),
-            currentPoolReserves.dexLimits,
-            Math.floor(Date.now() / 1000),
-          );
-        }
-      });
-      return [
-        {
-          prices: prices,
-          unit: getBigIntPow(destToken.decimals),
-          data: {},
-          exchange: this.dexKey,
-          poolIdentifier: pool.id,
-          gasCost: FLUID_DEX_GAS_COST,
-          poolAddresses: [pool.address],
-        },
-      ];
+
+      const notNullResults = poolsPrices.filter(
+        res => res !== null,
+      ) as ExchangePrices<FluidDexData>;
+
+      return notNullResults;
     } catch (e) {
       this.logger.error(
         `Error_getPricesVolume ${srcToken.address || srcToken.symbol}, ${
@@ -272,10 +315,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   ): AdapterExchangeParam {
     // Encode here the payload for adapter
     const payload = '';
-    const pool = this.getPoolByTokenPair(srcToken, destToken);
 
     return {
-      targetExchange: pool!.address,
+      targetExchange: '0x',
       payload,
       networkFee: '0',
     };
@@ -313,7 +355,11 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       side === SwapSide.SELL ? 'amountOut_' : 'amountIn_',
     );
 
-    const pool = this.getPoolByTokenPair(srcToken, destToken);
+    const pool = this.pools.find(pool => pool.id === data.poolId);
+    if (!pool)
+      throw new Error(
+        `${this.dexKey}-${this.network}: Pool with id: ${data.poolId} was not found`,
+      );
 
     if (side === SwapSide.SELL) {
       if (pool!.token0.toLowerCase() !== srcToken.toLowerCase()) {
@@ -584,9 +630,82 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     if (priceDiff > maxAllowedDiff) {
       return 0n;
     }
+
+    if (amountInCollateral > 0) {
+      let reservesRatioValid = swap0To1
+        ? this.verifyToken1Reserves(
+            colReserveIn + amountInCollateral,
+            colReserveOut - amountOutCollateral,
+            oldPrice,
+          )
+        : this.verifyToken0Reserves(
+            colReserveOut - amountOutCollateral,
+            colReserveIn + amountInCollateral,
+            oldPrice,
+          );
+      if (!reservesRatioValid) {
+        return 0n;
+      }
+    }
+
+    if (amountInDebt > 0) {
+      let reservesRatioValid = swap0To1
+        ? this.verifyToken1Reserves(
+            debtReserveIn + amountInDebt,
+            debtReserveOut - amountOutDebt,
+            oldPrice,
+          )
+        : this.verifyToken0Reserves(
+            debtReserveOut - amountOutDebt,
+            debtReserveIn + amountInDebt,
+            oldPrice,
+          );
+      if (!reservesRatioValid) {
+        return 0n;
+      }
+    }
+
     const totalAmountOut = amountOutCollateral + amountOutDebt;
 
     return totalAmountOut;
+  }
+
+  /**
+   * Checks if token0 reserves are sufficient compared to token1 reserves.
+   * This helps prevent edge cases and ensures high precision in calculations.
+   * @param {number} token0Reserves - The reserves of token0.
+   * @param {number} token1Reserves - The reserves of token1.
+   * @param {number} price - The current price used for calculation.
+   * @returns {boolean} - Returns false if token0 reserves are too low, true otherwise.
+   */
+  protected verifyToken0Reserves(
+    token0Reserves: bigint,
+    token1Reserves: bigint,
+    price: bigint,
+  ): boolean {
+    return (
+      token0Reserves >=
+      (token1Reserves * 10n ** 27n) / (price * MIN_SWAP_LIQUIDITY)
+    );
+  }
+
+  /**
+   * Checks if token1 reserves are sufficient compared to token0 reserves.
+   * This helps prevent edge cases and ensures high precision in calculations.
+   * @param {number} token0Reserves - The reserves of token0.
+   * @param {number} token1Reserves - The reserves of token1.
+   * @param {number} price - The current price used for calculation.
+   * @returns {boolean} - Returns false if token1 reserves are too low, true otherwise.
+   */
+  protected verifyToken1Reserves(
+    token0Reserves: bigint,
+    token1Reserves: bigint,
+    price: bigint,
+  ): boolean {
+    return (
+      token1Reserves >=
+      (token0Reserves * price) / (10n ** 27n * MIN_SWAP_LIQUIDITY)
+    );
   }
 
   /**
@@ -765,7 +884,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       syncTime,
     );
 
-    if (amountIn == 2n ** 256n - 1n) {
+    if (amountIn === 2n ** 256n - 1n) {
       return amountIn;
     }
     const ans = (amountIn * BigInt(10 ** inDecimals)) / BigInt(10 ** 12);
@@ -983,6 +1102,39 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     ) {
       // if price diff is > 5% then swap would revert.
       return 2n ** 256n - 1n;
+    }
+
+    if (amountInCollateral > 0) {
+      let reservesRatioValid = swap0to1
+        ? this.verifyToken1Reserves(
+            colReserveIn + amountInCollateral,
+            colReserveOut - amountOutCollateral,
+            oldPrice,
+          )
+        : this.verifyToken0Reserves(
+            colReserveOut - amountOutCollateral,
+            colReserveIn + amountInCollateral,
+            oldPrice,
+          );
+      if (!reservesRatioValid) {
+        return 0n;
+      }
+    }
+    if (amountInDebt > 0) {
+      let reservesRatioValid = swap0to1
+        ? this.verifyToken1Reserves(
+            debtReserveIn + amountInDebt,
+            debtReserveOut - amountOutDebt,
+            oldPrice,
+          )
+        : this.verifyToken0Reserves(
+            debtReserveOut - amountOutDebt,
+            debtReserveIn + amountInDebt,
+            oldPrice,
+          );
+      if (!reservesRatioValid) {
+        return 0n;
+      }
     }
 
     const totalAmountIn = amountInCollateral + amountInDebt;
