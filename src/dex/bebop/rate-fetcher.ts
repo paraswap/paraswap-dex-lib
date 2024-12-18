@@ -143,14 +143,6 @@ export class RateFetcher {
     this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
-      this.tokensCacheKey,
-      this.tokensCacheTTL,
-      JSON.stringify(tokenMap),
-    );
-
-    this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
       this.tokensAddrCacheKey,
       this.tokensCacheTTL,
       JSON.stringify(tokenAddrMap),

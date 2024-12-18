@@ -73,7 +73,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   private tokensMap: TokenDataMap = {};
 
   private pricesCacheKey: string;
-  private tokensCacheKey: string;
   private tokensAddrCacheKey: string;
 
   private bebopAuthToken: string;
@@ -90,7 +89,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.tokensCacheKey = `tokens`;
     this.pricesCacheKey = `prices`;
     this.tokensAddrCacheKey = `tokens_addr`;
     const token = this.dexHelper.config.data.bebopAuthToken;
@@ -109,7 +107,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           tokensIntervalMs: BEBOP_TOKENS_POLLING_INTERVAL_MS,
           pricesCacheKey: this.pricesCacheKey,
           pricesCacheTTLSecs: BEBOP_PRICES_CACHE_TTL,
-          tokensCacheKey: this.tokensCacheKey,
           tokensAddrCacheKey: this.tokensAddrCacheKey,
           tokensCacheTTLSecs: BEBOP_TOKENS_CACHE_TTL,
           tokensReqParams: {
