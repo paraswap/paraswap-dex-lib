@@ -1,6 +1,7 @@
 import { Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher } from '../../lib/fetcher/fetcher';
+import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
 import { validateAndCast } from '../../lib/validators';
 import { Address, Logger, Token } from '../../types';
 import { PairData } from '../cables/types';
@@ -24,20 +25,26 @@ import {
 
 export class CablesRateFetcher {
   public tokensFetcher: Fetcher<CablesTokensResponse>;
+  private tokensPubSub: JsonPubSub;
   public tokensCacheKey: string;
   public tokensCacheTTL: number;
 
   public pairsFetcher: Fetcher<CablesPairsResponse>;
+  private pairsPubSub: JsonPubSub;
   public pairsCacheKey: string;
   public pairsCacheTTL: number;
 
   public pricesFetcher: Fetcher<CablesPricesResponse>;
+  private pricesPubSub: JsonPubSub;
   public pricesCacheKey: string;
   public pricesCacheTTL: number;
 
   public blacklistFetcher: Fetcher<CablesBlacklistResponse>;
+  private blacklistPubSub: SetPubSub;
   public blacklistCacheKey: string;
   public blacklistCacheTTL: number;
+
+  private restrictPubSub: JsonPubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -58,6 +65,7 @@ export class CablesRateFetcher {
     this.blacklistCacheKey = config.rateConfig.blacklistCacheKey;
     this.blacklistCacheTTL = config.rateConfig.blacklistCacheTTLSecs;
 
+    this.pairsPubSub = new JsonPubSub(dexHelper, dexKey, 'pairs');
     this.pairsFetcher = new Fetcher<CablesPairsResponse>(
       dexHelper.httpRequest,
       {
@@ -76,6 +84,7 @@ export class CablesRateFetcher {
       logger,
     );
 
+    this.pricesPubSub = new JsonPubSub(dexHelper, dexKey, 'prices');
     this.pricesFetcher = new Fetcher<CablesPricesResponse>(
       dexHelper.httpRequest,
       {
@@ -94,6 +103,7 @@ export class CablesRateFetcher {
       logger,
     );
 
+    this.blacklistPubSub = new SetPubSub(dexHelper, dexKey, 'blacklist', '');
     this.blacklistFetcher = new Fetcher<CablesBlacklistResponse>(
       dexHelper.httpRequest,
       {
@@ -112,6 +122,7 @@ export class CablesRateFetcher {
       logger,
     );
 
+    this.tokensPubSub = new JsonPubSub(dexHelper, dexKey, 'tokens');
     this.tokensFetcher = new Fetcher<CablesTokensResponse>(
       dexHelper.httpRequest,
       {
@@ -129,16 +140,34 @@ export class CablesRateFetcher {
       config.rateConfig.tokensIntervalMs,
       logger,
     );
+
+    this.restrictPubSub = new JsonPubSub(
+      dexHelper,
+      dexKey,
+      'restrict',
+      'not_restricted',
+      CABLES_RESTRICT_TTL_S,
+    );
   }
 
   /**
    * Utils
    */
-  start() {
-    this.pairsFetcher.startPolling();
-    this.pricesFetcher.startPolling();
-    this.blacklistFetcher.startPolling();
-    this.tokensFetcher.startPolling();
+  async start() {
+    if (!this.dexHelper.config.isSlave) {
+      this.pairsFetcher.startPolling();
+      this.pricesFetcher.startPolling();
+      this.blacklistFetcher.startPolling();
+      this.tokensFetcher.startPolling();
+    } else {
+      this.pairsPubSub.subscribe();
+      this.tokensPubSub.subscribe();
+      this.pricesPubSub.subscribe();
+      this.restrictPubSub.subscribe();
+
+      const initBlacklisted = await this.getAllBlacklisted();
+      this.blacklistPubSub.initializeAndSubscribe(initBlacklisted);
+    }
   }
   stop() {
     this.pairsFetcher.stopPolling();
@@ -163,6 +192,8 @@ export class CablesRateFetcher {
       this.pairsCacheTTL,
       JSON.stringify(normalized_pairs),
     );
+
+    this.pairsPubSub.publish(normalized_pairs, this.pairsCacheTTL);
   }
 
   private handlePricesResponse(res: CablesPricesResponse): void {
@@ -176,17 +207,22 @@ export class CablesRateFetcher {
       this.pricesCacheTTL,
       JSON.stringify(prices),
     );
+
+    this.pricesPubSub.publish(prices, this.pricesCacheTTL);
   }
 
   private handleBlacklistResponse(res: CablesBlacklistResponse): void {
     const { blacklist } = res;
+    const list = blacklist.map(item => item.toLowerCase());
     this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
       this.blacklistCacheKey,
       this.blacklistCacheTTL,
-      JSON.stringify(blacklist.map(item => item.toLowerCase())),
+      JSON.stringify(list),
     );
+
+    this.blacklistPubSub.publish(list);
   }
 
   // Convert addresses to lowercase
@@ -212,73 +248,67 @@ export class CablesRateFetcher {
       this.tokensCacheTTL,
       JSON.stringify(normalizedTokens),
     );
+
+    this.tokensPubSub.publish(normalizedTokens, this.tokensCacheTTL);
   }
 
   /**
    * CACHED UTILS
    */
   async getCachedTokens(): Promise<any> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const cachedTokens = await this.tokensPubSub.getAndCache(
       this.tokensCacheKey,
     );
-
-    return cachedTokens ? JSON.parse(cachedTokens) : {};
+    return cachedTokens ?? {};
   }
 
   async getCachedPairs(): Promise<any> {
-    const cachedPairs = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.pairsCacheKey,
-    );
-
-    return cachedPairs ? JSON.parse(cachedPairs) : {};
+    const cachedPairs = await this.pairsPubSub.getAndCache(this.pairsCacheKey);
+    return cachedPairs ?? {};
   }
 
   async getCachedPrices(): Promise<any> {
-    const cachedPrices = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const cachedPrices = await this.pricesPubSub.getAndCache(
       this.pricesCacheKey,
     );
 
-    return cachedPrices ? JSON.parse(cachedPrices) : {};
+    return cachedPrices ?? {};
   }
 
-  async isRestricted(): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      CABLES_RESTRICTED_CACHE_KEY,
-    );
-
-    return result === 'true';
-  }
-
-  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+  async getAllBlacklisted(): Promise<string[]> {
     const cachedBlacklist = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,
       this.blacklistCacheKey,
     );
 
-    if (cachedBlacklist) {
-      const blacklist = JSON.parse(cachedBlacklist) as string[];
-      return blacklist.includes(txOrigin.toLowerCase());
-    }
+    return cachedBlacklist ? JSON.parse(cachedBlacklist) : [];
+  }
 
-    return false;
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    return this.blacklistPubSub.has(txOrigin.toLowerCase());
+  }
+
+  async isRestricted(): Promise<boolean> {
+    const result = await this.restrictPubSub.getAndCache(
+      CABLES_RESTRICTED_CACHE_KEY,
+    );
+
+    return result === 'true';
   }
 
   async restrict(): Promise<void> {
-    return this.dexHelper.cache.setex(
+    await this.dexHelper.cache.setex(
       this.dexKey,
       this.network,
       CABLES_RESTRICTED_CACHE_KEY,
       CABLES_RESTRICT_TTL_S,
       'true',
+    );
+
+    this.restrictPubSub.publish(
+      { [CABLES_RESTRICTED_CACHE_KEY]: 'true' },
+      CABLES_RESTRICT_TTL_S,
     );
   }
 }
