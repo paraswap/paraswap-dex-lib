@@ -43,6 +43,14 @@ class DummyCache implements ICache {
     return null;
   }
 
+  async keys(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<string[]> {
+    return [];
+  }
+
   async ttl(
     dexKey: string,
     network: number,
