@@ -184,7 +184,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       return [];
     }
 
-    const prices = await this.getCachedPrices();
+    const prices = await this.rateFetcher.getCachedPrices();
     if (!prices) {
       throw new Error('No prices available');
     }
@@ -523,7 +523,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async setTokensMap() {
-    const tokens = await this.getCachedTokens();
+    const tokens = await this.rateFetcher.getCachedTokens();
 
     if (tokens) {
       this.tokensMap = tokens;
@@ -542,7 +542,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const prices = await this.getCachedPrices();
+    const prices = await this.rateFetcher.getCachedPrices();
 
     if (!prices) {
       return [];
@@ -839,41 +839,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async isRestricted(): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      BEBOP_RESTRICTED_CACHE_KEY,
-    );
-
-    return result === 'true';
-  }
-
-  async getCachedPrices(): Promise<BebopPricingResponse | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.pricesCacheKey,
-    );
-
-    if (cachedPrices) {
-      return JSON.parse(cachedPrices) as BebopPricingResponse;
-    }
-
-    return null;
-  }
-
-  async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.tokensAddrCacheKey,
-    );
-
-    if (cachedTokens) {
-      return JSON.parse(cachedTokens) as TokenDataMap;
-    }
-
-    return null;
+    return this.rateFetcher.isRestricted();
   }
 
   getTokenFromAddress(address: Address): Token {

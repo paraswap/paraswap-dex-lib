@@ -9,6 +9,7 @@ import {
   BebopPricingResponse,
   BebopRateFetcherConfig,
   BebopTokensResponse,
+  TokenDataMap,
 } from './types';
 import {
   BebopPricingUpdate,
@@ -17,6 +18,7 @@ import {
 } from './validators';
 import { WebSocketFetcher } from '../../lib/fetcher/wsFetcher';
 import { utils } from 'ethers';
+import { BEBOP_RESTRICTED_CACHE_KEY } from './constants';
 
 export function levels_from_flat_array(values: number[]): BebopLevel[] {
   const levels: BebopLevel[] = [];
@@ -179,5 +181,43 @@ export class RateFetcher {
       this.pricesCacheTTL,
       JSON.stringify(normalizedPrices),
     );
+  }
+
+  async getCachedPrices(): Promise<BebopPricingResponse | null> {
+    const cachedPrices = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.pricesCacheKey,
+    );
+
+    if (cachedPrices) {
+      return JSON.parse(cachedPrices) as BebopPricingResponse;
+    }
+
+    return null;
+  }
+
+  async getCachedTokens(): Promise<TokenDataMap | null> {
+    const cachedTokens = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.tokensAddrCacheKey,
+    );
+
+    if (cachedTokens) {
+      return JSON.parse(cachedTokens) as TokenDataMap;
+    }
+
+    return null;
+  }
+
+  async isRestricted(): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      BEBOP_RESTRICTED_CACHE_KEY,
+    );
+
+    return result === 'true';
   }
 }
