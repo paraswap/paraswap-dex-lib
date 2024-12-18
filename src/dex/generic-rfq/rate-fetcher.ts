@@ -37,7 +37,6 @@ import {
   ERC1271Contract,
 } from '../../lib/erc1271-utils';
 import { isContractAddress } from '../../utils';
-import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
 
 const GET_FIRM_RATE_TIMEOUT_MS = 2000;
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
@@ -55,9 +54,6 @@ export class RateFetcher {
   private tokens: Record<string, TokenWithInfo> = {};
   private addressToTokenMap: Record<string, TokenWithInfo> = {};
   private pairs: PairMap = {};
-
-  private pricesPubSub: JsonPubSub;
-  private blacklistPubSub?: SetPubSub;
 
   private firmRateAuth?: (options: RequestConfig) => void;
 
@@ -127,8 +123,6 @@ export class RateFetcher {
       logger,
     );
 
-    this.pricesPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'prices');
-
     if (config.blacklistConfig) {
       this.blackListFetcher = new Fetcher<BlackListResponse>(
         dexHelper.httpRequest,
@@ -148,12 +142,6 @@ export class RateFetcher {
         config.blacklistConfig.intervalMs,
         logger,
       );
-
-      this.blacklistPubSub = new SetPubSub(
-        this.dexHelper,
-        this.dexKey,
-        'blacklist',
-      );
     }
 
     this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
@@ -172,13 +160,6 @@ export class RateFetcher {
         this.dexHelper.web3Provider,
         this.config.maker,
       );
-    }
-
-    if (this.dexHelper.config.isSlave) {
-      this.pricesPubSub.initialize();
-      if (this.blacklistPubSub) {
-        this.blacklistPubSub.initialize(this.blackListCacheKey);
-      }
     }
   }
 
@@ -233,22 +214,16 @@ export class RateFetcher {
     for (const address of resp.blacklist) {
       this.dexHelper.cache.sadd(this.blackListCacheKey, address.toLowerCase());
     }
-
-    if (this.blacklistPubSub) {
-      this.blacklistPubSub.publish(resp.blacklist);
-    }
   }
 
   public isBlackListed(userAddress: string) {
-    if (this.blacklistPubSub) {
-      return this.blacklistPubSub.has(userAddress.toLowerCase());
-    }
-    return false;
+    return this.dexHelper.cache.sismember(
+      this.blackListCacheKey,
+      userAddress.toLowerCase(),
+    );
   }
 
   private handleRatesResponse(resp: RatesResponse) {
-    const pubSubData: Record<string, unknown> = {};
-    const ttl = this.config.rateConfig.dataTTLS;
     const pairs = this.pairs;
 
     if (isEmpty(pairs)) return;
@@ -277,51 +252,37 @@ export class RateFetcher {
       }
 
       if (prices.bids.length) {
-        const key = `${baseToken.address}_${quoteToken.address}_bids`;
-        const value = prices.bids;
-        pubSubData[key] = value;
-
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          key,
-          ttl,
-          JSON.stringify(value),
+          `${baseToken.address}_${quoteToken.address}_bids`,
+          this.config.rateConfig.dataTTLS,
+          JSON.stringify(prices.bids),
         );
         currentPricePairs.add(`${baseToken.address}_${quoteToken.address}`);
       }
 
       if (prices.asks.length) {
-        const key = `${baseToken.address}_${quoteToken.address}_asks`;
-        const value = prices.asks;
-        pubSubData[key] = value;
-
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          key,
-          ttl,
-          JSON.stringify(value),
+          `${baseToken.address}_${quoteToken.address}_asks`,
+          this.config.rateConfig.dataTTLS,
+          JSON.stringify(prices.asks),
         );
         currentPricePairs.add(`${quoteToken.address}_${baseToken.address}`);
       }
     });
 
     if (currentPricePairs.size > 0) {
-      const key = `pairs`;
-      const value = Array.from(currentPricePairs);
-      pubSubData[key] = value;
-
       this.dexHelper.cache.setex(
         this.dexKey,
         this.dexHelper.config.data.network,
-        key,
-        ttl,
-        JSON.stringify(value),
+        `pairs`,
+        this.config.rateConfig.dataTTLS,
+        JSON.stringify(Array.from(currentPricePairs)),
       );
     }
-
-    this.pricesPubSub.publish(pubSubData, ttl);
   }
 
   checkHealth(): boolean {
@@ -361,13 +322,17 @@ export class RateFetcher {
   }
 
   public async getAvailablePairs(): Promise<string[]> {
-    const pairs = await this.pricesPubSub.getAndCache<string[]>(`pairs`);
+    const pairs = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.dexHelper.config.data.network,
+      `pairs`,
+    );
 
     if (!pairs) {
       return [];
     }
 
-    return pairs;
+    return JSON.parse(pairs) as string[];
   }
 
   public async getOrderPrice(
@@ -377,36 +342,49 @@ export class RateFetcher {
   ): Promise<PriceAndAmountBigNumber[] | null> {
     let reversed = false;
 
-    let prices: PriceAndAmount[] | null = null;
+    let pricesAsString: string | null = null;
     if (side === SwapSide.SELL) {
-      prices = await this.pricesPubSub.getAndCache(
+      pricesAsString = await this.dexHelper.cache.get(
+        this.dexKey,
+        this.dexHelper.config.data.network,
         `${srcToken.address}_${destToken.address}_bids`,
       );
 
-      if (!prices) {
-        prices = await this.pricesPubSub.getAndCache(
+      if (!pricesAsString) {
+        pricesAsString = await this.dexHelper.cache.get(
+          this.dexKey,
+          this.dexHelper.config.data.network,
           `${destToken.address}_${srcToken.address}_asks`,
         );
         reversed = true;
       }
     } else {
-      prices = await this.pricesPubSub.getAndCache(
+      pricesAsString = await this.dexHelper.cache.get(
+        this.dexKey,
+        this.dexHelper.config.data.network,
         `${destToken.address}_${srcToken.address}_asks`,
       );
 
-      if (!prices) {
-        prices = await this.pricesPubSub.getAndCache(
+      if (!pricesAsString) {
+        pricesAsString = await this.dexHelper.cache.get(
+          this.dexKey,
+          this.dexHelper.config.data.network,
           `${srcToken.address}_${destToken.address}_bids`,
         );
         reversed = true;
       }
     }
 
-    if (!prices) {
+    if (!pricesAsString) {
       return null;
     }
 
-    let orderPrices = prices.map(price => [
+    const orderPricesAsString: PriceAndAmount[] = JSON.parse(pricesAsString);
+    if (!orderPricesAsString) {
+      return null;
+    }
+
+    let orderPrices = orderPricesAsString.map(price => [
       new BigNumber(price[0]),
       new BigNumber(price[1]),
     ]);
