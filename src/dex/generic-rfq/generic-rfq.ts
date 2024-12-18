@@ -447,12 +447,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
   }
 
   async setBlacklist(userAddress: string): Promise<boolean> {
-    await this.dexHelper.cache.hset(
-      this.rateFetcher.blackListCacheKey,
-      userAddress.toLowerCase(),
-      'true',
-    );
-    return true;
+    return this.rateFetcher.setBlacklist(userAddress);
   }
 
   releaseResources(): void {
