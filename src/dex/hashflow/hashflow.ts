@@ -156,9 +156,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
-    if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher.start();
-    }
+    this.rateFetcher.start();
 
     return;
   }

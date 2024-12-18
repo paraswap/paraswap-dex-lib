@@ -14,15 +14,19 @@ import {
 } from './types';
 import { marketMakersValidator, pricesResponseValidator } from './validators';
 import { HASHFLOW_BLACKLIST_TTL_S } from './constants';
+import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
 
 export class RateFetcher {
   private rateFetcher: Fetcher<HashflowRatesResponse>;
+  private ratePubSub: JsonPubSub;
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
   private marketMakersFetcher: Fetcher<HashflowMarketMakersResponse>;
   private marketMakersCacheKey: string;
   private marketMakersCacheTTL: number;
+
+  private blacklistedPubSub: SetPubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -52,6 +56,8 @@ export class RateFetcher {
       config.rateConfig.markerMakersIntervalMs,
       logger,
     );
+
+    this.ratePubSub = new JsonPubSub(dexHelper, dexKey, 'rates');
 
     this.rateFetcher = new Fetcher<HashflowRatesResponse>(
       dexHelper.httpRequest,
@@ -91,11 +97,26 @@ export class RateFetcher {
       config.rateConfig.pricesIntervalMs,
       logger,
     );
+
+    this.blacklistedPubSub = new SetPubSub(
+      dexHelper,
+      dexKey,
+      'blacklisted',
+      // TODO-rfq-ps: temporary for validation local with cache
+      '',
+    );
   }
 
-  start() {
-    this.marketMakersFetcher.startPolling();
-    this.rateFetcher.startPolling();
+  async start() {
+    if (!this.dexHelper.config.isSlave) {
+      this.marketMakersFetcher.startPolling();
+      this.rateFetcher.startPolling();
+    } else {
+      this.ratePubSub.subscribe();
+
+      const allBlacklisted = await this.getAllBlacklisted();
+      this.blacklistedPubSub.initializeAndSubscribe(allBlacklisted);
+    }
   }
 
   stop() {
@@ -114,11 +135,15 @@ export class RateFetcher {
 
   private handleRatesResponse(resp: HashflowRatesResponse): void {
     const { levels } = resp;
-    this.dexHelper.cache.rawset(
+    this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
       this.pricesCacheKey,
-      JSON.stringify(levels),
       this.pricesCacheTTL,
+      JSON.stringify(levels),
     );
+
+    this.ratePubSub.publish(levels, this.pricesCacheTTL);
   }
 
   async getCachedMarketMakers(): Promise<
@@ -138,7 +163,11 @@ export class RateFetcher {
   }
 
   async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
-    const cachedLevels = await this.dexHelper.cache.rawget(this.pricesCacheKey);
+    const cachedLevels = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.pricesCacheKey,
+    );
 
     if (cachedLevels) {
       return JSON.parse(cachedLevels) as PriceLevelsResponse['levels'];
@@ -148,12 +177,7 @@ export class RateFetcher {
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.getBlackListKey(txOrigin),
-    );
-    return result === 'blacklisted';
+    return this.blacklistedPubSub.has(txOrigin.toLowerCase());
   }
 
   async setBlacklist(
@@ -167,10 +191,29 @@ export class RateFetcher {
       ttl,
       'blacklisted',
     );
+
+    this.blacklistedPubSub.publish([txOrigin.toLowerCase()]);
+
     return true;
+  }
+
+  async getAllBlacklisted(): Promise<Address[]> {
+    const defaultKey = this.getBlackListKey('');
+    const pattern = `${defaultKey}*`;
+    const allBlacklisted = await this.dexHelper.cache.keys(
+      this.dexKey,
+      this.network,
+      pattern,
+    );
+
+    return allBlacklisted.map(t => this.getAddressFromBlackListKey(t));
   }
 
   getBlackListKey(address: Address) {
     return `blacklist_${address}`.toLowerCase();
+  }
+
+  getAddressFromBlackListKey(key: Address) {
+    return (key.split('blacklist_')[1] ?? '').toLowerCase();
   }
 }
