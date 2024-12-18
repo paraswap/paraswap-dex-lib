@@ -37,7 +37,7 @@ import {
   ERC1271Contract,
 } from '../../lib/erc1271-utils';
 import { isContractAddress } from '../../utils';
-import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
+import { ExpKeyValuePubSub, NonExpSetPubSub } from '../../lib/pub-sub';
 
 const GET_FIRM_RATE_TIMEOUT_MS = 2000;
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
@@ -56,8 +56,8 @@ export class RateFetcher {
   private addressToTokenMap: Record<string, TokenWithInfo> = {};
   private pairs: PairMap = {};
 
-  private pricesPubSub: JsonPubSub;
-  private blacklistPubSub?: SetPubSub;
+  private pricesPubSub: ExpKeyValuePubSub;
+  private blacklistPubSub?: NonExpSetPubSub;
 
   private firmRateAuth?: (options: RequestConfig) => void;
 
@@ -127,7 +127,11 @@ export class RateFetcher {
       logger,
     );
 
-    this.pricesPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'prices');
+    this.pricesPubSub = new ExpKeyValuePubSub(
+      this.dexHelper,
+      this.dexKey,
+      'prices',
+    );
 
     this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (config.blacklistConfig) {
@@ -150,7 +154,7 @@ export class RateFetcher {
         logger,
       );
 
-      this.blacklistPubSub = new SetPubSub(
+      this.blacklistPubSub = new NonExpSetPubSub(
         this.dexHelper,
         this.dexKey,
         'blacklist',

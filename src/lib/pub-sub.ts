@@ -6,7 +6,7 @@ import _ from 'lodash';
 import jsonDiff from 'json-diff';
 import hash from 'object-hash';
 
-type JsonPubSubMsg = {
+type KeyValuePubSubMsg = {
   expiresAt: number;
   hash: string;
   data: Record<string, unknown>;
@@ -14,7 +14,7 @@ type JsonPubSubMsg = {
 
 type SetPubSubMsg = string[];
 
-export class JsonPubSub {
+export class ExpKeyValuePubSub {
   channel: string;
   network: Network;
   localCache: NodeCache = new NodeCache();
@@ -32,14 +32,14 @@ export class JsonPubSub {
     this.network = this.dexHelper.config.data.network;
     this.channel = `${this.network}_${this.dexKey}_${channel}`;
 
-    this.logger = this.dexHelper.getLogger(`JsonPubSub_${this.channel}`);
+    this.logger = this.dexHelper.getLogger(`ExpKeyValuePubSub_${this.channel}`);
   }
 
   subscribe() {
     this.logger.info(`Subscribing to ${this.channel}`);
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
-      const decodedMsg = JSON.parse(msg) as JsonPubSubMsg;
+      const decodedMsg = JSON.parse(msg) as KeyValuePubSubMsg;
       this.handleSubscription(decodedMsg);
     });
   }
@@ -55,8 +55,8 @@ export class JsonPubSub {
     );
   }
 
-  handleSubscription(json: JsonPubSubMsg) {
-    const { expiresAt, data, hash } = json;
+  handleSubscription(msg: KeyValuePubSubMsg) {
+    const { expiresAt, data, hash } = msg;
 
     this.logger.info(`Received message from ${this.channel} with hash ${hash}`);
 
@@ -121,7 +121,7 @@ export class JsonPubSub {
   }
 }
 
-export class SetPubSub {
+export class NonExpSetPubSub {
   channel: string;
   network: Network;
   set = new Set<string>();
@@ -138,7 +138,7 @@ export class SetPubSub {
     this.network = this.dexHelper.config.data.network;
     this.channel = `${this.network}_${this.dexKey}_${channel}`;
 
-    this.logger = this.dexHelper.getLogger(`SetPubSub_${this.channel}`);
+    this.logger = this.dexHelper.getLogger(`NonExpSetPubSub_${this.channel}`);
   }
 
   async initializeAndSubscribe(initialSet: string[]) {
@@ -159,7 +159,7 @@ export class SetPubSub {
     });
   }
 
-  publish(set: SetPubSubMsg) {
+  publish(msg: SetPubSubMsg) {
     this.logger.info(`Publishing to ${this.channel}`);
 
     // should not be a problem, as we also subscribe to the channel on the same instance
@@ -167,7 +167,7 @@ export class SetPubSub {
     // for (const key of set) {
     //   this.set.add(key);
     // }
-    this.dexHelper.cache.publish(this.channel, JSON.stringify(set));
+    this.dexHelper.cache.publish(this.channel, JSON.stringify(msg));
   }
 
   handleSubscription(set: SetPubSubMsg) {

@@ -14,11 +14,11 @@ import {
 } from './types';
 import { marketMakersValidator, pricesResponseValidator } from './validators';
 import { HASHFLOW_BLACKLIST_TTL_S } from './constants';
-import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
+import { ExpKeyValuePubSub, NonExpSetPubSub } from '../../lib/pub-sub';
 
 export class RateFetcher {
   private rateFetcher: Fetcher<HashflowRatesResponse>;
-  private ratePubSub: JsonPubSub;
+  private ratePubSub: ExpKeyValuePubSub;
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
@@ -26,7 +26,7 @@ export class RateFetcher {
   private marketMakersCacheKey: string;
   private marketMakersCacheTTL: number;
 
-  private blacklistedPubSub: SetPubSub;
+  private blacklistedPubSub: NonExpSetPubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -57,7 +57,7 @@ export class RateFetcher {
       logger,
     );
 
-    this.ratePubSub = new JsonPubSub(dexHelper, dexKey, 'rates');
+    this.ratePubSub = new ExpKeyValuePubSub(dexHelper, dexKey, 'rates');
 
     this.rateFetcher = new Fetcher<HashflowRatesResponse>(
       dexHelper.httpRequest,
@@ -98,7 +98,7 @@ export class RateFetcher {
       logger,
     );
 
-    this.blacklistedPubSub = new SetPubSub(
+    this.blacklistedPubSub = new NonExpSetPubSub(
       dexHelper,
       dexKey,
       'blacklisted',

@@ -1,9 +1,9 @@
 import { Network } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { Fetcher } from '../../lib/fetcher/fetcher';
-import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
+import { ExpKeyValuePubSub, NonExpSetPubSub } from '../../lib/pub-sub';
 import { validateAndCast } from '../../lib/validators';
-import { Address, Logger, Token } from '../../types';
+import { Address, Logger } from '../../types';
 import { PairData } from '../cables/types';
 import {
   CABLES_RESTRICT_TTL_S,
@@ -24,7 +24,7 @@ import {
 } from './validators';
 
 export class CablesRateFetcher {
-  private tokensPairsPricesPubSub: JsonPubSub;
+  private tokensPairsPricesPubSub: ExpKeyValuePubSub;
 
   public tokensFetcher: Fetcher<CablesTokensResponse>;
   public tokensCacheKey: string;
@@ -39,11 +39,11 @@ export class CablesRateFetcher {
   public pricesCacheTTL: number;
 
   public blacklistFetcher: Fetcher<CablesBlacklistResponse>;
-  private blacklistPubSub: SetPubSub;
+  private blacklistPubSub: NonExpSetPubSub;
   public blacklistCacheKey: string;
   public blacklistCacheTTL: number;
 
-  private restrictPubSub: JsonPubSub;
+  private restrictPubSub: ExpKeyValuePubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -64,7 +64,7 @@ export class CablesRateFetcher {
     this.blacklistCacheKey = config.rateConfig.blacklistCacheKey;
     this.blacklistCacheTTL = config.rateConfig.blacklistCacheTTLSecs;
 
-    this.tokensPairsPricesPubSub = new JsonPubSub(
+    this.tokensPairsPricesPubSub = new ExpKeyValuePubSub(
       dexHelper,
       dexKey,
       'tokensPairsPrices',
@@ -106,7 +106,12 @@ export class CablesRateFetcher {
       logger,
     );
 
-    this.blacklistPubSub = new SetPubSub(dexHelper, dexKey, 'blacklist', '');
+    this.blacklistPubSub = new NonExpSetPubSub(
+      dexHelper,
+      dexKey,
+      'blacklist',
+      '',
+    );
     this.blacklistFetcher = new Fetcher<CablesBlacklistResponse>(
       dexHelper.httpRequest,
       {
@@ -143,7 +148,7 @@ export class CablesRateFetcher {
       logger,
     );
 
-    this.restrictPubSub = new JsonPubSub(
+    this.restrictPubSub = new ExpKeyValuePubSub(
       dexHelper,
       dexKey,
       'restrict',

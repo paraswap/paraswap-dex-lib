@@ -15,7 +15,7 @@ import { BebopPricingUpdate, tokensResponseValidator } from './validators';
 import { WebSocketFetcher } from '../../lib/fetcher/wsFetcher';
 import { utils } from 'ethers';
 import { BEBOP_RESTRICT_TTL_S, BEBOP_RESTRICTED_CACHE_KEY } from './constants';
-import { JsonPubSub } from '../../lib/pub-sub';
+import { ExpKeyValuePubSub } from '../../lib/pub-sub';
 
 export function levels_from_flat_array(values: number[]): BebopLevel[] {
   const levels: BebopLevel[] = [];
@@ -26,7 +26,7 @@ export function levels_from_flat_array(values: number[]): BebopLevel[] {
 }
 
 export class RateFetcher {
-  private tokensPricesPubSub: JsonPubSub;
+  private tokensPricesPubSub: ExpKeyValuePubSub;
 
   private pricesFetcher: WebSocketFetcher<BebopPricingResponse>;
   private pricesCacheKey: string;
@@ -36,7 +36,7 @@ export class RateFetcher {
   private tokensAddrCacheKey: string;
   private tokensCacheTTL: number;
 
-  private restrictPubSub: JsonPubSub;
+  private restrictPubSub: ExpKeyValuePubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -48,7 +48,7 @@ export class RateFetcher {
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.pricesCacheTTL = config.rateConfig.pricesCacheTTLSecs;
 
-    this.tokensPricesPubSub = new JsonPubSub(
+    this.tokensPricesPubSub = new ExpKeyValuePubSub(
       this.dexHelper,
       this.dexKey,
       'tokensPrices',
@@ -97,7 +97,7 @@ export class RateFetcher {
       logger,
     );
 
-    this.restrictPubSub = new JsonPubSub(
+    this.restrictPubSub = new ExpKeyValuePubSub(
       dexHelper,
       dexKey,
       'restrict',

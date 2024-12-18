@@ -32,7 +32,7 @@ import {
 } from './constants';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 import { Network } from '../../constants';
-import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
+import { ExpKeyValuePubSub, NonExpSetPubSub } from '../../lib/pub-sub';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -44,9 +44,9 @@ export class RateFetcher {
   private tokenCacheKey: string;
   private pricesCacheKey: string;
 
-  private rateTokensPubSub: JsonPubSub;
-  private restrictedPubSub: JsonPubSub;
-  private blacklistPubSub: SetPubSub;
+  private rateTokensPubSub: ExpKeyValuePubSub;
+  private restrictedPubSub: ExpKeyValuePubSub;
+  private blacklistPubSub: NonExpSetPubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -60,7 +60,7 @@ export class RateFetcher {
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.tokenCacheKey = config.tokensConfig.tokensCacheKey;
 
-    this.rateTokensPubSub = new JsonPubSub(
+    this.rateTokensPubSub = new ExpKeyValuePubSub(
       this.dexHelper,
       this.dexKey,
       'rateTokens',
@@ -102,7 +102,7 @@ export class RateFetcher {
       logger,
     );
 
-    this.restrictedPubSub = new JsonPubSub(
+    this.restrictedPubSub = new ExpKeyValuePubSub(
       this.dexHelper,
       this.dexKey,
       'restricted',
@@ -110,7 +110,7 @@ export class RateFetcher {
       SWAAP_POOL_RESTRICT_TTL_S,
     );
 
-    this.blacklistPubSub = new SetPubSub(
+    this.blacklistPubSub = new NonExpSetPubSub(
       this.dexHelper,
       this.dexKey,
       'blacklist',

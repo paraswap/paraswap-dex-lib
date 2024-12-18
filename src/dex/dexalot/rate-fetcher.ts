@@ -25,14 +25,14 @@ import {
   DEXALOT_RESTRICT_TTL_S,
   DEXALOT_RESTRICTED_CACHE_KEY,
 } from './constants';
-import { JsonPubSub, SetPubSub } from '../../lib/pub-sub';
+import { ExpKeyValuePubSub, NonExpSetPubSub } from '../../lib/pub-sub';
 
 export class RateFetcher {
   private pairsFetcher: Fetcher<DexalotPairsResponse>;
   private pairsCacheKey: string;
 
   private rateFetcher: Fetcher<DexalotPricesResponse>;
-  private rateTokensPubSub: JsonPubSub;
+  private rateTokensPubSub: ExpKeyValuePubSub;
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
@@ -41,11 +41,11 @@ export class RateFetcher {
   private tokensCacheTTL: number;
 
   private blacklistFetcher: Fetcher<DexalotBlacklistResponse>;
-  private blacklistPubSub: SetPubSub;
+  private blacklistPubSub: NonExpSetPubSub;
   private blacklistCacheKey: string;
   private blacklistCacheTTL: number;
 
-  private restrictedPoolPubSub: JsonPubSub;
+  private restrictedPoolPubSub: ExpKeyValuePubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -63,7 +63,11 @@ export class RateFetcher {
     this.blacklistCacheKey = config.rateConfig.blacklistCacheKey;
     this.blacklistCacheTTL = config.rateConfig.blacklistCacheTTLSecs;
 
-    this.rateTokensPubSub = new JsonPubSub(dexHelper, dexKey, 'rateTokens');
+    this.rateTokensPubSub = new ExpKeyValuePubSub(
+      dexHelper,
+      dexKey,
+      'rateTokens',
+    );
 
     this.pairsFetcher = new Fetcher<DexalotPairsResponse>(
       dexHelper.httpRequest,
@@ -101,7 +105,7 @@ export class RateFetcher {
       logger,
     );
 
-    this.blacklistPubSub = new SetPubSub(
+    this.blacklistPubSub = new NonExpSetPubSub(
       dexHelper,
       dexKey,
       'blacklist',
@@ -126,7 +130,7 @@ export class RateFetcher {
       logger,
     );
 
-    this.restrictedPoolPubSub = new JsonPubSub(
+    this.restrictedPoolPubSub = new ExpKeyValuePubSub(
       dexHelper,
       dexKey,
       'restricted-pool',
