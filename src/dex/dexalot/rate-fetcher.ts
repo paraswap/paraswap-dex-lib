@@ -138,7 +138,7 @@ export class RateFetcher {
     );
   }
 
-  start() {
+  async start() {
     if (!this.dexHelper.config.isSlave) {
       this.pairsFetcher.startPolling();
       this.rateFetcher.startPolling();
@@ -147,7 +147,11 @@ export class RateFetcher {
       this.ratePubSub.subscribe();
       this.tokensPubSub.subscribe();
       this.restrictedPoolPubSub.subscribe();
-      this.blacklistPubSub.initializeAndSubscribe(this.blacklistCacheKey);
+
+      const initSet = await this.dexHelper.cache.smembers(
+        this.blacklistCacheKey,
+      );
+      this.blacklistPubSub.initializeAndSubscribe(initSet);
     }
   }
 

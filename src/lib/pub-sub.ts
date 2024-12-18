@@ -141,10 +141,9 @@ export class SetPubSub {
     this.logger = this.dexHelper.getLogger(`SetPubSub_${this.channel}`);
   }
 
-  async initializeAndSubscribe(key: string) {
+  async initializeAndSubscribe(initialSet: string[]) {
     // as there's no lazy load, we need to initialize the set
-    const initSet = await this.dexHelper.cache.smembers(key);
-    for (const member of initSet) {
+    for (const member of initialSet) {
       this.set.add(member);
     }
 

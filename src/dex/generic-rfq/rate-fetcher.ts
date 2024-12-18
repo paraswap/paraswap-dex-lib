@@ -178,7 +178,10 @@ export class RateFetcher {
     if (this.dexHelper.config.isSlave) {
       this.pricesPubSub.subscribe();
       if (this.blacklistPubSub) {
-        this.blacklistPubSub.initializeAndSubscribe(this.blackListCacheKey);
+        const initSet = await this.dexHelper.cache.smembers(
+          this.blackListCacheKey,
+        );
+        this.blacklistPubSub.initializeAndSubscribe(initSet);
       }
     }
   }
