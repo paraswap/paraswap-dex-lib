@@ -381,15 +381,13 @@
   },
   {
     "anonymous": false,
-    "inputs": [
-    ],
+    "inputs": [],
     "name": "LogPauseSwapAndArbitrage",
     "type": "event"
   },
   {
     "anonymous": false,
-    "inputs": [
-    ],
+    "inputs": [],
     "name": "LogUnpauseSwapAndArbitrage",
     "type": "event"
   },
