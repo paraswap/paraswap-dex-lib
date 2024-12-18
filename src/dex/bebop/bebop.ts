@@ -73,7 +73,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   private tokensMap: TokenDataMap = {};
 
   private pricesCacheKey: string;
-  private tokensCacheKey: string;
   private tokensAddrCacheKey: string;
 
   private bebopAuthToken: string;
@@ -90,7 +89,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.tokensCacheKey = `tokens`;
     this.pricesCacheKey = `prices`;
     this.tokensAddrCacheKey = `tokens_addr`;
     const token = this.dexHelper.config.data.bebopAuthToken;
@@ -109,7 +107,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           tokensIntervalMs: BEBOP_TOKENS_POLLING_INTERVAL_MS,
           pricesCacheKey: this.pricesCacheKey,
           pricesCacheTTLSecs: BEBOP_PRICES_CACHE_TTL,
-          tokensCacheKey: this.tokensCacheKey,
           tokensAddrCacheKey: this.tokensAddrCacheKey,
           tokensCacheTTLSecs: BEBOP_TOKENS_CACHE_TTL,
           tokensReqParams: {
@@ -132,11 +129,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async initializePricing(blockNumber: number) {
-    if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher.start();
-      await sleep(BEBOP_INIT_TIMEOUT_MS);
-    }
-
+    await this.rateFetcher.start();
+    await sleep(BEBOP_INIT_TIMEOUT_MS);
     await this.setTokensMap();
   }
 
@@ -184,7 +178,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       return [];
     }
 
-    const prices = await this.getCachedPrices();
+    const prices = await this.rateFetcher.getCachedPrices();
     if (!prices) {
       throw new Error('No prices available');
     }
@@ -523,7 +517,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async setTokensMap() {
-    const tokens = await this.getCachedTokens();
+    const tokens = await this.rateFetcher.getCachedTokens();
 
     if (tokens) {
       this.tokensMap = tokens;
@@ -542,7 +536,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const prices = await this.getCachedPrices();
+    const prices = await this.rateFetcher.getCachedPrices();
 
     if (!prices) {
       return [];
@@ -812,13 +806,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
             errorsData.count + 1
           } within ${BEBOP_RESTRICT_CHECK_INTERVAL_MS / 1000 / 60} minutes`,
         );
-        await this.dexHelper.cache.setex(
-          this.dexKey,
-          this.network,
-          BEBOP_RESTRICTED_CACHE_KEY,
-          BEBOP_RESTRICT_TTL_S,
-          'true',
-        );
+        this.rateFetcher.restrict();
       } else {
         this.logger.warn(
           `${this.dexKey}-${this.network}: Error count increased`,
@@ -839,41 +827,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async isRestricted(): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      BEBOP_RESTRICTED_CACHE_KEY,
-    );
-
-    return result === 'true';
-  }
-
-  async getCachedPrices(): Promise<BebopPricingResponse | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.pricesCacheKey,
-    );
-
-    if (cachedPrices) {
-      return JSON.parse(cachedPrices) as BebopPricingResponse;
-    }
-
-    return null;
-  }
-
-  async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.tokensAddrCacheKey,
-    );
-
-    if (cachedTokens) {
-      return JSON.parse(cachedTokens) as TokenDataMap;
-    }
-
-    return null;
+    return this.rateFetcher.isRestricted();
   }
 
   getTokenFromAddress(address: Address): Token {
