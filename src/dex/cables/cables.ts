@@ -753,7 +753,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
         await this.dexHelper.cache.setex(
           this.dexKey,
           this.network,
-          CABLES_RESTRICTED_CACHE_KEY,
+          CABLES_ERRORS_CACHE_KEY,
           ERRORS_TTL_S,
           Utils.Serialize(data),
         );
