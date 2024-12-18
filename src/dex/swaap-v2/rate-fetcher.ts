@@ -334,24 +334,25 @@ export class RateFetcher {
   }
 
   async restrictPool(poolIdentifier: string): Promise<void> {
-    await this.dexHelper.cache.hset(
-      this.runtimeMMsRestrictHashMapKey,
-      poolIdentifier,
-      Date.now().toString(),
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getRestrictPoolKey(poolIdentifier),
+      SWAAP_POOL_RESTRICT_TTL_S,
+      'restricted',
     );
   }
 
   async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
-    const expirationThreshold = Date.now() - SWAAP_POOL_RESTRICT_TTL_S * 1000;
-    const createdAt = await this.dexHelper.cache.hget(
-      this.runtimeMMsRestrictHashMapKey,
-      poolIdentifier,
+    const restricted = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.getRestrictPoolKey(poolIdentifier),
     );
-    const wasNotRestricted = createdAt === null;
-    if (wasNotRestricted) {
-      return false;
-    }
-    const restrictionExpired = +createdAt < expirationThreshold;
-    return !restrictionExpired;
+    return restricted === 'restricted';
+  }
+
+  getRestrictPoolKey(poolIdentifier: string): string {
+    return `${this.runtimeMMsRestrictHashMapKey}_${poolIdentifier}`;
   }
 }
