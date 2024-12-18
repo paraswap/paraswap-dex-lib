@@ -148,9 +148,7 @@ export class RateFetcher {
       this.tokensPubSub.subscribe();
       this.restrictedPoolPubSub.subscribe();
 
-      const initSet = await this.dexHelper.cache.smembers(
-        this.blacklistCacheKey,
-      );
+      const initSet = await this.getAllBlacklisted();
       this.blacklistPubSub.initializeAndSubscribe(initSet);
     }
   }
@@ -290,16 +288,7 @@ export class RateFetcher {
     txOrigin: Address,
     ttl: number = DEXALOT_BLACKLIST_CACHES_TTL_S,
   ): Promise<boolean> {
-    const cachedBlacklist = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.blacklistCacheKey,
-    );
-
-    let blacklist: string[] = [];
-    if (cachedBlacklist) {
-      blacklist = JSON.parse(cachedBlacklist);
-    }
+    const blacklist = await this.getAllBlacklisted();
 
     blacklist.push(txOrigin.toLowerCase());
 
@@ -314,6 +303,20 @@ export class RateFetcher {
     this.blacklistPubSub.publish([txOrigin.toLowerCase()]);
 
     return true;
+  }
+
+  async getAllBlacklisted(): Promise<string[]> {
+    const cachedBlacklist = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.blacklistCacheKey,
+    );
+
+    if (cachedBlacklist) {
+      return JSON.parse(cachedBlacklist);
+    }
+
+    return [];
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
