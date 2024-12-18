@@ -11,14 +11,11 @@ import {
   BebopTokensResponse,
   TokenDataMap,
 } from './types';
-import {
-  BebopPricingUpdate,
-  pricesResponseValidator,
-  tokensResponseValidator,
-} from './validators';
+import { BebopPricingUpdate, tokensResponseValidator } from './validators';
 import { WebSocketFetcher } from '../../lib/fetcher/wsFetcher';
 import { utils } from 'ethers';
-import { BEBOP_RESTRICTED_CACHE_KEY } from './constants';
+import { BEBOP_RESTRICT_TTL_S, BEBOP_RESTRICTED_CACHE_KEY } from './constants';
+import { JsonPubSub } from '../../lib/pub-sub';
 
 export function levels_from_flat_array(values: number[]): BebopLevel[] {
   const levels: BebopLevel[] = [];
@@ -30,13 +27,16 @@ export function levels_from_flat_array(values: number[]): BebopLevel[] {
 
 export class RateFetcher {
   private pricesFetcher: WebSocketFetcher<BebopPricingResponse>;
+  private pricesPubSub: JsonPubSub;
   private pricesCacheKey: string;
   private pricesCacheTTL: number;
 
   private tokensFetcher: Fetcher<BebopTokensResponse>;
+  private tokensPubSub: JsonPubSub;
   private tokensAddrCacheKey: string;
-  private tokensCacheKey: string;
   private tokensCacheTTL: number;
+
+  private restrictPubSub: JsonPubSub;
 
   constructor(
     private dexHelper: IDexHelper,
@@ -47,6 +47,7 @@ export class RateFetcher {
   ) {
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.pricesCacheTTL = config.rateConfig.pricesCacheTTLSecs;
+    this.pricesPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'prices');
     this.pricesFetcher = new WebSocketFetcher<BebopPricingResponse>(
       {
         info: {
@@ -70,8 +71,9 @@ export class RateFetcher {
     );
 
     this.tokensAddrCacheKey = config.rateConfig.tokensAddrCacheKey;
-    this.tokensCacheKey = config.rateConfig.tokensCacheKey;
     this.tokensCacheTTL = config.rateConfig.tokensCacheTTLSecs;
+
+    this.tokensPubSub = new JsonPubSub(this.dexHelper, this.dexKey, 'tokens');
     this.tokensFetcher = new Fetcher<BebopTokensResponse>(
       dexHelper.httpRequest,
       {
@@ -88,6 +90,14 @@ export class RateFetcher {
       },
       config.rateConfig.tokensIntervalMs,
       logger,
+    );
+
+    this.restrictPubSub = new JsonPubSub(
+      dexHelper,
+      dexKey,
+      'restrict',
+      'not_restricted',
+      BEBOP_RESTRICT_TTL_S,
     );
   }
 
@@ -116,8 +126,14 @@ export class RateFetcher {
   }
 
   start() {
-    this.pricesFetcher.startPolling();
-    this.tokensFetcher.startPolling();
+    if (!this.dexHelper.config.isSlave) {
+      this.pricesFetcher.startPolling();
+      this.tokensFetcher.startPolling();
+    } else {
+      this.tokensPubSub.subscribe();
+      this.pricesPubSub.subscribe();
+      this.restrictPubSub.subscribe();
+    }
   }
 
   stop() {
@@ -147,6 +163,8 @@ export class RateFetcher {
       this.tokensCacheTTL,
       JSON.stringify(tokenAddrMap),
     );
+
+    this.tokensPubSub.publish(tokenAddrMap, this.tokensCacheTTL);
   }
 
   private handlePricesResponse(resp: BebopPricingResponse): void {
@@ -173,43 +191,54 @@ export class RateFetcher {
       this.pricesCacheTTL,
       JSON.stringify(normalizedPrices),
     );
+
+    this.pricesPubSub.publish(normalizedPrices, this.pricesCacheTTL);
   }
 
   async getCachedPrices(): Promise<BebopPricingResponse | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const cachedPrices = await this.pricesPubSub.getAndCache(
       this.pricesCacheKey,
     );
 
     if (cachedPrices) {
-      return JSON.parse(cachedPrices) as BebopPricingResponse;
+      return cachedPrices as BebopPricingResponse;
     }
 
     return null;
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const cachedTokens = await this.tokensPubSub.getAndCache(
       this.tokensAddrCacheKey,
     );
 
     if (cachedTokens) {
-      return JSON.parse(cachedTokens) as TokenDataMap;
+      return cachedTokens as TokenDataMap;
     }
 
     return null;
   }
 
   async isRestricted(): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
+    const result = await this.restrictPubSub.getAndCache(
       BEBOP_RESTRICTED_CACHE_KEY,
     );
 
     return result === 'true';
+  }
+
+  async restrict(): Promise<void> {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      BEBOP_RESTRICTED_CACHE_KEY,
+      BEBOP_RESTRICT_TTL_S,
+      'true',
+    );
+
+    this.restrictPubSub.publish(
+      { [BEBOP_RESTRICTED_CACHE_KEY]: 'true' },
+      BEBOP_RESTRICT_TTL_S,
+    );
   }
 }

@@ -129,11 +129,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async initializePricing(blockNumber: number) {
-    if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher.start();
-      await sleep(BEBOP_INIT_TIMEOUT_MS);
-    }
-
+    await this.rateFetcher.start();
+    await sleep(BEBOP_INIT_TIMEOUT_MS);
     await this.setTokensMap();
   }
 
@@ -809,13 +806,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
             errorsData.count + 1
           } within ${BEBOP_RESTRICT_CHECK_INTERVAL_MS / 1000 / 60} minutes`,
         );
-        await this.dexHelper.cache.setex(
-          this.dexKey,
-          this.network,
-          BEBOP_RESTRICTED_CACHE_KEY,
-          BEBOP_RESTRICT_TTL_S,
-          'true',
-        );
+        this.rateFetcher.restrict();
       } else {
         this.logger.warn(
           `${this.dexKey}-${this.network}: Error count increased`,
