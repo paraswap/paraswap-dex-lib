@@ -79,8 +79,6 @@ import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { SpecialDex } from '../../executor/types';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
-const BLACKLISTED = 'blacklisted';
-
 export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   readonly isStatePollingDex = true;
   readonly hasConstantPriceLargeAmounts = false;
@@ -89,7 +87,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   private rateFetcher: RateFetcher;
   private swaapV2AuthToken: string;
   private tokensMap: TokensMap = {};
-  private runtimeMMsRestrictHashMapKey: string;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SwaapV2Config);
@@ -115,6 +112,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
     this.rateFetcher = new RateFetcher(
       this.dexHelper,
+      this.network,
       this.dexKey,
       this.logger,
       {
@@ -132,9 +130,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         },
       },
     );
-
-    this.runtimeMMsRestrictHashMapKey =
-      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
@@ -168,7 +163,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       normalizedDestToken.address,
     );
 
-    const levels = await this.getCachedLevels();
+    const levels = await this.rateFetcher.getCachedLevels();
     if (levels === null) {
       return [];
     }
@@ -277,34 +272,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     });
   }
 
-  async getCachedTokens(): Promise<TokensMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      SWAAP_TOKENS_CACHE_KEY,
-    );
-
-    if (cachedTokens) {
-      return JSON.parse(cachedTokens) as TokensMap;
-    }
-
-    return null;
-  }
-
-  async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
-    const cachedLevels = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      SWAAP_PRICES_CACHE_KEY,
-    );
-
-    if (cachedLevels) {
-      return JSON.parse(cachedLevels) as Record<string, SwaapV2PriceLevels>;
-    }
-
-    return null;
-  }
-
   normalizeToken(token: Token): Token {
     return {
       address: normalizeTokenAddress(token.address),
@@ -330,11 +297,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     );
 
     try {
-      if (await this.isRestrictedPool(requestedPoolIdentifier)) {
+      if (await this.rateFetcher.isRestrictedPool(requestedPoolIdentifier)) {
         return null;
       }
 
-      this.tokensMap = (await this.getCachedTokens()) || {};
+      this.tokensMap = (await this.rateFetcher.getCachedTokens()) || {};
 
       if (normalizedSrcToken.address === normalizedDestToken.address) {
         return null;
@@ -362,7 +329,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         return null;
       }
 
-      const levels = await this.getCachedLevels();
+      const levels = await this.rateFetcher.getCachedLevels();
       if (levels === null) {
         return null;
       }
@@ -636,12 +603,18 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       ];
     } catch (e) {
       if (isAxiosError(e) && e.response?.status === 403) {
-        await this.setBlacklist(options.userAddress, SWAAP_403_TTL_S);
+        await this.rateFetcher.setBlacklist(
+          options.userAddress,
+          SWAAP_403_TTL_S,
+        );
         this.logger.warn(
           `${this.dexKey}-${this.network}: Encountered blacklisted user=${options.userAddress}. Adding to local blacklist cache`,
         );
       } else if (isAxiosError(e) && e.response?.status === 429) {
-        await this.setBlacklist(options.userAddress, SWAAP_429_TTL_S);
+        await this.rateFetcher.setBlacklist(
+          options.userAddress,
+          SWAAP_429_TTL_S,
+        );
         this.logger.warn(
           `${this.dexKey}-${this.network}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
         );
@@ -677,11 +650,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     );
 
     // We use timestamp for creation date to later discern if it already expired or not
-    await this.dexHelper.cache.hset(
-      this.runtimeMMsRestrictHashMapKey,
-      poolIdentifier,
-      Date.now().toString(),
-    );
+    await this.rateFetcher.restrictPool(poolIdentifier);
 
     this.rateFetcher
       .notify(SWAAP_BANNED_CODE, message, this.getNotifyReqParams())
@@ -698,45 +667,8 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       });
   }
 
-  async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
-    const expirationThreshold = Date.now() - SWAAP_POOL_RESTRICT_TTL_S * 1000;
-    const createdAt = await this.dexHelper.cache.hget(
-      this.runtimeMMsRestrictHashMapKey,
-      poolIdentifier,
-    );
-    const wasNotRestricted = createdAt === null;
-    if (wasNotRestricted) {
-      return false;
-    }
-    const restrictionExpired = +createdAt < expirationThreshold;
-    return !restrictionExpired;
-  }
-
-  async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      this.getBlackListKey(txOrigin),
-    );
-    return result === BLACKLISTED;
-  }
-
-  getBlackListKey(address: Address) {
-    return `blacklist_${address}`.toLowerCase();
-  }
-
-  async setBlacklist(
-    txOrigin: Address,
-    ttl: number = SWAAP_403_TTL_S,
-  ): Promise<boolean> {
-    await this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      this.getBlackListKey(txOrigin),
-      ttl,
-      BLACKLISTED,
-    );
-    return true;
+  isBlacklisted(userAddress: Address): AsyncOrSync<boolean> {
+    return this.rateFetcher.isBlacklisted(userAddress);
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -971,10 +903,10 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    this.tokensMap = (await this.getCachedTokens()) || {};
+    this.tokensMap = (await this.rateFetcher.getCachedTokens()) || {};
     const normalizedTokenAddress = normalizeTokenAddress(tokenAddress);
 
-    const pLevels = await this.getCachedLevels();
+    const pLevels = await this.rateFetcher.getCachedLevels();
 
     if (pLevels === null) {
       return [];
@@ -992,7 +924,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           base,
           quote,
         );
-        const isRestrictedPool = await this.isRestrictedPool(poolIdentifier);
+        const isRestrictedPool = await this.rateFetcher.isRestrictedPool(
+          poolIdentifier,
+        );
 
         return {
           pair,

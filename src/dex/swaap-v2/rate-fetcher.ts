@@ -26,8 +26,15 @@ import {
   SWAAP_RFQ_QUOTE_TIMEOUT_MS,
   SWAAP_NOTIFY_TIMEOUT_MS,
   SWAAP_NOTIFICATION_ORIGIN,
+  SWAAP_TOKENS_CACHE_KEY,
+  SWAAP_PRICES_CACHE_KEY,
+  SWAAP_403_TTL_S,
+  SWAAP_POOL_RESTRICT_TTL_S,
 } from './constants';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
+import { CACHE_PREFIX, Network } from '../../constants';
+
+const BLACKLISTED = 'blacklisted';
 
 export class RateFetcher {
   private rateFetcher: Fetcher<SwaapV2PriceLevelsResponse>;
@@ -37,8 +44,11 @@ export class RateFetcher {
   private tokenCacheKey: string;
   private pricesCacheKey: string;
 
+  private runtimeMMsRestrictHashMapKey: string;
+
   constructor(
     private dexHelper: IDexHelper,
+    private network: Network,
     private dexKey: string,
     private logger: Logger,
     config: SwaapV2RateFetcherConfig,
@@ -47,6 +57,9 @@ export class RateFetcher {
     this.tokensCacheTTL = config.tokensConfig.tokensCacheTTLSecs;
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.tokenCacheKey = config.tokensConfig.tokensCacheKey;
+
+    this.runtimeMMsRestrictHashMapKey =
+      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
 
     this.rateFetcher = new Fetcher<SwaapV2PriceLevelsResponse>(
       dexHelper.httpRequest,
@@ -263,5 +276,82 @@ export class RateFetcher {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  async getCachedTokens(): Promise<TokensMap | null> {
+    const cachedTokens = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      SWAAP_TOKENS_CACHE_KEY,
+    );
+
+    if (cachedTokens) {
+      return JSON.parse(cachedTokens) as TokensMap;
+    }
+
+    return null;
+  }
+
+  async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
+    const cachedLevels = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      SWAAP_PRICES_CACHE_KEY,
+    );
+
+    if (cachedLevels) {
+      return JSON.parse(cachedLevels) as Record<string, SwaapV2PriceLevels>;
+    }
+
+    return null;
+  }
+
+  async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    const result = await this.dexHelper.cache.get(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+    );
+    return result === BLACKLISTED;
+  }
+
+  getBlackListKey(address: Address) {
+    return `blacklist_${address}`.toLowerCase();
+  }
+
+  async setBlacklist(
+    txOrigin: Address,
+    ttl: number = SWAAP_403_TTL_S,
+  ): Promise<boolean> {
+    await this.dexHelper.cache.setex(
+      this.dexKey,
+      this.network,
+      this.getBlackListKey(txOrigin),
+      ttl,
+      BLACKLISTED,
+    );
+    return true;
+  }
+
+  async restrictPool(poolIdentifier: string): Promise<void> {
+    await this.dexHelper.cache.hset(
+      this.runtimeMMsRestrictHashMapKey,
+      poolIdentifier,
+      Date.now().toString(),
+    );
+  }
+
+  async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
+    const expirationThreshold = Date.now() - SWAAP_POOL_RESTRICT_TTL_S * 1000;
+    const createdAt = await this.dexHelper.cache.hget(
+      this.runtimeMMsRestrictHashMapKey,
+      poolIdentifier,
+    );
+    const wasNotRestricted = createdAt === null;
+    if (wasNotRestricted) {
+      return false;
+    }
+    const restrictionExpired = +createdAt < expirationThreshold;
+    return !restrictionExpired;
   }
 }
