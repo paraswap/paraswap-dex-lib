@@ -34,6 +34,7 @@ type BaseConfig = {
   idleDaoAuthToken?: string;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
+  bebopAuthName?: string;
   bebopAuthToken?: string;
   forceRpcFallbackDexs: string[];
 };
@@ -74,6 +75,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     rpcPollingBlocksBackToTriggerUpdate: 0,
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
+    bebopAuthName: process.env.API_KEY_BEBOP_AUTH_NAME || '',
     bebopAuthToken: process.env.API_KEY_BEBOP_AUTH_TOKEN || '',
     idleDaoAuthToken: process.env.API_KEY_IDLEDAO_AUTH_TOKEN || '',
     hashFlowDisabledMMs:
@@ -147,6 +149,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xC50F4c1E81c873B2204D7eFf7069Ffec6Fbe136D',
     privateHttpProvider: process.env.HTTP_PROVIDER_56,
     augustusV6Address: '0x6a000f20005980200259b80c5102003040001068',
+    bebopAuthName: process.env.API_KEY_BEBOP_AUTH_NAME || '',
     bebopAuthToken: process.env.API_KEY_BEBOP_AUTH_TOKEN || '',
     executorsAddresses: {
       Executor01: '0x000010036C0190E009a000d0fc3541100A07380A',
@@ -301,6 +304,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
       Executor03: '0xe009F00e200A090090fC70e02d70B232000c0802',
     },
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
+    bebopAuthName: process.env.API_KEY_BEBOP_AUTH_NAME || '',
     bebopAuthToken: process.env.API_KEY_BEBOP_AUTH_TOKEN || '',
     adapterAddresses: {
       ArbitrumAdapter01: '0x369A2FDb910d432f0a07381a5E3d27572c876713',
@@ -348,6 +352,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     uniswapV2ExchangeRouterAddress:
       '0xB41dD984730dAf82f5C41489E21ac79D5e3B61bC',
     uniswapV3EventLoggingSampleRate: 0,
+    bebopAuthName: process.env.API_KEY_BEBOP_AUTH_NAME || '',
     bebopAuthToken: process.env.API_KEY_BEBOP_AUTH_TOKEN || '',
     rfqConfigs: {},
     rpcPollingMaxAllowedStateDelayInBlocks: 5,
@@ -431,6 +436,7 @@ const baseConfigs: { [network: number]: BaseConfig } = {
     multicallV2Address: '0xeDF6D2a16e8081F777eB623EeB4411466556aF3d',
     privateHttpProvider: process.env.HTTP_PROVIDER_8453,
     dexalotAuthToken: process.env.API_KEY_DEXALOT_AUTH_TOKEN || '',
+    bebopAuthName: process.env.API_KEY_BEBOP_AUTH_NAME || '',
     bebopAuthToken: process.env.API_KEY_BEBOP_AUTH_TOKEN || '',
     hashFlowAuthToken: process.env.API_KEY_HASHFLOW_AUTH_TOKEN || '',
     swaapV2AuthToken: process.env.API_KEY_SWAAP_V2_AUTH_TOKEN || '',
@@ -528,6 +534,7 @@ export function generateConfig(network: number): Config {
     idleDaoAuthToken: baseConfig.idleDaoAuthToken,
     swaapV2AuthToken: baseConfig.swaapV2AuthToken,
     dexalotAuthToken: baseConfig.dexalotAuthToken,
+    bebopAuthName: baseConfig.bebopAuthName,
     bebopAuthToken: baseConfig.bebopAuthToken,
     hashFlowDisabledMMs: baseConfig.hashFlowDisabledMMs,
     forceRpcFallbackDexs: baseConfig.forceRpcFallbackDexs,
