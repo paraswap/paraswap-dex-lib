@@ -8,7 +8,7 @@ import {
 } from '@bgd-labs/aave-address-book';
 
 export const AaveV3StataConfig: DexConfigMap<DexParams> = {
-  AaveV3Stata: {
+  AaveV3StataV2: {
     [Network.MAINNET]: {
       factoryAddresses: [
         AaveV3Ethereum.STATA_FACTORY,

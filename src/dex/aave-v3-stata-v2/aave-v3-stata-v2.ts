@@ -388,6 +388,7 @@ export class AaveV3StataV2
             [
               srcAmount,
               recipient, // receiver
+              executorAddress, // owner
             ],
           );
         } else {
@@ -396,6 +397,7 @@ export class AaveV3StataV2
             [
               srcAmount,
               recipient, // receiver
+              executorAddress, // owner
             ],
           );
         }
