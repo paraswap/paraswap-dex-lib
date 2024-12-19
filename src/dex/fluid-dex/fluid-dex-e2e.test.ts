@@ -118,6 +118,23 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
+    describe('ETH -> INST', () => {
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'INST';
+
+      const tokenAAmount: string = '100000000000000';
+      const tokenBAmount: string = '100000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
     describe('ETH -> wstETH', () => {
       const tokenASymbol: string = 'wstETH';
       const tokenBSymbol: string = 'ETH';

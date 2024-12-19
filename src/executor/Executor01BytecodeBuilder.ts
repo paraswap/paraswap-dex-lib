@@ -275,6 +275,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
         curExchangeParam.approveData.target,
         curExchangeParam.approveData.token,
         flags.approves[index],
+        curExchangeParam.permit2Approval,
       );
 
       swapCallData = hexConcat([approveCallData, swapCallData]);
@@ -298,6 +299,7 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
               curExchangeParam.approveData.target,
               curExchangeParam.approveData.token,
               flags.approves[index],
+              curExchangeParam.permit2Approval,
             );
           }
 
@@ -377,17 +379,21 @@ export class Executor01BytecodeBuilder extends ExecutorBytecodeBuilder<
 
     let fromAmountPos = 0;
     if (insertFromAmount) {
-      const fromAmount = ethers.utils.defaultAbiCoder.encode(
-        ['uint256'],
-        [swap.swapExchanges[swapExchangeIndex].srcAmount],
-      );
+      if (exchangeParam.insertFromAmountPos) {
+        fromAmountPos = exchangeParam.insertFromAmountPos;
+      } else {
+        const fromAmount = ethers.utils.defaultAbiCoder.encode(
+          ['uint256'],
+          [swap.swapExchanges[swapExchangeIndex].srcAmount],
+        );
 
-      const fromAmountIndex = exchangeData
-        .replace('0x', '')
-        .indexOf(fromAmount.replace('0x', ''));
+        const fromAmountIndex = exchangeData
+          .replace('0x', '')
+          .indexOf(fromAmount.replace('0x', ''));
 
-      fromAmountPos =
-        (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
+        fromAmountPos =
+          (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
+      }
     }
 
     return this.buildCallData(

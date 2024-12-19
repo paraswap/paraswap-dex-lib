@@ -634,7 +634,7 @@ export class MaverickPoolMath {
       activeTick += delta.tokenAIn ? 1n : -1n;
 
       if (MaverickDeltaMath.pastMaxTick(delta, activeTick)) {
-        this.state.activeTick += delta.tokenAIn ? 1n : -1n;
+        this.state.activeTick += delta.tokenAIn ? -1n : 1n;
         return delta;
       }
     }
