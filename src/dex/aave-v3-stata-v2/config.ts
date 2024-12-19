@@ -1,6 +1,6 @@
 import { DexParams } from './types';
-import { DexConfigMap, AdapterMappings } from '../../types';
-import { Network, SwapSide } from '../../constants';
+import { DexConfigMap } from '../../types';
+import { Network } from '../../constants';
 import {
   AaveV3Ethereum,
   AaveV3EthereumLido,
@@ -21,10 +21,4 @@ export const AaveV3StataConfig: DexConfigMap<DexParams> = {
       pool: AaveV3Gnosis.POOL,
     },
   },
-};
-
-export const Adapters: Record<number, AdapterMappings> = {
-  // TODO: add adapters for each chain for V5 support
-  [Network.MAINNET]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
-  [Network.GNOSIS]: { [SwapSide.SELL]: [{ name: '', index: 0 }] },
 };

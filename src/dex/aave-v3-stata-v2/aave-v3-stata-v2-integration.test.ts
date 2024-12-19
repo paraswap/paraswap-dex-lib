@@ -39,13 +39,12 @@ function decodeReaderResult(
 
 async function checkOnChainPricing(
   aaveV3Statav2: AaveV3StataV2,
+  exchangeAddress: string,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = '0x2dca80061632f3f87c9ca28364d1d0c30cd79a19'; // stataUSDCn
-
   const readerIface = AaveV3StataV2.stata;
 
   const readerCallData = getReaderCalldata(
@@ -76,6 +75,7 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
+  exchangeAddress: string,
   funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
@@ -116,6 +116,7 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     aaveV3Statav2,
+    exchangeAddress,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
@@ -123,10 +124,166 @@ async function testPricingOnNetwork(
   );
 }
 
-describe('AaveV3Stata', function () {
-  const dexKey = 'AaveV3Stata';
+describe('AaveV3StataV2', function () {
+  const dexKey = 'AaveV3StataV2';
   let blockNumber: number;
   let aaveV3Statav2: AaveV3StataV2;
+
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'USDT';
+    const destTokenSymbol = 'waEthUSDT';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      aaveV3Statav2 = new AaveV3StataV2(network, dexKey, dexHelper);
+      if (aaveV3Statav2.initializePricing) {
+        await aaveV3Statav2.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL USDT -> waEthUSDT', async function () {
+      await testPricingOnNetwork(
+        aaveV3Statav2,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        '0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8',
+        'previewDeposit',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL waEthUSDT -> USDT ', async function () {
+      await testPricingOnNetwork(
+        aaveV3Statav2,
+        network,
+        dexKey,
+        blockNumber,
+        destTokenSymbol,
+        srcTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        '0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8',
+        'previewRedeem',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY USDT -> waEthUSDT', async function () {
+      await testPricingOnNetwork(
+        aaveV3Statav2,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        '0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8',
+        'previewMint',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY waEthUSDT -> USDT', async function () {
+      await testPricingOnNetwork(
+        aaveV3Statav2,
+        network,
+        dexKey,
+        blockNumber,
+        destTokenSymbol,
+        srcTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        '0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8',
+        'previewWithdraw',
+      );
+    });
+
+    it(`getTopPoolsForToken - ${srcTokenSymbol}`, async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveV3Stata = new AaveV3StataV2(network, dexKey, dexHelper);
+      if (newAaveV3Stata.updatePoolState) {
+        await newAaveV3Stata.updatePoolState();
+      }
+      const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(
+        `${srcTokenSymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+
+    it(`getTopPoolsForToken - ${destTokenSymbol}`, async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveV3Stata = new AaveV3StataV2(network, dexKey, dexHelper);
+      if (newAaveV3Stata.updatePoolState) {
+        await newAaveV3Stata.updatePoolState();
+      }
+      const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
+        tokens[destTokenSymbol].address,
+        10,
+      );
+      console.log(
+        `${destTokenSymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][destTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
 
   // polygon is not yet live
   describe.skip('Polygon', () => {
@@ -184,6 +341,7 @@ describe('AaveV3Stata', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
+        '0x2dca80061632f3f87c9ca28364d1d0c30cd79a19',
         'previewDeposit',
       );
     });
@@ -198,6 +356,7 @@ describe('AaveV3Stata', function () {
         srcTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
+        '0x2dca80061632f3f87c9ca28364d1d0c30cd79a19',
         'previewRedeem',
       );
     });
@@ -212,6 +371,7 @@ describe('AaveV3Stata', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
+        '0x2dca80061632f3f87c9ca28364d1d0c30cd79a19',
         'previewMint',
       );
     });
@@ -226,6 +386,7 @@ describe('AaveV3Stata', function () {
         srcTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
+        '0x2dca80061632f3f87c9ca28364d1d0c30cd79a19',
         'previewWithdraw',
       );
     });

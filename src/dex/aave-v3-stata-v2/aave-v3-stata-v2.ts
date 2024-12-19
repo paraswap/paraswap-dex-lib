@@ -23,7 +23,7 @@ import {
   TokenType,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { AaveV3StataConfig, Adapters } from './config';
+import { AaveV3StataConfig } from './config';
 import { Interface } from '@ethersproject/abi';
 import { fetchTokenList } from './utils';
 import {
@@ -70,7 +70,6 @@ export class AaveV3StataV2
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
     protected config = AaveV3StataConfig[dexKey][network],
-    protected adapters = Adapters[network],
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);

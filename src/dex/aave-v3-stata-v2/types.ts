@@ -1,11 +1,6 @@
 import { Address } from '../../types';
 
-export type PoolState = {
-  // TODO: poolState is the state of event
-  // subscriber. This should be the minimum
-  // set of parameters required to compute
-  // pool prices. Complete me!
-};
+export type PoolState = {};
 
 export enum TokenType {
   UNDERLYING,
@@ -15,10 +10,6 @@ export enum TokenType {
 }
 
 export type AaveV3StataV2Data = {
-  // TODO: AaveV3StataData is the dex data that is
-  // returned by the API that can be used for
-  // tx building. The data structure should be minimal.
-  // Complete me!
   exchange: Address;
   srcType: TokenType;
   destType: TokenType;

@@ -71,6 +71,46 @@ function testForNetwork(
 describe('AaveV3Stata E2E', () => {
   const dexKey = 'AaveV3StataV2';
 
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+
+    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+      [
+        {
+          name: 'USDT',
+          amount: '100000',
+        },
+        {
+          name: 'waEthUSDT',
+          amount: '100000',
+        },
+      ],
+      [
+        {
+          name: 'aaveUSDT',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'waEthUSDT',
+          amount: '100000',
+        },
+      ],
+    ];
+
+    pairs.forEach(pair => {
+      testForNetwork(
+        network,
+        dexKey,
+        pair[0].name,
+        pair[1].name,
+        pair[0].amount,
+        pair[1].amount,
+        pair[0].skipBuy,
+      );
+    });
+  });
+
   // polygon is not yet live
   describe.skip('Polygon', () => {
     const network = Network.POLYGON;
@@ -94,46 +134,6 @@ describe('AaveV3Stata E2E', () => {
         },
         {
           name: 'stataUSDCn',
-          amount: '100000',
-        },
-      ],
-    ];
-
-    pairs.forEach(pair => {
-      testForNetwork(
-        network,
-        dexKey,
-        pair[0].name,
-        pair[1].name,
-        pair[0].amount,
-        pair[1].amount,
-        pair[0].skipBuy,
-      );
-    });
-  });
-
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-
-    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
-      [
-        {
-          name: 'USDT',
-          amount: '100000',
-        },
-        {
-          name: 'waEthUSDT',
-          amount: '100000',
-        },
-      ],
-      [
-        {
-          name: 'aaveUSDT',
-          amount: '100000',
-          skipBuy: true,
-        },
-        {
-          name: 'waEthUSDT',
           amount: '100000',
         },
       ],
