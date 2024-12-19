@@ -312,7 +312,7 @@ export type Config = {
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
-  bebopAuthName: string;
+  bebopAuthName?: string;
   bebopAuthToken?: string;
   idleDaoAuthToken?: string;
   forceRpcFallbackDexs: string[];
