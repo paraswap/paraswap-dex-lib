@@ -69,7 +69,7 @@ function testForNetwork(
 }
 
 describe('AaveV3Stata E2E', () => {
-  const dexKey = 'AaveV3Stata';
+  const dexKey = 'AaveV3StataV2';
 
   // polygon is not yet live
   describe.skip('Polygon', () => {

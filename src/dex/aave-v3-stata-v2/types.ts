@@ -14,7 +14,7 @@ export enum TokenType {
   UNKNOWN,
 }
 
-export type AaveV3StataData = {
+export type AaveV3StataV2Data = {
   // TODO: AaveV3StataData is the dex data that is
   // returned by the API that can be used for
   // tx building. The data structure should be minimal.

@@ -16,7 +16,7 @@ import { Utils, getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  AaveV3StataData,
+  AaveV3StataV2Data,
   Rounding,
   StataFunctions,
   StataToken,
@@ -48,7 +48,7 @@ const RAY = BigInt(`1${'0'.repeat(27)}`);
 
 export class AaveV3StataV2
   extends SimpleExchange
-  implements IDex<AaveV3StataData>
+  implements IDex<AaveV3StataV2Data>
 {
   readonly hasConstantPriceLargeAmounts = false;
 
@@ -169,7 +169,7 @@ export class AaveV3StataV2
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<AaveV3StataData>> {
+  ): Promise<null | ExchangePrices<AaveV3StataV2Data>> {
     const src = getTokenType(this.network, srcToken.address);
     const dest = getTokenType(this.network, destToken.address);
 
@@ -284,7 +284,7 @@ export class AaveV3StataV2
   }
 
   getCalldataGasCost(
-    poolPrices: PoolPrices<AaveV3StataData>,
+    poolPrices: PoolPrices<AaveV3StataV2Data>,
   ): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
@@ -307,7 +307,7 @@ export class AaveV3StataV2
   //   destToken: string,
   //   srcAmount: string,
   //   destAmount: string,
-  //   data: AaveV3StataData,
+  //   data: AaveV3StataV2Data,
   //   side: SwapSide,
   // ): Promise<SimpleExchangeParam> {
   //   const { exchange, srcType, destType } = data;
@@ -370,7 +370,7 @@ export class AaveV3StataV2
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     recipient: Address,
-    data: AaveV3StataData,
+    data: AaveV3StataV2Data,
     side: SwapSide,
     _: Context,
     executorAddress: Address,
