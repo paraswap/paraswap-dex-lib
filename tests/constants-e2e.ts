@@ -1312,6 +1312,10 @@ export const Tokens: {
       address: '0x5979D7b546E38E414F7E9822514be443A4800529',
       decimals: 18,
     },
+    weETH: {
+      address: '0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe',
+      decimals: 18,
+    },
     RDPX: {
       address: '0x32eb7902d4134bf98a28b963d26de779af92a212',
       decimals: 18,
@@ -1962,6 +1966,7 @@ export const Holders: {
     SEN: '0x76d39045d856caf9bfae12ba611ca4a94449a4f1',
     RDPX: '0x115b818593c00da4f9d1d8f5ce7d7f88cce48bee',
     ARB: '0xb65edba80a3d81903ecd499c8eb9cf0e19096bd0',
+    weETH: '0xE957D8386d20D077F511E86672Fc7ee4b83067da',
     ETH: '0xfa0a32e5c33b6123122b6b68099001d9371d14e9',
     DAI: '0x2d070ed1321871841245d8ee5b84bd2712644322',
     WETH: '0x3368e17064c9ba5d6f1f93c4c678bea00cc78555',
@@ -1988,7 +1993,7 @@ export const Holders: {
     LINK: '0x7f1fa204bb700853d36994da19f830b6ad18455c',
     DMT: '0x40414f138eb2ef938e6c3629897ef99d4464d4e8',
     PENDLE: '0x5bdf85216ec1e38d6458c870992a69e38e03f7ef',
-    wstETH: '0x3c22ec75ea5D745c78fc84762F7F1E6D82a2c5BF',
+    wstETH: '0xb3843D7BBb8530f95e5bEaBeff451fA5380510a8',
     EURA: '0x6dd7b830896b56812aa667bdd14b71c8b3252f8e',
     stEUR: '0xE588611e7A2392507879E3be80531654b85C16aA',
     USDA: '0xa86ff337db9107b54862d30d1a598f8be847b05e',
