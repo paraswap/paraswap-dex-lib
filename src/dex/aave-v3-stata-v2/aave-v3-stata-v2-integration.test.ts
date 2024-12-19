@@ -285,6 +285,162 @@ describe('AaveV3StataV2', function () {
     });
   });
 
+  describe('Gnosis', () => {
+    const network = Network.GNOSIS;
+    const dexHelper = new DummyDexHelper(network);
+
+    const tokens = Tokens[network];
+
+    const srcTokenSymbol = 'wstETH';
+    const destTokenSymbol = 'waGnowstETH';
+
+    const amountsForSell = [
+      0n,
+      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    ];
+
+    const amountsForBuy = [
+      0n,
+      1n * BI_POWS[tokens[destTokenSymbol].decimals],
+      2n * BI_POWS[tokens[destTokenSymbol].decimals],
+      3n * BI_POWS[tokens[destTokenSymbol].decimals],
+      4n * BI_POWS[tokens[destTokenSymbol].decimals],
+      5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      6n * BI_POWS[tokens[destTokenSymbol].decimals],
+      7n * BI_POWS[tokens[destTokenSymbol].decimals],
+      8n * BI_POWS[tokens[destTokenSymbol].decimals],
+      9n * BI_POWS[tokens[destTokenSymbol].decimals],
+      10n * BI_POWS[tokens[destTokenSymbol].decimals],
+    ];
+
+    beforeAll(async () => {
+      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      aaveV3Statav2 = new AaveV3StataV2(network, dexKey, dexHelper);
+      if (aaveV3Statav2.initializePricing) {
+        await aaveV3Statav2.initializePricing(blockNumber);
+      }
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL wstETH -> waGnowstETH', async function () {
+      await testPricingOnNetwork(
+        aaveV3Statav2,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        '0x773CDA0CADe2A3d86E6D4e30699d40bB95174ff2',
+        'previewDeposit',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL waGnowstETH -> wstETH', async function () {
+      await testPricingOnNetwork(
+        aaveV3Statav2,
+        network,
+        dexKey,
+        blockNumber,
+        destTokenSymbol,
+        srcTokenSymbol,
+        SwapSide.SELL,
+        amountsForSell,
+        '0x773CDA0CADe2A3d86E6D4e30699d40bB95174ff2',
+        'previewRedeem',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY wstETH -> waGnowstETH', async function () {
+      await testPricingOnNetwork(
+        aaveV3Statav2,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        '0x773CDA0CADe2A3d86E6D4e30699d40bB95174ff2',
+        'previewMint',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY waGnowstETH -> wstETH', async function () {
+      await testPricingOnNetwork(
+        aaveV3Statav2,
+        network,
+        dexKey,
+        blockNumber,
+        destTokenSymbol,
+        srcTokenSymbol,
+        SwapSide.BUY,
+        amountsForBuy,
+        '0x773CDA0CADe2A3d86E6D4e30699d40bB95174ff2',
+        'previewWithdraw',
+      );
+    });
+
+    it(`getTopPoolsForToken - ${srcTokenSymbol}`, async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveV3Stata = new AaveV3StataV2(network, dexKey, dexHelper);
+      if (newAaveV3Stata.updatePoolState) {
+        await newAaveV3Stata.updatePoolState();
+      }
+      const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(
+        `${srcTokenSymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+
+    it(`getTopPoolsForToken - ${destTokenSymbol}`, async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const newAaveV3Stata = new AaveV3StataV2(network, dexKey, dexHelper);
+      if (newAaveV3Stata.updatePoolState) {
+        await newAaveV3Stata.updatePoolState();
+      }
+      const poolLiquidity = await newAaveV3Stata.getTopPoolsForToken(
+        tokens[destTokenSymbol].address,
+        10,
+      );
+      console.log(
+        `${destTokenSymbol} Top Pools:`,
+        JSON.stringify(poolLiquidity, null, 2),
+      );
+
+      if (!newAaveV3Stata.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          Tokens[network][destTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+
   // polygon is not yet live
   describe.skip('Polygon', () => {
     const network = Network.POLYGON;

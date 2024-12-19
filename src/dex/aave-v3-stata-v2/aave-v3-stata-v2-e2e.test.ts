@@ -111,6 +111,47 @@ describe('AaveV3Stata E2E', () => {
     });
   });
 
+  describe('Gnosis', () => {
+    const network = Network.GNOSIS;
+
+    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+      [
+        {
+          name: 'waGnowstETH',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'wstETH',
+          amount: '100000',
+        },
+      ],
+      [
+        {
+          name: 'waGnoWETH',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'WETH',
+          amount: '100000',
+        },
+      ],
+    ];
+
+    pairs.forEach(pair => {
+      testForNetwork(
+        network,
+        dexKey,
+        pair[0].name,
+        pair[1].name,
+        pair[0].amount,
+        pair[1].amount,
+        pair[0].skipBuy,
+      );
+    });
+  });
+
   // polygon is not yet live
   describe.skip('Polygon', () => {
     const network = Network.POLYGON;

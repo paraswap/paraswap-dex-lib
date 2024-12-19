@@ -1539,6 +1539,10 @@ export const Tokens: {
       address: '0x773CDA0CADe2A3d86E6D4e30699d40bB95174ff2',
       decimals: 18,
     },
+    waGnoGNO: {
+      address: '0x7c16F0185A26Db0AE7a9377f23BC18ea7ce5d644',
+      decimals: 18,
+    },
     aGnoUSDC: {
       address: '0xc6b7aca6de8a6044e0e32d0c841a89244a10d284',
       decimals: 6,
@@ -2063,6 +2067,7 @@ export const Holders: {
     SWPR: '0x9467dcFD4519287e3878C018c02f5670465a9003',
     waGnoWETH: '0x854B004700885A61107B458f11eCC169A019b764',
     waGnowstETH: '0x854B004700885A61107B458f11eCC169A019b764',
+    waGnoGNO: '0x9Ec6472Fc33D9a5D17613484aDF0295A001fDF32',
   },
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
