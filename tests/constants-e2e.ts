@@ -131,6 +131,10 @@ export const Tokens: {
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
+    INST: {
+      address: '0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb',
+      decimals: 18,
+    },
     aEthUSDC: {
       address: '0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c',
       decimals: 6,
@@ -554,6 +558,16 @@ export const Tokens: {
       address: '0x7751e2f4b8ae93ef6b79d86419d42fe3295a4559',
       decimals: 18,
       symbol: 'wUSDL',
+    },
+    WrappedM: {
+      address: '0x437cc33344a0B27A429f795ff6B469C72698B291',
+      decimals: 6,
+      symbol: 'wM',
+    },
+    UsualM: {
+      address: '0x4cbc25559dbbd1272ec5b64c7b5f48a2405e6470',
+      decimals: 6,
+      symbol: 'USUALM',
     },
   },
   [Network.POLYGON]: {
@@ -1685,12 +1699,10 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
-    wUSDL: '0x50fc9731dAcE42CaA45D166bfF404bBB7464bF21',
     USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
     sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
     MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
-    ETHx: '0xFCC1A2c71F01B7f58Ed538a6B4AAa5A0724eB5A6',
     // Idle tokens
     AA_wstETH: '0xd7C1b48877A7dFA7D51cf1144c89C0A3F134F935',
     'AA_idle_cpPOR-USDC': '0x085c8eaccA6911fE60aE3f8FbAe5F3012E3A05Ec',
@@ -1794,10 +1806,12 @@ export const Holders: {
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
-    USD0: '0x6A5d5Af0E266a24648a9d7E8D388EAEc7AbD8433',
+    USD0: '0x224762e69169E425239EeEE0012d1B0e041C123D',
+    WrappedM: '0xE0663f2372cAa1459b7ade90812Dc737CE587FA6',
     'USD0++': '0x2227b6806339906707b43F36a1f07B52FF7Fa776',
     USDM: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     wUSDM: '0x3B95bC951EE0f553ba487327278cAc44f29715E5',
+    UsualM: '0xE3f7A0c4a44b740328157A5152A85c3bCB54DA09',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',

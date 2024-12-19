@@ -5,6 +5,6 @@ export type PoolState = {};
 export type UsualBondData = {};
 
 export type DexParams = {
-  usd0Address: Address;
-  usd0ppAddress: Address;
+  fromToken: { address: Address; decimals: number };
+  toToken: { address: Address; decimals: number };
 };

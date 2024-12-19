@@ -91,13 +91,15 @@ import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
-import { UsualBond } from './usual-bond/usual-bond';
 import { StkGHO } from './stkgho/stkgho';
 import { BalancerV3 } from './balancer-v3/balancer-v3';
 import { balancerV3Merge } from './balancer-v3/optimizer';
 import { SkyConverter } from './sky-converter/sky-converter';
 import { Cables } from './cables/cables';
 import { Stader } from './stader/stader';
+import { UsualBond } from './usual/usual-bond';
+import { UsualMWrappedM } from './usual/usual-m-wrapped-m';
+import { UsualMUsd0 } from './usual/usual-m-usd0';
 
 const LegacyDexes = [
   CurveV2,
@@ -190,6 +192,8 @@ const Dexes = [
   SkyConverter,
   Cables,
   FluidDex,
+  UsualMWrappedM,
+  UsualMUsd0,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
