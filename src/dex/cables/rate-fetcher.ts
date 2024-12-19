@@ -297,7 +297,22 @@ export class CablesRateFetcher {
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    return this.blacklistPubSub.has(txOrigin.toLowerCase());
+    const fallback = async () => {
+      const cachedBlacklist = await this.dexHelper.cache.get(
+        this.dexKey,
+        this.network,
+        this.blacklistCacheKey,
+      );
+
+      if (cachedBlacklist) {
+        const blacklist = JSON.parse(cachedBlacklist) as string[];
+        return blacklist.includes(txOrigin.toLowerCase());
+      }
+
+      return false;
+    };
+
+    return this.blacklistPubSub.has(txOrigin.toLowerCase(), fallback);
   }
 
   async isRestricted(): Promise<boolean> {
