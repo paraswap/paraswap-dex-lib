@@ -6,6 +6,8 @@ import { Interface, Result } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
+import { VenusConfig } from './config';
+import TokenConverter from '../../abi/venus/token-converter.json';
 import { Venus } from './venus';
 import {
   checkPoolPrices,
@@ -19,14 +21,10 @@ import { Tokens } from '../../../tests/constants-e2e';
   ======
 
   This test script adds tests for Venus general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Venus specific
-  logic.
+  with the DEX interface.
 
   You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
+  `npx jest src/dex/venus/venus-integration.test.ts`
 */
 
 function getReaderCalldata(
@@ -34,15 +32,20 @@ function getReaderCalldata(
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  tokenAddressIn: string,
+  tokenAddressOut: string,
 ) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
-  }));
+  const callData = amounts.map(amount => {
+    return {
+      target: exchangeAddress,
+      callData: readerIface.encodeFunctionData(funcName, [
+        amount,
+        tokenAddressIn,
+        tokenAddressOut,
+      ]),
+    };
+  });
+  return callData;
 }
 
 function decodeReaderResult(
@@ -50,43 +53,43 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
+    return BigInt(parsed[1]._hex);
   });
 }
 
 async function checkOnChainPricing(
   venus: Venus,
+  tokenConverterAddress: string,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  tokenAddressIn: string,
+  tokenAddressOut: string,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = tokenConverterAddress;
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from venus.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = new Interface(TokenConverter);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    tokenAddressIn,
+    tokenAddressOut,
   );
+
   const readerResult = (
     await venus.dexHelper.multiContract.methods
       .aggregate(readerCallData)
       .call({}, blockNumber)
   ).returnData;
-
   const expectedPrices = [0n].concat(
     decodeReaderResult(readerResult, readerIface, funcName),
   );
-
   expect(prices).toEqual(expectedPrices);
 }
 
@@ -139,113 +142,113 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     venus,
+    VenusConfig[dexKey][network].converterAddress,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    networkTokens[srcTokenSymbol].address,
+    networkTokens[destTokenSymbol].address,
   );
 }
 
 describe('Venus', function () {
-  const dexKey = 'Venus';
   let blockNumber: number;
   let venus: Venus;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('BSC', () => {
+    const network = Network.BSC;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
-
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+    const dexKeys = [
+      ['UsdtPrimeConverter', 'USDT'],
+      ['BtcbPrimeConverter', 'bBTC'],
+      ['UsdcPrimeConverter', 'USDC'],
+      ['EthPrimeConverter', 'ETH'],
+      ['XvsVaultConverter', 'XVS'],
     ];
 
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
+    for (const [dexKey, srcTokenSymbol] of dexKeys) {
+      describe(dexKey, () => {
+        const destTokenSymbol = 'WBNB';
+        const amountsForSell = [
+          0n,
+          1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+          10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        ];
 
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      venus = new Venus(network, dexKey, dexHelper);
-      if (venus.initializePricing) {
-        await venus.initializePricing(blockNumber);
-      }
-    });
+        beforeAll(async () => {
+          blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          venus = new Venus(network, dexKey, dexHelper);
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        venus,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
+          if (venus.initializePricing) {
+            await venus.initializePricing(blockNumber);
+          }
+        });
 
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        venus,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
+        afterAll(async () => {
+          await venus.releaseResources();
+        });
 
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newVenus = new Venus(network, dexKey, dexHelper);
-      if (newVenus.updatePoolState) {
-        await newVenus.updatePoolState();
-      }
-      const poolLiquidity = await newVenus.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+        // Only Supply is supported
+        it(`getPoolIdentifiers and getPricesVolume SELL ${srcTokenSymbol}`, async function () {
+          await testPricingOnNetwork(
+            venus,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.SELL,
+            amountsForSell,
+            'getUpdatedAmountOut',
+          );
+        });
 
-      if (!newVenus.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
-    });
+        it('getTopPoolsForToken', async function () {
+          // We have to check without calling initializePricing, because
+          // pool-tracker is not calling that function
+          const newVenus = new Venus(network, dexKey, dexHelper);
+
+          if (newVenus.updatePoolState) {
+            await newVenus.updatePoolState();
+          }
+
+          const poolLiquidity = await newVenus.getTopPoolsForToken(
+            tokens[srcTokenSymbol].address,
+            10,
+          );
+
+          expect(poolLiquidity.length).toEqual(10);
+          for (const [idx, pool] of Object.entries(poolLiquidity)) {
+            if (Number(idx) < 9) {
+              expect(pool.liquidityUSD).toBeGreaterThan(
+                poolLiquidity[Number(idx) + 1].liquidityUSD,
+              );
+            }
+          }
+
+          console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+          if (!newVenus.hasConstantPriceLargeAmounts) {
+            checkPoolsLiquidity(
+              poolLiquidity,
+              Tokens[network][srcTokenSymbol].address,
+              dexKey,
+            );
+          }
+        });
+      });
+    }
   });
 });
