@@ -293,13 +293,6 @@ export class RateFetcher {
         const value = prices.bids;
         pubSubData[key] = value;
 
-        this.dexHelper.cache.setex(
-          this.dexKey,
-          this.dexHelper.config.data.network,
-          key,
-          ttl,
-          JSON.stringify(value),
-        );
         currentPricePairs.add(`${baseToken.address}_${quoteToken.address}`);
       }
 
@@ -308,13 +301,6 @@ export class RateFetcher {
         const value = prices.asks;
         pubSubData[key] = value;
 
-        this.dexHelper.cache.setex(
-          this.dexKey,
-          this.dexHelper.config.data.network,
-          key,
-          ttl,
-          JSON.stringify(value),
-        );
         currentPricePairs.add(`${quoteToken.address}_${baseToken.address}`);
       }
     });
@@ -323,17 +309,22 @@ export class RateFetcher {
       const key = `pairs`;
       const value = Array.from(currentPricePairs);
       pubSubData[key] = value;
-
-      this.dexHelper.cache.setex(
-        this.dexKey,
-        this.dexHelper.config.data.network,
-        key,
-        ttl,
-        JSON.stringify(value),
-      );
     }
 
+    // publish in priority
     this.pricesPubSub.publish(pubSubData, ttl);
+
+    if (Object.keys(pubSubData).length > 0) {
+      Object.keys(pubSubData).forEach(key => {
+        this.dexHelper.cache.setex(
+          this.dexKey,
+          this.dexHelper.config.data.network,
+          key,
+          ttl,
+          JSON.stringify(pubSubData[key]),
+        );
+      });
+    }
   }
 
   checkHealth(): boolean {
