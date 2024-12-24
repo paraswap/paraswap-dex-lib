@@ -7,7 +7,6 @@ import {
 } from '@paraswap/core';
 import {
   DexExchangeBuildParam,
-  DexExchangeParam,
   DexExchangeParamWithBooleanNeedWrapNative,
 } from '../types';
 import { Executors, Flag, SpecialDex } from './types';
@@ -28,7 +27,6 @@ import {
   ZEROS_4_BYTES,
   DEFAULT_RETURN_AMOUNT_POS,
 } from './constants';
-import * as constants from 'constants';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
