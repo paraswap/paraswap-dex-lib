@@ -41,15 +41,17 @@ export class ExpKeyValuePubSub {
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
-    const expiresAt = Math.round(Date.now() / 1000) + ttl;
-    this.logger.info(
-      `Publishing keys: '${Object.keys(data)}', expiresAt: '${expiresAt}'`,
-    );
+    if (Object.keys(data).length > 0) {
+      const expiresAt = Math.round(Date.now() / 1000) + ttl;
+      this.logger.info(
+        `Publishing keys: '${Object.keys(data)}', expiresAt: '${expiresAt}'`,
+      );
 
-    this.dexHelper.cache.publish(
-      this.channel,
-      JSON.stringify({ expiresAt, data }),
-    );
+      this.dexHelper.cache.publish(
+        this.channel,
+        JSON.stringify({ expiresAt, data }),
+      );
+    }
   }
 
   handleSubscription(msg: KeyValuePubSubMsg) {
@@ -168,8 +170,10 @@ export class NonExpSetPubSub {
   }
 
   publish(msg: SetPubSubMsg) {
-    this.logger.info(`Publishing msg: '${msg}'`);
-    this.dexHelper.cache.publish(this.channel, JSON.stringify(msg));
+    if (msg.length > 0) {
+      this.logger.info(`Publishing msg: '${msg}'`);
+      this.dexHelper.cache.publish(this.channel, JSON.stringify(msg));
+    }
   }
 
   handleSubscription(set: SetPubSubMsg) {
