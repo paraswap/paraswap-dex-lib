@@ -596,9 +596,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
-    if (!this.dexHelper.config.isSlave) {
-      this.rateFetcher.start();
-    }
+    this.rateFetcher.start();
     return;
   }
 
