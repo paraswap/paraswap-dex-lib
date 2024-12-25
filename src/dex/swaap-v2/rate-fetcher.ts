@@ -340,16 +340,7 @@ export class RateFetcher {
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
-    const fallback = async () => {
-      const value = await this.dexHelper.cache.get(
-        this.dexKey,
-        this.network,
-        this.getBlackListKey(txOrigin),
-      );
-      return value === BLACKLISTED;
-    };
-
-    return this.blacklistPubSub.has(txOrigin.toLowerCase(), fallback);
+    return this.blacklistPubSub.has(txOrigin.toLowerCase());
   }
 
   getBlackListKey(address: Address) {

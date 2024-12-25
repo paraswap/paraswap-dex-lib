@@ -248,12 +248,7 @@ export class RateFetcher {
 
   public isBlackListed(userAddress: string) {
     if (this.blacklistPubSub) {
-      const fallback = () =>
-        this.dexHelper.cache.sismember(
-          this.blackListCacheKey,
-          userAddress.toLowerCase(),
-        );
-      return this.blacklistPubSub.has(userAddress.toLowerCase(), fallback);
+      return this.blacklistPubSub.has(userAddress.toLowerCase());
     }
     return false;
   }

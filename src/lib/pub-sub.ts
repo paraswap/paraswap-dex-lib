@@ -2,7 +2,6 @@ import NodeCache from 'node-cache';
 import { Network } from '../constants';
 import { IDexHelper } from '../dex-helper';
 import { Logger } from '../types';
-import _ from 'lodash';
 
 type KeyValuePubSubMsg = {
   expiresAt: number;
@@ -82,43 +81,19 @@ export class ExpKeyValuePubSub {
   }
 
   async getAndCache<T>(key: string): Promise<T | null> {
-    const localValue = this.localCache.get<T>(key) ?? null;
+    const localValue = this.localCache.get<T>(key);
 
-    // if (localValue) {
-    //   return localValue;
-    // }
+    if (localValue) {
+      return localValue;
+    }
 
-    const [cacheValue, ttl] = await Promise.all([
+    const [value, ttl] = await Promise.all([
       this.dexHelper.cache.get(this.dexKey, this.network, key),
       this.dexHelper.cache.ttl(this.dexKey, this.network, key),
-    ]).then(t =>
-      t
-        .map(t => t ?? null)
-        .map(v => (!!v && typeof v === 'object' ? JSON.parse(v) : v)),
-    );
+    ]);
 
-    if (localValue === null && cacheValue) {
-      this.logger.error(
-        `1-${key}: Local value is not present, meanwhile cache value is present, local: '${localValue}', cache: '${cacheValue}'`,
-      );
-    }
-
-    if (localValue && cacheValue === null) {
-      this.logger.error(
-        `2-${key}: Local value is present, meanwhile cache value is not present, local: '${localValue}', cache: '${cacheValue}'`,
-      );
-    }
-
-    if (localValue && cacheValue && _.isEqual(localValue, cacheValue)) {
-      this.logger.error(
-        `3-${key}: Local value is not equal to cache value, local: '${JSON.stringify(
-          localValue,
-        )}', cache: '${JSON.stringify(cacheValue)}'`,
-      );
-    }
-
-    if (cacheValue && ttl > 0) {
-      const parsedValue = JSON.parse(cacheValue);
+    if (value && ttl > 0) {
+      const parsedValue = JSON.parse(value);
       this.localCache.set(key, parsedValue, ttl);
       return parsedValue;
     }
@@ -151,7 +126,7 @@ export class NonExpSetPubSub {
   }
 
   async initializeAndSubscribe(initialSet: string[]) {
-    this.logger.info(`initializeAndSubscribe`);
+    this.logger.info(`initializeAndSubscribe with ${initialSet}`);
 
     for (const member of initialSet) {
       this.set.add(member);
@@ -184,32 +159,7 @@ export class NonExpSetPubSub {
     }
   }
 
-  async has(
-    key: string,
-    // TODO-rfq-ps: temporary for tests
-    fallbackCacheValue: (key: string) => Promise<boolean>,
-  ) {
-    const localValue = this.set.has(key) ?? null;
-    const cacheValue = (await fallbackCacheValue(key)) ?? null;
-
-    if (localValue === null && cacheValue) {
-      this.logger.error(
-        `1-${key}: Local value is not present, meanwhile cache value is present, local: '${localValue}', cache: '${cacheValue}'`,
-      );
-    }
-
-    if (localValue && cacheValue === null) {
-      this.logger.error(
-        `2-${key}: Local value is present, meanwhile cache value is not present, local: '${localValue}', cache: '${cacheValue}'`,
-      );
-    }
-
-    if (localValue && cacheValue && localValue !== cacheValue) {
-      this.logger.error(
-        `3-${key}: Local value is not equal to cache value, local: '${localValue}', cache: '${cacheValue}'`,
-      );
-    }
-
-    return localValue;
+  async has(key: string) {
+    return this.set.has(key);
   }
 }
