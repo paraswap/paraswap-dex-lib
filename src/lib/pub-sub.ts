@@ -84,8 +84,11 @@ export class ExpKeyValuePubSub {
     const localValue = this.localCache.get<T>(key);
 
     if (localValue) {
+      this.logger.info(`Returning from local cache: '${key}'`);
       return localValue;
     }
+
+    this.logger.info(`Returning from external cache: '${key}'`);
 
     const [value, ttl] = await Promise.all([
       this.dexHelper.cache.get(this.dexKey, this.network, key),
