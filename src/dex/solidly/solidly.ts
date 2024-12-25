@@ -409,6 +409,7 @@ export class Solidly extends UniswapV2 {
             isFeeTokenInRoute: Object.values(transferFees).some(f => f !== 0),
             pools: [
               {
+                stable: pairParam.stable,
                 address: pairParam.exchange,
                 fee: parseInt(pairParam.fee),
                 direction: pairParam.direction,
@@ -657,9 +658,17 @@ export class Solidly extends UniswapV2 {
     if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
     let exchangeDataTypes = ['bytes4', 'bytes32'];
 
+    const isStable = data.pools.some(pool => !!pool.stable);
+    const isStablePoolAndPoolCount = isStable
+      ? BigNumber.from(1)
+          .shl(255)
+          .or(BigNumber.from(data.pools.length))
+          .toHexString()
+      : hexZeroPad(hexlify(data.pools.length), 32);
+
     let exchangeDataToPack = [
       hexZeroPad(hexlify(0), 4),
-      hexZeroPad(hexlify(data.pools.length), 32),
+      isStablePoolAndPoolCount,
     ];
 
     const pools = encodePools(data.pools, this.feeFactor);
