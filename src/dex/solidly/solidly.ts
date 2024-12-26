@@ -453,6 +453,7 @@ export class Solidly extends UniswapV2 {
       stableFieldKey = 'isStable';
     }
 
+    // aerodrome subgraph has broken reserve and other volume fields with all 0s
     if (this.dexKey.toLowerCase() === 'aerodrome') {
       skipReserveCheck = true;
     }
