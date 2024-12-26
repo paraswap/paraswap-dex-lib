@@ -31,7 +31,7 @@ export class ExpKeyValuePubSub {
   }
 
   subscribe() {
-    this.logger.info(`Subscribing to ${this.channel}`);
+    this.logger.info(`Subscribing`);
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
       const decodedMsg = JSON.parse(msg) as KeyValuePubSubMsg;
@@ -40,15 +40,27 @@ export class ExpKeyValuePubSub {
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
-    const expiresAt = Math.round(Date.now() / 1000) + ttl;
-    this.dexHelper.cache.publish(
-      this.channel,
-      JSON.stringify({ expiresAt, data }),
-    );
+    if (Object.keys(data).length > 0) {
+      const expiresAt = Math.round(Date.now() / 1000) + ttl;
+      this.logger.info(
+        `Publishing keys: '${Object.keys(data)}', expiresAt: '${expiresAt}'`,
+      );
+
+      this.dexHelper.cache.publish(
+        this.channel,
+        JSON.stringify({ expiresAt, data }),
+      );
+    }
   }
 
   handleSubscription(msg: KeyValuePubSubMsg) {
+    const nowTimer = new Date().getTime();
     const { expiresAt, data } = msg;
+    this.logger.info(
+      `Received subscription, keys: '${Object.keys(
+        data,
+      )}', expiresAt: '${expiresAt}'`,
+    );
 
     const now = Math.round(Date.now() / 1000);
     // calculating ttl as message might come with the delay
@@ -67,14 +79,25 @@ export class ExpKeyValuePubSub {
         keys: Object.keys(data),
       });
     }
+
+    const afterTimer = new Date().getTime();
+    this.logger.info(`Time taken to 'process': ${afterTimer - nowTimer}ms`);
   }
 
   async getAndCache<T>(key: string): Promise<T | null> {
+    const nowTimer = new Date().getTime();
     const localValue = this.localCache.get<T>(key);
+    const afterTimer = new Date().getTime();
+    this.logger.info(
+      `Time taken to 'get from local cache': ${afterTimer - nowTimer}ms`,
+    );
 
     if (localValue) {
+      this.logger.info(`Returning from local cache: '${key}'`);
       return localValue;
     }
+
+    this.logger.info(`Returning from external cache: '${key}'`);
 
     const [value, ttl] = await Promise.all([
       this.dexHelper.cache.get(this.dexKey, this.network, key),
@@ -115,6 +138,8 @@ export class NonExpSetPubSub {
   }
 
   async initializeAndSubscribe(initialSet: string[]) {
+    this.logger.info(`initializeAndSubscribe with ${initialSet}`);
+
     for (const member of initialSet) {
       this.set.add(member);
     }
@@ -123,7 +148,7 @@ export class NonExpSetPubSub {
   }
 
   subscribe() {
-    this.logger.info(`Subscribing to ${this.channel}`);
+    this.logger.info(`Subscribing`);
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
       const decodedMsg = JSON.parse(msg) as SetPubSubMsg;
@@ -132,10 +157,15 @@ export class NonExpSetPubSub {
   }
 
   publish(msg: SetPubSubMsg) {
-    this.dexHelper.cache.publish(this.channel, JSON.stringify(msg));
+    if (msg.length > 0) {
+      this.logger.info(`Publishing msg: '${msg}'`);
+      this.dexHelper.cache.publish(this.channel, JSON.stringify(msg));
+    }
   }
 
   handleSubscription(set: SetPubSubMsg) {
+    this.logger.info(`Received subscription msg: '${set}'`);
+
     for (const key of set) {
       this.set.add(key);
     }
