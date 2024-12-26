@@ -10,7 +10,7 @@ type KeyValuePubSubMsg = {
 
 type SetPubSubMsg = string[];
 
-export class ExpKeyValuePubSub {
+export class ExpStringPubSub {
   channel: string;
   network: Network;
   localCache: NodeCache = new NodeCache();
