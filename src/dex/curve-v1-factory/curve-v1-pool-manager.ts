@@ -74,6 +74,10 @@ export class CurveV1FactoryPoolManager {
       (stateUpdatePeriodMs / 1000) * maxAllowedStateDelayFactor,
     );
 
+    if (this.dexHelper.config.isSlave) {
+      this.statePollingManager.subscribe();
+    }
+
     this.taskScheduler = new TaskScheduler(
       this.name,
       this.logger,

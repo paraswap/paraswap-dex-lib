@@ -15,7 +15,9 @@ export class StatePollingManager {
 
   constructor(dexHelper: IDexHelper, cacheKey: string, ttl: number) {
     this.pubSub = new ExpKeyValuePubSub(dexHelper, cacheKey, ttl);
+  }
 
+  subscribe() {
     this.pubSub.subscribe();
   }
 
