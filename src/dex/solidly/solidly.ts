@@ -445,6 +445,7 @@ export class Solidly extends UniswapV2 {
     if (!this.subgraphURL) return [];
 
     let stableFieldKey = '';
+    let skipReserveCheck = false;
 
     if (this.dexKey.toLowerCase() === 'solidly') {
       stableFieldKey = 'stable';
@@ -452,8 +453,15 @@ export class Solidly extends UniswapV2 {
       stableFieldKey = 'isStable';
     }
 
+    // aerodrome subgraph has broken reserve and other volume fields with all 0s
+    if (this.dexKey.toLowerCase() === 'aerodrome') {
+      skipReserveCheck = true;
+    }
+
     const query = `query ($token: Bytes!, $count: Int) {
-      pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+      pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token ${
+        skipReserveCheck ? '' : ', reserve0_gt: 1, reserve1_gt: 1'
+      }}) {
         id
         ${stableFieldKey}
         token0 {
@@ -466,7 +474,9 @@ export class Solidly extends UniswapV2 {
         }
         reserveUSD
       }
-      pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+      pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token ${
+        skipReserveCheck ? '' : ', reserve0_gt: 1, reserve1_gt: 1'
+      }}) {
         id
         ${stableFieldKey}
         token0 {
@@ -502,7 +512,8 @@ export class Solidly extends UniswapV2 {
           decimals: parseInt(pool.token1.decimals),
         },
       ],
-      liquidityUSD: parseFloat(pool.reserveUSD),
+      liquidityUSD:
+        parseFloat(pool.reserveUSD) || (skipReserveCheck ? 10e5 : 0),
     }));
 
     const pools1 = _.map(data.pools1, pool => ({
@@ -515,7 +526,8 @@ export class Solidly extends UniswapV2 {
           decimals: parseInt(pool.token0.decimals),
         },
       ],
-      liquidityUSD: parseFloat(pool.reserveUSD),
+      liquidityUSD:
+        parseFloat(pool.reserveUSD) || (skipReserveCheck ? 10e5 : 0),
     }));
 
     return _.slice(

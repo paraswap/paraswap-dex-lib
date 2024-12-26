@@ -54,7 +54,7 @@ import {
 } from './constants';
 import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
-import { utils } from 'ethers';
+import { ethers, utils } from 'ethers';
 import qs from 'qs';
 import { isEqual } from 'lodash';
 
@@ -658,12 +658,28 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         srcAmount, // modify filledTakerAmount to make insertFromAmount work
       ]);
 
+      const fromAmount = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'],
+        [srcAmount],
+      );
+
+      const filledTakerAmountIndex = exchangeData
+        .replace('0x', '')
+        .lastIndexOf(fromAmount.replace('0x', ''));
+
+      const filledTakerAmountPos =
+        (filledTakerAmountIndex !== -1
+          ? filledTakerAmountIndex
+          : exchangeData.length) / 2;
+
       return {
         exchangeData: exchangeData,
         needWrapNative: this.needWrapNative,
         dexFuncHasRecipient: true,
         targetExchange: this.settlementAddress,
         returnAmountPos: undefined,
+        sendEthButSupportsInsertFromAmount: true,
+        insertFromAmountPos: filledTakerAmountPos,
       };
     } else {
       throw new Error('Not supported method');
