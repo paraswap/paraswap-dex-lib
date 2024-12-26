@@ -34,8 +34,13 @@ export class ExpKeyValuePubSub {
     this.logger.info(`Subscribing`);
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
+      const before = Date.now();
       const decodedMsg = JSON.parse(msg) as KeyValuePubSubMsg;
       this.handleSubscription(decodedMsg);
+      const after = Date.now();
+      this.logger.info(
+        `Time taken to 'handleSubscription': ${after - before}ms`,
+      );
     });
   }
 
@@ -54,7 +59,6 @@ export class ExpKeyValuePubSub {
   }
 
   handleSubscription(msg: KeyValuePubSubMsg) {
-    const nowTimer = new Date().getTime();
     const { expiresAt, data } = msg;
     this.logger.info(
       `Received subscription, keys: '${Object.keys(
@@ -79,9 +83,6 @@ export class ExpKeyValuePubSub {
         keys: Object.keys(data),
       });
     }
-
-    const afterTimer = new Date().getTime();
-    this.logger.info(`Time taken to 'process': ${afterTimer - nowTimer}ms`);
   }
 
   async getAndCache<T>(key: string): Promise<T | null> {
