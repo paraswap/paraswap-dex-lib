@@ -11,50 +11,46 @@ type KeyValuePubSubMsg = {
 type SetPubSubMsg = string[];
 
 export class ExpKeyValuePubSub {
-  channel: string;
-  network: Network;
   localCache: NodeCache = new NodeCache();
 
   logger: Logger;
 
   constructor(
     private dexHelper: IDexHelper,
-    private dexKey: string,
-    channel: string,
-    private defaultValue?: any,
-    private defaultTTL?: number,
+    private hashKey: string,
+    private ttl: number,
   ) {
-    this.network = this.dexHelper.config.data.network;
-    this.channel = `${this.network}_${this.dexKey}_${channel}`;
-
-    this.logger = this.dexHelper.getLogger(`ExpKeyValuePubSub_${this.channel}`);
+    this.hashKey = hashKey;
+    this.logger = this.dexHelper.getLogger(`ExpKeyValuePubSub_${this.hashKey}`);
   }
 
   subscribe() {
     this.logger.info(`Subscribing`);
 
-    this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
+    this.dexHelper.cache.subscribe(this.hashKey, (_, msg) => {
+      const before = Date.now();
       const decodedMsg = JSON.parse(msg) as KeyValuePubSubMsg;
       this.handleSubscription(decodedMsg);
+      const after = Date.now();
+      this.logger.info(`Decoding and handling took: ${after - before}ms`);
     });
   }
 
-  publish(data: Record<string, unknown>, ttl: number) {
+  publish(data: Record<string, unknown>) {
     if (Object.keys(data).length > 0) {
-      const expiresAt = Math.round(Date.now() / 1000) + ttl;
+      const expiresAt = Math.round(Date.now() / 1000) + this.ttl;
       this.logger.info(
         `Publishing keys: '${Object.keys(data)}', expiresAt: '${expiresAt}'`,
       );
 
       this.dexHelper.cache.publish(
-        this.channel,
+        this.hashKey,
         JSON.stringify({ expiresAt, data }),
       );
     }
   }
 
   handleSubscription(msg: KeyValuePubSubMsg) {
-    const nowTimer = new Date().getTime();
     const { expiresAt, data } = msg;
     this.logger.info(
       `Received subscription, keys: '${Object.keys(
@@ -79,40 +75,24 @@ export class ExpKeyValuePubSub {
         keys: Object.keys(data),
       });
     }
-
-    const afterTimer = new Date().getTime();
-    this.logger.info(`Time taken to 'process': ${afterTimer - nowTimer}ms`);
   }
 
   async getAndCache<T>(key: string): Promise<T | null> {
-    const nowTimer = new Date().getTime();
     const localValue = this.localCache.get<T>(key);
-    const afterTimer = new Date().getTime();
-    this.logger.info(
-      `Time taken to 'get from local cache': ${afterTimer - nowTimer}ms`,
-    );
 
-    if (localValue) {
+    if (localValue !== undefined) {
       this.logger.info(`Returning from local cache: '${key}'`);
       return localValue;
     }
 
     this.logger.info(`Returning from external cache: '${key}'`);
 
-    const [value, ttl] = await Promise.all([
-      this.dexHelper.cache.get(this.dexKey, this.network, key),
-      this.dexHelper.cache.ttl(this.dexKey, this.network, key),
-    ]);
+    const value = await this.dexHelper.cache.hget(this.hashKey, key);
 
-    if (value && ttl > 0) {
+    if (value && this.ttl > 0) {
       const parsedValue = JSON.parse(value);
-      this.localCache.set(key, parsedValue, ttl);
+      this.localCache.set(key, parsedValue, this.ttl);
       return parsedValue;
-    }
-
-    if (this.defaultValue && this.defaultTTL && this.defaultTTL > 0) {
-      this.localCache.set(key, this.defaultValue, this.defaultTTL);
-      return this.defaultValue;
     }
 
     return null;
