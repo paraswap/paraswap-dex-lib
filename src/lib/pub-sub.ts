@@ -18,6 +18,7 @@ export class ExpKeyValuePubSub {
   constructor(
     private dexHelper: IDexHelper,
     private hashKey: string,
+    // in seconds
     private ttl: number,
   ) {
     this.hashKey = hashKey;

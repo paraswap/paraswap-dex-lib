@@ -13,7 +13,7 @@ import { ExpKeyValuePubSub } from '../../../lib/pub-sub';
 export class StatePollingManager {
   private pubSub: ExpKeyValuePubSub;
 
-  constructor(dexHelper: IDexHelper, cacheKey: string, private ttl: number) {
+  constructor(dexHelper: IDexHelper, cacheKey: string, ttl: number) {
     this.pubSub = new ExpKeyValuePubSub(dexHelper, cacheKey, ttl);
 
     this.pubSub.subscribe();

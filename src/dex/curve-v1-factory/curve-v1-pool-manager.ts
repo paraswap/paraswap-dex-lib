@@ -71,7 +71,7 @@ export class CurveV1FactoryPoolManager {
       dexHelper,
       cacheStateKey,
       // same as on PoolPollingBase.isStateUpToDate
-      stateUpdatePeriodMs * maxAllowedStateDelayFactor,
+      (stateUpdatePeriodMs / 1000) * maxAllowedStateDelayFactor,
     );
 
     this.taskScheduler = new TaskScheduler(
