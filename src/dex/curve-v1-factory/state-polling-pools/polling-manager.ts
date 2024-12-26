@@ -3,7 +3,7 @@ import { IDexHelper } from '../../../dex-helper';
 import { Utils, _require } from '../../../utils';
 import { PoolState } from '../types';
 import { MulticallReturnedTypes, PoolPollingBase } from './pool-polling-base';
-import { ExpKeyValuePubSub } from '../../../lib/pub-sub';
+import { ExpHashPubSub } from '../../../lib/pub-sub';
 
 /*
  * Since we are updating all pools state at once, I need some generalized iterator without state,
@@ -11,10 +11,10 @@ import { ExpKeyValuePubSub } from '../../../lib/pub-sub';
  */
 
 export class StatePollingManager {
-  private pubSub: ExpKeyValuePubSub;
+  private pubSub: ExpHashPubSub;
 
   constructor(dexHelper: IDexHelper, cacheKey: string, ttl: number) {
-    this.pubSub = new ExpKeyValuePubSub(dexHelper, cacheKey, ttl);
+    this.pubSub = new ExpHashPubSub(dexHelper, cacheKey, ttl);
   }
 
   subscribe() {

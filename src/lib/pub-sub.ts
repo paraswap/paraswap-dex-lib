@@ -10,7 +10,7 @@ type KeyValuePubSubMsg = {
 
 type SetPubSubMsg = string[];
 
-export class ExpKeyValuePubSub {
+export class ExpHashPubSub {
   localCache: NodeCache = new NodeCache();
 
   logger: Logger;
