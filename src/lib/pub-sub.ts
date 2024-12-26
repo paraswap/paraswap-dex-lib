@@ -54,6 +54,7 @@ export class ExpKeyValuePubSub {
   }
 
   handleSubscription(msg: KeyValuePubSubMsg) {
+    const nowTimer = new Date().getTime();
     const { expiresAt, data } = msg;
     this.logger.info(
       `Received subscription, keys: '${Object.keys(
@@ -78,10 +79,18 @@ export class ExpKeyValuePubSub {
         keys: Object.keys(data),
       });
     }
+
+    const afterTimer = new Date().getTime();
+    this.logger.info(`Time taken to 'process': ${afterTimer - nowTimer}ms`);
   }
 
   async getAndCache<T>(key: string): Promise<T | null> {
+    const nowTimer = new Date().getTime();
     const localValue = this.localCache.get<T>(key);
+    const afterTimer = new Date().getTime();
+    this.logger.info(
+      `Time taken to 'get from local cache': ${afterTimer - nowTimer}ms`,
+    );
 
     if (localValue) {
       this.logger.info(`Returning from local cache: '${key}'`);
