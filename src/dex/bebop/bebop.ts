@@ -35,7 +35,6 @@ import { Interface } from 'ethers/lib/utils';
 import { RateFetcher } from './rate-fetcher';
 import {
   BEBOP_API_URL,
-  BEBOP_AUTH_NAME,
   BEBOP_ERRORS_CACHE_KEY,
   BEBOP_GAS_COST,
   BEBOP_INIT_TIMEOUT_MS,
@@ -77,6 +76,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   private tokensAddrCacheKey: string;
 
   private bebopAuthToken: string;
+  private bebopAuthName: string;
 
   logger: Logger;
 
@@ -94,9 +94,19 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     this.pricesCacheKey = `prices`;
     this.tokensAddrCacheKey = `tokens_addr`;
     const token = this.dexHelper.config.data.bebopAuthToken;
-    if (!token) {
-      throw new Error('Bebop auth token is not set');
-    }
+    const name = this.dexHelper.config.data.bebopAuthName;
+
+    assert(
+      token !== undefined,
+      'Bebop auth token is not specified with env variable',
+    );
+
+    assert(
+      name !== undefined,
+      'Bebop auth name is not specified with env variable',
+    );
+
+    this.bebopAuthName = name;
     this.bebopAuthToken = token;
 
     this.rateFetcher = new RateFetcher(
@@ -122,7 +132,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
               BEBOP_WS_API_URL +
               `/pmm/${BebopConfig['Bebop'][network].chainName}/v3/pricing?format=protobuf`,
             headers: {
-              name: BEBOP_AUTH_NAME,
+              name: this.bebopAuthName,
               authorization: this.bebopAuthToken,
             },
           },
@@ -703,7 +713,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       receiver_address: utils.getAddress(options.recipient),
       gasless: false,
       skip_validation: true,
-      source: BEBOP_AUTH_NAME,
+      source: this.bebopAuthName,
     };
 
     try {
