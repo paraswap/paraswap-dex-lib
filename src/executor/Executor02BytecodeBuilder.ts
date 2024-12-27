@@ -7,7 +7,6 @@ import {
 } from '@paraswap/core';
 import {
   DexExchangeBuildParam,
-  DexExchangeParam,
   DexExchangeParamWithBooleanNeedWrapNative,
 } from '../types';
 import { Executors, Flag, SpecialDex } from './types';
@@ -475,6 +474,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     swap: OptimalSwap,
     swapCallData: string,
     flag: Flag,
+    isRoot = false,
   ) {
     const data = this.packVerticalBranchingData(swapCallData);
 
@@ -486,16 +486,34 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     let destTokenPos: number;
 
     if (isEthDest) {
-      anyDexOnSwapNeedsWrapNative = this.anyDexOnSwapNeedsWrapNative(
-        priceRoute,
-        swap,
-        exchangeParams,
-      );
-      anyDexOnSwapDoesntNeedWrapNative = this.anyDexOnSwapDoesntNeedWrapNative(
-        priceRoute,
-        swap,
-        exchangeParams,
-      );
+      if (!isRoot) {
+        anyDexOnSwapNeedsWrapNative = this.anyDexOnSwapNeedsWrapNative(
+          priceRoute,
+          swap,
+          exchangeParams,
+        );
+        anyDexOnSwapDoesntNeedWrapNative =
+          this.anyDexOnSwapDoesntNeedWrapNative(
+            priceRoute,
+            swap,
+            exchangeParams,
+          );
+      } else {
+        anyDexOnSwapNeedsWrapNative = priceRoute.bestRoute.some(route =>
+          this.anyDexOnSwapNeedsWrapNative(
+            priceRoute,
+            route.swaps[route.swaps.length - 1],
+            exchangeParams,
+          ),
+        );
+        anyDexOnSwapDoesntNeedWrapNative = priceRoute.bestRoute.some(route =>
+          this.anyDexOnSwapDoesntNeedWrapNative(
+            priceRoute,
+            route.swaps[route.swaps.length - 1],
+            exchangeParams,
+          ),
+        );
+      }
     }
 
     if (
@@ -1313,6 +1331,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         needWrapEth
           ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
           : Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP, // 8
+        true, // isRoot branch
       );
     }
 
