@@ -122,7 +122,6 @@ export class ExpHashPubSub {
   }
 
   subscribe() {
-    return;
     this.logger.info(`Subscribing`);
 
     this.dexHelper.cache.subscribe(this.hashKey, (_, msg) => {
@@ -135,7 +134,6 @@ export class ExpHashPubSub {
   }
 
   publish(data: Record<string, unknown>) {
-    return;
     if (Object.keys(data).length > 0) {
       const expiresAt = Math.round(Date.now() / 1000) + this.ttl;
       this.logger.info(
@@ -150,7 +148,6 @@ export class ExpHashPubSub {
   }
 
   handleSubscription(msg: KeyValuePubSubMsg) {
-    return;
     const { expiresAt, data } = msg;
     this.logger.info(
       `Received subscription, keys: '${Object.keys(
