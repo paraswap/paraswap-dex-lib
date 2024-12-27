@@ -31,7 +31,6 @@ export class ExpStringPubSub {
   }
 
   subscribe() {
-    return;
     this.logger.info(`Subscribing to ${this.channel}`);
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
@@ -44,7 +43,6 @@ export class ExpStringPubSub {
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
-    return;
     const expiresAt = Math.round(Date.now() / 1000) + ttl;
     this.logger.info(
       `Publishing keys: '${Object.keys(data)}', expiresAt: '${expiresAt}'`,
@@ -57,7 +55,6 @@ export class ExpStringPubSub {
   }
 
   handleSubscription(msg: KeyValuePubSubMsg) {
-    return;
     const { expiresAt, data } = msg;
 
     const now = Math.round(Date.now() / 1000);
@@ -225,7 +222,6 @@ export class NonExpSetPubSub {
   }
 
   subscribe() {
-    return;
     this.logger.info(`Subscribing`);
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
@@ -235,7 +231,6 @@ export class NonExpSetPubSub {
   }
 
   publish(msg: SetPubSubMsg) {
-    return;
     if (msg.length > 0) {
       this.logger.info(`Publishing msg: '${msg}'`);
       this.dexHelper.cache.publish(this.channel, JSON.stringify(msg));
@@ -243,7 +238,6 @@ export class NonExpSetPubSub {
   }
 
   handleSubscription(set: SetPubSubMsg) {
-    return;
     this.logger.info(`Received subscription msg: '${set}'`);
 
     for (const key of set) {
