@@ -70,8 +70,10 @@ export class CurveV1FactoryPoolManager {
     this.statePollingManager = new StatePollingManager(
       dexHelper,
       cacheStateKey,
-      // same as on PoolPollingBase.isStateUpToDate
-      (stateUpdatePeriodMs / 1000) * maxAllowedStateDelayFactor,
+      // lower than on PoolPollingBase.isStateUpToDate to increase chances of getting fresh data if pub-sub is lagging
+      Math.round(
+        (stateUpdatePeriodMs / 1000) * (maxAllowedStateDelayFactor - 1),
+      ),
     );
 
     if (this.dexHelper.config.isSlave) {
