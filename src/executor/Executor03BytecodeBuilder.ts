@@ -15,7 +15,6 @@ import {
   ExecutorBytecodeBuilder,
   SingleSwapCallDataParams,
 } from './ExecutorBytecodeBuilder';
-import { assert } from 'ts-essentials';
 
 const {
   utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
@@ -330,6 +329,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
 
     let fromAmountPos = 0;
     let toAmountPos = 0;
+
     if (insertAmount) {
       if (exchangeParam.insertFromAmountPos) {
         fromAmountPos = exchangeParam.insertFromAmountPos;

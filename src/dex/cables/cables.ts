@@ -323,6 +323,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       targetExchange: this.mainnetRFQAddress,
       returnAmountPos: undefined,
       insertFromAmountPos: filledAmountPos,
+      sendEthButSupportsInsertFromAmount: true,
     };
   }
 
