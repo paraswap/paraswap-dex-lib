@@ -95,9 +95,17 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     this.tokensAddrCacheKey = `tokens_addr`;
     const token = this.dexHelper.config.data.bebopAuthToken;
     const name = this.dexHelper.config.data.bebopAuthName;
-    if (!token || !name) {
-      throw new Error('Bebop auth token and name is not set');
-    }
+
+    assert(
+      token !== undefined,
+      'Bebop auth token is not specified with env variable',
+    );
+
+    assert(
+      name !== undefined,
+      'Bebop auth name is not specified with env variable',
+    );
+
     this.bebopAuthName = name;
     this.bebopAuthToken = token;
 
