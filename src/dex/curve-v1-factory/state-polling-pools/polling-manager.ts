@@ -18,7 +18,7 @@ export class StatePollingManager {
   }
 
   subscribe() {
-    this.pubSub.subscribe();
+    // this.pubSub.subscribe();
   }
 
   async fetchAndSetStatesFromRPC(
@@ -132,7 +132,7 @@ export class StatePollingManager {
         {} as Record<string, PoolState | null>,
       );
 
-      this.pubSub.publish(dataToPublish);
+      // this.pubSub.publish(dataToPublish);
 
       await Promise.all(
         pools.map(async (p, i) => {
