@@ -2,6 +2,7 @@ import NodeCache from 'node-cache';
 import { Network } from '../constants';
 import { IDexHelper } from '../dex-helper';
 import { Logger } from '../types';
+import { Utils } from '../utils';
 
 type KeyValuePubSubMsg = {
   expiresAt: number;
@@ -123,7 +124,7 @@ export class ExpHashPubSub {
 
     this.dexHelper.cache.subscribe(this.hashKey, (_, msg) => {
       const before = Date.now();
-      const decodedMsg = JSON.parse(msg) as KeyValuePubSubMsg;
+      const decodedMsg = Utils.Parse(msg) as KeyValuePubSubMsg;
       this.handleSubscription(decodedMsg);
       const after = Date.now();
       this.logger.info(`Decoding and handling took: ${after - before}ms`);
@@ -139,7 +140,7 @@ export class ExpHashPubSub {
 
       this.dexHelper.cache.publish(
         this.hashKey,
-        JSON.stringify({ expiresAt, data }),
+        Utils.Serialize({ expiresAt, data }),
       );
     }
   }
@@ -184,7 +185,7 @@ export class ExpHashPubSub {
     const value = await this.dexHelper.cache.hget(this.hashKey, key);
 
     if (value && this.ttl > 0) {
-      const parsedValue = JSON.parse(value);
+      const parsedValue = Utils.Parse(value);
       this.localCache.set(key, parsedValue, this.ttl);
       return parsedValue;
     }
