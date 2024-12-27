@@ -997,6 +997,10 @@ export const Tokens: {
       address: '0xa9251ca9de909cb71783723713b21e4233fbf1b1',
       decimals: 18,
     },
+    XVS: {
+      address: '0xcF6BB5389c92Bdda8a3747Ddb454cB7a64626C63',
+      decimals: 18,
+    },
   },
   [Network.AVALANCHE]: {
     LINKe: {
@@ -1901,7 +1905,7 @@ export const Holders: {
     POPS: '0x4b78b52e7de4d8b7d367297cb8a87c1875a9d591',
     BNB: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
     USDT: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
-    ETH: '0xefdca55e4bce6c1d535cb2d0687b5567eef2ae83',
+    ETH: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
     USDC: '0x554b52bf57b387fd09d6644368c5a8aacaaf5ae0',
     RADIO: '0x75b3efed620e2d6750d88263cd4d7a27b0d7d3c5',
     bBTC: '0x72a53cdbbcc1b9efa39c834a540550e23463aacb',
@@ -1918,6 +1922,7 @@ export const Holders: {
     stUSD: '0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776',
     stataUSDT: '', // no holders yet
     aaveUSDT: '0x5DE3c5BE52D7aDbdC3aEFe2eA061A2ECE0C7d766',
+    XVS: '0x9FCc67D7DB763787BB1c7f3bC7f34d3C548c19Fe',
   },
   [Network.AVALANCHE]: {
     LINKe: '0x9efa0A617C0552F1558c95993aA8b8A68b3e709C',
