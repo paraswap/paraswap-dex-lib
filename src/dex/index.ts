@@ -85,6 +85,7 @@ import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
+import { AaveV3StataV2 } from './aave-v3-stata-v2/aave-v3-stata-v2';
 import { OSwap } from './oswap/oswap';
 import { FluidDex } from './fluid-dex/fluid-dex';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
@@ -182,6 +183,7 @@ const Dexes = [
   PharaohV1,
   Spark,
   AaveV3Stata,
+  AaveV3StataV2,
   OSwap,
   ConcentratorArusd,
   FxProtocolRusd,
