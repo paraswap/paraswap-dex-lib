@@ -278,10 +278,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async getCachedTokens(): Promise<TokensMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       SWAAP_TOKENS_CACHE_KEY,
+      SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedTokens) {
@@ -292,10 +293,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
-    const cachedLevels = await this.dexHelper.cache.get(
+    const cachedLevels = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       SWAAP_PRICES_CACHE_KEY,
+      SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedLevels) {
