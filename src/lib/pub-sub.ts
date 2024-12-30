@@ -35,19 +35,13 @@ export class ExpStringPubSub {
     this.logger.info(`Subscribing to ${this.channel}`);
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
-      const before = Date.now();
       const decodedMsg = JSON.parse(msg) as KeyValuePubSubMsg;
       this.handleSubscription(decodedMsg);
-      const after = Date.now();
-      this.logger.info(`Decoding and handling took: ${after - before}ms`);
     });
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
     const expiresAt = Math.round(Date.now() / 1000) + ttl;
-    this.logger.info(
-      `Publishing keys: '${Object.keys(data)}', expiresAt: '${expiresAt}'`,
-    );
 
     this.dexHelper.cache.publish(
       this.channel,
@@ -123,20 +117,14 @@ export class ExpHashPubSub {
     this.logger.info(`Subscribing`);
 
     this.dexHelper.cache.subscribe(this.hashKey, (_, msg) => {
-      const before = Date.now();
       const decodedMsg = Utils.Parse(msg) as KeyValuePubSubMsg;
       this.handleSubscription(decodedMsg);
-      const after = Date.now();
-      this.logger.info(`Decoding and handling took: ${after - before}ms`);
     });
   }
 
   publish(data: Record<string, unknown>) {
     if (Object.keys(data).length > 0) {
       const expiresAt = Math.round(Date.now() / 1000) + this.ttl;
-      this.logger.info(
-        `Publishing keys: '${Object.keys(data)}', expiresAt: '${expiresAt}'`,
-      );
 
       this.dexHelper.cache.publish(
         this.hashKey,
@@ -147,11 +135,6 @@ export class ExpHashPubSub {
 
   handleSubscription(msg: KeyValuePubSubMsg) {
     const { expiresAt, data } = msg;
-    this.logger.info(
-      `Received subscription, keys: '${Object.keys(
-        data,
-      )}', expiresAt: '${expiresAt}'`,
-    );
 
     const now = Math.round(Date.now() / 1000);
     // calculating ttl as message might come with the delay
@@ -176,11 +159,8 @@ export class ExpHashPubSub {
     const localValue = this.localCache.get<T>(key);
 
     if (localValue !== undefined) {
-      this.logger.info(`Returning from local cache: '${key}'`);
       return localValue;
     }
-
-    this.logger.info(`Returning from external cache: '${key}'`);
 
     const value = await this.dexHelper.cache.hget(this.hashKey, key);
 
