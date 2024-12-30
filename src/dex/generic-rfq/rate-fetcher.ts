@@ -326,7 +326,7 @@ export class RateFetcher {
       this.dexKey,
       this.dexHelper.config.data.network,
       `pairs`,
-      this.config.rateConfig.dataTTLS,
+      this.config.rateConfig.intervalMs / 1000,
     );
 
     if (!pairs) {
@@ -349,7 +349,7 @@ export class RateFetcher {
         this.dexKey,
         this.dexHelper.config.data.network,
         `${srcToken.address}_${destToken.address}_bids`,
-        this.config.rateConfig.dataTTLS,
+        this.config.rateConfig.intervalMs / 1000,
       );
 
       if (!pricesAsString) {
@@ -357,7 +357,7 @@ export class RateFetcher {
           this.dexKey,
           this.dexHelper.config.data.network,
           `${destToken.address}_${srcToken.address}_asks`,
-          this.config.rateConfig.dataTTLS,
+          this.config.rateConfig.intervalMs / 1000,
         );
         reversed = true;
       }
@@ -366,7 +366,7 @@ export class RateFetcher {
         this.dexKey,
         this.dexHelper.config.data.network,
         `${destToken.address}_${srcToken.address}_asks`,
-        this.config.rateConfig.dataTTLS,
+        this.config.rateConfig.intervalMs / 1000,
       );
 
       if (!pricesAsString) {
@@ -374,7 +374,7 @@ export class RateFetcher {
           this.dexKey,
           this.dexHelper.config.data.network,
           `${srcToken.address}_${destToken.address}_bids`,
-          this.config.rateConfig.dataTTLS,
+          this.config.rateConfig.intervalMs / 1000,
         );
         reversed = true;
       }
