@@ -215,9 +215,12 @@ export class CurveV1Factory
 
     this.poolManager = new CurveV1FactoryPoolManager(
       this.dexKey,
+      // should be the same as we use for FactoryStateHandler (4th param) and others
+      this.cacheStateKey,
       dexHelper.getLogger(`${this.dexKey}-state-manager`),
       dexHelper,
       allPriceHandlers,
+      // should be the same as we use for FactoryStateHandler (8th param) and others
       this.config.stateUpdatePeriodMs,
     );
   }
@@ -707,7 +710,8 @@ export class CurveV1Factory
               factoryImplementationFromConfig.name,
               implementationAddress.toLowerCase(),
               poolAddresses[i],
-              this.config,
+              this.config.stateUpdatePeriodMs,
+              this.config.factories,
               factoryAddress,
               poolIdentifier,
               poolConstants,

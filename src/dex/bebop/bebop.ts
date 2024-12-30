@@ -875,10 +875,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async getCachedPrices(): Promise<BebopPricingResponse | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
+    const cachedPrices = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.pricesCacheKey,
+      2,
     );
 
     if (cachedPrices) {
@@ -889,10 +890,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.tokensAddrCacheKey,
+      BEBOP_TOKENS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedTokens) {
