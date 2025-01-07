@@ -224,6 +224,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         pools = pools.filter(pool => limitPools.includes(pool.id));
       }
 
+      // temporarily limit FLUID-ETH Dex Pool.
+      pools = pools.filter(pool => pool.id != '11');
+
       if (!pools.length) return null;
 
       const liquidityProxyState = await this.liquidityProxy.getStateOrGenerate(
