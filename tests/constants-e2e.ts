@@ -131,7 +131,7 @@ export const Tokens: {
       addBalance: balancesFn,
       addAllowance: allowedFn,
     },
-    INST: {
+    FLUID: {
       address: '0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb',
       decimals: 18,
     },
@@ -1816,6 +1816,7 @@ export const Holders: {
     USDM: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     wUSDM: '0x3B95bC951EE0f553ba487327278cAc44f29715E5',
     UsualM: '0xE3f7A0c4a44b740328157A5152A85c3bCB54DA09',
+    FLUID: '0x2d675D4C52a8aE117b935fF98c6F9f29A15827F0',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
