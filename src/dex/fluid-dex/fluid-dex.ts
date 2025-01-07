@@ -48,6 +48,11 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   pools: FluidDexPool[] = [];
 
+  // temporarily limit FLUID-ETH Dex Pool.
+  restrictedIds: string[] = [
+    'FluidDex_0xc800b0e15c40a1ff0539218100c86f4c1bac8d9c',
+  ];
+
   eventPools: FluidDexEventPool[] = [];
 
   readonly factory: FluidDexFactory;
@@ -111,6 +116,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   async initializePricing(blockNumber: number) {
     await this.factory.initialize(blockNumber);
     this.pools = await this.fetchFluidDexPools(blockNumber);
+    this.pools = this.pools.filter(
+      pool => !this.restrictedIds.includes(pool.id),
+    );
 
     this.eventPools = await Promise.all(
       this.pools.map(async pool => {
@@ -135,6 +143,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   protected onPoolCreatedUpdatePools(poolsFromFactory: readonly Pool[]) {
     this.pools = this.generateFluidDexPoolsFromPoolsFactory(poolsFromFactory);
+    this.pools = this.pools.filter(
+      pool => !this.restrictedIds.includes(pool.id),
+    );
     this.logger.info(`${this.dexKey}: pools list was updated ...`);
   }
 
@@ -174,6 +185,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     // A pair must have 2 different tokens.
     if (srcAddress === destAddress) return [];
 
+    this.pools = this.pools.filter(
+      pool => !this.restrictedIds.includes(pool.id),
+    );
     const pools = this.pools.filter(
       pool =>
         (srcAddress === pool.token0 && destAddress === pool.token1) ||
@@ -205,12 +219,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       if (limitPools) {
         pools = pools.filter(pool => limitPools.includes(pool.id));
       }
-
-      // temporarily limit FLUID-ETH Dex Pool.
-      pools = pools.filter(
-        pool =>
-          pool.id != 'FluidDex_0xc800b0e15c40a1ff0539218100c86f4c1bac8d9c',
-      );
 
       if (!pools.length) return null;
 
