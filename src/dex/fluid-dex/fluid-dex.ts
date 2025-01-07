@@ -225,7 +225,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       }
 
       // temporarily limit FLUID-ETH Dex Pool.
-      pools = pools.filter(pool => pool.id != '11');
+      pools = pools.filter(
+        pool =>
+          pool.id != 'FluidDex_0xc800b0e15c40a1ff0539218100c86f4c1bac8d9c',
+      );
 
       if (!pools.length) return null;
 
