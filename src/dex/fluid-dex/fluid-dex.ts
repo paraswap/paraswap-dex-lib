@@ -135,7 +135,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   protected onPoolCreatedUpdatePools(poolsFromFactory: readonly Pool[]) {
     this.pools = this.generateFluidDexPoolsFromPoolsFactory(poolsFromFactory);
-
     this.logger.info(`${this.dexKey}: pools list was updated ...`);
   }
 
