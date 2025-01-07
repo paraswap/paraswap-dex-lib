@@ -19,13 +19,6 @@ import { FluidDex } from './fluid-dex';
   README
   ======
 
-  The template already enumerates the basic structure which involves
-  testing simpleSwap, multiSwap, megaSwap contract methods for
-  ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace tokenA and
-  tokenB with any two highly liquid tokens on FluidDex for the tests
-  to work. If the tokens that you would like to use are not defined in
-  Tokens or Holders map, you can update the './tests/constants-e2e'
-
   Other than the standard cases that are already added by the template
   it is highly recommended to add test cases which could be specific
   to testing FluidDex (Eg. Tests based on poolType, special tokens,
