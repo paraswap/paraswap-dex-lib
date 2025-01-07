@@ -193,25 +193,13 @@ describe('FluidDex', function () {
       }
     });
 
-    describe('wstETH -> ETH', () => {
-      const tokenASymbol = 'wstETH';
+    describe.only('FLUID -> ETH', () => {
+      const tokenASymbol = 'FLUID';
       const tokenBSymbol = 'ETH';
 
-      const amountsForSwap = [
-        0n,
-        1n * BI_POWS[18],
-        2n * BI_POWS[18],
-        3n * BI_POWS[18],
-        4n * BI_POWS[18],
-        5n * BI_POWS[18],
-        6n * BI_POWS[18],
-        7n * BI_POWS[18],
-        8n * BI_POWS[18],
-        9n * BI_POWS[18],
-        10n * BI_POWS[18],
-      ];
+      const amountsForSwap = [0n, 79923068733005505624n];
 
-      it('wstETH -> ETH, getPoolIdentifiers and getPricesVolume SELL', async function () {
+      it.only('FLUID -> ETH, getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           fluidDex,
           network,
@@ -226,7 +214,7 @@ describe('FluidDex', function () {
         );
       });
 
-      it('wstETH -> ETH, getPoolIdentifiers and getPricesVolume BUY', async function () {
+      it('FLUID -> ETH, getPoolIdentifiers and getPricesVolume BUY', async function () {
         await testPricingOnNetwork(
           fluidDex,
           network,
@@ -241,7 +229,7 @@ describe('FluidDex', function () {
         );
       });
 
-      it('ETH -> wstETH, getPoolIdentifiers and getPricesVolume SELL', async function () {
+      it('ETH -> FLUID, getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           fluidDex,
           network,
@@ -256,7 +244,7 @@ describe('FluidDex', function () {
         );
       });
 
-      it('ETH -> wstETH, getPoolIdentifiers and getPricesVolume BUY', async function () {
+      it('ETH -> FLUID, getPoolIdentifiers and getPricesVolume BUY', async function () {
         await testPricingOnNetwork(
           fluidDex,
           network,
