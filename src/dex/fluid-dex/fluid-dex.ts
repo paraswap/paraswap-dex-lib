@@ -48,8 +48,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   pools: FluidDexPool[] = [];
 
-  restrictedIds: string[] = [];
-
   eventPools: FluidDexEventPool[] = [];
 
   readonly factory: FluidDexFactory;
@@ -106,15 +104,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     }));
   }
 
-  // Restricts a pool by its ID, ensuring it is not used for future operations.
-  async restrictPoolWithIds(restrictedId: string) {
-    if (!this.restrictedIds.includes(restrictedId)) {
-      this.restrictedIds.push(restrictedId);
-    }
-    // Filter out the pool with the specified ID from the list of available pools.
-    this.pools = this.pools.filter(pool => pool.id !== restrictedId);
-  }
-
   // Initialize pricing is called once in the start of
   // pricing service. It is intended to setup the integration
   // for pricing requests. It is optional for a DEX to
@@ -122,9 +111,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   async initializePricing(blockNumber: number) {
     await this.factory.initialize(blockNumber);
     this.pools = await this.fetchFluidDexPools(blockNumber);
-    this.pools = this.pools.filter(
-      pool => !this.restrictedIds.includes(pool.id),
-    );
 
     this.eventPools = await Promise.all(
       this.pools.map(async pool => {
@@ -149,9 +135,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   protected onPoolCreatedUpdatePools(poolsFromFactory: readonly Pool[]) {
     this.pools = this.generateFluidDexPoolsFromPoolsFactory(poolsFromFactory);
-    this.pools = this.pools.filter(
-      pool => !this.restrictedIds.includes(pool.id),
-    );
 
     this.logger.info(`${this.dexKey}: pools list was updated ...`);
   }
