@@ -115,11 +115,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   // implement this function
   async initializePricing(blockNumber: number) {
     await this.factory.initialize(blockNumber);
-    this.pools = await this.fetchFluidDexPools(blockNumber);
-    this.pools = this.pools.filter(
+    this.pools = (await this.fetchFluidDexPools(blockNumber)).filter(
       pool => !this.restrictedIds.includes(pool.id),
     );
-
     this.eventPools = await Promise.all(
       this.pools.map(async pool => {
         const eventPool = new FluidDexEventPool(
