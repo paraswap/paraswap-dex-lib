@@ -47,7 +47,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   logger: Logger;
 
   pools: FluidDexPool[] = [];
-  // temporarily limit FLUID-ETH Dex Pool.
+
   restrictedIds: string[] = [];
 
   eventPools: FluidDexEventPool[] = [];
