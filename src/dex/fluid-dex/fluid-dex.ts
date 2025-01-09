@@ -48,9 +48,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
   pools: FluidDexPool[] = [];
   // temporarily limit FLUID-ETH Dex Pool.
-  restrictedIds: string[] = [
-    'FluidDex_0xc800b0e15c40a1ff0539218100c86f4c1bac8d9c',
-  ];
+  restrictedIds: string[] = [];
 
   eventPools: FluidDexEventPool[] = [];
 
@@ -620,7 +618,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        return BigInt(Number.MAX_VALUE);
+        return 2n ** 256n - 1n;
       }
     }
 
@@ -637,7 +635,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        return BigInt(Number.MAX_VALUE);
+        return 2n ** 256n - 1n;
       }
     }
 
@@ -904,7 +902,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     if (amountIn === 2n ** 256n - 1n) {
       return amountIn;
     }
-    const ans = (amountIn * BigInt(10 ** inDecimals)) / BigInt(10 ** 12);
+    const ans =
+      amountIn !== 2n ** 256n - 1n
+        ? (amountIn * BigInt(10 ** inDecimals)) / BigInt(10 ** 12)
+        : amountIn;
 
     return ans;
   }
@@ -1099,7 +1100,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        return BigInt(Number.MAX_VALUE);
+        return 2n ** 256n - 1n;
       }
     }
     if (amountInDebt > 0) {
@@ -1115,7 +1116,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        return BigInt(Number.MAX_VALUE);
+        return 2n ** 256n - 1n;
       }
     }
 

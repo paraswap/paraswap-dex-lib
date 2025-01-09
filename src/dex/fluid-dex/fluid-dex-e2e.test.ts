@@ -119,30 +119,14 @@ describe('FluidDex E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Uncomment & test when the issue is resolved. Currently no price as expected.
-    // isSwapAndArbitragePaused is set to true, so will not work
-    // describe.only('FLUID -> ETH', () => {
-    //   const tokenASymbol: string = 'FLUID';
-    //   const tokenBSymbol: string = 'ETH';
+    describe('FLUID -> ETH', () => {
+      const tokenASymbol: string = 'FLUID';
+      const tokenBSymbol: string = 'ETH';
 
-    //   const tokenAAmount: string = '160097047322810379';
-    //   const tokenBAmount: string = '79923068733005505624';
-
-    //   testForNetwork(
-    //     network,
-    //     dexKey,
-    //     tokenASymbol,
-    //     tokenBSymbol,
-    //     tokenAAmount,
-    //     tokenBAmount,
-    //   );
-    // });
-
-    describe.only('ETH -> INST', () => {
-      const tokenASymbol: string = 'ETH';
-      const tokenBSymbol: string = 'INST';
-
-      const tokenAAmount: string = '100000000000000';
-      const tokenBAmount: string = '100000000000000';
+      const tokenAAmount: string = '16009704732281';
+      const tokenBAmount: string = '7992306873000001';
+      // const tokenAAmount: string = '160097047322810379';
+      // const tokenBAmount: string = '79923068733005505624';
 
       testForNetwork(
         network,
@@ -153,6 +137,23 @@ describe('FluidDex E2E', () => {
         tokenBAmount,
       );
     });
+
+    // describe.only('ETH -> INST', () => {
+    //   const tokenASymbol: string = 'ETH';
+    //   const tokenBSymbol: string = 'INST';
+
+    //   const tokenAAmount: string = '100000000000000';
+    //   const tokenBAmount: string = '100000000000000';
+
+    //   testForNetwork(
+    //     network,
+    //     dexKey,
+    //     tokenASymbol,
+    //     tokenBSymbol,
+    //     tokenAAmount,
+    //     tokenBAmount,
+    //   );
+    // });
 
     describe('ETH -> wstETH', () => {
       const tokenASymbol: string = 'wstETH';
