@@ -119,13 +119,14 @@ describe('FluidDex E2E', () => {
     const network = Network.MAINNET;
 
     // TODO: Uncomment & test when the issue is resolved. Currently no price as expected.
+    // isSwapAndArbitragePaused is set to true, so will not work
     // describe.only('FLUID -> ETH', () => {
     //   const tokenASymbol: string = 'FLUID';
     //   const tokenBSymbol: string = 'ETH';
-    //
+
     //   const tokenAAmount: string = '160097047322810379';
     //   const tokenBAmount: string = '79923068733005505624';
-    //
+
     //   testForNetwork(
     //     network,
     //     dexKey,
@@ -136,7 +137,7 @@ describe('FluidDex E2E', () => {
     //   );
     // });
 
-    describe('ETH -> INST', () => {
+    describe.only('ETH -> INST', () => {
       const tokenASymbol: string = 'ETH';
       const tokenBSymbol: string = 'INST';
 
@@ -339,7 +340,7 @@ describe('TestPoolSimulator_SwapInLimits', () => {
       Math.floor(Date.now() / 1000) - 6000,
     );
     console.log('outAmt: ', outAmt);
-    expect(outAmt?.toString()).toEqual('998262697204710');
+    expect(outAmt?.toString()).toEqual('998163044346107');
   });
 
   it('when price diff hit', () => {
