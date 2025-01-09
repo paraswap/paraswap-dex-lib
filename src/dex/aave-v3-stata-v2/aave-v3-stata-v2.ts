@@ -1,4 +1,3 @@
-import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -50,7 +49,7 @@ export class AaveV3StataV2
   extends SimpleExchange
   implements IDex<AaveV3StataV2Data>
 {
-  readonly hasConstantPriceLargeAmounts = false;
+  readonly hasConstantPriceLargeAmounts = true;
 
   readonly isFeeOnTransferSupported = false;
 
