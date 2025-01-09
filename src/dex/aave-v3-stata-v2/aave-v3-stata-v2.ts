@@ -212,40 +212,24 @@ export class AaveV3StataV2
       !this.state[stataAddressLower]?.blockNumber ||
       blockNumber > this.state[stataAddressLower].blockNumber
     ) {
-      const cached = await this.dexHelper.cache.get(
-        this.dexKey,
-        this.network,
-        `state_${stataAddressLower}`,
+      const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
+        true,
+        [
+          {
+            target: this.config.pool,
+            callData: AaveV3StataV2.pool.encodeFunctionData(
+              'getReserveNormalizedIncome',
+              [stataToken.underlying],
+            ),
+            decodeFunction: uint256ToBigInt,
+          },
+        ],
+        blockNumber,
       );
-      if (cached) {
-        this.state[stataAddressLower] = Utils.Parse(cached);
-      } else {
-        const results = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-          true,
-          [
-            {
-              target: this.config.pool,
-              callData: AaveV3StataV2.pool.encodeFunctionData(
-                'getReserveNormalizedIncome',
-                [stataToken.underlying],
-              ),
-              decodeFunction: uint256ToBigInt,
-            },
-          ],
-          blockNumber,
-        );
-        this.state[stataAddressLower] = {
-          blockNumber,
-          rate: results[0].returnData,
-        };
-        this.dexHelper.cache.setex(
-          this.dexKey,
-          this.network,
-          `state_${stataAddressLower}`,
-          60,
-          Utils.Serialize(this.state[stataAddressLower]),
-        );
-      }
+      this.state[stataAddressLower] = {
+        blockNumber,
+        rate: results[0].returnData,
+      };
     }
 
     return [
