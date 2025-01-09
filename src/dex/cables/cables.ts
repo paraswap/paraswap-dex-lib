@@ -323,6 +323,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       targetExchange: this.mainnetRFQAddress,
       returnAmountPos: undefined,
       insertFromAmountPos: filledAmountPos,
+      sendEthButSupportsInsertFromAmount: true,
     };
   }
 
@@ -641,30 +642,36 @@ export class Cables extends SimpleExchange implements IDex<any> {
    * CACHED UTILS
    */
   async getCachedTokens(): Promise<any> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.rateFetcher.tokensCacheKey,
+      // as local cache just uses passed ttl (instead of getting actual ttl from cache)
+      // pass shorter interval to avoid getting stale data
+      // (same logic is used in other places)
+      CABLES_API_TOKENS_POLLING_INTERVAL_MS / 1000,
     );
 
     return cachedTokens ? JSON.parse(cachedTokens) : {};
   }
 
   async getCachedPairs(): Promise<any> {
-    const cachedPairs = await this.dexHelper.cache.get(
+    const cachedPairs = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.rateFetcher.pairsCacheKey,
+      CABLES_API_PAIRS_POLLING_INTERVAL_MS / 1000,
     );
 
     return cachedPairs ? JSON.parse(cachedPairs) : {};
   }
 
   async getCachedPrices(): Promise<any> {
-    const cachedPrices = await this.dexHelper.cache.get(
+    const cachedPrices = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.rateFetcher.pricesCacheKey,
+      CABLES_API_PRICES_POLLING_INTERVAL_MS / 1000,
     );
 
     return cachedPrices ? JSON.parse(cachedPrices) : {};

@@ -446,6 +446,10 @@ export const Tokens: {
       decimals: 18,
       symbol: 'EURA',
     },
+    FLUID: {
+      address: '0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb',
+      decimals: 18,
+    },
     EUROC: {
       address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c',
       decimals: 6,
@@ -1711,6 +1715,7 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
+    FLUID: '0x2d675D4C52a8aE117b935fF98c6F9f29A15827F0',
     USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
     sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',

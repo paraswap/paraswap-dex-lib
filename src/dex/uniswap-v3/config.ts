@@ -359,32 +359,6 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       subgraphURL: 'Dimv1udMsJu1DqirVM4G2vNRvH8CWzWTn7GffQQCGAaq',
     },
   },
-  VelodromeSlipstream: {
-    [Network.OPTIMISM]: {
-      factory: '0x548118C7E0B865C2CfA94D15EC86B666468ac758',
-      quoter: '0xA2DEcF05c16537C702779083Fe067e308463CE45',
-      router: '0x93A3b44C38A8557E935B3e2549B2809a582c28EE',
-      supportedFees: SUPPORTED_FEES,
-      tickSpacings: [1n, 50n, 100n, 200n, 2000n],
-      tickSpacingsToFees: {
-        '1': 100n,
-        '50': 500n,
-        '100': 500n,
-        '200': 3000n,
-        '2000': 10000n,
-      },
-      stateMulticall: '0xc055b23319b3a140D4De2d0001bd0A885B3d7DbB',
-      stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
-      eventPoolImplementation: VelodromeSlipstreamEventPool,
-      factoryImplementation: VelodromeSlipstreamFactory,
-      decodeStateMultiCallResultWithRelativeBitmaps:
-        decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
-      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
-      chunksCount: 10,
-      initRetryFrequency: 10,
-      initHash: '0xE0A596c403E854FFb9C828aB4f07eEae04A05D37', // pool implementation address from factory contract is used instead of initHash here
-    },
-  },
   VelodromeSlipstreamNewFactory: {
     [Network.OPTIMISM]: {
       factory: '0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F',

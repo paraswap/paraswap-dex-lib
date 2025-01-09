@@ -84,6 +84,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       // There is no subgraph for Aerodrome
       factoryAddress: '0x420DD381b31aEf6683db6B902084cB0FFECe40Da',
       router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
+      subgraphURL: '7uEwiKmfbRQqV8Ec9nvdKrMFVFQv5qaM271gdBvHtywj',
       initCode:
         '0x1a8f01f7eab324003d9388f229ea17991eee9c9d14586f429799f3656790eba0',
       poolGasCost: 180 * 1000,
