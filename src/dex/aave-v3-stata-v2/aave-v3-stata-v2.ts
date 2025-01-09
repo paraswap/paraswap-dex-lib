@@ -49,7 +49,7 @@ export class AaveV3StataV2
   extends SimpleExchange
   implements IDex<AaveV3StataV2Data>
 {
-  readonly hasConstantPriceLargeAmounts = true;
+  readonly hasConstantPriceLargeAmounts = false;
 
   readonly isFeeOnTransferSupported = false;
 
