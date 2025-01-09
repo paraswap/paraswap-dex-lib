@@ -247,6 +247,9 @@ function NewDebtReservesOne(): DebtReserves {
   };
 }
 
+const centerPriceTight: bigint = 3401944443797854601871360n;
+const centerPriceWide: bigint = 1190081051944310368000000000n;
+
 const limitsTight: DexLimits = {
   withdrawableToken0: {
     available: 456740438880263n,
@@ -314,6 +317,7 @@ describe('TestPoolSimulator_SwapInLimits', () => {
         100n,
         18,
         limitsTight,
+        BigInt(centerPriceTight),
         Math.floor(Date.now() / 1000) - 10,
       );
       expect(outAmt).toEqual(0n);
@@ -331,6 +335,7 @@ describe('TestPoolSimulator_SwapInLimits', () => {
       100n,
       18,
       limitsTight,
+      BigInt(centerPriceTight),
       Math.floor(Date.now() / 1000) - 6000,
     );
     console.log('outAmt: ', outAmt);
@@ -348,6 +353,7 @@ describe('TestPoolSimulator_SwapInLimits', () => {
         100n,
         18,
         limitsWide,
+        BigInt(centerPriceWide),
         Math.floor(Date.now() / 1000) - 10,
       );
       expect(outAmt).toEqual(0n);
@@ -367,6 +373,7 @@ describe('TestPoolSimulator_SwapInLimits', () => {
         100n,
         18,
         limitsWide,
+        BigInt(centerPriceWide),
         Math.floor(Date.now() / 1000) - 10,
       );
       expect(outAmt).toEqual(0n);

@@ -1,1 +1,1 @@
-export const MIN_SWAP_LIQUIDITY = 10n ** 4n;
+export const MIN_SWAP_LIQUIDITY = 20n ** 4n;

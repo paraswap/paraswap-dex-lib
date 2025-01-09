@@ -47,7 +47,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
   logger: Logger;
 
   pools: FluidDexPool[] = [];
-
   // temporarily limit FLUID-ETH Dex Pool.
   restrictedIds: string[] = [
     'FluidDex_0xc800b0e15c40a1ff0539218100c86f4c1bac8d9c',
@@ -260,6 +259,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
                 destToken.decimals,
                 BigInt(currentPoolReserves.fee),
                 currentPoolReserves.dexLimits,
+                BigInt(currentPoolReserves.centerPrice),
                 Math.floor(Date.now() / 1000),
               );
             } else {
@@ -272,6 +272,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
                 destToken.decimals,
                 BigInt(currentPoolReserves.fee),
                 currentPoolReserves.dexLimits,
+                BigInt(currentPoolReserves.centerPrice),
                 Math.floor(Date.now() / 1000),
               );
             }
@@ -415,6 +416,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     outDecimals: number,
     fee: bigint,
     currentLimits: DexLimits,
+    centerPrice: bigint,
     syncTime: number,
   ): bigint {
     if (amountIn === 0n) {
@@ -438,6 +440,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       fee,
       outDecimals,
       currentLimits,
+      centerPrice,
       syncTime,
     );
     return (amountOut * BigInt(10 ** outDecimals)) / BigInt(10 ** 12);
@@ -459,6 +462,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     fee: bigint,
     outDecimals: number,
     currentLimits: DexLimits,
+    centerPrice: bigint,
     syncTime: number,
   ): bigint {
     const {
@@ -603,6 +607,40 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       return 0n;
     }
 
+    if (amountInCollateral > 0) {
+      let reservesRatioValid = swap0To1
+        ? this.verifyToken1Reserves(
+            colReserveIn + amountInCollateral,
+            colReserveOut - amountOutCollateral,
+            centerPrice,
+          )
+        : this.verifyToken0Reserves(
+            colReserveOut - amountOutCollateral,
+            colReserveIn + amountInCollateral,
+            centerPrice,
+          );
+      if (!reservesRatioValid) {
+        return BigInt(Number.MAX_VALUE);
+      }
+    }
+
+    if (amountInDebt > 0) {
+      let reservesRatioValid = swap0To1
+        ? this.verifyToken1Reserves(
+            debtReserveIn + amountInDebt,
+            debtReserveOut - amountOutDebt,
+            centerPrice,
+          )
+        : this.verifyToken0Reserves(
+            debtReserveOut - amountOutDebt,
+            debtReserveIn + amountInDebt,
+            centerPrice,
+          );
+      if (!reservesRatioValid) {
+        return BigInt(Number.MAX_VALUE);
+      }
+    }
+
     // For price calculations, we'll use a precision factor for bigint division
     const PRECISION = 1000000000000000000000000000n; // 1e27
 
@@ -640,40 +678,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
     if (priceDiff > maxAllowedDiff) {
       return 0n;
-    }
-
-    if (amountInCollateral > 0) {
-      let reservesRatioValid = swap0To1
-        ? this.verifyToken1Reserves(
-            colReserveIn + amountInCollateral,
-            colReserveOut - amountOutCollateral,
-            oldPrice,
-          )
-        : this.verifyToken0Reserves(
-            colReserveOut - amountOutCollateral,
-            colReserveIn + amountInCollateral,
-            oldPrice,
-          );
-      if (!reservesRatioValid) {
-        return 0n;
-      }
-    }
-
-    if (amountInDebt > 0) {
-      let reservesRatioValid = swap0To1
-        ? this.verifyToken1Reserves(
-            debtReserveIn + amountInDebt,
-            debtReserveOut - amountOutDebt,
-            oldPrice,
-          )
-        : this.verifyToken0Reserves(
-            debtReserveOut - amountOutDebt,
-            debtReserveIn + amountInDebt,
-            oldPrice,
-          );
-      if (!reservesRatioValid) {
-        return 0n;
-      }
     }
 
     const totalAmountOut = amountOutCollateral + amountOutDebt;
@@ -879,6 +883,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     outDecimals: number,
     fee: bigint,
     currentLimits: DexLimits,
+    centerPrice: bigint,
     syncTime: number,
   ): bigint {
     const amountOutAdjusted =
@@ -892,6 +897,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       fee,
       outDecimals,
       currentLimits,
+      centerPrice,
       syncTime,
     );
 
@@ -919,6 +925,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     fee: bigint,
     outDecimals: number,
     currentLimits: DexLimits,
+    centerPrice: bigint,
     syncTime: number,
   ): bigint {
     if (amountOut === 0n) {
@@ -1079,6 +1086,39 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       }
     }
 
+    if (amountInCollateral > 0) {
+      let reservesRatioValid = swap0to1
+        ? this.verifyToken1Reserves(
+            colReserveIn + amountInCollateral,
+            colReserveOut - amountOutCollateral,
+            centerPrice,
+          )
+        : this.verifyToken0Reserves(
+            colReserveOut - amountOutCollateral,
+            colReserveIn + amountInCollateral,
+            centerPrice,
+          );
+      if (!reservesRatioValid) {
+        return BigInt(Number.MAX_VALUE);
+      }
+    }
+    if (amountInDebt > 0) {
+      let reservesRatioValid = swap0to1
+        ? this.verifyToken1Reserves(
+            debtReserveIn + amountInDebt,
+            debtReserveOut - amountOutDebt,
+            centerPrice,
+          )
+        : this.verifyToken0Reserves(
+            debtReserveOut - amountOutDebt,
+            debtReserveIn + amountInDebt,
+            centerPrice,
+          );
+      if (!reservesRatioValid) {
+        return BigInt(Number.MAX_VALUE);
+      }
+    }
+
     let oldPrice: bigint;
     let newPrice: bigint;
     const SCALE = BigInt(1e27);
@@ -1113,39 +1153,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     ) {
       // if price diff is > 5% then swap would revert.
       return 2n ** 256n - 1n;
-    }
-
-    if (amountInCollateral > 0) {
-      let reservesRatioValid = swap0to1
-        ? this.verifyToken1Reserves(
-            colReserveIn + amountInCollateral,
-            colReserveOut - amountOutCollateral,
-            oldPrice,
-          )
-        : this.verifyToken0Reserves(
-            colReserveOut - amountOutCollateral,
-            colReserveIn + amountInCollateral,
-            oldPrice,
-          );
-      if (!reservesRatioValid) {
-        return 0n;
-      }
-    }
-    if (amountInDebt > 0) {
-      let reservesRatioValid = swap0to1
-        ? this.verifyToken1Reserves(
-            debtReserveIn + amountInDebt,
-            debtReserveOut - amountOutDebt,
-            oldPrice,
-          )
-        : this.verifyToken0Reserves(
-            debtReserveOut - amountOutDebt,
-            debtReserveIn + amountInDebt,
-            oldPrice,
-          );
-      if (!reservesRatioValid) {
-        return 0n;
-      }
     }
 
     const totalAmountIn = amountInCollateral + amountInDebt;
