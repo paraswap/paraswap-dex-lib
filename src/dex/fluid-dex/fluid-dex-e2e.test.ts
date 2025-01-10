@@ -19,16 +19,6 @@ import { FluidDex } from './fluid-dex';
   README
   ======
 
-  This test script should add e2e tests for FluidDex. The tests
-  should cover as many cases as possible. Most of the DEXes follow
-  the following test structure:
-    - DexName
-      - ForkName + Network
-        - ContractMethod
-          - ETH -> Token swap
-          - Token -> ETH swap
-          - Token -> Token swap
-
   The template already enumerates the basic structure which involves
   testing simpleSwap, multiSwap, megaSwap contract methods for
   ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace tokenA and
