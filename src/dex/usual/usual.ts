@@ -72,7 +72,7 @@ export class Usual extends SimpleExchange implements IDex<UsualBondData> {
     }
 
     if (this.isValidTokens(srcTokenAddress, destTokenAddress)) {
-      return [`${this.dexKey}_${this.config.toToken}`];
+      return [`${this.dexKey}_${this.config.toToken.address}`];
     }
 
     return [];
