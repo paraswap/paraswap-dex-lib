@@ -21,7 +21,6 @@ import { Interface } from '@ethersproject/abi';
 import UsualPoolAbi from '../../abi/usual-pp/abi.json';
 import { Config } from './config';
 import { getDexKeysWithNetwork } from '../../utils';
-import { UsualBondData } from '../usual/types';
 
 export class UsualPP extends SimpleExchange implements IDex<UsualPPData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -186,7 +185,7 @@ export class UsualPP extends SimpleExchange implements IDex<UsualPPData> {
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     recipient: Address,
-    data: UsualBondData,
+    data: UsualPPData,
     side: SwapSide,
   ): Promise<DexExchangeParam> {
     if (this.isUsd0PP(srcToken) && this.isUsd0(destToken)) {
