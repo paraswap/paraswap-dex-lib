@@ -446,6 +446,10 @@ export const Tokens: {
       decimals: 18,
       symbol: 'EURA',
     },
+    FLUID: {
+      address: '0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb',
+      decimals: 18,
+    },
     EUROC: {
       address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c',
       decimals: 6,
@@ -530,6 +534,10 @@ export const Tokens: {
     },
     stataUSDT: {
       address: '0x862c57d48becb45583aeba3f489696d22466ca1b',
+      decimals: 6,
+    },
+    waEthUSDT: {
+      address: '0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8',
       decimals: 6,
     },
     aaveUSDT: {
@@ -1535,6 +1543,10 @@ export const Tokens: {
       address: '0x773CDA0CADe2A3d86E6D4e30699d40bB95174ff2',
       decimals: 18,
     },
+    waGnoGNO: {
+      address: '0x7c16F0185A26Db0AE7a9377f23BC18ea7ce5d644',
+      decimals: 18,
+    },
     aGnoUSDC: {
       address: '0xc6b7aca6de8a6044e0e32d0c841a89244a10d284',
       decimals: 6,
@@ -1703,6 +1715,7 @@ export const Holders: {
   [network: number]: { [tokenAddress: string]: Address };
 } = {
   [Network.MAINNET]: {
+    FLUID: '0x2d675D4C52a8aE117b935fF98c6F9f29A15827F0',
     USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
     sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
@@ -1806,7 +1819,8 @@ export const Holders: {
     USDe: '0x74e6c48e667d698a4cf90665b6960a5bae39e603',
     eETH: '0x0f1DfeF1a40557d279d0de6E49aB306891A638b8',
     stataUSDT: '0x6803364AceD5181877abC11E865FB27cB654a426',
-    aaveUSDT: '0x32c98a981Fe7C333Bd4e8E7630E8e0CF5ce20987',
+    aaveUSDT: '0x464C71f6c2F760DdA6093dCB91C24c39e5d6e18c',
+    waEthUSDT: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
@@ -2058,6 +2072,7 @@ export const Holders: {
     SWPR: '0x9467dcFD4519287e3878C018c02f5670465a9003',
     waGnoWETH: '0x854B004700885A61107B458f11eCC169A019b764',
     waGnowstETH: '0x854B004700885A61107B458f11eCC169A019b764',
+    waGnoGNO: '0x9Ec6472Fc33D9a5D17613484aDF0295A001fDF32',
   },
   [Network.BASE]: {
     WETH: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
