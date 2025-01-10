@@ -118,7 +118,6 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // TODO: Uncomment & test when the issue is resolved. Currently no price as expected.
     describe('FLUID -> ETH', () => {
       const tokenASymbol: string = 'FLUID';
       const tokenBSymbol: string = 'ETH';
