@@ -617,23 +617,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         },
-        SAAVE: {
-          underlying: [
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
-          ],
-          coins: [
-            '0x028171bCA77440897B824Ca71D1c56caC55b68A3',
-            '0x6C5024Cd4F8A59110119C56f8933403A539555EB',
-          ],
-          address: '0xeb16ae0052ed37f479f7fe63849198df1765a733',
-          name: 'SAAVE',
-          type: 2,
-          version: 3,
-          isLending: true,
-          isMetapool: false,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
         BAC: {
           underlying: [
             '0x3449fc1cd036255ba1eb19d65ff4ba2b8903a69a',
