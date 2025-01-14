@@ -1008,23 +1008,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70',
         },
-        Ren: {
-          underlying: [
-            '0x50b7545627a5162F82A992c33b87aDc75187B218',
-            '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
-          ],
-          coins: [
-            '0x686bEF2417b6Dc32C50a3cBfbCC3bb60E1e9a15D',
-            '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
-          ],
-          address: '0x16a7DA911A4DD1d83F3fF066fE28F3C792C50d90',
-          name: 'ren',
-          type: 2,
-          version: 3,
-          isLending: true,
-          isMetapool: false,
-          baseToken: '0x50b7545627a5162F82A992c33b87aDc75187B218',
-        },
       },
     },
     [Network.ARBITRUM]: {
