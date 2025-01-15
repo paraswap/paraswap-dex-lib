@@ -540,6 +540,10 @@ export const Tokens: {
       address: '0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8',
       decimals: 6,
     },
+    waEthUSDC: {
+      address: '0xD4fa2D31b7968E448877f69A96DE69f5de8cD23E',
+      decimals: 6,
+    },
     aaveUSDT: {
       address: '0x23878914efe38d27c4d67ab83ed1b93a74d4086a',
       decimals: 6,
@@ -1791,7 +1795,7 @@ export const Holders: {
     aUSDT: '0x4aef720f7bbe98f916221bbc2fb5a15efe6d2cb8',
     BBAUSD: '0x4361b7425cff39b1be9bf12cee2ef32f89656cda',
     sETH: '0x274d9E726844AB52E351e8F1272e7fc3f58B7E5F',
-    sUSD: '0xcb68110C43C97b6051FEd5e2Bacc2814aDaD1688',
+    sUSD: '0xe44b88dadbac54ba75beaa07aae99b243b0b9f87',
     USDD: '0xf89d7b9c864f589bbf53a82105107622b35eaa40',
     alETH: '0xBD28e1B15EcbE72706A445f77bd17FCd8Fe6f652',
     SHIBA: '0x73af3bcf944a6559933396c1577b257e2054d935',
@@ -1821,6 +1825,7 @@ export const Holders: {
     stataUSDT: '0x6803364AceD5181877abC11E865FB27cB654a426',
     aaveUSDT: '0x464C71f6c2F760DdA6093dCB91C24c39e5d6e18c',
     waEthUSDT: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
+    waEthUSDC: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
     weETH: '0x267ed5f71EE47D3E45Bb1569Aa37889a2d10f91e',
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
