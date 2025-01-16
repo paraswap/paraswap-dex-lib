@@ -13,7 +13,7 @@ import {
   NumberAsString,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, Network, ETHER_ADDRESS } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -56,11 +56,10 @@ import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
 import { ethers, utils } from 'ethers';
 import qs from 'qs';
-import { isEqual } from 'lodash';
 
 export class Bebop extends SimpleExchange implements IDex<BebopData> {
   readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = false;
+  readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
   readonly isStatePollingDex = true;
@@ -186,11 +185,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       srcToken.address.toLowerCase(),
       destToken.address.toLowerCase(),
     ]);
-    const nativeWrappedSet = new Set([
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
-      ETHER_ADDRESS.toLowerCase(),
-    ]);
-    if (tokensSet.size < 2 || isEqual(tokensSet, nativeWrappedSet)) {
+    if (tokensSet.size < 2) {
       return [];
     }
 
@@ -281,11 +276,14 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   // across DEXes. It is recommended to use
   // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
-    srcToken: Token,
-    destToken: Token,
+    _srcToken: Token,
+    _destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    const srcToken = this.dexHelper.config.wrapETH(_srcToken);
+    const destToken = this.dexHelper.config.wrapETH(_destToken);
+
     if (
       (await this.calculateInstructions(srcToken, destToken, side)).length > 0
     ) {
@@ -387,8 +385,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   // should be used. If limitPools is undefined then
   // any pools can be used.
   async getPricesVolume(
-    srcToken: Token,
-    destToken: Token,
+    _srcToken: Token,
+    _destToken: Token,
     amounts: bigint[],
     side: SwapSide,
     blockNumber: number,
@@ -398,6 +396,9 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     if (isRestricted) {
       return null;
     }
+
+    const srcToken = this.dexHelper.config.wrapETH(_srcToken);
+    const destToken = this.dexHelper.config.wrapETH(_destToken);
 
     try {
       let pools = limitPools
