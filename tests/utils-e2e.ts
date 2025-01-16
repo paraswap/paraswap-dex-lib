@@ -59,7 +59,6 @@ import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
 import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
-import * as net from 'net';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
