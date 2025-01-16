@@ -120,7 +120,7 @@ export class TenderlySimulation implements TransactionSimulator {
       );
       this.vnetId = res.data.id;
     } catch (e) {
-      console.log(`TenderlySimulation_setup:`, e);
+      console.error(`TenderlySimulation_setup:`, e);
       throw e;
     }
   }
