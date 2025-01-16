@@ -170,7 +170,7 @@ export class TenderlySimulation implements TransactionSimulator {
           url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/testnet/${
             this.vnetId
           }/tx/${this.chainIdToChainNameMap[this.network]}/${data.id}`,
-          error: `Simulation failed`,
+          error: `Simulation failed ${data.error_reason}`,
         };
       }
     } catch (e) {
