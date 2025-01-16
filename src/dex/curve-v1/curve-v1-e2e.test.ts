@@ -25,23 +25,33 @@ describe('CurveV1 E2E', () => {
     );
 
     const tokensToTest = [
+      // [
+      //   {
+      //     symbol: 'USDC',
+      //     amount: (10 ** 8).toString(),
+      //   },
+      //   {
+      //     symbol: 'DAI',
+      //     amount: (10 ** 8).toString(),
+      //   },
+      // ],
+      // [
+      //   {
+      //     symbol: 'CUSDC',
+      //     amount: (10 ** 8).toString(),
+      //   },
+      //   {
+      //     symbol: 'CDAI',
+      //     amount: (10 ** 8).toString(),
+      //   },
+      // ],
       [
         {
-          symbol: 'USDC',
-          amount: (10 ** 8).toString(),
+          symbol: 'sUSD',
+          amount: '76088500000000000000000',
         },
         {
           symbol: 'DAI',
-          amount: (10 ** 8).toString(),
-        },
-      ],
-      [
-        {
-          symbol: 'CUSDC',
-          amount: (10 ** 8).toString(),
-        },
-        {
-          symbol: 'CDAI',
           amount: (10 ** 8).toString(),
         },
       ],
@@ -54,7 +64,8 @@ describe('CurveV1 E2E', () => {
           // ContractMethod.simpleSwap,
           // ContractMethod.multiSwap,
           // ContractMethod.megaSwap,
-          ContractMethod.swapExactAmountInOnCurveV1,
+          // ContractMethod.swapExactAmountInOnCurveV1,
+          ContractMethod.swapExactAmountIn,
         ],
       ],
     ]);

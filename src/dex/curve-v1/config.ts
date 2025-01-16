@@ -617,23 +617,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         },
-        SAAVE: {
-          underlying: [
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
-          ],
-          coins: [
-            '0x028171bCA77440897B824Ca71D1c56caC55b68A3',
-            '0x6C5024Cd4F8A59110119C56f8933403A539555EB',
-          ],
-          address: '0xeb16ae0052ed37f479f7fe63849198df1765a733',
-          name: 'SAAVE',
-          type: 2,
-          version: 3,
-          isLending: true,
-          isMetapool: false,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
         BAC: {
           underlying: [
             '0x3449fc1cd036255ba1eb19d65ff4ba2b8903a69a',
@@ -1024,23 +1007,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isLending: true,
           isMetapool: false,
           baseToken: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70',
-        },
-        Ren: {
-          underlying: [
-            '0x50b7545627a5162F82A992c33b87aDc75187B218',
-            '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
-          ],
-          coins: [
-            '0x686bEF2417b6Dc32C50a3cBfbCC3bb60E1e9a15D',
-            '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
-          ],
-          address: '0x16a7DA911A4DD1d83F3fF066fE28F3C792C50d90',
-          name: 'ren',
-          type: 2,
-          version: 3,
-          isLending: true,
-          isMetapool: false,
-          baseToken: '0x50b7545627a5162F82A992c33b87aDc75187B218',
         },
       },
     },
