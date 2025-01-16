@@ -22,6 +22,8 @@ export interface TransactionSimulator {
   vnetId: string;
   setup(): Promise<void>;
 
+  getChainNameByChainId(network: number): string;
+
   simulate(
     params: TxObject,
     stateOverrides?: StateOverrides,
@@ -34,6 +36,10 @@ export class EstimateGasSimulation implements TransactionSimulator {
   constructor(private provider: Provider) {}
 
   async setup() {}
+
+  getChainNameByChainId(network: number) {
+    return '';
+  }
 
   async simulate(
     params: TxObject,
@@ -74,6 +80,10 @@ export class TenderlySimulation implements TransactionSimulator {
     if (vnetId) {
       this.vnetId = vnetId;
     }
+  }
+
+  getChainNameByChainId(network: number): string {
+    return this.chainIdToChainNameMap[network];
   }
 
   async setup() {
