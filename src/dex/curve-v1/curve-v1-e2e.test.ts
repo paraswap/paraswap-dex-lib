@@ -15,7 +15,7 @@ import { DIRECT_METHOD_NAME_V6 } from './constants';
 describe('CurveV1 E2E', () => {
   const dexKey = 'CurveV1';
 
-  describe('CurveV1 MAINNET', () => {
+  describe('CurveV1_MAINNET', () => {
     const network = Network.MAINNET;
     const tokens = Tokens[network];
     const holders = Holders[network];
