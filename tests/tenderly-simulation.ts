@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { TxObject } from '../src/types';
 import { StateOverrides } from './smart-tokens';
-import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
 import { Network } from '../build/constants';
 
