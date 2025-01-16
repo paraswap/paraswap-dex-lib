@@ -55,8 +55,6 @@ export class EstimateGasSimulation implements TransactionSimulator {
 }
 
 export class TenderlySimulation implements TransactionSimulator {
-  testNetRPC: StaticJsonRpcProvider | null = null;
-  // lastTx: string = '';
   vnetId: string = '';
   maxGasLimit = 80000000;
 
@@ -176,7 +174,6 @@ export class TenderlySimulation implements TransactionSimulator {
         };
       }
     } catch (e) {
-      const err = e as AxiosError;
       return {
         success: false,
       };
