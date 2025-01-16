@@ -609,7 +609,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        return 2n ** 256n - 1n;
+        throw new Error('TokenReservesTooLow');
       }
     }
 
@@ -626,7 +626,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        return 2n ** 256n - 1n;
+        throw new Error('TokenReservesTooLow');
       }
     }
 
@@ -1088,7 +1088,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        return 2n ** 256n - 1n;
+        throw new Error('TokenReservesTooLow');
       }
     }
     if (amountInDebt > 0) {
@@ -1104,7 +1104,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        return 2n ** 256n - 1n;
+        throw new Error('TokenReservesTooLow');
       }
     }
 
