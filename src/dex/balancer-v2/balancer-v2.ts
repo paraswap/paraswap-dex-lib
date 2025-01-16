@@ -32,6 +32,7 @@ import { LinearPool } from './pools/linear/LinearPool';
 import { Gyro3Pool } from './pools/gyro/Gyro3Pool';
 import { GyroEPool } from './pools/gyro/GyroEPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
+import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
@@ -42,11 +43,15 @@ import {
 import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
-  BalancerV2BatchSwapParam,
   BalancerPoolTypes,
   BalancerSwap,
+  BalancerV2BatchSwapParam,
   BalancerV2Data,
   BalancerV2DirectParam,
+  BalancerV2DirectParamV6,
+  BalancerV2DirectParamV6Swap,
+  BalancerV2SingleSwap,
+  BalancerV2SwapParam,
   OptimizedBalancerV2Data,
   PoolState,
   PoolStateCache,
@@ -54,10 +59,6 @@ import {
   SubgraphPoolAddressDictionary,
   SubgraphPoolBase,
   SwapTypes,
-  BalancerV2DirectParamV6,
-  BalancerV2DirectParamV6Swap,
-  BalancerV2SwapParam,
-  BalancerV2SingleSwap,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -79,10 +80,11 @@ import {
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
 import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
-import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
 import { BigNumber } from 'ethers';
 import { SpecialDex } from '../../executor/types';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { util } from 'protobufjs';
+import pool = util.pool;
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -504,6 +506,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     amounts: bigint[],
     unitVolume: bigint,
     side: SwapSide,
+    poolAddress: string,
   ): { unit: bigint; prices: bigint[] } | null {
     if (!this.isSupportedPool(subgraphPool.poolType)) {
       this.logger.error(`Unsupported Pool Type: ${subgraphPool.poolType}`);
@@ -728,6 +731,7 @@ export class BalancerV2
         (wu: { poolId: { address: Address } }) => wu.poolId.address,
       ),
     );
+
     const poolAddressList = JSON.stringify(this.eventDisabledPools);
     this.logger.info(
       `Pools blocked from event based on ${this.dexKey}_${this.network}: ${poolAddressList}`,
@@ -899,6 +903,7 @@ export class BalancerV2
           missingPools,
           blockNumber,
         );
+
         // Update non-event pool state cache with newly retrieved data so it can be reused in future
         nonEventPoolStates = this.updateNonEventPoolStateCache(
           missingPoolsStateMap,
@@ -946,6 +951,7 @@ export class BalancerV2
                 pathAmounts,
                 unitVolume,
                 side,
+                poolAddress,
               );
 
               if (!res) {
