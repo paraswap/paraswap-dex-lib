@@ -699,7 +699,7 @@ export async function newTestE2E({
       stateOverrides: {},
     };
 
-    destToken.addBalance(GIFTER_ADDRESS, MAX_UINT);
+    destToken.addBalance(GIFTER_ADDRESS, (BigInt(MAX_UINT) / 4n).toString());
     destToken.applyOverrides(stateOverrides);
 
     const giftTx = makeFakeTransferToSenderAddress(
