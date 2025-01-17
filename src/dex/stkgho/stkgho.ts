@@ -195,8 +195,10 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     tokenAddress = tokenAddress.toLowerCase();
+    const isGHO = tokenAddress == this.config.GHO;
+    const isStkGHO = tokenAddress == this.config.stkGHO;
 
-    if (tokenAddress == this.config.GHO) {
+    if (isGHO || isStkGHO) {
       return [
         {
           exchange: this.dexKey,
@@ -204,7 +206,7 @@ export class StkGHO extends SimpleExchange implements IDex<StkGHOData> {
           connectorTokens: [
             {
               decimals: 18,
-              address: this.config.stkGHO,
+              address: isGHO ? this.config.stkGHO : this.config.GHO,
             },
           ],
           liquidityUSD: 1_000_000_000_000, // GHO to stkGHO supply is unlimited
