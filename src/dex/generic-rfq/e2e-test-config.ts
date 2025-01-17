@@ -9,12 +9,12 @@ export const testConfig: {
   }>;
 } = {
   [Network.MAINNET]: [
-    // {
-    //   srcToken: 'USDT',
-    //   destToken: 'USDC',
-    //   amount: '10000',
-    //   swapSide: SwapSide.BUY,
-    // },
+    {
+      srcToken: 'USDT',
+      destToken: 'USDC',
+      amount: '10000',
+      swapSide: SwapSide.BUY,
+    },
     {
       srcToken: 'USDC',
       destToken: 'USDT',
