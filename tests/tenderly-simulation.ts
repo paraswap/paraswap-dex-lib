@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { TxObject } from '../src/types';
 import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
-import { Provider } from '@ethersproject/providers';
+import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
 import { Network } from '../build/constants';
 import { Address } from '@paraswap/core';
@@ -63,6 +63,7 @@ export class EstimateGasSimulation implements TransactionSimulator {
 
 export class TenderlySimulation implements TransactionSimulator {
   vnetId: string = '';
+  rpcURL: string = '';
   maxGasLimit = 80000000;
 
   private readonly chainIdToChainNameMap: { [key: number]: string } = {
@@ -129,7 +130,14 @@ export class TenderlySimulation implements TransactionSimulator {
           },
         },
       );
+
+      const rpc: { name: string; url: string } = res.data.rpcs.find(
+        (rpc: { name: string; url: string }) =>
+          rpc.name.toLowerCase() === 'Admin RPC'.toLowerCase(),
+      );
+
       this.vnetId = res.data.id;
+      this.rpcURL = rpc.url;
     } catch (e) {
       console.error(`TenderlySimulation_setup:`, e);
       throw e;
@@ -139,8 +147,6 @@ export class TenderlySimulation implements TransactionSimulator {
   async simulate(params: TxObject, stateOverrides?: StateOverrides) {
     try {
       let stateOverridesParams = {};
-
-      console.log('stateOverrides: ', stateOverrides);
 
       if (stateOverrides) {
         await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
@@ -155,8 +161,6 @@ export class TenderlySimulation implements TransactionSimulator {
           },
         );
 
-        console.log('result.data.stateOverrides: ', result.data.stateOverrides);
-
         stateOverridesParams = Object.keys(result.data.stateOverrides).reduce(
           (acc, contract) => {
             const _storage = result.data.stateOverrides[contract].value;
@@ -168,9 +172,9 @@ export class TenderlySimulation implements TransactionSimulator {
           },
           {} as Record<Address, StateSimulateApiOverride>,
         );
-      }
 
-      console.log('stateOverridesParams: ', stateOverridesParams);
+        await this.executeStateOverrides(stateOverridesParams);
+      }
 
       await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       const { data } = await axios.post(
@@ -191,7 +195,6 @@ export class TenderlySimulation implements TransactionSimulator {
             data: params.data,
           },
           blockNumber: 'pending',
-          stateOverrides: stateOverridesParams,
         },
         {
           timeout: 30 * 1000,
@@ -200,34 +203,6 @@ export class TenderlySimulation implements TransactionSimulator {
           },
         },
       );
-
-      console.log(
-        'URL: ',
-        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/vnets/${this.vnetId}/transactions`,
-      );
-      console.log(
-        'PARAMS: ',
-        JSON.stringify({
-          callArgs: {
-            from: params.from,
-            to: params.to,
-            value:
-              params.value === '0'
-                ? '0x0'
-                : ethers.utils.hexStripZeros(
-                    ethers.utils.hexlify(BigInt(params.value)),
-                  ),
-            gas: ethers.utils.hexStripZeros(
-              ethers.utils.hexlify(BigInt(this.maxGasLimit)),
-            ),
-            data: params.data,
-          },
-          blockNumber: 'pending',
-          stateOverrides: stateOverridesParams,
-        }),
-      );
-
-      console.log('TX DATA: ', data);
 
       if (data.status === 'success') {
         return {
@@ -252,5 +227,29 @@ export class TenderlySimulation implements TransactionSimulator {
         success: false,
       };
     }
+  }
+
+  async executeStateOverrides(
+    stateOverridesParams: Record<string, StateSimulateApiOverride>,
+  ) {
+    const testNetRPC = new StaticJsonRpcProvider(this.rpcURL);
+
+    await Promise.all(
+      Object.keys(stateOverridesParams).map(address => {
+        const storage = stateOverridesParams[address].storage;
+        Object.keys(storage).map(async slot => {
+          const txHash = await testNetRPC!.send('tenderly_setStorageAt', [
+            address,
+            slot,
+            storage[slot],
+          ]);
+
+          const transaction = await testNetRPC!.waitForTransaction(txHash);
+          if (!transaction.status) {
+            console.log(`Transaction failed: ${txHash}`);
+          }
+        });
+      }),
+    );
   }
 }
