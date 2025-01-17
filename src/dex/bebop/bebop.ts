@@ -697,13 +697,16 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
 
   async preProcessTransaction(
     optimalSwapExchange: OptimalSwapExchange<BebopData>,
-    srcToken: Token,
-    destToken: Token,
+    _srcToken: Token,
+    _destToken: Token,
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<BebopData>, ExchangeTxInfo]> {
     const isSell = side === SwapSide.SELL;
     const isBuy = side === SwapSide.BUY;
+
+    const srcToken = this.dexHelper.config.wrapETH(_srcToken);
+    const destToken = this.dexHelper.config.wrapETH(_destToken);
 
     const params = {
       sell_tokens: utils.getAddress(srcToken.address),
