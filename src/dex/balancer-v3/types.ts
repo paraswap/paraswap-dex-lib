@@ -1,6 +1,11 @@
 import { BufferState } from '@balancer-labs/balancer-maths';
 import { Address } from '../../types';
 
+export type HookState = {
+  hookType: string;
+  address: string;
+};
+
 // Immutable data types available on all pools (Available from API)
 export type CommonImmutablePoolState = {
   poolAddress: string;
@@ -12,7 +17,7 @@ export type CommonImmutablePoolState = {
   weights: bigint[];
   // TODO re-introduce this once added to API
   // scalingFactors: bigint[];
-  hookType: string | undefined;
+  hookState: HookState | undefined;
 };
 
 // Mutable data types available on all pools (Available via onchain calls/events)
@@ -76,6 +81,9 @@ export type DexParams = {
   // https://github.com/balancer/balancer-v3-monorepo/blob/main/pkg/interfaces/contracts/vault/IRouter.sol
   balancerRouterAddress: string;
   balancerBatchRouterAddress: string;
+  hooks?: {
+    DirectionalFee?: string[];
+  };
 };
 
 export type TokenInfo = {

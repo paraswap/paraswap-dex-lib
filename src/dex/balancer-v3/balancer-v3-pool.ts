@@ -29,6 +29,10 @@ import {
   isStableMutableState,
 } from './stablePool';
 import { BI_POWS } from '../../bigint-constants';
+import {
+  HookStateMap,
+  HooksTypeMap,
+} from './hooks/balancer-hook-event-subscriber';
 
 export const WAD = BI_POWS[18];
 
@@ -48,8 +52,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   interfaces: {
     [name: string]: Interface;
   };
-
   vault: Vault;
+  hooksTypeMap: HooksTypeMap = {};
 
   constructor(
     readonly parentName: string,
@@ -96,6 +100,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.vault = new Vault();
   }
 
+  setHooksMap(hooksMap: HooksTypeMap) {
+    this.hooksTypeMap = hooksMap;
+  }
+
   /**
    * The function is called every time any of the subscribed
    * addresses release log. The function accepts the current
@@ -134,7 +142,11 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     blockNumber: number,
   ): Promise<DeepReadonly<PoolStateMap>> {
     const block = await this.dexHelper.provider.getBlock(blockNumber);
-    const apiPoolStateMap = await getPoolsApi(this.network, block.timestamp);
+    const apiPoolStateMap = await getPoolsApi(
+      this.network,
+      this.hooksTypeMap,
+      block.timestamp,
+    );
     const allOnChainPools = await getOnChainState(
       this.network,
       apiPoolStateMap,
@@ -160,7 +172,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     existingPoolState: DeepReadonly<PoolStateMap>,
   ): Promise<DeepReadonly<PoolStateMap> | null> {
     // Get all latest pools from API
-    const apiPoolStateMap = await getPoolsApi(this.network);
+    const apiPoolStateMap = await getPoolsApi(this.network, this.hooksTypeMap);
 
     // Filter out pools that already exist in existing state
     const newApiPools = Object.entries(apiPoolStateMap).reduce(
@@ -391,6 +403,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     amountRaw: bigint,
     swapKind: SwapKind,
     timestamp: number,
+    hookStateMap: HookStateMap,
   ): bigint {
     if (amountRaw === 0n) return 0n;
 
@@ -419,6 +432,11 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           );
         }
       }
+      // If the pool has a hook we fetch latest hook state for use in maths
+      let hookState = undefined;
+      if ('hookState' in step.poolState && step.poolState.hookState)
+        hookState = hookStateMap[step.poolState.hookState.address];
+
       outputAmountRaw = this.vault.swap(
         {
           ...step.swapInput,
@@ -426,6 +444,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           swapKind,
         },
         step.poolState,
+        hookState,
       );
       // Next step uses output from previous step as input
       amount = outputAmountRaw;

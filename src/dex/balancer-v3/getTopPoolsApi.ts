@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { apiUrl, BalancerV3Config, disabledPoolIds } from './config';
+import { HooksTypeMap } from './hooks/balancer-hook-event-subscriber';
 
 interface PoolToken {
   address: string;
@@ -16,6 +17,9 @@ export interface Pool {
   dynamicData: {
     totalLiquidity: string;
   };
+  hook: {
+    address: string;
+  } | null;
 }
 
 interface QueryResponse {
@@ -68,6 +72,9 @@ function createQuery(
         dynamicData {
           totalLiquidity
         }
+        hook {
+          address
+        }
       }
     }
   `;
@@ -77,6 +84,7 @@ export async function getTopPoolsApi(
   networkId: number,
   poolsFilter: string[],
   count: number,
+  hooksTypeMap: HooksTypeMap,
 ): Promise<Pool[]> {
   try {
     const query = createQuery(networkId, poolsFilter, count);
@@ -92,7 +100,9 @@ export async function getTopPoolsApi(
       },
     );
 
-    const pools = response.data.data.poolGetAggregatorPools;
+    const pools = response.data.data.poolGetAggregatorPools.filter(
+      pool => !pool.hook || (pool.hook && pool.hook.address in hooksTypeMap),
+    );
     return pools;
   } catch (error) {
     // console.error('Error executing GraphQL query:', error);

@@ -7,6 +7,7 @@ import {
 } from './config';
 import { CommonImmutablePoolState, ImmutablePoolStateMap } from './types';
 import { parseUnits } from 'ethers/lib/utils';
+import { HooksTypeMap } from './hooks/balancer-hook-event-subscriber';
 
 interface PoolToken {
   address: string;
@@ -21,6 +22,9 @@ interface Pool {
   id: string;
   type: string;
   poolTokens: PoolToken[];
+  hook: {
+    address: string;
+  } | null;
 }
 
 interface QueryResponse {
@@ -44,7 +48,6 @@ function createQuery(
   const whereClause = {
     chainIn: networkString,
     protocolVersionIn: 3,
-    hasHook: false,
     poolTypeIn: `[${poolTypesString}]`,
     ...(timestamp && { createTime: `{lt: ${timestamp}}` }),
     ...(disabledPoolIdsString && { idNotIn: `[${disabledPoolIdsString}]` }),
@@ -69,37 +72,52 @@ function createQuery(
             address
           }
         }
+        hook {
+          address
+        }
       }
     }
   `;
 }
 
-function toImmutablePoolStateMap(pools: Pool[]): ImmutablePoolStateMap {
-  return pools.reduce((map, pool) => {
-    const immutablePoolState: CommonImmutablePoolState = {
-      poolAddress: pool.id,
-      tokens: pool.poolTokens.map(t => t.address),
-      tokensUnderlying: pool.poolTokens.map(t =>
-        t.underlyingToken ? t.underlyingToken.address : null,
-      ),
-      weights: pool.poolTokens.map(t =>
-        t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,
-      ),
-      poolType: pool.type,
-      // TODO add scalingFactors once API provides them
-      // scalingFactors: pool.poolTokens.map(t => parseUnits('1', 18).toBigInt()),
-      // TODO Hook support will be added in future PR
-      hookType: undefined,
-    };
-
-    map[pool.id] = immutablePoolState;
-    return map;
-  }, {} as ImmutablePoolStateMap);
+function toImmutablePoolStateMap(
+  pools: Pool[],
+  hooksMap: HooksTypeMap,
+): ImmutablePoolStateMap {
+  return (
+    pools
+      // First filter out pools with hooks that aren't in hooksMap
+      .filter(
+        pool => !pool.hook || (pool.hook && pool.hook.address in hooksMap),
+      )
+      .reduce((map, pool) => {
+        const immutablePoolState: CommonImmutablePoolState = {
+          poolAddress: pool.id,
+          tokens: pool.poolTokens.map(t => t.address),
+          tokensUnderlying: pool.poolTokens.map(t =>
+            t.underlyingToken ? t.underlyingToken.address : null,
+          ),
+          weights: pool.poolTokens.map(t =>
+            t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,
+          ),
+          poolType: pool.type,
+          hookState: pool.hook
+            ? {
+                hookType: hooksMap[pool.hook.address],
+                address: pool.hook.address,
+              }
+            : undefined,
+        };
+        map[pool.id] = immutablePoolState;
+        return map;
+      }, {} as ImmutablePoolStateMap)
+  );
 }
 
 // Any data from API will be immutable. Mutable data such as balances, etc will be fetched via onchain/event state.
 export async function getPoolsApi(
   network: number,
+  hooksTypeMap: HooksTypeMap,
   timestamp?: number,
 ): Promise<ImmutablePoolStateMap> {
   try {
@@ -121,7 +139,7 @@ export async function getPoolsApi(
     );
 
     const pools = response.data.data.poolGetAggregatorPools;
-    return toImmutablePoolStateMap(pools);
+    return toImmutablePoolStateMap(pools, hooksTypeMap);
   } catch (error) {
     // console.error('Error executing GraphQL query:', error);
     throw error;

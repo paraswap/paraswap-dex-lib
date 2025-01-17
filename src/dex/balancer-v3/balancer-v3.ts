@@ -27,6 +27,7 @@ import balancerRouterAbi from '../../abi/balancer-v3/router.json';
 import balancerBatchRouterAbi from '../../abi/balancer-v3/batch-router.json';
 import { getGasCost } from './getGasCost';
 import { Block } from '@ethersproject/abstract-provider';
+import { BalancerEventHook } from './hooks/balancer-hook-event-subscriber';
 
 const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
@@ -39,6 +40,7 @@ type DeepMutable<T> = {
 
 export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   protected eventPools: BalancerV3EventPool;
+  protected eventHooks: BalancerEventHook;
 
   readonly hasConstantPriceLargeAmounts = false;
   // Vault can handle native
@@ -64,6 +66,12 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
+    this.eventHooks = new BalancerEventHook(
+      dexKey,
+      network,
+      dexHelper,
+      this.logger,
+    );
     this.eventPools = new BalancerV3EventPool(
       dexKey,
       network,
@@ -79,6 +87,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   // for pricing requests. It is optional for a DEX to
   // implement this function
   async initializePricing(blockNumber: number) {
+    await this.eventHooks.initialize(blockNumber);
+    this.eventPools.setHooksMap(this.eventHooks.hooksTypeMap);
     await this.eventPools.initialize(blockNumber);
 
     // This will periodically query API and add any new pools to pool state
@@ -261,6 +271,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
               unitAmount,
               swapKind,
               block.timestamp,
+              this.eventHooks.getState(blockNumber) || {},
             );
 
           const poolExchangePrice: PoolPrices<BalancerV3Data> = {
@@ -283,6 +294,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
                 amounts[j],
                 swapKind,
                 block.timestamp,
+                this.eventHooks.getState(blockNumber) || {},
               );
             }
           }
@@ -571,7 +583,12 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       })
       .map(([address]) => address);
 
-    const topPools = await getTopPoolsApi(this.network, poolsWithToken, count);
+    const topPools = await getTopPoolsApi(
+      this.network,
+      poolsWithToken,
+      count,
+      this.eventHooks.hooksTypeMap,
+    );
 
     return topPools.map(pool => {
       const tokens = pool.poolTokens
