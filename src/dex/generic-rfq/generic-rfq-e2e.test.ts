@@ -118,18 +118,20 @@ describe(`GenericRFQ ${dexKey} E2E`, () => {
           srcToken = smartTokens[testCase.srcToken];
           destToken = smartTokens[testCase.destToken];
 
-          srcToken.addBalance(testAccount.address, MAX_UINT);
+          const amount = (BigInt(MAX_UINT) / 10n ** 10n).toString();
+
+          srcToken.addBalance(testAccount.address, amount);
           srcToken.addAllowance(
             testAccount.address,
             config.augustusRFQAddress,
-            MAX_UINT,
+            amount,
           );
 
-          destToken.addBalance(testAccount.address, MAX_UINT);
+          destToken.addBalance(testAccount.address, amount);
           destToken.addAllowance(
             testAccount.address,
             config.augustusRFQAddress,
-            MAX_UINT,
+            amount,
           );
         }
         const contractMethod =

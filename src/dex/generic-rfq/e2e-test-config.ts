@@ -8,16 +8,16 @@ export const testConfig: {
     amount: string;
   }>;
 } = {
-  [Network.ARBITRUM]: [
-    {
-      srcToken: 'WETH',
-      destToken: 'USDC',
-      amount: '10000',
-      swapSide: SwapSide.BUY,
-    },
+  [Network.MAINNET]: [
+    // {
+    //   srcToken: 'USDT',
+    //   destToken: 'USDC',
+    //   amount: '10000',
+    //   swapSide: SwapSide.BUY,
+    // },
     {
       srcToken: 'USDC',
-      destToken: 'WETH',
+      destToken: 'USDT',
       amount: '10000',
       swapSide: SwapSide.SELL,
     },
