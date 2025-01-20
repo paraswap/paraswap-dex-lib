@@ -234,22 +234,22 @@ export class TenderlySimulation implements TransactionSimulator {
   ) {
     const testNetRPC = new StaticJsonRpcProvider(this.rpcURL);
 
-    await Promise.all(
-      Object.keys(stateOverridesParams).map(address => {
-        const storage = stateOverridesParams[address].storage;
-        Object.keys(storage).map(async slot => {
-          const txHash = await testNetRPC!.send('tenderly_setStorageAt', [
-            address,
-            slot,
-            storage[slot],
-          ]);
+    // need to execute promises sequentially here
+    for await (const addr of Object.keys(stateOverridesParams)) {
+      const storage = stateOverridesParams[addr].storage;
 
-          const transaction = await testNetRPC!.waitForTransaction(txHash);
-          if (!transaction.status) {
-            console.log(`Transaction failed: ${txHash}`);
-          }
-        });
-      }),
-    );
+      for await (const slot of Object.keys(storage)) {
+        const txHash = await testNetRPC!.send('tenderly_setStorageAt', [
+          addr,
+          slot,
+          storage[slot],
+        ]);
+
+        const transaction = await testNetRPC!.waitForTransaction(txHash);
+        if (!transaction.status) {
+          console.log(`Transaction failed: ${txHash}`);
+        }
+      }
+    }
   }
 }
