@@ -78,11 +78,7 @@ export class TenderlySimulation implements TransactionSimulator {
     [Network.BASE]: 'base',
   };
 
-  constructor(private network: number = 1, vnetId?: string) {
-    if (vnetId) {
-      this.vnetId = vnetId;
-    }
-  }
+  constructor(private network: number = 1) {}
 
   getChainNameByChainId(network: number): string {
     return this.chainIdToChainNameMap[network];
@@ -93,8 +89,6 @@ export class TenderlySimulation implements TransactionSimulator {
       throw new Error(
         `TenderlySimulation_setup: TENDERLY_TOKEN not found in the env`,
       );
-
-    if (this.vnetId) return;
 
     const findAdminRPC = (rpcs: { name: string; url: string }[]) => {
       return rpcs.find(
