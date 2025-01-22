@@ -446,7 +446,7 @@ export async function testE2E(
       formatDeployMessage(
         'adapter',
         contractAddress,
-        ts.forkId,
+        ts.vnetId,
         testContractName || '',
         testContractRelativePath || '',
       ),
@@ -486,7 +486,9 @@ export async function testE2E(
 
   if (paraswap.dexHelper?.replaceProviderWithRPC) {
     paraswap.dexHelper?.replaceProviderWithRPC(
-      `https://rpc.tenderly.co/fork/${ts.forkId}`,
+      `https://virtual.${ts.getChainNameByChainId(network)}.rpc.tenderly.co/${
+        ts.vnetId
+      }`,
     );
   }
 
@@ -572,6 +574,7 @@ export async function testE2E(
     );
 
     const swapTx = await ts.simulate(swapParams);
+
     // Only log gas estimate if testing against API
     if (useAPI) {
       const gasUsed = swapTx.gasUsed || '0';
