@@ -232,24 +232,32 @@ export class TenderlySimulation implements TransactionSimulator {
   async executeStateOverrides(
     stateOverridesParams: Record<string, StateSimulateApiOverride>,
   ) {
-    const testNetRPC = new StaticJsonRpcProvider(this.rpcURL);
-
-    // need to execute promises sequentially here
-    for await (const addr of Object.keys(stateOverridesParams)) {
-      const storage = stateOverridesParams[addr].storage;
-
-      for await (const slot of Object.keys(storage)) {
-        const txHash = await testNetRPC!.send('tenderly_setStorageAt', [
-          addr,
-          slot,
-          storage[slot],
-        ]);
-
-        const transaction = await testNetRPC!.waitForTransaction(txHash);
-        if (!transaction.status) {
-          console.log(`Transaction failed: ${txHash}`);
-        }
-      }
+    if (!this.rpcURL) {
+      throw new Error(
+        `rpcURL is not defined for testnet: ${this.vnetId} (https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/testnet/${this.vnetId}`,
+      );
     }
+
+    const testNetRPC = new StaticJsonRpcProvider(this.rpcURL);
+    await Promise.all(
+      Object.keys(stateOverridesParams).map(async addr => {
+        const storage = stateOverridesParams[addr].storage;
+
+        await Promise.all(
+          Object.keys(storage).map(async slot => {
+            const txHash = await testNetRPC!.send('tenderly_setStorageAt', [
+              addr,
+              slot,
+              storage[slot],
+            ]);
+
+            const transaction = await testNetRPC!.waitForTransaction(txHash);
+            if (!transaction.status) {
+              console.log(`Transaction failed: ${txHash}`);
+            }
+          }),
+        );
+      }),
+    );
   }
 }
