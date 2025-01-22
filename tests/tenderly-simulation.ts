@@ -96,8 +96,38 @@ export class TenderlySimulation implements TransactionSimulator {
 
     if (this.vnetId) return;
 
+    const findAdminRPC = (rpcs: { name: string; url: string }[]) => {
+      return rpcs.find(
+        rpc => rpc.name.toLowerCase() === 'Admin RPC'.toLowerCase(),
+      );
+    };
+
     if (TENDERLY_VNET_ID) {
       this.vnetId = TENDERLY_VNET_ID;
+
+      try {
+        let res = await axios.get(
+          `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/vnets/${this.vnetId}`,
+          {
+            timeout: 200000,
+            headers: {
+              'x-access-key': TENDERLY_TOKEN,
+            },
+          },
+        );
+
+        const rpc = findAdminRPC(res.data.rpcs);
+
+        if (!rpc) {
+          throw new Error(`RPC url was not found for testnet: ${this.vnetId}`);
+        }
+
+        this.rpcURL = rpc.url;
+      } catch (e) {
+        console.error(`TenderlySimulation_setup:`, e);
+        throw e;
+      }
+
       return;
     }
 
@@ -126,17 +156,17 @@ export class TenderlySimulation implements TransactionSimulator {
         {
           timeout: 200000,
           headers: {
-            'X-Access-Key': TENDERLY_TOKEN,
+            'x-access-key': TENDERLY_TOKEN,
           },
         },
       );
 
-      const rpc: { name: string; url: string } = res.data.rpcs.find(
-        (rpc: { name: string; url: string }) =>
-          rpc.name.toLowerCase() === 'Admin RPC'.toLowerCase(),
-      );
-
       this.vnetId = res.data.id;
+      const rpc = findAdminRPC(res.data.rpcs);
+      if (!rpc) {
+        throw new Error(`RPC url was not found for testnet: ${this.vnetId}`);
+      }
+
       this.rpcURL = rpc.url;
     } catch (e) {
       console.error(`TenderlySimulation_setup:`, e);
