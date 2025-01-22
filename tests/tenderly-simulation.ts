@@ -175,8 +175,7 @@ export class TenderlySimulation implements TransactionSimulator {
       if (stateOverrides) {
         await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
         const result = await axios.post(
-          `
-        https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
+          `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
           stateOverrides,
           {
             headers: {
