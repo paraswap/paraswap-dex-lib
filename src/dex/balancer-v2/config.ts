@@ -21,8 +21,7 @@ export const BalancerConfig: DexConfigMap<DexParams> = {
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
     [Network.BASE]: {
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest',
+      subgraphURL: 'E7XyutxXVLrp8njmjF16Hh38PCJuHm12RRyMt5ma4ctX',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
     [Network.GNOSIS]: {
