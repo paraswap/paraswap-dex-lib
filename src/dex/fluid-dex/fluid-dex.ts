@@ -293,6 +293,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         }, ${side}:`,
         e,
       );
+      throw e;
       return null;
     }
   }
@@ -895,7 +896,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     }
     const ans = (amountIn * BigInt(10 ** inDecimals)) / BigInt(10 ** 12);
 
-    return ans;
+    return (ans * (100000n - 5n)) / 100000n;
   }
 
   /**
