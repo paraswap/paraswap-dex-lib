@@ -1043,7 +1043,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         // return 2n ** 256n - 1n;
       }
       if (amountOut > borrowable) {
-        throw new Error('TokenReservesTooLow');
+        throw new Error('DebtLimitReached');
         // return 2n ** 256n - 1n;
       }
     } else if (a >= amountOut) {
@@ -1056,7 +1056,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       );
       amountInCollateral = this.applyFeeForBuy(amountInCollateral, fee);
       if (amountOut > colReserveOut) {
-        throw new Error('DebtLimitReached');
+        throw new Error('TokenReservesTooLow');
         // return 2n ** 256n - 1n;
       }
       if (amountOut > withdrawable) {
@@ -1083,7 +1083,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         // return 2n ** 256n - 1n;
       }
       if (amountOutDebt > borrowable || a > withdrawable) {
-        throw new Error('SwapOutLimitingAmounts');
+        throw new Error('WithdrawLimitReached or DebtLimitReached');
         // return 2n ** 256n - 1n;
       }
     }
