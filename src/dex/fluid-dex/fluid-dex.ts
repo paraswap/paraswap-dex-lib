@@ -417,7 +417,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       colReserves.token1RealReserves + debtReserves.token1RealReserves == 0n
     ) {
       throw new Error('InvalidCollateralReserves');
-      // return 0n;
     }
 
     const amountInAdjusted =
@@ -585,21 +584,17 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
     if (amountOutDebt > debtReserveOut) {
       throw new Error('DebtReservesTooLow');
-      // return 0n;
     }
     if (amountOutDebt > borrowable) {
       throw new Error('DebtLimitReached');
-      // return 0n;
     }
 
     if (amountOutCollateral > colReserveOut) {
       throw new Error('TokenReservesTooLow');
-      // return 0n;
     }
 
     if (amountOutCollateral > withdrawable) {
       throw new Error('WithdrawLimitReached');
-      // return 0n;
     }
 
     if (amountInCollateral > 0) {
@@ -673,7 +668,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
     if (priceDiff > maxAllowedDiff) {
       throw new Error('OracleUpdateHugeSwapDiff');
-      // return 0n;
     }
 
     const totalAmountOut = amountOutCollateral + amountOutDebt;
@@ -1040,11 +1034,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       amountInDebt = this.applyFeeForBuy(amountInDebt, fee);
       if (amountOut > debtReserveOut) {
         throw new Error('TokenReservesTooLow');
-        // return 2n ** 256n - 1n;
       }
       if (amountOut > borrowable) {
         throw new Error('DebtLimitReached');
-        // return 2n ** 256n - 1n;
       }
     } else if (a >= amountOut) {
       // Entire trade routes through collateral pool
@@ -1057,11 +1049,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       amountInCollateral = this.applyFeeForBuy(amountInCollateral, fee);
       if (amountOut > colReserveOut) {
         throw new Error('TokenReservesTooLow');
-        // return 2n ** 256n - 1n;
       }
       if (amountOut > withdrawable) {
         throw new Error('WithdrawLimitReached');
-        // return 2n ** 256n - 1n;
       }
     } else {
       // Trade routes through both pools
@@ -1080,11 +1070,9 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       amountInDebt = this.applyFeeForBuy(amountInDebt, fee);
       if (amountOutDebt > debtReserveOut || a > colReserveOut) {
         throw new Error('TokenReservesTooLow');
-        // return 2n ** 256n - 1n;
       }
       if (amountOutDebt > borrowable || a > withdrawable) {
         throw new Error('WithdrawLimitReached or DebtLimitReached');
-        // return 2n ** 256n - 1n;
       }
     }
 
@@ -1155,7 +1143,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     ) {
       // if price diff is > 5% then swap would revert.
       throw new Error('OracleUpdateHugeSwapDiff');
-      // return 2n ** 256n - 1n;
     }
 
     const totalAmountIn = amountInCollateral + amountInDebt;

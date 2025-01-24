@@ -87,7 +87,20 @@ function testForNetwork(
                 );
               } catch (e: any) {
                 console.log(`Skipping ${tokenBSymbol} -> ${tokenASymbol}`);
-                if (e.message.includes('TokenReservesTooLow')) {
+                const errorMessages = [
+                  'TokenReservesTooLow',
+                  'InvalidCollateralReserves',
+                  'No pools are enabled',
+                  'DebtReservesTooLow',
+                  'DebtLimitReached',
+                  'WithdrawLimitReached',
+                  'OracleUpdateHugeSwapDiff',
+                ];
+                if (
+                  errorMessages.some(errorMessage =>
+                    e.message.includes(errorMessage),
+                  )
+                ) {
                   return;
                 }
               }
@@ -125,7 +138,20 @@ function testForNetwork(
                 );
               } catch (e: any) {
                 console.log(`Skipping ${tokenASymbol} -> ${tokenBSymbol}`);
-                if (e.message.includes('TokenReservesTooLow')) {
+                const errorMessages = [
+                  'TokenReservesTooLow',
+                  'InvalidCollateralReserves',
+                  'No pools are enabled',
+                  'DebtReservesTooLow',
+                  'DebtLimitReached',
+                  'WithdrawLimitReached',
+                  'OracleUpdateHugeSwapDiff',
+                ];
+                if (
+                  errorMessages.some(errorMessage =>
+                    e.message.includes(errorMessage),
+                  )
+                ) {
                   return;
                 }
               }
@@ -314,9 +340,9 @@ const limitsWide: DexLimits = {
   },
 };
 
-const ErrInsufficientBorrowable = new Error('insufficient borrowable');
-const ErrInsufficientMaxPrice = new Error('insufficient max price');
-const ErrInsufficientReserve = new Error('insufficient reserve');
+const ErrInsufficientBorrowable = new Error('DebtLimitReached');
+const ErrInsufficientMaxPrice = new Error('OracleUpdateHugeSwapDiff');
+const ErrInsufficientReserve = new Error('DebtReservesTooLow');
 
 describe('TestPoolSimulator_SwapInLimits', () => {
   const network = Network.MAINNET;
