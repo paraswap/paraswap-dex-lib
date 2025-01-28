@@ -256,7 +256,6 @@ export class TenderlySimulatorNew {
     const simulationId = await this.simulateTransaction(
       balanceOfSimulationRequest,
     );
-    // const simulationId = 'ab476e0b-e344-455c-9c04-0e8dda58f907';
 
     const simulationDetails = await this.getSimulatedTransactionDetails(
       simulationId,
