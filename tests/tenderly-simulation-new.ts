@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import 'dotenv/config';
 import axios from 'axios';
 import { ethers } from 'ethers';
@@ -63,6 +64,25 @@ interface SimulatedTransactionCall {
   calls: SimulatedTransactionCall[] | null;
 }
 
+// not fully complete
+interface Simulation {
+  id: string;
+  project_id: string;
+  owner_id: string;
+  network_id: string;
+  block_number: number;
+  transaction_index: number;
+  from: string;
+  to: string;
+  input: string;
+  gas: number;
+  gas_price: string;
+  gas_used: number;
+  value: string;
+  method: string;
+  status: boolean;
+}
+
 // not complete, all details include a lot more info
 interface SimulatedTransactionDetails {
   transaction: {
@@ -105,7 +125,7 @@ export class TenderlySimulatorNew {
 
   public async simulateTransaction(
     request: SimulateTransactionRequest,
-  ): Promise<string> {
+  ): Promise<Simulation> {
     const data = {
       network_id: request.chainId,
       from: request.from,
@@ -128,13 +148,13 @@ export class TenderlySimulatorNew {
       data,
     });
 
-    const id = response.data.simulation.id;
-    const url = `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/simulator/${id}`;
+    const simulation = response.data.simulation as Simulation;
+    const url = `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/simulator/${simulation.id}`;
 
-    console.log('Successfully simulated settlement transaction:');
+    console.log('Successfully simulated a transaction:');
     console.log(`Simulation URL - ${url}`);
 
-    return id;
+    return simulation;
   }
 
   public async getSimulatedTransactionDetails(
@@ -253,7 +273,7 @@ export class TenderlySimulatorNew {
       account,
     );
 
-    const simulationId = await this.simulateTransaction(
+    const { id: simulationId } = await this.simulateTransaction(
       balanceOfSimulationRequest,
     );
 
@@ -304,10 +324,9 @@ export class TenderlySimulatorNew {
       spender,
     );
 
-    const simulationId = await this.simulateTransaction(
+    const { id: simulationId } = await this.simulateTransaction(
       allowanceSimulationRequest,
     );
-    // const simulationId = 'ab476e0b-e344-455c-9c04-0e8dda58f907';
 
     const simulationDetails = await this.getSimulatedTransactionDetails(
       simulationId,
