@@ -483,6 +483,26 @@
     "0x65d72aa8da931f047169112fcf34f52dbaae7d18": {
       "balanceSlot": "0x0000000000000000000000000000000000000000000000000000000000000097",
       "allowanceSlot": "0x0000000000000000000000000000000000000000000000000000000000000098"
+    },
+    "0x4cbc25559dbbd1272ec5b64c7b5f48a2405e6470": {
+      "balanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00",
+      "allowanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace01"
+    },
+    "0x7bc3485026ac48b6cf9baf0a377477fff5703af8": {
+      "balanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00",
+      "allowanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace01"
+    },
+    "0xd4fa2d31b7968e448877f69a96de69f5de8cd23e": {
+      "balanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00",
+      "allowanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace01"
+    },
+    "0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5": {
+      "balanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00",
+      "allowanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace01"
+    },
+    "0x35d8949372d46b7a3d5a56006ae77b215fc69bc0": {
+      "balanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00",
+      "allowanceSlot": "0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace01"
     }
   },
   "8453": {
