@@ -14,6 +14,7 @@ import {
   TenderlySimulation,
   TransactionSimulator,
 } from './tenderly-simulation';
+import { TenderlySimulatorNew, StateOverride } from './tenderly-simulation-new';
 import {
   SwapSide,
   ETHER_ADDRESS,
@@ -59,6 +60,7 @@ import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
 import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
+import { ethers } from 'ethers';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
 
@@ -124,7 +126,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   constructor(
     protected network: number,
     dexKeys: string | string[],
-    rpcUrl: string,
+    rpcUrl?: string,
   ) {
     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.paraSwap = constructSimpleSDK({
@@ -223,6 +225,10 @@ class APIParaswapSDK implements IParaSwapSDK {
       deadline: deadline.toString(),
       uuid: uuid(),
     });
+  }
+
+  async releaseResources(): Promise<void> {
+    await this.pricingHelper.releaseResources(this.dexKeys);
   }
 }
 
@@ -1030,4 +1036,128 @@ export const constructE2ETests = (
       });
     });
   });
+};
+
+export const testGasEstimation = async (
+  network: Network,
+  srcToken: Token,
+  destToken: Token,
+  amount: bigint,
+  swapSide: SwapSide,
+  dexKeys: string | string[],
+  contractMethod: ContractMethod,
+  targetDifference?: number,
+) => {
+  assert(
+    testingEndpoint,
+    'Estimation can only be tested with testing endpoint',
+  );
+  // initialize pricing
+  const sdk = new APIParaswapSDK(network, dexKeys);
+  await sdk.initializePricing();
+  // fetch the route
+  const priceRoute = await sdk.getPrices(
+    srcToken,
+    destToken,
+    amount,
+    swapSide,
+    contractMethod,
+  );
+  console.log({ priceRoute });
+  // prepare state overrides
+  const tenderlySimulator = TenderlySimulatorNew.getInstance();
+  // any address works
+  const userAddress = ethers.Wallet.createRandom().address;
+  // get storage `balanceOf` and `allowance` mapping slots
+  const srcTokenSlots = await tenderlySimulator.getTokenStorageSlots(
+    network,
+    srcToken.address,
+  );
+  const destTokenSlots = await tenderlySimulator.getTokenStorageSlots(
+    network,
+    destToken.address,
+  );
+  // calculate exact storage slots needed to override
+  const userSrcBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
+    srcTokenSlots.balanceSlot,
+    userAddress,
+  );
+  const userDestBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
+    destTokenSlots.balanceSlot,
+    userAddress,
+  );
+  const userSrcAllowanceToAugustusSlot =
+    tenderlySimulator.calculateAddressAllowanceSlot(
+      srcTokenSlots.allowanceSlot,
+      userAddress,
+      priceRoute.tokenTransferProxy,
+    );
+  // build `StateOverride` object
+  const stateOverride: StateOverride = {
+    [srcToken.address]: {
+      storage: {
+        [userSrcBalanceOfSlot]: ethers.utils.defaultAbiCoder.encode(
+          ['uint'],
+          [amount * 2n],
+        ),
+        [userSrcAllowanceToAugustusSlot]: ethers.utils.defaultAbiCoder.encode(
+          ['uint'],
+          [amount * 2n],
+        ),
+      },
+    },
+    [destToken.address]: {
+      storage: {
+        // dust
+        [userDestBalanceOfSlot]: ethers.utils.defaultAbiCoder.encode(
+          ['uint'],
+          [1],
+        ),
+      },
+    },
+  };
+  // build swap transaction
+  const slippage = 100;
+  const minMaxAmount =
+    (swapSide === SwapSide.SELL
+      ? BigInt(priceRoute.destAmount) * (10000n - BigInt(slippage))
+      : BigInt(priceRoute.srcAmount) * (10000n + BigInt(slippage))) / 10000n;
+  const swapParams = await sdk.buildTransaction(
+    priceRoute,
+    minMaxAmount,
+    userAddress,
+  );
+  assert(
+    swapParams.to !== undefined,
+    'Transaction params missing `to` property',
+  );
+  // assemble `SimulationRequest`
+  const { from, to, data } = swapParams;
+  const simulationRequest = {
+    chainId: network,
+    from,
+    to,
+    data,
+    blockNumber: priceRoute.blockNumber,
+    stateOverride,
+  };
+  // simulate the transaction with overrides
+  const simulation = await tenderlySimulator.simulateTransaction(
+    simulationRequest,
+  );
+  // compare and assert
+  const estimatedGas = Number(priceRoute.gasCost);
+  const actualGas = simulation.gas_used;
+  const diffPercent = ((estimatedGas - actualGas) / actualGas) * 100;
+  console.log(
+    `Estimated gas cost: ${estimatedGas}, actual gas cost: ${actualGas}, diff: ${diffPercent}%`,
+  );
+  if (targetDifference !== undefined) {
+    assert(
+      targetDifference <= Math.abs(diffPercent),
+      `Deviation is higher than target ${targetDifference}%`,
+    );
+  }
+  // release
+  await sdk.releaseResources();
 };
