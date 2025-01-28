@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ethers } from 'ethers';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { ETHER_ADDRESS } from '../src/constants';
 
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN!;
 const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID!;
@@ -293,7 +294,7 @@ export class TenderlySimulatorNew {
       .map(call => call.storage_slot?.[0])
       .filter<string>((slot): slot is string => !!slot);
 
-    for (let i = 0; i < 100; i += 1) {
+    for (let i = 0; i < 1_000; i += 1) {
       const candidateSlot = ethers.utils.defaultAbiCoder.encode(['uint'], [i]);
       const balanceOfSlot = this.calculateAddressBalanceSlot(
         candidateSlot,
@@ -344,7 +345,7 @@ export class TenderlySimulatorNew {
       .map(call => call.storage_slot?.[0])
       .filter<string>((slot): slot is string => !!slot);
 
-    for (let i = 0; i < 100; i += 1) {
+    for (let i = 0; i < 1_000; i += 1) {
       const candidateSlot = ethers.utils.defaultAbiCoder.encode(['uint'], [i]);
       const balanceOfSlot = this.calculateAddressAllowanceSlot(
         candidateSlot,
@@ -367,6 +368,11 @@ export class TenderlySimulatorNew {
     token: string,
   ): Promise<TokenStorageSlots> {
     const normalizedToken = token.toLowerCase();
+
+    if (normalizedToken === ETHER_ADDRESS) {
+      throw new Error('Cannot provide storage slots for native token');
+    }
+
     const jsonPath = path.join(__dirname, 'token-storage-slots.json');
 
     const chainSlots = JSON.parse(
