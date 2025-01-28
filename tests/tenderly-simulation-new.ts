@@ -294,15 +294,29 @@ export class TenderlySimulatorNew {
       .map(call => call.storage_slot?.[0])
       .filter<string>((slot): slot is string => !!slot);
 
-    for (let i = 0; i < 1_000; i += 1) {
-      const candidateSlot = ethers.utils.defaultAbiCoder.encode(['uint'], [i]);
-      const balanceOfSlot = this.calculateAddressBalanceSlot(
-        candidateSlot,
-        account,
-      );
+    const startingPoints = [
+      // regular contract
+      0n,
+      // ERC20Upgradeable
+      BigInt(
+        '0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00',
+      ),
+    ];
 
-      if (readSlots.includes(balanceOfSlot)) {
-        return candidateSlot;
+    for (const startingPoint of startingPoints) {
+      for (let i = startingPoint; i < startingPoint + 1_000n; i += 1n) {
+        const candidateSlot = ethers.utils.defaultAbiCoder.encode(
+          ['uint'],
+          [i],
+        );
+        const balanceOfSlot = this.calculateAddressBalanceSlot(
+          candidateSlot,
+          account,
+        );
+
+        if (readSlots.includes(balanceOfSlot)) {
+          return candidateSlot;
+        }
       }
     }
 
@@ -345,16 +359,30 @@ export class TenderlySimulatorNew {
       .map(call => call.storage_slot?.[0])
       .filter<string>((slot): slot is string => !!slot);
 
-    for (let i = 0; i < 1_000; i += 1) {
-      const candidateSlot = ethers.utils.defaultAbiCoder.encode(['uint'], [i]);
-      const balanceOfSlot = this.calculateAddressAllowanceSlot(
-        candidateSlot,
-        account,
-        spender,
-      );
+    const startingPoints = [
+      // regular contract
+      0n,
+      // ERC20Upgradeable
+      BigInt(
+        '0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00',
+      ),
+    ];
 
-      if (readSlots.includes(balanceOfSlot)) {
-        return candidateSlot;
+    for (const init of startingPoints) {
+      for (let i = init; i < init + 1000n; i += 1n) {
+        const candidateSlot = ethers.utils.defaultAbiCoder.encode(
+          ['uint'],
+          [i],
+        );
+        const balanceOfSlot = this.calculateAddressAllowanceSlot(
+          candidateSlot,
+          account,
+          spender,
+        );
+
+        if (readSlots.includes(balanceOfSlot)) {
+          return candidateSlot;
+        }
       }
     }
 
