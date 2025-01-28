@@ -246,6 +246,7 @@ export class TenderlySimulation implements TransactionSimulator {
         };
       }
     } catch (e) {
+      console.error('TenderlySimulation_simulate_error', e);
       return {
         success: false,
       };
