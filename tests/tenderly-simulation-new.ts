@@ -18,6 +18,7 @@ export type StateOverride = Record<string, StorageOverride>; // contract -> stor
 interface TokenStorageSlots {
   balanceSlot: string;
   allowanceSlot: string;
+  isVyper?: boolean;
 }
 
 interface SimulateTransactionRequest {
@@ -197,10 +198,37 @@ export class TenderlySimulatorNew {
    *
    * @param balanceOfSlot storage slot of `balanceOf` mapping
    * @param owner account's address
+   * @param isVyper `true` if contract is written in Vyper
    */
-  calculateAddressBalanceSlot(balanceOfSlot: string, owner: string) {
+  calculateAddressBalanceSlot(
+    balanceOfSlot: string,
+    owner: string,
+    isVyper = false,
+  ) {
+    return isVyper
+      ? this.calculateVyperAddressBalanceSlot(balanceOfSlot, owner)
+      : this.calculateSolidityAddressBalanceSlot(balanceOfSlot, owner);
+  }
+
+  /**
+   *
+   * @param balanceOfSlot storage slot of `balanceOf` mapping
+   * @param owner account's address
+   */
+  calculateSolidityAddressBalanceSlot(balanceOfSlot: string, owner: string) {
     return ethers.utils.keccak256(
       ethers.utils.concat([ethers.utils.hexZeroPad(owner, 32), balanceOfSlot]),
+    );
+  }
+
+  /**
+   *
+   * @param balanceOfSlot storage slot of `balanceOf` mapping
+   * @param owner account's address
+   */
+  calculateVyperAddressBalanceSlot(balanceOfSlot: string, owner: string) {
+    return ethers.utils.keccak256(
+      ethers.utils.concat([balanceOfSlot, ethers.utils.hexZeroPad(owner, 32)]),
     );
   }
 
@@ -209,8 +237,30 @@ export class TenderlySimulatorNew {
    * @param allowanceSlot storage slot of `allowance` mapping
    * @param owner account's address
    * @param spender spender's address
+   * @param isVyper `true` if contract is written in Vyper
    */
   calculateAddressAllowanceSlot(
+    allowanceSlot: string,
+    owner: string,
+    spender: string,
+    isVyper = false,
+  ) {
+    return isVyper
+      ? this.calculateVyperAddressAllowanceSlot(allowanceSlot, owner, spender)
+      : this.calculateSolidityAddressAllowanceSlot(
+          allowanceSlot,
+          owner,
+          spender,
+        );
+  }
+
+  /**
+   *
+   * @param allowanceSlot storage slot of `allowance` mapping
+   * @param owner account's address
+   * @param spender spender's address
+   */
+  calculateSolidityAddressAllowanceSlot(
     allowanceSlot: string,
     owner: string,
     spender: string,
@@ -224,6 +274,29 @@ export class TenderlySimulatorNew {
 
     return ethers.utils.keccak256(
       ethers.utils.concat([ethers.utils.hexZeroPad(spender, 32), slotHash]),
+    );
+  }
+
+  /**
+   *
+   * @param allowanceSlot storage slot of `allowance` mapping
+   * @param owner account's address
+   * @param spender spender's address
+   */
+  calculateVyperAddressAllowanceSlot(
+    allowanceSlot: string,
+    owner: string,
+    spender: string,
+  ) {
+    const slotHash = ethers.utils.keccak256(
+      ethers.utils.concat([
+        ethers.utils.hexZeroPad(allowanceSlot, 32),
+        ethers.utils.hexZeroPad(owner, 32),
+      ]),
+    );
+
+    return ethers.utils.keccak256(
+      ethers.utils.concat([slotHash, ethers.utils.hexZeroPad(spender, 32)]),
     );
   }
 
@@ -265,7 +338,7 @@ export class TenderlySimulatorNew {
   async findTokenBalanceOfSlot(
     chainId: number,
     token: string,
-  ): Promise<string> {
+  ): Promise<{ slot: string; isVyper?: boolean }> {
     const account = ethers.constants.AddressZero;
 
     const balanceOfSimulationRequest = this.buildBalanceOfSimulationRequest(
@@ -309,13 +382,21 @@ export class TenderlySimulatorNew {
           ['uint'],
           [i],
         );
-        const balanceOfSlot = this.calculateAddressBalanceSlot(
+        // try solidity slot
+        const solitidyBalanceOfSlot = this.calculateSolidityAddressBalanceSlot(
           candidateSlot,
           account,
         );
-
-        if (readSlots.includes(balanceOfSlot)) {
-          return candidateSlot;
+        if (readSlots.includes(solitidyBalanceOfSlot)) {
+          return { slot: candidateSlot };
+        }
+        // try vyper slot
+        const vyperBalanceOfSlot = this.calculateVyperAddressBalanceSlot(
+          candidateSlot,
+          account,
+        );
+        if (readSlots.includes(vyperBalanceOfSlot)) {
+          return { slot: candidateSlot, isVyper: true };
         }
       }
     }
@@ -328,7 +409,7 @@ export class TenderlySimulatorNew {
   async findTokenAllowanceSlot(
     chainId: number,
     token: string,
-  ): Promise<string> {
+  ): Promise<{ slot: string; isVyper?: boolean }> {
     const account = ethers.constants.AddressZero;
     const spender = ethers.constants.AddressZero.slice(0, -2) + '01';
 
@@ -374,14 +455,24 @@ export class TenderlySimulatorNew {
           ['uint'],
           [i],
         );
-        const balanceOfSlot = this.calculateAddressAllowanceSlot(
+        // try solidity
+        const solidityAllowanceSlot =
+          this.calculateSolidityAddressAllowanceSlot(
+            candidateSlot,
+            account,
+            spender,
+          );
+        if (readSlots.includes(solidityAllowanceSlot)) {
+          return { slot: candidateSlot };
+        }
+        // try vyper
+        const vyperAllowanceSlot = this.calculateVyperAddressAllowanceSlot(
           candidateSlot,
           account,
           spender,
         );
-
-        if (readSlots.includes(balanceOfSlot)) {
-          return candidateSlot;
+        if (readSlots.includes(vyperAllowanceSlot)) {
+          return { slot: candidateSlot, isVyper: true };
         }
       }
     }
@@ -419,8 +510,9 @@ export class TenderlySimulatorNew {
 
     // save the slots and return
     const slots: TokenStorageSlots = {
-      balanceSlot,
-      allowanceSlot,
+      balanceSlot: balanceSlot.slot,
+      allowanceSlot: allowanceSlot.slot,
+      isVyper: balanceSlot.isVyper,
     };
 
     chainSlots[chainId] ||= {};
