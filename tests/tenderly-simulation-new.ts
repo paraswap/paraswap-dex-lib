@@ -121,6 +121,10 @@ interface SimulatedTransactionDetails {
 }
 
 export class TenderlySimulatorNew {
+  static readonly DEFAULT_OWNER = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+  static readonly DEFAULT_SPENDER =
+    '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
   private static instance: TenderlySimulatorNew;
 
   private constructor() {}
@@ -348,7 +352,7 @@ export class TenderlySimulatorNew {
     chainId: number,
     token: string,
   ): Promise<{ slot: string; isVyper?: boolean }> {
-    const account = ethers.constants.AddressZero;
+    const account = TenderlySimulatorNew.DEFAULT_OWNER;
 
     const balanceOfSimulationRequest = this.buildBalanceOfSimulationRequest(
       chainId,
@@ -419,8 +423,8 @@ export class TenderlySimulatorNew {
     chainId: number,
     token: string,
   ): Promise<{ slot: string; isVyper?: boolean }> {
-    const account = ethers.constants.AddressZero;
-    const spender = ethers.constants.AddressZero.slice(0, -2) + '01';
+    const account = TenderlySimulatorNew.DEFAULT_OWNER;
+    const spender = TenderlySimulatorNew.DEFAULT_SPENDER;
 
     const allowanceSimulationRequest = this.buildAllowanceSimulationRequest(
       chainId,

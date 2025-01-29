@@ -1067,7 +1067,7 @@ export const testGasEstimation = async (
   // prepare state overrides
   const tenderlySimulator = TenderlySimulatorNew.getInstance();
   // any address works
-  const userAddress = ethers.Wallet.createRandom().address;
+  const userAddress = TenderlySimulatorNew.DEFAULT_OWNER;
   // init `StateOverride` object
   const stateOverride: StateOverride = {};
   // add overrides for src token
