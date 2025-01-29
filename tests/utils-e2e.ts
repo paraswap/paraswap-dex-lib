@@ -1081,16 +1081,19 @@ export const testGasEstimation = async (
   const userSrcBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
     srcTokenSlots.balanceSlot,
     userAddress,
+    srcTokenSlots.isVyper,
   );
   const userDestBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
     destTokenSlots.balanceSlot,
     userAddress,
+    destTokenSlots.isVyper,
   );
   const userSrcAllowanceToAugustusSlot =
     tenderlySimulator.calculateAddressAllowanceSlot(
       srcTokenSlots.allowanceSlot,
       userAddress,
       priceRoute.tokenTransferProxy,
+      srcTokenSlots.isVyper,
     );
   // build `StateOverride` object
   const stateOverride: StateOverride = {
