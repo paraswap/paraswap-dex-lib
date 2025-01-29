@@ -348,6 +348,12 @@ export class TenderlySimulatorNew {
     };
   }
 
+  /**
+   * Finds the slot of the `balanceOf` mapping in given token contract's storage.
+   * Supports `Solidity` and `Vyper` contracts
+   * @param chainId token chain id
+   * @param token token address
+   */
   async findTokenBalanceOfSlot(
     chainId: number,
     token: string,
@@ -419,6 +425,12 @@ export class TenderlySimulatorNew {
     );
   }
 
+  /**
+   * Finds the slot of the `allowance` mapping in given token contract's storage
+   * Supports `Solidity` and `Vyper` contracts
+   * @param chainId token chain id
+   * @param token token address
+   */
   async findTokenAllowanceSlot(
     chainId: number,
     token: string,
@@ -495,6 +507,11 @@ export class TenderlySimulatorNew {
     );
   }
 
+  /**
+   * Returns storage slots for the given token contract.
+   * @param chainId Token chain ID
+   * @param token Token address. Doesn't have to be normalized
+   */
   async getTokenStorageSlots(
     chainId: number,
     token: string,
