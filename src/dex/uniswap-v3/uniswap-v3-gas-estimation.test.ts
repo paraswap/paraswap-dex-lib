@@ -31,4 +31,28 @@ describe('UniswapV3 Gas Estimation', () => {
       );
     });
   });
+
+  it('Wrap `swapExactAmountInOnUniswapV3`', async () => {
+    await testGasEstimation(
+      network,
+      Tokens[network]['ETH'],
+      destToken,
+      100000000000000000n,
+      SwapSide.SELL,
+      dexKey,
+      ContractMethodV6.swapExactAmountInOnUniswapV3,
+    );
+  });
+
+  it('Unwrap `swapExactAmountInOnUniswapV3`', async () => {
+    await testGasEstimation(
+      network,
+      srcToken,
+      Tokens[network]['ETH'],
+      amount,
+      SwapSide.SELL,
+      dexKey,
+      ContractMethodV6.swapExactAmountInOnUniswapV3,
+    );
+  });
 });
