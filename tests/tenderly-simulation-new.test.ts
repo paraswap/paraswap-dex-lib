@@ -82,14 +82,14 @@ describe('Tenderly', () => {
       const expectedSlot = ethers.utils.defaultAbiCoder.encode(['uint'], [9]);
       const foundSlot = await tenderly.findTokenBalanceOfSlot(1, USDC);
       // assert
-      expect(foundSlot).toEqual(expectedSlot);
+      expect(foundSlot.slot).toEqual(expectedSlot);
     });
 
     it('should find Mainnet USDT `balanceOf` storage slot', async () => {
       const expectedSlot = ethers.utils.defaultAbiCoder.encode(['uint'], [2]);
       const foundSlot = await tenderly.findTokenBalanceOfSlot(1, USDT);
       // assert
-      expect(foundSlot).toEqual(expectedSlot);
+      expect(foundSlot.slot).toEqual(expectedSlot);
     });
 
     it('should find Mainnet stETH `balanceOf` storage slot', async () => {
@@ -99,7 +99,7 @@ describe('Tenderly', () => {
         '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84', // Lido's `stETH`
       );
       // assert
-      expect(foundSlot).toEqual(expectedSlot);
+      expect(foundSlot.slot).toEqual(expectedSlot);
     });
 
     it('should find Mainnet aEthDai `balanceOf` storage slot', async () => {
@@ -109,7 +109,7 @@ describe('Tenderly', () => {
         '0x018008bfb33d285247A21d44E50697654f754e63', // Aave's `aEthDai`
       );
       // assert
-      expect(foundSlot).toEqual(expectedSlot);
+      expect(foundSlot.slot).toEqual(expectedSlot);
     });
   });
 
@@ -118,14 +118,14 @@ describe('Tenderly', () => {
       const expectedSlot = ethers.utils.defaultAbiCoder.encode(['uint'], [10]);
       const foundSlot = await tenderly.findTokenAllowanceSlot(1, USDC);
       // assert
-      expect(foundSlot).toEqual(expectedSlot);
+      expect(foundSlot.slot).toEqual(expectedSlot);
     });
 
     it('should find Mainnet USDT `allowance` storage slot', async () => {
       const expectedSlot = ethers.utils.defaultAbiCoder.encode(['uint'], [5]);
       const foundSlot = await tenderly.findTokenAllowanceSlot(1, USDT);
       // assert
-      expect(foundSlot).toEqual(expectedSlot);
+      expect(foundSlot.slot).toEqual(expectedSlot);
     });
 
     it('should find Mainnet stETH `allowance` storage slot', async () => {
@@ -135,7 +135,7 @@ describe('Tenderly', () => {
         '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84', // Lido's `stETH`
       );
       // assert
-      expect(foundSlot).toEqual(expectedSlot);
+      expect(foundSlot.slot).toEqual(expectedSlot);
     });
 
     it('should find Mainnet aEthDai `allowance` storage slot', async () => {
@@ -145,7 +145,7 @@ describe('Tenderly', () => {
         '0x018008bfb33d285247A21d44E50697654f754e63', // Aave's `aEthDai`
       );
       // assert
-      expect(foundSlot).toEqual(expectedSlot);
+      expect(foundSlot.slot).toEqual(expectedSlot);
     });
   });
 });
