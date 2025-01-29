@@ -15,9 +15,7 @@ interface StateObject {
   // In this mapping, the key is variable storage slot,
   // and the value contains the override.
   storage?: Record<string, string>; // storage slot -> value
-  balance?: {
-    value: string;
-  };
+  balance?: string;
   nonce?: number;
   // Bytecode that will override the code associated to the given account.
   code?: string;
@@ -33,6 +31,7 @@ interface TokenStorageSlots {
 interface SimulateTransactionRequest {
   from: string | null;
   to: string | null;
+  value?: string;
   data: string;
   chainId: number;
   timestamp?: number;
@@ -142,6 +141,7 @@ export class TenderlySimulatorNew {
       from: request.from,
       to: request.to,
       input: request.data,
+      value: request.value,
       save: true,
       save_if_fails: true,
       state_objects: request.stateOverride,
