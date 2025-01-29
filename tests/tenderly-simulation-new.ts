@@ -10,10 +10,19 @@ const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN!;
 const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID!;
 const TENDERLY_PROJECT = process.env.TENDERLY_PROJECT!;
 
-interface StorageOverride {
-  storage: Record<string, string>; // storage slot -> value
+interface StateObject {
+  // Overrides of storage slots.
+  // In this mapping, the key is variable storage slot,
+  // and the value contains the override.
+  storage?: Record<string, string>; // storage slot -> value
+  balance?: {
+    value: string;
+  };
+  nonce?: number;
+  // Bytecode that will override the code associated to the given account.
+  code?: string;
 }
-export type StateOverride = Record<string, StorageOverride>; // contract -> storage override
+export type StateOverride = Record<string, StateObject>; // contract -> storage override
 
 interface TokenStorageSlots {
   balanceSlot: string;
