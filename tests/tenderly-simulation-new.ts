@@ -120,11 +120,76 @@ interface SimulatedTransactionDetails {
   };
 }
 
+class TokenStorageSlotsCache {
+  private static TOKEN_STORAGE_SLOTS: Record<
+    number,
+    Record<string, TokenStorageSlots>
+  > | null = null;
+  private static readonly TOKEN_STORAGE_SLOTS_FILEPATH = path.join(
+    __dirname,
+    'token-storage-slots.json',
+  );
+
+  private static async loadTokenStorageSlots(): Promise<
+    Record<number, Record<string, TokenStorageSlots>>
+  > {
+    return JSON.parse(
+      await fs.readFile(TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS_FILEPATH, {
+        encoding: 'utf-8',
+      }),
+    );
+  }
+
+  private static async saveTokenStorageSlots(): Promise<void> {
+    await fs.writeFile(
+      TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS_FILEPATH,
+      JSON.stringify(TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS, null, 2),
+      { encoding: 'utf-8' },
+    );
+  }
+
+  static async getTokenStorageSlots(
+    chainId: number,
+    token: string,
+  ): Promise<TokenStorageSlots | null> {
+    if (!TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS) {
+      TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS =
+        await TokenStorageSlotsCache.loadTokenStorageSlots();
+    }
+
+    return (
+      TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS[chainId]?.[
+        token.toLowerCase()
+      ] ?? null
+    );
+  }
+
+  static async setTokenStorageSlots(
+    chainId: number,
+    token: string,
+    slots: TokenStorageSlots,
+  ): Promise<void> {
+    if (!TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS) {
+      TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS =
+        await TokenStorageSlotsCache.loadTokenStorageSlots();
+    }
+
+    TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS ||= {};
+    TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS[chainId] ||= {};
+    TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS[chainId][token.toLowerCase()] =
+      slots;
+
+    void TokenStorageSlotsCache.saveTokenStorageSlots();
+  }
+}
+
 export class TenderlySimulatorNew {
+  // public constants
   static readonly DEFAULT_OWNER = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
   static readonly DEFAULT_SPENDER =
     '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
+  // singleton
   private static instance: TenderlySimulatorNew;
 
   private constructor() {}
@@ -522,14 +587,15 @@ export class TenderlySimulatorNew {
       throw new Error('Cannot provide storage slots for native token');
     }
 
-    const jsonPath = path.join(__dirname, 'token-storage-slots.json');
+    // check cache
+    const cachedSlots = await TokenStorageSlotsCache.getTokenStorageSlots(
+      chainId,
+      normalizedToken,
+    );
 
-    const chainSlots = JSON.parse(
-      await fs.readFile(jsonPath, { encoding: 'utf-8' }),
-    ) as Record<number, Record<string, TokenStorageSlots>>;
-
-    if (chainSlots[chainId]?.[normalizedToken]) {
-      return chainSlots[chainId][normalizedToken];
+    // return if cached
+    if (cachedSlots) {
+      return cachedSlots;
     }
 
     // find the slots
@@ -545,11 +611,9 @@ export class TenderlySimulatorNew {
       isVyper: balanceSlot.isVyper,
     };
 
-    chainSlots[chainId] ||= {};
-    chainSlots[chainId][normalizedToken] = slots;
-    const stringified = JSON.stringify(chainSlots, null, 2);
-    await fs.writeFile(jsonPath, stringified, { encoding: 'utf-8' });
+    // no need to await
+    void TokenStorageSlotsCache.setTokenStorageSlots(chainId, token, slots);
 
-    return chainSlots[chainId][normalizedToken];
+    return slots;
   }
 }
