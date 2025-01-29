@@ -616,4 +616,83 @@ export class TenderlySimulatorNew {
 
     return slots;
   }
+
+  /**
+   * Adds native balance override to an existing `StateOverride` object
+   * @param stateOverride object to add the override to
+   * @param account address to be given the balance
+   * @param amount token amount in wei
+   */
+  addBalanceOverride(
+    stateOverride: StateOverride,
+    account: string,
+    amount: bigint,
+  ): void {
+    // add the balance override
+    stateOverride[account] ||= {};
+    stateOverride[account].balance = amount.toString();
+  }
+
+  /**
+   * Adds token balance override to an existing `StateOverride` object
+   * @param stateOverride object to add the override to
+   * @param chainId token chain ID
+   * @param token token address
+   * @param account address to be given the balance
+   * @param amount token amount in wei
+   */
+  async addTokenBalanceOverride(
+    stateOverride: StateOverride,
+    chainId: number,
+    token: string,
+    account: string,
+    amount: bigint,
+  ): Promise<void> {
+    // get mapping slots
+    const tokenSlots = await this.getTokenStorageSlots(chainId, token);
+    // calculate balance slot
+    const slotToOverride = this.calculateAddressBalanceSlot(
+      tokenSlots.balanceSlot,
+      account,
+      tokenSlots.isVyper,
+    );
+    // add the balance override
+    stateOverride[token] ||= {};
+    stateOverride[token].storage ||= {};
+    stateOverride[token].storage[slotToOverride] =
+      ethers.utils.defaultAbiCoder.encode(['uint'], [amount]);
+  }
+
+  /**
+   * Adds token allowance override to an existing `StateOverride` object
+   * @param stateOverride object to add the override to
+   * @param chainId token chain ID
+   * @param token token address
+   * @param account owner address
+   * @param spender spender address
+   * @param amount token amount in wei
+   */
+  async addAllowanceOverride(
+    stateOverride: StateOverride,
+    chainId: number,
+    token: string,
+    account: string,
+    spender: string,
+    amount: bigint,
+  ): Promise<void> {
+    // get mapping slots
+    const tokenSlots = await this.getTokenStorageSlots(chainId, token);
+    // calculate allowance slot
+    const slotToOverride = this.calculateAddressAllowanceSlot(
+      tokenSlots.allowanceSlot,
+      account,
+      spender,
+      tokenSlots.isVyper,
+    );
+    // add the allowance override
+    stateOverride[token] ||= {};
+    stateOverride[token].storage ||= {};
+    stateOverride[token].storage[slotToOverride] =
+      ethers.utils.defaultAbiCoder.encode(['uint'], [amount]);
+  }
 }

@@ -1070,70 +1070,47 @@ export const testGasEstimation = async (
   const userAddress = TenderlySimulatorNew.DEFAULT_OWNER;
   // init `StateOverride` object
   const stateOverride: StateOverride = {};
+  // fund x2 just in case
+  const amountToFund = amount * 2n;
   // add overrides for src token
   if (srcToken.address.toLowerCase() === ETHER_ADDRESS) {
     // add eth balance to user
-    stateOverride[userAddress] ||= {};
-    stateOverride[userAddress].balance = (amount * 2n).toString();
+    tenderlySimulator.addBalanceOverride(
+      stateOverride,
+      userAddress,
+      amountToFund,
+    );
   } else {
     // add token balance and allowance to Augustus
-    // calculate the exact slots
-    const srcTokenSlots = await tenderlySimulator.getTokenStorageSlots(
+    await tenderlySimulator.addTokenBalanceOverride(
+      stateOverride,
       network,
       srcToken.address,
-    );
-    const userSrcBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
-      srcTokenSlots.balanceSlot,
       userAddress,
-      srcTokenSlots.isVyper,
+      amountToFund,
     );
-    const userSrcAllowanceToAugustusSlot =
-      tenderlySimulator.calculateAddressAllowanceSlot(
-        srcTokenSlots.allowanceSlot,
-        userAddress,
-        priceRoute.tokenTransferProxy,
-        srcTokenSlots.isVyper,
-      );
-    // add the overrides
-    stateOverride[srcToken.address] = {
-      storage: {
-        [userSrcBalanceOfSlot]: ethers.utils.defaultAbiCoder.encode(
-          ['uint'],
-          [amount * 2n],
-        ),
-        [userSrcAllowanceToAugustusSlot]: ethers.utils.defaultAbiCoder.encode(
-          ['uint'],
-          [amount * 2n],
-        ),
-      },
-    };
+    await tenderlySimulator.addAllowanceOverride(
+      stateOverride,
+      network,
+      srcToken.address,
+      userAddress,
+      priceRoute.tokenTransferProxy,
+      amountToFund,
+    );
   }
   // add overrides for dest token (dust balance)
   if (destToken.address.toLowerCase() === ETHER_ADDRESS) {
     // add eth dust
-    stateOverride[userAddress] ||= {};
-    stateOverride[userAddress].balance = '1';
+    tenderlySimulator.addBalanceOverride(stateOverride, userAddress, 1n);
   } else {
     // add token dust
-    // calculate exact slots
-    const destTokenSlots = await tenderlySimulator.getTokenStorageSlots(
+    await tenderlySimulator.addTokenBalanceOverride(
+      stateOverride,
       network,
       destToken.address,
-    );
-    const userDestBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
-      destTokenSlots.balanceSlot,
       userAddress,
-      destTokenSlots.isVyper,
+      1n,
     );
-    // add the overrides
-    stateOverride[destToken.address] = {
-      storage: {
-        [userDestBalanceOfSlot]: ethers.utils.defaultAbiCoder.encode(
-          ['uint'],
-          [1],
-        ),
-      },
-    };
   }
   // build swap transaction
   const slippage = 100n;
