@@ -1068,36 +1068,34 @@ export const testGasEstimation = async (
   const tenderlySimulator = TenderlySimulatorNew.getInstance();
   // any address works
   const userAddress = ethers.Wallet.createRandom().address;
-  // get storage `balanceOf` and `allowance` mapping slots
-  const srcTokenSlots = await tenderlySimulator.getTokenStorageSlots(
-    network,
-    srcToken.address,
-  );
-  const destTokenSlots = await tenderlySimulator.getTokenStorageSlots(
-    network,
-    destToken.address,
-  );
-  // calculate exact storage slots needed to override
-  const userSrcBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
-    srcTokenSlots.balanceSlot,
-    userAddress,
-    srcTokenSlots.isVyper,
-  );
-  const userDestBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
-    destTokenSlots.balanceSlot,
-    userAddress,
-    destTokenSlots.isVyper,
-  );
-  const userSrcAllowanceToAugustusSlot =
-    tenderlySimulator.calculateAddressAllowanceSlot(
-      srcTokenSlots.allowanceSlot,
+  // init `StateOverride` object
+  const stateOverride: StateOverride = {};
+  // add overrides for src token
+  if (srcToken.address.toLowerCase() === ETHER_ADDRESS) {
+    // add eth balance to user
+    stateOverride[userAddress] ||= {};
+    stateOverride[userAddress].balance = (amount * 2n).toString();
+  } else {
+    // add token balance and allowance to Augustus
+    // calculate the exact slots
+    const srcTokenSlots = await tenderlySimulator.getTokenStorageSlots(
+      network,
+      srcToken.address,
+    );
+    const userSrcBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
+      srcTokenSlots.balanceSlot,
       userAddress,
-      priceRoute.tokenTransferProxy,
       srcTokenSlots.isVyper,
     );
-  // build `StateOverride` object
-  const stateOverride: StateOverride = {
-    [srcToken.address]: {
+    const userSrcAllowanceToAugustusSlot =
+      tenderlySimulator.calculateAddressAllowanceSlot(
+        srcTokenSlots.allowanceSlot,
+        userAddress,
+        priceRoute.tokenTransferProxy,
+        srcTokenSlots.isVyper,
+      );
+    // add the overrides
+    stateOverride[srcToken.address] = {
       storage: {
         [userSrcBalanceOfSlot]: ethers.utils.defaultAbiCoder.encode(
           ['uint'],
@@ -1108,23 +1106,41 @@ export const testGasEstimation = async (
           [amount * 2n],
         ),
       },
-    },
-    [destToken.address]: {
+    };
+  }
+  // add overrides for dest token (dust balance)
+  if (destToken.address.toLowerCase() === ETHER_ADDRESS) {
+    // add eth dust
+    stateOverride[userAddress] ||= {};
+    stateOverride[userAddress].balance = '1';
+  } else {
+    // add token dust
+    // calculate exact slots
+    const destTokenSlots = await tenderlySimulator.getTokenStorageSlots(
+      network,
+      destToken.address,
+    );
+    const userDestBalanceOfSlot = tenderlySimulator.calculateAddressBalanceSlot(
+      destTokenSlots.balanceSlot,
+      userAddress,
+      destTokenSlots.isVyper,
+    );
+    // add the overrides
+    stateOverride[destToken.address] = {
       storage: {
-        // dust
         [userDestBalanceOfSlot]: ethers.utils.defaultAbiCoder.encode(
           ['uint'],
           [1],
         ),
       },
-    },
-  };
+    };
+  }
   // build swap transaction
-  const slippage = 100;
+  const slippage = 100n;
   const minMaxAmount =
     (swapSide === SwapSide.SELL
-      ? BigInt(priceRoute.destAmount) * (10000n - BigInt(slippage))
-      : BigInt(priceRoute.srcAmount) * (10000n + BigInt(slippage))) / 10000n;
+      ? BigInt(priceRoute.destAmount) * (10000n - slippage)
+      : BigInt(priceRoute.srcAmount) * (10000n + slippage)) / 10000n;
   const swapParams = await sdk.buildTransaction(
     priceRoute,
     minMaxAmount,
@@ -1135,12 +1151,13 @@ export const testGasEstimation = async (
     'Transaction params missing `to` property',
   );
   // assemble `SimulationRequest`
-  const { from, to, data } = swapParams;
+  const { from, to, data, value } = swapParams;
   const simulationRequest = {
     chainId: network,
     from,
     to,
     data,
+    value,
     blockNumber: priceRoute.blockNumber,
     stateOverride,
   };
