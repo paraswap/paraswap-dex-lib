@@ -33,6 +33,7 @@ import {
   HookStateMap,
   HooksConfigMap,
 } from './hooks/balancer-hook-event-subscriber';
+import { StableSurge } from './hooks/stableSurgeHook';
 
 export const WAD = BI_POWS[18];
 
@@ -411,6 +412,12 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     let outputAmountRaw = 0n;
     for (const i of indices) {
       const step = steps[i];
+
+      // If the pool has a hook we fetch latest hook state for use in maths
+      let hookState = undefined;
+      if ('hookAddress' in step.poolState && step.poolState.hookAddress)
+        hookState = hookStateMap[step.poolState.hookAddress];
+
       // If its a Stable Pool with an updating Amp factor calculate current Amp value
       if (
         step.poolState.poolType === 'STABLE' &&
@@ -425,15 +432,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
             BigInt(timestamp),
           );
         }
-      }
-      // If the pool has a hook we fetch latest hook state for use in maths
-      let hookState = undefined;
-      if ('hookAddress' in step.poolState && step.poolState.hookAddress) {
-        hookState = hookStateMap[step.poolState.hookAddress];
-        if (
-          step.poolState.poolType === 'STABLE' &&
-          isStableMutableState(step.poolState)
-        )
+        // StableSurge uses Amp as part of hook maths
+        if (step.poolState.hookType === StableSurge.type)
           hookState = { ...hookState, amp: step.poolState.amp };
       }
 

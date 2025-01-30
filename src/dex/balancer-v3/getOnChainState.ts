@@ -161,9 +161,6 @@ const poolOnChain: Record<
           (r: string) => BigInt(r),
         ),
         isPoolPaused: resultIsPoolPaused[0],
-        hasHook:
-          resultHooksConfig[0].hooksContract !==
-          '0x0000000000000000000000000000000000000000',
       };
     },
   },

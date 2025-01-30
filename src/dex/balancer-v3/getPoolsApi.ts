@@ -103,6 +103,9 @@ function toImmutablePoolStateMap(
           ),
           poolType: pool.type,
           hookAddress: pool.hook ? pool.hook.address : undefined,
+          hookType: pool.hook
+            ? hooksConfigMap[pool.hook.address].type
+            : undefined,
         };
         map[pool.id] = immutablePoolState;
         return map;

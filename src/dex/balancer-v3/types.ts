@@ -14,6 +14,7 @@ export type CommonImmutablePoolState = {
   // TODO re-introduce this once added to API
   // scalingFactors: bigint[];
   hookAddress: string | undefined;
+  hookType: string | undefined;
 };
 
 // Mutable data types available on all pools (Available via onchain calls/events)
@@ -27,8 +28,6 @@ export interface CommonMutableState {
   isPoolPaused: boolean;
   // TODO remove this once API provides it
   scalingFactors: bigint[];
-  // TODO remove this once API provides it
-  hasHook: boolean;
 }
 
 type CommonPoolState = CommonImmutablePoolState & CommonMutableState;
