@@ -54,12 +54,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const isValid =
-      from?.address?.toLowerCase() ===
-        this.config.fromToken.address.toLowerCase() &&
-      to?.address?.toLowerCase() === this.config.toToken.address.toLowerCase();
-
-    if (!isValid) {
+    if (!this.ensureOrigin({ from, to })) {
       return [];
     }
 
@@ -135,5 +130,14 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {
     // TODO: complete me!
+  }
+
+  ensureOrigin(args: Partial<{ from: Token; to: Token }>): boolean {
+    return (
+      args?.from?.address.toLowerCase() ===
+        this.config.fromToken.address.toLowerCase() &&
+      args?.to?.address.toLowerCase() ===
+        this.config.toToken.address.toLowerCase()
+    );
   }
 }
