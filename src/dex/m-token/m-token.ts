@@ -113,11 +113,8 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     data: MTokenData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    // TODO: complete me!
-    const exchange = '0x';
-
-    // Encode here the payload for adapter
-    const payload = '';
+    const exchange = this.config.toToken.address;
+    const payload = '0x';
 
     return {
       targetExchange: exchange,
