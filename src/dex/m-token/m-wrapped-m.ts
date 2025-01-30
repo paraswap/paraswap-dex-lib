@@ -17,11 +17,8 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { MWrappedMData } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { MWrappedMConfig } from './config';
-import { MTokenEventPool } from './m-token-pool';
 
 export class MWrappedM extends SimpleExchange implements IDex<MWrappedMData> {
-  protected eventPools: MTokenEventPool;
-
   readonly hasConstantPriceLargeAmounts = false;
   // TODO: set true here if protocols works only with wrapped asset
   readonly needWrapNative = true;
@@ -40,12 +37,6 @@ export class MWrappedM extends SimpleExchange implements IDex<MWrappedMData> {
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPools = new MTokenEventPool(
-      dexKey,
-      network,
-      dexHelper,
-      this.logger,
-    );
   }
 
   // No initialization needed for constant price
