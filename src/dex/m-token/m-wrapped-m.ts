@@ -2,8 +2,10 @@ import { Network } from '../../constants';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { MToken } from './m-token';
-import { DexParams } from './types';
-import { DexConfigMap } from '../../types';
+import type { DexParams } from './types';
+import type { DexConfigMap } from '../../types';
+import { Interface } from '@ethersproject/abi';
+import WRAPPED_M_ABI from '../../abi/m-token/WrappedM.abi.json';
 
 export const MWrappedMConfig: DexConfigMap<DexParams> = {
   MWrappedM: {
@@ -25,11 +27,16 @@ export class MWrappedM extends MToken {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(MWrappedMConfig);
 
+  wrappedMInterface: Interface;
+
   constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
   ) {
-    super(network, dexKey, dexHelper);
+    const config = MWrappedMConfig[dexKey][network];
+    super(network, dexKey, dexHelper, config);
+
+    this.wrappedMInterface = new Interface(WRAPPED_M_ABI);
   }
 }
