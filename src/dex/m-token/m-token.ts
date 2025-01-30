@@ -49,13 +49,21 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
   // across DEXes. It is recommended to use
   // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
-    srcToken: Token,
-    destToken: Token,
+    from: Token,
+    to: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    // TODO: complete me!
-    return [];
+    const isValid =
+      from?.address?.toLowerCase() ===
+        this.config.fromToken.address.toLowerCase() &&
+      to?.address?.toLowerCase() === this.config.toToken.address.toLowerCase();
+
+    if (!isValid) {
+      return [];
+    }
+
+    return [`${this.dexKey}_${this.config.toToken.address}`];
   }
 
   // Returns pool prices for amounts.
