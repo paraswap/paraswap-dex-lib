@@ -14,6 +14,7 @@ import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import type { MTokenData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
+import { BI_POWS } from '../../bigint-constants';
 
 export class MToken extends SimpleExchange implements IDex<MTokenData> {
   readonly hasConstantPriceLargeAmounts = true;
@@ -58,7 +59,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
       return [];
     }
 
-    return [`${this.dexKey}_${this.config.toToken.address}`];
+    return [`${this.dexKey}_${to.address}`];
   }
 
   // Returns pool prices for amounts.
@@ -66,14 +67,32 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
   // should be used. If limitPools is undefined then
   // any pools can be used.
   async getPricesVolume(
-    srcToken: Token,
-    destToken: Token,
+    from: Token,
+    to: Token,
     amounts: bigint[],
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<MTokenData>> {
-    // TODO: complete me!
+    if (side === SwapSide.BUY || !this.ensureOrigin({ from, to })) {
+      return null;
+    }
+
+    // 1:1 swap
+    // Amounts need no adjustment
+    const unitOut = BI_POWS[to.decimals];
+
+    return [
+      {
+        unit: unitOut,
+        prices: amounts,
+        data: {},
+        poolAddresses: [to.address],
+        exchange: this.dexKey,
+        gasCost: 70000,
+        poolIdentifier: this.dexKey,
+      },
+    ];
     return [];
   }
 
