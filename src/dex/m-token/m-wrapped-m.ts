@@ -10,13 +10,14 @@ import WRAPPED_M_ABI from '../../abi/m-token/WrappedM.abi.json';
 export const MWrappedMConfig: DexConfigMap<DexParams> = {
   MWrappedM: {
     [Network.MAINNET]: {
-      // TODO: Verify direction
       fromToken: {
-        address: '0x437cc33344a0b27a429f795ff6b469c72698b291',
+        // M Token
+        address: '0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b',
         decimals: 6,
       },
       toToken: {
-        address: '0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b',
+        // WrappedM Token
+        address: '0x437cc33344a0b27a429f795ff6b469c72698b291',
         decimals: 6,
       },
     },
