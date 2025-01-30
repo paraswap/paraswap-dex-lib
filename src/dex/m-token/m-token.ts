@@ -1,5 +1,5 @@
 import { AsyncOrSync } from 'ts-essentials';
-import {
+import type {
   Token,
   Address,
   ExchangePrices,
@@ -12,7 +12,7 @@ import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { IDex } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { MTokenData } from './types';
+import type { MTokenData, DexParams } from './types';
 import { SimpleExchange } from '../simple-exchange';
 
 export class MToken extends SimpleExchange implements IDex<MTokenData> {
@@ -28,6 +28,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
+    readonly config: DexParams,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
