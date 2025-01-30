@@ -48,13 +48,8 @@ export class MWrappedM extends SimpleExchange implements IDex<MWrappedMData> {
     );
   }
 
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(blockNumber: number) {
-    // TODO: complete me!
-  }
+  // No initialization needed for constant price
+  async initializePricing() {}
 
   // Legacy: was only used for V5
   // Returns the list of contract adapters (name and index)
