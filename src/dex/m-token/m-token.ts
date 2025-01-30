@@ -128,9 +128,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
   // update common state required for calculating
   // getTopPoolsForToken. It is optional for a DEX
   // to implement this
-  async updatePoolState(): Promise<void> {
-    // TODO: complete me!
-  }
+  async updatePoolState(): Promise<void> {}
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
@@ -138,15 +136,31 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    // TODO: complete me!
-    return [];
+    const isFromOrigin =
+      tokenAddress.toLowerCase() ===
+      this.config.fromToken.address.toLowerCase();
+    const isToOrigin =
+      tokenAddress.toLowerCase() === this.config.toToken.address.toLowerCase();
+
+    if (!(isFromOrigin || isToOrigin)) {
+      return [];
+    }
+
+    return [
+      {
+        exchange: this.dexKey,
+        address: this.config.toToken.address,
+        connectorTokens: [
+          isFromOrigin ? this.config.toToken : this.config.fromToken,
+        ],
+        liquidityUSD: 1000000000, // Returning a big number to prefer this DEX
+      },
+    ];
   }
 
   // This is optional function in case if your implementation has acquired any resources
   // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
-  }
+  releaseResources(): AsyncOrSync<void> {}
 
   ensureOrigin(args: Partial<{ from: Token; to: Token }>): boolean {
     return (
