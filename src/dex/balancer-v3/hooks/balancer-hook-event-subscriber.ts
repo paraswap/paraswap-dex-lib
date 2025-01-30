@@ -4,6 +4,7 @@ import {
   FunctionFragment,
   Interface,
 } from '@ethersproject/abi';
+import _ from 'lodash';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../../types';
 import { catchParseLogError } from '../../../utils';
@@ -143,6 +144,27 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
       }
     }
     return hookState;
+  }
+
+  async updateHookState() {
+    // Not all hooks need updated, only ones with settings/state that can't be handled by events
+    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const currentState =
+      (_.cloneDeep(this.getStaleState()) as HookStateMap) || {};
+    for (const hookAddress in this.hooksConfigMap) {
+      const hookConfig = this.hooksConfigMap[hookAddress];
+      // StableSurge can have new registered pools with associated hook state
+      if (hookConfig.type === StableSurge.type) {
+        currentState[hookAddress] = await getStableSurgeHookState(
+          this.interfaces[1],
+          hookAddress,
+          hookConfig.factory,
+          this.dexHelper,
+          blockNumber,
+        );
+      }
+    }
+    this.setState(currentState, blockNumber);
   }
 
   combineInterfaces = (interfaces: Interface[]): Interface => {

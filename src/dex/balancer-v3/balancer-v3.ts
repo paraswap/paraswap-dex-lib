@@ -33,6 +33,7 @@ const MAX_UINT256 =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 const POOL_UPDATE_TTL = 5 * 60; // 5mins
 const RATE_UPDATE_TTL = 1 * 60; // 1min
+const HOOK_UPDATE_TTL = 5 * 60; // 5min
 
 type DeepMutable<T> = {
   -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : T[P];
@@ -56,6 +57,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   balancerBatchRouter: Interface;
   updateNewPoolsTimer?: NodeJS.Timeout;
   updateRatesTimer?: NodeJS.Timeout;
+  updateHooksTimer?: NodeJS.Timeout;
 
   latestBlock?: Block;
 
@@ -111,6 +113,17 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
           this.logger.error(`${this.dexKey}: Failed to update pool rates:`, e);
         }
       }, RATE_UPDATE_TTL * 1000);
+    }
+
+    // This will periodically update any hook state that can't be tracked by events
+    if (!this.updateHooksTimer) {
+      this.updateHooksTimer = setInterval(async () => {
+        try {
+          await this.updateHooksState();
+        } catch (e) {
+          this.logger.error(`${this.dexKey}: Failed to update hook state:`, e);
+        }
+      }, HOOK_UPDATE_TTL * 1000);
     }
   }
 
@@ -571,6 +584,10 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
     await this.eventPools.updateStatePools();
   }
 
+  async updateHooksState(): Promise<void> {
+    await this.eventHooks.updateHookState();
+  }
+
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
   async getTopPoolsForToken(
@@ -625,6 +642,13 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       this.updateRatesTimer = undefined;
       this.logger.info(
         `${this.dexKey}: cleared updateRatesTimer before shutting down`,
+      );
+    }
+    if (this.updateHooksTimer) {
+      clearInterval(this.updateHooksTimer);
+      this.updateHooksTimer = undefined;
+      this.logger.info(
+        `${this.dexKey}: cleared updateHooksTimer before shutting down`,
       );
     }
   }
