@@ -1,13 +1,10 @@
 import { BalancerV3Config } from './../config';
-import { HooksTypeMap } from './balancer-hook-event-subscriber';
+import { HooksConfigMap } from './balancer-hook-event-subscriber';
 
-export function loadHooksConfig(network: number): HooksTypeMap {
+export function loadHooksConfig(network: number): HooksConfigMap {
   const hooks = BalancerV3Config.BalancerV3[network].hooks;
-  // Create the inverted dictionary efficiently
-  return Object.entries(hooks ?? {}).reduce((acc, [hookType, addresses]) => {
-    addresses.forEach(address => {
-      acc[address] = hookType;
-    });
-    return acc;
-  }, {} as HooksTypeMap);
+
+  if (!hooks) return {};
+
+  return Object.fromEntries(hooks.map(hook => [hook.address, hook]));
 }

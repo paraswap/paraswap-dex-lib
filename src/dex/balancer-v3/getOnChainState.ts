@@ -10,7 +10,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import { IDexHelper } from '../../dex-helper';
 import { WAD } from './balancer-v3-pool';
 
-interface callData {
+export interface callData {
   target: string;
   callData: string;
 }

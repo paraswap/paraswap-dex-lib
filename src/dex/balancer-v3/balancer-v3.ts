@@ -88,7 +88,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   // implement this function
   async initializePricing(blockNumber: number) {
     await this.eventHooks.initialize(blockNumber);
-    this.eventPools.setHooksMap(this.eventHooks.hooksTypeMap);
+    this.eventPools.setHooksConfigMap(this.eventHooks.hooksConfigMap);
     await this.eventPools.initialize(blockNumber);
 
     // This will periodically query API and add any new pools to pool state
@@ -587,7 +587,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
       this.network,
       poolsWithToken,
       count,
-      this.eventHooks.hooksTypeMap,
+      this.eventHooks.hooksConfigMap,
     );
 
     return topPools.map(pool => {

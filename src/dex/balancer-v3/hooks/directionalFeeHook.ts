@@ -6,7 +6,14 @@ import { Log } from '../../../types';
 import { DeepReadonly } from 'ts-essentials';
 import { HookStateMap } from './balancer-hook-event-subscriber';
 
-export const directionalFeeType = 'DirectionalFee';
+export const DirectionalFee = {
+  type: 'DirectionalFee' as const,
+};
+
+export type DirectionalFeeConfig = {
+  type: typeof DirectionalFee.type;
+  address: string;
+};
 
 export type DirectionalFeeHookState = {
   test: string; // Note - this is just a dummy example as this specific test hook doesn't have any required state but is used to prove concept

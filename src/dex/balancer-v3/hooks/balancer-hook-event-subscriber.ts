@@ -1,4 +1,9 @@
-import { Fragment, Interface } from '@ethersproject/abi';
+import {
+  EventFragment,
+  Fragment,
+  FunctionFragment,
+  Interface,
+} from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../../types';
 import { catchParseLogError } from '../../../utils';
@@ -6,22 +11,33 @@ import { StatefulEventSubscriber } from '../../../stateful-event-subscriber';
 import { IDexHelper } from '../../../dex-helper/idex-helper';
 import { loadHooksConfig } from './loadHooksConfig';
 import {
+  DirectionalFee,
+  DirectionalFeeConfig,
   DirectionalFeeHookState,
-  directionalFeeType,
-  exitFeeHookExampleRegisteredEvent,
   getDirectionalFeeHookState,
 } from './directionalFeeHook';
 import exitFeeHookAbi from '../../../abi/balancer-v3/directionalFeeHook.json';
+import {
+  getStableSurgeHookState,
+  maxSurgeFeePercentageChangedEvent,
+  StableSurge,
+  StableSurgeConfig,
+  StableSurgeHookState,
+  thresholdSurgePercentageChangedEvent,
+} from './stableSurgeHook';
+import stableSurgeHookAbi from '../../../abi/balancer-v3/stableSurgeHook.json';
 
 // Add each supported hook state here
-export type HookState = DirectionalFeeHookState;
+export type HookState = DirectionalFeeHookState | StableSurgeHookState;
 
 export type HookStateMap = {
   [address: string]: HookState;
 };
 
-export type HooksTypeMap = {
-  [hookAddress: string]: string; // hookAddress -> hookType mapping
+export type HookConfig = DirectionalFeeConfig | StableSurgeConfig;
+
+export type HooksConfigMap = {
+  [hookAddress: string]: HookConfig;
 };
 
 /**
@@ -42,7 +58,7 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
 
   addressesSubscribed: string[];
 
-  hooksTypeMap: HooksTypeMap;
+  hooksConfigMap: HooksConfigMap;
 
   constructor(
     readonly parentName: string,
@@ -53,20 +69,24 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
     super(parentName, 'Balancer_Hooks', dexHelper, logger);
 
     // Load supported hooks from config file
-    this.hooksTypeMap = loadHooksConfig(network);
+    this.hooksConfigMap = loadHooksConfig(network);
 
     // Add each hook ABI here
-    this.interfaces = [new Interface(exitFeeHookAbi)];
-    // Add any hook specific log decoders here (see balancer-v3-pool as ref when doing first hook implementation)
+    this.interfaces = [
+      new Interface(exitFeeHookAbi),
+      new Interface(stableSurgeHookAbi),
+    ];
     this.logDecoder = (log: Log) =>
       this.combineInterfaces(this.interfaces).parseLog(log);
 
     // Subscribe to all hooks
-    this.addressesSubscribed = Object.keys(this.hooksTypeMap);
+    this.addressesSubscribed = Object.keys(this.hooksConfigMap);
 
-    // Add hook specific log handlers here
-    this.handlers['ExitFeeHookExampleRegistered'] =
-      exitFeeHookExampleRegisteredEvent.bind(this);
+    // StableSurgeHook events
+    this.handlers['ThresholdSurgePercentageChanged'] =
+      thresholdSurgePercentageChangedEvent.bind(this);
+    this.handlers['MaxSurgeFeePercentageChanged'] =
+      maxSurgeFeePercentageChangedEvent.bind(this);
   }
 
   /**
@@ -108,26 +128,54 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
   ): Promise<DeepReadonly<HookStateMap>> {
     // Only hooks that are supported will be called
     const hookState: HookStateMap = {};
-    for (const hookAddress in this.hooksTypeMap) {
-      const hookType = this.hooksTypeMap[hookAddress];
-      if (hookType === directionalFeeType) {
+    for (const hookAddress in this.hooksConfigMap) {
+      const hookConfig = this.hooksConfigMap[hookAddress];
+      if (hookConfig.type === DirectionalFee.type) {
         hookState[hookAddress] = await getDirectionalFeeHookState();
+      } else if (hookConfig.type === StableSurge.type) {
+        hookState[hookAddress] = await getStableSurgeHookState(
+          this.interfaces[1],
+          hookAddress,
+          hookConfig.factory,
+          this.dexHelper,
+          blockNumber,
+        );
       }
     }
     return hookState;
   }
 
   combineInterfaces = (interfaces: Interface[]): Interface => {
-    const allFragments: Fragment[] = interfaces.reduce(
-      (acc: Fragment[], interfaceInstance: Interface) => {
-        // Get all fragments from the current interface
-        const fragments = interfaceInstance.fragments;
-        return [...acc, ...fragments];
-      },
-      [],
-    );
+    // Use a Map to store unique fragments, keyed by their string representation
+    const uniqueFragments = new Map<string, Fragment>();
 
-    // Create a new interface with all fragments
-    return new Interface(allFragments);
+    interfaces.forEach((interfaceInstance: Interface) => {
+      interfaceInstance.fragments.forEach((fragment: Fragment) => {
+        let key: string;
+
+        if (fragment instanceof FunctionFragment) {
+          // For functions, use the signature as the key
+          // This includes name and parameter types
+          key = fragment.format();
+        } else if (fragment instanceof EventFragment) {
+          // For events, use the signature as the key
+          key = fragment.format();
+        } else {
+          // For other fragment types (like errors), use their string representation
+          key = fragment.toString();
+        }
+
+        // Only add if we haven't seen this signature before
+        if (!uniqueFragments.has(key)) {
+          uniqueFragments.set(key, fragment);
+        }
+      });
+    });
+
+    // Convert the Map values back to an array
+    const dedupedFragments = Array.from(uniqueFragments.values());
+
+    // Create a new interface with the deduped fragments
+    return new Interface(dedupedFragments);
   };
 }

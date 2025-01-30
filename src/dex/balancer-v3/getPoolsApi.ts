@@ -7,7 +7,7 @@ import {
 } from './config';
 import { CommonImmutablePoolState, ImmutablePoolStateMap } from './types';
 import { parseUnits } from 'ethers/lib/utils';
-import { HooksTypeMap } from './hooks/balancer-hook-event-subscriber';
+import { HooksConfigMap } from './hooks/balancer-hook-event-subscriber';
 
 interface PoolToken {
   address: string;
@@ -82,13 +82,14 @@ function createQuery(
 
 function toImmutablePoolStateMap(
   pools: Pool[],
-  hooksMap: HooksTypeMap,
+  hooksConfigMap: HooksConfigMap,
 ): ImmutablePoolStateMap {
   return (
     pools
       // First filter out pools with hooks that aren't in hooksMap
       .filter(
-        pool => !pool.hook || (pool.hook && pool.hook.address in hooksMap),
+        pool =>
+          !pool.hook || (pool.hook && pool.hook.address in hooksConfigMap),
       )
       .reduce((map, pool) => {
         const immutablePoolState: CommonImmutablePoolState = {
@@ -101,12 +102,7 @@ function toImmutablePoolStateMap(
             t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,
           ),
           poolType: pool.type,
-          hookState: pool.hook
-            ? {
-                hookType: hooksMap[pool.hook.address],
-                address: pool.hook.address,
-              }
-            : undefined,
+          hookAddress: pool.hook ? pool.hook.address : undefined,
         };
         map[pool.id] = immutablePoolState;
         return map;
@@ -117,7 +113,7 @@ function toImmutablePoolStateMap(
 // Any data from API will be immutable. Mutable data such as balances, etc will be fetched via onchain/event state.
 export async function getPoolsApi(
   network: number,
-  hooksTypeMap: HooksTypeMap,
+  hooksConfigMap: HooksConfigMap,
   timestamp?: number,
 ): Promise<ImmutablePoolStateMap> {
   try {
@@ -139,7 +135,7 @@ export async function getPoolsApi(
     );
 
     const pools = response.data.data.poolGetAggregatorPools;
-    return toImmutablePoolStateMap(pools, hooksTypeMap);
+    return toImmutablePoolStateMap(pools, hooksConfigMap);
   } catch (error) {
     // console.error('Error executing GraphQL query:', error);
     throw error;

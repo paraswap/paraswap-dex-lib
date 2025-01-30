@@ -31,7 +31,7 @@ import {
 import { BI_POWS } from '../../bigint-constants';
 import {
   HookStateMap,
-  HooksTypeMap,
+  HooksConfigMap,
 } from './hooks/balancer-hook-event-subscriber';
 
 export const WAD = BI_POWS[18];
@@ -53,7 +53,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     [name: string]: Interface;
   };
   vault: Vault;
-  hooksTypeMap: HooksTypeMap = {};
+  hooksConfigMap: HooksConfigMap = {};
 
   constructor(
     readonly parentName: string,
@@ -100,8 +100,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.vault = new Vault();
   }
 
-  setHooksMap(hooksMap: HooksTypeMap) {
-    this.hooksTypeMap = hooksMap;
+  setHooksConfigMap(hooksConfigMap: HooksConfigMap) {
+    this.hooksConfigMap = hooksConfigMap;
   }
 
   /**
@@ -144,7 +144,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const block = await this.dexHelper.provider.getBlock(blockNumber);
     const apiPoolStateMap = await getPoolsApi(
       this.network,
-      this.hooksTypeMap,
+      this.hooksConfigMap,
       block.timestamp,
     );
     const allOnChainPools = await getOnChainState(
@@ -172,7 +172,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     existingPoolState: DeepReadonly<PoolStateMap>,
   ): Promise<DeepReadonly<PoolStateMap> | null> {
     // Get all latest pools from API
-    const apiPoolStateMap = await getPoolsApi(this.network, this.hooksTypeMap);
+    const apiPoolStateMap = await getPoolsApi(
+      this.network,
+      this.hooksConfigMap,
+    );
 
     // Filter out pools that already exist in existing state
     const newApiPools = Object.entries(apiPoolStateMap).reduce(
@@ -198,19 +201,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.interfaces,
     );
 
-    // Filter out pools with hooks and paused pools from new state
-    // TODO this won't be necessary once API has this filter option
-    const filteredNewPools = Object.entries(newOnChainPools)
-      .filter(([_, pool]) => !(pool.hasHook || pool.isPoolPaused))
-      .reduce((acc, [address, pool]) => {
-        acc[address] = pool;
-        return acc;
-      }, {} as PoolStateMap);
-
     // Merge existing pools with new pools
     return {
       ...existingPoolState,
-      ...filteredNewPools,
+      ...newOnChainPools,
     };
   }
 
@@ -434,8 +428,14 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       }
       // If the pool has a hook we fetch latest hook state for use in maths
       let hookState = undefined;
-      if ('hookState' in step.poolState && step.poolState.hookState)
-        hookState = hookStateMap[step.poolState.hookState.address];
+      if ('hookAddress' in step.poolState && step.poolState.hookAddress) {
+        hookState = hookStateMap[step.poolState.hookAddress];
+        if (
+          step.poolState.poolType === 'STABLE' &&
+          isStableMutableState(step.poolState)
+        )
+          hookState = { ...hookState, amp: step.poolState.amp };
+      }
 
       outputAmountRaw = this.vault.swap(
         {

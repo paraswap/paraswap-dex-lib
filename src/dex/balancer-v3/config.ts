@@ -25,9 +25,17 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
       apiNetworkName: 'SEPOLIA',
       balancerRouterAddress: '0x0BF61f706105EA44694f2e92986bD01C39930280',
       balancerBatchRouterAddress: '0xC85b652685567C1B074e8c0D4389f83a2E458b1C',
-      hooks: {
-        DirectionalFee: ['0xd68372e85d8a14afa5fdb3d506bf765939aaf382'], // this is a test example only
-      },
+      hooks: [
+        {
+          type: 'DirectionalFee',
+          address: '0xd68372e85d8a14afa5fdb3d506bf765939aaf382',
+        },
+        {
+          type: 'StableSurge',
+          factory: '0x9eB9867C1d4B6fd3a7D0dAd3101b5A153b1107Ec',
+          address: '0xc0cbcdd6b823a4f22aa6bbdde44c17e754266aef',
+        },
+      ],
     },
     [Network.GNOSIS]: {
       vaultAddress: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',

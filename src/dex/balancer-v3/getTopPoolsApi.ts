@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { apiUrl, BalancerV3Config, disabledPoolIds } from './config';
-import { HooksTypeMap } from './hooks/balancer-hook-event-subscriber';
+import { HooksConfigMap } from './hooks/balancer-hook-event-subscriber';
 
 interface PoolToken {
   address: string;
@@ -84,7 +84,7 @@ export async function getTopPoolsApi(
   networkId: number,
   poolsFilter: string[],
   count: number,
-  hooksTypeMap: HooksTypeMap,
+  hooksTypeMap: HooksConfigMap,
 ): Promise<Pool[]> {
   try {
     const query = createQuery(networkId, poolsFilter, count);
