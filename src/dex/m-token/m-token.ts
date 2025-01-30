@@ -74,6 +74,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<MTokenData>> {
+    // TODO: Enable bi-directional swap?
     if (side === SwapSide.BUY || !this.ensureOrigin({ from, to })) {
       return null;
     }
@@ -93,7 +94,6 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
         poolIdentifier: this.dexKey,
       },
     ];
-    return [];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
