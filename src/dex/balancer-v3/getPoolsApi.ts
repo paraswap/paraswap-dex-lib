@@ -14,6 +14,7 @@ interface PoolToken {
   isErc4626: boolean;
   underlyingToken: {
     address: string;
+    underlyingTokenAddress: string | null;
   } | null;
 }
 
@@ -67,6 +68,7 @@ function createQuery(
           isErc4626
           underlyingToken {
             address
+            underlyingTokenAddress
           }
         }
       }
@@ -81,6 +83,9 @@ function toImmutablePoolStateMap(pools: Pool[]): ImmutablePoolStateMap {
       tokens: pool.poolTokens.map(t => t.address),
       tokensUnderlying: pool.poolTokens.map(t =>
         t.underlyingToken ? t.underlyingToken.address : null,
+      ),
+      tokensNestedERC4626Underlying: pool.poolTokens.map(t =>
+        t.underlyingToken ? t.underlyingToken.underlyingTokenAddress : null,
       ),
       weights: pool.poolTokens.map(t =>
         t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,

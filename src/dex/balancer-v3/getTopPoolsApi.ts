@@ -7,6 +7,7 @@ interface PoolToken {
   underlyingToken?: {
     address: string;
     decimals: number;
+    underlyingTokenAddress: string;
   };
 }
 
@@ -63,6 +64,7 @@ function createQuery(
           underlyingToken {
             address
             decimals
+            underlyingTokenAddress
           }
         }
         dynamicData {

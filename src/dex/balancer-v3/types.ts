@@ -9,6 +9,7 @@ export type CommonImmutablePoolState = {
   tokens: string[];
   // For boosted pools underlying is the unwrapped token, e.g. USDC/DAI
   tokensUnderlying: (string | null)[];
+  tokensNestedERC4626Underlying: (string | null)[];
   weights: bigint[];
   // TODO re-introduce this once added to API
   // scalingFactors: bigint[];
@@ -19,6 +20,7 @@ export type CommonImmutablePoolState = {
 export interface CommonMutableState {
   tokenRates: bigint[];
   erc4626Rates: (bigint | null)[];
+  erc4626NestedRates: (bigint | null)[];
   balancesLiveScaled18: bigint[];
   swapFee: bigint;
   aggregateSwapFee: bigint;
@@ -78,10 +80,13 @@ export type DexParams = {
   balancerBatchRouterAddress: string;
 };
 
+export enum TokenType {
+  MainToken = 1,
+  ERC4626,
+  ERC4626Nested,
+}
+
 export type TokenInfo = {
-  isBoosted: boolean;
-  underlyingToken: string | null;
-  mainToken: string;
   index: number;
-  rate: bigint;
+  type: TokenType;
 };

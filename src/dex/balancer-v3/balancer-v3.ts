@@ -177,7 +177,9 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
   hasTokens(pool: DeepReadonly<PoolState>, tokens: string[]): boolean {
     return tokens.every(
       token =>
-        pool.tokens.includes(token) || pool.tokensUnderlying.includes(token),
+        pool.tokens.includes(token) ||
+        pool.tokensUnderlying.includes(token) ||
+        pool.tokensNestedERC4626Underlying.includes(token),
     );
   }
 
@@ -586,11 +588,20 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         .filter(t => !!t)
         .filter(t => t?.address !== tokenAddress) as Token[];
 
+      const nestedUnderlyingTokens = pool.poolTokens
+        .map(t => ({
+          address: t.underlyingToken?.underlyingTokenAddress,
+          decimals: t.underlyingToken?.decimals,
+        }))
+        .filter(item => !!item.address) as Token[];
+
       return {
         exchange: this.dexKey,
         address: pool.address,
         liquidityUSD: parseFloat(pool.dynamicData.totalLiquidity),
-        connectorTokens: tokens.concat(underlyingTokens),
+        connectorTokens: tokens
+          .concat(underlyingTokens)
+          .concat(nestedUnderlyingTokens),
       };
     });
   }
