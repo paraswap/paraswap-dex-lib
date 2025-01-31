@@ -11,6 +11,7 @@ import {
   StableMutableState,
   Step,
   TokenInfo,
+  TokenType,
 } from './types';
 import { getPoolsApi } from './getPoolsApi';
 import vaultExtensionAbi_V3 from '../../abi/balancer-v3/vault-extension.json';
@@ -543,11 +544,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     );
     if (tokenIndex !== -1) {
       return {
-        isBoosted: false,
-        mainToken: tokenAddress,
-        underlyingToken: null,
         index: tokenIndex,
-        rate: poolState.tokenRates[tokenIndex],
+        type: TokenType.MainToken,
       };
     }
 
@@ -558,18 +556,23 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           address && address.toLowerCase() === tokenAddress.toLowerCase(),
       );
       if (tokenIndex !== -1) {
-        if (poolState.erc4626Rates[tokenIndex] === null) {
-          this.logger.error(
-            `missing erc4626 token rate ${poolState.tokens[tokenIndex]}`,
-          );
-          return null;
-        }
         return {
-          isBoosted: true,
-          mainToken: poolState.tokens[tokenIndex],
-          underlyingToken: tokenAddress,
           index: tokenIndex,
-          rate: poolState.erc4626Rates[tokenIndex]!,
+          type: TokenType.ERC4626,
+        };
+      }
+    }
+
+    // Check in nested underlying tokens if available
+    if (poolState.tokensNestedERC4626Underlying) {
+      tokenIndex = poolState.tokensNestedERC4626Underlying.findIndex(
+        address =>
+          address && address.toLowerCase() === tokenAddress.toLowerCase(),
+      );
+      if (tokenIndex !== -1) {
+        return {
+          index: tokenIndex,
+          type: TokenType.ERC4626Nested,
         };
       }
     }
@@ -593,104 +596,182 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
    * https://docs-v3.balancer.fi/concepts/vault/buffer.html
    */
   getSteps(pool: PoolState, tokenIn: TokenInfo, tokenOut: TokenInfo): Step[] {
-    if (tokenIn.isBoosted && tokenOut.isBoosted) {
-      return [
-        // Wrap tokenIn underlying to main token
-        this.getWrapStep(tokenIn),
-        // Swap main > main
-        this.getSwapStep(pool, tokenIn, tokenOut),
-        // Unwrap tokenOut main to underlying token
-        this.getUnwrapStep(tokenOut),
-      ];
-    } else if (tokenIn.isBoosted) {
-      if (
-        tokenIn.mainToken.toLowerCase() === tokenOut.mainToken.toLowerCase()
-      ) {
-        // wrap, token > erc4626
-        // tokenIn is boosted, e.g. isn't pool token and must be wrapped
-        return [this.getWrapStep(tokenIn)];
+    // This is a single buffer wrap/unwrap
+    if (tokenIn.index === tokenOut.index) {
+      return this.singleBufferStep(pool, tokenIn, tokenOut);
+    }
+
+    // Create steps based on token types
+    const steps: Step[] = [];
+
+    // Handle input token wrapping if needed
+    if (this.needsBuffer(tokenIn)) {
+      if (tokenIn.type === TokenType.ERC4626Nested) {
+        steps.push(this.getWrapStepNested(pool, tokenIn));
       }
-      return [
-        // Wrap tokenIn underlying to main token
-        this.getWrapStep(tokenIn),
-        // Swap main > main
-        this.getSwapStep(pool, tokenIn, tokenOut),
-      ];
-    } else if (tokenOut.isBoosted) {
-      if (
-        tokenIn.mainToken.toLowerCase() === tokenOut.mainToken.toLowerCase()
-      ) {
-        // unwrap, stata > token
-        // token out is boosted, e.g. isn't pool token
-        return [this.getUnwrapStep(tokenOut)];
+      steps.push(this.getWrapStep(pool, tokenIn));
+    }
+
+    // Add main swap step
+    steps.push(this.getSwapStep(pool, tokenIn, tokenOut));
+
+    // Handle output token unwrapping if needed
+    if (this.needsBuffer(tokenOut)) {
+      steps.push(this.getUnwrapStep(pool, tokenOut));
+      if (tokenOut.type === TokenType.ERC4626Nested) {
+        steps.push(this.getUnwrapStepNested(pool, tokenOut));
       }
-      return [
-        // Swap main > main
-        this.getSwapStep(pool, tokenIn, tokenOut),
-        // Unwrap tokenOut main to underlying token
-        this.getUnwrapStep(tokenOut),
-      ];
-    } else {
-      return [
-        // Swap main > main
-        this.getSwapStep(pool, tokenIn, tokenOut),
-      ];
+    }
+
+    return steps;
+  }
+
+  private singleBufferStep(
+    pool: PoolState,
+    tokenIn: TokenInfo,
+    tokenOut: TokenInfo,
+  ): Step[] {
+    if (tokenIn.type === TokenType.ERC4626) {
+      // wrap, token > erc4626
+      // tokenIn is boosted, e.g. isn't pool token and must be wrapped
+      return [this.getWrapStep(pool, tokenIn)];
+    }
+    if (tokenOut.type === TokenType.ERC4626) {
+      // unwrap, erc4626 > token
+      // tokenOut is boosted, e.g. isn't pool token and must be unwrapped
+      return [this.getUnwrapStep(pool, tokenOut)];
+    }
+    throw new Error(`Error get step with same token index`);
+  }
+
+  private needsBuffer(token: TokenInfo): boolean {
+    return (
+      token.type === TokenType.ERC4626 || token.type === TokenType.ERC4626Nested
+    );
+  }
+
+  private validateUnderlyingToken(pool: PoolState, tokenIndex: number): void {
+    if (!pool.tokensUnderlying[tokenIndex] || !pool.erc4626Rates[tokenIndex]) {
+      throw new Error(
+        `Underlying Token Error: token at index ${tokenIndex}. ${pool.tokensUnderlying[tokenIndex]} ${pool.erc4626Rates[tokenIndex]}`,
+      );
     }
   }
 
-  getWrapStep(token: TokenInfo): Step {
-    if (!token.underlyingToken)
+  private validateNestedUnderlyingToken(
+    pool: PoolState,
+    tokenIndex: number,
+  ): void {
+    if (
+      !pool.tokensUnderlying[tokenIndex] ||
+      !pool.tokensNestedERC4626Underlying[tokenIndex] ||
+      !pool.erc4626NestedRates[tokenIndex]
+    ) {
       throw new Error(
-        `Buffer wrap: token has no underlying. ${token.mainToken}`,
+        `NestedUnderlying Token Error: token at index ${tokenIndex}. ${pool.tokensUnderlying[tokenIndex]} ${pool.tokensNestedERC4626Underlying[tokenIndex]} ${pool.erc4626NestedRates[tokenIndex]}`,
       );
-    // Vault expects pool to be the ERC4626 wrapped token, e.g. aUSDC
+    }
+  }
+
+  getWrapStepNested(pool: PoolState, token: TokenInfo): Step {
+    this.validateNestedUnderlyingToken(pool, token.index);
+
+    const underlyingToken = pool.tokensUnderlying[token.index] as string;
+    const nestedUnderlyingToken = pool.tokensNestedERC4626Underlying[
+      token.index
+    ] as string;
+
     return {
-      pool: token.mainToken,
+      pool: underlyingToken,
       isBuffer: true,
       swapInput: {
-        tokenIn: token.underlyingToken,
-        tokenOut: token.mainToken,
+        tokenIn: nestedUnderlyingToken,
+        tokenOut: underlyingToken,
       },
       poolState: {
         poolType: 'Buffer',
-        rate: token.rate,
-        poolAddress: token.mainToken,
-        tokens: [token.mainToken, token.underlyingToken], // staticToken & underlying
+        rate: pool.erc4626NestedRates[token.index] as bigint,
+        poolAddress: underlyingToken,
+        tokens: [nestedUnderlyingToken, underlyingToken],
       },
     };
   }
 
-  getUnwrapStep(token: TokenInfo): Step {
-    if (!token.underlyingToken)
-      throw new Error(
-        `Buffer unwrap: token has no underlying. ${token.mainToken}`,
-      );
-    // Vault expects pool to be the ERC4626 wrapped token, e.g. aUSDC
+  getWrapStep(pool: PoolState, token: TokenInfo): Step {
+    this.validateUnderlyingToken(pool, token.index);
+
+    const wrappedToken = pool.tokens[token.index];
+    const underlyingToken = pool.tokensUnderlying[token.index] as string;
+
     return {
-      pool: token.mainToken,
+      pool: wrappedToken,
       isBuffer: true,
       swapInput: {
-        tokenIn: token.mainToken,
-        tokenOut: token.underlyingToken,
+        tokenIn: underlyingToken,
+        tokenOut: wrappedToken,
       },
       poolState: {
         poolType: 'Buffer',
-        // TODO: for ERC4626 fetch the wrap/unwrap rate
-        rate: token.rate,
-        poolAddress: token.mainToken,
-        tokens: [token.mainToken, token.underlyingToken], // staticToken & underlying
+        rate: pool.erc4626Rates[token.index] as bigint,
+        poolAddress: wrappedToken,
+        tokens: [wrappedToken, underlyingToken],
+      },
+    };
+  }
+
+  getUnwrapStepNested(pool: PoolState, token: TokenInfo): Step {
+    this.validateNestedUnderlyingToken(pool, token.index);
+
+    const underlyingToken = pool.tokensUnderlying[token.index] as string;
+    const nestedUnderlyingToken = pool.tokensNestedERC4626Underlying[
+      token.index
+    ] as string;
+
+    return {
+      pool: underlyingToken,
+      isBuffer: true,
+      swapInput: {
+        tokenIn: underlyingToken,
+        tokenOut: nestedUnderlyingToken,
+      },
+      poolState: {
+        poolType: 'Buffer',
+        rate: pool.erc4626NestedRates[token.index] as bigint,
+        poolAddress: underlyingToken,
+        tokens: [nestedUnderlyingToken, underlyingToken],
+      },
+    };
+  }
+
+  getUnwrapStep(pool: PoolState, token: TokenInfo): Step {
+    this.validateUnderlyingToken(pool, token.index);
+
+    const wrappedToken = pool.tokens[token.index];
+    const underlyingToken = pool.tokensUnderlying[token.index] as string;
+
+    return {
+      pool: wrappedToken,
+      isBuffer: true,
+      swapInput: {
+        tokenIn: wrappedToken,
+        tokenOut: underlyingToken,
+      },
+      poolState: {
+        poolType: 'Buffer',
+        rate: pool.erc4626Rates[token.index] as bigint,
+        poolAddress: wrappedToken,
+        tokens: [wrappedToken, underlyingToken],
       },
     };
   }
 
   getSwapStep(pool: PoolState, tokenIn: TokenInfo, tokenOut: TokenInfo): Step {
-    // A normal swap between two tokens in a pool
     return {
       pool: pool.poolAddress,
       isBuffer: false,
       swapInput: {
-        tokenIn: tokenIn.mainToken,
-        tokenOut: tokenOut.mainToken,
+        tokenIn: pool.tokens[tokenIn.index],
+        tokenOut: pool.tokens[tokenOut.index],
       },
       poolState: pool,
     };
