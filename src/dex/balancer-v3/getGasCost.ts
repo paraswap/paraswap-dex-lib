@@ -14,15 +14,7 @@ const PARTIAL_BOOSTED_SWAP_GAS_COST = 259815;
 const BUFFER_WRAP_UNWRAP_GAS_COST = 155921;
 
 export function getGasCost(steps: Step[]): number {
-  if (steps.length === 2) {
-    // Partial boosted/buffer swap:
-    // token[wrap]wrappedToken[swap]wrappedToken or
-    // wrappedToken[swap]wrappedToken[unwrap]token
-    return PARTIAL_BOOSTED_SWAP_GAS_COST;
-  } else if (steps.length === 3) {
-    // Full boosted/buffer swap: token[wrap]wrappedToken[swap]wrappedToken[unwrap]token
-    return FULL_BOOSTED_SWAP_GAS_COST;
-  } else {
+  if (steps.length === 1) {
     switch (steps[0].poolState.poolType) {
       case 'WEIGHTED':
         return WEIGHTED_GAS_COST;
@@ -33,5 +25,18 @@ export function getGasCost(steps: Step[]): number {
       default:
         return WEIGHTED_GAS_COST;
     }
+  } else if (steps.length === 2) {
+    // Partial boosted/buffer swap:
+    // token[wrap]wrappedToken[swap]wrappedToken or
+    // wrappedToken[swap]wrappedToken[unwrap]token
+    return PARTIAL_BOOSTED_SWAP_GAS_COST;
+  } else if (steps.length === 3) {
+    // Full boosted/buffer swap: token[wrap]wrappedToken[swap]wrappedToken[unwrap]token
+    return FULL_BOOSTED_SWAP_GAS_COST;
+  } else {
+    return (
+      FULL_BOOSTED_SWAP_GAS_COST +
+      (steps.length - 3) * BUFFER_WRAP_UNWRAP_GAS_COST
+    );
   }
 }
