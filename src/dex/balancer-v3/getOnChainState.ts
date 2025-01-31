@@ -86,7 +86,7 @@ const poolOnChain: Record<
       poolAddress: string,
       data: any,
       startIndex: number,
-    ): Omit<CommonMutableState, 'erc4626Rates'> => {
+    ): Omit<CommonMutableState, 'erc4626Rates' | 'erc4626NestedRates'> => {
       const resultTokenRates = decodeThrowError(
         contractInterface,
         'getPoolTokenRates',
@@ -267,8 +267,17 @@ export function getErc4626MultiCallData(
   // We want to query rate for each unique ERC4626 token
   const uniqueErc4626Tokens = Array.from(
     new Set(
-      Object.values(immutablePoolStateMap).flatMap(pool =>
-        pool.tokens.filter((_, index) => pool.tokensUnderlying[index] !== null),
+      Object.values(immutablePoolStateMap).flatMap(
+        pool =>
+          [
+            // Get tokens with corresponding non-null tokensUnderlying
+            ...pool.tokens.filter(
+              (_, index) => pool.tokensUnderlying[index] !== null,
+            ),
+            ...pool.tokensUnderlying.filter(
+              (_, index) => pool.tokensNestedERC4626Underlying[index] !== null,
+            ),
+          ] as string[],
       ),
     ),
   );
@@ -390,6 +399,10 @@ export async function getOnChainState(
           ...poolMutableData,
           erc4626Rates: pool.tokens.map(t => {
             if (!tokensWithRates[t]) return null;
+            return tokensWithRates[t];
+          }),
+          erc4626NestedRates: pool.tokensUnderlying.map(t => {
+            if (!t || !tokensWithRates[t]) return null;
             return tokensWithRates[t];
           }),
         },
