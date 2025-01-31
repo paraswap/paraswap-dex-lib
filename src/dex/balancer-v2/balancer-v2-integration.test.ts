@@ -697,29 +697,41 @@ describe('BalancerV2', function () {
     });
 
     describe('WETH / USDC', () => {
-      const gyroEAddr = '0x4c42b5057a8663e2b1ac21685d1502c937a03817';
+      const gyroEAddr = '0x1a63b425600d775a1e1bfc212f021273812c3b16';
 
       it('SELL WETH -> USDC getPoolIdentifiers and getPricesVolume', async function () {
         const network = Network.BASE;
 
         const dexHelper = new DummyDexHelper(network);
-        const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-        // const blocknumber = 19425305;
+        // const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        const blocknumber = 25726105;
         const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
         const tokens = Tokens[network];
 
+        console.log('BLOCK NUMBER: ', blocknumber);
+
         const amounts = [
           0n,
-          BI_POWS[18],
-          2n * BI_POWS[18],
-          3n * BI_POWS[18],
-          4n * BI_POWS[18],
-          5n * BI_POWS[18],
-          6n * BI_POWS[18],
-          7n * BI_POWS[18],
-          8n * BI_POWS[18],
-          9n * BI_POWS[18],
-          10n * BI_POWS[18],
+
+          // 1000000000000n, // works
+          // 1200000000000n, // works
+          // 3900000000000n, // works
+          4000000000000n, // not working
+
+          // 19000000000000n, // not working
+          // 4248000000000000n, // not working
+          // 16941024000000000000n,
+
+          // 19000000000000n, // not working
+          // 20000000000000n, // not working
+          // 30000000000000n, // not working
+
+          // 200000000000n,
+          // 900000000000000n,
+          // 20000000000000n,
+          // 0000000000000n,
+          // 900000000000000n,
+          // 1000000000000000n,
         ];
 
         await balancerV2.initializePricing(blocknumber);
@@ -754,6 +766,9 @@ describe('BalancerV2', function () {
         const isPoolPrice = poolPrices!.find(price =>
           price.data.poolId.includes(gyroEAddr),
         );
+
+        // console.log('isPoolPrice: ', isPoolPrice);
+
         expect(isPoolPrice).toBeDefined();
 
         const onChainPrices = await getOnChainPricingForWeightedPool(
