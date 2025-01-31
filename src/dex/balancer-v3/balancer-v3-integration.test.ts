@@ -205,8 +205,27 @@ async function checkOnChainPricingNonMulti(
         price,
         amounts,
       );
-    expect(price.prices).toEqual(expectedPrices);
+    price.prices.forEach((p, i) => {
+      expect(areBigIntsWithinPercent(p, expectedPrices[i], 0.001)).toEqual(
+        true,
+      );
+    });
   }
+}
+
+// Helper function to check if two BigInts are within a given percentage
+export function areBigIntsWithinPercent(
+  value1: bigint,
+  value2: bigint,
+  percent: number,
+): boolean {
+  if (percent < 0) {
+    throw new Error('Percent must be non-negative');
+  }
+  const difference = value1 > value2 ? value1 - value2 : value2 - value1;
+  const percentFactor = BigInt(Math.floor(percent * 1e8));
+  const tolerance = (value2 * percentFactor) / BigInt(1e10);
+  return difference <= tolerance;
 }
 
 async function testPricingOnNetwork(
@@ -901,7 +920,7 @@ describe('BalancerV3', function () {
       Note for maths: Instead of manually adding support for each ERC4626 implementation (e.g. stata with Ray maths) we always use an 
       18 decimal scaled rate and do 18 decimal maths to convert. We may end up loosing 100% accuracy but thats deemed acceptable.
       */
-      describe.only('Buffer wrap 6decimal>18decimal', () => {
+      describe('Buffer wrap 6decimal>18decimal', () => {
         const dexHelper = new DummyDexHelper(network);
 
         const tokens = Tokens[network];
@@ -1013,6 +1032,120 @@ describe('BalancerV3', function () {
         const tokens = Tokens[network];
         const srcTokenSymbol = 'wUSDL';
         const destTokenSymbol = 'USDC';
+
+        const amountsForSell = [
+          0n,
+          1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        ];
+
+        const amountsForBuy = [
+          0n,
+          1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        ];
+
+        beforeAll(async () => {
+          blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+          if (balancerV3.initializePricing) {
+            await balancerV3.initializePricing(blockNumber);
+          }
+        });
+
+        it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.SELL,
+            amountsForSell,
+          );
+        });
+
+        it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.BUY,
+            amountsForBuy,
+          );
+        });
+      });
+    });
+
+    describe('Nested ERC4626', () => {
+      /*
+      Pool has csUSDL which has nested ERC4626. USDL swaps can be enabled by simply adding extra buffer step.
+      https://balancer.fi/pools/ethereum/v3/0x10a04efba5b880e169920fd4348527c64fb29d4d
+      csUSDC: 0x7204b7dbf9412567835633b6f00c3edc3a8d6330
+        - USDC: 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+      csUSDL: 0xbeefc011e94f43b8b7b455ebab290c7ab4e216f1
+        - wUSDL: 0x7751e2f4b8ae93ef6b79d86419d42fe3295a4559
+          - USDL: 0xbdc7c08592ee4aa51d06c27ee23d5087d65adbcd
+      */
+      describe('Nested underlying as token in', () => {
+        const dexHelper = new DummyDexHelper(network);
+
+        const tokens = Tokens[network];
+        const srcTokenSymbol = 'USDL';
+        const destTokenSymbol = 'USDC';
+
+        const amountsForSell = [
+          0n,
+          1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        ];
+
+        const amountsForBuy = [
+          0n,
+          1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        ];
+
+        beforeAll(async () => {
+          blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+          balancerV3 = new BalancerV3(network, dexKey, dexHelper);
+          if (balancerV3.initializePricing) {
+            await balancerV3.initializePricing(blockNumber);
+          }
+        });
+
+        it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.SELL,
+            amountsForSell,
+          );
+        });
+
+        it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+          await testPricingOnNetwork(
+            balancerV3,
+            network,
+            dexKey,
+            blockNumber,
+            srcTokenSymbol,
+            destTokenSymbol,
+            SwapSide.BUY,
+            amountsForBuy,
+          );
+        });
+      });
+      describe('Nested underlying as token out', () => {
+        const dexHelper = new DummyDexHelper(network);
+
+        const tokens = Tokens[network];
+        const srcTokenSymbol = 'USDC';
+        const destTokenSymbol = 'USDL';
 
         const amountsForSell = [
           0n,

@@ -581,6 +581,21 @@ export const Tokens: {
       decimals: 6,
       symbol: 'USUALM',
     },
+    USDL: {
+      address: '0xbdC7c08592Ee4aa51D06C27Ee23D5087D65aDbcD',
+      decimals: 18,
+      symbol: 'USDL',
+    },
+    csUSDL: {
+      address: '0xbEeFc011e94f43b8B7b455eBaB290C7Ab4E216f1',
+      decimals: 18,
+      symbol: 'csUSDL',
+    },
+    csUSDC: {
+      address: '0x7204b7dbf9412567835633b6f00c3edc3a8d6330',
+      decimals: 18,
+      symbol: 'csUSDC',
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
