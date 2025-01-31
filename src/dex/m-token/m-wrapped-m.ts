@@ -23,7 +23,7 @@ export const MWrappedMConfig: DexConfigMap<DexParams> = {
       },
       toToken: {
         // WrappedM Token
-        address: '0x437cc33344a0b27a429f795ff6b469c72698b291',
+        address: '0x437cc33344a0B27A429f795ff6B469C72698B291',
         decimals: 6,
       },
     },
