@@ -16,12 +16,12 @@ import WRAPPED_M_ABI from '../../abi/m-token/WrappedM.abi.json';
 export const MWrappedMConfig: DexConfigMap<DexParams> = {
   MWrappedM: {
     [Network.MAINNET]: {
-      fromToken: {
+      MTOKEN: {
         // M Token
         address: '0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b',
         decimals: 6,
       },
-      toToken: {
+      WRAPPEDM: {
         // WrappedM Token
         address: '0x437cc33344a0B27A429f795ff6B469C72698B291',
         decimals: 6,
@@ -73,7 +73,7 @@ export class MWrappedM extends MToken {
       needWrapNative: false,
       dexFuncHasRecipient: true,
       exchangeData,
-      targetExchange: this.config.toToken.address,
+      targetExchange: this.config.WRAPPEDM.address,
       returnAmountPos: undefined,
     };
   }

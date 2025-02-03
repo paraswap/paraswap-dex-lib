@@ -113,7 +113,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     data: MTokenData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const exchange = this.config.toToken.address;
+    const exchange = this.config.WRAPPEDM.address;
     const payload = '0x';
 
     return {
@@ -137,10 +137,9 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     limit: number,
   ): Promise<PoolLiquidity[]> {
     const isFromOrigin =
-      tokenAddress.toLowerCase() ===
-      this.config.fromToken.address.toLowerCase();
+      tokenAddress.toLowerCase() === this.config.MTOKEN.address.toLowerCase();
     const isToOrigin =
-      tokenAddress.toLowerCase() === this.config.toToken.address.toLowerCase();
+      tokenAddress.toLowerCase() === this.config.WRAPPEDM.address.toLowerCase();
 
     if (!(isFromOrigin || isToOrigin)) {
       return [];
@@ -149,9 +148,9 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     return [
       {
         exchange: this.dexKey,
-        address: this.config.toToken.address,
+        address: this.config.WRAPPEDM.address,
         connectorTokens: [
-          isFromOrigin ? this.config.toToken : this.config.fromToken,
+          isFromOrigin ? this.config.WRAPPEDM : this.config.MTOKEN,
         ],
         liquidityUSD: 1000000000, // Returning a big number to prefer this DEX
       },
@@ -165,9 +164,9 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
   ensureOrigin(args: Partial<{ from: Token; to: Token }>): boolean {
     return (
       args?.from?.address.toLowerCase() ===
-        this.config.fromToken.address.toLowerCase() &&
+        this.config.MTOKEN.address.toLowerCase() &&
       args?.to?.address.toLowerCase() ===
-        this.config.toToken.address.toLowerCase()
+        this.config.WRAPPEDM.address.toLowerCase()
     );
   }
 }
