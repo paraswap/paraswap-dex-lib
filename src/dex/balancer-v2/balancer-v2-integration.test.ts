@@ -703,8 +703,8 @@ describe('BalancerV2', function () {
         const network = Network.BASE;
 
         const dexHelper = new DummyDexHelper(network);
-        // const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-        const blocknumber = 25726105;
+        const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        // const blocknumber = 25726105;
         const balancerV2 = new BalancerV2(network, dexKey, dexHelper);
         const tokens = Tokens[network];
 
@@ -712,26 +712,10 @@ describe('BalancerV2', function () {
 
         const amounts = [
           0n,
-
-          // 1000000000000n, // works
-          // 1200000000000n, // works
-          // 3900000000000n, // works
-          4000000000000n, // not working
-
-          // 19000000000000n, // not working
-          // 4248000000000000n, // not working
-          // 16941024000000000000n,
-
-          // 19000000000000n, // not working
-          // 20000000000000n, // not working
-          // 30000000000000n, // not working
-
-          // 200000000000n,
-          // 900000000000000n,
-          // 20000000000000n,
-          // 0000000000000n,
-          // 900000000000000n,
-          // 1000000000000000n,
+          1000000000000n, // works
+          1200000000000n, // works
+          // 3900000000000n, // not working
+          // 4000000000000n, // not working
         ];
 
         await balancerV2.initializePricing(blocknumber);
@@ -767,7 +751,7 @@ describe('BalancerV2', function () {
           price.data.poolId.includes(gyroEAddr),
         );
 
-        // console.log('isPoolPrice: ', isPoolPrice);
+        console.log('isPoolPrice: ', isPoolPrice);
 
         expect(isPoolPrice).toBeDefined();
 
