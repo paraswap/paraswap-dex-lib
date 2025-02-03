@@ -581,6 +581,14 @@ export const Tokens: {
       decimals: 6,
       symbol: 'USUALM',
     },
+    stataEthWETH: {
+      address: '0x252231882FB38481497f3C767469106297c8d93b',
+      decimals: 18,
+    },
+    waEthWETH: {
+      address: '0x0bfc9d54Fc184518A81162F8fB99c2eACa081202',
+      decimals: 18,
+    },
   },
   [Network.POLYGON]: {
     jGBP: {
