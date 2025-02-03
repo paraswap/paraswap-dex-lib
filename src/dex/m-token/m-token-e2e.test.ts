@@ -25,19 +25,24 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
       describe(`${side}`, () => {
+        const isSell = side === SwapSide.SELL;
+
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                // Changing the source here for AugustV6 to fund the sender account with MToken for SELL (M->WrappedM)
+                // and WrappedM for BUY (WrappedM->M). This is to ensure that the sender account has enough balance for testing
+                isSell ? tokens[tokenASymbol] : tokens[tokenBSymbol],
+                isSell ? tokens[tokenBSymbol] : tokens[tokenASymbol],
+                isSell ? holders[tokenASymbol] : holders[tokenBSymbol],
+                isSell ? tokenAAmount : tokenBAmount,
                 side,
                 dexKey,
                 contractMethod,
