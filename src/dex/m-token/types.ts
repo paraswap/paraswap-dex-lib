@@ -5,6 +5,6 @@ import { Address } from '../../types';
 export type MTokenData = {};
 
 export type DexParams = {
-  fromToken: { address: Address; decimals: number };
-  toToken: { address: Address; decimals: number };
+  MTOKEN: { address: Address; decimals: number };
+  WRAPPEDM: { address: Address; decimals: number };
 };
