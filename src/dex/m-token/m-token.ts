@@ -59,7 +59,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
       return [];
     }
 
-    return [`${this.dexKey}_${to.address}`];
+    return [`${this.dexKey}_${this.config.WRAPPEDM.address}`];
   }
 
   // Returns pool prices for amounts.
@@ -74,8 +74,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<MTokenData>> {
-    // TODO: Enable bi-directional swap?
-    if (side === SwapSide.BUY || !this.ensureOrigin({ from, to })) {
+    if (!this.ensureOrigin({ from, to })) {
       return null;
     }
 
@@ -88,7 +87,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
         unit: unitOut,
         prices: amounts,
         data: {},
-        poolAddresses: [to.address],
+        poolAddresses: [this.config.WRAPPEDM.address],
         exchange: this.dexKey,
         gasCost: 70000,
         poolIdentifier: this.dexKey,
@@ -136,22 +135,18 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const isFromOrigin =
-      tokenAddress.toLowerCase() === this.config.MTOKEN.address.toLowerCase();
-    const isToOrigin =
-      tokenAddress.toLowerCase() === this.config.WRAPPEDM.address.toLowerCase();
-
-    if (!(isFromOrigin || isToOrigin)) {
+    if (!this.isMOrWrappedM(tokenAddress)) {
       return [];
     }
+
+    const isM =
+      tokenAddress.toLowerCase() === this.config.MTOKEN.address.toLowerCase();
 
     return [
       {
         exchange: this.dexKey,
         address: this.config.WRAPPEDM.address,
-        connectorTokens: [
-          isFromOrigin ? this.config.WRAPPEDM : this.config.MTOKEN,
-        ],
+        connectorTokens: [isM ? this.config.WRAPPEDM : this.config.MTOKEN],
         liquidityUSD: 1000000000, // Returning a big number to prefer this DEX
       },
     ];
@@ -161,12 +156,23 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
   // you need to release for graceful shutdown. For example, it may be any interval timer
   releaseResources(): AsyncOrSync<void> {}
 
-  ensureOrigin(args: Partial<{ from: Token; to: Token }>): boolean {
+  // Checks if the token addresses is M or WrappedM
+  isMOrWrappedM(tokenAddress: Address): boolean {
     return (
-      args?.from?.address.toLowerCase() ===
-        this.config.MTOKEN.address.toLowerCase() &&
-      args?.to?.address.toLowerCase() ===
-        this.config.WRAPPEDM.address.toLowerCase()
+      tokenAddress.toLowerCase() === this.config.MTOKEN.address.toLowerCase() ||
+      tokenAddress.toLowerCase() === this.config.WRAPPEDM.address.toLowerCase()
+    );
+  }
+
+  // Ensures that the token addresses are correct
+  ensureOrigin(args: Partial<{ from: Token; to: Token }>): boolean {
+    const areDifferentAddresses =
+      args?.from?.address?.toLowerCase() !== args?.to?.address?.toLowerCase();
+
+    return (
+      areDifferentAddresses &&
+      this.isMOrWrappedM(args?.from?.address || '') &&
+      this.isMOrWrappedM(args?.to?.address || '')
     );
   }
 }

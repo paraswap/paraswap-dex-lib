@@ -1,4 +1,4 @@
-import { Network } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { getDexKeysWithNetwork } from '../../utils';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { MToken } from './m-token';
@@ -17,12 +17,10 @@ export const MWrappedMConfig: DexConfigMap<DexParams> = {
   MWrappedM: {
     [Network.MAINNET]: {
       MTOKEN: {
-        // M Token
         address: '0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b',
         decimals: 6,
       },
       WRAPPEDM: {
-        // WrappedM Token
         address: '0x437cc33344a0B27A429f795ff6B469C72698B291',
         decimals: 6,
       },
@@ -53,6 +51,8 @@ export class MWrappedM extends MToken {
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     recipient: Address,
+    data: {},
+    side: SwapSide,
   ): Promise<DexExchangeParam> {
     if (
       !this.ensureOrigin({
@@ -63,11 +63,15 @@ export class MWrappedM extends MToken {
       throw new Error('Unexpected token addresses');
     }
 
-    // TODO: Enable bi-directional swap?
-    const exchangeData = this.wrappedMInterface.encodeFunctionData(
-      'wrap(address, uint256)',
-      [recipient, srcAmount],
-    );
+    const fn =
+      side === SwapSide.SELL
+        ? 'wrap(address, uint256)'
+        : 'unwrap(address, uint256)';
+
+    const exchangeData = this.wrappedMInterface.encodeFunctionData(fn, [
+      recipient,
+      srcAmount,
+    ]);
 
     return {
       needWrapNative: false,
