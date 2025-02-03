@@ -1046,6 +1046,7 @@ export const testGasEstimation = async (
   swapSide: SwapSide,
   dexKeys: string | string[],
   contractMethod: ContractMethod,
+  route?: string[],
   targetDifference?: number,
 ) => {
   assert(
@@ -1062,8 +1063,17 @@ export const testGasEstimation = async (
     amount,
     swapSide,
     contractMethod,
+    undefined,
+    undefined,
+    route,
   );
-  console.log({ priceRoute });
+  // make sure fetched route uses correct `contractMethod`
+  assert(
+    priceRoute.contractMethod === contractMethod,
+    'Price route has incorrect contract method!',
+  );
+  // log the route for visibility
+  console.log({ priceRoute: JSON.stringify(priceRoute, null, 2) });
   // prepare state overrides
   const tenderlySimulator = TenderlySimulatorNew.getInstance();
   // any address works
