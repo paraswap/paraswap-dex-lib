@@ -111,6 +111,9 @@ const disabledPoolIds = [
   // broken ?
   '0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6',
 
+  //base
+  '0x1a63b425600d775a1e1bfc212f021273812c3b160002000000000000000001a7', // re-enable this pool when https://github.com/balancer/balancer-sor/pull/436 is merged and published
+
   /* DISABLED POOLS SINCE VULNERABILITY https://github.com/BalancerMaxis/multisig-ops/blob/main/BIPs/00notGov/2023-08-mitigation.md*/
   /* START:2023-08-mitigation */
   //mainnet
