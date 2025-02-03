@@ -43,6 +43,23 @@ class DummyCache implements ICache {
     return null;
   }
 
+  async keys(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<string[]> {
+    return [];
+  }
+
+  async ttl(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<number> {
+    const key = `${network}_${dexKey}_${cacheKey}`.toLowerCase();
+    return this.storage[key] ? 1 : -1;
+  }
+
   async rawget(key: string): Promise<string | null> {
     return this.storage[key] ? this.storage[key] : null;
     return null;
@@ -137,6 +154,10 @@ class DummyCache implements ICache {
     }
 
     return set.has(key);
+  }
+
+  async smembers(setKey: string): Promise<string[]> {
+    return Array.from(this.setMap[setKey] ?? []);
   }
 
   async hset(mapKey: string, key: string, value: string): Promise<void> {

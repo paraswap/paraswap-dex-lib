@@ -58,6 +58,7 @@ import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
 import { curveV1Merge } from './curve-v1-factory/optimizer';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
+import { WUSDM } from './wusdm/wusdm';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { Infusion } from './infusion/infusion';
@@ -76,6 +77,7 @@ import { AngleStakedStable } from './angle-staked-stable/angle-staked-stable';
 import { QuickPerps } from './quick-perps/quick-perps';
 import { NomiswapV2 } from './uniswap-v2/nomiswap-v2';
 import { Dexalot } from './dexalot/dexalot';
+import { Bebop } from './bebop/bebop';
 import { Wombat } from './wombat/wombat';
 import { Swell } from './swell/swell';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
@@ -83,15 +85,24 @@ import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
+import { AaveV3StataV2 } from './aave-v3-stata-v2/aave-v3-stata-v2';
 import { OSwap } from './oswap/oswap';
+import { FluidDex } from './fluid-dex/fluid-dex';
 import { ConcentratorArusd } from './concentrator-arusd/concentrator-arusd';
 import { FxProtocolRusd } from './fx-protocol-rusd/fx-protocol-rusd';
 import { AaveGsm } from './aave-gsm/aave-gsm';
 import { LitePsm } from './lite-psm/lite-psm';
-import { UsualBond } from './usual-bond/usual-bond';
 import { StkGHO } from './stkgho/stkgho';
+import { BalancerV3 } from './balancer-v3/balancer-v3';
+import { balancerV3Merge } from './balancer-v3/optimizer';
 import { SkyConverter } from './sky-converter/sky-converter';
 import { Yieldnest } from './yieldnest/yieldnest';
+import { Cables } from './cables/cables';
+import { Stader } from './stader/stader';
+import { UsualBond } from './usual/usual-bond';
+import { UsualMWrappedM } from './usual/usual-m-wrapped-m';
+import { UsualMUsd0 } from './usual/usual-m-usd0';
+import { UsualPP } from './usual-pp/usual-pp';
 
 const LegacyDexes = [
   CurveV2,
@@ -111,12 +122,15 @@ const LegacyDexes = [
 ];
 
 const Dexes = [
+  Stader,
+  Bebop,
   Dexalot,
   CurveV1,
   CurveFork,
   Swerve,
   BalancerV1,
   BalancerV2,
+  BalancerV3,
   UniswapV2,
   UniswapV3,
   Algebra,
@@ -154,6 +168,7 @@ const Dexes = [
   CurveV1Factory,
   CurveV1StableNg,
   WstETH,
+  WUSDM,
   Hashflow,
   Infusion,
   MaverickV1,
@@ -170,6 +185,7 @@ const Dexes = [
   PharaohV1,
   Spark,
   AaveV3Stata,
+  AaveV3StataV2,
   OSwap,
   ConcentratorArusd,
   FxProtocolRusd,
@@ -179,6 +195,11 @@ const Dexes = [
   StkGHO,
   SkyConverter,
   Yieldnest,
+  Cables,
+  FluidDex,
+  UsualMWrappedM,
+  UsualMUsd0,
+  UsualPP,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
@@ -209,6 +230,7 @@ export class DexAdapterService {
   public routeOptimizers: IRouteOptimizer<UnoptimizedRate>[] = [
     balancerV1Merge,
     balancerV2Merge,
+    balancerV3Merge,
     uniswapMerge,
     curveV1Merge,
   ];

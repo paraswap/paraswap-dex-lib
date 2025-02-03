@@ -62,10 +62,10 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       initCode:
         '0xc1ac28b1c4ebe53c0cff67bab5878c4eb68759bb1e9f73977cd266b247d149f0',
       // updatable fees on the factory without event
-      stableFee: 2,
-      volatileFee: 2,
+      stableFee: 5,
+      volatileFee: 5,
       poolGasCost: 180 * 1000,
-      feeCode: 2,
+      feeCode: 5,
     },
   },
   VelodromeV2: {
@@ -84,6 +84,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       // There is no subgraph for Aerodrome
       factoryAddress: '0x420DD381b31aEf6683db6B902084cB0FFECe40Da',
       router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
+      subgraphURL: '7uEwiKmfbRQqV8Ec9nvdKrMFVFQv5qaM271gdBvHtywj',
       initCode:
         '0x1a8f01f7eab324003d9388f229ea17991eee9c9d14586f429799f3656790eba0',
       poolGasCost: 180 * 1000,

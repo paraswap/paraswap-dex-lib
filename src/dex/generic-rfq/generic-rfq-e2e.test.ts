@@ -85,7 +85,8 @@ const buildConfigForGenericRFQ = (): RFQConfig => {
   };
 };
 
-const SKIP_TENDERLY = !!getEnv('GENERIC_RFQ_SKIP_TENDERLY', true);
+const SKIP_TENDERLY =
+  (process.env.GENERIC_RFQ_SKIP_TENDERLY ?? 'true') === 'true';
 const dexKey = 'YOUR_NAME';
 
 describe(`GenericRFQ ${dexKey} E2E`, () => {
@@ -114,8 +115,8 @@ describe(`GenericRFQ ${dexKey} E2E`, () => {
               `Please add "addBalance" and "addAllowance" functions for ${testCase.destToken} on ${Network[network]} (in constants-e2e.ts).`,
             );
           }
-          srcToken = smartTokens[testCase.srcToken];
-          destToken = smartTokens[testCase.destToken];
+          srcToken = new SmartToken(tokens[testCase.srcToken]);
+          destToken = new SmartToken(tokens[testCase.destToken]);
 
           srcToken.addBalance(testAccount.address, MAX_UINT);
           srcToken.addAllowance(
@@ -133,8 +134,8 @@ describe(`GenericRFQ ${dexKey} E2E`, () => {
         }
         const contractMethod =
           testCase.swapSide === SwapSide.BUY
-            ? ContractMethod.swapExactAmountInOutOnAugustusRFQTryBatchFill
-            : ContractMethod.swapExactAmountInOutOnAugustusRFQTryBatchFill;
+            ? ContractMethod.swapOnAugustusRFQTryBatchFill
+            : ContractMethod.swapOnAugustusRFQTryBatchFill;
         describe(`${contractMethod}`, () => {
           it(`${testCase.swapSide} ${testCase.srcToken} -> ${testCase.destToken}`, async () => {
             await newTestE2E({

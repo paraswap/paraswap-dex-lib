@@ -16,6 +16,7 @@ import { OptimalRate } from '@paraswap/core';
 import BigNumber from 'bignumber.js';
 import { RFQConfig } from './dex/generic-rfq/types';
 import { Executors, Flag, SpecialDex } from './executor/types';
+import { NeedWrapNativeFunc } from './dex/idex';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -158,7 +159,7 @@ export type AdapterExchangeParam = {
 };
 
 export type DexExchangeParam = {
-  needWrapNative: boolean;
+  needWrapNative: boolean | NeedWrapNativeFunc;
   skipApproval?: boolean;
   wethAddress?: string;
   exchangeData: string;
@@ -172,14 +173,21 @@ export type DexExchangeParam = {
   swappedAmountNotPresentInExchangeData?: boolean;
   preSwapUnwrapCalldata?: string;
   returnAmountPos: number | undefined;
+  insertFromAmountPos?: number;
+  permit2Approval?: boolean;
 };
 
-export type DexExchangeBuildParam = DexExchangeParam & {
-  approveData?: {
-    target: Address;
-    token: Address;
-  };
+export type DexExchangeParamWithBooleanNeedWrapNative = DexExchangeParam & {
+  needWrapNative: boolean;
 };
+
+export type DexExchangeBuildParam =
+  DexExchangeParamWithBooleanNeedWrapNative & {
+    approveData?: {
+      target: Address;
+      token: Address;
+    };
+  };
 
 export type AdapterMappings = {
   [side: string]: { name: string; index: number }[];
@@ -288,7 +296,7 @@ export type Config = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
-  augustusV6Address?: Address;
+  augustusV6Address: Address;
   augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
@@ -304,6 +312,8 @@ export type Config = {
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
+  bebopAuthName?: string;
+  bebopAuthToken?: string;
   idleDaoAuthToken?: string;
   forceRpcFallbackDexs: string[];
   apiKeyTheGraph: string;

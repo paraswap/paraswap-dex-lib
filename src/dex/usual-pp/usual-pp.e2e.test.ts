@@ -3,11 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
@@ -56,17 +52,17 @@ function testForNetwork(
   });
 }
 
-describe('UsualBond E2E', () => {
-  const dexKey = 'UsualBond';
+describe('UsualPP E2E', () => {
+  const dexKey = 'UsualPP';
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USD0';
-    const tokenBSymbol: string = 'USD0++';
+    const tokenASymbol: string = 'USD0++';
+    const tokenBSymbol: string = 'USD0';
 
-    const tokenAAmount: string = '100000';
-    const tokenBAmount: string = '100000';
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
 
     testForNetwork(
       network,

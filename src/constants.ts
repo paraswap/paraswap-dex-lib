@@ -7,6 +7,9 @@ export const PORT_TEST_SERVER = process.env.TEST_PORT;
 export const ETHER_ADDRESS =
   '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'.toLowerCase();
 
+// address is the same on all chains
+export const PERMIT2_ADDRESS = '0x000000000022d473030f116ddee9f6b43ac78ba3';
+
 export const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export const CACHE_PREFIX = 'dl';
@@ -41,6 +44,8 @@ export enum Network {
   ARBITRUM = 42161,
   OPTIMISM = 10,
   BASE = 8453,
+  SEPOLIA = 11155111,
+  GNOSIS = 100,
 }
 export const SUBGRAPH_TIMEOUT = 20 * 1000;
 

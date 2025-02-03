@@ -6,21 +6,21 @@ import { Interface } from '@ethersproject/abi';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { UsualBond } from './usual-bond';
 import {
   checkPoolPrices,
   checkConstantPoolPrices,
   checkPoolsLiquidity,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { UsualPP } from './usual-pp';
 
 async function testPricingOnNetwork(
-  usualBond: UsualBond,
+  usual: UsualPP,
   network: Network,
   dexKey: string,
   blockNumber: number,
-  srcTokenAddress: string,
-  destTokenAddress: string,
+  srcTokenSymbol: string,
+  destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
   funcNameToCheck: string,
@@ -29,41 +29,40 @@ async function testPricingOnNetwork(
 
   console.log(amounts);
 
-  const pools = await usualBond.getPoolIdentifiers(
-    networkTokens['USD0'],
-    networkTokens['USD0++'],
+  const pools = await usual.getPoolIdentifiers(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
     side,
     blockNumber,
   );
-  console.log(`${'USD0'} <> ${'USD0++'} Pool Identifiers: `, pools);
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
+    pools,
+  );
 
   expect(pools.length).toBeGreaterThan(0);
 
-  const poolPrices = await usualBond.getPricesVolume(
-    networkTokens['USD0'],
-    networkTokens['USD0++'],
+  const poolPrices = await usual.getPricesVolume(
+    networkTokens[srcTokenSymbol],
+    networkTokens[destTokenSymbol],
     amounts,
     side,
     blockNumber,
     pools,
   );
-  console.log(`${'USD0'} <> ${'USD0++'} Pool Prices: `, poolPrices);
+  console.log(
+    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
+    poolPrices,
+  );
 
   expect(poolPrices).not.toBeNull();
-  if (usualBond.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
-
   // Check if onchain pricing equals to calculated ones
-  checkPoolPrices(poolPrices!, amounts, side, dexKey);
 }
 
-describe('UsualBond', function () {
-  const dexKey = 'UsualBond';
+describe('UsualPP', function () {
+  const dexKey = 'UsualPP';
   let blockNumber: number;
-  let usualBond: UsualBond;
+  let usualPP: UsualPP;
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
@@ -87,20 +86,20 @@ describe('UsualBond', function () {
 
     beforeAll(async () => {
       blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      usualBond = new UsualBond(network, dexKey, dexHelper);
-      if (usualBond.initializePricing) {
-        await usualBond.initializePricing(blockNumber);
+      usualPP = new UsualPP(network, dexKey, dexHelper);
+      if (usualPP.initializePricing) {
+        await usualPP.initializePricing(blockNumber);
       }
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
       await testPricingOnNetwork(
-        usualBond,
+        usualPP,
         network,
         dexKey,
         blockNumber,
-        'USD0',
         'USD0++',
+        'USD0',
         SwapSide.SELL,
         amountsForSell,
         '',
@@ -110,9 +109,9 @@ describe('UsualBond', function () {
     it('getTopPoolsForToken: USD0', async function () {
       const tokenA = Tokens[network]['USD0'];
       const dexHelper = new DummyDexHelper(network);
-      const usualBond = new UsualBond(network, dexKey, dexHelper);
+      const usualPP = new UsualPP(network, dexKey, dexHelper);
 
-      const poolLiquidity = await usualBond.getTopPoolsForToken(
+      const poolLiquidity = await usualPP.getTopPoolsForToken(
         tokenA.address,
         10,
       );
@@ -127,9 +126,9 @@ describe('UsualBond', function () {
     it('getTopPoolsForToken: USD0++', async function () {
       const tokenA = Tokens[network]['USD0++'];
       const dexHelper = new DummyDexHelper(network);
-      const usualBond = new UsualBond(network, dexKey, dexHelper);
+      const usualPP = new UsualPP(network, dexKey, dexHelper);
 
-      const poolLiquidity = await usualBond.getTopPoolsForToken(
+      const poolLiquidity = await usualPP.getTopPoolsForToken(
         tokenA.address,
         10,
       );

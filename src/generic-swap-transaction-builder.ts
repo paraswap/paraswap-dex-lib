@@ -2,6 +2,7 @@ import {
   Address,
   DexExchangeBuildParam,
   DexExchangeParam,
+  DexExchangeParamWithBooleanNeedWrapNative,
   OptimalRate,
   OptimalSwap,
   OptimalSwapExchange,
@@ -134,7 +135,7 @@ export class GenericSwapTransactionBuilder {
               executorAddress,
             );
 
-            const dexParams = await dex.getDexParam!(
+            let dexParams = await dex.getDexParam!(
               srcToken,
               destToken,
               side === SwapSide.BUY ? se.srcAmount : srcAmount, // in other case we would not be able to make insert from amount on Ex3
@@ -152,8 +153,16 @@ export class GenericSwapTransactionBuilder {
               executorAddress,
             );
 
+            if (typeof dexParams.needWrapNative === 'function') {
+              dexParams.needWrapNative = dexParams.needWrapNative(
+                priceRoute,
+                swap,
+                se,
+              );
+            }
+
             return {
-              dexParams,
+              dexParams: <DexExchangeParamWithBooleanNeedWrapNative>dexParams,
               wethDeposit,
               wethWithdraw,
             };
@@ -164,7 +173,7 @@ export class GenericSwapTransactionBuilder {
 
     const { exchangeParams, srcAmountWethToDeposit, destAmountWethToWithdraw } =
       await rawDexParams.reduce<{
-        exchangeParams: DexExchangeParam[];
+        exchangeParams: DexExchangeParamWithBooleanNeedWrapNative[];
         srcAmountWethToDeposit: bigint;
         destAmountWethToWithdraw: bigint;
       }>(
@@ -633,7 +642,12 @@ export class GenericSwapTransactionBuilder {
     // should work if the final slippage check passes.
     const _destAmount = side === SwapSide.SELL ? '1' : se.destAmount;
 
-    if (isETHAddress(swap.srcToken) && dex.needWrapNative) {
+    const dexNeedWrapNative =
+      typeof dex.needWrapNative === 'function'
+        ? dex.needWrapNative(priceRoute, swap, se)
+        : dex.needWrapNative;
+
+    if (isETHAddress(swap.srcToken) && dexNeedWrapNative) {
       _src = wethAddress;
       wethDeposit = BigInt(_srcAmount);
     }
@@ -641,11 +655,11 @@ export class GenericSwapTransactionBuilder {
     const forceUnwrap =
       isETHAddress(swap.destToken) &&
       (isMultiSwap || isMegaSwap) &&
-      !dex.needWrapNative &&
+      !dexNeedWrapNative &&
       !isLastSwap;
 
-    if ((isETHAddress(swap.destToken) && dex.needWrapNative) || forceUnwrap) {
-      _dest = forceUnwrap && !dex.needWrapNative ? _dest : wethAddress;
+    if ((isETHAddress(swap.destToken) && dexNeedWrapNative) || forceUnwrap) {
+      _dest = forceUnwrap && !dexNeedWrapNative ? _dest : wethAddress;
       wethWithdraw = BigInt(se.destAmount);
     }
 
@@ -668,12 +682,12 @@ export class GenericSwapTransactionBuilder {
   private async addDexExchangeApproveParams(
     bytecodeBuilder: ExecutorBytecodeBuilder,
     priceRoute: OptimalRate,
-    dexExchangeParams: DexExchangeParam[],
+    dexExchangeParams: DexExchangeParamWithBooleanNeedWrapNative[],
     maybeWethCallData?: DepositWithdrawReturn,
   ): Promise<DexExchangeBuildParam[]> {
     const spender = bytecodeBuilder.getAddress();
     const tokenTargetMapping: {
-      params: [token: Address, target: Address];
+      params: [token: Address, target: Address, permit2: boolean];
       exchangeParamIndex: number;
     }[] = [];
 
@@ -690,7 +704,11 @@ export class GenericSwapTransactionBuilder {
 
           if (approveParams) {
             tokenTargetMapping.push({
-              params: [approveParams.token, approveParams?.target],
+              params: [
+                approveParams.token,
+                approveParams.target,
+                !!curExchangeParam.permit2Approval,
+              ],
               exchangeParamIndex: currentExchangeParamIndex,
             });
           }

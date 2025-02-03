@@ -5,7 +5,10 @@ import {
   OptimalSwap,
   OptimalSwapExchange,
 } from '@paraswap/core';
-import { DexExchangeBuildParam, DexExchangeParam } from '../types';
+import {
+  DexExchangeBuildParam,
+  DexExchangeParamWithBooleanNeedWrapNative,
+} from '../types';
 import { Executors, Flag, SpecialDex } from './types';
 import { isETHAddress } from '../utils';
 import { DepositWithdrawReturn } from '../dex/weth/types';
@@ -103,8 +106,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP; // 0
 
     if (isEthSrc && !needWrap) {
-      dexFlag =
-        Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
+      dexFlag = dexFuncHasRecipient
+        ? Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 9
+        : Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP; // 5
     } else if (isEthDest && !needUnwrap) {
       dexFlag = forcePreventInsertFromAmount
         ? Flag.DONT_INSERT_FROM_AMOUNT_CHECK_ETH_BALANCE_AFTER_SWAP
@@ -330,16 +334,20 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
 
     let fromAmountPos = 0;
     if (insertFromAmount) {
-      const fromAmount = ethers.utils.defaultAbiCoder.encode(
-        ['uint256'],
-        [swapExchange.srcAmount],
-      );
-      const fromAmountIndex = exchangeData
-        .replace('0x', '')
-        .indexOf(fromAmount.replace('0x', ''));
+      if (exchangeParam.insertFromAmountPos) {
+        fromAmountPos = exchangeParam.insertFromAmountPos;
+      } else {
+        const fromAmount = ethers.utils.defaultAbiCoder.encode(
+          ['uint256'],
+          [swapExchange.srcAmount],
+        );
+        const fromAmountIndex = exchangeData
+          .replace('0x', '')
+          .indexOf(fromAmount.replace('0x', ''));
 
-      fromAmountPos =
-        (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
+        fromAmountPos =
+          (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
+      }
     }
 
     return this.buildCallData(
@@ -466,6 +474,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     swap: OptimalSwap,
     swapCallData: string,
     flag: Flag,
+    isRoot = false,
   ) {
     const data = this.packVerticalBranchingData(swapCallData);
 
@@ -477,16 +486,34 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     let destTokenPos: number;
 
     if (isEthDest) {
-      anyDexOnSwapNeedsWrapNative = this.anyDexOnSwapNeedsWrapNative(
-        priceRoute,
-        swap,
-        exchangeParams,
-      );
-      anyDexOnSwapDoesntNeedWrapNative = this.anyDexOnSwapDoesntNeedWrapNative(
-        priceRoute,
-        swap,
-        exchangeParams,
-      );
+      if (!isRoot) {
+        anyDexOnSwapNeedsWrapNative = this.anyDexOnSwapNeedsWrapNative(
+          priceRoute,
+          swap,
+          exchangeParams,
+        );
+        anyDexOnSwapDoesntNeedWrapNative =
+          this.anyDexOnSwapDoesntNeedWrapNative(
+            priceRoute,
+            swap,
+            exchangeParams,
+          );
+      } else {
+        anyDexOnSwapNeedsWrapNative = priceRoute.bestRoute.some(route =>
+          this.anyDexOnSwapNeedsWrapNative(
+            priceRoute,
+            route.swaps[route.swaps.length - 1],
+            exchangeParams,
+          ),
+        );
+        anyDexOnSwapDoesntNeedWrapNative = priceRoute.bestRoute.some(route =>
+          this.anyDexOnSwapDoesntNeedWrapNative(
+            priceRoute,
+            route.swaps[route.swaps.length - 1],
+            exchangeParams,
+          ),
+        );
+      }
     }
 
     if (
@@ -608,6 +635,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         curExchangeParam.approveData.target,
         curExchangeParam.approveData.token,
         flags.approves[exchangeParamIndex],
+        curExchangeParam.permit2Approval,
       );
 
       swapExchangeCallData = hexConcat([approveCallData, swapExchangeCallData]);
@@ -625,6 +653,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
             curExchangeParam.approveData.target,
             curExchangeParam.approveData.token,
             flags.approves[exchangeParamIndex],
+            curExchangeParam.permit2Approval,
           );
         }
 
@@ -1220,7 +1249,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
 
   private doesRouteNeedsRootUnwrapEth(
     priceRoute: OptimalRate,
-    exchangeParams: DexExchangeParam[],
+    exchangeParams: DexExchangeParamWithBooleanNeedWrapNative[],
   ): boolean {
     if (!isETHAddress(priceRoute.destToken)) {
       return false;
@@ -1302,6 +1331,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         needWrapEth
           ? Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP // 0
           : Flag.DONT_INSERT_FROM_AMOUNT_CHECK_SRC_TOKEN_BALANCE_AFTER_SWAP, // 8
+        true, // isRoot branch
       );
     }
 

@@ -617,23 +617,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         },
-        SAAVE: {
-          underlying: [
-            '0x6b175474e89094c44da98b954eedeac495271d0f',
-            '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
-          ],
-          coins: [
-            '0x028171bCA77440897B824Ca71D1c56caC55b68A3',
-            '0x6C5024Cd4F8A59110119C56f8933403A539555EB',
-          ],
-          address: '0xeb16ae0052ed37f479f7fe63849198df1765a733',
-          name: 'SAAVE',
-          type: 2,
-          version: 3,
-          isLending: true,
-          isMetapool: false,
-          baseToken: '0x6b175474e89094c44da98b954eedeac495271d0f',
-        },
         BAC: {
           underlying: [
             '0x3449fc1cd036255ba1eb19d65ff4ba2b8903a69a',
@@ -1025,23 +1008,6 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           isMetapool: false,
           baseToken: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70',
         },
-        Ren: {
-          underlying: [
-            '0x50b7545627a5162F82A992c33b87aDc75187B218',
-            '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
-          ],
-          coins: [
-            '0x686bEF2417b6Dc32C50a3cBfbCC3bb60E1e9a15D',
-            '0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
-          ],
-          address: '0x16a7DA911A4DD1d83F3fF066fE28F3C792C50d90',
-          name: 'ren',
-          type: 2,
-          version: 3,
-          isLending: true,
-          isMetapool: false,
-          baseToken: '0x50b7545627a5162F82A992c33b87aDc75187B218',
-        },
       },
     },
     [Network.ARBITRUM]: {
@@ -1109,6 +1075,42 @@ export const CurveV1Config: DexConfigMap<DexParams> = {
           address: '0x1337BedC9D22ecbe766dF105c9623922A27963EC',
           name: '3pool (3CRV)',
           type: 2,
+          version: 3,
+          isLending: false,
+          isMetapool: false,
+        },
+      },
+    },
+    [Network.GNOSIS]: {
+      baseTokens: {
+        '0xe91d153e0b41518a2ce8dd3d7944fa863463a97d': {
+          address: '0xe91d153e0b41518a2ce8dd3d7944fa863463a97d',
+          decimals: 18,
+          reasonableVolume: 1000000000000000000000n,
+        },
+        '0xddafbb505ad214d7b80b1f830fccc89b60fb7a83': {
+          address: '0xddafbb505ad214d7b80b1f830fccc89b60fb7a83',
+          decimals: 6,
+          reasonableVolume: 1000000000n,
+        },
+        '0x4ecaba5870353805a9f068101a40e0f32ed605c6': {
+          address: '0x4ecaba5870353805a9f068101a40e0f32ed605c6',
+          decimals: 6,
+          reasonableVolume: 1000000000n,
+        },
+      },
+      eventSupportedPools: [],
+      pools: {
+        '3pool': {
+          underlying: [],
+          coins: [
+            '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d',
+            '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',
+            '0x4ECaBa5870353805a9F068101A40E0f32ed605C6',
+          ],
+          address: '0x7f90122BF0700F9E7e1F688fe926940E8839F353',
+          name: '3pool (x3CRV)',
+          type: 1,
           version: 3,
           isLending: false,
           isMetapool: false,

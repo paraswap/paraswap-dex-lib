@@ -25,6 +25,9 @@ export const WethConfig: DexConfigMap<DexParams> = {
     [Network.BASE]: {
       poolGasCost: WethGasCost,
     },
+    [Network.SEPOLIA]: {
+      poolGasCost: WethGasCost,
+    },
   },
   Wbnb: {
     [Network.BSC]: {
@@ -43,6 +46,11 @@ export const WethConfig: DexConfigMap<DexParams> = {
   },
   Wavax: {
     [Network.AVALANCHE]: {
+      poolGasCost: WethGasCost,
+    },
+  },
+  Wxdai: {
+    [Network.GNOSIS]: {
       poolGasCost: WethGasCost,
     },
   },

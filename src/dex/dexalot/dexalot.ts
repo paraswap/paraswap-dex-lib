@@ -239,10 +239,14 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedPairs(): Promise<PairDataMap | null> {
-    const cachedPairs = await this.dexHelper.cache.get(
+    const cachedPairs = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.pairsCacheKey,
+      // as local cache just uses passed ttl (instead of getting actual ttl from cache)
+      // pass shorter interval to avoid getting stale data
+      // (same logic is used in other places)
+      DEXALOT_API_PAIRS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedPairs) {
@@ -253,10 +257,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedPrices(): Promise<PriceDataMap | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
+    const cachedPrices = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.pricesCacheKey,
+      DEXALOT_API_PRICES_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedPrices) {
@@ -267,10 +272,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedTokensAddr(): Promise<TokenAddrDataMap | null> {
-    const cachedTokensAddr = await this.dexHelper.cache.get(
+    const cachedTokensAddr = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.tokensAddrCacheKey,
+      DEXALOT_API_PAIRS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedTokensAddr) {
@@ -281,10 +287,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.tokensCacheKey,
+      DEXALOT_API_PAIRS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedTokens) {
@@ -593,6 +600,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             .multipliedBy(10000)
             .toFixed(0)
         : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
+
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
@@ -997,7 +1005,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       `${this.dexKey}-${this.network}: quoteData undefined`,
     );
 
-    const swapFunction = 'simpleSwap';
+    const swapFunction = 'partialSwap';
     const swapFunctionParams = [
       [
         quoteData.nonceAndMeta,
@@ -1010,6 +1018,8 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
         quoteData.takerAmount,
       ],
       quoteData.signature,
+      // might be overwritten on Executors
+      quoteData.takerAmount,
     ];
 
     const exchangeData = this.rfqInterface.encodeFunctionData(
