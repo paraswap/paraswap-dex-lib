@@ -416,10 +416,16 @@ export class Cables extends SimpleExchange implements IDex<any> {
   ) {
     let sumBaseQty = 0;
     let sumQuoteQty = 0;
+
     const selectedRows: string[][] = [];
 
     const isBase = qtyMode;
     const isQuote = !qtyMode;
+
+    const totalVolume: number = prices.reduce(
+      (sum, [, volume]) => sum + Number(volume),
+      0,
+    );
 
     for (const [price, volume] of prices) {
       if (isBase) {
@@ -460,6 +466,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
       selectedRows.push([price, currentBaseQty.toString()]);
     }
 
+    if (sumBaseQty == 0) {
+      throw new Error('Vwap price is 0');
+    }
+
     const vSumBase = selectedRows.reduce((sum: number, [price, volume]) => {
       return sum + Number(price) * Number(volume);
     }, 0);
@@ -468,11 +478,24 @@ export class Cables extends SimpleExchange implements IDex<any> {
       .dividedBy(new BigNumber(sumBaseQty))
       .toNumber();
 
+    let result: any;
     if (isBase) {
-      return requiredQty / price;
+      result = requiredQty / price;
     } else {
-      return requiredQty * price;
+      result = requiredQty * price;
     }
+
+    if (isQuote) {
+      if (requiredQty > totalVolume) {
+        throw new Error(`Not enough liquidity`);
+      }
+    } else {
+      if (result > totalVolume) {
+        throw new Error(`Not enough liquidity`);
+      }
+    }
+
+    return result;
   }
 
   async getPricesVolume(
@@ -538,10 +561,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const priceData = priceMap[pairKey];
 
       let orderbook: any[] = [];
-      if (side === SwapSide.BUY) {
+      orderbook = priceData.bids;
+      // reverse orderbook if isInputQuote
+      if (isInputQuote) {
         orderbook = priceData.asks;
-      } else {
-        orderbook = priceData.bids;
       }
       if (orderbook?.length === 0) {
         throw new Error(`Empty orderbook for ${pairKey}`);
