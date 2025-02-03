@@ -399,11 +399,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
       let decimals = baseToken.decimals;
       let out_decimals = quoteToken.decimals;
 
-      let price = this.calculatePriceSwap(
-        orderbook,
-        Number(amt) / 10 ** decimals,
-        isInputQuote,
-      );
+      let price = 0;
+
+      try {
+        price = this.calculatePriceSwap(
+          orderbook,
+          Number(amt) / 10 ** decimals,
+          isInputQuote,
+        );
+      } catch (error) {}
       result.push(BigInt(Math.round(price * 10 ** out_decimals)));
     }
     return result;
@@ -487,11 +491,11 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
     if (isQuote) {
       if (requiredQty > totalVolume) {
-        throw new Error(`Not enough liquidity`);
+        result = 0;
       }
     } else {
       if (result > totalVolume) {
-        throw new Error(`Not enough liquidity`);
+        result = 0;
       }
     }
 
