@@ -234,7 +234,7 @@ describe('AaveV3Stata E2E', () => {
   //   });
   // });
 
-  describe.skip('Arbitrum', () => {
+  describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
@@ -274,7 +274,7 @@ describe('AaveV3Stata E2E', () => {
     });
   });
 
-  describe.skip('Optimism', () => {
+  describe('Optimism', () => {
     const network = Network.OPTIMISM;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
@@ -314,7 +314,7 @@ describe('AaveV3Stata E2E', () => {
     });
   });
 
-  describe.skip('Base', () => {
+  describe('Base', () => {
     const network = Network.BASE;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
