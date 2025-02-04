@@ -5,9 +5,7 @@ export type StateOverride = {
 };
 
 export type StateSimulateApiOverride = {
-  storage: {
-    value: Record<string, string>;
-  };
+  storage: Record<string, string>;
 };
 
 export type StateOverrides = {
