@@ -296,4 +296,92 @@ describe('BalancerV3 E2E', () => {
       );
     });
   });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    describe('Stable Path', () => {
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'WETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'waBaswstETH';
+      const tokenBSymbol: string = 'waBasWETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    describe('Stable Path', () => {
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'WETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'waArbWETH';
+      const tokenBSymbol: string = 'waArbwstETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+  });
 });
