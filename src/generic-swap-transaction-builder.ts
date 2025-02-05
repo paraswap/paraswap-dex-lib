@@ -527,6 +527,10 @@ export class GenericSwapTransactionBuilder {
     isReferral,
     isSkipBlacklist,
   }: FeeParams): string {
+    if (feePercent === '0' && !isTakeSurplus) {
+      return '0x';
+    }
+
     // Partner address shifted left to make room for flags and fee percent
     const partialFeeCodeWithPartnerAddress = BigNumber.from(partner).shl(96);
     let partialFeeCodeWithBitFlags = BigNumber.from(0); // default 0 is safe if none the conditions pass
