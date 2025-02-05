@@ -407,7 +407,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
           Number(amt) / 10 ** decimals,
           isInputQuote,
         );
-      } catch (error) {}
+      } catch {}
       result.push(BigInt(Math.round(price * 10 ** out_decimals)));
     }
     return result;
@@ -471,7 +471,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
     }
 
     if (sumBaseQty == 0) {
-      throw new Error('Vwap price is 0');
+      return 0;
     }
 
     const vSumBase = selectedRows.reduce((sum: number, [price, volume]) => {
