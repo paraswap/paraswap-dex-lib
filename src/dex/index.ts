@@ -102,6 +102,7 @@ import { UsualBond } from './usual/usual-bond';
 import { UsualMWrappedM } from './usual/usual-m-wrapped-m';
 import { UsualMUsd0 } from './usual/usual-m-usd0';
 import { UsualPP } from './usual-pp/usual-pp';
+import { MWrappedM } from './m-token/m-wrapped-m';
 
 const LegacyDexes = [
   CurveV2,
@@ -198,6 +199,7 @@ const Dexes = [
   UsualMWrappedM,
   UsualMUsd0,
   UsualPP,
+  MWrappedM,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<

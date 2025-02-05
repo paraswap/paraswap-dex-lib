@@ -571,6 +571,11 @@ export const Tokens: {
       decimals: 18,
       symbol: 'wUSDL',
     },
+    M: {
+      address: '0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b',
+      decimals: 6,
+      symbol: 'M',
+    },
     WrappedM: {
       address: '0x437cc33344a0B27A429f795ff6B469C72698B291',
       decimals: 6,
@@ -1830,6 +1835,7 @@ export const Holders: {
     rUSD: '0xEC2eda1C4F981E468ABF62424a10B69B738b498E',
     arUSD: '0xeFc24206053a452e2299BF3b8f964512b041Db4C',
     USD0: '0x224762e69169E425239EeEE0012d1B0e041C123D',
+    M: '0xA370275bb06b7416184A967C5B8593942784CDFe',
     WrappedM: '0xE0663f2372cAa1459b7ade90812Dc737CE587FA6',
     'USD0++': '0x2227b6806339906707b43F36a1f07B52FF7Fa776',
     USDM: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
