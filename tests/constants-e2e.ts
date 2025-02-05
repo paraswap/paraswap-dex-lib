@@ -1356,6 +1356,14 @@ export const Tokens: {
       address: '0x7dff72693f6a4149b17e7c6314655f6a9f7c8b33',
       decimals: 18,
     },
+    waArbWETH: {
+      address: '0x4ce13a79f45c1be00bdabd38b764ac28c082704e',
+      decimals: 18,
+    },
+    waArbwstETH: {
+      address: '0xe98fc055c99decd8da0c111b090885d5d15c774e',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1676,6 +1684,14 @@ export const Tokens: {
     aaveUSDC: {
       address: '0x4e65fe4dba92790696d040ac24aa414708f5c0ab',
       decimals: 6,
+    },
+    waBaswstETH: {
+      address: '0x0830820d1a9aa1554364752d6d8f55c836871b74',
+      decimals: 18,
+    },
+    waBasWETH: {
+      address: '0xe298b938631f750dd409fb18227c4a23dcdaab9b',
+      decimals: 18,
     },
   },
   [Network.SEPOLIA]: {
