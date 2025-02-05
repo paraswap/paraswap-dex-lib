@@ -1238,6 +1238,10 @@ export const Tokens: {
       addBalance: _balancesFn,
       addAllowance: _allowancesFn,
     },
+    waArbUSDT: {
+      address: '0xa6D12574eFB239FC1D2099732bd8b5dC6306897F',
+      decimals: 6,
+    },
     FRAX: {
       address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
       decimals: 18,
@@ -1673,6 +1677,10 @@ export const Tokens: {
       address: '0x4ea71a20e655794051d1ee8b6e4a3269b13ccacc',
       decimals: 6,
     },
+    waBasUSDC: {
+      address: '0xC768c589647798a6EE01A91FdE98EF2ed046DBD6',
+      decimals: 6,
+    },
     aaveUSDC: {
       address: '0x4e65fe4dba92790696d040ac24aa414708f5c0ab',
       decimals: 6,
@@ -2000,6 +2008,7 @@ export const Holders: {
     MIM: '0xf46bb6dda9709c49efb918201d97f6474eac5aea',
     VST: '0x59bf0545fca0e5ad48e13da269facd2e8c886ba4',
     aArbUSDC: '0x048BF2F5908e95976CeAD0E47D805b3803E286e2',
+    waArbUSDT: '0xa6D12574eFB239FC1D2099732bd8b5dC6306897F',
     ZYB: '0x3ec0eddcd1e25025077327886a78133589082fb2',
     WBTC: '0xd9d611c6943585bc0e18e51034af8fa28778f7da',
     RDNT: '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
@@ -2100,6 +2109,7 @@ export const Holders: {
     DOG: '0xbe3ab8a87730684ef1e476064c2e43c3e982f8e8',
     stataUSDC: '0x88Cac91ADDE2208039A227B373C2A692C0700547',
     aaveUSDC: '0x5DE3c5BE52D7aDbdC3aEFe2eA061A2ECE0C7d766',
+    waBasUSDC: '0xC768c589647798a6EE01A91FdE98EF2ed046DBD6',
     USDM: '0x426c4966fC76Bf782A663203c023578B744e4C5E',
     crvUSD: '0xBbAbDB1385deA5285113581A7024d6DC04131101',
     cbETH: '0x50e011dD1e2b4906F1534623cD134B30422bb11E',

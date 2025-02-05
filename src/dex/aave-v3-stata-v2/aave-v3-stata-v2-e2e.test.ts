@@ -244,7 +244,7 @@ describe('AaveV3Stata E2E', () => {
           amount: '100000',
         },
         {
-          name: 'stataUSDT',
+          name: 'waArbUSDT',
           amount: '100000',
         },
       ],
@@ -255,7 +255,7 @@ describe('AaveV3Stata E2E', () => {
           skipBuy: true,
         },
         {
-          name: 'stataUSDT',
+          name: 'waArbUSDT',
           amount: '100000',
         },
       ],
@@ -274,7 +274,8 @@ describe('AaveV3Stata E2E', () => {
     });
   });
 
-  describe('Optimism', () => {
+  // no tokens yet deployed
+  describe.skip('Optimism', () => {
     const network = Network.OPTIMISM;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
@@ -324,7 +325,7 @@ describe('AaveV3Stata E2E', () => {
           amount: '100000',
         },
         {
-          name: 'stataUSDC',
+          name: 'waBasUSDC',
           amount: '100000',
         },
       ],
@@ -335,7 +336,7 @@ describe('AaveV3Stata E2E', () => {
           skipBuy: true,
         },
         {
-          name: 'stataUSDC',
+          name: 'waBasUSDC',
           amount: '100000',
         },
       ],
