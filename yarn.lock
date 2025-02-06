@@ -348,10 +348,10 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/balancer-maths@^0.0.19":
-  version "0.0.19"
-  resolved "https://registry.yarnpkg.com/@balancer-labs/balancer-maths/-/balancer-maths-0.0.19.tgz#d3b92c4b17caca67894806bd7768af1ea31cb956"
-  integrity sha512-x8t17q8fbXYZJSaidr4BWBg3O9jVnF6xoAsoMWWyUd6AnaxPyFnxAGs76+iQln4WEmC7S5G5uufWJ0OefvcqXQ==
+"@balancer-labs/balancer-maths@^0.0.21":
+  version "0.0.21"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/balancer-maths/-/balancer-maths-0.0.21.tgz#165d140656226614e489e6c9c7b890fd8e868f10"
+  integrity sha512-nVKoQ35VRCugO6pxMVMghn6v/PofBoUXE5+SOxLhD/eQgHYsdwbH/BA3TCOz7sFJ/69BxpcjS0E78x9xbllq5w==
 
 "@balancer-labs/sor@4.1.1-beta.4":
   version "4.1.1-beta.4"

@@ -107,7 +107,7 @@ function mapPoolsToDecodedData(
       'n/a',
     );
     // Add to accumulator
-    acc[pool] = {
+    acc[pool.toLowerCase()] = {
       surgeThresholdPercentage: decodedX[0].toBigInt(),
       maxSurgeFeePercentage: decodedY[0].toBigInt(),
     };

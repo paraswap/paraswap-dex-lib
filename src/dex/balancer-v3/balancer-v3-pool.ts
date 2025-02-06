@@ -33,7 +33,7 @@ import {
   HookStateMap,
   HooksConfigMap,
 } from './hooks/balancer-hook-event-subscriber';
-import { StableSurge } from './hooks/stableSurgeHook';
+import { StableSurge, StableSurgeHookState } from './hooks/stableSurgeHook';
 
 export const WAD = BI_POWS[18];
 
@@ -432,9 +432,14 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
             BigInt(timestamp),
           );
         }
-        // StableSurge uses Amp as part of hook maths
-        if (step.poolState.hookType === StableSurge.type)
-          hookState = { ...hookState, amp: step.poolState.amp };
+        // StableSurge hook uses Amp as part of maths
+        if (step.poolState.hookType === StableSurge.type && hookState)
+          hookState = {
+            ...(hookState as StableSurgeHookState)[
+              step.poolState.poolAddress.toLowerCase()
+            ],
+            amp: step.poolState.amp,
+          };
       }
 
       outputAmountRaw = this.vault.swap(

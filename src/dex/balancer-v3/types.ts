@@ -15,6 +15,7 @@ export type CommonImmutablePoolState = {
   // scalingFactors: bigint[];
   hookAddress: string | undefined;
   hookType: string | undefined;
+  supportsUnbalancedLiquidity: boolean;
 };
 
 // Mutable data types available on all pools (Available via onchain calls/events)

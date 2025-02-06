@@ -106,6 +106,7 @@ function toImmutablePoolStateMap(
           hookType: pool.hook
             ? hooksConfigMap[pool.hook.address].type
             : undefined,
+          supportsUnbalancedLiquidity: true,
         };
         map[pool.id] = immutablePoolState;
         return map;
