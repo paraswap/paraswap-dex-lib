@@ -176,7 +176,7 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    describe('failing:FLUID -> ETH', () => {
+    describe('FLUID -> ETH', () => {
       const tokenASymbol: string = 'FLUID';
       const tokenBSymbol: string = 'ETH';
       const tokenAAmount: string = '160097047322810379';
@@ -197,7 +197,7 @@ describe('FluidDex E2E', () => {
       const tokenBSymbol: string = 'ETH';
 
       const tokenAAmount: string = '100000000000000';
-      const tokenBAmount: string = '2500000000000000000';
+      const tokenBAmount: string = '3500000000000000000';
 
       testForNetwork(
         network,
@@ -227,43 +227,43 @@ describe('FluidDex E2E', () => {
     });
   });
 
-  // describe('Arbitrum', () => {
-  //   const network = Network.ARBITRUM;
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
 
-  //   describe('ETH -> wstETH', () => {
-  //     const tokenASymbol: string = 'wstETH';
-  //     const tokenBSymbol: string = 'ETH';
+    describe('ETH -> wstETH', () => {
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'ETH';
 
-  //     const tokenAAmount: string = '1000000000000000';
-  //     const tokenBAmount: string = '1000000000000000';
+      const tokenAAmount: string = '1000000000000000';
+      const tokenBAmount: string = '1000000000000000';
 
-  //     testForNetwork(
-  //       network,
-  //       dexKey,
-  //       tokenASymbol,
-  //       tokenBSymbol,
-  //       tokenAAmount,
-  //       tokenBAmount,
-  //     );
-  //   });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
 
-  //   describe('ETH -> weETH', () => {
-  //     const tokenBSymbol: string = 'ETH';
-  //     const tokenASymbol: string = 'weETH';
+    describe('ETH -> weETH', () => {
+      const tokenBSymbol: string = 'ETH';
+      const tokenASymbol: string = 'weETH';
 
-  //     const tokenAAmount: string = '1000000000000000';
-  //     const tokenBAmount: string = '1000000000000000';
+      const tokenAAmount: string = '1000000000000000';
+      const tokenBAmount: string = '1000000000000000';
 
-  //     testForNetwork(
-  //       network,
-  //       dexKey,
-  //       tokenASymbol,
-  //       tokenBSymbol,
-  //       tokenAAmount,
-  //       tokenBAmount,
-  //     );
-  //   });
-  // });
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
 });
 
 function NewColReservesOne(): CollateralReserves {
