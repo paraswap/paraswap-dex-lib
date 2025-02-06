@@ -214,7 +214,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     const minMaxAmount = _minMaxAmount.toString();
     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
 
-    return await this.transactionBuilder.build({
+    return (await this.transactionBuilder.build({
       priceRoute,
       minMaxAmount: minMaxAmount.toString(),
       userAddress,
@@ -222,7 +222,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       partnerFeePercent: '0',
       deadline: deadline.toString(),
       uuid: uuid(),
-    });
+    })) as TxObject;
   }
 }
 
