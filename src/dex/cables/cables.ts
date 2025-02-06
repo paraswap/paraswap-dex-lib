@@ -242,6 +242,8 @@ export class Cables extends SimpleExchange implements IDex<any> {
         { deadline: minDeadline },
       ];
     } catch (e: any) {
+      // TODO: Remove
+      this.logger.log('RES_ERR', e?.response?.data);
       const message = `${this.dexKey}-${this.network}: ${e}`;
       this.logger.error(message);
       if (!e?.isSlippageError) {
