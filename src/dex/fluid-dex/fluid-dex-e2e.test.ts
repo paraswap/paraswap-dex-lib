@@ -10,6 +10,7 @@ import { generateConfig } from '../../config';
 import { CollateralReserves, DebtReserves, DexLimits } from './types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { FluidDex } from './fluid-dex';
+import { adjustTestSwapOutAmount } from './utils';
 
 function testForNetwork(
   network: Network,
@@ -26,6 +27,8 @@ function testForNetwork(
 
   const tokens = Tokens[network];
   const holders = Holders[network];
+  let adjustedTokenAAmount = tokenAAmount;
+  let adjustedTokenBAmount = tokenBAmount;
 
   // Create FluidDex instance to check reserves
   const dexHelper = new DummyDexHelper(network);
@@ -43,12 +46,18 @@ function testForNetwork(
           describe(`${contractMethod}`, () => {
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
               await fluidDex.initializePricing(await provider.getBlockNumber());
+              if (contractMethod === ContractMethod.swapExactAmountOut) {
+                adjustedTokenBAmount = adjustTestSwapOutAmount(
+                  BigInt(tokenBAmount),
+                  tokens[tokenBSymbol].decimals,
+                );
+              }
 
               try {
                 const pricesB2A = await fluidDex.getPricesVolume(
                   tokens[tokenBSymbol],
                   tokens[tokenASymbol],
-                  [BigInt(tokenBAmount)],
+                  [BigInt(adjustedTokenBAmount)],
                   side,
                   await provider.getBlockNumber(),
                 );
@@ -80,7 +89,7 @@ function testForNetwork(
                 tokens[tokenBSymbol],
                 tokens[tokenASymbol],
                 holders[tokenBSymbol],
-                tokenBAmount,
+                adjustedTokenBAmount,
                 side,
                 dexKey,
                 contractMethod as ContractMethod,
@@ -96,10 +105,17 @@ function testForNetwork(
                   await provider.getBlockNumber(),
                 );
 
+                if (contractMethod === ContractMethod.swapExactAmountOut) {
+                  adjustedTokenAAmount = adjustTestSwapOutAmount(
+                    BigInt(tokenAAmount),
+                    tokens[tokenASymbol].decimals,
+                  );
+                }
+
                 const pricesA2B = await fluidDex.getPricesVolume(
                   tokens[tokenASymbol],
                   tokens[tokenBSymbol],
-                  [BigInt(tokenAAmount)],
+                  [BigInt(adjustedTokenAAmount)],
                   side,
                   await provider.getBlockNumber(),
                 );
@@ -131,7 +147,7 @@ function testForNetwork(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
-                tokenAAmount,
+                adjustedTokenAAmount,
                 side,
                 dexKey,
                 contractMethod as ContractMethod,

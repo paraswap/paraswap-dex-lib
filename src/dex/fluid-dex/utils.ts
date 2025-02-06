@@ -13,3 +13,13 @@ export function sqrt(value: BigNumber) {
   }
   return y;
 }
+
+export function adjustTestSwapOutAmount(
+  amountOut: bigint,
+  outDecimals: number,
+) {
+  return (
+    ((amountOut * BigInt(10 ** 12)) / BigInt(10 ** outDecimals)) *
+    BigInt(10 ** (outDecimals - 12))
+  ).toString();
+}
