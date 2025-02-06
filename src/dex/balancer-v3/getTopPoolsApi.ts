@@ -43,7 +43,6 @@ function createQuery(
   const whereClause = {
     chainIn: networkString,
     protocolVersionIn: 3,
-    hasHook: false,
     idIn: `[${poolIdString}]`,
     ...(disabledPoolIdsString && { idNotIn: `[${disabledPoolIdsString}]` }),
   };
