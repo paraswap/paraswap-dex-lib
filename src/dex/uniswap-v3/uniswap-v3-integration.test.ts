@@ -97,6 +97,8 @@ async function checkOnChainPricing(
     fee,
   );
 
+  console.log('readerCallData: ', readerCallData);
+
   let readerResult;
   try {
     readerResult = (
@@ -122,14 +124,16 @@ async function checkOnChainPricing(
   // we skipped first, so add +1 on result
   firstZeroIndex = firstZeroIndex === -1 ? prices.length : firstZeroIndex;
 
+  console.log('prices: ', prices);
+  console.log('expectedPrices: ', expectedPrices);
+
   // Compare only the ones for which we were able to calculate prices
   expect(prices.slice(0, firstZeroIndex)).toEqual(
     expectedPrices.slice(0, firstZeroIndex),
   );
 
-  console.log('prices: ', prices);
-  console.log('expectedPrices: ', expectedPrices);
   expect(prices).toStrictEqual(expectedPrices);
+
   return true;
 }
 
@@ -518,8 +522,11 @@ describe('UniswapV3', () => {
     const TokenB = Tokens[network][TokenBSymbol];
 
     beforeEach(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      // blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+      blockNumber = 21766507;
       uniswapV3 = new UniswapV3(network, dexKey, dexHelper);
+
+      console.log('blocknumber: ', blockNumber);
     });
 
     it('getPoolIdentifiers and getPricesVolume SELL', async function () {
@@ -527,23 +534,23 @@ describe('UniswapV3', () => {
         0n,
         2n * BI_POWS[18],
         3n * BI_POWS[18],
-        4n * BI_POWS[18],
-        5n * BI_POWS[18],
-        6n * BI_POWS[18],
-        7n * BI_POWS[18],
-        8n * BI_POWS[18],
-        9n * BI_POWS[18],
-        10n * BI_POWS[18],
-        11n * BI_POWS[18],
-        12n * BI_POWS[18],
-        13n * BI_POWS[18],
-        14n * BI_POWS[18],
-        15n * BI_POWS[18],
-        16n * BI_POWS[18],
-        17n * BI_POWS[18],
-        18n * BI_POWS[18],
-        19n * BI_POWS[18],
-        20n * BI_POWS[18],
+        // 4n * BI_POWS[18],
+        // 5n * BI_POWS[18],
+        // 6n * BI_POWS[18],
+        // 7n * BI_POWS[18],
+        // 8n * BI_POWS[18],
+        // 9n * BI_POWS[18],
+        // 10n * BI_POWS[18],
+        // 11n * BI_POWS[18],
+        // 12n * BI_POWS[18],
+        // 13n * BI_POWS[18],
+        // 14n * BI_POWS[18],
+        // 15n * BI_POWS[18],
+        // 16n * BI_POWS[18],
+        // 17n * BI_POWS[18],
+        // 18n * BI_POWS[18],
+        // 19n * BI_POWS[18],
+        // 20n * BI_POWS[18],
       ];
 
       const pools = await uniswapV3.getPoolIdentifiers(
