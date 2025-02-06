@@ -20,6 +20,6 @@ export function adjustTestSwapOutAmount(
 ) {
   return (
     ((amountOut * BigInt(10 ** 12)) / BigInt(10 ** outDecimals)) *
-    BigInt(10 ** (outDecimals - 12))
+    BigInt(10 ** Math.abs(outDecimals - 12))
   ).toString();
 }

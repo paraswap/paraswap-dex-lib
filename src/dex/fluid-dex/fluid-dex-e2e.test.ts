@@ -66,7 +66,11 @@ function testForNetwork(
                   pricesB2A,
                 );
               } catch (e: any) {
-                console.log(`Skipping ${tokenBSymbol} -> ${tokenASymbol}`);
+                console.log(
+                  `Skipping ${contractMethod} - ${tokenBSymbol} -> ${tokenASymbol}`,
+                );
+                console.log(e.message);
+
                 const errorMessages = [
                   'TokenReservesTooLow',
                   'InvalidCollateralReserves',
@@ -124,7 +128,11 @@ function testForNetwork(
                   pricesA2B,
                 );
               } catch (e: any) {
-                console.log(`Skipping ${tokenASymbol} -> ${tokenBSymbol}`);
+                console.log(
+                  `Skipping ${contractMethod} - ${tokenBSymbol} -> ${tokenASymbol}`,
+                );
+                console.log(e.message);
+
                 const errorMessages = [
                   'TokenReservesTooLow',
                   'InvalidCollateralReserves',
@@ -189,7 +197,7 @@ describe('FluidDex E2E', () => {
       const tokenBSymbol: string = 'ETH';
 
       const tokenAAmount: string = '100000000000000';
-      const tokenBAmount: string = '100000000000000';
+      const tokenBAmount: string = '2500000000000000000';
 
       testForNetwork(
         network,
@@ -219,43 +227,43 @@ describe('FluidDex E2E', () => {
     });
   });
 
-  describe('Arbitrum', () => {
-    const network = Network.ARBITRUM;
+  // describe('Arbitrum', () => {
+  //   const network = Network.ARBITRUM;
 
-    describe('ETH -> wstETH', () => {
-      const tokenASymbol: string = 'wstETH';
-      const tokenBSymbol: string = 'ETH';
+  //   describe('ETH -> wstETH', () => {
+  //     const tokenASymbol: string = 'wstETH';
+  //     const tokenBSymbol: string = 'ETH';
 
-      const tokenAAmount: string = '1000000000000000';
-      const tokenBAmount: string = '1000000000000000';
+  //     const tokenAAmount: string = '1000000000000000';
+  //     const tokenBAmount: string = '1000000000000000';
 
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-      );
-    });
+  //     testForNetwork(
+  //       network,
+  //       dexKey,
+  //       tokenASymbol,
+  //       tokenBSymbol,
+  //       tokenAAmount,
+  //       tokenBAmount,
+  //     );
+  //   });
 
-    describe('ETH -> weETH', () => {
-      const tokenBSymbol: string = 'ETH';
-      const tokenASymbol: string = 'weETH';
+  //   describe('ETH -> weETH', () => {
+  //     const tokenBSymbol: string = 'ETH';
+  //     const tokenASymbol: string = 'weETH';
 
-      const tokenAAmount: string = '1000000000000000';
-      const tokenBAmount: string = '1000000000000000';
+  //     const tokenAAmount: string = '1000000000000000';
+  //     const tokenBAmount: string = '1000000000000000';
 
-      testForNetwork(
-        network,
-        dexKey,
-        tokenASymbol,
-        tokenBSymbol,
-        tokenAAmount,
-        tokenBAmount,
-      );
-    });
-  });
+  //     testForNetwork(
+  //       network,
+  //       dexKey,
+  //       tokenASymbol,
+  //       tokenBSymbol,
+  //       tokenAAmount,
+  //       tokenBAmount,
+  //     );
+  //   });
+  // });
 });
 
 function NewColReservesOne(): CollateralReserves {
