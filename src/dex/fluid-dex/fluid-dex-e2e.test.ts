@@ -10,7 +10,7 @@ import { generateConfig } from '../../config';
 import { CollateralReserves, DebtReserves, DexLimits } from './types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { FluidDex } from './fluid-dex';
-import { adjustTestSwapOutAmount } from './utils';
+import BigNumber from 'bignumber.js';
 
 function testForNetwork(
   network: Network,
@@ -420,3 +420,17 @@ describe('TestPoolSimulator_SwapInLimits', () => {
     }
   });
 });
+
+export function adjustTestSwapOutAmount(
+  amountOut: bigint,
+  outDecimals: number,
+) {
+  const amountOutParsed = new BigNumber(amountOut.toString());
+  const normalisationDecimalFactor = outDecimals - 12;
+
+  return amountOutParsed
+    .times(10 ** 12)
+    .dividedToIntegerBy(10 ** outDecimals)
+    .times(10 ** normalisationDecimalFactor)
+    .toFixed(0);
+}

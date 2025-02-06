@@ -13,14 +13,3 @@ export function sqrt(value: BigNumber) {
   }
   return y;
 }
-
-export function adjustTestSwapOutAmount(
-  amountOut: bigint,
-  outDecimals: number,
-) {
-  let normalisationDecimalFactor = outDecimals > 12 ? outDecimals - 12 : 0;
-  return (
-    ((amountOut * BigInt(10 ** 12)) / BigInt(10 ** outDecimals)) *
-    BigInt(10 ** normalisationDecimalFactor)
-  ).toString();
-}
