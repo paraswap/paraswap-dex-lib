@@ -10,6 +10,7 @@ import { generateConfig } from '../../config';
 import { CollateralReserves, DebtReserves, DexLimits } from './types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { FluidDex } from './fluid-dex';
+import BigNumber from 'bignumber.js';
 
 function testForNetwork(
   network: Network,
@@ -26,6 +27,8 @@ function testForNetwork(
 
   const tokens = Tokens[network];
   const holders = Holders[network];
+  let adjustedTokenAAmount = tokenAAmount;
+  let adjustedTokenBAmount = tokenBAmount;
 
   // Create FluidDex instance to check reserves
   const dexHelper = new DummyDexHelper(network);
@@ -43,12 +46,18 @@ function testForNetwork(
           describe(`${contractMethod}`, () => {
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
               await fluidDex.initializePricing(await provider.getBlockNumber());
+              if (contractMethod === ContractMethod.swapExactAmountOut) {
+                adjustedTokenBAmount = adjustTestSwapOutAmount(
+                  BigInt(tokenBAmount),
+                  tokens[tokenBSymbol].decimals,
+                );
+              }
 
               try {
                 const pricesB2A = await fluidDex.getPricesVolume(
                   tokens[tokenBSymbol],
                   tokens[tokenASymbol],
-                  [BigInt(tokenBAmount)],
+                  [BigInt(adjustedTokenBAmount)],
                   side,
                   await provider.getBlockNumber(),
                 );
@@ -57,7 +66,11 @@ function testForNetwork(
                   pricesB2A,
                 );
               } catch (e: any) {
-                console.log(`Skipping ${tokenBSymbol} -> ${tokenASymbol}`);
+                console.log(
+                  `Skipping ${contractMethod} - ${tokenBSymbol} -> ${tokenASymbol}`,
+                );
+                console.log(e.message);
+
                 const errorMessages = [
                   'TokenReservesTooLow',
                   'InvalidCollateralReserves',
@@ -80,7 +93,7 @@ function testForNetwork(
                 tokens[tokenBSymbol],
                 tokens[tokenASymbol],
                 holders[tokenBSymbol],
-                tokenBAmount,
+                adjustedTokenBAmount,
                 side,
                 dexKey,
                 contractMethod as ContractMethod,
@@ -96,10 +109,17 @@ function testForNetwork(
                   await provider.getBlockNumber(),
                 );
 
+                if (contractMethod === ContractMethod.swapExactAmountOut) {
+                  adjustedTokenAAmount = adjustTestSwapOutAmount(
+                    BigInt(tokenAAmount),
+                    tokens[tokenASymbol].decimals,
+                  );
+                }
+
                 const pricesA2B = await fluidDex.getPricesVolume(
                   tokens[tokenASymbol],
                   tokens[tokenBSymbol],
-                  [BigInt(tokenAAmount)],
+                  [BigInt(adjustedTokenAAmount)],
                   side,
                   await provider.getBlockNumber(),
                 );
@@ -108,7 +128,11 @@ function testForNetwork(
                   pricesA2B,
                 );
               } catch (e: any) {
-                console.log(`Skipping ${tokenASymbol} -> ${tokenBSymbol}`);
+                console.log(
+                  `Skipping ${contractMethod} - ${tokenBSymbol} -> ${tokenASymbol}`,
+                );
+                console.log(e.message);
+
                 const errorMessages = [
                   'TokenReservesTooLow',
                   'InvalidCollateralReserves',
@@ -131,7 +155,7 @@ function testForNetwork(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
-                tokenAAmount,
+                adjustedTokenAAmount,
                 side,
                 dexKey,
                 contractMethod as ContractMethod,
@@ -152,7 +176,7 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    describe('failing:FLUID -> ETH', () => {
+    describe('FLUID -> ETH', () => {
       const tokenASymbol: string = 'FLUID';
       const tokenBSymbol: string = 'ETH';
       const tokenAAmount: string = '160097047322810379';
@@ -173,7 +197,7 @@ describe('FluidDex E2E', () => {
       const tokenBSymbol: string = 'ETH';
 
       const tokenAAmount: string = '100000000000000';
-      const tokenBAmount: string = '100000000000000';
+      const tokenBAmount: string = '3500000000000000000';
 
       testForNetwork(
         network,
@@ -396,3 +420,17 @@ describe('TestPoolSimulator_SwapInLimits', () => {
     }
   });
 });
+
+export function adjustTestSwapOutAmount(
+  amountOut: bigint,
+  outDecimals: number,
+) {
+  const amountOutParsed = new BigNumber(amountOut.toString());
+  const normalisationDecimalFactor = outDecimals - 12;
+
+  return amountOutParsed
+    .times(10 ** 12)
+    .dividedToIntegerBy(10 ** outDecimals)
+    .times(10 ** normalisationDecimalFactor)
+    .toFixed(0);
+}
