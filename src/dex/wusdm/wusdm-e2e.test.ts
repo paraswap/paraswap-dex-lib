@@ -201,4 +201,23 @@ describe('MountainProtocol E2E', () => {
       tokenBAmount,
     );
   });
+
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+
+    const tokenASymbol: string = 'wUSDL';
+    const tokenBSymbol: string = 'USDL';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      'wUSDL',
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+    );
+  });
 });
