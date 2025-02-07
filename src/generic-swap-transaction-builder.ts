@@ -447,7 +447,7 @@ export class GenericSwapTransactionBuilder {
     uuid: string;
     beneficiary?: Address;
     onlyParams?: boolean;
-  }): Promise<TxObject> {
+  }): Promise<TxObject | (string | string[])[]> {
     // if beneficiary is not defined, then in smart contract it will be replaced to msg.sender
     const _beneficiary =
       beneficiary !== NULL_ADDRESS &&
@@ -493,6 +493,8 @@ export class GenericSwapTransactionBuilder {
         uuid,
       ));
     }
+
+    if (onlyParams) return params;
 
     const value = (
       priceRoute.srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase()
