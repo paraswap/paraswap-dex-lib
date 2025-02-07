@@ -95,7 +95,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       // AlgebraStateMulticall
       algebraStateMulticall: '0x49C46f7f88110ccA234ef27Cd664510f7bbF5998',
-      subgraphURL: 'AAA1vYjxwFHzbt6qKwLHNcDSASyr1J1xVViDH8gTMFMR',
+      subgraphURL: 'YwkNWffc8UTH77wDqGWgMShMq1uXdiQsD5wrD5MzKwJ',
       uniswapMulticall: '0x4dfa9a980efE4802E969AC33968E3d6E59B8a19e',
       deployer: '0xC1b576AC6Ec749d5Ace1787bF9Ec6340908ddB47',
       version: 'v1.9-bidirectional-fee',
