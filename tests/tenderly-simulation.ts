@@ -158,14 +158,11 @@ export class TenderlySimulation implements TransactionSimulator {
       );
 
       this.vnetId = res.data.id;
-      console.log('res.data.rpcs: ', res.data.rpcs);
       const rpc = findAdminRPC(res.data.rpcs);
       if (!rpc) {
         throw new Error(`RPC url was not found for testnet: ${this.vnetId}`);
       }
 
-      console.log('THIS vnetid: ', this.vnetId);
-      console.log('RPC: ', rpc);
       this.rpcURL = rpc.url;
     } catch (e) {
       console.error(`TenderlySimulation_setup:`, e);
