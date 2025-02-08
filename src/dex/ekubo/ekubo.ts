@@ -175,6 +175,8 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     this.supportedExtension = [0n, this.config.oracle];
   }
 
+  async initializePricing(_blockNumber: number) {}
+
   // Legacy: was only used for V5
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
@@ -269,8 +271,6 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
         }
 
         const [unitQuote, ...otherQuotes] = quotes;
-
-        // console.log(unitQuote, quotes);
 
         exchangePrices.push({
           prices: otherQuotes.map(quote => quote.calculatedAmount),
@@ -497,16 +497,24 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       }
     }
 
-    // TODO Make sure that we haven't initialized these pools before
+    const uninitializedPoolKeys: PoolKey[] = [];
+    const initializedPoolKeys: PoolKey[] = [];
+
+    for (const poolKey of poolKeys) {
+      (this.pools.has(poolKey.id())
+        ? initializedPoolKeys
+        : uninitializedPoolKeys
+      ).push(poolKey);
+    }
 
     const promises = [];
 
     for (
       let batchStart = 0;
-      batchStart < poolKeys.length;
+      batchStart < uninitializedPoolKeys.length;
       batchStart += MAX_POOL_BATCH_COUNT
     ) {
-      const batch = poolKeys.slice(
+      const batch = uninitializedPoolKeys.slice(
         batchStart,
         batchStart + MAX_POOL_BATCH_COUNT,
       );
@@ -531,7 +539,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
               fetchedData.map(async (data, i) => {
                 const initialState = PoolState.fromQuoter(data);
 
-                const poolKey = poolKeys[batchStart + i];
+                const poolKey = uninitializedPoolKeys[batchStart + i];
                 const poolId = poolKey.id();
                 const extension = poolKey.extension;
 
@@ -575,7 +583,8 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       );
     }
 
-    return (await Promise.allSettled(promises)).flatMap(res => {
+    const oldPoolIds = initializedPoolKeys.map(poolKey => poolKey.id());
+    const newPoolIds = (await Promise.allSettled(promises)).flatMap(res => {
       if (res.status === 'rejected') {
         this.logger.error(
           `Fetching batch failed. Pool keys: ${res.reason.batch}. Error: ${res.reason.err}`,
@@ -585,6 +594,8 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
         return res.value;
       }
     });
+
+    return oldPoolIds.concat(newPoolIds);
   }
 
   private async fetchPairPools(
