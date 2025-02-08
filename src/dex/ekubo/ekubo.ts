@@ -390,7 +390,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       return cached;
     }
 
-    const decimals: number = new Contract(
+    const decimals: number = await new Contract(
       paraswapToken,
       erc20Iface,
       this.dexHelper.provider,
