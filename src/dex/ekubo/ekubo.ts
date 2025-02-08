@@ -252,7 +252,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       }
     }
 
-    return exchangePrices;
+    return exchangePrices.length === 0 ? null : exchangePrices;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
