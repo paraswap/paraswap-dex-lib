@@ -54,11 +54,30 @@ import { isPriceIncreasing } from './pools/math/swap';
 import { OraclePool } from './pools/oracle-pool';
 import { erc20Iface } from '../../lib/tokens/utils';
 
-// TODO
 const ENABLED_POOL_PARAMETERS: VanillaPoolParameters[] = [
   {
-    fee: 0n,
-    tickSpacing: 1,
+    fee: 8507059173023461994257409214775295n,
+    tickSpacing: 50,
+  },
+  {
+    fee: 34028236692093847977029636859101184n,
+    tickSpacing: 200,
+  },
+  {
+    fee: 170141183460469235273462165868118016n,
+    tickSpacing: 1000,
+  },
+  {
+    fee: 1020847100762815411640772995208708096n,
+    tickSpacing: 5982,
+  },
+  {
+    fee: 3402823669209384634633746074317682114n,
+    tickSpacing: 19802,
+  },
+  {
+    fee: 17014118346046923173168730371588410572n,
+    tickSpacing: 95310,
   },
 ];
 
@@ -102,9 +121,8 @@ const topPairsSchema = Joi.object<{
   ),
 });
 
-// TODO
 const MIN_TICK_SPACINGS_PER_POOL = 10;
-const MAX_POOL_BATCH_COUNT = 10;
+const MAX_POOL_BATCH_COUNT = 5;
 
 /**
  * Ekubo Protocol https://ekubo.org/
@@ -156,12 +174,6 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     this.swapperIface = new Interface(SimpleSwapperABI);
     this.supportedExtension = [0n, this.config.oracle];
   }
-
-  // Initialize pricing is called once in the start of
-  // pricing service. It is intended to setup the integration
-  // for pricing requests. It is optional for a DEX to
-  // implement this function
-  async initializePricing(_blockNumber: number) {}
 
   // Legacy: was only used for V5
   // Returns the list of contract adapters (name and index)
@@ -503,11 +515,11 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
         Promise.race([
           ...(maxTime
             ? [
-                setTimeout(maxTime / 2).then(() => {
+                setTimeout(maxTime / 3).then(() => {
                   throw new Error('Timeout');
                 }),
               ]
-            : []), // TODO Timeout
+            : []),
           (async () => {
             const fetchedData: GetQuoteDataResponse =
               await this.dataFetcher.getQuoteData(
