@@ -1,12 +1,19 @@
-import { hexlify } from 'ethers/lib/utils';
+import { hexlify, hexZeroPad } from 'ethers/lib/utils';
 import { Token } from '../../types';
 import { isETHAddress } from '../../utils';
+import { ETHER_ADDRESS } from '../../constants';
 
 export const NATIVE_TOKEN_ADDRESS = 0x0000000000000000000000000000eeeeee000000n;
 export const ORACLE_TOKEN_ADDRESS = 0x04c46e830bb56ce22735d5d8fc9cb90309317d0fn;
 
-export function convertToEkuboETHAddress(address: string): bigint {
+export function convertParaSwapToEkubo(address: string): bigint {
   return isETHAddress(address) ? NATIVE_TOKEN_ADDRESS : BigInt(address);
+}
+
+export function convertEkuboToParaSwap(address: bigint): string {
+  return address === NATIVE_TOKEN_ADDRESS
+    ? ETHER_ADDRESS
+    : hexZeroPad(hexlify(address), 20);
 }
 
 export function sortAndConvertTokens(
@@ -14,8 +21,8 @@ export function sortAndConvertTokens(
   tokenB: Token,
 ): [bigint, bigint] {
   const [_a, _b] = [
-    convertToEkuboETHAddress(tokenA.address),
-    convertToEkuboETHAddress(tokenB.address),
+    convertParaSwapToEkubo(tokenA.address),
+    convertParaSwapToEkubo(tokenB.address),
   ];
   return _a > _b ? [_b, _a] : [_a, _b];
 }

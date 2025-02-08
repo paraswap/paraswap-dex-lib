@@ -1,4 +1,3 @@
-import { AsyncOrSync } from 'ts-essentials';
 import {
   Token,
   Address,
@@ -14,6 +13,7 @@ import {
   Network,
   FETCH_POOL_IDENTIFIER_TIMEOUT,
   FETCH_POOL_PRICES_TIMEOUT,
+  ETHER_ADDRESS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
@@ -30,7 +30,8 @@ import { SimpleExchange } from '../simple-exchange';
 import { EkuboConfig } from './config';
 import { BasePool, BasePool as EkuboEventPool } from './pools/base-pool';
 import {
-  convertToEkuboETHAddress,
+  convertEkuboToParaSwap,
+  convertParaSwapToEkubo,
   hexStringTokenPair,
   ORACLE_TOKEN_ADDRESS,
   sortAndConvertTokens,
@@ -51,8 +52,7 @@ import { hexlify } from 'ethers/lib/utils';
 import SimpleSwapperABI from '../../abi/ekubo/simple-swapper.json';
 import { isPriceIncreasing } from './pools/math/swap';
 import { OraclePool } from './pools/oracle-pool';
-
-// TODO Function for converting amount when exact output
+import { erc20Iface } from '../../lib/tokens/utils';
 
 // TODO
 const ENABLED_POOL_PARAMETERS: VanillaPoolParameters[] = [
@@ -62,7 +62,7 @@ const ENABLED_POOL_PARAMETERS: VanillaPoolParameters[] = [
   },
 ];
 
-type PoolRes = {
+type PairInfo = {
   fee: string;
   tick_spacing: number;
   extension: string;
@@ -70,12 +70,32 @@ type PoolRes = {
   tvl1_total: string;
 };
 
-const poolSchema = Joi.object({
-  topPools: Joi.array<PoolRes[]>().items(
+const tokenPairSchema = Joi.object<{
+  topPools: PairInfo[];
+}>({
+  topPools: Joi.array().items(
     Joi.object({
       fee: Joi.string(),
       tick_spacing: Joi.number(),
       extension: Joi.string(),
+      tvl0_total: Joi.string(),
+      tvl1_total: Joi.string(),
+    }),
+  ),
+});
+
+const topPairsSchema = Joi.object<{
+  topPairs: {
+    token0: string;
+    token1: string;
+    tvl0_total: string;
+    tvl1_total: string;
+  }[];
+}>({
+  topPairs: Joi.array().items(
+    Joi.object({
+      token0: Joi.string(),
+      token1: Joi.string(),
       tvl0_total: Joi.string(),
       tvl1_total: Joi.string(),
     }),
@@ -112,6 +132,10 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   private readonly dataFetcher;
   private readonly swapperIface;
   private readonly supportedExtension;
+
+  private readonly decimals: Record<string, number> = {
+    [ETHER_ADDRESS]: 18,
+  };
 
   constructor(
     readonly network: Network,
@@ -181,7 +205,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     const isExactOut = side === SwapSide.BUY;
 
     const amountToken = isExactOut ? destToken : srcToken;
-    const amountTokenAddress = convertToEkuboETHAddress(amountToken.address);
+    const amountTokenAddress = convertParaSwapToEkubo(amountToken.address);
     const unitAmount = getBigIntPow(amountToken.decimals);
 
     const [token0, token1] = sortAndConvertTokens(srcToken, destToken);
@@ -285,22 +309,96 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const res = await this.dexHelper.httpRequest.get(
-      `${this.config.apiUrl}/overview/pairs`,
-    );
+    const topPairsUrl = `${this.config.apiUrl}/overview/pairs`;
+    const topPairsRes = await this.dexHelper.httpRequest.get(topPairsUrl);
 
-    const { error, value } = tokenPairSchema.validate(res, {
+    const { error, value } = topPairsSchema.validate(topPairsRes, {
       allowUnknown: true,
       presence: 'required',
     });
 
     if (typeof error !== 'undefined') {
-      throw new Error(`validating API response: ${error}`);
+      throw new Error(`validating API response from ${topPairsUrl}: ${error}`);
     }
 
-    // getTokenUSDPrice may be used for this
-    //TODO: complete me!
-    return [];
+    const poolLiquidities: PoolLiquidity[] = [];
+
+    await Promise.allSettled(
+      value.topPairs.map(pair =>
+        (async () => {
+          if (pair.tvl0_total === '0' && pair.tvl1_total === '0') {
+            return;
+          }
+
+          const tokenPair = [BigInt(pair.token0), BigInt(pair.token1)];
+          const [token0, token1] = tokenPair;
+
+          if (!tokenPair.includes(convertParaSwapToEkubo(tokenAddress))) {
+            return;
+          }
+
+          const pairsInfo = await this.fetchPairPools(
+            hexStringTokenPair(token0, token1),
+          );
+
+          for (const pairInfo of pairsInfo) {
+            const [info0, info1] = await Promise.all(
+              tokenPair.map((ekuboToken, i) =>
+                (async () => {
+                  const paraswapToken = convertEkuboToParaSwap(ekuboToken);
+                  const decimals = await this.getDecimals(paraswapToken);
+
+                  const token = {
+                    address: paraswapToken,
+                    decimals,
+                  };
+
+                  return {
+                    token,
+                    tvl: await this.dexHelper.getTokenUSDPrice(
+                      token,
+                      BigInt(pairInfo[`tvl${i as 0 | 1}_total`]),
+                    ),
+                  };
+                })(),
+              ),
+            );
+
+            poolLiquidities.push({
+              exchange: this.dexKey,
+              address: this.config.core,
+              connectorTokens: [
+                (info0.token.address !== tokenAddress ? info0 : info1).token,
+              ],
+              liquidityUSD: info0.tvl + info1.tvl,
+            });
+          }
+        })(),
+      ),
+    );
+
+    poolLiquidities
+      .sort((a, b) => a.liquidityUSD - b.liquidityUSD)
+      .splice(limit, Infinity);
+
+    return poolLiquidities;
+  }
+
+  private async getDecimals(paraswapToken: string): Promise<number> {
+    const cached = this.decimals[paraswapToken];
+    if (typeof cached === 'number') {
+      return cached;
+    }
+
+    const decimals: number = new Contract(
+      paraswapToken,
+      erc20Iface,
+      this.dexHelper.provider,
+    ).decimals();
+
+    this.decimals[paraswapToken] = decimals;
+
+    return decimals;
   }
 
   getDexParam(
@@ -334,12 +432,12 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   }
 
   private async fetchPools(
-    srcToken: Token,
-    destToken: Token,
+    tokenA: Token,
+    tokenB: Token,
     blockNumber: number,
     maxTime?: number,
   ): Promise<string[]> {
-    const [token0, token1] = sortAndConvertTokens(srcToken, destToken);
+    const [token0, token1] = sortAndConvertTokens(tokenA, tokenB);
     const pair = hexStringTokenPair(token0, token1);
 
     if (typeof maxTime === 'number') {
@@ -349,38 +447,21 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
     let poolKeys: PoolKey[];
     try {
-      const res = await this.dexHelper.httpRequest.get(
-        `${this.config.apiUrl}/pair/${pair}/pools`,
-        typeof maxTime === 'undefined' ? maxTime : maxTime / 2,
-      );
-
-      const { error, value } = poolSchema.validate(res, {
-        allowUnknown: true,
-        presence: 'required',
-      });
-
-      if (typeof error !== 'undefined') {
-        throw new Error(`validating API response: ${error}`);
-      }
-
-      const poolRes: PoolRes[] = value.topPools;
-
-      poolKeys = poolRes
-        .filter(
-          res =>
-            this.supportedExtension.includes(BigInt(res.extension)) &&
-            (res.tvl0_total !== '0' || res.tvl1_total !== '0'),
+      poolKeys = (
+        await this.fetchPairPools(
+          pair,
+          typeof maxTime === 'undefined' ? maxTime : maxTime / 2,
         )
-        .map(
-          pool =>
-            new PoolKey(
-              token0,
-              token1,
-              BigInt(pool.fee),
-              pool.tick_spacing,
-              BigInt(pool.extension),
-            ),
-        );
+      ).map(
+        pool =>
+          new PoolKey(
+            token0,
+            token1,
+            BigInt(pool.fee),
+            pool.tick_spacing,
+            BigInt(pool.extension),
+          ),
+      );
     } catch (err) {
       this.logger.error(
         `Fetching pools from Ekubo API for token pair ${pair} failed, falling back to default pool parameters: ${err}`,
@@ -492,5 +573,30 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
         return res.value;
       }
     });
+  }
+
+  private async fetchPairPools(
+    pair: string,
+    maxTime?: number,
+  ): Promise<PairInfo[]> {
+    const res = await this.dexHelper.httpRequest.get(
+      `${this.config.apiUrl}/pair/${pair}/pools`,
+      typeof maxTime === 'undefined' ? maxTime : maxTime / 2,
+    );
+
+    const { error, value } = tokenPairSchema.validate(res, {
+      allowUnknown: true,
+      presence: 'required',
+    });
+
+    if (typeof error !== 'undefined') {
+      throw new Error(`validating API response: ${error}`);
+    }
+
+    return value.topPools.filter(
+      res =>
+        this.supportedExtension.includes(BigInt(res.extension)) &&
+        (res.tvl0_total !== '0' || res.tvl1_total !== '0'),
+    );
   }
 }
