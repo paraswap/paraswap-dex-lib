@@ -13,6 +13,10 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import { EkuboData } from './types';
+import { MAX_SQRT_RATIO, MIN_SQRT_RATIO } from './pools/math/tick';
+import SimpleQuoterABI from '../../abi/ekubo/simple-quoter.json';
+import { isPriceIncreasing } from './pools/math/swap';
 
 /*
   README
@@ -30,17 +34,19 @@ import { Tokens } from '../../../tests/constants-e2e';
 */
 
 function getReaderCalldata(
-  exchangeAddress: string,
+  quoterAddress: string,
   readerIface: Interface,
   amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
+  { poolKey, isToken1 }: EkuboData,
 ) {
   return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+    target: quoterAddress,
+    callData: readerIface.encodeFunctionData('quote', [
+      poolKey.toAbi(),
+      isToken1,
       amount,
+      isPriceIncreasing(amount, isToken1) ? MAX_SQRT_RATIO : MIN_SQRT_RATIO,
+      0,
     ]),
   }));
 }
@@ -48,35 +54,39 @@ function getReaderCalldata(
 function decodeReaderResult(
   results: Result,
   readerIface: Interface,
-  funcName: string,
-) {
-  // TODO: Adapt this function for your needs
+  isToken1: boolean,
+  swapSide: SwapSide,
+): bigint[] {
   return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
+    const parsed = readerIface.decodeFunctionResult('quote', result);
+
+    const delta: bigint = parsed[isToken1 ? 'delta0' : 'delta1'].toBigInt();
+    return swapSide === SwapSide.BUY ? delta : -delta;
   });
 }
 
 async function checkOnChainPricing(
   ekubo: Ekubo,
-  funcName: string,
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
+  side: SwapSide,
+  data: EkuboData,
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const quoterAddress = '0xac1bed43b8a3fee83f5c604c6a5f330ff9088a0e';
+  const readerIface = new Interface(SimpleQuoterABI);
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from ekubo.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  if (side === SwapSide.BUY) {
+    amounts = amounts.map(amount => -amount);
+  }
 
   const readerCallData = getReaderCalldata(
-    exchangeAddress,
+    quoterAddress,
     readerIface,
     amounts.slice(1),
-    funcName,
+    data,
   );
+
   const readerResult = (
     await ekubo.dexHelper.multiContract.methods
       .aggregate(readerCallData)
@@ -84,10 +94,15 @@ async function checkOnChainPricing(
   ).returnData;
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
+    decodeReaderResult(readerResult, readerIface, data.isToken1, side),
   );
 
-  expect(prices).toEqual(expectedPrices);
+  expect(prices.length).toEqual(expectedPrices.length);
+
+  for (let i = 0; i < expectedPrices.length; i++) {
+    const price = prices[i];
+    expect([price - 1n, price, price + 1n]).toContain(expectedPrices[i]);
+  }
 }
 
 async function testPricingOnNetwork(
@@ -99,7 +114,6 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
-  funcNameToCheck: string,
 ) {
   const networkTokens = Tokens[network];
 
@@ -139,10 +153,11 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     ekubo,
-    funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
     amounts,
+    side,
+    poolPrices![0].data,
   );
 }
 
@@ -157,10 +172,8 @@ describe('Ekubo', function () {
 
     const tokens = Tokens[network];
 
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
+    const srcTokenSymbol = 'ETH';
+    const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
       0n,
@@ -208,7 +221,6 @@ describe('Ekubo', function () {
         destTokenSymbol,
         SwapSide.SELL,
         amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
       );
     });
 
@@ -222,7 +234,6 @@ describe('Ekubo', function () {
         destTokenSymbol,
         SwapSide.BUY,
         amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
       );
     });
 

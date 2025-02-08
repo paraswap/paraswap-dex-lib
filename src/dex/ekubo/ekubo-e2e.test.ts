@@ -68,10 +68,8 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    // TODO: If buy is not supported remove the buy contract methods
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -132,12 +130,11 @@ describe('Ekubo E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    // TODO: Modify the tokenASymbol, tokenBSymbol, tokenAAmount;
-    const tokenASymbol: string = 'tokenASymbol';
-    const tokenBSymbol: string = 'tokenBSymbol';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = 'tokenAAmount';
-    const tokenBAmount: string = 'tokenBAmount';
+    const tokenAAmount: string = '200000000';
+    const tokenBAmount: string = '200000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

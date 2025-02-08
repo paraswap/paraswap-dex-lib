@@ -2,12 +2,19 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { EkuboEventPool } from './ekubo-pool';
+import { BasePool } from './pools/base-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { PoolState } from './types';
+import { PoolKey, PoolState } from './types';
+import { EkuboConfig } from './config';
+import { DeepReadonly, DeepWritable } from 'ts-essentials';
+import { Contract } from 'ethers';
+import CoreABI from '../../abi/ekubo/core.json';
+import DataFetcherABI from '../../abi/ekubo/data-fetcher.json';
+import { Tokens } from '../../../tests/constants-e2e';
+import { Interface } from '@ethersproject/abi';
 
 /*
   README
@@ -45,61 +52,73 @@ import { PoolState } from './types';
 jest.setTimeout(50 * 1000);
 
 async function fetchPoolState(
-  ekuboPools: EkuboEventPool,
+  pool: BasePool,
   blockNumber: number,
-  poolAddress: string,
 ): Promise<PoolState> {
-  // TODO: complete me!
-  return {};
+  return pool.generateState(blockNumber) as Promise<PoolState>;
 }
 
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
 
-describe('Ekubo EventPool Mainnet', function () {
+describe('Ekubo Mainnet', function () {
   const dexKey = 'Ekubo';
   const network = Network.MAINNET;
+  const config = EkuboConfig[dexKey][network];
   const dexHelper = new DummyDexHelper(network);
+  const core = new Contract(config.core, CoreABI, dexHelper.provider);
+  const coreIface = new Interface(CoreABI);
+  const dataFetcher = new Contract(
+    config.dataFetcher,
+    DataFetcherABI,
+    dexHelper.provider,
+  );
   const logger = dexHelper.getLogger(dexKey);
-  let ekuboPool: EkuboEventPool;
+  let pool: BasePool;
 
-  // poolAddress -> EventMappings
-  const eventsToTest: Record<Address, EventMappings> = {
-    // TODO: complete me!
+  const eventsToTest: EventMappings = {
+    Swapped: [
+      21796221, // https://etherscan.io/tx/0x6bb4c90f1ff6f81fc98973590f11968215cd3572c9b285197539d6776bdc4204
+    ],
+    /*"PositionUpdated": [
+      21746135, // https://etherscan.io/tx/0x383d3c972413545685037dba19f2b8ccb184d1e2b165fe754b520c30567aed2a
+    ]*/
   };
 
   beforeEach(async () => {
-    ekuboPool = new EkuboEventPool(
+    pool = new BasePool(
       dexKey,
       network,
       dexHelper,
       logger,
-      /* TODO: Put here additional constructor arguments if needed */
+      core,
+      coreIface,
+      dataFetcher,
+      new PoolKey(
+        BigInt(Tokens[network].USDC.address),
+        BigInt(Tokens[network].USDT.address),
+        8507059173023461994257409214775295n,
+        50,
+        0n,
+      ),
     );
   });
 
   Object.entries(eventsToTest).forEach(
-    ([poolAddress, events]: [string, EventMappings]) => {
-      describe(`Events for ${poolAddress}`, () => {
-        Object.entries(events).forEach(
-          ([eventName, blockNumbers]: [string, number[]]) => {
-            describe(`${eventName}`, () => {
-              blockNumbers.forEach((blockNumber: number) => {
-                it(`State after ${blockNumber}`, async function () {
-                  await testEventSubscriber(
-                    ekuboPool,
-                    ekuboPool.addressesSubscribed,
-                    (_blockNumber: number) =>
-                      fetchPoolState(ekuboPool, _blockNumber, poolAddress),
-                    blockNumber,
-                    `${dexKey}_${poolAddress}`,
-                    dexHelper.provider,
-                  );
-                });
-              });
-            });
-          },
-        );
+    ([eventName, blockNumbers]: [string, number[]]) => {
+      describe(`${eventName}`, () => {
+        blockNumbers.forEach((blockNumber: number) => {
+          it(`State after ${blockNumber}`, async function () {
+            await testEventSubscriber(
+              pool,
+              pool.addressesSubscribed,
+              (blockNumber: number) => fetchPoolState(pool, blockNumber),
+              blockNumber,
+              `${dexKey}_${pool.key.stringId()}`,
+              dexHelper.provider,
+            );
+          });
+        });
       });
     },
   );
