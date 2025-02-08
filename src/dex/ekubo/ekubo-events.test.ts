@@ -114,7 +114,7 @@ describe('Ekubo Mainnet', function () {
               pool.addressesSubscribed,
               (blockNumber: number) => fetchPoolState(pool, blockNumber),
               blockNumber,
-              `${dexKey}_${pool.key.stringId()}`,
+              `${dexKey}_${pool.key.id()}`,
               dexHelper.provider,
             );
           });

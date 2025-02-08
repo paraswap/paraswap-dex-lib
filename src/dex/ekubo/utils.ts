@@ -3,6 +3,7 @@ import { Token } from '../../types';
 import { isETHAddress } from '../../utils';
 
 export const NATIVE_TOKEN_ADDRESS = 0x0000000000000000000000000000eeeeee000000n;
+export const ORACLE_TOKEN_ADDRESS = 0x04c46e830bb56ce22735d5d8fc9cb90309317d0fn;
 
 export function convertToEkuboETHAddress(address: string): bigint {
   return isETHAddress(address) ? NATIVE_TOKEN_ADDRESS : BigInt(address);

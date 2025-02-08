@@ -32,6 +32,7 @@ import { BasePool, BasePool as EkuboEventPool } from './pools/base-pool';
 import {
   convertToEkuboETHAddress,
   hexStringTokenPair,
+  ORACLE_TOKEN_ADDRESS,
   sortAndConvertTokens,
 } from './utils';
 import Joi from 'joi';
@@ -276,11 +277,6 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     };
   }
 
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
   async updatePoolState(): Promise<void> {}
 
   // Returns list of top pools based on liquidity. Max
@@ -289,24 +285,36 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    const res = await this.dexHelper.httpRequest.get(
+      `${this.config.apiUrl}/overview/pairs`,
+    );
+
+    const { error, value } = tokenPairSchema.validate(res, {
+      allowUnknown: true,
+      presence: 'required',
+    });
+
+    if (typeof error !== 'undefined') {
+      throw new Error(`validating API response: ${error}`);
+    }
+
     // getTokenUSDPrice may be used for this
     //TODO: complete me!
     return [];
   }
 
   getDexParam(
-    srcToken: Address,
-    destToken: Address,
+    _srcToken: Address,
+    _destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    recipient: Address,
+    _recipient: Address,
     data: EkuboData,
     side: SwapSide,
     _context: Context,
     _executorAddress: Address,
   ): DexExchangeParam {
-    const amount =
-      side === SwapSide.BUY ? BigInt(`-${destAmount}`) : BigInt(srcAmount);
+    const amount = BigInt(side === SwapSide.BUY ? `-${destAmount}` : srcAmount);
 
     return {
       needWrapNative: this.needWrapNative,
@@ -323,12 +331,6 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       dexFuncHasRecipient: false,
       returnAmountPos: undefined,
     };
-  }
-
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {
-    // TODO: complete me!
   }
 
   private async fetchPools(
@@ -384,21 +386,22 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
         `Fetching pools from Ekubo API for token pair ${pair} failed, falling back to default pool parameters: ${err}`,
       );
 
-      poolKeys = [
-        // Base pools
-        ...ENABLED_POOL_PARAMETERS.map(
-          params =>
-            new PoolKey(token0, token1, params.fee, params.tickSpacing, 0n),
-        ),
-        // Oracle pool
-        new PoolKey(
-          token0,
-          token1,
-          0n,
-          MAX_TICK_SPACING,
-          BigInt(this.config.oracle),
-        ),
-      ];
+      poolKeys = ENABLED_POOL_PARAMETERS.map(
+        params =>
+          new PoolKey(token0, token1, params.fee, params.tickSpacing, 0n),
+      );
+
+      if ([token0, token1].includes(ORACLE_TOKEN_ADDRESS)) {
+        poolKeys.push(
+          new PoolKey(
+            token0,
+            token1,
+            0n,
+            MAX_TICK_SPACING,
+            BigInt(this.config.oracle),
+          ),
+        );
+      }
     }
 
     // TODO Make sure that we haven't initialized these pools before
@@ -436,7 +439,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
                 const initialState = PoolState.fromQuoter(data);
 
                 const poolKey = poolKeys[batchStart + i];
-                const poolId = poolKey.stringId();
+                const poolId = poolKey.id();
                 const extension = poolKey.extension;
 
                 let poolConstructor;
@@ -489,9 +492,5 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
         return res.value;
       }
     });
-  }
-
-  private poolId(poolKey: PoolKey): string {
-    return `${this.dexKey}_${poolKey.stringId()}`;
   }
 }

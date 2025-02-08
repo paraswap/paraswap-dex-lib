@@ -42,8 +42,6 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
 
   public readonly addressesSubscribed: string[];
 
-  private readonly id: bigint;
-
   constructor(
     public readonly parentName: string,
     protected network: number,
@@ -54,15 +52,13 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
     private readonly dataFetcher: Contract,
     public readonly key: PoolKey,
   ) {
-    super(parentName, key.stringId(), dexHelper, logger);
+    super(parentName, key.id(), dexHelper, logger);
 
     this.addressesSubscribed = [core.address];
 
     this.handlers['Swapped'] = this.handleSwappedEvent.bind(this);
     this.handlers['PositionUpdated'] =
       this.handlePositionUpdatedEvent.bind(this);
-
-    this.id = this.key.intId();
   }
 
   /**

@@ -3,6 +3,7 @@ import { hexlify, hexZeroPad } from 'ethers/lib/utils';
 import _ from 'lodash';
 import { DeepReadonly, DeepWritable } from 'ts-essentials';
 import { MIN_TICK } from './pools/math/tick';
+import { hexStringTokenPair } from './utils';
 
 export type Pool = {
   key: PoolKey;
@@ -267,11 +268,6 @@ export type DexParams = {
   oracle: string;
   dataFetcher: string;
   swapper: string;
-  //enabledFeeTiers: bigint[],
-  //api_url: Url,
-  // TODO: DexParams is set of parameters the can
-  // be used to initiate a DEX fork.
-  // Complete me!
 };
 
 export class PoolKey {
@@ -283,13 +279,10 @@ export class PoolKey {
     public readonly extension: bigint,
   ) {}
 
-  stringId(): string {
-    return `${this.token0}_${this.token1}_${this.fee}_${this.tickSpacing}_${this.extension}`;
-  }
-
-  intId(): bigint {
-    // TODO
-    return 0n;
+  id(): string {
+    return `${hexStringTokenPair(this.token0, this.token1)}_${this.fee}_${
+      this.tickSpacing
+    }_${hexlify(this.extension)}`;
   }
 
   toAbi(): AbiPoolKey {
