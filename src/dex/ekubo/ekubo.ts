@@ -378,7 +378,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     );
 
     poolLiquidities
-      .sort((a, b) => a.liquidityUSD - b.liquidityUSD)
+      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
       .splice(limit, Infinity);
 
     return poolLiquidities;

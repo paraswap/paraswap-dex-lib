@@ -20,11 +20,11 @@ export function sortAndConvertTokens(
   tokenA: Token,
   tokenB: Token,
 ): [bigint, bigint] {
-  const [_a, _b] = [
+  const [a, b] = [
     convertParaSwapToEkubo(tokenA.address),
     convertParaSwapToEkubo(tokenB.address),
   ];
-  return _a > _b ? [_b, _a] : [_a, _b];
+  return a > b ? [b, a] : [a, b];
 }
 
 export function hexStringTokenPair(token0: bigint, token1: bigint): string {
