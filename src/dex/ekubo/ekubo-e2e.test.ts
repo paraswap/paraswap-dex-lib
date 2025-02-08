@@ -131,10 +131,10 @@ describe('Ekubo E2E', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'USDT';
+    const tokenBSymbol: string = 'EKUBO';
 
     const tokenAAmount: string = '200000000';
-    const tokenBAmount: string = '200000000';
+    const tokenBAmount: string = '10000000000000000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(

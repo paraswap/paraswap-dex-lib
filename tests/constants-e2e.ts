@@ -88,6 +88,10 @@ export const Tokens: {
       address: '0x4c9edd5852cd905f086c759e8383e09bff1e68b3',
       decimals: 18,
     },
+    EKUBO: {
+      address: '0x04C46E830Bb56ce22735d5d8Fc9CB90309317d0f',
+      decimals: 18,
+    },
     ETH: {
       address: ETHER_ADDRESS,
       decimals: 18,

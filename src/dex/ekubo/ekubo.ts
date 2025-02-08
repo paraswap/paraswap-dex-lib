@@ -149,7 +149,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   private readonly coreIface;
   private readonly dataFetcher;
   private readonly swapperIface;
-  private readonly supportedExtension;
+  private readonly supportedExtensions;
 
   private readonly decimals: Record<string, number> = {
     [ETHER_ADDRESS]: 18,
@@ -172,7 +172,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       dexHelper.provider,
     );
     this.swapperIface = new Interface(SimpleSwapperABI);
-    this.supportedExtension = [0n, this.config.oracle];
+    this.supportedExtensions = [0n, BigInt(this.config.oracle)];
   }
 
   async initializePricing(_blockNumber: number) {}
@@ -618,7 +618,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
     return value.topPools.filter(
       res =>
-        this.supportedExtension.includes(BigInt(res.extension)) &&
+        this.supportedExtensions.includes(BigInt(res.extension)) &&
         (res.tvl0_total !== '0' || res.tvl1_total !== '0'),
     );
   }
