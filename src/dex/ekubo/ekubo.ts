@@ -441,9 +441,9 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
                 let poolConstructor;
                 if (extension === 0n) {
-                  poolConstructor = OraclePool;
-                } else if (extension === BigInt(this.config.oracle)) {
                   poolConstructor = BasePool;
+                } else if (extension === BigInt(this.config.oracle)) {
+                  poolConstructor = OraclePool;
                 } else {
                   throw new Error(
                     `Unknown pool extension ${hexlify(extension)}`,
