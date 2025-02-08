@@ -31,13 +31,13 @@ const GAS_COST_OF_ONE_TICK_SPACING_CROSSED = 2_000;
  * To avoid registering handlers with the same filter for every pool, we handle all events in this subscriber
  * and delegate the events to the pool implementations.
  */
-export class BasePool extends StatefulEventSubscriber<PoolState> {
+export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
   handlers: {
     [event: string]: (
       event: LogDescription,
-      state: DeepReadonly<PoolState>,
+      state: DeepReadonly<PoolState.Object>,
       log: Readonly<Log>,
-    ) => DeepReadonly<PoolState> | null;
+    ) => DeepReadonly<PoolState.Object> | null;
   } = {};
 
   public readonly addressesSubscribed: string[];
@@ -75,9 +75,9 @@ export class BasePool extends StatefulEventSubscriber<PoolState> {
    * @returns Updates state of the event subscriber after the log
    */
   protected processLog(
-    state: DeepReadonly<PoolState>,
+    state: DeepReadonly<PoolState.Object>,
     log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
+  ): DeepReadonly<PoolState.Object> | null {
     try {
       const event = this.coreIface.parseLog(log);
       if (event.name in this.handlers) {
@@ -99,7 +99,9 @@ export class BasePool extends StatefulEventSubscriber<PoolState> {
    * should be generated
    * @returns state of the event subscriber at blocknumber
    */
-  async generateState(blockNumber: number): Promise<DeepReadonly<PoolState>> {
+  async generateState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<PoolState.Object>> {
     const data = await this.dataFetcher.getQuoteData([this.key.toAbi()], 10, {
       blockTag: blockNumber,
     });
@@ -108,9 +110,9 @@ export class BasePool extends StatefulEventSubscriber<PoolState> {
 
   handleSwappedEvent(
     event: LogDescription,
-    oldState: DeepReadonly<PoolState>,
+    oldState: DeepReadonly<PoolState.Object>,
     _log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
+  ): DeepReadonly<PoolState.Object> | null {
     const args = event.args;
     const poolKey = poolKeyFromEventArgs(args.poolKey);
 
@@ -128,9 +130,9 @@ export class BasePool extends StatefulEventSubscriber<PoolState> {
 
   handlePositionUpdatedEvent(
     event: LogDescription,
-    oldState: DeepReadonly<PoolState>,
+    oldState: DeepReadonly<PoolState.Object>,
     _log: Readonly<Log>,
-  ): DeepReadonly<PoolState> | null {
+  ): DeepReadonly<PoolState.Object> | null {
     const args = event.args;
     const poolKey = poolKeyFromEventArgs(args.poolKey);
 
@@ -138,8 +140,13 @@ export class BasePool extends StatefulEventSubscriber<PoolState> {
       return null;
     }
 
-    this.logger.info(event);
-    return null;
+    const params = args.params;
+
+    return PoolState.fromPositionUpdatedEvent(
+      oldState,
+      [params.bounds.lower, params.bounds.upper],
+      params.liquidityDelta.toBigInt(),
+    );
   }
 
   public quote(amount: bigint, token: bigint, blockNumber: number): Quote {

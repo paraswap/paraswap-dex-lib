@@ -303,7 +303,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     data: EkuboData,
     side: SwapSide,
     _context: Context,
-    executorAddress: Address,
+    _executorAddress: Address,
   ): DexExchangeParam {
     const amount =
       side === SwapSide.BUY ? BigInt(`-${destAmount}`) : BigInt(srcAmount);
@@ -338,7 +338,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     maxTime?: number,
   ): Promise<string[]> {
     const [token0, token1] = sortAndConvertTokens(srcToken, destToken);
-    const pair = `${hexlify(token0)}/${hexlify(token1)}`;
+    const pair = hexStringTokenPair(token0, token1);
 
     if (typeof maxTime === 'number') {
       // Leave some time for computations & timer inaccuracies

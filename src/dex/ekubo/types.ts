@@ -14,7 +14,7 @@ export type Pool = {
 
 export interface Tick {
   readonly number: number;
-  readonly liquidityDelta: bigint;
+  liquidityDelta: bigint;
 }
 
 /**
@@ -49,7 +49,7 @@ export function findNearestInitializedTickIndex(
     }
   }
 
-  return -1;
+  throw new Error('Nearest initialized tick index should be findable');
 }
 
 export type PoolData = {
@@ -130,63 +130,22 @@ function addLiquidityCutoffsAndComputeTickIndex(
   return activeTickIndex;
 }
 
-export class PoolState {
-  private constructor(
-    public sqrtRatio: bigint,
-    public liquidity: bigint,
-    public activeTick: number,
-    public readonly sortedTicks: Tick[],
-    public activeTickIndex: number,
-  ) {}
+export namespace PoolState {
+  // Needs to be serializiable, therefore can't make it a class
+  export type Object = {
+    sqrtRatio: bigint;
+    liquidity: bigint;
+    activeTick: number;
+    readonly sortedTicks: Tick[];
+    activeTickIndex: number;
+  };
 
-  public equals(other: DeepReadonly<PoolState>) {
-    // Compare but special case low and high cutoff ticks
-  }
-
-  public static fromSwappedEvent(
-    oldState: DeepReadonly<PoolState>,
-    sqrtRatioAfter: BigNumber,
-    liquidityAfter: BigNumber,
-    tickAfter: number,
-  ): PoolState {
-    const sortedTicks = oldState.sortedTicks;
-
-    const clonedTicks = _.cloneDeep(sortedTicks) as DeepWritable<
-      typeof sortedTicks
-    >;
-
-    return new PoolState(
-      sqrtRatioAfter.toBigInt(),
-      liquidityAfter.toBigInt(),
-      tickAfter,
-      clonedTicks,
-      findNearestInitializedTickIndex(clonedTicks, tickAfter),
-    );
-  }
-
-  public static fromPositionUpdatedEvent(
-    oldState: DeepReadonly<PoolState>,
-    [lowTick, highTick]: [number, number],
-    liquidityDelta: bigint,
-  ): PoolState | null {
-    if (liquidityDelta === 0n) {
-      return null;
-    }
-
-    return null;
-    /*return new PoolState(
-      oldState.sqrtRatio,
-    )*/
-  }
-
-  public static fromQuoter(data: PoolData): PoolState {
+  export function fromQuoter(data: PoolData): Object {
     const sortedTicks = data.ticks.map(({ number, liquidityDelta }) => ({
       number,
       liquidityDelta: liquidityDelta.toBigInt(),
     }));
     const liquidity = data.liquidity.toBigInt();
-
-    //console.log(sortedTicks, liquidity, data.tick, data.minTick, data.maxTick);
 
     const activeTickIndex = addLiquidityCutoffsAndComputeTickIndex(
       data.tick,
@@ -195,15 +154,105 @@ export class PoolState {
       [data.minTick, data.maxTick],
     );
 
-    //console.log(sortedTicks);
-
-    return new PoolState(
-      data.sqrtRatio.toBigInt(),
+    return {
+      sqrtRatio: data.sqrtRatio.toBigInt(),
       liquidity,
-      data.tick,
+      activeTick: data.tick,
       sortedTicks,
       activeTickIndex,
+    };
+  }
+
+  export function fromSwappedEvent(
+    oldState: DeepReadonly<Object>,
+    sqrtRatioAfter: BigNumber,
+    liquidityAfter: BigNumber,
+    tickAfter: number,
+  ): Object {
+    const sortedTicks = oldState.sortedTicks;
+
+    const clonedTicks = _.cloneDeep(sortedTicks) as DeepWritable<
+      typeof sortedTicks
+    >;
+
+    return {
+      sqrtRatio: sqrtRatioAfter.toBigInt(),
+      liquidity: liquidityAfter.toBigInt(),
+      activeTick: tickAfter,
+      sortedTicks: clonedTicks,
+      activeTickIndex: findNearestInitializedTickIndex(clonedTicks, tickAfter),
+    };
+  }
+
+  export function fromPositionUpdatedEvent(
+    oldState: DeepReadonly<Object>,
+    [lowTick, highTick]: [number, number],
+    liquidityDelta: bigint,
+  ): Object | null {
+    if (liquidityDelta === 0n) {
+      return null;
+    }
+
+    const clonedState = _.cloneDeep(oldState) as DeepWritable<typeof oldState>;
+
+    updateTick(clonedState, lowTick, liquidityDelta, false);
+    updateTick(clonedState, highTick, liquidityDelta, true);
+
+    if (
+      clonedState.activeTick >= lowTick &&
+      clonedState.activeTick < highTick
+    ) {
+      clonedState.liquidity += liquidityDelta;
+    }
+
+    return clonedState;
+  }
+
+  export function equal() {
+    // Compare but special case low and high cutoff ticks
+  }
+
+  export function updateTick(
+    state: Object,
+    updatedTickNumber: number,
+    liquidityDelta: bigint,
+    upper: boolean,
+  ) {
+    if (upper) {
+      liquidityDelta = -liquidityDelta;
+    }
+
+    const nearestTickIndex = findNearestInitializedTickIndex(
+      state.sortedTicks,
+      updatedTickNumber,
     );
+    const nearestTick = state.sortedTicks[nearestTickIndex];
+    const nearestTickNumber = nearestTick.number;
+
+    const newTickInitialized = nearestTickNumber !== updatedTickNumber;
+
+    if (newTickInitialized) {
+      state.sortedTicks.splice(nearestTickIndex, 0, {
+        number: updatedTickNumber,
+        liquidityDelta,
+      });
+
+      if (state.activeTick >= updatedTickNumber) {
+        state.activeTick++;
+      }
+    } else {
+      const newDelta = nearestTick.liquidityDelta + liquidityDelta;
+
+      if (newDelta === 0n && nearestTickNumber !== MIN_TICK) {
+        state.sortedTicks.splice(nearestTickIndex, 1);
+
+        if (state.activeTick >= updatedTickNumber) {
+          state.activeTick--;
+        }
+      } else {
+        nearestTick.liquidityDelta = newDelta;
+      }
+    }
   }
 }
 

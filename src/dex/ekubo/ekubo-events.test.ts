@@ -54,8 +54,8 @@ jest.setTimeout(50 * 1000);
 async function fetchPoolState(
   pool: BasePool,
   blockNumber: number,
-): Promise<PoolState> {
-  return pool.generateState(blockNumber) as Promise<PoolState>;
+): Promise<PoolState.Object> {
+  return pool.generateState(blockNumber) as Promise<PoolState.Object>;
 }
 
 // eventName -> blockNumbers
@@ -80,9 +80,9 @@ describe('Ekubo Mainnet', function () {
     Swapped: [
       21796221, // https://etherscan.io/tx/0x6bb4c90f1ff6f81fc98973590f11968215cd3572c9b285197539d6776bdc4204
     ],
-    /*"PositionUpdated": [
-      21746135, // https://etherscan.io/tx/0x383d3c972413545685037dba19f2b8ccb184d1e2b165fe754b520c30567aed2a
-    ]*/
+    PositionUpdated: [
+      21802238, // https://etherscan.io/tx/0x0c978ec4226b73f7d1e718d93bb91a8e8dd27a7bb173b21b7d17823333e5221a
+    ],
   };
 
   beforeEach(async () => {
