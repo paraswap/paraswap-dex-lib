@@ -112,5 +112,5 @@ export function approximateNumberOfTickSpacingsCrossed(
   const logPriceDiff =
     Math.log(Number(sqrtRatioEnd) / Number(sqrtRatioStart)) / logBase;
 
-  return Math.floor(Math.abs(logPriceDiff / (tickSpacing * 251)));
+  return Math.floor(Math.abs(logPriceDiff / (tickSpacing * 256)));
 }
