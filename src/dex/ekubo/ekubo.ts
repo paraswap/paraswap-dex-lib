@@ -5,9 +5,7 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
-  Logger,
   DexExchangeParam,
   NumberAsString,
 } from '../../types';
@@ -18,7 +16,7 @@ import {
   FETCH_POOL_PRICES_TIMEOUT,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, isTruthy } from '../../utils';
+import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
@@ -31,9 +29,13 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { EkuboConfig } from './config';
 import { BasePool, BasePool as EkuboEventPool } from './pools/base-pool';
-import { convertToEkuboETHAddress, sortAndConvertTokens } from './utils';
+import {
+  convertToEkuboETHAddress,
+  hexStringTokenPair,
+  sortAndConvertTokens,
+} from './utils';
 import Joi from 'joi';
-import { Interface, Result } from '@ethersproject/abi';
+import { Interface } from '@ethersproject/abi';
 
 import CoreABI from '../../abi/ekubo/core.json';
 import DataFetcherABI from '../../abi/ekubo/data-fetcher.json';
@@ -176,24 +178,19 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     );
 
     const isExactOut = side === SwapSide.BUY;
-    let unitAmount, token;
 
-    if (isExactOut) {
-      amounts = amounts.map(amount => -amount);
-
-      unitAmount = -getBigIntPow(destToken.decimals);
-      token = convertToEkuboETHAddress(destToken.address);
-    } else {
-      unitAmount = getBigIntPow(srcToken.decimals);
-      token = convertToEkuboETHAddress(srcToken.address);
-    }
+    const amountToken = isExactOut ? destToken : srcToken;
+    const amountTokenAddress = convertToEkuboETHAddress(amountToken.address);
+    const unitAmount = getBigIntPow(amountToken.decimals);
 
     const [token0, token1] = sortAndConvertTokens(srcToken, destToken);
 
     const exchangePrices = [];
 
-    for (const poolId of limitPools) {
+    // eslint-disable-next-line no-restricted-syntax
+    poolLoop: for (const poolId of limitPools) {
       const pool = this.pools.get(poolId);
+
       if (typeof pool === 'undefined') {
         this.logger.warn(`Pool ${poolId} not found`);
         continue;
@@ -201,28 +198,53 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
       if (pool.key.token0 !== token0 || pool.key.token1 !== token1) {
         this.logger.error(
-          `Can't quote pair ${token0}/${token1} on pool ${poolId}`,
+          `Can't quote pair ${hexStringTokenPair(
+            token0,
+            token1,
+          )} on pool ${poolId}`,
         );
         continue;
       }
 
       try {
-        const [unitQuote, ...quotes] = [unitAmount, ...amounts].map(amount =>
-          pool.quote(amount, token, blockNumber),
-        );
+        const quotes = [];
+
+        for (const amount of [unitAmount, ...amounts]) {
+          const inputAmount = isExactOut ? -amount : amount;
+
+          const quote = pool.quote(
+            inputAmount,
+            amountTokenAddress,
+            blockNumber,
+          );
+
+          if (isExactOut && quote.consumedAmount !== inputAmount) {
+            this.logger.debug(
+              "Pool doesn't have enough liquidity to support exact-out swap",
+            );
+
+            // There doesn't seem to be a way to skip just this one price.
+            // Anyway, this pool is probably not the right one if it has such thin liquidity.
+            continue poolLoop;
+          }
+
+          quotes.push(quote);
+        }
+
+        const [unitQuote, ...otherQuotes] = quotes;
 
         // console.log(unitQuote, quotes);
 
         exchangePrices.push({
-          prices: quotes.map(quote => quote.calculatedAmount),
+          prices: otherQuotes.map(quote => quote.calculatedAmount),
           unit: unitQuote.calculatedAmount,
           data: {
             poolKey: pool.key,
-            isToken1: token === token1,
+            isToken1: amountTokenAddress === token1,
           },
           poolIdentifier: poolId,
           exchange: this.dexKey,
-          gasCost: quotes.map(quote => quote.gasConsumed),
+          gasCost: otherQuotes.map(quote => quote.gasConsumed),
         });
       } catch (err) {
         this.logger.error('Quote error:', err);

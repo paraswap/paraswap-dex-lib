@@ -1,3 +1,4 @@
+import { hexlify } from 'ethers/lib/utils';
 import { Token } from '../../types';
 import { isETHAddress } from '../../utils';
 
@@ -16,4 +17,8 @@ export function sortAndConvertTokens(
     convertToEkuboETHAddress(tokenB.address),
   ];
   return _a > _b ? [_b, _a] : [_a, _b];
+}
+
+export function hexStringTokenPair(token0: bigint, token1: bigint): string {
+  return `${hexlify(token0)}/${hexlify(token1)}`;
 }
