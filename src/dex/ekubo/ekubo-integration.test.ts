@@ -18,21 +18,6 @@ import { MAX_SQRT_RATIO, MIN_SQRT_RATIO } from './pools/math/tick';
 import SimpleQuoterABI from '../../abi/ekubo/simple-quoter.json';
 import { isPriceIncreasing } from './pools/math/swap';
 
-/*
-  README
-  ======
-
-  This test script adds tests for Ekubo general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover Ekubo specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
-
 function getReaderCalldata(
   quoterAddress: string,
   readerIface: Interface,
