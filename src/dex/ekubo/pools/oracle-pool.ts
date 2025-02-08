@@ -36,7 +36,11 @@ export class OraclePool extends BasePool {
     blockNumber: number,
   ): Quote {
     let baseQuote = super.quote(amount, token, blockNumber);
-    baseQuote.gasConsumed += GAS_COST_OF_UPDATING_ORACLE_SNAPSHOT;
+
+    if (baseQuote.gasConsumed > 0n) {
+      baseQuote.gasConsumed += GAS_COST_OF_UPDATING_ORACLE_SNAPSHOT;
+    }
+
     return baseQuote;
   }
 }
