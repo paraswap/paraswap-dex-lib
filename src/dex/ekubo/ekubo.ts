@@ -124,12 +124,7 @@ const topPairsSchema = Joi.object<{
 const MIN_TICK_SPACINGS_PER_POOL = 10;
 const MAX_POOL_BATCH_COUNT = 5;
 
-/**
- * Ekubo Protocol https://ekubo.org/
- *
- * Potential improvements:
- * - Use subgraphs instead of the Ekubo API
- */
+// Ekubo Protocol https://ekubo.org/
 export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   protected readonly eventPools: Record<string, EkuboEventPool> = {};
 

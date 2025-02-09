@@ -67,11 +67,11 @@ export type PoolData = {
 
 export type GetQuoteDataResponse = PoolData[];
 
-function addLiquidityCutoffsAndComputeTickIndex(
+export function addLiquidityCutoffsAndComputeTickIndex(
   activeTick: number,
   liquidity: bigint,
   sortedTicks: Tick[],
-  [minCheckedTickNumber, maxCheckedTickNumber]: [number, number],
+  [minCheckedTickNumber, maxCheckedTickNumber]: [number, number], // Must be different and lt/gt activeTick
 ): number {
   // Such that every tick has a valid tick index in sortedTicks
   if (sortedTicks.at(0)?.number !== MIN_TICK) {
@@ -85,17 +85,17 @@ function addLiquidityCutoffsAndComputeTickIndex(
   let currentLiquidity = 0n;
 
   // The liquidity added/removed by out-of-range initialized ticks (i.e. lower/higher than minCheckedTickNumber/maxCheckedTickNumber)
-  let liquidityDeltaMin = liquidity,
+  let liquidityDeltaMin = 0n,
     liquidityDeltaMax;
 
   for (let i = 0; i < sortedTicks.length; i++) {
     const tick = sortedTicks[i];
 
     if (activeTickIndex === null && activeTick < tick.number) {
-      // Might need to be corrected if we prepend ticks to the array (see below)
+      // Might need to be corrected if we prepend ticks to or remove ticks from the array (see below)
       activeTickIndex = i - 1; // Non-negative due to the first tick being the MIN_TICK
 
-      liquidityDeltaMin -= currentLiquidity;
+      liquidityDeltaMin = liquidity - currentLiquidity;
 
       // We now need to switch to tracking the liquidity that needs to be cut off at maxCheckedTickNumber, therefore reset to the actual liquidity
       currentLiquidity = liquidity;
@@ -104,28 +104,45 @@ function addLiquidityCutoffsAndComputeTickIndex(
     currentLiquidity += tick.liquidityDelta;
   }
 
-  activeTickIndex ??= sortedTicks.length - 1;
+  if (activeTickIndex === null) {
+    activeTickIndex = sortedTicks.length - 1;
+    liquidityDeltaMin = liquidity - currentLiquidity;
+    currentLiquidity = liquidity;
+  }
 
   if (liquidityDeltaMin !== 0n) {
     // minCheckedTickNumber > MIN_TICK (otherwise liquidityDeltaMin would be 0)
-    sortedTicks.splice(1, 0, {
-      number: minCheckedTickNumber,
-      liquidityDelta: liquidityDeltaMin,
-    });
 
-    if (activeTickIndex !== 0 || activeTick >= minCheckedTickNumber) {
-      activeTickIndex++;
+    const index1Tick = sortedTicks[1];
+
+    if (index1Tick?.number === minCheckedTickNumber) {
+      index1Tick.liquidityDelta += liquidityDeltaMin;
+    } else {
+      sortedTicks.splice(1, 0, {
+        number: minCheckedTickNumber,
+        liquidityDelta: liquidityDeltaMin,
+      });
+
+      if (activeTickIndex !== 0 || activeTick >= minCheckedTickNumber) {
+        activeTickIndex++;
+      }
     }
   }
 
   liquidityDeltaMax = -currentLiquidity;
   if (liquidityDeltaMax !== 0n) {
-    // No modification of activeTickIndex required here
+    const lastTick = sortedTicks[sortedTicks.length - 1];
 
-    sortedTicks.push({
-      number: maxCheckedTickNumber,
-      liquidityDelta: liquidityDeltaMax,
-    });
+    if (lastTick.number === maxCheckedTickNumber) {
+      lastTick.liquidityDelta += liquidityDeltaMax;
+    } else {
+      sortedTicks.push({
+        number: maxCheckedTickNumber,
+        liquidityDelta: liquidityDeltaMax,
+      });
+
+      // No modification of activeTickIndex required here
+    }
   }
 
   return activeTickIndex;
@@ -207,10 +224,6 @@ export namespace PoolState {
     }
 
     return clonedState;
-  }
-
-  export function equal() {
-    // Compare but special case low and high cutoff ticks
   }
 
   export function updateTick(
