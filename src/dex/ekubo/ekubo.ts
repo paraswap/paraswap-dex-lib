@@ -49,7 +49,7 @@ import {
   MIN_SQRT_RATIO,
 } from './pools/math/tick';
 import { hexlify } from 'ethers/lib/utils';
-import SimpleSwapperABI from '../../abi/ekubo/simple-swapper.json';
+import SwapperABI from '../../abi/ekubo/swapper.json';
 import { isPriceIncreasing } from './pools/math/swap';
 import { OraclePool } from './pools/oracle-pool';
 import { erc20Iface } from '../../lib/tokens/utils';
@@ -171,7 +171,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       DataFetcherABI,
       dexHelper.provider,
     );
-    this.swapperIface = new Interface(SimpleSwapperABI);
+    this.swapperIface = new Interface(SwapperABI);
     this.supportedExtensions = [0n, BigInt(this.config.oracle)];
   }
 
@@ -421,7 +421,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     _destToken: Address,
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
-    _recipient: Address,
+    recipient: Address,
     data: EkuboData,
     side: SwapSide,
     _context: Context,
@@ -432,6 +432,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     return {
       needWrapNative: this.needWrapNative,
       exchangeData: this.swapperIface.encodeFunctionData('swap', [
+        recipient,
         data.poolKey.toAbi(),
         data.isToken1,
         BigNumber.from(amount),
@@ -443,7 +444,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
         ) ?? 0,
       ]),
       targetExchange: this.config.swapper,
-      dexFuncHasRecipient: false,
+      dexFuncHasRecipient: true,
       returnAmountPos: undefined,
     };
   }
