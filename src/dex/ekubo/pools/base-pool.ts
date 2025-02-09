@@ -27,11 +27,6 @@ const BASE_GAS_COST_OF_ONE_SWAP = 90_000;
 const GAS_COST_OF_ONE_INITIALIZED_TICK_CROSSED = 20_000;
 const GAS_COST_OF_ONE_TICK_SPACING_CROSSED = 2_000;
 
-/**
- * Ekubo uses a singleton architecture, meaning that most pool events are emitted by one contract.
- * To avoid registering handlers with the same filter for every pool, we handle all events in this subscriber
- * and delegate the events to the pool implementations.
- */
 export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
   handlers: {
     [event: string]: (
