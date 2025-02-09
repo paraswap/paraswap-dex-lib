@@ -239,7 +239,7 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
       skipAhead:
         initializedTicksCrossed === 0
           ? 0
-          : tickSpacingsCrossed / initializedTicksCrossed,
+          : Math.floor(tickSpacingsCrossed / initializedTicksCrossed),
     };
   }
 }

@@ -31,7 +31,7 @@ function getReaderCalldata(
       isToken1,
       amount,
       isPriceIncreasing(amount, isToken1) ? MAX_SQRT_RATIO : MIN_SQRT_RATIO,
-      skipAhead,
+      skipAhead.get(amount) ?? 0,
     ]),
   }));
 }
