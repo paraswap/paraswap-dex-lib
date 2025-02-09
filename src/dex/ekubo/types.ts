@@ -260,6 +260,7 @@ export namespace PoolState {
 export type EkuboData = {
   poolKey: PoolKey;
   isToken1: boolean;
+  skipAhead: Map<bigint, number>;
 };
 
 export type DexParams = {

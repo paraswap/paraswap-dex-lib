@@ -20,6 +20,7 @@ export interface Quote {
   consumedAmount: bigint;
   calculatedAmount: bigint;
   gasConsumed: number;
+  skipAhead: number;
 }
 
 const BASE_GAS_COST_OF_ONE_SWAP = 90_000;
@@ -157,6 +158,7 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
         consumedAmount: 0n,
         calculatedAmount: 0n,
         gasConsumed: 0,
+        skipAhead: 0,
       };
     }
 
@@ -221,18 +223,23 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
       }
     }
 
+    const tickSpacingsCrossed = approximateNumberOfTickSpacingsCrossed(
+      startingSqrtRatio,
+      sqrtRatio,
+      this.key.tickSpacing,
+    );
+
     return {
       consumedAmount: amount - amountRemaining,
       calculatedAmount,
       gasConsumed:
         BASE_GAS_COST_OF_ONE_SWAP +
         initializedTicksCrossed * GAS_COST_OF_ONE_INITIALIZED_TICK_CROSSED +
-        approximateNumberOfTickSpacingsCrossed(
-          startingSqrtRatio,
-          sqrtRatio,
-          this.key.tickSpacing,
-        ) *
-          GAS_COST_OF_ONE_TICK_SPACING_CROSSED,
+        tickSpacingsCrossed * GAS_COST_OF_ONE_TICK_SPACING_CROSSED,
+      skipAhead:
+        initializedTicksCrossed === 0
+          ? 0
+          : tickSpacingsCrossed / initializedTicksCrossed,
     };
   }
 }
