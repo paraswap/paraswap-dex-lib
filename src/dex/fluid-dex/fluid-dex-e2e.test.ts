@@ -131,6 +131,9 @@ function testForNetwork(
                     e.message.includes(errorMessage),
                   )
                 ) {
+                  console.log(
+                    'Pool out of range or not sufficient liquidity for swap at the moment, error is expected.',
+                  );
                   return;
                 }
               }
@@ -404,17 +407,3 @@ describe('TestPoolSimulator_SwapInLimits', () => {
     }
   });
 });
-
-export function adjustTestSwapOutAmount(
-  amountOut: bigint,
-  outDecimals: number,
-) {
-  const amountOutParsed = new BigNumber(amountOut.toString());
-  const normalisationDecimalFactor = outDecimals - 12;
-
-  return amountOutParsed
-    .times(10 ** 12)
-    .dividedToIntegerBy(10 ** outDecimals)
-    .times(10 ** normalisationDecimalFactor)
-    .toFixed(0);
-}
