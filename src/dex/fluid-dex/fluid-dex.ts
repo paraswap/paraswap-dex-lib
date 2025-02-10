@@ -371,9 +371,19 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       }
     } else {
       if (pool!.token0.toLowerCase() !== srcToken.toLowerCase()) {
-        args = [false, BigInt(destAmount), BigInt(srcAmount), recipient];
+        args = [
+          false,
+          (BigInt(destAmount) * 1000001n) / 1000000n, // 0.0001% increase target out amount when calling Fluid Dex as it is not 100% exact. Guarantees meeting reaching exact out amount condition
+          BigInt(srcAmount),
+          recipient,
+        ];
       } else {
-        args = [true, BigInt(destAmount), BigInt(srcAmount), recipient];
+        args = [
+          true,
+          (BigInt(destAmount) * 1000001n) / 1000000n, // 0.0001% increase target out amount when calling Fluid Dex as it is not 100% exact. Guarantees meeting reaching exact out amount condition
+          BigInt(srcAmount),
+          recipient,
+        ];
       }
     }
     const swapData = this.fluidDexPoolIface.encodeFunctionData(method, args);
