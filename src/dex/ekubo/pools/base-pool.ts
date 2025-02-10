@@ -179,7 +179,9 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
     while (amountRemaining !== 0n && sqrtRatio !== sqrtRatioLimit) {
       const nextInitializedTick =
         (isIncreasing
-          ? sortedTicks[activeTickIndex + 1]
+          ? sortedTicks[activeTickIndex === null ? 0 : activeTickIndex + 1]
+          : activeTickIndex === null
+          ? null
           : sortedTicks[activeTickIndex]) ?? null;
 
       const nextInitializedTickSqrtRatio = nextInitializedTick
@@ -209,8 +211,12 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
       // cross the tick if the price moved all the way to the next initialized tick price
       if (nextInitializedTick && sqrtRatio === nextInitializedTickSqrtRatio) {
         activeTickIndex = isIncreasing
-          ? activeTickIndex + 1
-          : activeTickIndex - 1;
+          ? activeTickIndex === null
+            ? 0
+            : activeTickIndex + 1
+          : activeTickIndex
+          ? activeTickIndex - 1
+          : null;
         initializedTicksCrossed++;
         liquidity += isIncreasing
           ? nextInitializedTick.liquidityDelta

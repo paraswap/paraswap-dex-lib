@@ -1,86 +1,75 @@
-import { MIN_TICK } from './pools/math/tick';
-import { addLiquidityCutoffsAndComputeTickIndex, Tick } from './types';
+import { MAX_TICK, MIN_TICK } from './pools/math/tick';
+import { PoolState, Tick } from './types';
 
-const nonZeroLiquidity = 1_000_000n;
-
-const minTickUninitialized: Tick = {
-  number: MIN_TICK,
-  liquidityDelta: 0n,
-};
+const positiveLiquidity = 10n;
 
 const checkedTickNumberBounds: [number, number] = [-2, 2];
 const [minCheckedTickNumber, maxCheckedTickNumber] = checkedTickNumberBounds;
+const [minCheckedTickUninitialized, maxCheckedTickUninitialized]: [Tick, Tick] =
+  [
+    {
+      number: minCheckedTickNumber,
+      liquidityDelta: 0n,
+    },
+    {
+      number: maxCheckedTickNumber,
+      liquidityDelta: 0n,
+    },
+  ];
 const [betweenMinAndActiveTickNumber, betweenActiveAndMaxTickNumber] = [-1, 1];
 const activeTickNumber = 0;
 
-describe('addLiquidityCutoffsAndComputeTickIndex', () => {
+function poolState(
+  activeTickIndex: number | null,
+  liquidity: bigint,
+  sortedTicks: Tick[],
+): PoolState.Object {
+  return {
+    activeTick: activeTickNumber,
+    activeTickIndex,
+    checkedTicksBounds: checkedTickNumberBounds,
+    liquidity,
+    sortedTicks,
+    sqrtRatio: 0n, // Irrelevant for these tests
+  };
+}
+
+describe('addLiquidityCutoffs', () => {
   test('empty ticks', () => {
-    const sortedTicks: Tick[] = [];
+    const state = poolState(null, 0n, []);
 
-    expect(
-      addLiquidityCutoffsAndComputeTickIndex(
-        activeTickNumber,
-        0n,
-        sortedTicks,
-        checkedTickNumberBounds,
-      ),
-    ).toStrictEqual(0);
+    PoolState.addLiquidityCutoffs(state);
 
-    expect(sortedTicks).toStrictEqual([minTickUninitialized]);
-  });
-
-  test('initialized MIN_TICK', () => {
-    const minTickInitialized = {
-      number: MIN_TICK,
-      liquidityDelta: nonZeroLiquidity,
-    };
-    const sortedTicks: Tick[] = [minTickInitialized];
-
-    expect(
-      addLiquidityCutoffsAndComputeTickIndex(
-        activeTickNumber,
-        nonZeroLiquidity,
-        sortedTicks,
-        checkedTickNumberBounds,
-      ),
-    ).toStrictEqual(0);
-
-    expect(sortedTicks).toStrictEqual([
-      minTickInitialized,
-      {
-        number: maxCheckedTickNumber,
-        liquidityDelta: -nonZeroLiquidity,
-      },
+    expect(state.sortedTicks).toStrictEqual([
+      minCheckedTickUninitialized,
+      maxCheckedTickUninitialized,
     ]);
+    expect(state.activeTickIndex).toStrictEqual(0);
   });
 
   describe('positive liquidity delta', () => {
-    const liquidityDelta = 1_000_000n;
+    const liquidityDelta = positiveLiquidity;
 
     test('initialized active tick', () => {
       const activeTickInitialized = {
         number: activeTickNumber,
-        liquidityDelta: liquidityDelta,
+        liquidityDelta,
       };
-      const sortedTicks: Tick[] = [activeTickInitialized];
+      const sortedTicks = [structuredClone(activeTickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          liquidityDelta,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(1);
+      const state = poolState(0, positiveLiquidity, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
+        minCheckedTickUninitialized,
         activeTickInitialized,
         {
           number: maxCheckedTickNumber,
           liquidityDelta: -liquidityDelta,
         },
       ]);
+      expect(state.activeTickIndex).toStrictEqual(1);
     });
 
     test('initialized minCheckedTick', () => {
@@ -88,25 +77,20 @@ describe('addLiquidityCutoffsAndComputeTickIndex', () => {
         number: minCheckedTickNumber,
         liquidityDelta: liquidityDelta,
       };
-      const sortedTicks: Tick[] = [minCheckedTickInitialized];
+      const sortedTicks: Tick[] = [structuredClone(minCheckedTickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          liquidityDelta,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(1);
+      const state = poolState(0, liquidityDelta, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
         minCheckedTickInitialized,
         {
           number: maxCheckedTickNumber,
           liquidityDelta: -liquidityDelta,
         },
       ]);
+      expect(state.activeTickIndex).toStrictEqual(0);
     });
 
     test('initialized maxCheckedTick', () => {
@@ -116,22 +100,15 @@ describe('addLiquidityCutoffsAndComputeTickIndex', () => {
       };
       const sortedTicks: Tick[] = [maxCheckedTickInitialized];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          0n,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(0);
+      const state = poolState(null, 0n, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
-        {
-          number: maxCheckedTickNumber,
-          liquidityDelta: 0n,
-        },
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
       ]);
+      expect(state.activeTickIndex).toStrictEqual(0);
     });
 
     test('initialized minCheckedTick < tick < activeTick', () => {
@@ -139,25 +116,21 @@ describe('addLiquidityCutoffsAndComputeTickIndex', () => {
         number: betweenMinAndActiveTickNumber,
         liquidityDelta: liquidityDelta,
       };
-      const sortedTicks: Tick[] = [tickInitialized];
+      const sortedTicks: Tick[] = [structuredClone(tickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          liquidityDelta,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(1);
+      const state = poolState(0, liquidityDelta, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
+        minCheckedTickUninitialized,
         tickInitialized,
         {
           number: maxCheckedTickNumber,
           liquidityDelta: -liquidityDelta,
         },
       ]);
+      expect(state.activeTickIndex).toStrictEqual(1);
     });
 
     test('initialized activeTick < tick < maxCheckedTick', () => {
@@ -165,55 +138,47 @@ describe('addLiquidityCutoffsAndComputeTickIndex', () => {
         number: betweenActiveAndMaxTickNumber,
         liquidityDelta: liquidityDelta,
       };
-      const sortedTicks: Tick[] = [tickInitialized];
+      const sortedTicks: Tick[] = [structuredClone(tickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          0n,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(0);
+      const state = poolState(null, 0n, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
+        minCheckedTickUninitialized,
         tickInitialized,
         {
           number: maxCheckedTickNumber,
           liquidityDelta: -liquidityDelta,
         },
       ]);
+      expect(state.activeTickIndex).toStrictEqual(0);
     });
   });
 
   describe('negative liquidity delta', () => {
-    const liquidityDelta = -1_000_000n;
+    const liquidityDelta = -positiveLiquidity;
 
     test('initialized active tick', () => {
       const activeTickInitialized = {
         number: activeTickNumber,
         liquidityDelta: liquidityDelta,
       };
-      const sortedTicks: Tick[] = [activeTickInitialized];
+      const sortedTicks: Tick[] = [structuredClone(activeTickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          0n,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(2);
+      const state = poolState(0, 0n, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
         {
           number: minCheckedTickNumber,
           liquidityDelta: -liquidityDelta,
         },
         activeTickInitialized,
+        maxCheckedTickUninitialized,
       ]);
+      expect(state.activeTickIndex).toStrictEqual(1);
     });
 
     test('initialized minCheckedTick', () => {
@@ -221,24 +186,17 @@ describe('addLiquidityCutoffsAndComputeTickIndex', () => {
         number: minCheckedTickNumber,
         liquidityDelta: liquidityDelta,
       };
-      const sortedTicks: Tick[] = [minCheckedTickInitialized];
+      const sortedTicks: Tick[] = [structuredClone(minCheckedTickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          0n,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(1);
+      const state = poolState(0, 0n, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
-        {
-          number: minCheckedTickNumber,
-          liquidityDelta: 0n,
-        },
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
       ]);
+      expect(state.activeTickIndex).toStrictEqual(0);
     });
 
     test('initialized maxCheckedTick', () => {
@@ -246,25 +204,20 @@ describe('addLiquidityCutoffsAndComputeTickIndex', () => {
         number: maxCheckedTickNumber,
         liquidityDelta: liquidityDelta,
       };
-      const sortedTicks: Tick[] = [maxCheckedTickInitialized];
+      const sortedTicks: Tick[] = [structuredClone(maxCheckedTickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          -liquidityDelta,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(1);
+      const state = poolState(null, -liquidityDelta, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
         {
           number: minCheckedTickNumber,
           liquidityDelta: -liquidityDelta,
         },
         maxCheckedTickInitialized,
       ]);
+      expect(state.activeTickIndex).toStrictEqual(0);
     });
 
     test('initialized minCheckedTick < tick < activeTick', () => {
@@ -272,25 +225,21 @@ describe('addLiquidityCutoffsAndComputeTickIndex', () => {
         number: betweenMinAndActiveTickNumber,
         liquidityDelta: liquidityDelta,
       };
-      const sortedTicks: Tick[] = [tickInitialized];
+      const sortedTicks: Tick[] = [structuredClone(tickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          0n,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(2);
+      const state = poolState(0, 0n, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
         {
           number: minCheckedTickNumber,
           liquidityDelta: -liquidityDelta,
         },
         tickInitialized,
+        maxCheckedTickUninitialized,
       ]);
+      expect(state.activeTickIndex).toStrictEqual(1);
     });
 
     test('initialized activeTick < tick < maxCheckedTick', () => {
@@ -298,25 +247,306 @@ describe('addLiquidityCutoffsAndComputeTickIndex', () => {
         number: betweenActiveAndMaxTickNumber,
         liquidityDelta: liquidityDelta,
       };
-      const sortedTicks: Tick[] = [tickInitialized];
+      const sortedTicks: Tick[] = [structuredClone(tickInitialized)];
 
-      expect(
-        addLiquidityCutoffsAndComputeTickIndex(
-          activeTickNumber,
-          -liquidityDelta,
-          sortedTicks,
-          checkedTickNumberBounds,
-        ),
-      ).toStrictEqual(1);
+      const state = poolState(null, -liquidityDelta, sortedTicks);
 
-      expect(sortedTicks).toStrictEqual([
-        minTickUninitialized,
+      PoolState.addLiquidityCutoffs(state);
+
+      expect(sortedTicks).toEqual([
         {
           number: minCheckedTickNumber,
           liquidityDelta: -liquidityDelta,
         },
         tickInitialized,
+        maxCheckedTickUninitialized,
       ]);
+      expect(state.activeTickIndex).toStrictEqual(0);
+    });
+  });
+});
+
+describe('fromPositionUpdatedEvent', () => {
+  describe('empty ticks', () => {
+    const stateBefore = poolState(0, 0n, [
+      minCheckedTickUninitialized,
+      maxCheckedTickUninitialized,
+    ]);
+
+    test('between checked bounds', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [betweenMinAndActiveTickNumber, betweenActiveAndMaxTickNumber],
+        positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        {
+          number: betweenMinAndActiveTickNumber,
+          liquidityDelta: positiveLiquidity,
+        },
+        {
+          number: betweenActiveAndMaxTickNumber,
+          liquidityDelta: -positiveLiquidity,
+        },
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(1);
+      expect(stateAfter?.liquidity).toStrictEqual(positiveLiquidity);
+    });
+
+    test('upper in checked bounds', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [MIN_TICK, betweenActiveAndMaxTickNumber],
+        positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        {
+          number: minCheckedTickNumber,
+          liquidityDelta: positiveLiquidity,
+        },
+        {
+          number: betweenActiveAndMaxTickNumber,
+          liquidityDelta: -positiveLiquidity,
+        },
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(positiveLiquidity);
+    });
+
+    test('lower in checked bounds', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [betweenMinAndActiveTickNumber, MAX_TICK],
+        positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        {
+          number: betweenMinAndActiveTickNumber,
+          liquidityDelta: positiveLiquidity,
+        },
+        {
+          number: maxCheckedTickNumber,
+          liquidityDelta: -positiveLiquidity,
+        },
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(1);
+      expect(stateAfter?.liquidity).toStrictEqual(positiveLiquidity);
+    });
+
+    test('below checked bounds', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [MIN_TICK, MIN_TICK + 1],
+        positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(0n);
+    });
+
+    test('above checked bounds', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [MAX_TICK - 1, MAX_TICK],
+        positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(0n);
+    });
+
+    test('referenced lower bound', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [MIN_TICK, minCheckedTickNumber],
+        positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(0n);
+    });
+
+    test('referenced upper bound', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [maxCheckedTickNumber, MAX_TICK],
+        positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(0n);
+    });
+  });
+
+  describe('active tick initialized', () => {
+    const stateBefore = poolState(1, positiveLiquidity, [
+      minCheckedTickUninitialized,
+      {
+        number: activeTickNumber,
+        liquidityDelta: positiveLiquidity,
+      },
+      {
+        number: maxCheckedTickNumber,
+        liquidityDelta: -positiveLiquidity,
+      },
+    ]);
+
+    test('modify delta', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [activeTickNumber, MAX_TICK],
+        -positiveLiquidity / 2n,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        {
+          number: activeTickNumber,
+          liquidityDelta: positiveLiquidity / 2n,
+        },
+        {
+          number: maxCheckedTickNumber,
+          liquidityDelta: -positiveLiquidity / 2n,
+        },
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(1);
+      expect(stateAfter?.liquidity).toStrictEqual(positiveLiquidity / 2n);
+    });
+
+    test('close position', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [activeTickNumber, MAX_TICK],
+        -positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(0n);
+    });
+  });
+
+  describe('minCheckedTick initialized', () => {
+    const stateBefore = poolState(0, positiveLiquidity, [
+      {
+        number: minCheckedTickNumber,
+        liquidityDelta: positiveLiquidity,
+      },
+      {
+        number: maxCheckedTickNumber,
+        liquidityDelta: -positiveLiquidity,
+      },
+    ]);
+
+    test('modify delta', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [minCheckedTickNumber, MAX_TICK],
+        -positiveLiquidity / 2n,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        {
+          number: minCheckedTickNumber,
+          liquidityDelta: positiveLiquidity / 2n,
+        },
+        {
+          number: maxCheckedTickNumber,
+          liquidityDelta: -positiveLiquidity / 2n,
+        },
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(positiveLiquidity / 2n);
+    });
+
+    test('close position', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [minCheckedTickNumber, MAX_TICK],
+        -positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(0n);
+    });
+  });
+
+  describe('maxCheckedTick initialized', () => {
+    const stateBefore = poolState(0, positiveLiquidity, [
+      {
+        number: minCheckedTickNumber,
+        liquidityDelta: positiveLiquidity,
+      },
+      {
+        number: maxCheckedTickNumber,
+        liquidityDelta: -positiveLiquidity,
+      },
+    ]);
+
+    test('modify delta', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [MIN_TICK, maxCheckedTickNumber],
+        -positiveLiquidity / 2n,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        {
+          number: minCheckedTickNumber,
+          liquidityDelta: positiveLiquidity / 2n,
+        },
+        {
+          number: maxCheckedTickNumber,
+          liquidityDelta: -positiveLiquidity / 2n,
+        },
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(positiveLiquidity / 2n);
+    });
+
+    test('close position', () => {
+      const stateAfter = PoolState.fromPositionUpdatedEvent(
+        stateBefore,
+        [MIN_TICK, maxCheckedTickNumber],
+        -positiveLiquidity,
+      );
+
+      expect(stateAfter?.sortedTicks).toEqual([
+        minCheckedTickUninitialized,
+        maxCheckedTickUninitialized,
+      ]);
+      expect(stateAfter?.activeTickIndex).toStrictEqual(0);
+      expect(stateAfter?.liquidity).toStrictEqual(0n);
     });
   });
 });

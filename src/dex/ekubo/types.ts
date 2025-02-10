@@ -26,7 +26,7 @@ export interface Tick {
 export function findNearestInitializedTickIndex(
   sortedTicks: Tick[],
   tick: number,
-): number {
+): number | null {
   let l = 0,
     r = sortedTicks.length;
 
@@ -50,7 +50,7 @@ export function findNearestInitializedTickIndex(
     }
   }
 
-  throw new Error('Nearest initialized tick index should be findable');
+  return null;
 }
 
 export type PoolData = {
@@ -67,87 +67,6 @@ export type PoolData = {
 
 export type GetQuoteDataResponse = PoolData[];
 
-export function addLiquidityCutoffsAndComputeTickIndex(
-  activeTick: number,
-  liquidity: bigint,
-  sortedTicks: Tick[],
-  [minCheckedTickNumber, maxCheckedTickNumber]: [number, number], // Must be different and lt/gt activeTick
-): number {
-  // Such that every tick has a valid tick index in sortedTicks
-  if (sortedTicks.at(0)?.number !== MIN_TICK) {
-    sortedTicks.unshift({
-      number: MIN_TICK,
-      liquidityDelta: 0n,
-    });
-  }
-
-  let activeTickIndex = null;
-  let currentLiquidity = 0n;
-
-  // The liquidity added/removed by out-of-range initialized ticks (i.e. lower/higher than minCheckedTickNumber/maxCheckedTickNumber)
-  let liquidityDeltaMin = 0n,
-    liquidityDeltaMax;
-
-  for (let i = 0; i < sortedTicks.length; i++) {
-    const tick = sortedTicks[i];
-
-    if (activeTickIndex === null && activeTick < tick.number) {
-      // Might need to be corrected if we prepend ticks to or remove ticks from the array (see below)
-      activeTickIndex = i - 1; // Non-negative due to the first tick being the MIN_TICK
-
-      liquidityDeltaMin = liquidity - currentLiquidity;
-
-      // We now need to switch to tracking the liquidity that needs to be cut off at maxCheckedTickNumber, therefore reset to the actual liquidity
-      currentLiquidity = liquidity;
-    }
-
-    currentLiquidity += tick.liquidityDelta;
-  }
-
-  if (activeTickIndex === null) {
-    activeTickIndex = sortedTicks.length - 1;
-    liquidityDeltaMin = liquidity - currentLiquidity;
-    currentLiquidity = liquidity;
-  }
-
-  if (liquidityDeltaMin !== 0n) {
-    // minCheckedTickNumber > MIN_TICK (otherwise liquidityDeltaMin would be 0)
-
-    const index1Tick = sortedTicks[1];
-
-    if (index1Tick?.number === minCheckedTickNumber) {
-      index1Tick.liquidityDelta += liquidityDeltaMin;
-    } else {
-      sortedTicks.splice(1, 0, {
-        number: minCheckedTickNumber,
-        liquidityDelta: liquidityDeltaMin,
-      });
-
-      if (activeTickIndex !== 0 || activeTick >= minCheckedTickNumber) {
-        activeTickIndex++;
-      }
-    }
-  }
-
-  liquidityDeltaMax = -currentLiquidity;
-  if (liquidityDeltaMax !== 0n) {
-    const lastTick = sortedTicks[sortedTicks.length - 1];
-
-    if (lastTick.number === maxCheckedTickNumber) {
-      lastTick.liquidityDelta += liquidityDeltaMax;
-    } else {
-      sortedTicks.push({
-        number: maxCheckedTickNumber,
-        liquidityDelta: liquidityDeltaMax,
-      });
-
-      // No modification of activeTickIndex required here
-    }
-  }
-
-  return activeTickIndex;
-}
-
 export namespace PoolState {
   // Needs to be serializiable, therefore can't make it a class
   export type Object = {
@@ -155,7 +74,8 @@ export namespace PoolState {
     liquidity: bigint;
     activeTick: number;
     readonly sortedTicks: Tick[];
-    activeTickIndex: number;
+    activeTickIndex: number | null;
+    readonly checkedTicksBounds: readonly [number, number];
   };
 
   export function fromQuoter(data: PoolData): Object {
@@ -165,20 +85,18 @@ export namespace PoolState {
     }));
     const liquidity = data.liquidity.toBigInt();
 
-    const activeTickIndex = addLiquidityCutoffsAndComputeTickIndex(
-      data.tick,
-      liquidity,
-      sortedTicks,
-      [data.minTick, data.maxTick],
-    );
-
-    return {
+    const state: Object = {
       sqrtRatio: data.sqrtRatio.toBigInt(),
       liquidity,
       activeTick: data.tick,
       sortedTicks,
-      activeTickIndex,
+      activeTickIndex: null, // This will be filled in
+      checkedTicksBounds: [data.minTick, data.maxTick],
     };
+
+    addLiquidityCutoffs(state);
+
+    return state;
   }
 
   export function fromSwappedEvent(
@@ -199,6 +117,7 @@ export namespace PoolState {
       activeTick: tickAfter,
       sortedTicks: clonedTicks,
       activeTickIndex: findNearestInitializedTickIndex(clonedTicks, tickAfter),
+      checkedTicksBounds: oldState.checkedTicksBounds,
     };
   }
 
@@ -213,8 +132,8 @@ export namespace PoolState {
 
     const clonedState = _.cloneDeep(oldState) as DeepWritable<typeof oldState>;
 
-    updateTick(clonedState, lowTick, liquidityDelta, false);
-    updateTick(clonedState, highTick, liquidityDelta, true);
+    updateTick(clonedState, lowTick, liquidityDelta, false, false);
+    updateTick(clonedState, highTick, liquidityDelta, true, false);
 
     if (
       clonedState.activeTick >= lowTick &&
@@ -226,45 +145,111 @@ export namespace PoolState {
     return clonedState;
   }
 
+  export function addLiquidityCutoffs(state: PoolState.Object) {
+    const { sortedTicks, liquidity, activeTick } = state;
+
+    let activeTickIndex = undefined;
+    let currentLiquidity = 0n;
+
+    // The liquidity added/removed by out-of-range initialized ticks (i.e. lower than minCheckedTickNumber)
+    let liquidityDeltaMin = 0n;
+
+    for (let i = 0; i < sortedTicks.length; i++) {
+      const tick = sortedTicks[i];
+
+      if (typeof activeTickIndex === 'undefined' && activeTick < tick.number) {
+        activeTickIndex = i === 0 ? null : i - 1;
+
+        liquidityDeltaMin = liquidity - currentLiquidity;
+
+        // We now need to switch to tracking the liquidity that needs to be cut off at maxCheckedTickNumber, therefore reset to the actual liquidity
+        currentLiquidity = liquidity;
+      }
+
+      currentLiquidity += tick.liquidityDelta;
+    }
+
+    if (typeof activeTickIndex === 'undefined') {
+      activeTickIndex = sortedTicks.length > 0 ? sortedTicks.length - 1 : null;
+      liquidityDeltaMin = liquidity - currentLiquidity;
+      currentLiquidity = liquidity;
+    }
+
+    state.activeTickIndex = activeTickIndex;
+
+    PoolState.updateTick(
+      state,
+      state.checkedTicksBounds[0],
+      liquidityDeltaMin,
+      false,
+      true,
+    );
+
+    PoolState.updateTick(
+      state,
+      state.checkedTicksBounds[1],
+      currentLiquidity,
+      true,
+      true,
+    );
+  }
+
   export function updateTick(
     state: Object,
     updatedTickNumber: number,
     liquidityDelta: bigint,
     upper: boolean,
+    forceInsert: boolean,
   ) {
+    const sortedTicks = state.sortedTicks;
+
     if (upper) {
       liquidityDelta = -liquidityDelta;
     }
 
     const nearestTickIndex = findNearestInitializedTickIndex(
-      state.sortedTicks,
+      sortedTicks,
       updatedTickNumber,
     );
-    const nearestTick = state.sortedTicks[nearestTickIndex];
-    const nearestTickNumber = nearestTick.number;
+    const nearestTick =
+      nearestTickIndex === null ? null : sortedTicks[nearestTickIndex];
+    const nearestTickNumber = nearestTick?.number;
+    const newTickReferenced = nearestTickNumber !== updatedTickNumber;
 
-    const newTickInitialized = nearestTickNumber !== updatedTickNumber;
-
-    if (newTickInitialized) {
-      state.sortedTicks.splice(nearestTickIndex, 0, {
-        number: updatedTickNumber,
-        liquidityDelta,
-      });
-
-      if (state.activeTick >= updatedTickNumber) {
-        state.activeTick++;
-      }
-    } else {
-      const newDelta = nearestTick.liquidityDelta + liquidityDelta;
-
-      if (newDelta === 0n && nearestTickNumber !== MIN_TICK) {
-        state.sortedTicks.splice(nearestTickIndex, 1);
+    if (newTickReferenced) {
+      if (!forceInsert && nearestTickIndex === null) {
+        sortedTicks[0].liquidityDelta += liquidityDelta;
+      } else if (!forceInsert && nearestTickIndex === sortedTicks.length - 1) {
+        sortedTicks[sortedTicks.length - 1].liquidityDelta += liquidityDelta;
+      } else {
+        sortedTicks.splice(
+          nearestTickIndex === null ? 0 : nearestTickIndex + 1,
+          0,
+          {
+            number: updatedTickNumber,
+            liquidityDelta,
+          },
+        );
 
         if (state.activeTick >= updatedTickNumber) {
-          state.activeTick--;
+          state.activeTickIndex =
+            state.activeTickIndex === null ? 0 : state.activeTickIndex + 1;
+        }
+      }
+    } else {
+      const newDelta = nearestTick!.liquidityDelta + liquidityDelta;
+
+      if (
+        newDelta === 0n &&
+        !state.checkedTicksBounds.includes(nearestTickNumber)
+      ) {
+        sortedTicks.splice(nearestTickIndex!, 1);
+
+        if (state.activeTick >= updatedTickNumber) {
+          state.activeTickIndex!--;
         }
       } else {
-        nearestTick.liquidityDelta = newDelta;
+        nearestTick!.liquidityDelta = newDelta;
       }
     }
   }
