@@ -528,7 +528,9 @@ export class GenericSwapTransactionBuilder {
     isSkipBlacklist,
   }: FeeParams): string {
     const partnerAddress =
-      feePercent === '0' && !isTakeSurplus ? NULL_ADDRESS : partner;
+      feePercent === '0' && !isTakeSurplus && !isReferral
+        ? NULL_ADDRESS
+        : partner;
 
     // Partner address shifted left to make room for flags and fee percent
     const partialFeeCodeWithPartnerAddress =
