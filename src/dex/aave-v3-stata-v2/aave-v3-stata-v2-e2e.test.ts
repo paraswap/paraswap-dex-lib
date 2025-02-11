@@ -240,23 +240,12 @@ describe('AaveV3Stata E2E', () => {
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
       [
         {
-          name: 'USDT',
-          amount: '100000',
+          name: 'WETH',
+          amount: '100000000000000',
         },
         {
-          name: 'waArbUSDT',
-          amount: '100000',
-        },
-      ],
-      [
-        {
-          name: 'aaveUSDT',
-          amount: '100000',
-          skipBuy: true,
-        },
-        {
-          name: 'waArbUSDT',
-          amount: '100000',
+          name: 'waArbWETH',
+          amount: '1744566786133980',
         },
       ],
     ];
@@ -321,23 +310,12 @@ describe('AaveV3Stata E2E', () => {
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
       [
         {
-          name: 'USDC',
-          amount: '100000',
+          name: 'WETH',
+          amount: '100000000000',
         },
         {
-          name: 'waBasUSDC',
-          amount: '100000',
-        },
-      ],
-      [
-        {
-          name: 'aaveUSDC',
-          amount: '100000',
-          skipBuy: true,
-        },
-        {
-          name: 'waBasUSDC',
-          amount: '100000',
+          name: 'waBasWETH',
+          amount: '3792954988415750',
         },
       ],
     ];

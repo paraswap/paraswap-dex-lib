@@ -23,10 +23,11 @@ export const AaveV3StataConfig: DexConfigMap<DexParams> = {
       factoryAddresses: [AaveV3Gnosis.STATA_FACTORY],
       pool: AaveV3Gnosis.POOL,
     },
-    [Network.OPTIMISM]: {
-      factoryAddresses: [AaveV3Optimism.STATA_FACTORY],
-      pool: AaveV3Optimism.POOL,
-    },
+    // Waiting for BalancerV3 to get released on Optimism
+    // [Network.OPTIMISM]: {
+    //   factoryAddresses: [AaveV3Optimism.STATA_FACTORY],
+    //   pool: AaveV3Optimism.POOL,
+    // },
     [Network.ARBITRUM]: {
       factoryAddresses: [AaveV3Arbitrum.STATA_FACTORY],
       pool: AaveV3Arbitrum.POOL,
