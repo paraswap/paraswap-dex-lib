@@ -539,8 +539,6 @@ export const Tokens: {
     waEthUSDT: {
       address: '0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8',
       decimals: 6,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     waEthUSDC: {
       address: '0xD4fa2D31b7968E448877f69A96DE69f5de8cD23E',
@@ -549,8 +547,6 @@ export const Tokens: {
     aaveUSDT: {
       address: '0x23878914efe38d27c4d67ab83ed1b93a74d4086a',
       decimals: 6,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     rUSD: {
       address: '0x65D72AA8DA931F047169112fcf34f52DbaAE7D18',
@@ -1249,8 +1245,6 @@ export const Tokens: {
     waArbUSDT: {
       address: '0xa6D12574eFB239FC1D2099732bd8b5dC6306897F',
       decimals: 6,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
     },
     FRAX: {
       address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
@@ -1365,8 +1359,6 @@ export const Tokens: {
     aaveUSDT: {
       address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
       decimals: 6,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
     },
     GHO: {
       address: '0x7dff72693f6a4149b17e7c6314655f6a9f7c8b33',
