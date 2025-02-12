@@ -218,10 +218,12 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       i < newState[poolAddress].balancesLiveScaled18.length;
       i++
     ) {
-      newState[poolAddress].balancesLiveScaled18[i] += this.toScaled18(
-        BigInt(event.args.amountsAddedRaw[i]),
-        newState[poolAddress].scalingFactors[i],
-      );
+      newState[poolAddress].balancesLiveScaled18[i] +=
+        this.toScaled18ApplyRateRoundDown(
+          BigInt(event.args.amountsAddedRaw[i]),
+          newState[poolAddress].scalingFactors[i],
+          newState[poolAddress].tokenRates[i] || WAD,
+        );
     }
     newState[poolAddress].totalSupply = BigInt(event.args.totalSupply);
 
@@ -244,10 +246,12 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       i < newState[poolAddress].balancesLiveScaled18.length;
       i++
     ) {
-      newState[poolAddress].balancesLiveScaled18[i] -= this.toScaled18(
-        BigInt(event.args.amountsRemovedRaw[i]),
-        newState[poolAddress].scalingFactors[i],
-      );
+      newState[poolAddress].balancesLiveScaled18[i] -=
+        this.toScaled18ApplyRateRoundDown(
+          BigInt(event.args.amountsRemovedRaw[i]),
+          newState[poolAddress].scalingFactors[i],
+          newState[poolAddress].tokenRates[i] || WAD,
+        );
     }
     newState[poolAddress].totalSupply = BigInt(event.args.totalSupply);
 
@@ -275,14 +279,17 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.logger.error(`swapEvent - token index not found in pool state`);
       return null;
     }
-    newState[poolAddress].balancesLiveScaled18[tokenInIndex] += this.toScaled18(
-      BigInt(event.args.amountIn),
-      newState[poolAddress].scalingFactors[tokenInIndex],
-    );
+    newState[poolAddress].balancesLiveScaled18[tokenInIndex] +=
+      this.toScaled18ApplyRateRoundDown(
+        BigInt(event.args.amountIn),
+        newState[poolAddress].scalingFactors[tokenInIndex],
+        newState[poolAddress].tokenRates[tokenInIndex] || WAD,
+      );
     newState[poolAddress].balancesLiveScaled18[tokenOutIndex] -=
-      this.toScaled18(
+      this.toScaled18ApplyRateRoundDown(
         BigInt(event.args.amountOut),
         newState[poolAddress].scalingFactors[tokenOutIndex],
+        newState[poolAddress].tokenRates[tokenOutIndex] || WAD,
       );
 
     return newState;
@@ -697,6 +704,19 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   }
 
   toScaled18(amount: bigint, scalingFactor: bigint): bigint {
+    // (amount * scalingFactor).mulUp(tokenRate);
     return (amount * scalingFactor * WAD) / WAD;
+  }
+
+  toScaled18ApplyRateRoundDown(
+    amount: bigint,
+    scalingFactor: bigint,
+    tokenRate: bigint,
+  ): bigint {
+    return this.mulDown(amount * scalingFactor, tokenRate);
+  }
+
+  mulDown(a: bigint, b: bigint): bigint {
+    return (a * b) / WAD;
   }
 }
