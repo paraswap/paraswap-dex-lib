@@ -214,7 +214,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     const minMaxAmount = _minMaxAmount.toString();
     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
 
-    return await this.transactionBuilder.build({
+    return (await this.transactionBuilder.build({
       priceRoute,
       minMaxAmount: minMaxAmount.toString(),
       userAddress,
@@ -222,7 +222,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       partnerFeePercent: '0',
       deadline: deadline.toString(),
       uuid: uuid(),
-    });
+    })) as TxObject;
   }
 }
 
@@ -446,7 +446,7 @@ export async function testE2E(
       formatDeployMessage(
         'adapter',
         contractAddress,
-        ts.forkId,
+        ts.vnetId,
         testContractName || '',
         testContractRelativePath || '',
       ),
@@ -485,9 +485,8 @@ export async function testE2E(
   }
 
   if (paraswap.dexHelper?.replaceProviderWithRPC) {
-    paraswap.dexHelper?.replaceProviderWithRPC(
-      `https://rpc.tenderly.co/fork/${ts.forkId}`,
-    );
+    console.log('ts.rpcURL: ', ts.rpcURL);
+    paraswap.dexHelper?.replaceProviderWithRPC(ts.rpcURL);
   }
 
   try {
@@ -572,6 +571,7 @@ export async function testE2E(
     );
 
     const swapTx = await ts.simulate(swapParams);
+
     // Only log gas estimate if testing against API
     if (useAPI) {
       const gasUsed = swapTx.gasUsed || '0';

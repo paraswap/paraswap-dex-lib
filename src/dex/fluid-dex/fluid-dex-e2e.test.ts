@@ -19,16 +19,6 @@ import { FluidDex } from './fluid-dex';
   README
   ======
 
-  This test script should add e2e tests for FluidDex. The tests
-  should cover as many cases as possible. Most of the DEXes follow
-  the following test structure:
-    - DexName
-      - ForkName + Network
-        - ContractMethod
-          - ETH -> Token swap
-          - Token -> ETH swap
-          - Token -> Token swap
-
   The template already enumerates the basic structure which involves
   testing simpleSwap, multiSwap, megaSwap contract methods for
   ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace tokenA and
@@ -118,6 +108,24 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
+    // TODO: Uncomment & test when the issue is resolved. Currently no price as expected.
+    // describe.only('FLUID -> ETH', () => {
+    //   const tokenASymbol: string = 'FLUID';
+    //   const tokenBSymbol: string = 'ETH';
+    //
+    //   const tokenAAmount: string = '160097047322810379';
+    //   const tokenBAmount: string = '79923068733005505624';
+    //
+    //   testForNetwork(
+    //     network,
+    //     dexKey,
+    //     tokenASymbol,
+    //     tokenBSymbol,
+    //     tokenAAmount,
+    //     tokenBAmount,
+    //   );
+    // });
+
     describe('ETH -> INST', () => {
       const tokenASymbol: string = 'ETH';
       const tokenBSymbol: string = 'INST';
@@ -158,6 +166,44 @@ describe('FluidDex E2E', () => {
 
       const tokenAAmount: string = '10000';
       const tokenBAmount: string = '1000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    describe('ETH -> wstETH', () => {
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'ETH';
+
+      const tokenAAmount: string = '1000000000000000';
+      const tokenBAmount: string = '1000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('ETH -> weETH', () => {
+      const tokenBSymbol: string = 'ETH';
+      const tokenASymbol: string = 'weETH';
+
+      const tokenAAmount: string = '1000000000000000';
+      const tokenBAmount: string = '1000000000000000';
 
       testForNetwork(
         network,

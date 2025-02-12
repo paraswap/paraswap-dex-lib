@@ -13,7 +13,7 @@ import {
   NumberAsString,
   DexExchangeParam,
 } from '../../types';
-import { SwapSide, Network, ETHER_ADDRESS } from '../../constants';
+import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, Utils } from '../../utils';
 import { IDex } from '../../dex/idex';
@@ -35,7 +35,6 @@ import { Interface } from 'ethers/lib/utils';
 import { RateFetcher } from './rate-fetcher';
 import {
   BEBOP_API_URL,
-  BEBOP_AUTH_NAME,
   BEBOP_ERRORS_CACHE_KEY,
   BEBOP_GAS_COST,
   BEBOP_INIT_TIMEOUT_MS,
@@ -55,13 +54,12 @@ import {
 } from './constants';
 import BigNumber from 'bignumber.js';
 import { getBigNumberPow } from '../../bignumber-constants';
-import { utils } from 'ethers';
+import { ethers, utils } from 'ethers';
 import qs from 'qs';
-import { isEqual } from 'lodash';
 
 export class Bebop extends SimpleExchange implements IDex<BebopData> {
   readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = false;
+  readonly needWrapNative = true;
 
   readonly isFeeOnTransferSupported = false;
   readonly isStatePollingDex = true;
@@ -77,6 +75,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   private tokensAddrCacheKey: string;
 
   private bebopAuthToken: string;
+  private bebopAuthName: string;
 
   logger: Logger;
 
@@ -94,9 +93,19 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     this.pricesCacheKey = `prices`;
     this.tokensAddrCacheKey = `tokens_addr`;
     const token = this.dexHelper.config.data.bebopAuthToken;
-    if (!token) {
-      throw new Error('Bebop auth token is not set');
-    }
+    const name = this.dexHelper.config.data.bebopAuthName;
+
+    assert(
+      token !== undefined,
+      'Bebop auth token is not specified with env variable',
+    );
+
+    assert(
+      name !== undefined,
+      'Bebop auth name is not specified with env variable',
+    );
+
+    this.bebopAuthName = name;
     this.bebopAuthToken = token;
 
     this.rateFetcher = new RateFetcher(
@@ -122,7 +131,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
               BEBOP_WS_API_URL +
               `/pmm/${BebopConfig['Bebop'][network].chainName}/v3/pricing?format=protobuf`,
             headers: {
-              name: BEBOP_AUTH_NAME,
+              name: this.bebopAuthName,
               authorization: this.bebopAuthToken,
             },
           },
@@ -176,11 +185,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       srcToken.address.toLowerCase(),
       destToken.address.toLowerCase(),
     ]);
-    const nativeWrappedSet = new Set([
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase(),
-      ETHER_ADDRESS.toLowerCase(),
-    ]);
-    if (tokensSet.size < 2 || isEqual(tokensSet, nativeWrappedSet)) {
+    if (tokensSet.size < 2) {
       return [];
     }
 
@@ -271,11 +276,14 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   // across DEXes. It is recommended to use
   // ${dexKey}_${poolAddress} as a poolIdentifier
   async getPoolIdentifiers(
-    srcToken: Token,
-    destToken: Token,
+    _srcToken: Token,
+    _destToken: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    const srcToken = this.dexHelper.config.wrapETH(_srcToken);
+    const destToken = this.dexHelper.config.wrapETH(_destToken);
+
     if (
       (await this.calculateInstructions(srcToken, destToken, side)).length > 0
     ) {
@@ -377,8 +385,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   // should be used. If limitPools is undefined then
   // any pools can be used.
   async getPricesVolume(
-    srcToken: Token,
-    destToken: Token,
+    _srcToken: Token,
+    _destToken: Token,
     amounts: bigint[],
     side: SwapSide,
     blockNumber: number,
@@ -388,6 +396,9 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     if (isRestricted) {
       return null;
     }
+
+    const srcToken = this.dexHelper.config.wrapETH(_srcToken);
+    const destToken = this.dexHelper.config.wrapETH(_destToken);
 
     try {
       let pools = limitPools
@@ -656,12 +667,28 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         srcAmount, // modify filledTakerAmount to make insertFromAmount work
       ]);
 
+      const fromAmount = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'],
+        [srcAmount],
+      );
+
+      const filledTakerAmountIndex = exchangeData
+        .replace('0x', '')
+        .lastIndexOf(fromAmount.replace('0x', ''));
+
+      const filledTakerAmountPos =
+        (filledTakerAmountIndex !== -1
+          ? filledTakerAmountIndex
+          : exchangeData.length) / 2;
+
       return {
         exchangeData: exchangeData,
         needWrapNative: this.needWrapNative,
         dexFuncHasRecipient: true,
         targetExchange: this.settlementAddress,
         returnAmountPos: undefined,
+        sendEthButSupportsInsertFromAmount: true,
+        insertFromAmountPos: filledTakerAmountPos,
       };
     } else {
       throw new Error('Not supported method');
@@ -670,13 +697,16 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
 
   async preProcessTransaction(
     optimalSwapExchange: OptimalSwapExchange<BebopData>,
-    srcToken: Token,
-    destToken: Token,
+    _srcToken: Token,
+    _destToken: Token,
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<BebopData>, ExchangeTxInfo]> {
     const isSell = side === SwapSide.SELL;
     const isBuy = side === SwapSide.BUY;
+
+    const srcToken = this.dexHelper.config.wrapETH(_srcToken);
+    const destToken = this.dexHelper.config.wrapETH(_destToken);
 
     const params = {
       sell_tokens: utils.getAddress(srcToken.address),
@@ -687,7 +717,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       receiver_address: utils.getAddress(options.recipient),
       gasless: false,
       skip_validation: true,
-      source: BEBOP_AUTH_NAME,
+      source: this.bebopAuthName,
     };
 
     try {
@@ -849,10 +879,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async getCachedPrices(): Promise<BebopPricingResponse | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
+    const cachedPrices = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.pricesCacheKey,
+      2,
     );
 
     if (cachedPrices) {
@@ -863,10 +894,11 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.tokensAddrCacheKey,
+      BEBOP_TOKENS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedTokens) {

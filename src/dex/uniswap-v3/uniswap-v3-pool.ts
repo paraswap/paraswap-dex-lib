@@ -269,15 +269,15 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   _setState(state: any, blockNumber: number, reason?: string): void {
-    if (this.parentName === 'UniswapV3') {
-      this.logger.info(
-        `UniV3: Setting state: '${!!state ? 'non-empty' : 'empty'}' for '${
-          this.name
-        }' for bn: '${blockNumber}' due to reason: '${
-          reason ?? 'outside_of_event_subscriber'
-        }'`,
-      );
-    }
+    // if (this.parentName === 'UniswapV3') {
+    // this.logger.info(
+    //   `UniV3: Setting state: '${!!state ? 'non-empty' : 'empty'}' for '${
+    //     this.name
+    //   }' for bn: '${blockNumber}' due to reason: '${
+    //     reason ?? 'outside_of_event_subscriber'
+    //   }'`,
+    // );
+    // }
     super._setState(state, blockNumber);
   }
 
