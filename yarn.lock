@@ -353,10 +353,10 @@
   resolved "https://registry.yarnpkg.com/@balancer-labs/balancer-maths/-/balancer-maths-0.0.21.tgz#165d140656226614e489e6c9c7b890fd8e868f10"
   integrity sha512-nVKoQ35VRCugO6pxMVMghn6v/PofBoUXE5+SOxLhD/eQgHYsdwbH/BA3TCOz7sFJ/69BxpcjS0E78x9xbllq5w==
 
-"@balancer-labs/sor@4.1.1-beta.4":
-  version "4.1.1-beta.4"
-  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.1-beta.4.tgz#9369435f8bbc781e9048f33aa496a484631b56e9"
-  integrity sha512-jiejxteVwbdzz82zVJtO+Fmsd7XNDx0DHJYXIo+mQlOEdmYC/1BPVPKS7We10xbs6x/4IFQY2KzgjUhD0EVJew==
+"@balancer-labs/sor@4.1.3":
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.3.tgz#584118c1dbfd63c689358db853e876504119466f"
+  integrity sha512-hliz7C7YbK31wdieLw2vzQfLNdrvNZbOu4X4adUIf1qQTmBicc5BYvYtO9FtDt8AyZ8ZRNT9O6xXkAFghmMmYw==
   dependencies:
     isomorphic-fetch "^2.2.1"
 
@@ -365,10 +365,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@bgd-labs/aave-address-book@4.7.0":
-  version "4.7.0"
-  resolved "https://registry.yarnpkg.com/@bgd-labs/aave-address-book/-/aave-address-book-4.7.0.tgz#4d64ff67dd83f32fcff71ffe7498bf9477c8586f"
-  integrity sha512-oxLDYy36woE1AuW97aXI7bk+v+/my0YAqaWbGokLJGc+An7/ABfF89cbn9aJqAx3fyT8DDRojGyrcGIeocnNBg==
+"@bgd-labs/aave-address-book@4.9.0":
+  version "4.9.0"
+  resolved "https://registry.yarnpkg.com/@bgd-labs/aave-address-book/-/aave-address-book-4.9.0.tgz#b4b1be4bf14fb7f3e76be0dd8583bbdaf09b564c"
+  integrity sha512-abw6Z1p8Kt0DSlXXWs8kiiadONS49KgcOIn6WW7fSMzFRFZ3HYoRUt/hu6uNfEmbQ5cO9Qe+leAp2O+o9oovWw==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"

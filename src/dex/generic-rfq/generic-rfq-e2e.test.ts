@@ -115,8 +115,8 @@ describe(`GenericRFQ ${dexKey} E2E`, () => {
               `Please add "addBalance" and "addAllowance" functions for ${testCase.destToken} on ${Network[network]} (in constants-e2e.ts).`,
             );
           }
-          srcToken = smartTokens[testCase.srcToken];
-          destToken = smartTokens[testCase.destToken];
+          srcToken = new SmartToken(tokens[testCase.srcToken]);
+          destToken = new SmartToken(tokens[testCase.destToken]);
 
           srcToken.addBalance(testAccount.address, MAX_UINT);
           srcToken.addAllowance(
