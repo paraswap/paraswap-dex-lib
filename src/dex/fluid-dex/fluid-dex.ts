@@ -426,7 +426,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       colReserves.token0RealReserves + debtReserves.token0RealReserves == 0n &&
       colReserves.token1RealReserves + debtReserves.token1RealReserves == 0n
     ) {
-      throw new Error('InvalidCollateralReserves');
+      return 0n;
     }
 
     const amountInAdjusted =
@@ -593,18 +593,18 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     }
 
     if (amountOutDebt > debtReserveOut) {
-      throw new Error('DebtReservesTooLow');
+      return 0n;
     }
     if (amountOutDebt > borrowable) {
-      throw new Error('DebtLimitReached');
+      return 0n;
     }
 
     if (amountOutCollateral > colReserveOut) {
-      throw new Error('TokenReservesTooLow');
+      return 0n;
     }
 
     if (amountOutCollateral > withdrawable) {
-      throw new Error('WithdrawLimitReached');
+      return 0n;
     }
 
     if (amountInCollateral > 0) {
@@ -620,7 +620,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        throw new Error('TokenReservesTooLow');
+        return 0n;
       }
     }
 
@@ -637,7 +637,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        throw new Error('TokenReservesTooLow');
+        return 0n;
       }
     }
 
@@ -677,7 +677,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     const maxAllowedDiff = (oldPrice * MAX_PRICE_DIFF) / 100n;
 
     if (priceDiff > maxAllowedDiff) {
-      throw new Error('OracleUpdateHugeSwapDiff');
+      return 0n;
     }
 
     const totalAmountOut = amountOutCollateral + amountOutDebt;
@@ -1043,10 +1043,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       );
       amountInDebt = this.applyFeeForBuy(amountInDebt, fee);
       if (amountOut > debtReserveOut) {
-        throw new Error('TokenReservesTooLow');
+        return 0n;
       }
       if (amountOut > borrowable) {
-        throw new Error('DebtLimitReached');
+        return 0n;
       }
     } else if (a >= amountOut) {
       // Entire trade routes through collateral pool
@@ -1058,10 +1058,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       );
       amountInCollateral = this.applyFeeForBuy(amountInCollateral, fee);
       if (amountOut > colReserveOut) {
-        throw new Error('TokenReservesTooLow');
+        return 0n;
       }
       if (amountOut > withdrawable) {
-        throw new Error('WithdrawLimitReached');
+        return 0n;
       }
     } else {
       // Trade routes through both pools
@@ -1079,10 +1079,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
 
       amountInDebt = this.applyFeeForBuy(amountInDebt, fee);
       if (amountOutDebt > debtReserveOut || a > colReserveOut) {
-        throw new Error('TokenReservesTooLow');
+        return 0n;
       }
       if (amountOutDebt > borrowable || a > withdrawable) {
-        throw new Error('WithdrawLimitReached or DebtLimitReached');
+        return 0n;
       }
     }
 
@@ -1099,7 +1099,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        throw new Error('TokenReservesTooLow');
+        return 0n;
       }
     }
     if (amountInDebt > 0) {
@@ -1115,7 +1115,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
             centerPrice,
           );
       if (!reservesRatioValid) {
-        throw new Error('TokenReservesTooLow');
+        return 0n;
       }
     }
 
@@ -1152,7 +1152,7 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       (oldPrice / BigInt(100)) * MAX_PRICE_DIFF
     ) {
       // if price diff is > 5% then swap would revert.
-      throw new Error('OracleUpdateHugeSwapDiff');
+      return 0n;
     }
 
     const totalAmountIn = amountInCollateral + amountInDebt;

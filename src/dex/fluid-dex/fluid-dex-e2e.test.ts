@@ -42,44 +42,6 @@ function testForNetwork(
         contractMethods.forEach((contractMethod: string) => {
           describe(`${contractMethod}`, () => {
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await fluidDex.initializePricing(await provider.getBlockNumber());
-
-              try {
-                const pricesB2A = await fluidDex.getPricesVolume(
-                  tokens[tokenBSymbol],
-                  tokens[tokenASymbol],
-                  [BigInt(tokenBAmount)],
-                  side,
-                  await provider.getBlockNumber(),
-                );
-                console.log(
-                  `price check ${tokenBSymbol} -> ${tokenASymbol}`,
-                  pricesB2A,
-                );
-              } catch (e: any) {
-                console.log(
-                  `Skipping ${contractMethod} - ${tokenBSymbol} -> ${tokenASymbol}`,
-                );
-                console.log(e.message);
-
-                const errorMessages = [
-                  'TokenReservesTooLow',
-                  'InvalidCollateralReserves',
-                  'No pools are enabled',
-                  'DebtReservesTooLow',
-                  'DebtLimitReached',
-                  'WithdrawLimitReached',
-                  'OracleUpdateHugeSwapDiff',
-                ];
-                if (
-                  errorMessages.some(errorMessage =>
-                    e.message.includes(errorMessage),
-                  )
-                ) {
-                  return;
-                }
-              }
-
               await testE2E(
                 tokens[tokenBSymbol],
                 tokens[tokenASymbol],
@@ -94,50 +56,6 @@ function testForNetwork(
             });
 
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              // Check prices before running test
-              try {
-                await fluidDex.initializePricing(
-                  await provider.getBlockNumber(),
-                );
-
-                const pricesA2B = await fluidDex.getPricesVolume(
-                  tokens[tokenASymbol],
-                  tokens[tokenBSymbol],
-                  [BigInt(tokenAAmount)],
-                  side,
-                  await provider.getBlockNumber(),
-                );
-                console.log(
-                  `price check ${tokenASymbol} -> ${tokenBSymbol}`,
-                  pricesA2B,
-                );
-              } catch (e: any) {
-                console.log(
-                  `Skipping ${contractMethod} - ${tokenBSymbol} -> ${tokenASymbol}`,
-                );
-                console.log(e.message);
-
-                const errorMessages = [
-                  'TokenReservesTooLow',
-                  'InvalidCollateralReserves',
-                  'No pools are enabled',
-                  'DebtReservesTooLow',
-                  'DebtLimitReached',
-                  'WithdrawLimitReached',
-                  'OracleUpdateHugeSwapDiff',
-                ];
-                if (
-                  errorMessages.some(errorMessage =>
-                    e.message.includes(errorMessage),
-                  )
-                ) {
-                  console.log(
-                    'Pool out of range or not sufficient liquidity for swap at the moment, error is expected.',
-                  );
-                  return;
-                }
-              }
-
               await testE2E(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
@@ -163,11 +81,11 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    describe('FLUID -> ETH', () => {
+    describe('limit:FLUID -> ETH', () => {
       const tokenASymbol: string = 'FLUID';
       const tokenBSymbol: string = 'ETH';
-      const tokenAAmount: string = '160097047322810379';
-      const tokenBAmount: string = '79923068733005505624';
+      const tokenAAmount: string = '16009704732281037900';
+      const tokenBAmount: string = '7992306873300550562400';
 
       testForNetwork(
         network,
