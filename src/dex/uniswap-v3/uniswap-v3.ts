@@ -713,12 +713,6 @@ export class UniswapV3
         ).filter(isTruthy);
       }
 
-      selectedPools = selectedPools.filter(
-        pool =>
-          pool.poolAddress.toLowerCase() ===
-          '0x6958686b6348c3d6d5f2dca3106a5c09c156873a'.toLowerCase(),
-      );
-
       if (selectedPools.length === 0) return null;
 
       await Promise.all(

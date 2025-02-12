@@ -225,10 +225,10 @@ function _priceComputationCycles(
     latestFullCycleCache.tickCount += i - 1;
   }
 
-  if (state.amountSpecifiedRemaining !== 0n) {
-    state.amountSpecifiedRemaining = 0n;
-    state.amountCalculated = 0n;
-  }
+  // if (state.amountSpecifiedRemaining !== 0n) {
+  //   state.amountSpecifiedRemaining = 0n;
+  //   state.amountCalculated = 0n;
+  // }
 
   return [state, { latestFullCycleState, latestFullCycleCache }];
 }
@@ -241,9 +241,6 @@ class UniswapV3Math {
     zeroForOne: boolean,
     side: SwapSide,
   ): OutputResult {
-    console.log('UniswapV3Math queryOutputs amount: ', amounts);
-    console.log('zeroForOne: ', zeroForOne);
-
     const slot0Start = poolState.slot0;
 
     const isSell = side === SwapSide.SELL;
@@ -284,13 +281,10 @@ class UniswapV3Math {
 
     const outputs = new Array(amounts.length);
     const tickCounts = new Array(amounts.length);
-
     for (const [i, amount] of amounts.entries()) {
       if (amount === 0n) {
         outputs[i] = 0n;
         tickCounts[i] = 0;
-        console.log('amount === 0n continue...');
-        console.log('------------------------------------');
         continue;
       }
 
@@ -320,9 +314,6 @@ class UniswapV3Math {
         'zeroForOne ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO',
       );
 
-      console.log('amountSpecified: ', amountSpecified);
-      console.log('isOutOfRange: ', isOutOfRange);
-
       if (!isOutOfRange) {
         const [finalState, { latestFullCycleState, latestFullCycleCache }] =
           _priceComputationCycles(
@@ -335,25 +326,13 @@ class UniswapV3Math {
             zeroForOne,
             exactInput,
           );
-
-        console.log(
-          'finalState.amountSpecifiedRemaining: ',
-          finalState.amountSpecifiedRemaining,
-        );
-        console.log(
-          'finalState.amountCalculated: ',
-          finalState.amountCalculated,
-        );
         if (
           finalState.amountSpecifiedRemaining === 0n &&
           finalState.amountCalculated === 0n
         ) {
-          console.log('set isOutOfRange = true');
           isOutOfRange = true;
           outputs[i] = 0n;
           tickCounts[i] = 0;
-          console.log('continue...');
-          console.log('------------------------------------');
           continue;
         }
 
@@ -372,9 +351,6 @@ class UniswapV3Math {
                 amountSpecified - finalState.amountSpecifiedRemaining,
               ];
 
-        console.log('amount0: ', amount0);
-        console.log('amount1: ', amount1);
-
         // Update for next amount
         _updatePriceComputationObjects(state, latestFullCycleState);
         _updatePriceComputationObjects(cache, latestFullCycleCache);
@@ -388,20 +364,13 @@ class UniswapV3Math {
             ? BigInt.asUintN(256, amount0)
             : BigInt.asUintN(256, amount1);
           tickCounts[i] = latestFullCycleCache.tickCount;
-          console.log('continue...');
-          console.log('------------------------------------');
           continue;
         }
       } else {
         outputs[i] = 0n;
         tickCounts[i] = 0;
       }
-
-      console.log('------------------------------------');
     }
-
-    console.log('outputs: ', outputs);
-    console.log('tickCounts: ', tickCounts);
 
     return {
       outputs,
