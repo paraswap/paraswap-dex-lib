@@ -485,11 +485,8 @@ export async function testE2E(
   }
 
   if (paraswap.dexHelper?.replaceProviderWithRPC) {
-    paraswap.dexHelper?.replaceProviderWithRPC(
-      `https://virtual.${ts.getChainNameByChainId(network)}.rpc.tenderly.co/${
-        ts.vnetId
-      }`,
-    );
+    console.log('ts.rpcURL: ', ts.rpcURL);
+    paraswap.dexHelper?.replaceProviderWithRPC(ts.rpcURL);
   }
 
   try {
