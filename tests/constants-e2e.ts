@@ -1356,6 +1356,14 @@ export const Tokens: {
       address: '0x7dff72693f6a4149b17e7c6314655f6a9f7c8b33',
       decimals: 18,
     },
+    waArbWETH: {
+      address: '0x4ce13a79f45c1be00bdabd38b764ac28c082704e',
+      decimals: 18,
+    },
+    waArbwstETH: {
+      address: '0xe98fc055c99decd8da0c111b090885d5d15c774e',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1676,6 +1684,22 @@ export const Tokens: {
     aaveUSDC: {
       address: '0x4e65fe4dba92790696d040ac24aa414708f5c0ab',
       decimals: 6,
+    },
+    waBaswstETH: {
+      address: '0x0830820d1a9aa1554364752d6d8f55c836871b74',
+      decimals: 18,
+    },
+    waBasWETH: {
+      address: '0xe298b938631f750dd409fb18227c4a23dcdaab9b',
+      decimals: 18,
+    },
+    sUSDS: {
+      address: '0x5875eee11cf8398102fdad704c9e96607675467a',
+      decimals: 18,
+    },
+    smUSDC: {
+      address: '0x616a4e1db48e22028f6bbf20444cd3b8e3273738',
+      decimals: 18,
     },
   },
   [Network.SEPOLIA]: {
@@ -2104,6 +2128,10 @@ export const Holders: {
     crvUSD: '0xBbAbDB1385deA5285113581A7024d6DC04131101',
     cbETH: '0x50e011dD1e2b4906F1534623cD134B30422bb11E',
     wUSDM: '0xe30965Acd0Ee1CE2e0Cd0AcBFB3596bD6fC78A51',
+    wstETH: '0x96892b8FBd24e0aC40BD98A304095a6c485A6A68',
+    waBaswstETH: '0x854B004700885A61107B458f11eCC169A019b764',
+    sUSDS: '0xC9716E991396AA933Fa7A481003a5953bcBabC17',
+    smUSDC: '0x88457F47c9BEC8379eB90d8dC3592F79084e555d',
   },
   [Network.SEPOLIA]: {
     bal: '0xDb4ff41B4C1222c2b1869A67Be115070688989a2',
