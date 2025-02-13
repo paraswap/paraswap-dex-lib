@@ -33,4 +33,11 @@ export const WUSDMConfig: DexConfigMap<WusdmParams> = {
       USDMAddress: '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d', // WXDAI
     },
   },
+
+  wUSDL: {
+    [Network.MAINNET]: {
+      wUSDMAddress: '0x7751E2F4b8ae93EF6B79d86419d42FE3295A4559', // wUSDL
+      USDMAddress: '0xbdC7c08592Ee4aa51D06C27Ee23D5087D65aDbcD', // USDL
+    },
+  },
 };

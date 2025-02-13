@@ -571,6 +571,11 @@ export const Tokens: {
       decimals: 18,
       symbol: 'wUSDL',
     },
+    USDL: {
+      address: '0xbdC7c08592Ee4aa51D06C27Ee23D5087D65aDbcD',
+      decimals: 18,
+      symbol: 'USDL',
+    },
     WrappedM: {
       address: '0x437cc33344a0B27A429f795ff6B469C72698B291',
       decimals: 6,
@@ -1870,6 +1875,8 @@ export const Holders: {
     'USD0++': '0x2227b6806339906707b43F36a1f07B52FF7Fa776',
     USDM: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     wUSDM: '0x3B95bC951EE0f553ba487327278cAc44f29715E5',
+    USDL: '0xAb96AA0ee764924f49fbB372f3B4db9c2cB24Ea2',
+    wUSDL: '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb',
     UsualM: '0xE3f7A0c4a44b740328157A5152A85c3bCB54DA09',
   },
   [Network.POLYGON]: {
