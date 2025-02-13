@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Note - this is currently needed because queries won't work with multicall but should be updated in future
 export async function checkOnChainPricingNonMulti(
   network: number,

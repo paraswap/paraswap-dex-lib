@@ -129,20 +129,39 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
   ): Promise<DeepReadonly<HookStateMap>> {
     // Only hooks that are supported will be called
     const hookState: HookStateMap = {};
-    for (const hookAddress in this.hooksConfigMap) {
-      const hookConfig = this.hooksConfigMap[hookAddress];
-      if (hookConfig.type === DirectionalFee.type) {
-        hookState[hookAddress] = await getDirectionalFeeHookState();
-      } else if (hookConfig.type === StableSurge.type) {
-        hookState[hookAddress] = await getStableSurgeHookState(
-          this.interfaces[1],
-          hookAddress,
-          hookConfig.factory,
-          this.dexHelper,
-          blockNumber,
-        );
-      }
-    }
+
+    await Promise.all(
+      Object.keys(this.hooksConfigMap).map(async hookAddress => {
+        const hookConfig = this.hooksConfigMap[hookAddress];
+        if (hookConfig.type === DirectionalFee.type) {
+          hookState[hookAddress] = await getDirectionalFeeHookState();
+        } else if (hookConfig.type === StableSurge.type) {
+          hookState[hookAddress] = await getStableSurgeHookState(
+            this.interfaces[1],
+            hookAddress,
+            hookConfig.factory,
+            this.dexHelper,
+            blockNumber,
+          );
+        }
+      }),
+    );
+
+    // for (const hookAddress in this.hooksConfigMap) {
+    //   const hookConfig = this.hooksConfigMap[hookAddress];
+    //   if (hookConfig.type === DirectionalFee.type) {
+    //     hookState[hookAddress] = await getDirectionalFeeHookState();
+    //   } else if (hookConfig.type === StableSurge.type) {
+    //     hookState[hookAddress] = await getStableSurgeHookState(
+    //       this.interfaces[1],
+    //       hookAddress,
+    //       hookConfig.factory,
+    //       this.dexHelper,
+    //       blockNumber,
+    //     );
+    //   }
+    // }
+
     return hookState;
   }
 
@@ -151,19 +170,23 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
     const blockNumber = await this.dexHelper.provider.getBlockNumber();
     const currentState =
       (_.cloneDeep(this.getStaleState()) as HookStateMap) || {};
-    for (const hookAddress in this.hooksConfigMap) {
-      const hookConfig = this.hooksConfigMap[hookAddress];
-      // StableSurge can have new registered pools with associated hook state
-      if (hookConfig.type === StableSurge.type) {
-        currentState[hookAddress] = await getStableSurgeHookState(
-          this.interfaces[1],
-          hookAddress,
-          hookConfig.factory,
-          this.dexHelper,
-          blockNumber,
-        );
-      }
-    }
+
+    await Promise.all(
+      Object.keys(this.hooksConfigMap).map(async hookAddress => {
+        const hookConfig = this.hooksConfigMap[hookAddress];
+        // StableSurge can have new registered pools with associated hook state
+        if (hookConfig.type === StableSurge.type) {
+          currentState[hookAddress] = await getStableSurgeHookState(
+            this.interfaces[1],
+            hookAddress,
+            hookConfig.factory,
+            this.dexHelper,
+            blockNumber,
+          );
+        }
+      }),
+    );
+
     this.setState(currentState, blockNumber);
   }
 
