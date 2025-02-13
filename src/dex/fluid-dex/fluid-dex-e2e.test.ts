@@ -240,10 +240,6 @@ const limitsWide: DexLimits = {
   },
 };
 
-const ErrInsufficientBorrowable = new Error('DebtLimitReached');
-const ErrInsufficientMaxPrice = new Error('OracleUpdateHugeSwapDiff');
-const ErrInsufficientReserve = new Error('DebtReservesTooLow');
-
 describe('TestPoolSimulator_SwapInLimits', () => {
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
@@ -252,22 +248,18 @@ describe('TestPoolSimulator_SwapInLimits', () => {
 
   it('when limits hit', () => {
     let outAmt;
-    try {
-      outAmt = fluidDex.swapInAdjusted(
-        true,
-        BigInt(1e15),
-        NewColReservesOne(),
-        NewDebtReservesOne(),
-        100n,
-        18,
-        limitsTight,
-        BigInt(centerPriceTight),
-        Math.floor(Date.now() / 1000) - 10,
-      );
-      expect(outAmt).toEqual(0n);
-    } catch (err: any) {
-      expect(err.message).toEqual(ErrInsufficientBorrowable.message);
-    }
+    outAmt = fluidDex.swapInAdjusted(
+      true,
+      BigInt(1e15),
+      NewColReservesOne(),
+      NewDebtReservesOne(),
+      100n,
+      18,
+      limitsTight,
+      BigInt(centerPriceTight),
+      Math.floor(Date.now() / 1000) - 10,
+    );
+    expect(outAmt).toEqual(0n);
   });
 
   it('when expanded', () => {
@@ -287,41 +279,33 @@ describe('TestPoolSimulator_SwapInLimits', () => {
 
   it('when price diff hit', () => {
     let outAmt;
-    try {
-      outAmt = fluidDex.swapInAdjusted(
-        true,
-        BigInt(3e16),
-        NewColReservesOne(),
-        NewDebtReservesOne(),
-        100n,
-        18,
-        limitsWide,
-        BigInt(centerPriceWide),
-        Math.floor(Date.now() / 1000) - 10,
-      );
-      expect(outAmt).toEqual(0n);
-    } catch (err: any) {
-      expect(err.message).toEqual(ErrInsufficientMaxPrice.message);
-    }
+    outAmt = fluidDex.swapInAdjusted(
+      true,
+      BigInt(3e16),
+      NewColReservesOne(),
+      NewDebtReservesOne(),
+      100n,
+      18,
+      limitsWide,
+      BigInt(centerPriceWide),
+      Math.floor(Date.now() / 1000) - 10,
+    );
+    expect(outAmt).toEqual(0n);
   });
 
   it('when reserves limit is hit', () => {
     let outAmt;
-    try {
-      outAmt = fluidDex.swapInAdjusted(
-        true,
-        BigInt(5e16),
-        NewColReservesOne(),
-        NewDebtReservesOne(),
-        100n,
-        18,
-        limitsWide,
-        BigInt(centerPriceWide),
-        Math.floor(Date.now() / 1000) - 10,
-      );
-      expect(outAmt).toEqual(0n);
-    } catch (err: any) {
-      expect(err.message).toEqual(ErrInsufficientReserve.message);
-    }
+    outAmt = fluidDex.swapInAdjusted(
+      true,
+      BigInt(5e16),
+      NewColReservesOne(),
+      NewDebtReservesOne(),
+      100n,
+      18,
+      limitsWide,
+      BigInt(centerPriceWide),
+      Math.floor(Date.now() / 1000) - 10,
+    );
+    expect(outAmt).toEqual(0n);
   });
 });

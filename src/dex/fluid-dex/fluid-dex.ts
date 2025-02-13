@@ -293,7 +293,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
         }, ${side}:`,
         e,
       );
-      throw e;
       return null;
     }
   }
