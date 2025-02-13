@@ -44,7 +44,6 @@ export async function getStableSurgeHookState(
   const pools = (await resolverContract.callStatic.getPools({
     blockTag: blockNumber,
   })) as string[];
-  // query result for 1e18 (this maintains correct scaling for different token decimals in maths)
   const surgeThresholdCallData: callData[] = pools.flatMap(pool => {
     return [
       {
@@ -85,7 +84,6 @@ function mapPoolsToDecodedData(
   data: any[],
 ): StableSurgeHookState {
   return pools.reduce((acc, pool, index) => {
-    // Get the corresponding data indices for this pool
     const dataIndex = index * 2;
 
     // Ensure we have enough data
@@ -135,7 +133,7 @@ export function thresholdSurgePercentageChangedEvent(
   }
   const newState = _.cloneDeep(state) as HookStateMap;
   (newState[hookAddress] as StableSurgeHookState)[
-    event.args.pool
+    event.args.pool.toLowerCase()
   ].surgeThresholdPercentage = BigInt(event.args.newSurgeThresholdPercentage);
   return newState;
 }
@@ -159,7 +157,7 @@ export function maxSurgeFeePercentageChangedEvent(
   }
   const newState = _.cloneDeep(state) as HookStateMap;
   (newState[hookAddress] as StableSurgeHookState)[
-    event.args.pool
+    event.args.pool.toLowerCase()
   ].maxSurgeFeePercentage = BigInt(event.args.newMaxSurgeFeePercentage);
   return newState;
 }

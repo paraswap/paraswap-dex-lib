@@ -6,5 +6,7 @@ export function loadHooksConfig(network: number): HooksConfigMap {
 
   if (!hooks) return {};
 
-  return Object.fromEntries(hooks.map(hook => [hook.address, hook]));
+  return Object.fromEntries(
+    hooks.map(hook => [hook.address.toLowerCase(), hook]),
+  );
 }

@@ -89,7 +89,8 @@ function toImmutablePoolStateMap(
       // First filter out pools with hooks that aren't in hooksMap
       .filter(
         pool =>
-          !pool.hook || (pool.hook && pool.hook.address in hooksConfigMap),
+          !pool.hook ||
+          (pool.hook && pool.hook.address.toLowerCase() in hooksConfigMap),
       )
       .reduce((map, pool) => {
         const immutablePoolState: CommonImmutablePoolState = {
@@ -102,9 +103,9 @@ function toImmutablePoolStateMap(
             t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,
           ),
           poolType: pool.type,
-          hookAddress: pool.hook ? pool.hook.address : undefined,
+          hookAddress: pool.hook ? pool.hook.address.toLowerCase() : undefined,
           hookType: pool.hook
-            ? hooksConfigMap[pool.hook.address].type
+            ? hooksConfigMap[pool.hook.address.toLowerCase()].type
             : undefined,
           supportsUnbalancedLiquidity: true,
         };

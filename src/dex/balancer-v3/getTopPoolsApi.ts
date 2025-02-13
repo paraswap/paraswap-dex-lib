@@ -100,7 +100,9 @@ export async function getTopPoolsApi(
     );
 
     const pools = response.data.data.poolGetAggregatorPools.filter(
-      pool => !pool.hook || (pool.hook && pool.hook.address in hooksTypeMap),
+      pool =>
+        !pool.hook ||
+        (pool.hook && pool.hook.address.toLowerCase() in hooksTypeMap),
     );
     return pools;
   } catch (error) {
