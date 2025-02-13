@@ -202,8 +202,9 @@ describe('MountainProtocol E2E', () => {
     );
   });
 
-  describe('Mainnet', () => {
+  describe('wUSDL', () => {
     const network = Network.MAINNET;
+    const dexKey = 'wUSDL';
 
     const tokenASymbol: string = 'wUSDL';
     const tokenBSymbol: string = 'USDL';
@@ -213,7 +214,7 @@ describe('MountainProtocol E2E', () => {
 
     testForNetwork(
       network,
-      'wUSDL',
+      dexKey,
       tokenASymbol,
       tokenBSymbol,
       tokenAAmount,
