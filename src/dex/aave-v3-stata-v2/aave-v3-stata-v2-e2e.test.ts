@@ -234,29 +234,18 @@ describe('AaveV3Stata E2E', () => {
   //   });
   // });
 
-  describe.skip('Arbitrum', () => {
+  describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
       [
         {
-          name: 'USDT',
-          amount: '100000',
+          name: 'WETH',
+          amount: '100000000000000',
         },
         {
-          name: 'stataUSDT',
-          amount: '100000',
-        },
-      ],
-      [
-        {
-          name: 'aaveUSDT',
-          amount: '100000',
-          skipBuy: true,
-        },
-        {
-          name: 'stataUSDT',
-          amount: '100000',
+          name: 'waArbWETH',
+          amount: '1744566786133980',
         },
       ],
     ];
@@ -274,6 +263,7 @@ describe('AaveV3Stata E2E', () => {
     });
   });
 
+  // no tokens yet deployed
   describe.skip('Optimism', () => {
     const network = Network.OPTIMISM;
 
@@ -314,29 +304,18 @@ describe('AaveV3Stata E2E', () => {
     });
   });
 
-  describe.skip('Base', () => {
+  describe('Base', () => {
     const network = Network.BASE;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
       [
         {
-          name: 'USDC',
-          amount: '100000',
+          name: 'WETH',
+          amount: '100000000000',
         },
         {
-          name: 'stataUSDC',
-          amount: '100000',
-        },
-      ],
-      [
-        {
-          name: 'aaveUSDC',
-          amount: '100000',
-          skipBuy: true,
-        },
-        {
-          name: 'stataUSDC',
-          amount: '100000',
+          name: 'waBasWETH',
+          amount: '3792954988415750',
         },
       ],
     ];

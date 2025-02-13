@@ -129,95 +129,168 @@ type EventData = { blockNumbers: number[]; poolAddress: string[] };
 
 describe('BalancerV3 EventPool', function () {
   const dexKey = 'BalancerV3';
-  const network = Network.SEPOLIA;
-  const dexHelper = new DummyDexHelper(network);
-  const logger = dexHelper.getLogger(dexKey);
-  let balancerV3Pool: BalancerV3EventPool;
 
-  // vault -> EventMappings
-  // TODO once we have a new test deployment add tests for: AggregateSwapFeePercentageChanged, SwapFeePercentageChanged, PoolPausedStateChanged
-  const eventsToTest: Record<Address, EventMappings> = {
-    [BalancerV3Config.BalancerV3[network].vaultAddress]: {
-      // https://eth-sepolia.blockscout.com/tx/0xc417d38ad6e21250c9ddded37680b40f0991cfd3f8ae2d8b5800507a58d48c44
-      LiquidityAdded: {
-        blockNumbers: [7170937],
-        poolAddress: ['0x2ff3b96e0057a1f25f1d62ab800554ccdb268ab8'],
-      },
-      // https://sepolia.etherscan.io/tx/0xc1596e26d51104b9236a0debc3e1946b30b82f92b8331639ad6f6aea2ff2decc
-      LiquidityRemoved: {
-        blockNumbers: [7170957],
-        poolAddress: ['0x2ff3b96e0057a1f25f1d62ab800554ccdb268ab8'],
-      },
-      // https://sepolia.etherscan.io/tx/0x78d18503c2dd4458c94ec916b10c088bb4e8b90059676d00dbcec83f763d8c0e
-      Swap: {
-        blockNumbers: [7175721],
-        poolAddress: ['0x2ff3b96e0057a1f25f1d62ab800554ccdb268ab8'],
-      },
-      // 7170034, AmpUpdateStarted, https://eth-sepolia.blockscout.com/tx/0xfbe2e53d9cede1dc900100a1d6e809a89d909746ac7b8cc011e93227af8dda8b?tab=logs
-      // 7170069, AmpUpdateStopped, https://eth-sepolia.blockscout.com/tx/0x2ee2e1d5980013fdf1cf9c3789e0321fb598c2412db8ee8057fcfaffd1c792ab?tab=logs
-      VaultAuxiliary: {
-        blockNumbers: [7170034, 7170069],
-        poolAddress: [
-          '0xD63dB0B88dca565633fB8d70a70b9b8093d34A7E',
-          '0xD63dB0B88dca565633fB8d70a70b9b8093d34A7E',
-        ],
-      },
-      // https://sepolia.etherscan.io/tx/0x71f9879485f4e4cf97aa42381988ffe277f05a872d6b507cfa007cec1239a3f8#eventlog
-      SwapFeePercentageChanged: {
-        blockNumbers: [7206571],
-        poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
-      },
-      // https://sepolia.etherscan.io/tx/0xaf232ca2df59ba5fad38d74e9b54ec2ae1ad2e6abca8348f107cf3fd94c787c7#eventlog
-      // Should remove pool from state as its paused and no longer supports swaps
-      PoolPausedStateChanged: {
-        blockNumbers: [7206586],
-        poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
-      },
-      // https://sepolia.etherscan.io/tx/0xa23dc10bd0fbed7ffffe867766d9b0d7670ca4a0bc352669f547bc7775644349#eventlog
-      AggregateSwapFeePercentageChanged: {
-        blockNumbers: [7206701],
-        poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
-      },
-    },
-  };
+  describe('Sepolia', function () {
+    const network = Network.SEPOLIA;
+    const dexHelper = new DummyDexHelper(network);
+    const logger = dexHelper.getLogger(dexKey);
+    let balancerV3Pool: BalancerV3EventPool;
 
-  beforeEach(async () => {
-    balancerV3Pool = new BalancerV3EventPool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
+    // vault -> EventMappings
+    // TODO once we have a new test deployment add tests for: AggregateSwapFeePercentageChanged, SwapFeePercentageChanged, PoolPausedStateChanged
+    const eventsToTest: Record<Address, EventMappings> = {
+      [BalancerV3Config.BalancerV3[network].vaultAddress]: {
+        // https://eth-sepolia.blockscout.com/tx/0xc417d38ad6e21250c9ddded37680b40f0991cfd3f8ae2d8b5800507a58d48c44
+        LiquidityAdded: {
+          blockNumbers: [7170937],
+          poolAddress: ['0x2ff3b96e0057a1f25f1d62ab800554ccdb268ab8'],
+        },
+        // https://sepolia.etherscan.io/tx/0xc1596e26d51104b9236a0debc3e1946b30b82f92b8331639ad6f6aea2ff2decc
+        LiquidityRemoved: {
+          blockNumbers: [7170957],
+          poolAddress: ['0x2ff3b96e0057a1f25f1d62ab800554ccdb268ab8'],
+        },
+        // https://sepolia.etherscan.io/tx/0x78d18503c2dd4458c94ec916b10c088bb4e8b90059676d00dbcec83f763d8c0e
+        Swap: {
+          blockNumbers: [7175721],
+          poolAddress: ['0x2ff3b96e0057a1f25f1d62ab800554ccdb268ab8'],
+        },
+        // 7170034, AmpUpdateStarted, https://eth-sepolia.blockscout.com/tx/0xfbe2e53d9cede1dc900100a1d6e809a89d909746ac7b8cc011e93227af8dda8b?tab=logs
+        // 7170069, AmpUpdateStopped, https://eth-sepolia.blockscout.com/tx/0x2ee2e1d5980013fdf1cf9c3789e0321fb598c2412db8ee8057fcfaffd1c792ab?tab=logs
+        VaultAuxiliary: {
+          blockNumbers: [7170034, 7170069],
+          poolAddress: [
+            '0xD63dB0B88dca565633fB8d70a70b9b8093d34A7E',
+            '0xD63dB0B88dca565633fB8d70a70b9b8093d34A7E',
+          ],
+        },
+        // https://sepolia.etherscan.io/tx/0x71f9879485f4e4cf97aa42381988ffe277f05a872d6b507cfa007cec1239a3f8#eventlog
+        SwapFeePercentageChanged: {
+          blockNumbers: [7206571],
+          poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
+        },
+        // https://sepolia.etherscan.io/tx/0xaf232ca2df59ba5fad38d74e9b54ec2ae1ad2e6abca8348f107cf3fd94c787c7#eventlog
+        // Should remove pool from state as its paused and no longer supports swaps
+        PoolPausedStateChanged: {
+          blockNumbers: [7206586],
+          poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
+        },
+        // https://sepolia.etherscan.io/tx/0xa23dc10bd0fbed7ffffe867766d9b0d7670ca4a0bc352669f547bc7775644349#eventlog
+        AggregateSwapFeePercentageChanged: {
+          blockNumbers: [7206701],
+          poolAddress: ['0xe69b70a86A4e1fD33dA95693A1aE12Be1c26C8ea'],
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      balancerV3Pool = new BalancerV3EventPool(
+        dexKey,
+        network,
+        dexHelper,
+        logger,
+      );
+    });
+
+    Object.entries(eventsToTest).forEach(
+      ([vaultAddress, events]: [string, EventMappings]) => {
+        describe(`Events for Vault: ${vaultAddress}`, () => {
+          Object.entries(events).forEach(
+            ([eventName, eventData]: [string, EventData]) => {
+              describe(`${eventName}`, () => {
+                eventData.blockNumbers.forEach((blockNumber: number, i) => {
+                  it(`Pool: ${eventData.poolAddress[i]} State after ${blockNumber}`, async function () {
+                    await testEventSubscriber(
+                      balancerV3Pool,
+                      balancerV3Pool.addressesSubscribed,
+                      (_blockNumber: number) =>
+                        fetchPoolState(
+                          balancerV3Pool,
+                          _blockNumber,
+                          eventData.poolAddress[i],
+                        ),
+                      blockNumber,
+                      `${dexKey}_${vaultAddress}`,
+                      dexHelper.provider,
+                      stateCompare,
+                    );
+                  });
+                });
+              });
+            },
+          );
+        });
+      },
     );
   });
 
-  Object.entries(eventsToTest).forEach(
-    ([vaultAddress, events]: [string, EventMappings]) => {
-      describe(`Events for Vault: ${vaultAddress}`, () => {
-        Object.entries(events).forEach(
-          ([eventName, eventData]: [string, EventData]) => {
-            describe(`${eventName}`, () => {
-              eventData.blockNumbers.forEach((blockNumber: number, i) => {
-                it(`Pool: ${eventData.poolAddress[i]} State after ${blockNumber}`, async function () {
-                  await testEventSubscriber(
-                    balancerV3Pool,
-                    balancerV3Pool.addressesSubscribed,
-                    (_blockNumber: number) =>
-                      fetchPoolState(
-                        balancerV3Pool,
-                        _blockNumber,
-                        eventData.poolAddress[i],
-                      ),
-                    blockNumber,
-                    `${dexKey}_${vaultAddress}`,
-                    dexHelper.provider,
-                    stateCompare,
-                  );
+  describe('Mainnet', function () {
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
+    const logger = dexHelper.getLogger(dexKey);
+    let balancerV3Pool: BalancerV3EventPool;
+
+    // vault -> EventMappings
+    // TODO once we have a new test deployment add tests for: AggregateSwapFeePercentageChanged, SwapFeePercentageChanged, PoolPausedStateChanged
+    const eventsToTest: Record<Address, EventMappings> = {
+      [BalancerV3Config.BalancerV3[network].vaultAddress]: {
+        LiquidityAdded: {
+          blockNumbers: [21774068],
+          poolAddress: ['0x8523bcadcda4bd329435940dcc49a7c4c0a14d94'],
+        },
+        LiquidityRemoved: {
+          blockNumbers: [21788910],
+          poolAddress: ['0x8523bcadcda4bd329435940dcc49a7c4c0a14d94'],
+        },
+        Swap: {
+          blockNumbers: [21788638, 21791514, 21791514],
+          poolAddress: [
+            '0x8523bcadcda4bd329435940dcc49a7c4c0a14d94',
+            '0x8523bcadcda4bd329435940dcc49a7c4c0a14d94',
+            '0x8523bcadcda4bd329435940dcc49a7c4c0a14d94',
+          ],
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      balancerV3Pool = new BalancerV3EventPool(
+        dexKey,
+        network,
+        dexHelper,
+        logger,
+      );
+    });
+
+    Object.entries(eventsToTest).forEach(
+      ([vaultAddress, events]: [string, EventMappings]) => {
+        describe(`Events for Vault: ${vaultAddress}`, () => {
+          Object.entries(events).forEach(
+            ([eventName, eventData]: [string, EventData]) => {
+              describe(`${eventName}`, () => {
+                eventData.blockNumbers.forEach((blockNumber: number, i) => {
+                  it(`Pool: ${eventData.poolAddress[i]} State after ${blockNumber}`, async function () {
+                    await testEventSubscriber(
+                      balancerV3Pool,
+                      balancerV3Pool.addressesSubscribed,
+                      (_blockNumber: number) =>
+                        fetchPoolState(
+                          balancerV3Pool,
+                          _blockNumber,
+                          eventData.poolAddress[i],
+                        ),
+                      blockNumber,
+                      `${dexKey}_${vaultAddress}`,
+                      dexHelper.provider,
+                      stateCompare,
+                    );
+                  });
                 });
               });
-            });
-          },
-        );
-      });
-    },
-  );
+            },
+          );
+        });
+      },
+    );
+  });
 });
