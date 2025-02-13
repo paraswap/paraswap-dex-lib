@@ -22,6 +22,8 @@ import {
   OUT_OF_RANGE_ERROR_POSTFIX,
   TICK_BITMAP_BUFFER,
   TICK_BITMAP_TO_USE,
+  TICK_BITMAP_TO_USE_BY_CHAIN,
+  TICK_BITMAP_BUFFER_BY_CHAIN,
 } from './constants';
 import { TickBitMap } from './contract-math/TickBitMap';
 import { uint256ToBigInt } from '../../lib/decoders';
@@ -251,7 +253,14 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   getBitmapRangeToRequest() {
-    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
+    const networkId = this.dexHelper.config.data.network;
+
+    const tickBitMapToUse =
+      TICK_BITMAP_TO_USE_BY_CHAIN[networkId] ?? TICK_BITMAP_TO_USE;
+    const tickBitMapBuffer =
+      TICK_BITMAP_BUFFER_BY_CHAIN[networkId] ?? TICK_BITMAP_BUFFER;
+
+    return tickBitMapToUse + tickBitMapBuffer;
   }
 
   async checkState(
@@ -330,6 +339,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const requestedRange = this.getBitmapRangeToRequest();
 
     return {
+      networkId: this.dexHelper.config.data.network,
       pool: _state.pool,
       blockTimestamp: bigIntify(_state.blockTimestamp),
       slot0: {

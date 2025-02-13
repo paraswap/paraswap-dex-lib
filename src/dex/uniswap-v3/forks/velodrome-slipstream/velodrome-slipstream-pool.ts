@@ -125,6 +125,7 @@ export class VelodromeSlipstreamEventPool extends UniswapV3EventPool {
     const requestedRange = this.getBitmapRangeToRequest();
 
     return {
+      networkId: this.dexHelper.config.data.network,
       pool: _state.pool,
       fee,
       blockTimestamp: bigIntify(_state.blockTimestamp),
