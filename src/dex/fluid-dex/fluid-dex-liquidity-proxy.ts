@@ -137,12 +137,14 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
         token0,
         token1,
         feeHex,
+        centerPriceHex,
         collateralReservesHex,
         debtReservesHex,
         dexLimitsHex,
       ] = poolReserve;
 
       const fee = Number(feeHex.toString());
+      const centerPrice = Number(centerPriceHex.toString());
 
       const collateralReserves = {
         token0RealReserves: bigIntify(collateralReservesHex[0]),
@@ -196,6 +198,7 @@ export class FluidDexLiquidityProxy extends StatefulEventSubscriber<FluidDexLiqu
         token0,
         token1,
         fee,
+        centerPrice,
         collateralReserves,
         debtReserves,
         dexLimits,
