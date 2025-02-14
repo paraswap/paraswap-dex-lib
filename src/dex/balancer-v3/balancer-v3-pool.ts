@@ -422,8 +422,15 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
       // If the pool has a hook we fetch latest hook state for use in maths
       let hookState = undefined;
-      if ('hookAddress' in step.poolState && step.poolState.hookAddress)
+      if ('hookAddress' in step.poolState && step.poolState.hookAddress) {
         hookState = hookStateMap[step.poolState.hookAddress];
+        if (!hookState) {
+          this.logger.error(
+            `getSwapResult hookState not found ${step.poolState.hookAddress}`,
+          );
+          return 0n;
+        }
+      }
 
       // If its a Stable Pool with an updating Amp factor calculate current Amp value
       if (
