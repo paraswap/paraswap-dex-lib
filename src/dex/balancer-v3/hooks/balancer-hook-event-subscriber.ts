@@ -51,6 +51,7 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
       event: any,
       state: DeepReadonly<HookStateMap>,
       log: Readonly<Log>,
+      logger: Logger,
     ) => DeepReadonly<HookStateMap> | null;
   } = {};
 
@@ -106,7 +107,7 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
     try {
       const event = this.logDecoder(log);
       if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
+        return this.handlers[event.name](event, state, log, this.logger);
       }
     } catch (e) {
       catchParseLogError(e, this.logger);

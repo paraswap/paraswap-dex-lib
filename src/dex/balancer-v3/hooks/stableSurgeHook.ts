@@ -6,6 +6,7 @@ import { Interface } from '@ethersproject/abi';
 import { Contract } from 'ethers';
 import { IDexHelper } from '../../../dex-helper';
 import { callData, decodeThrowError } from '../getOnChainState';
+import { Logger } from 'log4js';
 
 export const StableSurge = {
   type: 'StableSurge' as const,
@@ -125,12 +126,16 @@ export function thresholdSurgePercentageChangedEvent(
   event: any,
   state: DeepReadonly<HookStateMap>,
   log: Readonly<Log>,
+  logger: Logger,
 ): DeepReadonly<HookStateMap> | null {
   // ThresholdSurgePercentageChanged(pool, newSurgeThresholdPercentage)
   const hookAddress = log.address.toLowerCase();
+
   if (!state[hookAddress]) {
-    return null;
+    logger.info(`State for hook ${hookAddress} was not found...`);
+    return state;
   }
+
   const newState = _.cloneDeep(state) as HookStateMap;
 
   if (
