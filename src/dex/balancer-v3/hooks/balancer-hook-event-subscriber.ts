@@ -17,7 +17,7 @@ import {
   DirectionalFeeHookState,
   getDirectionalFeeHookState,
 } from './directionalFeeHook';
-import exitFeeHookAbi from '../../../abi/balancer-v3/directionalFeeHook.json';
+import directionalFeeHookAbi from '../../../abi/balancer-v3/directionalFeeHook.json';
 import {
   getStableSurgeHookState,
   maxSurgeFeePercentageChangedEvent,
@@ -74,7 +74,7 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
 
     // Add each hook ABI here
     this.interfaces = [
-      new Interface(exitFeeHookAbi),
+      new Interface(directionalFeeHookAbi),
       new Interface(stableSurgeHookAbi),
     ];
     this.logDecoder = (log: Log) =>
