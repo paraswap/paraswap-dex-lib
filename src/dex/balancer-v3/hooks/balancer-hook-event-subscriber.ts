@@ -147,21 +147,6 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
       }),
     );
 
-    // for (const hookAddress in this.hooksConfigMap) {
-    //   const hookConfig = this.hooksConfigMap[hookAddress];
-    //   if (hookConfig.type === DirectionalFee.type) {
-    //     hookState[hookAddress] = await getDirectionalFeeHookState();
-    //   } else if (hookConfig.type === StableSurge.type) {
-    //     hookState[hookAddress] = await getStableSurgeHookState(
-    //       this.interfaces[1],
-    //       hookAddress,
-    //       hookConfig.factory,
-    //       this.dexHelper,
-    //       blockNumber,
-    //     );
-    //   }
-    // }
-
     return hookState;
   }
 

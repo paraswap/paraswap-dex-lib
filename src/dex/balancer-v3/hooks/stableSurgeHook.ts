@@ -18,8 +18,8 @@ export type StableSurgeConfig = {
 };
 
 export type StableSurgePoolSetting = {
-  surgeThresholdPercentage: bigint;
-  maxSurgeFeePercentage: bigint;
+  surgeThresholdPercentage?: bigint;
+  maxSurgeFeePercentage?: bigint;
 };
 
 export type StableSurgeHookState = Record<string, StableSurgePoolSetting>;
@@ -132,9 +132,24 @@ export function thresholdSurgePercentageChangedEvent(
     return null;
   }
   const newState = _.cloneDeep(state) as HookStateMap;
-  (newState[hookAddress] as StableSurgeHookState)[
-    event.args.pool.toLowerCase()
-  ].surgeThresholdPercentage = BigInt(event.args.newSurgeThresholdPercentage);
+
+  if (
+    newState[hookAddress] &&
+    !(newState[hookAddress] as StableSurgeHookState)[
+      event.args.pool.toLowerCase()
+    ]
+  ) {
+    (newState[hookAddress] as StableSurgeHookState)[
+      event.args.pool.toLowerCase()
+    ] = {
+      surgeThresholdPercentage: BigInt(event.args.newSurgeThresholdPercentage),
+    };
+  } else {
+    (newState[hookAddress] as StableSurgeHookState)[
+      event.args.pool.toLowerCase()
+    ].surgeThresholdPercentage = BigInt(event.args.newSurgeThresholdPercentage);
+  }
+
   return newState;
 }
 
@@ -156,8 +171,23 @@ export function maxSurgeFeePercentageChangedEvent(
     return null;
   }
   const newState = _.cloneDeep(state) as HookStateMap;
-  (newState[hookAddress] as StableSurgeHookState)[
-    event.args.pool.toLowerCase()
-  ].maxSurgeFeePercentage = BigInt(event.args.newMaxSurgeFeePercentage);
+
+  if (
+    newState[hookAddress] &&
+    !(newState[hookAddress] as StableSurgeHookState)[
+      event.args.pool.toLowerCase() as string
+    ]
+  ) {
+    (newState[hookAddress] as StableSurgeHookState)[
+      event.args.pool.toLowerCase()
+    ] = {
+      maxSurgeFeePercentage: BigInt(event.args.newMaxSurgeFeePercentage),
+    };
+  } else {
+    (newState[hookAddress] as StableSurgeHookState)[
+      event.args.pool.toLowerCase()
+    ].maxSurgeFeePercentage = BigInt(event.args.newMaxSurgeFeePercentage);
+  }
+
   return newState;
 }

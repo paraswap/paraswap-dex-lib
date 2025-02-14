@@ -37,63 +37,130 @@ type EventData = { blockNumbers: number[]; hookAddress: string[] };
 
 describe('BalancerEventHook', function () {
   const dexKey = 'BalancerV3';
-  const network = Network.SEPOLIA;
-  const dexHelper = new DummyDexHelper(network);
-  const logger = dexHelper.getLogger(dexKey);
-  let balancerEventHook: BalancerEventHook;
 
-  // hook -> EventMappings
-  const eventsToTest: Record<Address, EventMappings> = {
-    ['StableSurgeHook']: {
-      // https://sepolia.etherscan.io/tx/0xa8d363d9c78b7b66e6f93c4417de67e636c13691437aecf85a631987b200abd8
-      ThresholdSurgePercentageChanged: {
-        blockNumbers: [7596856],
-        hookAddress: ['0xC0cbcdD6b823A4f22aA6BbDDe44C17e754266AEF'],
-      },
-      // https://sepolia.etherscan.io/tx/0xd1a9e40ed3c3d32bf8f2264daa4c66879ac5eae1f4029ae9993badd653b26bad
-      MaxSurgeFeePercentageChanged: {
-        blockNumbers: [7596855],
-        hookAddress: ['0xC0cbcdD6b823A4f22aA6BbDDe44C17e754266AEF'],
-      },
-    },
-  };
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
+    const dexHelper = new DummyDexHelper(network);
+    const logger = dexHelper.getLogger(dexKey);
+    let balancerEventHook: BalancerEventHook;
 
-  beforeEach(async () => {
-    balancerEventHook = new BalancerEventHook(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
+    // hook -> EventMappings
+    const eventsToTest: Record<Address, EventMappings> = {
+      ['StableSurgeHook']: {
+        ThresholdSurgePercentageChanged: {
+          blockNumbers: [
+            21824387, 21825432, 21825615, 21825831, 21830728, 21830728,
+          ],
+          hookAddress: ['0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA'],
+        },
+        MaxSurgeFeePercentageChanged: {
+          blockNumbers: [
+            21824387, 21825432, 21825615, 21825831, 21830728, 21830728,
+          ],
+          hookAddress: ['0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA'],
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      balancerEventHook = new BalancerEventHook(
+        dexKey,
+        network,
+        dexHelper,
+        logger,
+      );
+    });
+
+    Object.entries(eventsToTest).forEach(
+      ([hookAddress, events]: [string, EventMappings]) => {
+        describe(`Events for Hook: ${hookAddress}`, () => {
+          Object.entries(events).forEach(
+            ([eventName, eventData]: [string, EventData]) => {
+              describe(`${eventName}`, () => {
+                eventData.blockNumbers.forEach((blockNumber: number, i) => {
+                  it(`Hook: ${eventData.hookAddress[i]} State after ${blockNumber}`, async function () {
+                    await testEventSubscriber(
+                      balancerEventHook,
+                      balancerEventHook.addressesSubscribed,
+                      (_blockNumber: number) =>
+                        fetchHookState(
+                          balancerEventHook,
+                          _blockNumber,
+                          eventData.hookAddress[0],
+                        ),
+                      blockNumber,
+                      `${dexKey}_${hookAddress}`,
+                      dexHelper.provider,
+                    );
+                  });
+                });
+              });
+            },
+          );
+        });
+      },
     );
   });
 
-  Object.entries(eventsToTest).forEach(
-    ([hookAddress, events]: [string, EventMappings]) => {
-      describe(`Events for Hook: ${hookAddress}`, () => {
-        Object.entries(events).forEach(
-          ([eventName, eventData]: [string, EventData]) => {
-            describe(`${eventName}`, () => {
-              eventData.blockNumbers.forEach((blockNumber: number, i) => {
-                it(`Hook: ${eventData.hookAddress[i]} State after ${blockNumber}`, async function () {
-                  await testEventSubscriber(
-                    balancerEventHook,
-                    balancerEventHook.addressesSubscribed,
-                    (_blockNumber: number) =>
-                      fetchHookState(
-                        balancerEventHook,
-                        _blockNumber,
-                        eventData.hookAddress[i],
-                      ),
-                    blockNumber,
-                    `${dexKey}_${hookAddress}`,
-                    dexHelper.provider,
-                  );
+  describe('SEPOLIA', () => {
+    const network = Network.SEPOLIA;
+    const dexHelper = new DummyDexHelper(network);
+    const logger = dexHelper.getLogger(dexKey);
+    let balancerEventHook: BalancerEventHook;
+
+    // hook -> EventMappings
+    const eventsToTest: Record<Address, EventMappings> = {
+      ['StableSurgeHook']: {
+        // https://sepolia.etherscan.io/tx/0xa8d363d9c78b7b66e6f93c4417de67e636c13691437aecf85a631987b200abd8
+        ThresholdSurgePercentageChanged: {
+          blockNumbers: [7596856],
+          hookAddress: ['0xC0cbcdD6b823A4f22aA6BbDDe44C17e754266AEF'],
+        },
+        // https://sepolia.etherscan.io/tx/0xd1a9e40ed3c3d32bf8f2264daa4c66879ac5eae1f4029ae9993badd653b26bad
+        MaxSurgeFeePercentageChanged: {
+          blockNumbers: [7596855],
+          hookAddress: ['0xC0cbcdD6b823A4f22aA6BbDDe44C17e754266AEF'],
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      balancerEventHook = new BalancerEventHook(
+        dexKey,
+        network,
+        dexHelper,
+        logger,
+      );
+    });
+
+    Object.entries(eventsToTest).forEach(
+      ([hookAddress, events]: [string, EventMappings]) => {
+        describe(`Events for Hook: ${hookAddress}`, () => {
+          Object.entries(events).forEach(
+            ([eventName, eventData]: [string, EventData]) => {
+              describe(`${eventName}`, () => {
+                eventData.blockNumbers.forEach((blockNumber: number, i) => {
+                  it(`Hook: ${eventData.hookAddress[i]} State after ${blockNumber}`, async function () {
+                    await testEventSubscriber(
+                      balancerEventHook,
+                      balancerEventHook.addressesSubscribed,
+                      (_blockNumber: number) =>
+                        fetchHookState(
+                          balancerEventHook,
+                          _blockNumber,
+                          eventData.hookAddress[i],
+                        ),
+                      blockNumber,
+                      `${dexKey}_${hookAddress}`,
+                      dexHelper.provider,
+                    );
+                  });
                 });
               });
-            });
-          },
-        );
-      });
-    },
-  );
+            },
+          );
+        });
+      },
+    );
+  });
 });
