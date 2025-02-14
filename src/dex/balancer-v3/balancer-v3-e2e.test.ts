@@ -385,6 +385,26 @@ describe('BalancerV3 E2E', () => {
       );
     });
 
+    describe('StableSurge Hook', () => {
+      const tokenASymbol: string = 'waBasGHO';
+      const tokenBSymbol: string = 'waBasUSDC';
+
+      const tokenAAmount: string = '500000000000000000';
+      const tokenBAmount: string = '500000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
     // No holders for waBasWETH
     // describe('Boosted Path', () => {
     //   const tokenASymbol: string = 'waBaswstETH';
