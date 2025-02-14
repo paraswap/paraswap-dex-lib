@@ -900,9 +900,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
       syncTime,
     );
 
-    if (amountIn === 2n ** 256n - 1n) {
-      return amountIn;
-    }
     const ans = (amountIn * BigInt(10 ** inDecimals)) / BigInt(10 ** 12);
     return ans;
   }
