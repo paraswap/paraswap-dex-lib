@@ -447,13 +447,21 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           );
         }
         // StableSurge hook uses Amp as part of maths
-        if (step.poolState.hookType === StableSurge.type && hookState)
+        if (step.poolState.hookType === StableSurge.type && hookState) {
+          const poolHookState = (hookState as StableSurgeHookState)[
+            step.poolState.poolAddress.toLowerCase()
+          ];
+          if (!poolHookState) {
+            this.logger.error(
+              `getSwapResult StableSurge hookState not found ${step.poolState.hookAddress}`,
+            );
+            return 0n;
+          }
           hookState = {
-            ...(hookState as StableSurgeHookState)[
-              step.poolState.poolAddress.toLowerCase()
-            ],
+            ...poolHookState,
             amp: step.poolState.amp,
           };
+        }
       }
 
       outputAmountRaw = this.vault.swap(
