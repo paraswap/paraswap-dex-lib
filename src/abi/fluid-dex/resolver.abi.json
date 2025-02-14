@@ -202,6 +202,11 @@
             "type": "uint256"
           },
           {
+            "internalType": "uint256",
+            "name": "centerPrice",
+            "type": "uint256"
+          },
+          {
             "components": [
               {
                 "internalType": "uint256",
@@ -393,6 +398,11 @@
           {
             "internalType": "uint256",
             "name": "fee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "centerPrice",
             "type": "uint256"
           },
           {
@@ -1193,6 +1203,11 @@
             "type": "uint256"
           },
           {
+            "internalType": "uint256",
+            "name": "centerPrice",
+            "type": "uint256"
+          },
+          {
             "components": [
               {
                 "internalType": "uint256",
@@ -1390,6 +1405,11 @@
           {
             "internalType": "uint256",
             "name": "fee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "centerPrice",
             "type": "uint256"
           },
           {
@@ -1617,6 +1637,11 @@
             "type": "uint256"
           },
           {
+            "internalType": "uint256",
+            "name": "centerPrice",
+            "type": "uint256"
+          },
+          {
             "components": [
               {
                 "internalType": "uint256",
@@ -1814,6 +1839,11 @@
           {
             "internalType": "uint256",
             "name": "fee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "centerPrice",
             "type": "uint256"
           },
           {
