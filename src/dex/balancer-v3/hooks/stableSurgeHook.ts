@@ -96,13 +96,13 @@ function mapPoolsToDecodedData(
       hookInterface,
       'getSurgeThresholdPercentage',
       data[dataIndex],
-      'n/a',
+      pool,
     );
     const decodedY = decodeThrowError(
       hookInterface,
       'getMaxSurgeFeePercentage',
       data[dataIndex + 1],
-      'n/a',
+      pool,
     );
     // Add to accumulator
     acc[pool.toLowerCase()] = {
