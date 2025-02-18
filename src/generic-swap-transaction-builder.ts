@@ -447,7 +447,7 @@ export class GenericSwapTransactionBuilder {
     uuid: string;
     beneficiary?: Address;
     onlyParams?: boolean;
-  }): Promise<TxObject> {
+  }): Promise<TxObject | (string | string[])[]> {
     // if beneficiary is not defined, then in smart contract it will be replaced to msg.sender
     const _beneficiary =
       beneficiary !== NULL_ADDRESS &&
@@ -494,6 +494,8 @@ export class GenericSwapTransactionBuilder {
       ));
     }
 
+    if (onlyParams) return params;
+
     const value = (
       priceRoute.srcToken.toLowerCase() === ETHER_ADDRESS.toLowerCase()
         ? BigInt(
@@ -525,8 +527,14 @@ export class GenericSwapTransactionBuilder {
     isReferral,
     isSkipBlacklist,
   }: FeeParams): string {
+    const partnerAddress =
+      feePercent === '0' && !isTakeSurplus && !isReferral
+        ? NULL_ADDRESS
+        : partner;
+
     // Partner address shifted left to make room for flags and fee percent
-    const partialFeeCodeWithPartnerAddress = BigNumber.from(partner).shl(96);
+    const partialFeeCodeWithPartnerAddress =
+      BigNumber.from(partnerAddress).shl(96);
     let partialFeeCodeWithBitFlags = BigNumber.from(0); // default 0 is safe if none the conditions pass
 
     const isFixedFees = !BigNumber.from(feePercent).isZero();

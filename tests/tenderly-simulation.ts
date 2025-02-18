@@ -21,6 +21,7 @@ export type SimulationResult = {
 
 export interface TransactionSimulator {
   vnetId: string;
+  rpcURL: string;
   setup(): Promise<void>;
 
   getChainNameByChainId(network: number): string;
@@ -33,6 +34,7 @@ export interface TransactionSimulator {
 
 export class EstimateGasSimulation implements TransactionSimulator {
   vnetId: string = '0';
+  rpcURL: string = '';
 
   constructor(private provider: Provider) {}
 
@@ -246,6 +248,7 @@ export class TenderlySimulation implements TransactionSimulator {
         };
       }
     } catch (e) {
+      console.error('TenderlySimulation_simulate_error', e);
       return {
         success: false,
       };

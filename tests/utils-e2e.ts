@@ -215,7 +215,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     const minMaxAmount = _minMaxAmount.toString();
     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
 
-    return await this.transactionBuilder.build({
+    return (await this.transactionBuilder.build({
       priceRoute,
       minMaxAmount: minMaxAmount.toString(),
       userAddress,
@@ -223,7 +223,7 @@ class APIParaswapSDK implements IParaSwapSDK {
       partnerFeePercent: '0',
       deadline: deadline.toString(),
       uuid: uuid(),
-    });
+    })) as TxObject;
   }
 
   async releaseResources(): Promise<void> {
@@ -490,11 +490,8 @@ export async function testE2E(
   }
 
   if (paraswap.dexHelper?.replaceProviderWithRPC) {
-    paraswap.dexHelper?.replaceProviderWithRPC(
-      `https://virtual.${ts.getChainNameByChainId(network)}.rpc.tenderly.co/${
-        ts.vnetId
-      }`,
-    );
+    console.log('ts.rpcURL: ', ts.rpcURL);
+    paraswap.dexHelper?.replaceProviderWithRPC(ts.rpcURL);
   }
 
   try {

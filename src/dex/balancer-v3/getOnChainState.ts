@@ -10,7 +10,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import { IDexHelper } from '../../dex-helper';
 import { WAD } from './balancer-v3-pool';
 
-interface callData {
+export interface callData {
   target: string;
   callData: string;
 }
@@ -161,9 +161,6 @@ const poolOnChain: Record<
           (r: string) => BigInt(r),
         ),
         isPoolPaused: resultIsPoolPaused[0],
-        hasHook:
-          resultHooksConfig[0].hooksContract !==
-          '0x0000000000000000000000000000000000000000',
       };
     },
   },
