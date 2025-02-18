@@ -603,6 +603,10 @@ export const Tokens: {
       addBalance: _balancesFn,
       addAllowance: _allowancesFn,
     },
+    MLN: {
+      address: '0xa9f37d84c856fda3812ad0519dad44fa0a3fe207',
+      decimals: 11,
+    },
     TEL: {
       address: '0xdf7837de1f2fa4631d716cf2502f8b230f1dcc32',
       decimals: 2,
