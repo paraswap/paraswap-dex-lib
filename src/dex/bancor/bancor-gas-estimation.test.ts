@@ -14,7 +14,8 @@ describe('Bancor Gas Estimation', () => {
     const BNT = Tokens[network]['BNT'];
     const amount = 100000000n;
 
-    it('convert', async () => {
+    // https://dashboard.tenderly.co/paraswap/paraswap/simulator/bcb58187-2a53-4d7f-b0b7-f1cce81ef0c8/gas-usage
+    it('convert2', async () => {
       await testGasEstimation(
         network,
         USDT,
