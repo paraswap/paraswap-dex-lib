@@ -4,12 +4,10 @@ dotenv.config();
 
 import { BasePool } from './pools/base-pool';
 import { Network } from '../../constants';
-import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { PoolKey, PoolState } from './types';
+import { findNearestInitializedTickIndex, PoolKey, PoolState } from './types';
 import { EkuboConfig } from './config';
-import { DeepReadonly, DeepWritable } from 'ts-essentials';
 import { Contract } from 'ethers';
 import CoreABI from '../../abi/ekubo/core.json';
 import DataFetcherABI from '../../abi/ekubo/data-fetcher.json';
@@ -27,6 +25,91 @@ async function fetchPoolState(
 
 // eventName -> blockNumbers
 type EventMappings = Record<string, number[]>;
+
+function stateCompare(actual: PoolState.Object, expected: PoolState.Object) {
+  const [lowCheckedTickActual, highCheckedTickActual] =
+    actual.checkedTicksBounds;
+  const [lowCheckedTickExpected, highCheckedTickExpected] =
+    expected.checkedTicksBounds;
+
+  const [sameLowCheckedTicks, sameHighCheckedTicks] = [
+    lowCheckedTickActual === lowCheckedTickExpected,
+    highCheckedTickActual === highCheckedTickExpected,
+  ];
+
+  if (sameLowCheckedTicks && sameHighCheckedTicks) {
+    expect(actual).toStrictEqual(expected);
+    return;
+  }
+
+  expect(actual.sqrtRatio).toStrictEqual(expected.sqrtRatio);
+  expect(actual.activeTick).toStrictEqual(expected.activeTick);
+  expect(actual.liquidity).toStrictEqual(expected.liquidity);
+
+  /**
+   * The checked tick ranges differ between the two states at this point.
+   * In order to still compare the tick arrays, we thus have to exclude the liquidity cutoff ticks
+   * from the comparison (if they differ), as well as any other ticks that could've only
+   * been discovered in one of the two checked tick ranges.
+   */
+
+  let lowTickIndexActual: number, lowTickIndexExpected: number;
+
+  if (sameLowCheckedTicks) {
+    [lowTickIndexActual, lowTickIndexExpected] = [0, 0];
+  } else if (lowCheckedTickActual > lowCheckedTickExpected) {
+    lowTickIndexActual = 1;
+    lowTickIndexExpected =
+      findNearestInitializedTickIndex(
+        expected.sortedTicks,
+        lowCheckedTickActual,
+      )! + 1;
+  } else {
+    lowTickIndexExpected = 1;
+    lowTickIndexActual =
+      findNearestInitializedTickIndex(
+        actual.sortedTicks,
+        lowCheckedTickExpected,
+      )! + 1;
+  }
+
+  let highTickIndexActual: number, highTickIndexExpected: number;
+
+  if (sameHighCheckedTicks) {
+    [highTickIndexActual, highTickIndexExpected] = [
+      actual.sortedTicks.length,
+      expected.sortedTicks.length,
+    ];
+  } else if (highCheckedTickActual > highCheckedTickExpected) {
+    highTickIndexExpected = expected.sortedTicks.length - 1;
+
+    let tickIndex = findNearestInitializedTickIndex(
+      actual.sortedTicks,
+      highCheckedTickExpected,
+    )!;
+    highTickIndexActual =
+      actual.sortedTicks[tickIndex].number === highCheckedTickExpected
+        ? tickIndex
+        : tickIndex + 1;
+  } else {
+    highTickIndexActual = actual.sortedTicks.length - 1;
+
+    let tickIndex = findNearestInitializedTickIndex(
+      expected.sortedTicks,
+      highCheckedTickActual,
+    )!;
+    highTickIndexExpected =
+      expected.sortedTicks[tickIndex].number === highCheckedTickActual
+        ? tickIndex
+        : tickIndex + 1;
+  }
+
+  expect(
+    actual.sortedTicks.slice(lowTickIndexActual, highTickIndexActual),
+  ).toStrictEqual(
+    expected.sortedTicks.slice(lowTickIndexExpected, highTickIndexExpected),
+  );
+}
 
 describe('Ekubo Mainnet', function () {
   const dexKey = 'Ekubo';
@@ -83,6 +166,7 @@ describe('Ekubo Mainnet', function () {
               blockNumber,
               `${dexKey}_${pool.key.id()}`,
               dexHelper.provider,
+              stateCompare,
             );
           });
         });
