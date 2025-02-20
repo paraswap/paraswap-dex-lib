@@ -37,6 +37,7 @@ export type Slot0 = {
 };
 
 export type PoolState = {
+  networkId: number;
   pool: string;
   blockTimestamp: bigint;
   tickSpacing: bigint;
