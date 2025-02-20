@@ -16,11 +16,11 @@ const Config: DexConfigMap<DexParams> = {
   WrappedMM: {
     [Network.MAINNET]: {
       fromToken: {
-        address: '0x437cc33344a0B27A429f795ff6B469C72698B291', // WrappedM
+        address: '0x437cc33344a0b27a429f795ff6b469c72698b291', // WrappedM
         decimals: 6,
       },
       toToken: {
-        address: '0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b', // M
+        address: '0x866a2bf4e572cbcf37d5071a7a58503bfb36be1b', // M
         decimals: 6,
       },
     },
