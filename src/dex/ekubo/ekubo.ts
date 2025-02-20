@@ -12,7 +12,6 @@ import {
   SwapSide,
   Network,
   FETCH_POOL_IDENTIFIER_TIMEOUT,
-  FETCH_POOL_PRICES_TIMEOUT,
   ETHER_ADDRESS,
 } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -41,7 +40,7 @@ import { Interface } from '@ethersproject/abi';
 
 import CoreABI from '../../abi/ekubo/core.json';
 import DataFetcherABI from '../../abi/ekubo/data-fetcher.json';
-import { BigNumber, constants, Contract } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 import { setTimeout } from 'node:timers/promises';
 import {
   MAX_SQRT_RATIO,
@@ -53,6 +52,7 @@ import SwapperABI from '../../abi/ekubo/swapper.json';
 import { isPriceIncreasing } from './pools/math/swap';
 import { OraclePool } from './pools/oracle-pool';
 import { erc20Iface } from '../../lib/tokens/utils';
+import { AsyncOrSync } from 'ts-essentials';
 
 const ENABLED_POOL_PARAMETERS: VanillaPoolParameters[] = [
   {
@@ -121,16 +121,38 @@ const topPairsSchema = Joi.object<{
   ),
 });
 
+const allPoolsSchema = Joi.array<
+  {
+    core_address: string;
+    token0: string;
+    token1: string;
+    fee: string;
+    tick_spacing: number;
+    extension: string;
+  }[]
+>().items(
+  Joi.object({
+    core_address: Joi.string(),
+    token0: Joi.string(),
+    token1: Joi.string(),
+    fee: Joi.string(),
+    tick_spacing: Joi.number(),
+    extension: Joi.string(),
+  }),
+);
+
 const MIN_TICK_SPACINGS_PER_POOL = 10;
 const MAX_POOL_BATCH_COUNT = 5;
+
+const POOL_MAP_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
 
 // Ekubo Protocol https://ekubo.org/
 export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   protected readonly eventPools: Record<string, EkuboEventPool> = {};
 
-  readonly hasConstantPriceLargeAmounts = false;
-  readonly needWrapNative = false;
-  readonly isFeeOnTransferSupported = false;
+  public readonly hasConstantPriceLargeAmounts = false;
+  public readonly needWrapNative = false;
+  public readonly isFeeOnTransferSupported = false;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(EkuboConfig);
@@ -146,11 +168,13 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   private readonly swapperIface;
   private readonly supportedExtensions;
 
+  private interval?: NodeJS.Timeout;
+
   private readonly decimals: Record<string, number> = {
     [ETHER_ADDRESS]: 18,
   };
 
-  constructor(
+  public constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
@@ -170,12 +194,20 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     this.supportedExtensions = [0n, BigInt(this.config.oracle)];
   }
 
-  async initializePricing(_blockNumber: number) {}
+  public async initializePricing(blockNumber: number) {
+    await this.updatePoolMap(blockNumber);
+
+    this.interval = setInterval(async () => {
+      await this.updatePoolMap(await this.dexHelper.provider.getBlockNumber());
+    }, POOL_MAP_UPDATE_INTERVAL_MS);
+  }
 
   // Legacy: was only used for V5
   // Returns the list of contract adapters (name and index)
   // for a buy/sell. Return null if there are no adapters.
-  getAdapters(_side: SwapSide): { name: string; index: number }[] | null {
+  public getAdapters(
+    _side: SwapSide,
+  ): { name: string; index: number }[] | null {
     return null;
   }
 
@@ -183,20 +215,25 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   // for a given swap. poolIdentifiers must be unique
   // across DEXes. It is recommended to use
   // ${dexKey}_${poolAddress} as a poolIdentifier
-  async getPoolIdentifiers(
+  public async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     _side: SwapSide,
-    _blockNumber: number,
+    blockNumber: number,
   ): Promise<string[]> {
-    return this.fetchPools(srcToken, destToken, FETCH_POOL_IDENTIFIER_TIMEOUT);
+    return this.fetchPoolsByPair(
+      srcToken,
+      destToken,
+      blockNumber,
+      FETCH_POOL_IDENTIFIER_TIMEOUT,
+    );
   }
 
   // Returns pool prices for amounts.
   // If limitPools is defined only pools in limitPools
   // should be used. If limitPools is undefined then
   // any pools can be used.
-  async getPricesVolume(
+  public async getPricesVolume(
     srcToken: Token,
     destToken: Token,
     amounts: bigint[],
@@ -204,12 +241,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<EkuboData>> {
-    limitPools ??= await this.fetchPools(
-      srcToken,
-      destToken,
-      blockNumber,
-      FETCH_POOL_PRICES_TIMEOUT,
-    );
+    const pools = this.getInitializedPools(srcToken, destToken, limitPools);
 
     const isExactOut = side === SwapSide.BUY;
 
@@ -222,13 +254,8 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     const exchangePrices = [];
 
     // eslint-disable-next-line no-restricted-syntax
-    poolLoop: for (const poolId of limitPools) {
-      const pool = this.pools.get(poolId);
-
-      if (typeof pool === 'undefined') {
-        this.logger.warn(`Pool ${poolId} not found`);
-        continue;
-      }
+    poolLoop: for (const pool of pools) {
+      const poolId = pool.key.id();
 
       if (pool.key.token0 !== token0 || pool.key.token1 !== token1) {
         this.logger.error(
@@ -291,12 +318,14 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(_poolPrices: PoolPrices<EkuboData>): number | number[] {
+  public getCalldataGasCost(
+    _poolPrices: PoolPrices<EkuboData>,
+  ): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
   // V6: Not used, can be left blank
-  getAdapterParam(
+  public getAdapterParam(
     _srcToken: string,
     _destToken: string,
     _srcAmount: string,
@@ -311,11 +340,11 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     };
   }
 
-  async updatePoolState(): Promise<void> {}
+  public async updatePoolState(): Promise<void> {}
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
-  async getTopPoolsForToken(
+  public async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
@@ -347,11 +376,11 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
             return;
           }
 
-          const pairsInfo = await this.fetchPairPools(
+          const poolsInfo = await this.fetchPairPoolsInfo(
             hexStringTokenPair(token0, token1),
           );
 
-          for (const pairInfo of pairsInfo) {
+          for (const poolInfo of poolsInfo) {
             const [info0, info1] = await Promise.all(
               tokenPair.map((ekuboToken, i) =>
                 (async () => {
@@ -367,7 +396,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
                     token,
                     tvl: await this.dexHelper.getTokenUSDPrice(
                       token,
-                      BigInt(pairInfo[`tvl${i as 0 | 1}_total`]),
+                      BigInt(poolInfo[`tvl${i as 0 | 1}_total`]),
                     ),
                   };
                 })(),
@@ -411,7 +440,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     return decimals;
   }
 
-  getDexParam(
+  public getDexParam(
     _srcToken: Address,
     _destToken: Address,
     srcAmount: NumberAsString,
@@ -444,28 +473,85 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     };
   }
 
-  private async fetchPools(
+  releaseResources(): AsyncOrSync<void> {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = undefined;
+    }
+  }
+
+  private getInitializedPools(
+    tokenA: Token,
+    tokenB: Token,
+    limitPools: string[] | undefined,
+  ): BasePool[] {
+    if (typeof limitPools === 'undefined') {
+      const [token0, token1] = sortAndConvertTokens(tokenA, tokenB);
+
+      return Array.from(
+        this.pools
+          .values()
+          .filter(
+            pool => pool.key.token0 === token0 && pool.key.token1 === token1,
+          ),
+      );
+    }
+
+    return limitPools.flatMap(poolId => {
+      const pool = this.pools.get(poolId);
+
+      if (typeof pool === 'undefined') {
+        this.logger.warn(`Pool ${poolId} requested but not found`);
+        return [];
+      }
+
+      return [pool];
+    });
+  }
+
+  private async updatePoolMap(blockNumber: number) {
+    let poolKeys: PoolKey[];
+    try {
+      poolKeys = await this.fetchAllPoolKeys();
+    } catch (err) {
+      this.logger.error(`Updating pool map from Ekubo API failed: ${err}`);
+
+      return;
+    }
+
+    const uninitializedPoolKeys = poolKeys.filter(
+      poolKey => !this.pools.has(poolKey.id()),
+    );
+    const promises = await this.initializePools(
+      uninitializedPoolKeys,
+      blockNumber,
+      undefined,
+    );
+
+    (await Promise.allSettled(promises)).flatMap(res => {
+      if (res.status === 'rejected') {
+        this.logger.error(
+          `Fetching batch failed. Pool keys: ${res.reason.batch}. Error: ${res.reason.err}`,
+        );
+      }
+    });
+  }
+
+  private async fetchPoolsByPair(
     tokenA: Token,
     tokenB: Token,
     blockNumber: number,
-    maxTime?: number,
+    maxTime: number,
   ): Promise<string[]> {
     const [token0, token1] = sortAndConvertTokens(tokenA, tokenB);
     const pair = hexStringTokenPair(token0, token1);
 
-    if (typeof maxTime === 'number') {
-      // Leave some time for computations & timer inaccuracies
-      maxTime -= 50;
-    }
+    // Leave some time for computations & timer inaccuracies
+    maxTime -= 50;
 
     let poolKeys: PoolKey[];
     try {
-      poolKeys = (
-        await this.fetchPairPools(
-          pair,
-          typeof maxTime === 'undefined' ? maxTime : maxTime / 2,
-        )
-      ).map(
+      poolKeys = (await this.fetchPairPoolsInfo(pair, maxTime / 2)).map(
         pool =>
           new PoolKey(
             token0,
@@ -508,14 +594,40 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       ).push(poolKey);
     }
 
+    const promises = await this.initializePools(
+      uninitializedPoolKeys,
+      blockNumber,
+      maxTime / 2,
+    );
+
+    const oldPoolIds = initializedPoolKeys.map(poolKey => poolKey.id());
+    const newPoolIds = (await Promise.allSettled(promises)).flatMap(res => {
+      if (res.status === 'rejected') {
+        this.logger.error(
+          `Fetching batch failed. Pool keys: ${res.reason.batch}. Error: ${res.reason.err}`,
+        );
+        return [];
+      } else {
+        return res.value;
+      }
+    });
+
+    return oldPoolIds.concat(newPoolIds);
+  }
+
+  private async initializePools(
+    poolKeys: PoolKey[],
+    blockNumber: number,
+    maxTime: number | undefined,
+  ) {
     const promises = [];
 
     for (
       let batchStart = 0;
-      batchStart < uninitializedPoolKeys.length;
+      batchStart < poolKeys.length;
       batchStart += MAX_POOL_BATCH_COUNT
     ) {
-      const batch = uninitializedPoolKeys.slice(
+      const batch = poolKeys.slice(
         batchStart,
         batchStart + MAX_POOL_BATCH_COUNT,
       );
@@ -524,7 +636,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
         Promise.race([
           ...(maxTime
             ? [
-                setTimeout(maxTime / 3).then(() => {
+                setTimeout(maxTime).then(() => {
                   throw new Error('Timeout');
                 }),
               ]
@@ -534,13 +646,16 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
               await this.dataFetcher.getQuoteData(
                 batch.map(poolKey => poolKey.toAbi()),
                 MIN_TICK_SPACINGS_PER_POOL,
+                {
+                  blockTag: blockNumber,
+                },
               );
 
             return Promise.all(
               fetchedData.map(async (data, i) => {
                 const initialState = PoolState.fromQuoter(data);
 
-                const poolKey = uninitializedPoolKeys[batchStart + i];
+                const poolKey = poolKeys[batchStart + i];
                 const poolId = poolKey.id();
                 const extension = poolKey.extension;
 
@@ -584,28 +699,48 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       );
     }
 
-    const oldPoolIds = initializedPoolKeys.map(poolKey => poolKey.id());
-    const newPoolIds = (await Promise.allSettled(promises)).flatMap(res => {
-      if (res.status === 'rejected') {
-        this.logger.error(
-          `Fetching batch failed. Pool keys: ${res.reason.batch}. Error: ${res.reason.err}`,
-        );
-        return [];
-      } else {
-        return res.value;
-      }
-    });
-
-    return oldPoolIds.concat(newPoolIds);
+    return promises;
   }
 
-  private async fetchPairPools(
+  private async fetchAllPoolKeys(): Promise<PoolKey[]> {
+    const res = await this.dexHelper.httpRequest.get(
+      `${this.config.apiUrl}/pools`,
+    );
+
+    const { error, value } = allPoolsSchema.validate(res, {
+      allowUnknown: true,
+      presence: 'required',
+    });
+
+    if (typeof error !== 'undefined') {
+      throw new Error(`validating API response: ${error}`);
+    }
+
+    return value
+      .filter(
+        res =>
+          this.supportedExtensions.includes(BigInt(res.extension)) &&
+          BigInt(res.core_address) === BigInt(this.config.core),
+      )
+      .map(
+        info =>
+          new PoolKey(
+            BigInt(info.token0),
+            BigInt(info.token1),
+            BigInt(info.fee),
+            info.tick_spacing,
+            BigInt(info.extension),
+          ),
+      );
+  }
+
+  private async fetchPairPoolsInfo(
     pair: string,
     maxTime?: number,
   ): Promise<PairInfo[]> {
     const res = await this.dexHelper.httpRequest.get(
       `${this.config.apiUrl}/pair/${pair}/pools`,
-      typeof maxTime === 'undefined' ? maxTime : maxTime / 2,
+      maxTime,
     );
 
     const { error, value } = tokenPairSchema.validate(res, {
