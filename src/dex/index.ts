@@ -101,8 +101,9 @@ import { Stader } from './stader/stader';
 import { UsualBond } from './usual/usual-bond';
 import { UsualMWrappedM } from './usual/usual-m-wrapped-m';
 import { UsualMUsd0 } from './usual/usual-m-usd0';
+import { MWrappedM } from './usual/m-wrapped-m';
+import { WrappedMM } from './usual/wrapped-m-m';
 import { UsualPP } from './usual-pp/usual-pp';
-import { MWrappedM } from './m-token/m-wrapped-m';
 
 const LegacyDexes = [
   CurveV2,
@@ -197,9 +198,10 @@ const Dexes = [
   Cables,
   FluidDex,
   UsualMWrappedM,
+  MWrappedM,
+  WrappedMM,
   UsualMUsd0,
   UsualPP,
-  MWrappedM,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
