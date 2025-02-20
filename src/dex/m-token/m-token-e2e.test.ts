@@ -25,7 +25,7 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -37,12 +37,24 @@ function testForNetwork(
           describe(`${contractMethod}`, () => {
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
-                // Changing the source here for AugustV6 to fund the sender account with MToken for SELL (M->WrappedM)
-                // and WrappedM for BUY (WrappedM->M). This is to ensure that the sender account has enough balance for testing
-                isSell ? tokens[tokenASymbol] : tokens[tokenBSymbol],
-                isSell ? tokens[tokenBSymbol] : tokens[tokenASymbol],
-                isSell ? holders[tokenASymbol] : holders[tokenBSymbol],
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
                 isSell ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                isSell ? tokenBAmount : tokenAAmount,
                 side,
                 dexKey,
                 contractMethod,
@@ -66,8 +78,8 @@ describe('MWrappedM E2E', () => {
     const tokenASymbol: string = 'M';
     const tokenBSymbol: string = 'WrappedM';
 
-    const tokenAAmount: string = '100000';
-    const tokenBAmount: string = '100000';
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000';
 
     testForNetwork(
       network,

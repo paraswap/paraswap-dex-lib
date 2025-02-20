@@ -59,7 +59,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
       return [];
     }
 
-    return [`${this.dexKey}_${this.config.WRAPPEDM.address}`];
+    return [`${this.dexKey}_${this.config.WrappedM.address}`];
   }
 
   // Returns pool prices for amounts.
@@ -87,7 +87,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
         unit: unitOut,
         prices: amounts,
         data: {},
-        poolAddresses: [this.config.WRAPPEDM.address],
+        poolAddresses: [this.config.WrappedM.address],
         exchange: this.dexKey,
         gasCost: 70000,
         poolIdentifier: this.dexKey,
@@ -112,7 +112,7 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     data: MTokenData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const exchange = this.config.WRAPPEDM.address;
+    const exchange = this.config.WrappedM.address;
     const payload = '0x';
 
     return {
@@ -121,13 +121,6 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
       networkFee: '0',
     };
   }
-
-  // This is called once before getTopPoolsForToken is
-  // called for multiple tokens. This can be helpful to
-  // update common state required for calculating
-  // getTopPoolsForToken. It is optional for a DEX
-  // to implement this
-  async updatePoolState(): Promise<void> {}
 
   // Returns list of top pools based on liquidity. Max
   // limit number pools should be returned.
@@ -140,27 +133,23 @@ export class MToken extends SimpleExchange implements IDex<MTokenData> {
     }
 
     const isM =
-      tokenAddress.toLowerCase() === this.config.MTOKEN.address.toLowerCase();
+      tokenAddress.toLowerCase() === this.config.MToken.address.toLowerCase();
 
     return [
       {
         exchange: this.dexKey,
-        address: this.config.WRAPPEDM.address,
-        connectorTokens: [isM ? this.config.WRAPPEDM : this.config.MTOKEN],
+        address: this.config.WrappedM.address,
+        connectorTokens: [isM ? this.config.WrappedM : this.config.MToken],
         liquidityUSD: 1000000000, // Returning a big number to prefer this DEX
       },
     ];
   }
 
-  // This is optional function in case if your implementation has acquired any resources
-  // you need to release for graceful shutdown. For example, it may be any interval timer
-  releaseResources(): AsyncOrSync<void> {}
-
   // Checks if the token addresses is M or WrappedM
   isMOrWrappedM(tokenAddress: Address): boolean {
     return (
-      tokenAddress.toLowerCase() === this.config.MTOKEN.address.toLowerCase() ||
-      tokenAddress.toLowerCase() === this.config.WRAPPEDM.address.toLowerCase()
+      tokenAddress.toLowerCase() === this.config.MToken.address.toLowerCase() ||
+      tokenAddress.toLowerCase() === this.config.WrappedM.address.toLowerCase()
     );
   }
 

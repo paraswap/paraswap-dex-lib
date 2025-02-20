@@ -80,7 +80,7 @@ describe('MWrappedM', function () {
 
     // Don't forget to update relevant tokens in constant-e2e.ts
 
-    const amountsForSell = [
+    const amounts = [
       0n,
       1n * BI_POWS[tokens[srcTokenSymbol].decimals],
       2n * BI_POWS[tokens[srcTokenSymbol].decimals],
@@ -102,7 +102,7 @@ describe('MWrappedM', function () {
       }
     });
 
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+    it('getPoolIdentifiers and getPricesVolume SELL M -> WrappedM', async function () {
       await testPricingOnNetwork(
         mWrappedM,
         network,
@@ -111,20 +111,57 @@ describe('MWrappedM', function () {
         srcTokenSymbol,
         destTokenSymbol,
         SwapSide.SELL,
-        amountsForSell,
+        amounts,
+        '',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume SELL WrappedM -> M', async function () {
+      await testPricingOnNetwork(
+        mWrappedM,
+        network,
+        dexKey,
+        blockNumber,
+        destTokenSymbol,
+        srcTokenSymbol,
+        SwapSide.SELL,
+        amounts,
+        '',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY M -> WrappedM', async function () {
+      await testPricingOnNetwork(
+        mWrappedM,
+        network,
+        dexKey,
+        blockNumber,
+        srcTokenSymbol,
+        destTokenSymbol,
+        SwapSide.BUY,
+        amounts,
+        '',
+      );
+    });
+
+    it('getPoolIdentifiers and getPricesVolume BUY WrappedM -> M', async function () {
+      await testPricingOnNetwork(
+        mWrappedM,
+        network,
+        dexKey,
+        blockNumber,
+        destTokenSymbol,
+        srcTokenSymbol,
+        SwapSide.BUY,
+        amounts,
         '',
       );
     });
 
     it('getTopPoolsForToken: M', async function () {
-      const newMWrappedM = new MWrappedM(network, dexKey, dexHelper);
-      if (newMWrappedM.updatePoolState) {
-        await newMWrappedM.updatePoolState();
-      }
-
       const symbol = srcTokenSymbol;
 
-      const poolLiquidity = await newMWrappedM.getTopPoolsForToken(
+      const poolLiquidity = await mWrappedM.getTopPoolsForToken(
         tokens[symbol].address,
         10,
       );
@@ -141,14 +178,9 @@ describe('MWrappedM', function () {
     });
 
     it('getTopPoolsForToken: WrappedM', async function () {
-      const newMWrappedM = new MWrappedM(network, dexKey, dexHelper);
-      if (newMWrappedM.updatePoolState) {
-        await newMWrappedM.updatePoolState();
-      }
-
       const symbol = destTokenSymbol;
 
-      const poolLiquidity = await newMWrappedM.getTopPoolsForToken(
+      const poolLiquidity = await mWrappedM.getTopPoolsForToken(
         tokens[symbol].address,
         10,
       );
