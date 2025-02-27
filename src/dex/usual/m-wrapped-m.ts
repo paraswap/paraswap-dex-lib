@@ -6,32 +6,32 @@ import {
 } from '../../types';
 import { Network, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { DexParams, UsualBondData } from './types';
+import { DexParams } from './types';
 import { Interface, JsonFragment } from '@ethersproject/abi';
-import USD0PP_ABI from '../../abi/usual-bond/usd0pp.abi.json';
 import { Usual } from './usual';
 import { getDexKeysWithNetwork } from '../../utils';
+import WRAPPED_M_ABI from '../../abi/m-token/WrappedM.abi.json';
 
 const Config: DexConfigMap<DexParams> = {
-  UsualBond: {
+  MWrappedM: {
     [Network.MAINNET]: {
       fromToken: {
-        address: '0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5',
-        decimals: 18,
+        address: '0x866a2bf4e572cbcf37d5071a7a58503bfb36be1b', // M
+        decimals: 6,
       },
       toToken: {
-        address: '0x35d8949372d46b7a3d5a56006ae77b215fc69bc0',
-        decimals: 18,
+        address: '0x437cc33344a0b27a429f795ff6b469c72698b291', // WrappedM
+        decimals: 6,
       },
     },
   },
 };
 
-export class UsualBond extends Usual {
+export class MWrappedM extends Usual {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(Config);
 
-  usd0ppIface: Interface;
+  wrappedMInterface: Interface;
 
   constructor(
     readonly network: Network,
@@ -39,7 +39,7 @@ export class UsualBond extends Usual {
     readonly dexHelper: IDexHelper,
   ) {
     super(network, dexKey, dexHelper, Config[dexKey][network]);
-    this.usd0ppIface = new Interface(USD0PP_ABI as JsonFragment[]);
+    this.wrappedMInterface = new Interface(WRAPPED_M_ABI as JsonFragment[]);
   }
 
   async getDexParam(
@@ -48,22 +48,29 @@ export class UsualBond extends Usual {
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     recipient: Address,
-    data: UsualBondData,
+    data: {},
     side: SwapSide,
   ): Promise<DexExchangeParam> {
     if (this.isFromToken(srcToken) && this.isToToken(destToken)) {
-      const exchangeData = this.usd0ppIface.encodeFunctionData('mint', [
+      const fn =
+        srcToken.toLowerCase() === this.config.fromToken.address.toLowerCase()
+          ? 'wrap(address, uint256)'
+          : 'unwrap(address, uint256)';
+
+      const exchangeData = this.wrappedMInterface.encodeFunctionData(fn, [
+        recipient,
         side === SwapSide.SELL ? srcAmount : destAmount,
       ]);
 
       return {
         needWrapNative: false,
-        dexFuncHasRecipient: false,
+        dexFuncHasRecipient: true,
         exchangeData,
         targetExchange: this.config.toToken.address,
         returnAmountPos: undefined,
       };
     }
+
     throw new Error('LOGIC ERROR');
   }
 }

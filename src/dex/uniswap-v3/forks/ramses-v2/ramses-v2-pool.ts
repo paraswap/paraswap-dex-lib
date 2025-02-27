@@ -123,6 +123,7 @@ export class RamsesV2EventPool extends UniswapV3EventPool {
     const requestedRange = this.getBitmapRangeToRequest();
 
     return {
+      networkId: this.dexHelper.config.data.network,
       pool: _state.pool,
       blockTimestamp: bigIntify(_state.blockTimestamp),
       slot0: {

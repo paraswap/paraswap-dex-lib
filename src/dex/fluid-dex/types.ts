@@ -6,6 +6,7 @@ export type PoolReserve = {
   token0: string;
   token1: string;
   fee: number;
+  centerPrice: number;
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
   dexLimits: DexLimits;
@@ -15,6 +16,7 @@ export type PoolReserveResponse = [
   string,
   string,
   string,
+  BigNumber,
   BigNumber,
   BigNumber[],
   BigNumber[],
@@ -68,6 +70,7 @@ export interface PoolWithReserves {
   token0: string;
   token1: string;
   fee: number;
+  centerPrice: number;
   collateralReserves: CollateralReserves;
   debtReserves: DebtReserves;
 }

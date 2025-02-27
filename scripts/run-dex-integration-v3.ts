@@ -48,10 +48,10 @@ async function main() {
 
   await balancerV3.initializePricing(blocknumber);
 
-  const from = stataUSDC;
-  const to = stataUSDT;
-  // const from = daiAave;
-  // const to = usdcAave;
+  // const from = stataUSDC;
+  // const to = stataUSDT;
+  const from = usdcAave;
+  const to = daiAave;
 
   const pools = await balancerV3.getPoolIdentifiers(
     from,

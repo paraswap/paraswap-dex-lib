@@ -86,10 +86,6 @@ export class Usual extends SimpleExchange implements IDex<UsualBondData> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<UsualBondData>> {
-    if (side === SwapSide.BUY) {
-      return null;
-    }
-
     const isValidSwap = this.isValidTokens(srcToken.address, destToken.address);
 
     if (!isValidSwap) {

@@ -29,6 +29,11 @@ import {
   isStableMutableState,
 } from './stablePool';
 import { BI_POWS } from '../../bigint-constants';
+import {
+  HookStateMap,
+  HooksConfigMap,
+} from './hooks/balancer-hook-event-subscriber';
+import { StableSurge, StableSurgeHookState } from './hooks/stableSurgeHook';
 
 export const WAD = BI_POWS[18];
 
@@ -48,8 +53,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   interfaces: {
     [name: string]: Interface;
   };
-
   vault: Vault;
+  hooksConfigMap: HooksConfigMap = {};
 
   constructor(
     readonly parentName: string,
@@ -96,6 +101,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.vault = new Vault();
   }
 
+  setHooksConfigMap(hooksConfigMap: HooksConfigMap) {
+    this.hooksConfigMap = hooksConfigMap;
+  }
+
   /**
    * The function is called every time any of the subscribed
    * addresses release log. The function accepts the current
@@ -134,7 +143,11 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     blockNumber: number,
   ): Promise<DeepReadonly<PoolStateMap>> {
     const block = await this.dexHelper.provider.getBlock(blockNumber);
-    const apiPoolStateMap = await getPoolsApi(this.network, block.timestamp);
+    const apiPoolStateMap = await getPoolsApi(
+      this.network,
+      this.hooksConfigMap,
+      block.timestamp,
+    );
     const allOnChainPools = await getOnChainState(
       this.network,
       apiPoolStateMap,
@@ -160,7 +173,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     existingPoolState: DeepReadonly<PoolStateMap>,
   ): Promise<DeepReadonly<PoolStateMap> | null> {
     // Get all latest pools from API
-    const apiPoolStateMap = await getPoolsApi(this.network);
+    const apiPoolStateMap = await getPoolsApi(
+      this.network,
+      this.hooksConfigMap,
+    );
 
     // Filter out pools that already exist in existing state
     const newApiPools = Object.entries(apiPoolStateMap).reduce(
@@ -186,19 +202,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.interfaces,
     );
 
-    // Filter out pools with hooks and paused pools from new state
-    // TODO this won't be necessary once API has this filter option
-    const filteredNewPools = Object.entries(newOnChainPools)
-      .filter(([_, pool]) => !(pool.hasHook || pool.isPoolPaused))
-      .reduce((acc, [address, pool]) => {
-        acc[address] = pool;
-        return acc;
-      }, {} as PoolStateMap);
-
     // Merge existing pools with new pools
     return {
       ...existingPoolState,
-      ...filteredNewPools,
+      ...newOnChainPools,
     };
   }
 
@@ -398,6 +405,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     amountRaw: bigint,
     swapKind: SwapKind,
     timestamp: number,
+    hookStateMap: HookStateMap,
   ): bigint {
     if (amountRaw === 0n) return 0n;
 
@@ -411,6 +419,19 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     let outputAmountRaw = 0n;
     for (const i of indices) {
       const step = steps[i];
+
+      // If the pool has a hook we fetch latest hook state for use in maths
+      let hookState = undefined;
+      if ('hookAddress' in step.poolState && step.poolState.hookAddress) {
+        hookState = hookStateMap[step.poolState.hookAddress];
+        if (!hookState) {
+          this.logger.error(
+            `getSwapResult hookState not found ${step.poolState.hookAddress}`,
+          );
+          return 0n;
+        }
+      }
+
       // If its a Stable Pool with an updating Amp factor calculate current Amp value
       if (
         step.poolState.poolType === 'STABLE' &&
@@ -425,7 +446,24 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
             BigInt(timestamp),
           );
         }
+        // StableSurge hook uses Amp as part of maths
+        if (step.poolState.hookType === StableSurge.type && hookState) {
+          const poolHookState = (hookState as StableSurgeHookState)[
+            step.poolState.poolAddress.toLowerCase()
+          ];
+          if (!poolHookState) {
+            this.logger.error(
+              `getSwapResult StableSurge hookState not found ${step.poolState.hookAddress}`,
+            );
+            return 0n;
+          }
+          hookState = {
+            ...poolHookState,
+            amp: step.poolState.amp,
+          };
+        }
       }
+
       outputAmountRaw = this.vault.swap(
         {
           ...step.swapInput,
@@ -433,6 +471,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           swapKind,
         },
         step.poolState,
+        hookState,
       );
       // Next step uses output from previous step as input
       amount = outputAmountRaw;
