@@ -1,10 +1,10 @@
 import {
   Address,
-  NumberAsString,
-  DexExchangeParam,
   DexConfigMap,
+  DexExchangeParam,
+  NumberAsString,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { DexParams } from './types';
 import { Interface, JsonFragment } from '@ethersproject/abi';
@@ -54,7 +54,7 @@ export class UsualMWrappedM extends Usual {
     if (this.isFromToken(srcToken) && this.isToToken(destToken)) {
       const exchangeData = this.usualMIface.encodeFunctionData(
         'wrap(address, uint256)',
-        [recipient, srcAmount],
+        [recipient, side === SwapSide.SELL ? srcAmount : destAmount],
       );
 
       return {
