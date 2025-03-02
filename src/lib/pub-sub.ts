@@ -37,7 +37,9 @@ export class ExpKeyValuePubSub {
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
       const decodedMsg = JSON.parse(msg) as KeyValuePubSubMsg;
-      this.logger.info(`${this.logPrefix} Received msg: '${msg}'`);
+      this.logger.info(
+        `${this.logPrefix} Received msg: '${Object.keys(decodedMsg).length}'`,
+      );
       this.handleSubscription(decodedMsg);
     });
   }
@@ -47,7 +49,7 @@ export class ExpKeyValuePubSub {
     this.logger.info(
       `${this.logPrefix} Publishing msg: '${JSON.stringify({
         expiresAt,
-        data,
+        data: Object.keys(data).length,
       })}'`,
     );
     this.dexHelper.cache.publish(
@@ -82,7 +84,9 @@ export class ExpKeyValuePubSub {
     const localValue = this.localCache.get<T>(key);
 
     this.logger.info(
-      `${this.logPrefix} Getting and caching key: ${key}, localValue: ${localValue}`,
+      `${this.logPrefix} Getting and caching key: ${key}, localValue length: ${
+        localValue ? Object.keys(localValue).length : 0
+      }`,
     );
 
     if (localValue) {
@@ -309,7 +313,7 @@ export class NonExpSetPubSub {
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
       const decodedMsg = JSON.parse(msg) as SetPubSubMsg;
       this.logger.info(
-        `${this.logPrefix} Received subscription msg: '${decodedMsg}'`,
+        `${this.logPrefix} Received subscription msg: '${decodedMsg.length}'`,
       );
       this.handleSubscription(decodedMsg);
     });
@@ -317,7 +321,7 @@ export class NonExpSetPubSub {
 
   publish(msg: SetPubSubMsg) {
     if (msg.length > 0) {
-      this.logger.info(`${this.logPrefix} Publishing msg: '${msg}'`);
+      this.logger.info(`${this.logPrefix} Publishing msg: '${msg.length}'`);
       this.dexHelper.cache.publish(this.channel, JSON.stringify(msg));
     }
   }
