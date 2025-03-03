@@ -191,7 +191,7 @@ export class PricingHelper {
       srcDexFee: 0,
       destDexFee: 0,
     },
-    rollupL1ToL2GasRatio?: number,
+    rollupL1CalldataCostToL2GasCost?: (calldataCost: number) => number,
   ): Promise<PoolPrices<any>[]> {
     const dexPoolPrices = await Promise.all(
       dexKeys.map(async key => {
@@ -229,7 +229,7 @@ export class PricingHelper {
                 )
                 .then(poolPrices => {
                   try {
-                    if (!poolPrices || !rollupL1ToL2GasRatio) {
+                    if (!poolPrices || !rollupL1CalldataCostToL2GasCost) {
                       return resolve(poolPrices);
                     }
                     return resolve(
@@ -241,7 +241,7 @@ export class PricingHelper {
                           typeof gasCostL1 === 'number'
                         ) {
                           pp.gasCost += Math.ceil(
-                            rollupL1ToL2GasRatio * gasCostL1,
+                            rollupL1CalldataCostToL2GasCost(gasCostL1),
                           );
                         } else if (
                           typeof pp.gasCost !== 'number' &&
@@ -255,7 +255,9 @@ export class PricingHelper {
                           pp.gasCost = pp.gasCost.map(
                             (g, i) =>
                               g +
-                              Math.ceil(rollupL1ToL2GasRatio * gasCostL1[i]),
+                              Math.ceil(
+                                rollupL1CalldataCostToL2GasCost(gasCostL1[i]),
+                              ),
                           );
                         } else {
                           throw new Error(
