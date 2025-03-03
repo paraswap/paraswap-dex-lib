@@ -239,6 +239,7 @@ export class PricingHelper {
                           dexInstance.getCalldataGasCost(pp);
                         if (
                           typeof pp.gasCost === 'number' &&
+                          pp.gasCost !== 0 &&
                           typeof calldataGasCost === 'number'
                         ) {
                           pp.gasCost += Math.ceil(
@@ -253,14 +254,15 @@ export class PricingHelper {
                               `getCalldataGasCost returned wrong array length in dex ${key}`,
                             );
                           }
-                          pp.gasCost = pp.gasCost.map(
-                            (g, i) =>
-                              g +
-                              Math.ceil(
-                                rollupL1CalldataCostToL2GasCost(
-                                  calldataGasCost[i],
+                          pp.gasCost = pp.gasCost.map((g, i) =>
+                            g === 0
+                              ? 0
+                              : g +
+                                Math.ceil(
+                                  rollupL1CalldataCostToL2GasCost(
+                                    calldataGasCost[i],
+                                  ),
                                 ),
-                              ),
                           );
                         } else {
                           throw new Error(
