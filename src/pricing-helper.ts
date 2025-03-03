@@ -235,19 +235,20 @@ export class PricingHelper {
                     return resolve(
                       poolPrices.map(pp => {
                         pp.gasCostL2 = pp.gasCost;
-                        const gasCostL1 = dexInstance.getCalldataGasCost(pp);
+                        const calldataGasCost =
+                          dexInstance.getCalldataGasCost(pp);
                         if (
                           typeof pp.gasCost === 'number' &&
-                          typeof gasCostL1 === 'number'
+                          typeof calldataGasCost === 'number'
                         ) {
                           pp.gasCost += Math.ceil(
-                            rollupL1CalldataCostToL2GasCost(gasCostL1),
+                            rollupL1CalldataCostToL2GasCost(calldataGasCost),
                           );
                         } else if (
                           typeof pp.gasCost !== 'number' &&
-                          typeof gasCostL1 !== 'number'
+                          typeof calldataGasCost !== 'number'
                         ) {
-                          if (pp.gasCost.length !== gasCostL1.length) {
+                          if (pp.gasCost.length !== calldataGasCost.length) {
                             throw new Error(
                               `getCalldataGasCost returned wrong array length in dex ${key}`,
                             );
@@ -256,7 +257,9 @@ export class PricingHelper {
                             (g, i) =>
                               g +
                               Math.ceil(
-                                rollupL1CalldataCostToL2GasCost(gasCostL1[i]),
+                                rollupL1CalldataCostToL2GasCost(
+                                  calldataGasCost[i],
+                                ),
                               ),
                           );
                         } else {
@@ -264,6 +267,7 @@ export class PricingHelper {
                             `getCalldataGasCost returned wrong type in dex ${key}`,
                           );
                         }
+                        pp.calldataGasCost = calldataGasCost;
                         return pp;
                       }),
                     );
