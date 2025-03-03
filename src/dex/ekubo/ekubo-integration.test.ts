@@ -15,7 +15,6 @@ import {
 import { Tokens } from '../../../tests/constants-e2e';
 import { EkuboData } from './types';
 import { MAX_SQRT_RATIO, MIN_SQRT_RATIO } from './pools/math/tick';
-import SimpleQuoterABI from '../../abi/ekubo/simple-quoter.json';
 import { isPriceIncreasing } from './pools/math/swap';
 
 function getReaderCalldata(
@@ -58,16 +57,13 @@ async function checkOnChainPricing(
   side: SwapSide,
   data: EkuboData,
 ) {
-  const quoterAddress = '0xac1bed43b8a3fee83f5c604c6a5f330ff9088a0e';
-  const readerIface = new Interface(SimpleQuoterABI);
-
   if (side === SwapSide.BUY) {
     amounts = amounts.map(amount => -amount);
   }
 
   const readerCallData = getReaderCalldata(
-    quoterAddress,
-    readerIface,
+    ekubo.config.router,
+    ekubo.routerIface,
     amounts.slice(1),
     data,
   );
@@ -79,7 +75,7 @@ async function checkOnChainPricing(
   ).returnData;
 
   const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, data.isToken1, side),
+    decodeReaderResult(readerResult, ekubo.routerIface, data.isToken1, side),
   );
 
   expect(prices.length).toEqual(expectedPrices.length);
@@ -151,14 +147,14 @@ describe('Ekubo', function () {
   let blockNumber: number;
   let ekubo: Ekubo;
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
+  describe('Sepolia', () => {
+    const network = Network.SEPOLIA;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'ETH';
-    const destTokenSymbol = 'USDC';
+    const srcTokenSymbol = 'TestToken';
+    const destTokenSymbol = 'TestToken2';
 
     const amountsForSell = [
       0n,

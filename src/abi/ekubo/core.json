@@ -6,11 +6,6 @@
         "name": "owner",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "expirationTime",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "nonpayable"
@@ -39,19 +34,9 @@
             "internalType": "address"
           },
           {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
           }
         ]
       },
@@ -67,7 +52,7 @@
       }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -96,19 +81,9 @@
             "internalType": "address"
           },
           {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
           }
         ]
       },
@@ -164,19 +139,6 @@
   },
   {
     "type": "function",
-    "name": "expirationTime",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "forward",
     "inputs": [
       {
@@ -193,9 +155,26 @@
     "name": "getPoolFeesPerLiquidityInside",
     "inputs": [
       {
-        "name": "poolId",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "poolKey",
+        "type": "tuple",
+        "internalType": "struct PoolKey",
+        "components": [
+          {
+            "name": "token0",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "token1",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
+          }
+        ]
       },
       {
         "name": "bounds",
@@ -256,19 +235,9 @@
             "internalType": "address"
           },
           {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
           }
         ]
       },
@@ -281,8 +250,8 @@
     "outputs": [
       {
         "name": "sqrtRatio",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint96",
+        "internalType": "SqrtRatio"
       }
     ],
     "stateMutability": "nonpayable"
@@ -398,7 +367,13 @@
         "internalType": "address"
       }
     ],
-    "outputs": [],
+    "outputs": [
+      {
+        "name": "payment",
+        "type": "uint128",
+        "internalType": "uint128"
+      }
+    ],
     "stateMutability": "nonpayable"
   },
   {
@@ -535,7 +510,7 @@
       }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -576,19 +551,9 @@
             "internalType": "address"
           },
           {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
           }
         ]
       },
@@ -609,8 +574,8 @@
           },
           {
             "name": "sqrtRatioLimit",
-            "type": "uint256",
-            "internalType": "uint256"
+            "type": "uint96",
+            "internalType": "SqrtRatio"
           },
           {
             "name": "skipAhead",
@@ -632,7 +597,7 @@
         "internalType": "int128"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -686,19 +651,9 @@
             "internalType": "address"
           },
           {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
           }
         ]
       },
@@ -749,7 +704,7 @@
         "internalType": "int128"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -815,37 +770,10 @@
     "name": "FeesAccumulated",
     "inputs": [
       {
-        "name": "poolKey",
-        "type": "tuple",
+        "name": "poolId",
+        "type": "bytes32",
         "indexed": false,
-        "internalType": "struct PoolKey",
-        "components": [
-          {
-            "name": "token0",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "token1",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
+        "internalType": "bytes32"
       },
       {
         "name": "amount0",
@@ -943,6 +871,12 @@
     "name": "PoolInitialized",
     "inputs": [
       {
+        "name": "poolId",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
         "name": "poolKey",
         "type": "tuple",
         "indexed": false,
@@ -959,19 +893,9 @@
             "internalType": "address"
           },
           {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
           }
         ]
       },
@@ -983,9 +907,9 @@
       },
       {
         "name": "sqrtRatio",
-        "type": "uint256",
+        "type": "uint96",
         "indexed": false,
-        "internalType": "uint256"
+        "internalType": "SqrtRatio"
       }
     ],
     "anonymous": false
@@ -995,37 +919,10 @@
     "name": "PositionFeesCollected",
     "inputs": [
       {
-        "name": "poolKey",
-        "type": "tuple",
+        "name": "poolId",
+        "type": "bytes32",
         "indexed": false,
-        "internalType": "struct PoolKey",
-        "components": [
-          {
-            "name": "token0",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "token1",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
+        "internalType": "bytes32"
       },
       {
         "name": "positionKey",
@@ -1088,37 +985,10 @@
         "internalType": "address"
       },
       {
-        "name": "poolKey",
-        "type": "tuple",
+        "name": "poolId",
+        "type": "bytes32",
         "indexed": false,
-        "internalType": "struct PoolKey",
-        "components": [
-          {
-            "name": "token0",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "token1",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
+        "internalType": "bytes32"
       },
       {
         "name": "params",
@@ -1166,93 +1036,6 @@
         "type": "int128",
         "indexed": false,
         "internalType": "int128"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "ProtocolFeesPaid",
-    "inputs": [
-      {
-        "name": "poolKey",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct PoolKey",
-        "components": [
-          {
-            "name": "token0",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "token1",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
-      },
-      {
-        "name": "positionKey",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct PositionKey",
-        "components": [
-          {
-            "name": "salt",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "owner",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "bounds",
-            "type": "tuple",
-            "internalType": "struct Bounds",
-            "components": [
-              {
-                "name": "lower",
-                "type": "int32",
-                "internalType": "int32"
-              },
-              {
-                "name": "upper",
-                "type": "int32",
-                "internalType": "int32"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "name": "amount0",
-        "type": "uint128",
-        "indexed": false,
-        "internalType": "uint128"
-      },
-      {
-        "name": "amount1",
-        "type": "uint128",
-        "indexed": false,
-        "internalType": "uint128"
       }
     ],
     "anonymous": false
@@ -1314,110 +1097,6 @@
     "anonymous": false
   },
   {
-    "type": "event",
-    "name": "Swapped",
-    "inputs": [
-      {
-        "name": "locker",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "poolKey",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct PoolKey",
-        "components": [
-          {
-            "name": "token0",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "token1",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
-      },
-      {
-        "name": "params",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct SwapParameters",
-        "components": [
-          {
-            "name": "amount",
-            "type": "int128",
-            "internalType": "int128"
-          },
-          {
-            "name": "isToken1",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "sqrtRatioLimit",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "skipAhead",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      },
-      {
-        "name": "delta0",
-        "type": "int128",
-        "indexed": false,
-        "internalType": "int128"
-      },
-      {
-        "name": "delta1",
-        "type": "int128",
-        "indexed": false,
-        "internalType": "int128"
-      },
-      {
-        "name": "sqrtRatioAfter",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "tickAfter",
-        "type": "int32",
-        "indexed": false,
-        "internalType": "int32"
-      },
-      {
-        "name": "liquidityAfter",
-        "type": "uint128",
-        "indexed": false,
-        "internalType": "uint128"
-      }
-    ],
-    "anonymous": false
-  },
-  {
     "type": "error",
     "name": "AlreadyInitialized",
     "inputs": []
@@ -1449,11 +1128,6 @@
   },
   {
     "type": "error",
-    "name": "ContractHasExpired",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "DebtsNotZeroed",
     "inputs": [
       {
@@ -1462,6 +1136,11 @@
         "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "ExtensionAlreadyRegistered",
+    "inputs": []
   },
   {
     "type": "error",
@@ -1475,19 +1154,18 @@
   },
   {
     "type": "error",
+    "name": "FullRangeOnlyPool",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InsufficientSavedBalance",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "InvalidSqrtRatio",
-    "inputs": [
-      {
-        "name": "sqrtRatio",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+    "name": "InvalidSqrtRatioLimit",
+    "inputs": []
   },
   {
     "type": "error",
@@ -1503,11 +1181,6 @@
   {
     "type": "error",
     "name": "InvalidTickSpacing",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidTokens",
     "inputs": []
   },
   {
@@ -1572,6 +1245,11 @@
   },
   {
     "type": "error",
+    "name": "TokensMustBeSorted",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "Unauthorized",
     "inputs": []
   },
@@ -1583,11 +1261,6 @@
   {
     "type": "error",
     "name": "ZeroLiquidityNextSqrtRatioFromAmount1",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ZeroSqrtRatio",
     "inputs": []
   }
 ]

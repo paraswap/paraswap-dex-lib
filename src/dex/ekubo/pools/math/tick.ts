@@ -5,7 +5,7 @@ export const MAX_TICK = 88722835;
 export const MAX_SQRT_RATIO: bigint =
   6276949602062853172742588666638147158083741740262337144812n;
 export const MIN_SQRT_RATIO: bigint = 18447191164202170526n;
-export const MAX_TICK_SPACING = 698605;
+export const FULL_RANGE_TICK_SPACING = 0;
 
 export function toSqrtRatio(tick: number): bigint {
   if (tick < MIN_TICK || tick > MAX_TICK)
@@ -109,6 +109,10 @@ export function approximateNumberOfTickSpacingsCrossed(
   sqrtRatioEnd: bigint,
   tickSpacing: number,
 ): number {
+  if (tickSpacing === FULL_RANGE_TICK_SPACING) {
+    return 0;
+  }
+
   const logPriceDiff =
     Math.log(Number(sqrtRatioEnd) / Number(sqrtRatioStart)) / logBase;
 

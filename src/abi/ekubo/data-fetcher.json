@@ -30,19 +30,9 @@
             "internalType": "address"
           },
           {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
           }
         ]
       },
@@ -98,19 +88,9 @@
             "internalType": "address"
           },
           {
-            "name": "fee",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "tickSpacing",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "extension",
-            "type": "address",
-            "internalType": "address"
+            "name": "config",
+            "type": "bytes32",
+            "internalType": "Config"
           }
         ]
       },
@@ -133,8 +113,8 @@
           },
           {
             "name": "sqrtRatio",
-            "type": "uint256",
-            "internalType": "uint256"
+            "type": "uint96",
+            "internalType": "SqrtRatio"
           },
           {
             "name": "liquidity",

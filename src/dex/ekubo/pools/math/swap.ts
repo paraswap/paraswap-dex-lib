@@ -24,8 +24,8 @@ function noOp(sqrtRatioNext: bigint): SwapResult {
 
 export function amountBeforeFee(amount: bigint, fee: bigint): bigint {
   if (fee === 0n) return amount;
-  const num = amount << 128n;
-  const denom = (1n << 128n) - fee;
+  const num = amount << 64n;
+  const denom = (1n << 64n) - fee;
   const val = num / denom;
   const result = val + (num % denom !== 0n ? 1n : 0n);
   if (result > MAX_U128) throw new Error('AMOUNT_BEFORE_FEE_OVERFLOW');
@@ -34,7 +34,7 @@ export function amountBeforeFee(amount: bigint, fee: bigint): bigint {
 
 export function computeFee(amount: bigint, fee: bigint) {
   const num = amount * fee;
-  const denom = 2n ** 128n;
+  const denom = 2n ** 64n;
   if (num % denom !== 0n) {
     return num / denom + 1n;
   } else {

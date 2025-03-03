@@ -1,4 +1,44 @@
+import { BigNumber } from 'ethers';
 import { MAX_U256 } from './constants';
+import { MAX_SQRT_RATIO, MIN_SQRT_RATIO } from './tick';
+
+const BIT_MASK = 0xc00000000000000000000000n;
+const NOT_BIT_MASK = 0x3fffffffffffffffffffffffn;
+
+export function floatSqrtRatioToFixed(sqrtRatioFloat: bigint): bigint {
+  return (
+    (sqrtRatioFloat & NOT_BIT_MASK) <<
+    (2n + ((sqrtRatioFloat & BIT_MASK) >> 89n))
+  );
+}
+
+const TWO_POW_192 = 2n ** 192n;
+const TWO_POW_160 = 2n ** 160n;
+const TWO_POW_128 = 2n ** 128n;
+const TWO_POW_96 = 2n ** 96n;
+const TWO_POW_95 = 2n ** 95n;
+const TWO_POW_94 = 2n ** 94n;
+
+export function fixedSqrtRatioToFloat(sqrtRatioFixed: bigint): bigint {
+  if (sqrtRatioFixed >= TWO_POW_192) {
+    throw new Error('Out of bounds');
+  } else if (sqrtRatioFixed >= TWO_POW_160) {
+    return (sqrtRatioFixed >> 98n) + BIT_MASK;
+  } else if (sqrtRatioFixed >= TWO_POW_128) {
+    return (sqrtRatioFixed >> 66n) + TWO_POW_95;
+  } else if (sqrtRatioFixed >= TWO_POW_96) {
+    return (sqrtRatioFixed >> 34n) + TWO_POW_94;
+  } else {
+    return sqrtRatioFixed >> 2n;
+  }
+}
+
+export const MAX_SQRT_RATIO_FLOAT = BigNumber.from(
+  fixedSqrtRatioToFloat(MAX_SQRT_RATIO),
+);
+export const MIN_SQRT_RATIO_FLOAT = BigNumber.from(
+  fixedSqrtRatioToFloat(MIN_SQRT_RATIO),
+);
 
 export function nextSqrtRatioFromAmount0(
   sqrtRatio: bigint,

@@ -1,11 +1,10 @@
-import { Interface, LogDescription } from '@ethersproject/abi';
-import { DeepReadonly, DeepWritable } from 'ts-essentials';
+import { Interface, Result } from '@ethersproject/abi';
+import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../../types';
 import { catchParseLogError } from '../../../utils';
 import { StatefulEventSubscriber } from '../../../stateful-event-subscriber';
 import { IDexHelper } from '../../../dex-helper/idex-helper';
-import { PoolKey, PoolState as PoolState, Tick } from '../types';
-import CoreABI from '../../../abi/ekubo/core.json';
+import { PoolKey, PoolState } from '../types';
 import { Contract } from 'ethers';
 import _ from 'lodash';
 import { computeStep, isPriceIncreasing } from './math/swap';
@@ -15,6 +14,7 @@ import {
   MIN_SQRT_RATIO,
   toSqrtRatio,
 } from './math/tick';
+import { floatSqrtRatioToFixed } from './math/price';
 
 export interface Quote {
   consumedAmount: bigint;
@@ -28,14 +28,6 @@ const GAS_COST_OF_ONE_INITIALIZED_TICK_CROSSED = 20_000;
 const GAS_COST_OF_ONE_TICK_SPACING_CROSSED = 2_000;
 
 export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
-  handlers: {
-    [event: string]: (
-      event: LogDescription,
-      state: DeepReadonly<PoolState.Object>,
-      log: Readonly<Log>,
-    ) => DeepReadonly<PoolState.Object> | null;
-  } = {};
-
   public readonly addressesSubscribed: string[];
 
   constructor(
@@ -43,18 +35,14 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    private readonly core: Contract,
     private readonly coreIface: Interface,
     private readonly dataFetcher: Contract,
     public readonly key: PoolKey,
+    core: Contract,
   ) {
-    super(parentName, key.id(), dexHelper, logger);
+    super(parentName, key.string_id, dexHelper, logger);
 
     this.addressesSubscribed = [core.address];
-
-    this.handlers['Swapped'] = this.handleSwappedEvent.bind(this);
-    this.handlers['PositionUpdated'] =
-      this.handlePositionUpdatedEvent.bind(this);
   }
 
   /**
@@ -70,10 +58,15 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
     state: DeepReadonly<PoolState.Object>,
     log: Readonly<Log>,
   ): DeepReadonly<PoolState.Object> | null {
+    if (log.topics.length === 0) {
+      return this.handleSwappedEvent(log.data, state);
+    }
+
     try {
       const event = this.coreIface.parseLog(log);
-      if (event.name in this.handlers) {
-        return this.handlers[event.name](event, state, log);
+
+      if (event.name === 'PositionUpdated') {
+        return this.handlePositionUpdatedEvent(event.args, state);
       }
     } catch (e) {
       catchParseLogError(e, this.logger);
@@ -101,34 +94,44 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
   }
 
   handleSwappedEvent(
-    event: LogDescription,
+    data: string,
     oldState: DeepReadonly<PoolState.Object>,
-    _log: Readonly<Log>,
   ): DeepReadonly<PoolState.Object> | null {
-    const args = event.args;
-    const poolKey = poolKeyFromEventArgs(args.poolKey);
+    let n = BigInt(data);
 
-    if (!_.isEqual(this.key, poolKey)) {
+    const poolId = (n >> 512n) & ((1n << 256n) - 1n);
+
+    if (this.key.num_id !== poolId) {
       return null;
     }
 
+    // tick: int32 (4 bytes)
+    const tickRaw = n & ((1n << 32n) - 1n);
+    const tickAfter = Number(toSigned(tickRaw, 32));
+    n >>= 32n;
+
+    // sqrtRatio: uint96 (12 bytes)
+    const sqrtRatioAfterCompact = n & ((1n << 96n) - 1n);
+    n >>= 96n;
+
+    const sqrtRatioAfter = floatSqrtRatioToFixed(sqrtRatioAfterCompact);
+
+    // liquidity: uint128 (16 bytes)
+    const liquidityAfter = n & ((1n << 128n) - 1n);
+
     return PoolState.fromSwappedEvent(
       oldState,
-      args.sqrtRatioAfter,
-      args.liquidityAfter,
-      args.tickAfter,
+      sqrtRatioAfter,
+      liquidityAfter,
+      tickAfter,
     );
   }
 
   handlePositionUpdatedEvent(
-    event: LogDescription,
+    args: Result,
     oldState: DeepReadonly<PoolState.Object>,
-    _log: Readonly<Log>,
   ): DeepReadonly<PoolState.Object> | null {
-    const args = event.args;
-    const poolKey = poolKeyFromEventArgs(args.poolKey);
-
-    if (!_.isEqual(this.key, poolKey)) {
+    if (this.key.num_id !== BigInt(args.poolId)) {
       return null;
     }
 
@@ -196,7 +199,7 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
           : sqrtRatioLimit;
 
       const step = computeStep({
-        fee: this.key.fee,
+        fee: this.key.config.fee,
         sqrtRatio,
         liquidity,
         isToken1,
@@ -227,7 +230,7 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
     const tickSpacingsCrossed = approximateNumberOfTickSpacingsCrossed(
       startingSqrtRatio,
       sqrtRatio,
-      this.key.tickSpacing,
+      this.key.config.tickSpacing,
     );
 
     return {
@@ -245,12 +248,7 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
   }
 }
 
-function poolKeyFromEventArgs(args: any): PoolKey {
-  return new PoolKey(
-    BigInt(args.token0),
-    BigInt(args.token1),
-    args.fee.toBigInt(),
-    args.tickSpacing,
-    BigInt(args.extension),
-  );
+function toSigned(value: bigint, bits: number): bigint {
+  const half = 1n << BigInt(bits - 1);
+  return value >= half ? value - (1n << BigInt(bits)) : value;
 }

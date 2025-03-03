@@ -2,17 +2,21 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { BasePool } from './pools/base-pool';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { findNearestInitializedTickIndex, PoolKey, PoolState } from './types';
+import {
+  findNearestInitializedTickIndex,
+  PoolConfig,
+  PoolKey,
+  PoolState,
+} from './types';
 import { EkuboConfig } from './config';
 import { Contract } from 'ethers';
 import CoreABI from '../../abi/ekubo/core.json';
 import DataFetcherABI from '../../abi/ekubo/data-fetcher.json';
-import { Tokens } from '../../../tests/constants-e2e';
 import { Interface } from '@ethersproject/abi';
+import { BasePool } from './pools/base-pool';
 
 jest.setTimeout(50 * 1000);
 
@@ -23,8 +27,7 @@ async function fetchPoolState(
   return pool.generateState(blockNumber) as Promise<PoolState.Object>;
 }
 
-// eventName -> blockNumbers
-type EventMappings = Record<string, number[]>;
+type EventMappings = Record<string, [typeof BasePool, PoolKey, number][]>;
 
 function stateCompare(actual: PoolState.Object, expected: PoolState.Object) {
   const [lowCheckedTickActual, highCheckedTickActual] =
@@ -111,9 +114,10 @@ function stateCompare(actual: PoolState.Object, expected: PoolState.Object) {
   );
 }
 
-describe('Ekubo Mainnet', function () {
-  const dexKey = 'Ekubo';
-  const network = Network.MAINNET;
+const dexKey = 'Ekubo';
+
+describe('Ekubo Sepolia', function () {
+  const network = Network.SEPOLIA;
   const config = EkuboConfig[dexKey][network];
   const dexHelper = new DummyDexHelper(network);
   const core = new Contract(config.core, CoreABI, dexHelper.provider);
@@ -124,53 +128,62 @@ describe('Ekubo Mainnet', function () {
     dexHelper.provider,
   );
   const logger = dexHelper.getLogger(dexKey);
-  let pool: BasePool;
 
   const eventsToTest: EventMappings = {
     Swapped: [
-      21796221, // https://etherscan.io/tx/0x6bb4c90f1ff6f81fc98973590f11968215cd3572c9b285197539d6776bdc4204
+      [
+        BasePool,
+        new PoolKey(
+          0n,
+          0xd876ec2ee0816c019cc54299a8184e8111694865n,
+          PoolConfig.fromCompressed(
+            0x00000000000000000000000000000000000000000020c49ba5e353f7000003e8n,
+          ),
+        ),
+        7818258, // https://sepolia.etherscan.io/tx/0x39571b8569625ee326cc5ba71031ce82466a1256964eb840ec6165aea545f3a7
+      ],
     ],
     PositionUpdated: [
-      21802238, // https://etherscan.io/tx/0x0c978ec4226b73f7d1e718d93bb91a8e8dd27a7bb173b21b7d17823333e5221a
+      [
+        BasePool,
+        new PoolKey(
+          0n,
+          0xd876ec2ee0816c019cc54299a8184e8111694865n,
+          PoolConfig.fromCompressed(
+            0x00000000000000000000000000000000000000000020c49ba5e353f7000003e8n,
+          ),
+        ),
+        7818239, // https://sepolia.etherscan.io/tx/0x4a0bdc9f301bbc398190b439991e0a3acc40841fe209b73563dbedbf04dfc40d
+      ],
     ],
   };
 
-  beforeEach(async () => {
-    pool = new BasePool(
-      dexKey,
-      network,
-      dexHelper,
-      logger,
-      core,
-      coreIface,
-      dataFetcher,
-      new PoolKey(
-        BigInt(Tokens[network].USDC.address),
-        BigInt(Tokens[network].USDT.address),
-        8507059173023461994257409214775295n,
-        50,
-        0n,
-      ),
-    );
-  });
+  Object.entries(eventsToTest).forEach(([eventName, eventDetails]) => {
+    describe(`${eventName}`, () => {
+      eventDetails.forEach(([PoolType, poolKey, blockNumber]) => {
+        it(`State of ${poolKey.string_id} after ${blockNumber}`, async function () {
+          const pool = new PoolType(
+            dexKey,
+            network,
+            dexHelper,
+            logger,
+            coreIface,
+            dataFetcher,
+            poolKey,
+            core,
+          );
 
-  Object.entries(eventsToTest).forEach(
-    ([eventName, blockNumbers]: [string, number[]]) => {
-      describe(`${eventName}`, () => {
-        blockNumbers.forEach((blockNumber: number) => {
-          it(`State after ${blockNumber}`, async function () {
-            await testEventSubscriber(
-              pool,
-              pool.addressesSubscribed,
-              (blockNumber: number) => fetchPoolState(pool, blockNumber),
-              blockNumber,
-              `${dexKey}_${pool.key.id()}`,
-              dexHelper.provider,
-              stateCompare,
-            );
-          });
+          await testEventSubscriber(
+            pool,
+            pool.addressesSubscribed,
+            (blockNumber: number) => fetchPoolState(pool, blockNumber),
+            blockNumber,
+            `${dexKey}_${pool.key.string_id}`,
+            dexHelper.provider,
+            stateCompare,
+          );
         });
       });
-    },
-  );
+    });
+  });
 });

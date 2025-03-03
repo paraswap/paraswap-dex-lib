@@ -13,20 +13,20 @@ export class OraclePool extends BasePool {
     network: number,
     dexHelper: IDexHelper,
     logger: Logger,
-    core: Contract,
     coreIface: Interface,
     dataFetcher: Contract,
     key: PoolKey,
+    core: Contract,
   ) {
     super(
       parentName,
       network,
       dexHelper,
       logger,
-      core,
       coreIface,
       dataFetcher,
       key,
+      core,
     );
   }
 

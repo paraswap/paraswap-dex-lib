@@ -1,9 +1,14 @@
 import { BigNumber } from 'ethers';
-import { hexlify, hexZeroPad } from 'ethers/lib/utils';
+import {
+  defaultAbiCoder,
+  hexlify,
+  hexZeroPad,
+  keccak256,
+} from 'ethers/lib/utils';
 import _ from 'lodash';
 import { DeepReadonly, DeepWritable } from 'ts-essentials';
-import { MIN_TICK } from './pools/math/tick';
 import { hexStringTokenPair } from './utils';
+import { floatSqrtRatioToFixed } from './pools/math/price';
 
 export type Pool = {
   key: PoolKey;
@@ -53,7 +58,7 @@ export function findNearestInitializedTickIndex(
   return null;
 }
 
-export type PoolData = {
+export type QuoteData = {
   tick: number;
   sqrtRatio: BigNumber;
   liquidity: BigNumber;
@@ -65,7 +70,7 @@ export type PoolData = {
   }[];
 };
 
-export type GetQuoteDataResponse = PoolData[];
+export type GetQuoteDataResponse = QuoteData[];
 
 export namespace PoolState {
   // Needs to be serializiable, therefore can't make it a class
@@ -78,15 +83,20 @@ export namespace PoolState {
     readonly checkedTicksBounds: readonly [number, number];
   };
 
-  export function fromQuoter(data: PoolData): Object {
+  export function fromQuoter(data: QuoteData): Object {
     const sortedTicks = data.ticks.map(({ number, liquidityDelta }) => ({
       number,
       liquidityDelta: liquidityDelta.toBigInt(),
     }));
     const liquidity = data.liquidity.toBigInt();
 
+    const sqrtRatioFloat = data.sqrtRatio.toBigInt();
+
     const state: Object = {
-      sqrtRatio: data.sqrtRatio.toBigInt(),
+      sqrtRatio:
+        sqrtRatioFloat === 0n
+          ? 2n ** 128n
+          : floatSqrtRatioToFixed(sqrtRatioFloat),
       liquidity,
       activeTick: data.tick,
       sortedTicks,
@@ -101,8 +111,8 @@ export namespace PoolState {
 
   export function fromSwappedEvent(
     oldState: DeepReadonly<Object>,
-    sqrtRatioAfter: BigNumber,
-    liquidityAfter: BigNumber,
+    sqrtRatioAfter: bigint,
+    liquidityAfter: bigint,
     tickAfter: number,
   ): Object {
     const sortedTicks = oldState.sortedTicks;
@@ -112,8 +122,8 @@ export namespace PoolState {
     >;
 
     return {
-      sqrtRatio: sqrtRatioAfter.toBigInt(),
-      liquidity: liquidityAfter.toBigInt(),
+      sqrtRatio: sqrtRatioAfter,
+      liquidity: liquidityAfter,
       activeTick: tickAfter,
       sortedTicks: clonedTicks,
       activeTickIndex: findNearestInitializedTickIndex(clonedTicks, tickAfter),
@@ -266,41 +276,84 @@ export type DexParams = {
   core: string;
   oracle: string;
   dataFetcher: string;
-  swapper: string;
+  router: string;
 };
 
 export class PoolKey {
-  constructor(
+  private _string_id?: string;
+  private _num_id?: bigint;
+
+  public constructor(
     public readonly token0: bigint,
     public readonly token1: bigint,
-    public readonly fee: bigint,
-    public readonly tickSpacing: number,
-    public readonly extension: bigint,
+    public readonly config: PoolConfig,
   ) {}
 
-  id(): string {
-    return `${hexStringTokenPair(this.token0, this.token1)}_${this.fee}_${
-      this.tickSpacing
-    }_${hexlify(this.extension)}`;
+  public get string_id(): string {
+    this._string_id ??= `${hexStringTokenPair(this.token0, this.token1)}_${
+      this.config.fee
+    }_${this.config.tickSpacing}_${hexZeroPad(
+      hexlify(this.config.extension),
+      20,
+    )}`;
+
+    return this._string_id;
   }
 
-  toAbi(): AbiPoolKey {
+  public get num_id(): bigint {
+    this._num_id ??= BigInt(
+      keccak256(
+        defaultAbiCoder.encode(
+          ['address', 'address', 'bytes32'],
+          [
+            hexZeroPad(hexlify(this.token0), 20),
+            hexZeroPad(hexlify(this.token1), 20),
+            hexZeroPad(hexlify(this.config.compressed), 32),
+          ],
+        ),
+      ),
+    );
+
+    return this._num_id;
+  }
+
+  public toAbi(): AbiPoolKey {
     return {
       token0: hexZeroPad(hexlify(this.token0), 20),
       token1: hexZeroPad(hexlify(this.token1), 20),
-      fee: BigNumber.from(this.fee),
-      tickSpacing: this.tickSpacing,
-      extension: hexZeroPad(hexlify(this.extension), 20),
+      config: hexZeroPad(hexlify(this.config.compressed), 32),
     };
+  }
+}
+
+export class PoolConfig {
+  public constructor(
+    public readonly tickSpacing: number,
+    public readonly fee: bigint,
+    public readonly extension: bigint,
+    private _compressed?: bigint,
+  ) {}
+
+  public get compressed(): bigint {
+    this._compressed ??=
+      BigInt(this.tickSpacing) + (this.fee << 32n) + (this.extension << 96n);
+    return this._compressed;
+  }
+
+  public static fromCompressed(compressed: bigint) {
+    return new this(
+      Number(compressed % 2n ** 32n),
+      (compressed >> 32n) % 2n ** 64n,
+      compressed >> 96n,
+      compressed,
+    );
   }
 }
 
 export type AbiPoolKey = {
   token0: string;
   token1: string;
-  fee: BigNumber;
-  tickSpacing: number;
-  extension: string;
+  config: string;
 };
 
 export type VanillaPoolParameters = {

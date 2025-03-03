@@ -21,6 +21,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   EkuboData,
   GetQuoteDataResponse,
+  PoolConfig,
   PoolKey,
   PoolState,
   VanillaPoolParameters,
@@ -32,7 +33,7 @@ import {
   convertEkuboToParaSwap,
   convertParaSwapToEkubo,
   hexStringTokenPair,
-  ORACLE_TOKEN_ADDRESS,
+  NATIVE_TOKEN_ADDRESS,
   sortAndConvertTokens,
 } from './utils';
 import Joi from 'joi';
@@ -42,41 +43,39 @@ import CoreABI from '../../abi/ekubo/core.json';
 import DataFetcherABI from '../../abi/ekubo/data-fetcher.json';
 import { BigNumber, Contract } from 'ethers';
 import { setTimeout } from 'node:timers/promises';
-import {
-  MAX_SQRT_RATIO,
-  MAX_TICK_SPACING,
-  MIN_SQRT_RATIO,
-} from './pools/math/tick';
+import { FULL_RANGE_TICK_SPACING } from './pools/math/tick';
 import { hexlify } from 'ethers/lib/utils';
-import SwapperABI from '../../abi/ekubo/swapper.json';
+import RouterABI from '../../abi/ekubo/router.json';
 import { isPriceIncreasing } from './pools/math/swap';
 import { OraclePool } from './pools/oracle-pool';
 import { erc20Iface } from '../../lib/tokens/utils';
 import { AsyncOrSync } from 'ts-essentials';
+import { MAX_SQRT_RATIO_FLOAT, MIN_SQRT_RATIO_FLOAT } from './pools/math/price';
+import { MIN_I256 } from './pools/math/constants';
 
-const ENABLED_POOL_PARAMETERS: VanillaPoolParameters[] = [
+const FALLBACK_POOL_PARAMETERS: VanillaPoolParameters[] = [
   {
-    fee: 8507059173023461994257409214775295n,
+    fee: 8507059173023461994257409214775295n, // TODO
     tickSpacing: 50,
   },
   {
-    fee: 34028236692093847977029636859101184n,
+    fee: 1844674407370955n,
     tickSpacing: 200,
   },
   {
-    fee: 170141183460469235273462165868118016n,
+    fee: 9223372036854775n,
     tickSpacing: 1000,
   },
   {
-    fee: 1020847100762815411640772995208708096n,
+    fee: 55340232221128654n,
     tickSpacing: 5982,
   },
   {
-    fee: 3402823669209384634633746074317682114n,
+    fee: 184467440737095516n,
     tickSpacing: 19802,
   },
   {
-    fee: 17014118346046923173168730371588410572n,
+    fee: 922337203685477580n,
     tickSpacing: 95310,
   },
 ];
@@ -84,6 +83,7 @@ const ENABLED_POOL_PARAMETERS: VanillaPoolParameters[] = [
 type PairInfo = {
   fee: string;
   tick_spacing: number;
+  core_address: string;
   extension: string;
   tvl0_total: string;
   tvl1_total: string;
@@ -161,11 +161,12 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
   public logger;
 
-  private readonly config;
+  public readonly config;
+  public readonly routerIface;
+
   private readonly core;
   private readonly coreIface;
   private readonly dataFetcher;
-  private readonly swapperIface;
   private readonly supportedExtensions;
 
   private interval?: NodeJS.Timeout;
@@ -190,7 +191,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       DataFetcherABI,
       dexHelper.provider,
     );
-    this.swapperIface = new Interface(SwapperABI);
+    this.routerIface = new Interface(RouterABI);
     this.supportedExtensions = [0n, BigInt(this.config.oracle)];
   }
 
@@ -255,7 +256,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
     // eslint-disable-next-line no-restricted-syntax
     poolLoop: for (const pool of pools) {
-      const poolId = pool.key.id();
+      const poolId = pool.key.string_id;
 
       if (pool.key.token0 !== token0 || pool.key.token1 !== token1) {
         this.logger.error(
@@ -314,7 +315,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       }
     }
 
-    return exchangePrices.length === 0 ? null : exchangePrices;
+    return exchangePrices;
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -455,19 +456,25 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
     return {
       needWrapNative: this.needWrapNative,
-      exchangeData: this.swapperIface.encodeFunctionData('swap', [
-        recipient,
-        data.poolKey.toAbi(),
-        data.isToken1,
-        BigNumber.from(amount),
-        isPriceIncreasing(amount, data.isToken1)
-          ? MAX_SQRT_RATIO
-          : MIN_SQRT_RATIO,
-        data.skipAhead.get(
-          BigInt(side === SwapSide.SELL ? srcAmount : destAmount),
-        ) ?? 0,
-      ]),
-      targetExchange: this.config.swapper,
+      exchangeData: this.routerIface.encodeFunctionData(
+        'swap((address,address,bytes32),bool,int128,uint96,uint256,int256,address)',
+        [
+          data.poolKey.toAbi(),
+          data.isToken1,
+          BigNumber.from(amount),
+          isPriceIncreasing(amount, data.isToken1)
+            ? MAX_SQRT_RATIO_FLOAT
+            : MIN_SQRT_RATIO_FLOAT,
+          BigNumber.from(
+            data.skipAhead.get(
+              BigInt(side === SwapSide.SELL ? srcAmount : destAmount),
+            ) ?? 0,
+          ),
+          MIN_I256,
+          recipient,
+        ],
+      ),
+      targetExchange: this.config.router,
       dexFuncHasRecipient: true,
       returnAmountPos: undefined,
     };
@@ -520,7 +527,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     }
 
     const uninitializedPoolKeys = poolKeys.filter(
-      poolKey => !this.pools.has(poolKey.id()),
+      poolKey => !this.pools.has(poolKey.string_id),
     );
     const promises = await this.initializePools(
       uninitializedPoolKeys,
@@ -551,34 +558,33 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
     let poolKeys: PoolKey[];
     try {
-      poolKeys = (await this.fetchPairPoolsInfo(pair, maxTime / 2)).map(
-        pool =>
-          new PoolKey(
-            token0,
-            token1,
-            BigInt(pool.fee),
-            pool.tick_spacing,
-            BigInt(pool.extension),
-          ),
+      poolKeys = (await this.fetchAllPoolKeys()).filter(
+        poolKey => poolKey.token0 === token0 && poolKey.token1 === token1,
       );
     } catch (err) {
       this.logger.error(
         `Fetching pools from Ekubo API for token pair ${pair} failed, falling back to default pool parameters: ${err}`,
       );
 
-      poolKeys = ENABLED_POOL_PARAMETERS.map(
+      poolKeys = FALLBACK_POOL_PARAMETERS.map(
         params =>
-          new PoolKey(token0, token1, params.fee, params.tickSpacing, 0n),
+          new PoolKey(
+            token0,
+            token1,
+            new PoolConfig(params.tickSpacing, params.fee, 0n),
+          ),
       );
 
-      if ([token0, token1].includes(ORACLE_TOKEN_ADDRESS)) {
+      if ([token0, token1].includes(NATIVE_TOKEN_ADDRESS)) {
         poolKeys.push(
           new PoolKey(
             token0,
             token1,
-            0n,
-            MAX_TICK_SPACING,
-            BigInt(this.config.oracle),
+            new PoolConfig(
+              FULL_RANGE_TICK_SPACING,
+              0n,
+              BigInt(this.config.oracle),
+            ),
           ),
         );
       }
@@ -588,7 +594,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     const initializedPoolKeys: PoolKey[] = [];
 
     for (const poolKey of poolKeys) {
-      (this.pools.has(poolKey.id())
+      (this.pools.has(poolKey.string_id)
         ? initializedPoolKeys
         : uninitializedPoolKeys
       ).push(poolKey);
@@ -600,7 +606,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       maxTime / 2,
     );
 
-    const oldPoolIds = initializedPoolKeys.map(poolKey => poolKey.id());
+    const oldPoolIds = initializedPoolKeys.map(poolKey => poolKey.string_id);
     const newPoolIds = (await Promise.allSettled(promises)).flatMap(res => {
       if (res.status === 'rejected') {
         this.logger.error(
@@ -656,8 +662,8 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
                 const initialState = PoolState.fromQuoter(data);
 
                 const poolKey = poolKeys[batchStart + i];
-                const poolId = poolKey.id();
-                const extension = poolKey.extension;
+                const poolId = poolKey.string_id;
+                const extension = poolKey.config.extension;
 
                 let poolConstructor;
                 if (extension === 0n) {
@@ -675,10 +681,10 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
                   this.network,
                   this.dexHelper,
                   this.logger,
-                  this.core,
                   this.coreIface,
                   this.dataFetcher,
                   poolKey,
+                  this.core,
                 );
 
                 this.pools.set(poolId, pool);
@@ -720,27 +726,25 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       .filter(
         res =>
           this.supportedExtensions.includes(BigInt(res.extension)) &&
-          BigInt(res.core_address) === BigInt(this.config.core),
+          BigInt(res.core_address) === BigInt(this.core.address),
       )
       .map(
         info =>
           new PoolKey(
             BigInt(info.token0),
             BigInt(info.token1),
-            BigInt(info.fee),
-            info.tick_spacing,
-            BigInt(info.extension),
+            new PoolConfig(
+              info.tick_spacing,
+              BigInt(info.fee),
+              BigInt(info.extension),
+            ),
           ),
       );
   }
 
-  private async fetchPairPoolsInfo(
-    pair: string,
-    maxTime?: number,
-  ): Promise<PairInfo[]> {
+  private async fetchPairPoolsInfo(pair: string): Promise<PairInfo[]> {
     const res = await this.dexHelper.httpRequest.get(
       `${this.config.apiUrl}/pair/${pair}/pools`,
-      maxTime,
     );
 
     const { error, value } = tokenPairSchema.validate(res, {
@@ -755,6 +759,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     return value.topPools.filter(
       res =>
         this.supportedExtensions.includes(BigInt(res.extension)) &&
+        BigInt(this.core.address) === BigInt(res.core_address) &&
         (res.tvl0_total !== '0' || res.tvl1_total !== '0'),
     );
   }

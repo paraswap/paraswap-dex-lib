@@ -1716,6 +1716,14 @@ export const Tokens: {
       address: `0x978206fae13faf5a8d293fb614326b237684b750`,
       decimals: 6,
     },
+    TestToken: {
+      address: '0xd876Ec2ee0816C019cC54299A8184E8111694865',
+      decimals: 18,
+    },
+    TestToken2: {
+      address: '0xf7B3e9697fD769104cD6cf653c179fb452505a3e',
+      decimals: 18,
+    },
   },
 };
 
@@ -2118,6 +2126,8 @@ export const Holders: {
     stataUSDC: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
     stataUSDT: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
     usdcAave: '0xdD5De55eA6804EFb283f43b0C091C25000a6486c',
+    TestToken: '0x0ffcBD20FD16EB030304f250c562dc32C4484131',
+    TestToken2: '0x0ffcBD20FD16EB030304f250c562dc32C4484131',
   },
 };
 
