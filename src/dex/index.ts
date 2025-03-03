@@ -104,6 +104,7 @@ import { UsualMUsd0 } from './usual/usual-m-usd0';
 import { MWrappedM } from './usual/m-wrapped-m';
 import { WrappedMM } from './usual/wrapped-m-m';
 import { UsualPP } from './usual-pp/usual-pp';
+import { AlgebraIntegral } from './algebra-integral/algebra-integral';
 
 const LegacyDexes = [
   CurveV2,
@@ -135,6 +136,7 @@ const Dexes = [
   UniswapV2,
   UniswapV3,
   Algebra,
+  AlgebraIntegral,
   PancakeswapV3,
   VelodromeSlipstream,
   BiSwap,
