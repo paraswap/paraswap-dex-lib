@@ -13,34 +13,25 @@ import {
   checkConstantPoolPrices,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-
-/*
-  README
-  ======
-
-  This test script adds tests for AlgebraIntegral general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover AlgebraIntegral specific
-  logic.
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
-
-  (This comment should be removed from the final implementation)
-*/
+import { Address } from '@paraswap/core';
 
 function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
   funcName: string,
-  // TODO: Put here additional arguments you need
+  tokenIn: Address,
+  tokenOut: Address,
+  deployer: Address,
 ) {
   return amounts.map(amount => ({
     target: exchangeAddress,
     callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
+      tokenIn,
+      tokenOut,
+      deployer,
       amount,
+      0n,
     ]),
   }));
 }
@@ -50,7 +41,6 @@ function decodeReaderResult(
   readerIface: Interface,
   funcName: string,
 ) {
-  // TODO: Adapt this function for your needs
   return results.map(result => {
     const parsed = readerIface.decodeFunctionResult(funcName, result);
     return BigInt(parsed[0]._hex);
@@ -62,20 +52,23 @@ async function checkOnChainPricing(
   funcName: string,
   blockNumber: number,
   prices: bigint[],
+  tokenIn: Address,
+  tokenOut: Address,
+  deployer: Address,
   amounts: bigint[],
 ) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+  const exchangeAddress = algebraIntegral.config.quoter;
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from algebraIntegral.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+  const readerIface = algebraIntegral.quoterIface;
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
     readerIface,
     amounts.slice(1),
     funcName,
+    tokenIn,
+    tokenOut,
+    deployer,
   );
   const readerResult = (
     await algebraIntegral.dexHelper.multiContract.methods
@@ -113,7 +106,7 @@ async function testPricingOnNetwork(
     `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
     pools,
   );
-
+  console.log('POOLS', pools);
   expect(pools.length).toBeGreaterThan(0);
 
   const poolPrices = await algebraIntegral.getPricesVolume(
@@ -136,12 +129,17 @@ async function testPricingOnNetwork(
     checkPoolPrices(poolPrices!, amounts, side, dexKey);
   }
 
+  console.log(poolPrices);
+
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     algebraIntegral,
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
+    networkTokens[srcTokenSymbol].address,
+    networkTokens[destTokenSymbol].address,
+    '0x0000000000000000000000000000000000000000',
     amounts,
   );
 }
@@ -157,8 +155,8 @@ describe('AlgebraIntegral', function () {
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'WMATIC';
-    const destTokenSymbol = 'DAI';
+    const srcTokenSymbol = 'USDCn';
+    const destTokenSymbol = 'WMATIC';
     // const destTokenSymbol = 'USDC';
 
     const amountsForSell = [
@@ -202,7 +200,6 @@ describe('AlgebraIntegral', function () {
         algebra,
         network,
         dexKey,
-        dexHelper,
         blockNumber,
         srcTokenSymbol,
         destTokenSymbol,
@@ -217,7 +214,6 @@ describe('AlgebraIntegral', function () {
         algebra,
         network,
         dexKey,
-        dexHelper,
         blockNumber,
         srcTokenSymbol,
         destTokenSymbol,

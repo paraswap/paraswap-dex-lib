@@ -1,6 +1,7 @@
 import { defaultAbiCoder } from '@ethersproject/abi';
 import { AsyncOrSync } from 'ts-essentials';
 import { AbiItem } from 'web3-utils';
+import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
 import {
   Token,
@@ -12,6 +13,8 @@ import {
   PoolLiquidity,
   TransferFeeParams,
   Logger,
+  DexExchangeParam,
+  NumberAsString,
 } from '../../types';
 import {
   SwapSide,
@@ -24,8 +27,8 @@ import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { Interface } from 'ethers/lib/utils';
 import { Contract } from 'web3-eth-contract';
 import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import SwapRouter from '../../abi/algebra/SwapRouter.json';
-import AlgebraQuoterABI from '../../abi/algebra/AlgebraQuoter.abi.json';
+import SwapRouter from '../../abi/algebra-integral/SwapRouter.abi.json';
+import AlgebraQuoterABI from '../../abi/algebra-integral/Quoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import {
   _require,
@@ -37,8 +40,11 @@ import {
 } from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AlgebraIntegralData, Pool } from './types';
-import { SimpleExchange } from '../simple-exchange';
+import { AlgebraIntegralData, Pool, AlgebraIntegralFunctions } from './types';
+import {
+  SimpleExchange,
+  getLocalDeadlineAsFriendlyPlaceholder,
+} from '../simple-exchange';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import { AlgebraIntegralConfig } from './config';
 import {
@@ -46,6 +52,7 @@ import {
   DEFAULT_ID_ERC20,
   DEFAULT_ID_ERC20_AS_STRING,
 } from '../../lib/tokens/types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const ALGEBRA_QUOTE_GASLIMIT = 2_000_000;
 const ALGEBRA_EFFICIENCY_FACTOR = 3;
@@ -116,10 +123,7 @@ export class AlgebraIntegral
 
     if (_srcAddress === _destAddress) return [];
 
-    const pools = await this.getAvailablePools(
-      srcToken.address.toLowerCase(),
-      destToken.address.toLowerCase(),
-    );
+    const pools = await this.getAvailablePools(_srcAddress, _destAddress);
 
     if (pools.length === 0) return [];
 
@@ -340,11 +344,6 @@ export class AlgebraIntegral
 
       const pools = await this.getAvailablePools(_srcAddress, _destAddress);
 
-      // TODO: use limitPools
-      // const availablePools =
-      //   limitPools?.filter(t => pools.find(p => p.poolAddress === t)) ??
-      //   pools.map(t => t.poolAddress);
-
       const rpcPrice = await this.getPricingFromRpc(
         _srcToken,
         _destToken,
@@ -372,6 +371,80 @@ export class AlgebraIntegral
   ): number | number[] {
     // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AlgebraIntegralData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    let swapFunction;
+    let swapFunctionParams;
+
+    if (data.feeOnTransfer) {
+      _require(
+        data.path.length === 1,
+        `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
+          .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
+          .join(' ')}`,
+      );
+      swapFunction = AlgebraIntegralFunctions.exactInputWithFeeToken;
+      swapFunctionParams = {
+        limitSqrtPrice: '0',
+        recipient: recipient,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+        amountIn: srcAmount,
+        amountOutMinimum: destAmount,
+        tokenIn: data.path[0].tokenIn,
+        tokenOut: data.path[0].tokenOut,
+        deployer: data.path[0].deployer,
+      };
+    } else {
+      swapFunction =
+        side === SwapSide.SELL
+          ? AlgebraIntegralFunctions.exactInput
+          : AlgebraIntegralFunctions.exactOutput;
+      const path = this._encodePath(data.path, side);
+      swapFunctionParams =
+        side === SwapSide.SELL
+          ? {
+              recipient: recipient,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountIn: srcAmount,
+              amountOutMinimum: destAmount,
+              path,
+            }
+          : {
+              recipient: recipient,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountOut: destAmount,
+              amountInMaximum: srcAmount,
+              path,
+            };
+    }
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
+    };
   }
 
   getAdapterParam(
@@ -420,7 +493,7 @@ export class AlgebraIntegral
     const { data } = await this.dexHelper.httpRequest.querySubgraph<{
       data: {
         pools: {
-          poolAddress: string;
+          id: string;
           deployer: string;
         }[];
       };
@@ -432,9 +505,8 @@ export class AlgebraIntegral
       },
       { timeout: SUBGRAPH_TIMEOUT },
     );
-
     return data.pools.map(pool => ({
-      poolAddress: pool.poolAddress,
+      poolAddress: pool.id,
       token0: token0,
       token1: token1,
       deployer: pool.deployer,
@@ -541,6 +613,44 @@ export class AlgebraIntegral
       this.logger.error(`${this.dexKey}: can not query subgraph: `, e);
       return {};
     }
+  }
+
+  private _encodePath(
+    path: {
+      tokenIn: Address;
+      tokenOut: Address;
+      deployer: Address;
+    }[],
+    side: SwapSide,
+  ): string {
+    if (path.length === 0) {
+      return '0x';
+    }
+
+    const { _path, types } = path.reduce(
+      (
+        { _path, types }: { _path: string[]; types: string[] },
+        curr,
+        index,
+      ): { _path: string[]; types: string[] } => {
+        if (index === 0) {
+          return {
+            types: ['address', 'address', 'address'],
+            _path: [curr.tokenIn, curr.deployer, curr.tokenOut],
+          };
+        } else {
+          return {
+            types: [...types, 'address', 'address'],
+            _path: [..._path, curr.deployer, curr.tokenOut],
+          };
+        }
+      },
+      { _path: [], types: [] },
+    );
+
+    return side === SwapSide.BUY
+      ? pack(types.reverse(), _path.reverse())
+      : pack(types, _path);
   }
 
   private _sortTokens(srcAddress: Address, destAddress: Address) {

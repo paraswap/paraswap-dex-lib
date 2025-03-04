@@ -21,7 +21,6 @@ export type DexParams = {
   router: Address;
   subgraphURL: string;
   uniswapMulticall: Address;
-  supportedDeployers: Address[];
   chunksCount: number;
 };
 
@@ -31,3 +30,9 @@ export type Pool = {
   token1: Address;
   deployer: string;
 };
+
+export enum AlgebraIntegralFunctions {
+  exactInput = 'exactInput',
+  exactOutput = 'exactOutput',
+  exactInputWithFeeToken = 'exactInputSingleSupportingFeeOnTransferTokens',
+}
