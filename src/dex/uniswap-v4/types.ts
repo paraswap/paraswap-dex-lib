@@ -24,6 +24,7 @@ export type DexParams = {
   quoter: Address;
   router: Address;
   subgraphURL: string;
+  stateView: string;
 };
 
 export type PoolKey = {
