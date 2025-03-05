@@ -1,3 +1,4 @@
+import { omit } from 'lodash';
 import {
   AdapterExchangeParam,
   Address,
@@ -7,7 +8,6 @@ import {
 } from '../../types';
 import { Logger } from 'log4js';
 import {
-  ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
@@ -15,26 +15,18 @@ import {
 } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { ExchangePrices, PoolPrices, PoolLiquidity } from '../../types';
-import { getDexKeysWithNetwork } from '../../utils';
+import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
 import { UniswapV4Config } from './config';
-import { Pool, UniswapV4Data } from './types';
-import { BigNumber, BytesLike, ethers } from 'ethers';
+import { Pool, UniswapV4Data, SubgraphPool } from './types';
+import { BytesLike } from 'ethers';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
 import { BI_POWS } from '../../bigint-constants';
-import { defaultAbiCoder, Interface } from '@ethersproject/abi';
-import {
-  extractSuccessAndValue,
-  generalDecoder,
-  uin256DecodeToFloat,
-} from '../../lib/decoders';
-import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
-import { erc20Iface } from '../../lib/utils-interfaces';
-import { hexZeroPad, hexlify, solidityPack } from 'ethers/lib/utils';
-import { SpecialDex } from '../../executor/types';
-import { UniswapData, UniswapV2Functions } from '../uniswap-v2/types';
+import { Interface } from '@ethersproject/abi';
+import { generalDecoder } from '../../lib/decoders';
+import { MultiResult } from '../../lib/multi-wrapper';
 import { swapExactInputSingleCalldata } from './encoder';
 
 export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
@@ -43,6 +35,8 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
 
   logger: Logger;
   protected quoterIface: Interface;
+
+  private pools: Pool[] = [];
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV4Config);
@@ -62,16 +56,21 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     this.quoterIface = new Interface(QuoterAbi);
   }
 
+  async initializePricing(blockNumber: number) {
+    this.pools = await this.queryAllAvailablePools();
+  }
+
   async getPoolIdentifiers(
     from: Token,
     to: Token,
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const pools = await this.getAvailablePools(
+    const pools = await this.getAvailablePoolsForPair(
       from.address.toLowerCase(),
       to.address.toLowerCase(),
     );
+
     return pools.map(pool => pool.id);
   }
 
@@ -85,7 +84,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   ): Promise<ExchangePrices<UniswapV4Data> | null> {
     if (side === SwapSide.BUY) return null;
 
-    const pools = await this.getAvailablePools(
+    const pools = await this.getAvailablePoolsForPair(
       from.address.toLowerCase(),
       to.address.toLowerCase(),
     );
@@ -98,7 +97,8 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       const pool = pools.find(p => p.id === poolId)!;
 
       const zeroForOne =
-        from.address.toLowerCase() === pool.key.currency0.toLowerCase();
+        from.address.toLowerCase() === pool.key.currency0.toLowerCase() ||
+        (isETHAddress(from.address) && pool.key.currency0 === NULL_ADDRESS);
 
       const prices = await this.queryPrice(zeroForOne, amounts, pool);
 
@@ -107,7 +107,10 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         prices,
         data: {
           exchange: this.dexKey,
-          pool,
+          pool: {
+            id: pool.id,
+            key: omit(pool.key, ['tick', 'ticks']),
+          },
           zeroForOne,
         },
         poolAddresses: [this.poolManager],
@@ -138,54 +141,102 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     return [];
   }
 
-  async getAvailablePools(
-    srcToken: Address,
-    destToken: Address,
-  ): Promise<Pool[]> {
-    // fetch only pools with positive volumeUSD
-    const availablePoolsQuery = `query ($token0: Bytes!, $token1: Bytes!, $hooks: Bytes!) {
-      pools (where :{token0: $token0, token1: $token1, hooks: $hooks, volumeUSD_gt: 0}, orderBy: volumeUSD, orderDirection: desc) { 
-         id
-         fee: feeTier
-         tickSpacing
-         hooks
-      }
-   }`;
+  async queryAllAvailablePools(): Promise<Pool[]> {
+    let pools: SubgraphPool[] = [];
+    let curPage = 0;
+    const limit = 1000;
+    let currentPools: SubgraphPool[] =
+      await this.queryOnePageForAllAvailablePoolsFromSubgraph(
+        curPage * limit,
+        limit,
+      );
+    while (currentPools.length === limit) {
+      currentPools = await this.queryOnePageForAllAvailablePoolsFromSubgraph(
+        curPage * limit,
+        limit,
+      );
 
-    const [token0, token1] =
-      parseInt(srcToken, 16) < parseInt(destToken, 16)
-        ? [srcToken, destToken]
-        : [destToken, srcToken];
+      pools = pools.concat(currentPools);
+      curPage++;
+    }
+
+    return pools.map(pool => ({
+      id: pool.id,
+      key: {
+        currency0: pool.token0.address,
+        currency1: pool.token1.address,
+        fee: pool.fee,
+        tickSpacing: pool.tickSpacing,
+        hooks: pool.hooks,
+        tick: pool.tick,
+        ticks: pool.ticks,
+      },
+    }));
+  }
+
+  async queryOnePageForAllAvailablePoolsFromSubgraph(
+    skip: number,
+    limit: number,
+  ): Promise<SubgraphPool[]> {
+    const ticksLimit = 100;
+
+    const poolsQuery = `query ($skip: Int!) {
+      pools(
+        orderBy: volumeUSD
+        orderDirection: desc
+        skip: $skip
+        first: ${limit}
+      ) {
+        id
+        fee: feeTier
+        tickSpacing
+        token0 {
+          address: id
+        }
+        token1 {
+          address: id
+        }
+        hooks
+        tick
+        ticks(first: ${ticksLimit}) {
+          id
+          liquidityGross
+          liquidityNet
+          tickIdx
+        }
+      }
+    }`;
 
     const { data } = await this.dexHelper.httpRequest.querySubgraph<{
       data: {
-        pools: {
-          id: string;
-          fee: string;
-          tickSpacing: string;
-          hooks: string;
-        }[];
+        pools: SubgraphPool[];
       };
     }>(
       this.subgraph,
-      // at the moment, support only pools with no hooks
       {
-        query: availablePoolsQuery,
-        variables: { token0, token1, hooks: NULL_ADDRESS },
+        query: poolsQuery,
+        variables: { skip: skip },
       },
       { timeout: SUBGRAPH_TIMEOUT },
     );
 
-    return data.pools.map(pool => ({
-      id: pool.id,
-      key: {
-        currency0: token0,
-        currency1: token1,
-        fee: pool.fee,
-        tickSpacing: pool.tickSpacing,
-        hooks: pool.hooks,
-      },
-    }));
+    return data.pools;
+  }
+
+  getAvailablePoolsForPair(srcToken: Address, destToken: Address): Pool[] {
+    const isEthSrc = isETHAddress(srcToken);
+    const isEthDest = isETHAddress(destToken);
+
+    const src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
+    const dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
+
+    const pools = this.pools.filter(
+      pool =>
+        (pool.key.currency0 === src && pool.key.currency1 === dest) ||
+        (pool.key.currency0 === dest && pool.key.currency1 === src),
+    );
+
+    return pools;
   }
 
   async queryPrice(
