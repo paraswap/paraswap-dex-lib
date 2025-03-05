@@ -7,7 +7,6 @@ import {
 } from '../../types';
 import { Logger } from 'log4js';
 import {
-  ETHER_ADDRESS,
   Network,
   NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
@@ -20,21 +19,13 @@ import { IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
 import { UniswapV4Config } from './config';
 import { Pool, UniswapV4Data } from './types';
-import { BigNumber, BytesLike, ethers } from 'ethers';
+import { BytesLike } from 'ethers';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
 import { BI_POWS } from '../../bigint-constants';
-import { defaultAbiCoder, Interface } from '@ethersproject/abi';
-import {
-  extractSuccessAndValue,
-  generalDecoder,
-  uin256DecodeToFloat,
-} from '../../lib/decoders';
-import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
-import { erc20Iface } from '../../lib/utils-interfaces';
-import { hexZeroPad, hexlify, solidityPack } from 'ethers/lib/utils';
-import { SpecialDex } from '../../executor/types';
-import { UniswapData, UniswapV2Functions } from '../uniswap-v2/types';
+import { Interface } from '@ethersproject/abi';
+import { generalDecoder } from '../../lib/decoders';
+import { MultiResult } from '../../lib/multi-wrapper';
 import { swapExactInputSingleCalldata } from './encoder';
 
 export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {

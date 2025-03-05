@@ -1,11 +1,31 @@
-import { Address } from '../../types';
+import { Address, NumberAsString } from '../../types';
+import { TickInfo } from '../uniswap-v3/types';
+
+export type PoolManagerState = {
+  _pools: PoolState[];
+};
+
+export type TickInfo = {
+  liquidityGross: bigint;
+  liquidityNet: bigint;
+  feeGrowthOutside0X128: bigint;
+  feeGrowthOutside1X128: bigint;
+};
+
+type PositionState = {
+  liquidity: bigint;
+  feeGrowthInside0LastX128: bigint;
+  feeGrowthInside1LastX128: bigint;
+};
 
 export type PoolState = {
-  id: string;
-  token0: Address;
-  token1: Address;
-  tickSpacing: number;
-  tick: number;
+  slot0: string;
+  feeGrowthGlobal0X128: bigint;
+  feeGrowthGlobal1X128: bigint;
+  liquidity: bigint;
+  ticks: Record<NumberAsString, TickInfo>;
+  tickBitmap: Record<NumberAsString, bigint>;
+  positions: Record<NumberAsString, PositionState>;
 };
 
 export type UniswapV4Data = {
@@ -24,6 +44,7 @@ export type DexParams = {
   quoter: Address;
   router: Address;
   subgraphURL: string;
+  stateView: Address;
 };
 
 export type PoolKey = {
