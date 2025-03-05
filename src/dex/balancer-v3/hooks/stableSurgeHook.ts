@@ -10,10 +10,12 @@ import { Logger } from 'log4js';
 
 export const StableSurge = {
   type: 'StableSurge' as const,
+  apiName: 'STABLE_SURGE' as const,
 };
 
 export type StableSurgeConfig = {
   type: typeof StableSurge.type;
+  apiName: typeof StableSurge.apiName;
   factory: string;
   address: string;
 };

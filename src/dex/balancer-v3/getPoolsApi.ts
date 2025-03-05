@@ -8,11 +8,12 @@ import {
 import { CommonImmutablePoolState, ImmutablePoolStateMap } from './types';
 import { parseUnits } from 'ethers/lib/utils';
 import { HooksConfigMap } from './hooks/balancer-hook-event-subscriber';
+import { getUniqueHookNames } from './utils';
 
 interface PoolToken {
   address: string;
   weight: string | null;
-  isErc4626: boolean;
+  canUseBufferForSwaps: boolean | null;
   underlyingToken: {
     address: string;
   } | null;
@@ -29,13 +30,14 @@ interface Pool {
 
 interface QueryResponse {
   data: {
-    poolGetAggregatorPools: Pool[];
+    aggregatorPools: Pool[];
   };
 }
 
 function createQuery(
   networkId: number,
   poolTypes: SUPPORTED_POOLS[],
+  hooks: string,
   timestamp?: number,
 ): string {
   const poolTypesString = poolTypes.map(type => `${type}`).join(', ');
@@ -51,6 +53,7 @@ function createQuery(
     poolTypeIn: `[${poolTypesString}]`,
     ...(timestamp && { createTime: `{lt: ${timestamp}}` }),
     ...(disabledPoolIdsString && { idNotIn: `[${disabledPoolIdsString}]` }),
+    includeHooks: `[${hooks}]`,
   };
 
   // Convert where clause to string, filtering out undefined values
@@ -59,7 +62,7 @@ function createQuery(
     .join(', ');
   return `
     query MyQuery {
-      poolGetAggregatorPools(
+      aggregatorPools(
         where: {${whereString}}
       ) {
         id
@@ -67,7 +70,7 @@ function createQuery(
         poolTokens {
           address
           weight
-          isErc4626
+          canUseBufferForSwaps
           underlyingToken {
             address
           }
@@ -97,7 +100,9 @@ function toImmutablePoolStateMap(
           poolAddress: pool.id,
           tokens: pool.poolTokens.map(t => t.address),
           tokensUnderlying: pool.poolTokens.map(t =>
-            t.underlyingToken ? t.underlyingToken.address : null,
+            t.underlyingToken && t.canUseBufferForSwaps
+              ? t.underlyingToken.address
+              : null,
           ),
           weights: pool.poolTokens.map(t =>
             t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,
@@ -125,6 +130,7 @@ export async function getPoolsApi(
     const query = createQuery(
       network,
       Object.values(SUPPORTED_POOLS),
+      getUniqueHookNames(hooksConfigMap),
       timestamp,
     );
     const response = await axios.post<QueryResponse>(
@@ -139,7 +145,7 @@ export async function getPoolsApi(
       },
     );
 
-    const pools = response.data.data.poolGetAggregatorPools;
+    const pools = response.data.data.aggregatorPools;
     return toImmutablePoolStateMap(pools, hooksConfigMap);
   } catch (error) {
     // console.error('Error executing GraphQL query:', error);
