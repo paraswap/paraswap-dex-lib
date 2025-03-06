@@ -55,10 +55,6 @@ import { MIN_I256 } from './pools/math/constants';
 
 const FALLBACK_POOL_PARAMETERS: VanillaPoolParameters[] = [
   {
-    fee: 8507059173023461994257409214775295n, // TODO
-    tickSpacing: 50,
-  },
-  {
     fee: 1844674407370955n,
     tickSpacing: 200,
   },
