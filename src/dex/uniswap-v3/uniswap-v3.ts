@@ -62,16 +62,13 @@ import { assert, DeepReadonly } from 'ts-essentials';
 import { uniswapV3Math } from './contract-math/uniswap-v3-math';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-import { BalanceRequest, getBalances } from '../../lib/tokens/balancer-fetcher';
-import {
-  AssetType,
-  DEFAULT_ID_ERC20,
-  DEFAULT_ID_ERC20_AS_STRING,
-} from '../../lib/tokens/types';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
 import { hexConcat, hexlify, hexZeroPad, hexValue } from 'ethers/lib/utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { getBalanceERC20 } from '../../lib/tokens/utils';
+import { MultiCallParams } from '../../lib/multi-wrapper';
+import { uint256ToBigInt } from '../../lib/decoders';
 
 type PoolPairsInfo = {
   token0: Address;
@@ -494,46 +491,12 @@ export class UniswapV3
     amounts: bigint[],
     side: SwapSide,
     pools: UniswapV3EventPool[],
-    states: PoolState[],
+    blockNumber?: number,
   ): Promise<ExchangePrices<UniswapV3Data> | null> {
     if (pools.length === 0) {
       return null;
     }
     this.logger.warn(`fallback to rpc for ${pools.length} pool(s)`);
-
-    const requests = pools.map<BalanceRequest>(
-      pool => ({
-        owner: pool.poolAddress,
-        asset: side == SwapSide.SELL ? from.address : to.address,
-        assetType: AssetType.ERC20,
-        ids: [
-          {
-            id: DEFAULT_ID_ERC20,
-            spenders: [],
-          },
-        ],
-      }),
-      [],
-    );
-
-    const balances = await getBalances(this.dexHelper.multiWrapper, requests);
-
-    pools = pools.filter((pool, index) => {
-      const balance = balances[index].amounts[DEFAULT_ID_ERC20_AS_STRING];
-      if (balance >= amounts[amounts.length - 1]) {
-        return true;
-      }
-      this.logger.warn(
-        `[${this.network}][${pool.parentName}] have no balance ${pool.poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
-      );
-      return false;
-    });
-
-    pools.forEach(pool => {
-      this.logger.warn(
-        `[${this.network}][${pool.parentName}] fallback to rpc for ${pool.name}`,
-      );
-    });
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
@@ -549,87 +512,103 @@ export class UniswapV3
       ),
     );
 
-    const calldata = pools.map(pool =>
-      _amounts.map(_amount => ({
-        target: this.config.quoter,
-        gasLimit: UNISWAPV3_QUOTE_GASLIMIT,
-        callData:
-          side === SwapSide.SELL
-            ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
-                [
-                  from.address,
-                  to.address,
-                  _amount.toString(),
-                  pool.feeCodeAsString,
-                  0, //sqrtPriceLimitX96
-                ],
-              ])
-            : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
-                [
-                  from.address,
-                  to.address,
-                  _amount.toString(),
-                  pool.feeCodeAsString,
-                  0, //sqrtPriceLimitX96
-                ],
-              ]),
-      })),
+    // for each pool:
+    // 1 balanceOf call
+    // {amounts.length quote calls
+    const calldata: MultiCallParams<bigint>[] = pools
+      .map(pool => {
+        const balanceCall = {
+          target: side == SwapSide.SELL ? from.address : to.address,
+          decodeFunction: uint256ToBigInt,
+          callData: getBalanceERC20(pool.poolAddress),
+        };
+
+        const quoteCalls = _amounts.map(_amount => ({
+          target: this.config.quoter,
+          callData:
+            side === SwapSide.SELL
+              ? this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
+                  [
+                    from.address,
+                    to.address,
+                    _amount.toString(),
+                    pool.feeCodeAsString,
+                    0, //sqrtPriceLimitX96
+                  ],
+                ])
+              : this.quoterIface.encodeFunctionData('quoteExactOutputSingle', [
+                  [
+                    from.address,
+                    to.address,
+                    _amount.toString(),
+                    pool.feeCodeAsString,
+                    0, //sqrtPriceLimitX96
+                  ],
+                ]),
+          decodeFunction: uint256ToBigInt,
+        }));
+
+        return [balanceCall, ...quoteCalls];
+      })
+      .flat();
+
+    const data = await this.dexHelper.multiWrapper.aggregate(
+      calldata,
+      blockNumber,
     );
 
-    const data = await this.uniswapMulti.methods
-      .multicall(calldata.flat())
-      .call();
-
-    const decode = (j: number): bigint => {
-      if (!data.returnData[j].success) {
-        return 0n;
-      }
-      const decoded = defaultAbiCoder.decode(
-        ['uint256'],
-        data.returnData[j].returnData,
-      );
-      return BigInt(decoded[0].toString());
-    };
-
     let i = 0;
-    const result = pools.map((pool, index) => {
-      const _rates = _amounts.map(() => decode(i++));
-      const unit: bigint = _rates[0];
 
-      const prices = interpolate(
-        _amounts.slice(1),
-        _rates.slice(1),
-        amounts,
-        side,
-      );
+    return pools
+      .map((pool, index) => {
+        const balance = data[i++];
 
-      return {
-        prices,
-        unit,
-        data: {
-          path: [
-            {
-              tokenIn: from.address,
-              tokenOut: to.address,
-              fee: pool.feeCodeAsString,
-              currentFee: states[index]?.fee.toString(),
-            },
-          ],
-          exchange: pool.poolAddress,
-        },
-        poolIdentifier: this.getPoolIdentifier(
-          pool.token0,
-          pool.token1,
-          pool.feeCode,
-          pool.tickSpacing,
-        ),
-        exchange: this.dexKey,
-        gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
-        poolAddresses: [pool.poolAddress],
-      };
-    });
+        if (balance < amounts[amounts.length - 1]) {
+          this.logger.warn(
+            `[${this.network}][${pool.parentName}] have no balance ${pool.poolAddress} ${from.address} ${to.address}. (Balance: ${balance})`,
+          );
 
-    return result;
+          // move index to the next pool
+          i += _amounts.length;
+
+          return null;
+        }
+
+        const _rates = _amounts.map(() => data[i++]);
+        const unit: bigint = _rates[0];
+
+        const prices = interpolate(
+          _amounts.slice(1),
+          _rates.slice(1),
+          amounts,
+          side,
+        );
+
+        return {
+          prices,
+          unit,
+          data: {
+            path: [
+              {
+                tokenIn: from.address,
+                tokenOut: to.address,
+                fee: pool.feeCodeAsString,
+              },
+            ],
+            exchange: pool.poolAddress,
+          },
+          poolIdentifier: this.getPoolIdentifier(
+            pool.token0,
+            pool.token1,
+            pool.feeCode,
+            pool.tickSpacing,
+          ),
+          exchange: this.dexKey,
+          gasCost: prices.map(p => (p === 0n ? 0 : UNISWAPV3_QUOTE_GASLIMIT)),
+          poolAddresses: [pool.poolAddress],
+        };
+      })
+      .filter(prices => prices !== null);
   }
 
   protected async getSelectedPools(
@@ -755,7 +734,7 @@ export class UniswapV3
         amounts,
         side,
         this.network === Network.ZKEVM ? [] : poolsToUse.poolWithoutState,
-        this.network === Network.ZKEVM ? [] : states,
+        blockNumber,
       );
 
       const unitAmount = getBigIntPow(

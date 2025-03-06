@@ -239,6 +239,88 @@ describe('UniswapV3', () => {
         expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
       });
 
+      it('DAI -> USDC getPricesVolume through PRC fallback SELL', async () => {
+        const amounts = [
+          0n,
+          1n * BI_POWS[18],
+          2n * BI_POWS[18],
+          3n * BI_POWS[18],
+          4n * BI_POWS[18],
+          5n * BI_POWS[18],
+          6n * BI_POWS[18],
+          7n * BI_POWS[18],
+          8n * BI_POWS[18],
+          9n * BI_POWS[18],
+          10n * BI_POWS[18],
+        ];
+
+        // PRC pricing breaks if this condition is not met
+        expect(amounts.length).toBeGreaterThan(uniswapV3['config'].chunksCount);
+
+        // Get pool IDs
+        const pools = await uniswapV3.getPoolIdentifiers(
+          TokenA,
+          TokenB,
+          SwapSide.SELL,
+          blockNumber,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        // Nullify pool states to trigger the fallback
+        pools.forEach(poolId => {
+          const poolInstance = uniswapV3.eventPools[poolId];
+
+          if (!poolInstance) {
+            return;
+          }
+
+          poolInstance._setState(null, blockNumber);
+        });
+
+        const prices = await uniswapV3.getPricesVolume(
+          TokenA,
+          TokenB,
+          amounts,
+          SwapSide.SELL,
+          blockNumber,
+          pools,
+        );
+
+        const poolPrices = prices;
+
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+
+        const asserts = await Promise.all(
+          poolPrices!.map(async price =>
+            checkOnChainPricing(
+              dexHelper,
+              uniswapV3,
+              'quoteExactInputSingle',
+              blockNumber,
+              '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+              price.prices,
+              TokenA.address,
+              TokenB.address,
+              uniswapV3.eventPools[price.poolIdentifier!]!.feeCode,
+              amounts,
+            ),
+          ),
+        );
+
+        expect(asserts.every(Boolean)).toEqual(true);
+      });
+
       it('DAI -> USDC getPoolIdentifiers and getPricesVolume BUY', async () => {
         const amounts = [
           0n,
