@@ -150,6 +150,8 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         curPage * limit,
         limit,
       );
+    pools = pools.concat(currentPools);
+
     while (currentPools.length === limit) {
       currentPools = await this.queryOnePageForAllAvailablePoolsFromSubgraph(
         curPage * limit,

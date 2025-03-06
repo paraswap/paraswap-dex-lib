@@ -126,19 +126,160 @@ describe('UniswapV4 E2E', () => {
   describe('Base', () => {
     const network = Network.BASE;
 
-    const tokenASymbol: string = 'USDC';
-    const tokenBSymbol: string = 'USDbC';
+    describe('ETH -> USDbC', () => {
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'USDbC';
 
-    const tokenAAmount: string = '10000000';
-    const tokenBAmount: string = '10000000';
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '10000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('WETH -> USDC', () => {
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('USDC -> USDbC', () => {
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'USDbC';
+
+      const tokenAAmount: string = '10000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    describe('ETH -> USDC', () => {
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    describe('ETH -> USDC', () => {
+      const tokenASymbol: string = 'ETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    describe('MATIC -> USDCe', () => {
+      const tokenASymbol: string = 'MATIC';
+      const tokenBSymbol: string = 'USDCe';
+
+      const tokenAAmount: string = '100000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+
+    describe('AVAX -> USDCe', () => {
+      const tokenASymbol: string = 'AVAX';
+      const tokenBSymbol: string = 'USDCe';
+
+      const tokenAAmount: string = '100000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
+
+  describe('BSC', () => {
+    const network = Network.BSC;
+
+    describe('BNB -> USDT', () => {
+      const tokenASymbol: string = 'BNB';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '100000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
 });
