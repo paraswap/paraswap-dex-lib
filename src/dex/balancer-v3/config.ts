@@ -6,6 +6,7 @@ import { Network, SwapSide } from '../../constants';
 export enum SUPPORTED_POOLS {
   WEIGHTED = 'WEIGHTED',
   STABLE = 'STABLE',
+  GYROE = 'GYROE',
 }
 
 export const disabledPoolIds: Record<string, Record<number, string[]>> = {

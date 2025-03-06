@@ -1774,6 +1774,10 @@ export const Tokens: {
       address: `0x978206fae13faf5a8d293fb614326b237684b750`,
       decimals: 6,
     },
+    DAI: {
+      address: `0xB77EB1A70A96fDAAeB31DB1b42F2b8b5846b2613`,
+      decimals: 18,
+    },
   },
 };
 

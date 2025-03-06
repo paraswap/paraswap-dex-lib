@@ -241,6 +241,24 @@ const poolOnChain: Record<
       };
     },
   },
+  ['GYROE']: {
+    count: 0,
+    ['encode']: (
+      network: number,
+      contractInterface: Interface,
+      address: string,
+    ): callData[] => {
+      return [];
+    },
+    ['decode']: (
+      contractInterface: Interface,
+      poolAddress: string,
+      data: any,
+      startIndex: number,
+    ) => {
+      return {};
+    },
+  },
 };
 
 export function decodeThrowError(
