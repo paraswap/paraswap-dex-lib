@@ -37,6 +37,7 @@ import {
   ERC1271Contract,
 } from '../../lib/erc1271-utils';
 import { isContractAddress } from '../../utils';
+import { ExpKeyValuePubSub, NonExpSetPubSub } from '../../lib/pub-sub';
 
 const GET_FIRM_RATE_TIMEOUT_MS = 2000;
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
@@ -54,6 +55,9 @@ export class RateFetcher {
   private tokens: Record<string, TokenWithInfo> = {};
   private addressToTokenMap: Record<string, TokenWithInfo> = {};
   private pairs: PairMap = {};
+
+  private pricesPubSub: ExpKeyValuePubSub;
+  private blacklistPubSub?: NonExpSetPubSub;
 
   private firmRateAuth?: (options: RequestConfig) => void;
 
@@ -123,6 +127,13 @@ export class RateFetcher {
       logger,
     );
 
+    this.pricesPubSub = new ExpKeyValuePubSub(
+      this.dexHelper,
+      this.dexKey,
+      'prices',
+    );
+
+    this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (config.blacklistConfig) {
       this.blackListFetcher = new Fetcher<BlackListResponse>(
         dexHelper.httpRequest,
@@ -142,9 +153,14 @@ export class RateFetcher {
         config.blacklistConfig.intervalMs,
         logger,
       );
+
+      this.blacklistPubSub = new NonExpSetPubSub(
+        this.dexHelper,
+        this.dexKey,
+        'blacklist',
+      );
     }
 
-    this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (this.config.firmRateConfig.secret) {
       this.firmRateAuth = this.authHttp(this.config.firmRateConfig.secret);
     }
@@ -160,6 +176,16 @@ export class RateFetcher {
         this.dexHelper.web3Provider,
         this.config.maker,
       );
+    }
+
+    if (this.dexHelper.config.isSlave) {
+      this.pricesPubSub.subscribe();
+      if (this.blacklistPubSub) {
+        const initSet = await this.dexHelper.cache.smembers(
+          this.blackListCacheKey,
+        );
+        this.blacklistPubSub.initializeAndSubscribe(initSet);
+      }
     }
   }
 
@@ -214,16 +240,22 @@ export class RateFetcher {
     for (const address of resp.blacklist) {
       this.dexHelper.cache.sadd(this.blackListCacheKey, address.toLowerCase());
     }
+
+    if (this.blacklistPubSub) {
+      this.blacklistPubSub.publish(resp.blacklist);
+    }
   }
 
   public isBlackListed(userAddress: string) {
-    return this.dexHelper.cache.sismember(
-      this.blackListCacheKey,
-      userAddress.toLowerCase(),
-    );
+    if (this.blacklistPubSub) {
+      return this.blacklistPubSub.has(userAddress.toLowerCase());
+    }
+    return false;
   }
 
   private handleRatesResponse(resp: RatesResponse) {
+    const pubSubData: Record<string, unknown> = {};
+    const ttl = this.config.rateConfig.dataTTLS;
     const pairs = this.pairs;
 
     if (isEmpty(pairs)) return;
@@ -252,37 +284,51 @@ export class RateFetcher {
       }
 
       if (prices.bids.length) {
+        const key = `${baseToken.address}_${quoteToken.address}_bids`;
+        const value = prices.bids;
+        pubSubData[key] = value;
+
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          `${baseToken.address}_${quoteToken.address}_bids`,
-          this.config.rateConfig.dataTTLS,
-          JSON.stringify(prices.bids),
+          key,
+          ttl,
+          JSON.stringify(value),
         );
         currentPricePairs.add(`${baseToken.address}_${quoteToken.address}`);
       }
 
       if (prices.asks.length) {
+        const key = `${baseToken.address}_${quoteToken.address}_asks`;
+        const value = prices.asks;
+        pubSubData[key] = value;
+
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          `${baseToken.address}_${quoteToken.address}_asks`,
-          this.config.rateConfig.dataTTLS,
-          JSON.stringify(prices.asks),
+          key,
+          ttl,
+          JSON.stringify(value),
         );
         currentPricePairs.add(`${quoteToken.address}_${baseToken.address}`);
       }
     });
 
     if (currentPricePairs.size > 0) {
+      const key = `pairs`;
+      const value = Array.from(currentPricePairs);
+      pubSubData[key] = value;
+
       this.dexHelper.cache.setex(
         this.dexKey,
         this.dexHelper.config.data.network,
-        `pairs`,
-        this.config.rateConfig.dataTTLS,
-        JSON.stringify(Array.from(currentPricePairs)),
+        key,
+        ttl,
+        JSON.stringify(value),
       );
     }
+
+    this.pricesPubSub.publish(pubSubData, ttl);
   }
 
   checkHealth(): boolean {
@@ -322,18 +368,12 @@ export class RateFetcher {
   }
 
   public async getAvailablePairs(): Promise<string[]> {
-    const pairs = await this.dexHelper.cache.getAndCacheLocally(
-      this.dexKey,
-      this.dexHelper.config.data.network,
-      `pairs`,
-      this.config.rateConfig.intervalMs / 1000,
-    );
-
+    const pairs = await this.pricesPubSub.getAndCache<string[]>(`pairs`);
     if (!pairs) {
       return [];
     }
 
-    return JSON.parse(pairs) as string[];
+    return pairs;
   }
 
   public async getOrderPrice(
@@ -343,53 +383,36 @@ export class RateFetcher {
   ): Promise<PriceAndAmountBigNumber[] | null> {
     let reversed = false;
 
-    let pricesAsString: string | null = null;
+    let prices: PriceAndAmount[] | null = null;
     if (side === SwapSide.SELL) {
-      pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
-        this.dexKey,
-        this.dexHelper.config.data.network,
+      prices = await this.pricesPubSub.getAndCache(
         `${srcToken.address}_${destToken.address}_bids`,
-        this.config.rateConfig.intervalMs / 1000,
       );
 
-      if (!pricesAsString) {
-        pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
-          this.dexKey,
-          this.dexHelper.config.data.network,
+      if (!prices) {
+        prices = await this.pricesPubSub.getAndCache(
           `${destToken.address}_${srcToken.address}_asks`,
-          this.config.rateConfig.intervalMs / 1000,
         );
         reversed = true;
       }
     } else {
-      pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
-        this.dexKey,
-        this.dexHelper.config.data.network,
+      prices = await this.pricesPubSub.getAndCache(
         `${destToken.address}_${srcToken.address}_asks`,
-        this.config.rateConfig.intervalMs / 1000,
       );
 
-      if (!pricesAsString) {
-        pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
-          this.dexKey,
-          this.dexHelper.config.data.network,
+      if (!prices) {
+        prices = await this.pricesPubSub.getAndCache(
           `${srcToken.address}_${destToken.address}_bids`,
-          this.config.rateConfig.intervalMs / 1000,
         );
         reversed = true;
       }
     }
 
-    if (!pricesAsString) {
+    if (!prices) {
       return null;
     }
 
-    const orderPricesAsString: PriceAndAmount[] = JSON.parse(pricesAsString);
-    if (!orderPricesAsString) {
-      return null;
-    }
-
-    let orderPrices = orderPricesAsString.map(price => [
+    let orderPrices = prices.map(price => [
       new BigNumber(price[0]),
       new BigNumber(price[1]),
     ]);
@@ -487,5 +510,17 @@ export class RateFetcher {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  async setBlacklist(userAddress: string): Promise<boolean> {
+    await this.dexHelper.cache.hset(
+      this.blackListCacheKey,
+      userAddress.toLowerCase(),
+      'true',
+    );
+    if (this.blacklistPubSub) {
+      this.blacklistPubSub.publish([userAddress.toLowerCase()]);
+    }
+    return true;
   }
 }
