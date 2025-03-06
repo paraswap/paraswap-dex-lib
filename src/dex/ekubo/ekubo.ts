@@ -28,7 +28,7 @@ import {
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { EkuboConfig } from './config';
-import { BasePool, BasePool as EkuboEventPool } from './pools/base-pool';
+import { BasePool } from './pools/base-pool';
 import {
   convertEkuboToParaSwap,
   convertParaSwapToEkubo,
@@ -144,8 +144,6 @@ const POOL_MAP_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
 
 // Ekubo Protocol https://ekubo.org/
 export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
-  protected readonly eventPools: Record<string, EkuboEventPool> = {};
-
   public readonly hasConstantPriceLargeAmounts = false;
   public readonly needWrapNative = false;
   public readonly isFeeOnTransferSupported = false;
@@ -167,6 +165,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
   private interval?: NodeJS.Timeout;
 
+  // Caches the number of decimals for TVL computation purposes
   private readonly decimals: Record<string, number> = {
     [ETHER_ADDRESS]: 18,
   };
@@ -188,9 +187,12 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       dexHelper.provider,
     );
     this.routerIface = new Interface(RouterABI);
+
+    // 0 are vanilla pools
     this.supportedExtensions = [0n, BigInt(this.config.oracle)];
   }
 
+  // Periodically schedules fetching pool keys from the Ekubo API and filling in details with the quote data fetcher
   public async initializePricing(blockNumber: number) {
     await this.updatePoolMap(blockNumber);
 
@@ -199,37 +201,83 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     }, POOL_MAP_UPDATE_INTERVAL_MS);
   }
 
-  // Legacy: was only used for V5
-  // Returns the list of contract adapters (name and index)
-  // for a buy/sell. Return null if there are no adapters.
+  // LEGACY
   public getAdapters(
     _side: SwapSide,
   ): { name: string; index: number }[] | null {
     return null;
   }
 
-  // Returns list of pool identifiers that can be used
-  // for a given swap. poolIdentifiers must be unique
-  // across DEXes. It is recommended to use
-  // ${dexKey}_${poolAddress} as a poolIdentifier
   public async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
     _side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    return this.fetchPoolsByPair(
-      srcToken,
-      destToken,
-      blockNumber,
-      FETCH_POOL_IDENTIFIER_TIMEOUT,
-    );
+    const [token0, token1] = sortAndConvertTokens(srcToken, destToken);
+    const pair = hexStringTokenPair(token0, token1);
+
+    let poolKeys: PoolKey[];
+    try {
+      poolKeys = (await this.fetchAllPoolKeys()).filter(
+        poolKey => poolKey.token0 === token0 && poolKey.token1 === token1,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Fetching pools from Ekubo API for token pair ${pair} failed, falling back to default pool parameters: ${err}`,
+      );
+
+      poolKeys = FALLBACK_POOL_PARAMETERS.map(
+        params =>
+          new PoolKey(
+            token0,
+            token1,
+            new PoolConfig(params.tickSpacing, params.fee, 0n),
+          ),
+      );
+
+      if ([token0, token1].includes(NATIVE_TOKEN_ADDRESS)) {
+        poolKeys.push(
+          new PoolKey(
+            token0,
+            token1,
+            new PoolConfig(
+              FULL_RANGE_TICK_SPACING,
+              0n,
+              BigInt(this.config.oracle),
+            ),
+          ),
+        );
+      }
+    }
+
+    const uninitializedPoolKeys: PoolKey[] = [];
+    const initializedPoolKeys: PoolKey[] = [];
+
+    for (const poolKey of poolKeys) {
+      (this.pools.has(poolKey.string_id)
+        ? initializedPoolKeys
+        : uninitializedPoolKeys
+      ).push(poolKey);
+    }
+
+    const promises = this.initializePools(uninitializedPoolKeys, blockNumber);
+
+    const oldPoolIds = initializedPoolKeys.map(poolKey => poolKey.string_id);
+    const newPoolIds = (await Promise.allSettled(promises)).flatMap(res => {
+      if (res.status === 'rejected') {
+        this.logger.error(
+          `Fetching batch failed. Pool keys: ${res.reason.batch}. Error: ${res.reason.err}`,
+        );
+        return [];
+      } else {
+        return res.value;
+      }
+    });
+
+    return oldPoolIds.concat(newPoolIds);
   }
 
-  // Returns pool prices for amounts.
-  // If limitPools is defined only pools in limitPools
-  // should be used. If limitPools is undefined then
-  // any pools can be used.
   public async getPricesVolume(
     srcToken: Token,
     destToken: Token,
@@ -314,14 +362,14 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     return exchangePrices;
   }
 
-  // Returns estimated gas cost of calldata for this DEX in multiSwap
+  // LEGACY
   public getCalldataGasCost(
     _poolPrices: PoolPrices<EkuboData>,
   ): number | number[] {
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
 
-  // V6: Not used, can be left blank
+  // LEGACY
   public getAdapterParam(
     _srcToken: string,
     _destToken: string,
@@ -339,8 +387,6 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
   public async updatePoolState(): Promise<void> {}
 
-  // Returns list of top pools based on liquidity. Max
-  // limit number pools should be returned.
   public async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
@@ -525,11 +571,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     const uninitializedPoolKeys = poolKeys.filter(
       poolKey => !this.pools.has(poolKey.string_id),
     );
-    const promises = await this.initializePools(
-      uninitializedPoolKeys,
-      blockNumber,
-      undefined,
-    );
+    const promises = this.initializePools(uninitializedPoolKeys, blockNumber);
 
     (await Promise.allSettled(promises)).flatMap(res => {
       if (res.status === 'rejected') {
@@ -540,88 +582,10 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     });
   }
 
-  private async fetchPoolsByPair(
-    tokenA: Token,
-    tokenB: Token,
-    blockNumber: number,
-    maxTime: number,
-  ): Promise<string[]> {
-    const [token0, token1] = sortAndConvertTokens(tokenA, tokenB);
-    const pair = hexStringTokenPair(token0, token1);
-
-    // Leave some time for computations & timer inaccuracies
-    maxTime -= 50;
-
-    let poolKeys: PoolKey[];
-    try {
-      poolKeys = (await this.fetchAllPoolKeys()).filter(
-        poolKey => poolKey.token0 === token0 && poolKey.token1 === token1,
-      );
-    } catch (err) {
-      this.logger.error(
-        `Fetching pools from Ekubo API for token pair ${pair} failed, falling back to default pool parameters: ${err}`,
-      );
-
-      poolKeys = FALLBACK_POOL_PARAMETERS.map(
-        params =>
-          new PoolKey(
-            token0,
-            token1,
-            new PoolConfig(params.tickSpacing, params.fee, 0n),
-          ),
-      );
-
-      if ([token0, token1].includes(NATIVE_TOKEN_ADDRESS)) {
-        poolKeys.push(
-          new PoolKey(
-            token0,
-            token1,
-            new PoolConfig(
-              FULL_RANGE_TICK_SPACING,
-              0n,
-              BigInt(this.config.oracle),
-            ),
-          ),
-        );
-      }
-    }
-
-    const uninitializedPoolKeys: PoolKey[] = [];
-    const initializedPoolKeys: PoolKey[] = [];
-
-    for (const poolKey of poolKeys) {
-      (this.pools.has(poolKey.string_id)
-        ? initializedPoolKeys
-        : uninitializedPoolKeys
-      ).push(poolKey);
-    }
-
-    const promises = await this.initializePools(
-      uninitializedPoolKeys,
-      blockNumber,
-      maxTime / 2,
-    );
-
-    const oldPoolIds = initializedPoolKeys.map(poolKey => poolKey.string_id);
-    const newPoolIds = (await Promise.allSettled(promises)).flatMap(res => {
-      if (res.status === 'rejected') {
-        this.logger.error(
-          `Fetching batch failed. Pool keys: ${res.reason.batch}. Error: ${res.reason.err}`,
-        );
-        return [];
-      } else {
-        return res.value;
-      }
-    });
-
-    return oldPoolIds.concat(newPoolIds);
-  }
-
-  private async initializePools(
+  private initializePools(
     poolKeys: PoolKey[],
     blockNumber: number,
-    maxTime: number | undefined,
-  ) {
+  ): Promise<string[]>[] {
     const promises = [];
 
     for (
@@ -635,64 +599,51 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       );
 
       promises.push(
-        Promise.race([
-          ...(maxTime
-            ? [
-                setTimeout(maxTime).then(() => {
-                  throw new Error('Timeout');
-                }),
-              ]
-            : []),
-          (async () => {
-            const fetchedData: GetQuoteDataResponse =
-              await this.dataFetcher.getQuoteData(
-                batch.map(poolKey => poolKey.toAbi()),
-                MIN_TICK_SPACINGS_PER_POOL,
-                {
-                  blockTag: blockNumber,
-                },
-              );
-
-            return Promise.all(
-              fetchedData.map(async (data, i) => {
-                const initialState = PoolState.fromQuoter(data);
-
-                const poolKey = poolKeys[batchStart + i];
-                const poolId = poolKey.string_id;
-                const extension = poolKey.config.extension;
-
-                let poolConstructor;
-                if (extension === 0n) {
-                  poolConstructor = BasePool;
-                } else if (extension === BigInt(this.config.oracle)) {
-                  poolConstructor = OraclePool;
-                } else {
-                  throw new Error(
-                    `Unknown pool extension ${hexlify(extension)}`,
-                  );
-                }
-
-                const pool = new poolConstructor(
-                  this.dexKey,
-                  this.network,
-                  this.dexHelper,
-                  this.logger,
-                  this.coreIface,
-                  this.dataFetcher,
-                  poolKey,
-                  this.core,
-                );
-
-                this.pools.set(poolId, pool);
-
-                // This is fulfilled immediately
-                await pool.initialize(blockNumber, { state: initialState });
-
-                return poolId;
-              }),
+        (async () => {
+          const fetchedData: GetQuoteDataResponse =
+            await this.dataFetcher.getQuoteData(
+              batch.map(poolKey => poolKey.toAbi()),
+              MIN_TICK_SPACINGS_PER_POOL,
+              {
+                blockTag: blockNumber,
+              },
             );
-          })(),
-        ]).catch(err => {
+
+          return fetchedData.map((data, i) => {
+            const initialState = PoolState.fromQuoter(data);
+
+            const poolKey = poolKeys[batchStart + i];
+            const poolId = poolKey.string_id;
+            const extension = poolKey.config.extension;
+
+            let poolConstructor;
+            if (extension === 0n) {
+              poolConstructor = BasePool;
+            } else if (extension === BigInt(this.config.oracle)) {
+              poolConstructor = OraclePool;
+            } else {
+              throw new Error(`Unknown pool extension ${hexlify(extension)}`);
+            }
+
+            const pool = new poolConstructor(
+              this.dexKey,
+              this.network,
+              this.dexHelper,
+              this.logger,
+              this.coreIface,
+              this.dataFetcher,
+              poolKey,
+              this.core,
+            );
+
+            this.pools.set(poolId, pool);
+
+            // This is fulfilled immediately
+            pool.initialize(blockNumber, { state: initialState });
+
+            return poolId;
+          });
+        })().catch(err => {
           throw {
             batch,
             err,
