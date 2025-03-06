@@ -46,7 +46,6 @@ export const reversePrice = (price: PriceAndAmountBigNumber) =>
     price[1].times(price[0]),
   ] as PriceAndAmountBigNumber;
 
-const logPrefix = 'RateFetched[pub_sub]';
 export class RateFetcher {
   private tokensFetcher: Fetcher<TokensResponse>;
   private pairsFetcher: Fetcher<PairsResponse>;
@@ -168,7 +167,6 @@ export class RateFetcher {
   }
 
   async initialize() {
-    this.logger.info(`${logPrefix} Initializing rate fetcher`);
     const isContract = await isContractAddress(
       this.dexHelper.web3Provider,
       this.config.maker,
@@ -181,10 +179,8 @@ export class RateFetcher {
     }
 
     if (this.dexHelper.config.isSlave) {
-      this.logger.info(`${logPrefix} Subscribing to prices pubsub`);
       this.pricesPubSub.subscribe();
       if (this.blacklistPubSub) {
-        this.logger.info(`${logPrefix} Subscribing to blacklist pubsub`);
         const initSet = await this.dexHelper.cache.smembers(
           this.blackListCacheKey,
         );
@@ -194,7 +190,6 @@ export class RateFetcher {
   }
 
   start() {
-    this.logger.info(`${logPrefix} Starting rate fetcher`);
     this.tokensFetcher.startPolling();
     this.rateFetcher.startPolling();
     this.pairsFetcher.startPolling();
@@ -204,7 +199,6 @@ export class RateFetcher {
   }
 
   stop() {
-    this.logger.info(`${logPrefix} Stopping rate fetcher`);
     this.tokensFetcher.stopPolling();
     this.pairsFetcher.stopPolling();
     this.rateFetcher.stopPolling();
@@ -215,10 +209,6 @@ export class RateFetcher {
   }
 
   private handleTokensResponse(data: TokensResponse) {
-    this.logger.info(
-      `${logPrefix} Handling tokens response, tokens: `,
-      Object.keys(data.tokens).length,
-    );
     for (const tokenName of Object.keys(data.tokens)) {
       const token = data.tokens[tokenName];
       token.address = token.address.toLowerCase();
@@ -236,10 +226,6 @@ export class RateFetcher {
   }
 
   private handlePairsResponse(resp: PairsResponse) {
-    this.logger.info(
-      `${logPrefix} Handling pairs response, pairs: `,
-      Object.keys(resp.pairs).length,
-    );
     this.pairs = {};
 
     const pairs: PairMap = {};
@@ -251,19 +237,11 @@ export class RateFetcher {
   }
 
   private handleBlackListResponse(resp: BlackListResponse) {
-    this.logger.info(
-      `${logPrefix} Handling blacklist response, blacklist length: `,
-      resp.blacklist.length,
-    );
     for (const address of resp.blacklist) {
       this.dexHelper.cache.sadd(this.blackListCacheKey, address.toLowerCase());
     }
 
     if (this.blacklistPubSub) {
-      this.logger.info(
-        `${logPrefix} Publishing blacklist to pubsub, blacklist length: `,
-        resp.blacklist.length,
-      );
       this.blacklistPubSub.publish(resp.blacklist);
     }
   }
@@ -276,10 +254,6 @@ export class RateFetcher {
   }
 
   private handleRatesResponse(resp: RatesResponse) {
-    this.logger.info(
-      `${logPrefix} Handling rates response, prices length: `,
-      Object.keys(resp.prices).length,
-    );
     const pubSubData: Record<string, unknown> = {};
     const ttl = this.config.rateConfig.dataTTLS;
     const pairs = this.pairs;
@@ -395,10 +369,6 @@ export class RateFetcher {
 
   public async getAvailablePairs(): Promise<string[]> {
     const pairs = await this.pricesPubSub.getAndCache<string[]>(`pairs`);
-    this.logger.info(
-      `${logPrefix} Getting available pairs, pairs: `,
-      pairs?.length,
-    );
     if (!pairs) {
       return [];
     }

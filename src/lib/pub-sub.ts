@@ -15,7 +15,6 @@ export class ExpKeyValuePubSub {
   channel: string;
   network: Network;
   localCache: NodeCache = new NodeCache();
-  logPrefix = 'ExpKeyValuePubSub';
 
   logger: Logger;
 
@@ -37,21 +36,12 @@ export class ExpKeyValuePubSub {
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
       const decodedMsg = JSON.parse(msg) as KeyValuePubSubMsg;
-      this.logger.info(
-        `${this.logPrefix} Received msg: '${Object.keys(decodedMsg).length}'`,
-      );
       this.handleSubscription(decodedMsg);
     });
   }
 
   publish(data: Record<string, unknown>, ttl: number) {
     const expiresAt = Math.round(Date.now() / 1000) + ttl;
-    this.logger.info(
-      `${this.logPrefix} Publishing msg: '${JSON.stringify({
-        expiresAt,
-        data: Object.keys(data).length,
-      })}'`,
-    );
     this.dexHelper.cache.publish(
       this.channel,
       JSON.stringify({ expiresAt, data }),
@@ -82,12 +72,6 @@ export class ExpKeyValuePubSub {
 
   async getAndCache<T>(key: string): Promise<T | null> {
     const localValue = this.localCache.get<T>(key);
-
-    this.logger.info(
-      `${this.logPrefix} Getting and caching key: ${key}, localValue length: ${
-        localValue ? Object.keys(localValue).length : 0
-      }`,
-    );
 
     if (localValue) {
       return localValue;
@@ -280,7 +264,6 @@ export class NonExpSetPubSub {
   channel: string;
   network: Network;
   set = new Set<string>();
-  logPrefix = 'NonExpSetPubSub';
 
   logger: Logger;
 
@@ -296,10 +279,6 @@ export class NonExpSetPubSub {
   }
 
   async initializeAndSubscribe(initialSet: string[]) {
-    this.logger.info(
-      `${this.logPrefix} initializeAndSubscribe with ${initialSet}`,
-    );
-
     for (const member of initialSet) {
       this.set.add(member);
     }
@@ -312,23 +291,17 @@ export class NonExpSetPubSub {
 
     this.dexHelper.cache.subscribe(this.channel, (_, msg) => {
       const decodedMsg = JSON.parse(msg) as SetPubSubMsg;
-      this.logger.info(
-        `${this.logPrefix} Received subscription msg: '${decodedMsg.length}'`,
-      );
       this.handleSubscription(decodedMsg);
     });
   }
 
   publish(msg: SetPubSubMsg) {
     if (msg.length > 0) {
-      this.logger.info(`${this.logPrefix} Publishing msg: '${msg.length}'`);
       this.dexHelper.cache.publish(this.channel, JSON.stringify(msg));
     }
   }
 
   handleSubscription(set: SetPubSubMsg) {
-    this.logger.info(`${this.logPrefix} Received subscription msg: '${set}'`);
-
     for (const key of set) {
       this.set.add(key);
     }
