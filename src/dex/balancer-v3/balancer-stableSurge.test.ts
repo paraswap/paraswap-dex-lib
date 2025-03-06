@@ -5,9 +5,7 @@ import { Tokens } from '../../../tests/constants-e2e';
 import { Network, SwapSide } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper';
 import { BalancerV3 } from './balancer-v3';
-import { checkOnChainPricingNonMulti } from './balancer-test-helpers';
-import { ExchangePrices, Token } from '../../types';
-import { BalancerV3Data } from './types';
+import { testPricesVsOnchain } from './balancer-test-helpers';
 
 const dexKey = 'BalancerV3';
 const blockNumber = 7651340;
@@ -51,60 +49,61 @@ describe('BalancerV3 stableSurge hook tests', function () {
       it('SELL', async function () {
         const amounts = [0n, 10000000000000000n];
         const side = SwapSide.SELL;
-        await testPricesVsOnchain(amounts, weth, bal, side, blockNumber, [
-          stableSurgePool,
-        ]);
+        await testPricesVsOnchain(
+          balancerV3,
+          network,
+          amounts,
+          weth,
+          bal,
+          side,
+          blockNumber,
+          [stableSurgePool],
+        );
       });
       it('BUY', async function () {
         const amounts = [0n, 500000000000000000n];
         const side = SwapSide.BUY;
-        await testPricesVsOnchain(amounts, weth, bal, side, blockNumber, [
-          stableSurgePool,
-        ]);
+        await testPricesVsOnchain(
+          balancerV3,
+          network,
+          amounts,
+          weth,
+          bal,
+          side,
+          blockNumber,
+          [stableSurgePool],
+        );
       });
     });
     describe('using surge fee', function () {
       it('SELL', async function () {
         const amounts = [0n, 8000000000000000000n];
         const side = SwapSide.SELL;
-        await testPricesVsOnchain(amounts, bal, weth, side, blockNumber, [
-          stableSurgePool,
-        ]);
+        await testPricesVsOnchain(
+          balancerV3,
+          network,
+          amounts,
+          bal,
+          weth,
+          side,
+          blockNumber,
+          [stableSurgePool],
+        );
       });
       it('BUY', async function () {
         const amounts = [0n, 4000000000000000n];
         const side = SwapSide.BUY;
-        await testPricesVsOnchain(amounts, bal, weth, side, blockNumber, [
-          stableSurgePool,
-        ]);
+        await testPricesVsOnchain(
+          balancerV3,
+          network,
+          amounts,
+          bal,
+          weth,
+          side,
+          blockNumber,
+          [stableSurgePool],
+        );
       });
     });
   });
 });
-
-async function testPricesVsOnchain(
-  amounts: bigint[],
-  srcToken: Token,
-  dstToken: Token,
-  side: SwapSide,
-  blockNumber: number,
-  limitPools: string[],
-) {
-  const prices = await balancerV3.getPricesVolume(
-    srcToken,
-    dstToken,
-    amounts,
-    side,
-    blockNumber,
-    limitPools,
-  );
-  expect(prices).not.toBeNull();
-  await checkOnChainPricingNonMulti(
-    network,
-    side,
-    balancerV3,
-    blockNumber,
-    prices as ExchangePrices<BalancerV3Data>,
-    amounts,
-  );
-}
