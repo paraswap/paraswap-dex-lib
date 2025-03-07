@@ -227,6 +227,7 @@ export type PoolPrices<T> = {
   exchange: string;
   gasCost: number | number[];
   gasCostL2?: number | number[];
+  calldataGasCost?: number | number[];
   poolAddresses?: Array<Address>;
 };
 

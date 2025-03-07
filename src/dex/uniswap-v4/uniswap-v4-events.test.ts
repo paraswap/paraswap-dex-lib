@@ -1,22 +1,37 @@
+/* eslint-disable no-console */
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { Network } from '../../constants';
 import { UniswapV4Config } from '../uniswap-v4/config';
 import { DummyDexHelper } from '../../dex-helper';
-import { AbiItem } from 'web3-utils';
-import { decodeStateMultiCallResultWithRelativeBitmaps } from '../uniswap-v3/utils';
-import { Interface } from '@ethersproject/abi';
-import ERC20ABI from '../../abi/erc20.json';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { UniswapV4PoolManager } from './uniswap-v4-pool-manager';
+import { PoolManagerState } from './types';
 
-jest.setTimeout(300 * 1000);
+jest.setTimeout(500 * 1000);
 const dexKey = 'UniswapV4';
+
+async function fetchPoolManagerStateFromContract(
+  poolManager: UniswapV4PoolManager,
+  blockNumber: number,
+  poolAddress: string,
+): Promise<PoolManagerState> {
+  const message = `UniswapV4: ${poolAddress} blockNumber ${blockNumber}`;
+  console.log(`Fetching state ${message}`);
+  // Be careful to not request state prior to contract deployment
+  // Otherwise need to use manual state sourcing from multicall
+  // We had that mechanism, but removed it with this commit
+  // You can restore it, but better just to find block after state multicall
+  // deployment
+  const state = poolManager.generateState(blockNumber);
+  console.log(`Done ${message}`);
+  return state;
+}
 
 describe('UniswapV4 events', () => {
   const blockNumbers: { [eventName: string]: number[] } = {
-    ['Swap']: [],
-    ['Donate']: [],
-    ['Initialize']: [],
-    ['ModifyLiquidity']: [],
+    ['Initialize']: [21983404, 21983412, 21983413, 21983417, 21983421],
   };
 
   describe('Mainnet', () => {
@@ -28,43 +43,28 @@ describe('UniswapV4 events', () => {
         blockNumbers[event].forEach((blockNumber: number) => {
           it(`${event}:${blockNumber} - should return correct state`, async function () {
             const dexHelper = new DummyDexHelper(network);
-            // await dexHelper.init();
 
             const logger = dexHelper.getLogger(dexKey);
-
             const uniswapV4PoolManager = new UniswapV4PoolManager(
               dexHelper,
               dexKey,
-              new dexHelper.web3Provider.eth.Contract(
-                StateMulticallABI as AbiItem[],
-                config.stateMulticall,
-              ),
-              decodeStateMultiCallResultWithRelativeBitmaps,
-              new Interface(ERC20ABI),
-              config.factory,
-              poolFeeCode,
-              token0,
-              token1,
+              config.poolManager,
+              config.stateView,
+              config.subgraphURL,
               logger,
-              undefined,
-              config.initHash,
             );
 
-            // It is done in generateState. But here have to make it manually
-            uniswapV3Pool.poolAddress = poolAddress.toLowerCase();
-            uniswapV3Pool.addressesSubscribed[0] = poolAddress;
-
             await testEventSubscriber(
-              uniswapV3Pool,
-              uniswapV3Pool.addressesSubscribed,
+              uniswapV4PoolManager,
+              uniswapV4PoolManager.addressesSubscribed,
               (_blockNumber: number) =>
-                fetchPoolStateFromContract(
-                  uniswapV3Pool,
+                fetchPoolManagerStateFromContract(
+                  uniswapV4PoolManager,
                   _blockNumber,
-                  poolAddress,
+                  config.poolManager,
                 ),
               blockNumber,
-              `${dexKey}_${poolAddress}`,
+              `${dexKey}_${config.poolManager}`,
               dexHelper.provider,
             );
           });

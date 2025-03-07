@@ -1,31 +1,25 @@
-import { Address, NumberAsString } from '../../types';
-import { TickInfo } from '../uniswap-v3/types';
+import { Address } from '../../types';
+
+export type Tick = {
+  id: string;
+  tickIdx: string;
+  liquidityGross: string;
+  liquidityNet: string;
+};
 
 export type PoolManagerState = {
   _pools: PoolState[];
 };
 
-export type TickInfo = {
-  liquidityGross: bigint;
-  liquidityNet: bigint;
-  feeGrowthOutside0X128: bigint;
-  feeGrowthOutside1X128: bigint;
-};
-
-type PositionState = {
-  liquidity: bigint;
-  feeGrowthInside0LastX128: bigint;
-  feeGrowthInside1LastX128: bigint;
-};
-
 export type PoolState = {
-  slot0: string;
-  feeGrowthGlobal0X128: bigint;
-  feeGrowthGlobal1X128: bigint;
-  liquidity: bigint;
-  ticks: Record<NumberAsString, TickInfo>;
-  tickBitmap: Record<NumberAsString, bigint>;
-  positions: Record<NumberAsString, PositionState>;
+  id: string;
+  token0: Address;
+  token1: Address;
+  fee: string;
+  tickSpacing: string;
+  hooks: string;
+  tick?: number;
+  ticks?: Tick[];
 };
 
 export type UniswapV4Data = {
@@ -39,12 +33,27 @@ export type Pool = {
   key: PoolKey;
 };
 
+export type SubgraphPool = {
+  id: string;
+  fee: string;
+  hooks: string;
+  token0: {
+    address: string;
+  };
+  token1: {
+    address: string;
+  };
+  tick: string;
+  tickSpacing: string;
+  ticks: Tick[];
+};
+
 export type DexParams = {
   poolManager: Address;
   quoter: Address;
   router: Address;
   subgraphURL: string;
-  stateView: Address;
+  stateView: string;
 };
 
 export type PoolKey = {
@@ -58,4 +67,13 @@ export type PoolKey = {
   tickSpacing: string;
   // The hooks of the pool
   hooks: Address;
+
+  tick?: string;
+
+  ticks?: {
+    id: string;
+    tickIdx: string;
+    liquidityGross: string;
+    liquidityNet: string;
+  }[];
 };
