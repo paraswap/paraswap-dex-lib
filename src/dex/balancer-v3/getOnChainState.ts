@@ -241,6 +241,8 @@ const poolOnChain: Record<
       };
     },
   },
+  // nothing to encode/decode for this pool
+  // as all of the values are immutable and returned from the API
   ['GYROE']: {
     count: 0,
     ['encode']: (
