@@ -164,8 +164,8 @@ describe('UniswapV4 E2E', () => {
       const tokenASymbol: string = 'USDC';
       const tokenBSymbol: string = 'USDbC';
 
-      const tokenAAmount: string = '10000000';
-      const tokenBAmount: string = '10000000';
+      const tokenAAmount: string = '1000000000';
+      const tokenBAmount: string = '1000000000';
 
       testForNetwork(
         network,

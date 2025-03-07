@@ -7,13 +7,19 @@ export type Tick = {
   liquidityNet: string;
 };
 
+export type PoolManagerState = {
+  _pools: PoolState[];
+};
+
 export type PoolState = {
   id: string;
   token0: Address;
   token1: Address;
-  tickSpacing: number;
-  tick: number;
-  ticks: Tick[];
+  fee: string;
+  tickSpacing: string;
+  hooks: string;
+  tick?: number;
+  ticks?: Tick[];
 };
 
 export type UniswapV4Data = {

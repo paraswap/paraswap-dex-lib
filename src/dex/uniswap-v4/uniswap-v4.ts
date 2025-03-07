@@ -7,19 +7,14 @@ import {
   Token,
 } from '../../types';
 import { Logger } from 'log4js';
-import {
-  Network,
-  NULL_ADDRESS,
-  SUBGRAPH_TIMEOUT,
-  SwapSide,
-} from '../../constants';
+import { Network, NULL_ADDRESS, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { ExchangePrices, PoolPrices, PoolLiquidity } from '../../types';
 import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
 import { UniswapV4Config } from './config';
-import { Pool, UniswapV4Data, SubgraphPool } from './types';
+import { Pool, UniswapV4Data } from './types';
 import { BytesLike } from 'ethers';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
@@ -28,6 +23,7 @@ import { Interface } from '@ethersproject/abi';
 import { generalDecoder } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
 import { swapExactInputSingleCalldata } from './encoder';
+import { UniswapV4PoolManager } from './uniswap-v4-pool-manager';
 
 export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -36,7 +32,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   logger: Logger;
   protected quoterIface: Interface;
 
-  private pools: Pool[] = [];
+  private poolManager: UniswapV4PoolManager;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(UniswapV4Config);
@@ -45,19 +41,27 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
-    protected router = UniswapV4Config[dexKey][network].router,
-    protected quoter = UniswapV4Config[dexKey][network].quoter,
-    protected poolManager = UniswapV4Config[dexKey][network].poolManager,
-    protected subgraph = UniswapV4Config[dexKey][network].subgraphURL,
+    protected routerAddress = UniswapV4Config[dexKey][network].router,
+    protected quoterAddress = UniswapV4Config[dexKey][network].quoter,
+    protected poolManagerAddress = UniswapV4Config[dexKey][network].poolManager,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-
     this.quoterIface = new Interface(QuoterAbi);
+
+    this.poolManager = new UniswapV4PoolManager(
+      dexHelper,
+      dexKey,
+      network,
+      UniswapV4Config[dexKey][network].poolManager,
+      UniswapV4Config[dexKey][network].stateView,
+      UniswapV4Config[dexKey][network].subgraphURL,
+      this.logger,
+    );
   }
 
   async initializePricing(blockNumber: number) {
-    this.pools = await this.queryAllAvailablePools();
+    await this.poolManager.initialize(blockNumber);
   }
 
   async getPoolIdentifiers(
@@ -66,9 +70,10 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const pools = await this.getAvailablePoolsForPair(
+    const pools = await this.poolManager.getAvailablePoolsForPair(
       from.address.toLowerCase(),
       to.address.toLowerCase(),
+      blockNumber,
     );
 
     return pools.map(pool => pool.id);
@@ -84,9 +89,10 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   ): Promise<ExchangePrices<UniswapV4Data> | null> {
     if (side === SwapSide.BUY) return null;
 
-    const pools = await this.getAvailablePoolsForPair(
+    const pools: Pool[] = await this.poolManager.getAvailablePoolsForPair(
       from.address.toLowerCase(),
       to.address.toLowerCase(),
+      blockNumber,
     );
 
     const availablePools =
@@ -102,6 +108,10 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
 
       const prices = await this.queryPrice(zeroForOne, amounts, pool);
 
+      if (prices?.every(price => price === 0n || price === 1n)) {
+        return null;
+      }
+
       return {
         unit: BI_POWS[to.decimals],
         prices,
@@ -113,7 +123,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
           },
           zeroForOne,
         },
-        poolAddresses: [this.poolManager],
+        poolAddresses: [this.poolManagerAddress],
         exchange: this.dexKey,
         gasCost: 100_000,
         poolIdentifier: poolId,
@@ -121,8 +131,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     });
 
     const prices = await Promise.all(pricesPromises);
-
-    return prices;
+    return prices.filter(res => res !== null);
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
@@ -141,113 +150,13 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     return [];
   }
 
-  async queryAllAvailablePools(): Promise<Pool[]> {
-    let pools: SubgraphPool[] = [];
-    let curPage = 0;
-    const limit = 1000;
-    let currentPools: SubgraphPool[] =
-      await this.queryOnePageForAllAvailablePoolsFromSubgraph(
-        curPage * limit,
-        limit,
-      );
-    pools = pools.concat(currentPools);
-
-    while (currentPools.length === limit) {
-      currentPools = await this.queryOnePageForAllAvailablePoolsFromSubgraph(
-        curPage * limit,
-        limit,
-      );
-
-      pools = pools.concat(currentPools);
-      curPage++;
-    }
-
-    return pools.map(pool => ({
-      id: pool.id,
-      key: {
-        currency0: pool.token0.address,
-        currency1: pool.token1.address,
-        fee: pool.fee,
-        tickSpacing: pool.tickSpacing,
-        hooks: pool.hooks,
-        tick: pool.tick,
-        ticks: pool.ticks,
-      },
-    }));
-  }
-
-  async queryOnePageForAllAvailablePoolsFromSubgraph(
-    skip: number,
-    limit: number,
-  ): Promise<SubgraphPool[]> {
-    const ticksLimit = 100;
-
-    const poolsQuery = `query ($skip: Int!) {
-      pools(
-        orderBy: volumeUSD
-        orderDirection: desc
-        skip: $skip
-        first: ${limit}
-      ) {
-        id
-        fee: feeTier
-        tickSpacing
-        token0 {
-          address: id
-        }
-        token1 {
-          address: id
-        }
-        hooks
-        tick
-        ticks(first: ${ticksLimit}) {
-          id
-          liquidityGross
-          liquidityNet
-          tickIdx
-        }
-      }
-    }`;
-
-    const { data } = await this.dexHelper.httpRequest.querySubgraph<{
-      data: {
-        pools: SubgraphPool[];
-      };
-    }>(
-      this.subgraph,
-      {
-        query: poolsQuery,
-        variables: { skip: skip },
-      },
-      { timeout: SUBGRAPH_TIMEOUT },
-    );
-
-    return data.pools;
-  }
-
-  getAvailablePoolsForPair(srcToken: Address, destToken: Address): Pool[] {
-    const isEthSrc = isETHAddress(srcToken);
-    const isEthDest = isETHAddress(destToken);
-
-    const src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
-    const dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
-
-    const pools = this.pools.filter(
-      pool =>
-        (pool.key.currency0 === src && pool.key.currency1 === dest) ||
-        (pool.key.currency0 === dest && pool.key.currency1 === src),
-    );
-
-    return pools;
-  }
-
   async queryPrice(
     zeroForOne: boolean,
     amounts: bigint[],
     pool: Pool,
   ): Promise<bigint[]> {
     const calls = amounts.map(amount => ({
-      target: this.quoter,
+      target: this.quoterAddress,
       callData: this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
         {
           poolKey: pool.key,
@@ -295,7 +204,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       needWrapNative: this.needWrapNative,
       dexFuncHasRecipient: true,
       exchangeData,
-      targetExchange: this.router,
+      targetExchange: this.routerAddress,
       permit2Approval: true,
       returnAmountPos: undefined,
     };
