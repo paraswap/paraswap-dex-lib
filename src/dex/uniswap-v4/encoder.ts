@@ -3,6 +3,8 @@ import { PoolKey } from './types';
 import { Address } from '../../types';
 import RouterAbi from '../../abi/uniswap-v4/router.abi.json';
 import { Interface } from '@ethersproject/abi';
+import { isETHAddress } from '../../utils';
+import { NULL_ADDRESS } from '../../constants';
 
 const routerIface = new Interface(RouterAbi);
 
@@ -106,14 +108,22 @@ export function swapExactInputSingleCalldata(
   const settle = ethers.utils.defaultAbiCoder.encode(
     ['address', 'uint256', 'bool'],
     // srcToken, amountIn (`OPEN_DELTA` to settle all needed funds), takeFundsFromMsgSender (Executor in our case)
-    [srcToken, ActionConstants.OPEN_DELTA, true],
+    [
+      isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,
+      ActionConstants.OPEN_DELTA,
+      true,
+    ],
   );
 
   // encode TAKE
   const take = ethers.utils.defaultAbiCoder.encode(
     ['address', 'address', 'uint256'],
     // destToken, recipient, amountOut (`OPEN_DELTA` to take all funds)
-    [destToken, recipient, ActionConstants.OPEN_DELTA],
+    [
+      isETHAddress(destToken) ? NULL_ADDRESS : destToken,
+      recipient,
+      ActionConstants.OPEN_DELTA,
+    ],
   );
 
   const input = ethers.utils.defaultAbiCoder.encode(

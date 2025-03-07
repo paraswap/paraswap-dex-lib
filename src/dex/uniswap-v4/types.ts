@@ -1,11 +1,25 @@
 import { Address } from '../../types';
 
+export type Tick = {
+  id: string;
+  tickIdx: string;
+  liquidityGross: string;
+  liquidityNet: string;
+};
+
+export type PoolManagerState = {
+  _pools: PoolState[];
+};
+
 export type PoolState = {
   id: string;
   token0: Address;
   token1: Address;
-  tickSpacing: number;
-  tick: number;
+  fee: string;
+  tickSpacing: string;
+  hooks: string;
+  tick?: number;
+  ticks?: Tick[];
 };
 
 export type UniswapV4Data = {
@@ -17,6 +31,21 @@ export type UniswapV4Data = {
 export type Pool = {
   id: string;
   key: PoolKey;
+};
+
+export type SubgraphPool = {
+  id: string;
+  fee: string;
+  hooks: string;
+  token0: {
+    address: string;
+  };
+  token1: {
+    address: string;
+  };
+  tick: string;
+  tickSpacing: string;
+  ticks: Tick[];
 };
 
 export type DexParams = {
@@ -38,4 +67,13 @@ export type PoolKey = {
   tickSpacing: string;
   // The hooks of the pool
   hooks: Address;
+
+  tick?: string;
+
+  ticks?: {
+    id: string;
+    tickIdx: string;
+    liquidityGross: string;
+    liquidityNet: string;
+  }[];
 };
