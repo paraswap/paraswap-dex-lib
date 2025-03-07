@@ -1,4 +1,4 @@
-import { BufferState } from '@balancer-labs/balancer-maths';
+import { BufferState, GyroECLPImmutable } from '@balancer-labs/balancer-maths';
 import { Address } from '../../types';
 import { HookConfig } from './hooks/balancer-hook-event-subscriber';
 
@@ -16,7 +16,7 @@ export type CommonImmutablePoolState = {
   hookAddress: string | undefined;
   hookType: string | undefined;
   supportsUnbalancedLiquidity: boolean;
-};
+} & GyroECLPImmutable;
 
 // Mutable data types available on all pools (Available via onchain calls/events)
 export interface CommonMutableState {

@@ -1,4 +1,6 @@
 /* eslint-disable no-console */
+import { Token } from '../../types';
+
 // Note - this is currently needed because queries won't work with multicall but should be updated in future
 export async function checkOnChainPricingNonMulti(
   network: number,
@@ -196,4 +198,33 @@ function getQuerySwapMultiTokenCalldata(
         ),
       };
     });
+}
+
+export async function testPricesVsOnchain(
+  balancerV3: BalancerV3,
+  network: number,
+  amounts: bigint[],
+  srcToken: Token,
+  dstToken: Token,
+  side: SwapSide,
+  blockNumber: number,
+  limitPools: string[],
+) {
+  const prices = await balancerV3.getPricesVolume(
+    srcToken,
+    dstToken,
+    amounts,
+    side,
+    blockNumber,
+    limitPools,
+  );
+  expect(prices).not.toBeNull();
+  await checkOnChainPricingNonMulti(
+    network,
+    side,
+    balancerV3,
+    blockNumber,
+    prices as ExchangePrices<BalancerV3Data>,
+    amounts,
+  );
 }

@@ -60,6 +60,7 @@ function testForNetwork(
   tokenBAmount: string,
   nativeTokenAmount: string,
   testNative: boolean,
+  poolIds?: string[],
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -68,6 +69,8 @@ function testForNetwork(
   const tokens = Tokens[network];
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
+
+  const poolIdentifiers = poolIds ? { [dexKey]: poolIds } : undefined;
 
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
@@ -92,6 +95,7 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  poolIdentifiers,
                 );
               });
               it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
@@ -105,6 +109,7 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  poolIdentifiers,
                 );
               });
             }
@@ -119,6 +124,7 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                poolIdentifiers,
               );
             });
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
@@ -132,6 +138,7 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                poolIdentifiers,
               );
             });
           });
@@ -205,6 +212,27 @@ describe('BalancerV3 E2E', () => {
         tokenBAmount,
         nativeTokenAmount,
         false,
+      );
+    });
+
+    describe.only('GyroE Path', () => {
+      const tokenASymbol: string = 'bal';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+        ['0x80fd5bc9d4fa6c22132f8bb2d9d30b01c3336fb3'],
       );
     });
   });
