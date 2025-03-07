@@ -8,12 +8,7 @@ import {
   DexExchangeParam,
   NumberAsString,
 } from '../../types';
-import {
-  SwapSide,
-  Network,
-  FETCH_POOL_IDENTIFIER_TIMEOUT,
-  ETHER_ADDRESS,
-} from '../../constants';
+import { SwapSide, Network, ETHER_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
 import { Context, IDex } from '../../dex/idex';
@@ -42,7 +37,6 @@ import { Interface } from '@ethersproject/abi';
 import CoreABI from '../../abi/ekubo/core.json';
 import DataFetcherABI from '../../abi/ekubo/data-fetcher.json';
 import { BigNumber, Contract } from 'ethers';
-import { setTimeout } from 'node:timers/promises';
 import { FULL_RANGE_TICK_SPACING } from './pools/math/tick';
 import { hexlify } from 'ethers/lib/utils';
 import RouterABI from '../../abi/ekubo/router.json';
@@ -137,8 +131,8 @@ const allPoolsSchema = Joi.array<
   }),
 );
 
-const MIN_TICK_SPACINGS_PER_POOL = 10;
-const MAX_POOL_BATCH_COUNT = 5;
+const MIN_TICK_SPACINGS_PER_POOL = 2;
+const MAX_BATCH_SIZE = 100;
 
 const POOL_MAP_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -591,12 +585,9 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     for (
       let batchStart = 0;
       batchStart < poolKeys.length;
-      batchStart += MAX_POOL_BATCH_COUNT
+      batchStart += MAX_BATCH_SIZE
     ) {
-      const batch = poolKeys.slice(
-        batchStart,
-        batchStart + MAX_POOL_BATCH_COUNT,
-      );
+      const batch = poolKeys.slice(batchStart, batchStart + MAX_BATCH_SIZE);
 
       promises.push(
         (async () => {
