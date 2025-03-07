@@ -22,6 +22,8 @@ export type CommonImmutablePoolState = {
 export interface CommonMutableState {
   tokenRates: bigint[];
   erc4626Rates: (bigint | null)[];
+  erc4626MaxDeposit: (bigint | null)[];
+  erc4626MaxMint: (bigint | null)[];
   balancesLiveScaled18: bigint[];
   swapFee: bigint;
   aggregateSwapFee: bigint;
@@ -86,4 +88,6 @@ export type TokenInfo = {
   mainToken: string;
   index: number;
   rate: bigint;
+  maxDeposit: bigint;
+  maxMint: bigint;
 };
