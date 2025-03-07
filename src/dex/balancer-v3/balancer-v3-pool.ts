@@ -77,6 +77,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       ]),
       ['ERC4626']: new Interface([
         'function convertToAssets(uint256 shares) external view returns (uint256 assets)',
+        'function maxDeposit(address receiver) external view returns (uint256 maxAssets)',
+        'function maxMint(address receiver) external view returns (uint256 maxShares)',
       ]),
     };
 
@@ -464,15 +466,19 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         }
       }
 
-      outputAmountRaw = this.vault.swap(
-        {
-          ...step.swapInput,
-          amountRaw: amount,
-          swapKind,
-        },
-        step.poolState,
-        hookState,
-      );
+      try {
+        outputAmountRaw = this.vault.swap(
+          {
+            ...step.swapInput,
+            amountRaw: amount,
+            swapKind,
+          },
+          step.poolState,
+          hookState,
+        );
+      } catch (err) {
+        outputAmountRaw = 0n;
+      }
       // Next step uses output from previous step as input
       amount = outputAmountRaw;
     }
@@ -502,10 +508,23 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const poolRates = await this.getPoolRates(poolState);
 
     // Update each pools rate
-    poolRates.forEach(({ poolAddress, tokenRates, erc4626Rates }, i) => {
-      poolState[poolAddress].tokenRates = tokenRates;
-      poolState[poolAddress].erc4626Rates = erc4626Rates;
-    });
+    poolRates.forEach(
+      (
+        {
+          poolAddress,
+          tokenRates,
+          erc4626Rates,
+          erc4626MaxDeposit,
+          erc4626MaxMint,
+        },
+        i,
+      ) => {
+        poolState[poolAddress].tokenRates = tokenRates;
+        poolState[poolAddress].erc4626Rates = erc4626Rates;
+        poolState[poolAddress].erc4626MaxDeposit = erc4626MaxDeposit;
+        poolState[poolAddress].erc4626MaxMint = erc4626MaxMint;
+      },
+    );
 
     // Update state
     const blockNumber = await this.dexHelper.provider.getBlockNumber();
@@ -572,7 +591,15 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         tokenRates: tokenRateResult.tokenRates.map((r: string) => BigInt(r)),
         erc4626Rates: poolState[address].tokens.map(t => {
           if (!tokensWithRates[t]) return null;
-          return tokensWithRates[t];
+          return tokensWithRates[t].rate;
+        }),
+        erc4626MaxDeposit: poolState[address].tokens.map(t => {
+          if (!tokensWithRates[t]) return null;
+          return tokensWithRates[t].maxDeposit;
+        }),
+        erc4626MaxMint: poolState[address].tokens.map(t => {
+          if (!tokensWithRates[t]) return null;
+          return tokensWithRates[t].maxMint;
         }),
       };
     });
@@ -594,6 +621,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         underlyingToken: null,
         index: tokenIndex,
         rate: poolState.tokenRates[tokenIndex],
+        maxDeposit: 0n, // N/A As non-erc4626
+        maxMint: 0n,
       };
     }
 
@@ -616,6 +645,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           underlyingToken: tokenAddress,
           index: tokenIndex,
           rate: poolState.erc4626Rates[tokenIndex]!,
+          maxDeposit: poolState.erc4626MaxDeposit[tokenIndex]!,
+          maxMint: poolState.erc4626MaxMint[tokenIndex]!,
         };
       }
     }
@@ -702,6 +733,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         rate: token.rate,
         poolAddress: token.mainToken,
         tokens: [token.mainToken, token.underlyingToken], // staticToken & underlying
+        maxDeposit: token.maxDeposit,
+        maxMint: token.maxMint,
       },
     };
   }
@@ -725,6 +758,8 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
         rate: token.rate,
         poolAddress: token.mainToken,
         tokens: [token.mainToken, token.underlyingToken], // staticToken & underlying
+        maxDeposit: token.maxDeposit,
+        maxMint: token.maxMint,
       },
     };
   }
