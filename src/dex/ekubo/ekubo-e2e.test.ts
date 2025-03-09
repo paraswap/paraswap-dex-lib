@@ -94,8 +94,8 @@ describe('Ekubo E2E', () => {
     const tokenASymbol: string = 'TestToken';
     const tokenBSymbol: string = 'TestToken2';
 
-    const tokenAAmount: string = '10000';
-    const tokenBAmount: string = '10000';
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '1000000000000000000';
     const nativeTokenAmount = '10000';
 
     testForNetwork(

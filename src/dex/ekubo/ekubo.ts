@@ -93,24 +93,6 @@ const tokenPairSchema = Joi.object<{
   ),
 });
 
-const topPairsSchema = Joi.object<{
-  topPairs: {
-    token0: string;
-    token1: string;
-    tvl0_total: string;
-    tvl1_total: string;
-  }[];
-}>({
-  topPairs: Joi.array().items(
-    Joi.object({
-      token0: Joi.string(),
-      token1: Joi.string(),
-      tvl0_total: Joi.string(),
-      tvl1_total: Joi.string(),
-    }),
-  ),
-});
-
 const allPoolsSchema = Joi.array<
   {
     core_address: string;
@@ -321,7 +303,9 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
           if (isExactOut && quote.consumedAmount !== inputAmount) {
             this.logger.debug(
-              "Pool doesn't have enough liquidity to support exact-out swap",
+              `Pool ${poolId} doesn't have enough liquidity to support exact-out swap of ${amount} ${
+                amountToken.symbol ?? amountToken.address
+              }`,
             );
 
             // There doesn't seem to be a way to skip just this one price.
@@ -385,73 +369,63 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    const topPairsUrl = `${this.config.apiUrl}/overview/pairs`;
-    const topPairsRes = await this.dexHelper.httpRequest.get(topPairsUrl);
-
-    const { error, value } = topPairsSchema.validate(topPairsRes, {
-      allowUnknown: true,
-      presence: 'required',
-    });
-
-    if (typeof error !== 'undefined') {
-      throw new Error(`validating API response from ${topPairsUrl}: ${error}`);
+    // The integration tests skip initializePricing, hence this check
+    if (this.pools.size === 0) {
+      await this.updatePoolMap(await this.dexHelper.provider.getBlockNumber());
     }
 
-    const poolLiquidities: PoolLiquidity[] = [];
+    const token = convertParaSwapToEkubo(tokenAddress);
 
-    await Promise.allSettled(
-      value.topPairs.map(pair =>
-        (async () => {
-          if (pair.tvl0_total === '0' && pair.tvl1_total === '0') {
-            return;
-          }
+    const settledPromises = await Promise.allSettled(
+      Array.from(this.pools.entries()).map(async ([poolId, pool]) => {
+        const tokenPair = [pool.key.token0, pool.key.token1];
+        if (!tokenPair.includes(token)) {
+          return null;
+        }
 
-          const tokenPair = [BigInt(pair.token0), BigInt(pair.token1)];
-          const [token0, token1] = tokenPair;
+        const tvlRes = pool.computeTvl();
+        if (tvlRes === null) {
+          throw new Error(`failed to compute TVL for pool ${poolId}`);
+        }
 
-          if (!tokenPair.includes(convertParaSwapToEkubo(tokenAddress))) {
-            return;
-          }
+        const [info0, info1] = await Promise.all(
+          tokenPair.map((ekuboToken, i) =>
+            (async () => {
+              const paraswapToken = convertEkuboToParaSwap(ekuboToken);
+              const decimals = await this.getDecimals(paraswapToken);
 
-          const poolsInfo = await this.fetchPairPoolsInfo(
-            hexStringTokenPair(token0, token1),
-          );
+              const token = {
+                address: paraswapToken,
+                decimals,
+              };
 
-          for (const poolInfo of poolsInfo) {
-            const [info0, info1] = await Promise.all(
-              tokenPair.map((ekuboToken, i) =>
-                (async () => {
-                  const paraswapToken = convertEkuboToParaSwap(ekuboToken);
-                  const decimals = await this.getDecimals(paraswapToken);
+              return {
+                token,
+                tvl: await this.dexHelper.getTokenUSDPrice(token, tvlRes[i]),
+              };
+            })(),
+          ),
+        );
 
-                  const token = {
-                    address: paraswapToken,
-                    decimals,
-                  };
-
-                  return {
-                    token,
-                    tvl: await this.dexHelper.getTokenUSDPrice(
-                      token,
-                      BigInt(poolInfo[`tvl${i as 0 | 1}_total`]),
-                    ),
-                  };
-                })(),
-              ),
-            );
-
-            poolLiquidities.push({
-              exchange: this.dexKey,
-              address: this.config.core,
-              connectorTokens: [
-                (info0.token.address !== tokenAddress ? info0 : info1).token,
-              ],
-              liquidityUSD: info0.tvl + info1.tvl,
-            });
-          }
-        })(),
-      ),
+        return {
+          exchange: this.dexKey,
+          address: this.config.core,
+          connectorTokens: [
+            (info0.token.address !== tokenAddress ? info0 : info1).token,
+          ],
+          liquidityUSD: info0.tvl + info1.tvl,
+        };
+      }),
     );
+
+    const poolLiquidities = settledPromises.flatMap(res => {
+      if (res.status === 'rejected') {
+        this.logger.error('TVL computation failed:', res.reason);
+        return [];
+      }
+
+      return res.value ? [res.value] : [];
+    });
 
     poolLiquidities
       .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
@@ -601,9 +575,11 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
             );
 
           return fetchedData.map((data, i) => {
-            const initialState = PoolState.fromQuoter(data);
-
             const poolKey = poolKeys[batchStart + i];
+            const initialState = PoolState.fromQuoter(
+              data,
+              poolKey.config.tickSpacing === FULL_RANGE_TICK_SPACING,
+            );
             const poolId = poolKey.string_id;
             const extension = poolKey.config.extension;
 
@@ -648,7 +624,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
   private async fetchAllPoolKeys(): Promise<PoolKey[]> {
     const res = await this.dexHelper.httpRequest.get(
-      `${this.config.apiUrl}/pools`,
+      `${this.config.apiUrl}/v1/poolKeys`,
     );
 
     const { error, value } = allPoolsSchema.validate(res, {
@@ -678,27 +654,5 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
             ),
           ),
       );
-  }
-
-  private async fetchPairPoolsInfo(pair: string): Promise<PairInfo[]> {
-    const res = await this.dexHelper.httpRequest.get(
-      `${this.config.apiUrl}/pair/${pair}/pools`,
-    );
-
-    const { error, value } = tokenPairSchema.validate(res, {
-      allowUnknown: true,
-      presence: 'required',
-    });
-
-    if (typeof error !== 'undefined') {
-      throw new Error(`validating API response: ${error}`);
-    }
-
-    return value.topPools.filter(
-      res =>
-        this.supportedExtensions.includes(BigInt(res.extension)) &&
-        BigInt(this.core.address) === BigInt(res.core_address) &&
-        (res.tvl0_total !== '0' || res.tvl1_total !== '0'),
-    );
   }
 }

@@ -9,6 +9,13 @@ import _ from 'lodash';
 import { DeepReadonly, DeepWritable } from 'ts-essentials';
 import { hexStringTokenPair } from './utils';
 import { floatSqrtRatioToFixed } from './pools/math/price';
+import {
+  MAX_TICK,
+  MIN_SQRT_RATIO,
+  MIN_TICK,
+  toSqrtRatio,
+} from './pools/math/tick';
+import { amount0Delta, amount1Delta } from './pools/math/delta';
 
 export type Pool = {
   key: PoolKey;
@@ -83,7 +90,7 @@ export namespace PoolState {
     readonly checkedTicksBounds: readonly [number, number];
   };
 
-  export function fromQuoter(data: QuoteData): Object {
+  export function fromQuoter(data: QuoteData, isFullRange: boolean): Object {
     const sortedTicks = data.ticks.map(({ number, liquidityDelta }) => ({
       number,
       liquidityDelta: liquidityDelta.toBigInt(),
@@ -91,6 +98,10 @@ export namespace PoolState {
     const liquidity = data.liquidity.toBigInt();
 
     const sqrtRatioFloat = data.sqrtRatio.toBigInt();
+
+    const checkedTicksBounds: [number, number] = isFullRange
+      ? [MIN_TICK, MAX_TICK]
+      : [data.minTick, data.maxTick];
 
     const state: Object = {
       sqrtRatio:
@@ -101,7 +112,7 @@ export namespace PoolState {
       activeTick: data.tick,
       sortedTicks,
       activeTickIndex: null, // This will be filled in
-      checkedTicksBounds: [data.minTick, data.maxTick],
+      checkedTicksBounds,
     };
 
     addLiquidityCutoffs(state);
@@ -262,6 +273,41 @@ export namespace PoolState {
         nearestTick!.liquidityDelta = newDelta;
       }
     }
+  }
+
+  export function computeTvl(state: DeepReadonly<Object>): [bigint, bigint] {
+    const stateSqrtRatio = state.sqrtRatio;
+
+    let [tvl0, tvl1] = [0n, 0n];
+    let liquidity = 0n;
+    let sqrtRatio = MIN_SQRT_RATIO;
+
+    for (const tick of state.sortedTicks) {
+      const tickSqrtRatio = toSqrtRatio(tick.number);
+
+      const minAmount1SqrtRatio =
+        stateSqrtRatio > tickSqrtRatio ? tickSqrtRatio : stateSqrtRatio;
+      const maxAmount0SqrtRatio =
+        stateSqrtRatio > sqrtRatio ? stateSqrtRatio : sqrtRatio;
+
+      if (sqrtRatio < minAmount1SqrtRatio) {
+        tvl1 += amount1Delta(sqrtRatio, minAmount1SqrtRatio, liquidity, false);
+      }
+
+      if (maxAmount0SqrtRatio < tickSqrtRatio) {
+        tvl0 += amount0Delta(
+          maxAmount0SqrtRatio,
+          tickSqrtRatio,
+          liquidity,
+          false,
+        );
+      }
+
+      sqrtRatio = tickSqrtRatio;
+      liquidity += tick.liquidityDelta;
+    }
+
+    return [tvl0, tvl1];
   }
 }
 

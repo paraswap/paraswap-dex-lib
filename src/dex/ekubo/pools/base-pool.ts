@@ -10,6 +10,7 @@ import _ from 'lodash';
 import { computeStep, isPriceIncreasing } from './math/swap';
 import {
   approximateNumberOfTickSpacingsCrossed,
+  FULL_RANGE_TICK_SPACING,
   MAX_SQRT_RATIO,
   MIN_SQRT_RATIO,
   toSqrtRatio,
@@ -90,7 +91,10 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
     const data = await this.dataFetcher.getQuoteData([this.key.toAbi()], 10, {
       blockTag: blockNumber,
     });
-    return PoolState.fromQuoter(data[0]);
+    return PoolState.fromQuoter(
+      data[0],
+      this.key.config.tickSpacing === FULL_RANGE_TICK_SPACING,
+    );
   }
 
   handleSwappedEvent(
@@ -245,6 +249,15 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
           ? 0
           : Math.floor(tickSpacingsCrossed / initializedTicksCrossed),
     };
+  }
+
+  public computeTvl(): [bigint, bigint] | null {
+    const state = this.getStaleState();
+    if (state === null) {
+      return null;
+    }
+
+    return PoolState.computeTvl(state);
   }
 }
 
