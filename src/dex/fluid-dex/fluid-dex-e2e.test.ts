@@ -4,55 +4,12 @@ dotenv.config();
 
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { testE2E } from '../../../tests/utils-e2e';
-import {
-  Tokens,
-  Holders,
-  NativeTokenSymbols,
-} from '../../../tests/constants-e2e';
+import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { generateConfig } from '../../config';
 import { CollateralReserves, DebtReserves, DexLimits } from './types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { FluidDex } from './fluid-dex';
-
-/*
-  README
-  ======
-
-  This test script should add e2e tests for FluidDex. The tests
-  should cover as many cases as possible. Most of the DEXes follow
-  the following test structure:
-    - DexName
-      - ForkName + Network
-        - ContractMethod
-          - ETH -> Token swap
-          - Token -> ETH swap
-          - Token -> Token swap
-
-  The template already enumerates the basic structure which involves
-  testing simpleSwap, multiSwap, megaSwap contract methods for
-  ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace tokenA and
-  tokenB with any two highly liquid tokens on FluidDex for the tests
-  to work. If the tokens that you would like to use are not defined in
-  Tokens or Holders map, you can update the './tests/constants-e2e'
-
-  Other than the standard cases that are already added by the template
-  it is highly recommended to add test cases which could be specific
-  to testing FluidDex (Eg. Tests based on poolType, special tokens,
-  etc).
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-e2e.test.ts`
-
-  e2e tests use the Tenderly fork api. Please add the following to your
-  .env file:
-  TENDERLY_TOKEN=Find this under Account>Settings>Authorization.
-  TENDERLY_ACCOUNT_ID=Your Tenderly account name.
-  TENDERLY_PROJECT=Name of a Tenderly project you have created in your
-  dashboard.
-
-  (This comment should be removed from the final implementation)
-*/
 
 function testForNetwork(
   network: Network,
@@ -66,8 +23,13 @@ function testForNetwork(
     generateConfig(network).privateHttpProvider,
     network,
   );
+
   const tokens = Tokens[network];
   const holders = Holders[network];
+
+  // Create FluidDex instance to check reserves
+  const dexHelper = new DummyDexHelper(network);
+  const fluidDex = new FluidDex(network, dexKey, dexHelper);
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
@@ -79,11 +41,11 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: string) => {
           describe(`${contractMethod}`, () => {
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
               await testE2E(
-                tokens[tokenASymbol],
                 tokens[tokenBSymbol],
-                holders[tokenASymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
                 tokenBAmount,
                 side,
                 dexKey,
@@ -92,12 +54,13 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
-                tokens[tokenBSymbol],
                 tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                tokenBAmount,
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                tokenAAmount,
                 side,
                 dexKey,
                 contractMethod as ContractMethod,
@@ -118,12 +81,11 @@ describe('FluidDex E2E', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    describe('ETH -> INST', () => {
-      const tokenASymbol: string = 'ETH';
-      const tokenBSymbol: string = 'INST';
-
-      const tokenAAmount: string = '100000000000000';
-      const tokenBAmount: string = '100000000000000';
+    describe('limit:FLUID -> ETH', () => {
+      const tokenASymbol: string = 'FLUID';
+      const tokenBSymbol: string = 'ETH';
+      const tokenAAmount: string = '16009704732281037900';
+      const tokenBAmount: string = '7992306873300550562400';
 
       testForNetwork(
         network,
@@ -140,7 +102,7 @@ describe('FluidDex E2E', () => {
       const tokenBSymbol: string = 'ETH';
 
       const tokenAAmount: string = '100000000000000';
-      const tokenBAmount: string = '100000000000000';
+      const tokenBAmount: string = '3500000000000000000';
 
       testForNetwork(
         network,
@@ -158,6 +120,44 @@ describe('FluidDex E2E', () => {
 
       const tokenAAmount: string = '10000';
       const tokenBAmount: string = '1000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    describe('ETH -> wstETH', () => {
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'ETH';
+
+      const tokenAAmount: string = '1000000000000000';
+      const tokenBAmount: string = '1000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('ETH -> weETH', () => {
+      const tokenBSymbol: string = 'ETH';
+      const tokenASymbol: string = 'weETH';
+
+      const tokenAAmount: string = '1000000000000000';
+      const tokenBAmount: string = '1000000000000000';
 
       testForNetwork(
         network,
@@ -190,6 +190,9 @@ function NewDebtReservesOne(): DebtReserves {
     token1ImaginaryReserves: BigInt(184868330048879109),
   };
 }
+
+const centerPriceTight: bigint = 3401944443797854601871360n;
+const centerPriceWide: bigint = 1190081051944310368000000000n;
 
 const limitsTight: DexLimits = {
   withdrawableToken0: {
@@ -237,10 +240,6 @@ const limitsWide: DexLimits = {
   },
 };
 
-const ErrInsufficientBorrowable = new Error('insufficient borrowable');
-const ErrInsufficientMaxPrice = new Error('insufficient max price');
-const ErrInsufficientReserve = new Error('insufficient reserve');
-
 describe('TestPoolSimulator_SwapInLimits', () => {
   const network = Network.MAINNET;
   const dexHelper = new DummyDexHelper(network);
@@ -249,21 +248,18 @@ describe('TestPoolSimulator_SwapInLimits', () => {
 
   it('when limits hit', () => {
     let outAmt;
-    try {
-      outAmt = fluidDex.swapInAdjusted(
-        true,
-        BigInt(1e15),
-        NewColReservesOne(),
-        NewDebtReservesOne(),
-        100n,
-        18,
-        limitsTight,
-        Math.floor(Date.now() / 1000) - 10,
-      );
-      expect(outAmt).toEqual(0n);
-    } catch (err: any) {
-      expect(err.message).toEqual(ErrInsufficientBorrowable.message);
-    }
+    outAmt = fluidDex.swapInAdjusted(
+      true,
+      BigInt(1e15),
+      NewColReservesOne(),
+      NewDebtReservesOne(),
+      100n,
+      18,
+      limitsTight,
+      BigInt(centerPriceTight),
+      Math.floor(Date.now() / 1000) - 10,
+    );
+    expect(outAmt).toEqual(0n);
   });
 
   it('when expanded', () => {
@@ -275,47 +271,41 @@ describe('TestPoolSimulator_SwapInLimits', () => {
       100n,
       18,
       limitsTight,
+      BigInt(centerPriceTight),
       Math.floor(Date.now() / 1000) - 6000,
     );
-    console.log('outAmt: ', outAmt);
-    expect(outAmt?.toString()).toEqual('998262697204710');
+    expect(outAmt?.toString()).toEqual('998163044346107');
   });
 
   it('when price diff hit', () => {
     let outAmt;
-    try {
-      outAmt = fluidDex.swapInAdjusted(
-        true,
-        BigInt(3e16),
-        NewColReservesOne(),
-        NewDebtReservesOne(),
-        100n,
-        18,
-        limitsWide,
-        Math.floor(Date.now() / 1000) - 10,
-      );
-      expect(outAmt).toEqual(0n);
-    } catch (err: any) {
-      expect(err.message).toEqual(ErrInsufficientMaxPrice.message);
-    }
+    outAmt = fluidDex.swapInAdjusted(
+      true,
+      BigInt(3e16),
+      NewColReservesOne(),
+      NewDebtReservesOne(),
+      100n,
+      18,
+      limitsWide,
+      BigInt(centerPriceWide),
+      Math.floor(Date.now() / 1000) - 10,
+    );
+    expect(outAmt).toEqual(0n);
   });
 
   it('when reserves limit is hit', () => {
     let outAmt;
-    try {
-      outAmt = fluidDex.swapInAdjusted(
-        true,
-        BigInt(5e16),
-        NewColReservesOne(),
-        NewDebtReservesOne(),
-        100n,
-        18,
-        limitsWide,
-        Math.floor(Date.now() / 1000) - 10,
-      );
-      expect(outAmt).toEqual(0n);
-    } catch (err: any) {
-      expect(err.message).toEqual(ErrInsufficientReserve.message);
-    }
+    outAmt = fluidDex.swapInAdjusted(
+      true,
+      BigInt(5e16),
+      NewColReservesOne(),
+      NewDebtReservesOne(),
+      100n,
+      18,
+      limitsWide,
+      BigInt(centerPriceWide),
+      Math.floor(Date.now() / 1000) - 10,
+    );
+    expect(outAmt).toEqual(0n);
   });
 });

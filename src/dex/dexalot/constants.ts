@@ -2,6 +2,8 @@ import BigNumber from 'bignumber.js';
 
 export const DEXALOT_PRICES_CACHES_TTL_S = 5;
 
+export const DEXALOT_PAIRS_CACHES_TTL_S = 21 * 60; // 21 mins
+
 export const DEXALOT_TOKENS_CACHES_TTL_S = 21 * 60; // 21 mins
 
 export const DEXALOT_BLACKLIST_CACHES_TTL_S = 180 * 60; // 3 hours

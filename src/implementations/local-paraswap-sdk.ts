@@ -117,7 +117,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     transferFees?: TransferFeeParams,
     forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate> {
-    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    const blockNumber = await this.dexHelper.provider.getBlockNumber();
     const poolIdentifiers =
       _poolIdentifiers ||
       (await this.pricingHelper.getPoolIdentifiers(

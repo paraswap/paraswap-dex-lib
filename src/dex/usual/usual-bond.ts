@@ -1,12 +1,12 @@
 import {
   Address,
-  NumberAsString,
-  DexExchangeParam,
   DexConfigMap,
+  DexExchangeParam,
+  NumberAsString,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { Network, SwapSide } from '../../constants';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { UsualBondData, DexParams } from './types';
+import { DexParams, UsualBondData } from './types';
 import { Interface, JsonFragment } from '@ethersproject/abi';
 import USD0PP_ABI from '../../abi/usual-bond/usd0pp.abi.json';
 import { Usual } from './usual';
@@ -53,7 +53,7 @@ export class UsualBond extends Usual {
   ): Promise<DexExchangeParam> {
     if (this.isFromToken(srcToken) && this.isToToken(destToken)) {
       const exchangeData = this.usd0ppIface.encodeFunctionData('mint', [
-        srcAmount,
+        side === SwapSide.SELL ? srcAmount : destAmount,
       ]);
 
       return {

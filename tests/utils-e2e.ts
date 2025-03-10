@@ -14,6 +14,7 @@ import {
   TenderlySimulation,
   TransactionSimulator,
 } from './tenderly-simulation';
+import { TenderlySimulatorNew, StateOverride } from './tenderly-simulation-new';
 import {
   SwapSide,
   ETHER_ADDRESS,
@@ -124,7 +125,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   constructor(
     protected network: number,
     dexKeys: string | string[],
-    rpcUrl: string,
+    rpcUrl?: string,
   ) {
     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
     this.paraSwap = constructSimpleSDK({
@@ -214,7 +215,7 @@ class APIParaswapSDK implements IParaSwapSDK {
     const minMaxAmount = _minMaxAmount.toString();
     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
 
-    return await this.transactionBuilder.build({
+    return (await this.transactionBuilder.build({
       priceRoute,
       minMaxAmount: minMaxAmount.toString(),
       userAddress,
@@ -222,7 +223,11 @@ class APIParaswapSDK implements IParaSwapSDK {
       partnerFeePercent: '0',
       deadline: deadline.toString(),
       uuid: uuid(),
-    });
+    })) as TxObject;
+  }
+
+  async releaseResources(): Promise<void> {
+    await this.pricingHelper.releaseResources(this.dexKeys);
   }
 }
 
@@ -446,7 +451,7 @@ export async function testE2E(
       formatDeployMessage(
         'adapter',
         contractAddress,
-        ts.forkId,
+        ts.vnetId,
         testContractName || '',
         testContractRelativePath || '',
       ),
@@ -485,9 +490,8 @@ export async function testE2E(
   }
 
   if (paraswap.dexHelper?.replaceProviderWithRPC) {
-    paraswap.dexHelper?.replaceProviderWithRPC(
-      `https://rpc.tenderly.co/fork/${ts.forkId}`,
-    );
+    console.log('ts.rpcURL: ', ts.rpcURL);
+    paraswap.dexHelper?.replaceProviderWithRPC(ts.rpcURL);
   }
 
   try {
@@ -572,6 +576,7 @@ export async function testE2E(
     );
 
     const swapTx = await ts.simulate(swapParams);
+
     // Only log gas estimate if testing against API
     if (useAPI) {
       const gasUsed = swapTx.gasUsed || '0';
@@ -1027,4 +1032,135 @@ export const constructE2ETests = (
       });
     });
   });
+};
+
+export const testGasEstimation = async (
+  network: Network,
+  srcToken: Token,
+  destToken: Token,
+  amount: bigint,
+  swapSide: SwapSide,
+  dexKeys: string | string[],
+  contractMethod: ContractMethod,
+  route?: string[],
+  targetDifference?: number,
+) => {
+  assert(
+    testingEndpoint,
+    'Estimation can only be tested with testing endpoint',
+  );
+  // initialize pricing
+  const sdk = new APIParaswapSDK(network, dexKeys);
+  await sdk.initializePricing();
+  // fetch the route
+  const priceRoute = await sdk.getPrices(
+    srcToken,
+    destToken,
+    amount,
+    swapSide,
+    contractMethod,
+    undefined,
+    undefined,
+    route,
+  );
+  // make sure fetched route uses correct `contractMethod`
+  assert(
+    priceRoute.contractMethod === contractMethod,
+    'Price route has incorrect contract method!',
+  );
+  // log the route for visibility
+  console.log({ priceRoute: JSON.stringify(priceRoute, null, 2) });
+  // prepare state overrides
+  const tenderlySimulator = TenderlySimulatorNew.getInstance();
+  // any address works
+  const userAddress = TenderlySimulatorNew.DEFAULT_OWNER;
+  // init `StateOverride` object
+  const stateOverride: StateOverride = {};
+  // fund x2 just in case
+  const amountToFund = amount * 2n;
+  // add overrides for src token
+  if (srcToken.address.toLowerCase() === ETHER_ADDRESS) {
+    // add eth balance to user
+    tenderlySimulator.addBalanceOverride(
+      stateOverride,
+      userAddress,
+      amountToFund,
+    );
+  } else {
+    // add token balance and allowance to Augustus
+    await tenderlySimulator.addTokenBalanceOverride(
+      stateOverride,
+      network,
+      srcToken.address,
+      userAddress,
+      amountToFund,
+    );
+    await tenderlySimulator.addAllowanceOverride(
+      stateOverride,
+      network,
+      srcToken.address,
+      userAddress,
+      priceRoute.tokenTransferProxy,
+      amountToFund,
+    );
+  }
+  // add overrides for dest token (dust balance)
+  if (destToken.address.toLowerCase() === ETHER_ADDRESS) {
+    // add eth dust
+    tenderlySimulator.addBalanceOverride(stateOverride, userAddress, 1n);
+  } else {
+    // add token dust
+    await tenderlySimulator.addTokenBalanceOverride(
+      stateOverride,
+      network,
+      destToken.address,
+      userAddress,
+      1n,
+    );
+  }
+  // build swap transaction
+  const slippage = 100n;
+  const minMaxAmount =
+    (swapSide === SwapSide.SELL
+      ? BigInt(priceRoute.destAmount) * (10000n - slippage)
+      : BigInt(priceRoute.srcAmount) * (10000n + slippage)) / 10000n;
+  const swapParams = await sdk.buildTransaction(
+    priceRoute,
+    minMaxAmount,
+    userAddress,
+  );
+  assert(
+    swapParams.to !== undefined,
+    'Transaction params missing `to` property',
+  );
+  // assemble `SimulationRequest`
+  const { from, to, data, value } = swapParams;
+  const simulationRequest = {
+    chainId: network,
+    from,
+    to,
+    data,
+    value,
+    blockNumber: priceRoute.blockNumber,
+    stateOverride,
+  };
+  // simulate the transaction with overrides
+  const simulation = await tenderlySimulator.simulateTransaction(
+    simulationRequest,
+  );
+  // compare and assert
+  const estimatedGas = Number(priceRoute.gasCost);
+  const actualGas = simulation.gas_used;
+  const diffPercent = ((estimatedGas - actualGas) / actualGas) * 100;
+  console.log(
+    `Estimated gas cost: ${estimatedGas}, actual gas cost: ${actualGas}, diff: ${diffPercent}%`,
+  );
+  if (targetDifference !== undefined) {
+    assert(
+      targetDifference <= Math.abs(diffPercent),
+      `Deviation is higher than target ${targetDifference}%`,
+    );
+  }
+  // release
+  await sdk.releaseResources();
 };

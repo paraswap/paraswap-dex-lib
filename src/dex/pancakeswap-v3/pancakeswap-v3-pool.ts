@@ -265,15 +265,15 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
   }
 
   _setState(state: any, blockNumber: number, reason?: string): void {
-    if (this.parentName === 'PancakeswapV3') {
-      this.logger.info(
-        `PancakeV3: Setting state: ${!!state ? 'non-empty' : 'empty'} for '${
-          this.name
-        }' for bn: '${blockNumber}' due to reason: '${
-          reason ?? 'outside_of_event_subscriber'
-        }'`,
-      );
-    }
+    // if (this.parentName === 'PancakeswapV3') {
+    //   this.logger.info(
+    //     `PancakeV3: Setting state: ${!!state ? 'non-empty' : 'empty'} for '${
+    //       this.name
+    //     }' for bn: '${blockNumber}' due to reason: '${
+    //       reason ?? 'outside_of_event_subscriber'
+    //     }'`,
+    //   );
+    // }
     super._setState(state, blockNumber);
   }
 
@@ -326,6 +326,7 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const requestedRange = this.getBitmapRangeToRequest();
 
     return {
+      networkId: this.dexHelper.config.data.network,
       pool: _state.pool,
       blockTimestamp: bigIntify(_state.blockTimestamp),
       slot0: {

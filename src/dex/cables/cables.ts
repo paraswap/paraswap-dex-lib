@@ -323,6 +323,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
       targetExchange: this.mainnetRFQAddress,
       returnAmountPos: undefined,
       insertFromAmountPos: filledAmountPos,
+      sendEthButSupportsInsertFromAmount: true,
     };
   }
 
@@ -398,11 +399,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
       let decimals = baseToken.decimals;
       let out_decimals = quoteToken.decimals;
 
-      let price = this.calculatePriceSwap(
-        orderbook,
-        Number(amt) / 10 ** decimals,
-        isInputQuote,
-      );
+      let price = 0;
+
+      try {
+        price = this.calculatePriceSwap(
+          orderbook,
+          Number(amt) / 10 ** decimals,
+          isInputQuote,
+        );
+      } catch {}
       result.push(BigInt(Math.round(price * 10 ** out_decimals)));
     }
     return result;
@@ -415,10 +420,16 @@ export class Cables extends SimpleExchange implements IDex<any> {
   ) {
     let sumBaseQty = 0;
     let sumQuoteQty = 0;
+
     const selectedRows: string[][] = [];
 
     const isBase = qtyMode;
     const isQuote = !qtyMode;
+
+    const totalVolume: number = prices.reduce(
+      (sum, [, volume]) => sum + Number(volume),
+      0,
+    );
 
     for (const [price, volume] of prices) {
       if (isBase) {
@@ -459,6 +470,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
       selectedRows.push([price, currentBaseQty.toString()]);
     }
 
+    if (sumBaseQty == 0) {
+      return 0;
+    }
+
     const vSumBase = selectedRows.reduce((sum: number, [price, volume]) => {
       return sum + Number(price) * Number(volume);
     }, 0);
@@ -467,11 +482,24 @@ export class Cables extends SimpleExchange implements IDex<any> {
       .dividedBy(new BigNumber(sumBaseQty))
       .toNumber();
 
+    let result: any;
     if (isBase) {
-      return requiredQty / price;
+      result = requiredQty / price;
     } else {
-      return requiredQty * price;
+      result = requiredQty * price;
     }
+
+    if (isQuote) {
+      if (requiredQty > totalVolume) {
+        result = 0;
+      }
+    } else {
+      if (result > totalVolume) {
+        result = 0;
+      }
+    }
+
+    return result;
   }
 
   async getPricesVolume(
@@ -537,10 +565,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const priceData = priceMap[pairKey];
 
       let orderbook: any[] = [];
-      if (side === SwapSide.BUY) {
+      orderbook = priceData.bids;
+      // reverse orderbook if isInputQuote
+      if (isInputQuote) {
         orderbook = priceData.asks;
-      } else {
-        orderbook = priceData.bids;
       }
       if (orderbook?.length === 0) {
         throw new Error(`Empty orderbook for ${pairKey}`);
@@ -641,30 +669,36 @@ export class Cables extends SimpleExchange implements IDex<any> {
    * CACHED UTILS
    */
   async getCachedTokens(): Promise<any> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.rateFetcher.tokensCacheKey,
+      // as local cache just uses passed ttl (instead of getting actual ttl from cache)
+      // pass shorter interval to avoid getting stale data
+      // (same logic is used in other places)
+      CABLES_API_TOKENS_POLLING_INTERVAL_MS / 1000,
     );
 
     return cachedTokens ? JSON.parse(cachedTokens) : {};
   }
 
   async getCachedPairs(): Promise<any> {
-    const cachedPairs = await this.dexHelper.cache.get(
+    const cachedPairs = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.rateFetcher.pairsCacheKey,
+      CABLES_API_PAIRS_POLLING_INTERVAL_MS / 1000,
     );
 
     return cachedPairs ? JSON.parse(cachedPairs) : {};
   }
 
   async getCachedPrices(): Promise<any> {
-    const cachedPrices = await this.dexHelper.cache.get(
+    const cachedPrices = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.rateFetcher.pricesCacheKey,
+      CABLES_API_PRICES_POLLING_INTERVAL_MS / 1000,
     );
 
     return cachedPrices ? JSON.parse(cachedPrices) : {};

@@ -369,7 +369,6 @@ export class RateFetcher {
 
   public async getAvailablePairs(): Promise<string[]> {
     const pairs = await this.pricesPubSub.getAndCache<string[]>(`pairs`);
-
     if (!pairs) {
       return [];
     }

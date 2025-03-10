@@ -117,8 +117,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/48211/uniswap-v3-base/version/latest',
+      subgraphURL: 'GqzP4Xaehti8KSfQmv3ZctFSjnSUYZ4En5NRsiTbvZpz',
     },
   },
   SushiSwapV3: {
@@ -357,32 +356,6 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
       subgraphURL: 'Dimv1udMsJu1DqirVM4G2vNRvH8CWzWTn7GffQQCGAaq',
-    },
-  },
-  VelodromeSlipstream: {
-    [Network.OPTIMISM]: {
-      factory: '0x548118C7E0B865C2CfA94D15EC86B666468ac758',
-      quoter: '0xA2DEcF05c16537C702779083Fe067e308463CE45',
-      router: '0x93A3b44C38A8557E935B3e2549B2809a582c28EE',
-      supportedFees: SUPPORTED_FEES,
-      tickSpacings: [1n, 50n, 100n, 200n, 2000n],
-      tickSpacingsToFees: {
-        '1': 100n,
-        '50': 500n,
-        '100': 500n,
-        '200': 3000n,
-        '2000': 10000n,
-      },
-      stateMulticall: '0xc055b23319b3a140D4De2d0001bd0A885B3d7DbB',
-      stateMultiCallAbi: VelodromeSlipstreamMulticallABi as AbiItem[],
-      eventPoolImplementation: VelodromeSlipstreamEventPool,
-      factoryImplementation: VelodromeSlipstreamFactory,
-      decodeStateMultiCallResultWithRelativeBitmaps:
-        decodeStateMultiCallResultWithRelativeBitmapsForVelodromeSlipstream,
-      uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
-      chunksCount: 10,
-      initRetryFrequency: 10,
-      initHash: '0xE0A596c403E854FFb9C828aB4f07eEae04A05D37', // pool implementation address from factory contract is used instead of initHash here
     },
   },
   VelodromeSlipstreamNewFactory: {
