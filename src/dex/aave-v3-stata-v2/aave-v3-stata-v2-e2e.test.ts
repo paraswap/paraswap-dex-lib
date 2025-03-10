@@ -278,17 +278,17 @@ describe('AaveV3Stata E2E', () => {
           amount: '100000',
         },
       ],
-      // [
-      //   {
-      //     name: 'aOptUSDCn',
-      //     amount: '100000',
-      //     skipBuy: true,
-      //   },
-      //   {
-      //     name: 'stataUSDC', // no holders
-      //     amount: '100000',
-      //   },
-      // ],
+      [
+        {
+          name: 'aOptUSDCn',
+          amount: '100000',
+          skipBuy: true,
+        },
+        {
+          name: 'stataUSDC', // no holders
+          amount: '100000',
+        },
+      ],
     ];
 
     pairs.forEach(pair => {
