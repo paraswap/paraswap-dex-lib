@@ -6,21 +6,26 @@ import { Interface } from '@ethersproject/abi';
 import Web3 from 'web3';
 import { MultiCallParams, MultiWrapper } from '../../lib/multi-wrapper';
 import { stringDecode, uint8ToNumber, addressDecode } from '../../lib/decoders';
-import { StataToken } from './types';
+import { StataToken, DexParams } from './types';
 import FactoryABI from '../../abi/aavev3statav2/Factory.json';
 import TokenABI from '../../abi/aavev3statav2/Token.json';
 import { AbiItem } from 'web3-utils';
+
+type PoolAndToken = {
+  token: string;
+  pool: string;
+};
 
 // const stataInterface = new Interface(IStaticATokenLM_ABI);
 const statav2Interface = new Interface(TokenABI);
 
 async function getTokenMetaData(
-  stataTokens: string[],
+  stataTokens: PoolAndToken[],
   multiWrapper: MultiWrapper,
   blockNumber?: number,
 ): Promise<StataToken[]> {
   const calls: MultiCallParams<any>[] = stataTokens
-    .map(token => {
+    .map(({ token }) => {
       return [
         {
           target: token,
@@ -54,7 +59,8 @@ async function getTokenMetaData(
   let tokenList: StataToken[] = [];
   for (let i = 0, x = 0; i < stataTokens.length; ++i, x += 4) {
     tokenList.push({
-      address: stataTokens[i].toLowerCase(),
+      address: stataTokens[i].token.toLowerCase(),
+      pool: stataTokens[i].pool.toLowerCase(),
       stataSymbol: results[x] as string,
       decimals: results[x + 1] as number,
       underlying: (results[x + 2] as string).toLowerCase(),
@@ -66,22 +72,24 @@ async function getTokenMetaData(
 
 export const fetchTokenList = async (
   web3Provider: Web3,
-  factoryAddresses: string[],
+  config: DexParams,
   multiWrapper: MultiWrapper,
   blockNumber?: number,
 ): Promise<StataToken[]> => {
-  let stataList: string[] = (
+  let stataList: PoolAndToken[] = (
     (await Promise.all(
-      factoryAddresses.map(async factoryAddress => {
+      config.map(async ({ factory, pool }) => {
         let factoryContract = new web3Provider.eth.Contract(
           FactoryABI as AbiItem[],
           // IStaticATokenFactory_ABI as any,
-          factoryAddress,
+          factory,
         );
 
-        return await factoryContract.methods.getStataTokens().call();
+        return (
+          (await factoryContract.methods.getStataTokens().call()) as string[]
+        ).map(address => ({ token: address, pool }));
       }),
-    )) as string[][]
+    )) as PoolAndToken[][]
   ).flat();
 
   return getTokenMetaData(stataList, multiWrapper, blockNumber);
