@@ -8,9 +8,9 @@ export enum TokenType {
 }
 
 export type DexParams = {
-  factoryAddresses: string[];
+  factory: string;
   pool: string;
-};
+}[];
 
 export type AaveV3StataV2Data = {
   exchange: Address;
@@ -24,6 +24,7 @@ export type StataToken = {
   underlyingAToken: string;
   stataSymbol: string;
   decimals: number;
+  pool: string;
 };
 
 export enum StataFunctions {
