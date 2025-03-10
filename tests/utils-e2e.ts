@@ -490,7 +490,6 @@ export async function testE2E(
   }
 
   if (paraswap.dexHelper?.replaceProviderWithRPC) {
-    console.log('ts.rpcURL: ', ts.rpcURL);
     paraswap.dexHelper?.replaceProviderWithRPC(ts.rpcURL);
   }
 

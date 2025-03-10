@@ -1415,7 +1415,7 @@ export const Tokens: {
       address: '0x41B334E9F2C0ED1f30fD7c351874a6071C53a78E',
       decimals: 6,
     },
-    aaveUSDC: {
+    aOptUSDCn: {
       address: '0x38d693cE1dF5AaDF7bC62595A37D667aD57922e5',
       decimals: 6,
     },
@@ -2101,7 +2101,7 @@ export const Holders: {
     POPS: '0x3cbd9044aaabef08ce93a68448e093cff405ad76',
     USDCe: '0xdecc0c09c3b5f6e92ef4184125d5648a66e35298',
     USDC: '0x8aF3827a41c26C7F32C81E93bb66e837e0210D5c',
-    aaveUSDC: '0x38d693cE1dF5AaDF7bC62595A37D667aD57922e5',
+    aOptUSDCn: '0x38d693cE1dF5AaDF7bC62595A37D667aD57922e5',
     USDT: '0xf977814e90da44bfa03b6295a0616a897441acec',
     OP: '0xEBb8EA128BbdFf9a1780A4902A9380022371d466',
     aOptWETH: '0x7B7D80C40415F744864f051B806b466e2fbB8E68',

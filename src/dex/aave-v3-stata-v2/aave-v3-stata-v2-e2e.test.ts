@@ -263,6 +263,7 @@ describe('AaveV3Stata E2E', () => {
     });
   });
 
+  // no tokens yet deployed
   describe('Optimism', () => {
     const network = Network.OPTIMISM;
 
@@ -277,17 +278,17 @@ describe('AaveV3Stata E2E', () => {
           amount: '100000',
         },
       ],
-      [
-        {
-          name: 'aaveUSDC',
-          amount: '100000',
-          skipBuy: true,
-        },
-        {
-          name: 'stataUSDC',
-          amount: '100000',
-        },
-      ],
+      // [
+      //   {
+      //     name: 'aOptUSDCn',
+      //     amount: '100000',
+      //     skipBuy: true,
+      //   },
+      //   {
+      //     name: 'stataUSDC', // no holders
+      //     amount: '100000',
+      //   },
+      // ],
     ];
 
     pairs.forEach(pair => {
