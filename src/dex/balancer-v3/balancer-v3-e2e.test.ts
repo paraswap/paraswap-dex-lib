@@ -219,8 +219,8 @@ describe('BalancerV3 E2E', () => {
       const tokenASymbol: string = 'bal';
       const tokenBSymbol: string = 'DAI';
 
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '1000000000000000000';
+      const tokenAAmount: string = '100000000000';
+      const tokenBAmount: string = '100000000000';
       const nativeTokenAmount = '0';
 
       testForNetwork(
