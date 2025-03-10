@@ -5,7 +5,7 @@ import { BasePool, Quote } from './base-pool';
 import { PoolKey } from '../types';
 import { Interface } from '@ethersproject/abi';
 
-const GAS_COST_OF_UPDATING_ORACLE_SNAPSHOT = 40_000;
+const GAS_COST_OF_UPDATING_ORACLE_SNAPSHOT = 15_000;
 
 export class OraclePool extends BasePool {
   public constructor(

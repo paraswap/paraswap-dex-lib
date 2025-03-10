@@ -24,9 +24,9 @@ export interface Quote {
   skipAhead: number;
 }
 
-const BASE_GAS_COST_OF_ONE_SWAP = 90_000;
+const BASE_GAS_COST = 75_000;
 const GAS_COST_OF_ONE_INITIALIZED_TICK_CROSSED = 20_000;
-const GAS_COST_OF_ONE_TICK_SPACING_CROSSED = 2_000;
+const GAS_COST_OF_ONE_TICK_SPACING_CROSSED = 4_000;
 
 export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
   public readonly addressesSubscribed: string[];
@@ -241,7 +241,7 @@ export class BasePool extends StatefulEventSubscriber<PoolState.Object> {
       consumedAmount: amount - amountRemaining,
       calculatedAmount,
       gasConsumed:
-        BASE_GAS_COST_OF_ONE_SWAP +
+        BASE_GAS_COST +
         initializedTicksCrossed * GAS_COST_OF_ONE_INITIALIZED_TICK_CROSSED +
         tickSpacingsCrossed * GAS_COST_OF_ONE_TICK_SPACING_CROSSED,
       skipAhead:
