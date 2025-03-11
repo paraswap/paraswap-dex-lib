@@ -21,12 +21,12 @@ function getReaderCalldata(
   quoterAddress: string,
   readerIface: Interface,
   amounts: bigint[],
-  { poolKey, isToken1, skipAhead }: EkuboData,
+  { poolKeyAbi, isToken1, skipAhead }: EkuboData,
 ) {
   return amounts.map(amount => ({
     target: quoterAddress,
     callData: readerIface.encodeFunctionData('quote', [
-      poolKey.toAbi(),
+      poolKeyAbi,
       isToken1,
       amount,
       isPriceIncreasing(amount, isToken1) ? MAX_SQRT_RATIO : MIN_SQRT_RATIO,
