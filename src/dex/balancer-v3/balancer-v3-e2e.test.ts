@@ -296,4 +296,134 @@ describe('BalancerV3 E2E', () => {
       );
     });
   });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    describe('Stable Path', () => {
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'WETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    // No holders for tokens
+    // describe('Boosted Path', () => {
+    //   const tokenASymbol: string = 'waArbWETH';
+    //   const tokenBSymbol: string = 'waArbwstETH';
+    //
+    //   const tokenAAmount: string = '10000000000000';
+    //   const tokenBAmount: string = '10000000000000';
+    //   const nativeTokenAmount = '0';
+    //
+    //   testForNetwork(
+    //     network,
+    //     dexKey,
+    //     tokenASymbol,
+    //     tokenBSymbol,
+    //     tokenAAmount,
+    //     tokenBAmount,
+    //     nativeTokenAmount,
+    //     false,
+    //   );
+    // });
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    describe('Stable Path', () => {
+      const tokenASymbol: string = 'wstETH';
+      const tokenBSymbol: string = 'WETH';
+
+      const tokenAAmount: string = '100000000000000';
+      const tokenBAmount: string = '100000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'sUSDS';
+      const tokenBSymbol: string = 'smUSDC';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    describe('StableSurge Hook', () => {
+      const tokenASymbol: string = 'waBasGHO';
+      const tokenBSymbol: string = 'waBasUSDC';
+
+      const tokenAAmount: string = '500000000000000000';
+      const tokenBAmount: string = '500000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    // No holders for waBasWETH
+    // describe('Boosted Path', () => {
+    //   const tokenASymbol: string = 'waBaswstETH';
+    //   const tokenBSymbol: string = 'waBasWETH';
+    //
+    //   const tokenAAmount: string = '10000000000000';
+    //   const tokenBAmount: string = '10000000000000';
+    //   const nativeTokenAmount = '0';
+    //
+    //   testForNetwork(
+    //     network,
+    //     dexKey,
+    //     tokenASymbol,
+    //     tokenBSymbol,
+    //     tokenAAmount,
+    //     tokenBAmount,
+    //     nativeTokenAmount,
+    //     false,
+    //   );
+    // });
+  });
 });

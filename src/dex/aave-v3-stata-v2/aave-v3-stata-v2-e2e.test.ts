@@ -234,29 +234,18 @@ describe('AaveV3Stata E2E', () => {
   //   });
   // });
 
-  describe.skip('Arbitrum', () => {
+  describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
       [
         {
-          name: 'USDT',
-          amount: '100000',
+          name: 'WETH',
+          amount: '100000000000000',
         },
         {
-          name: 'stataUSDT',
-          amount: '100000',
-        },
-      ],
-      [
-        {
-          name: 'aaveUSDT',
-          amount: '100000',
-          skipBuy: true,
-        },
-        {
-          name: 'stataUSDT',
-          amount: '100000',
+          name: 'waArbWETH',
+          amount: '1744566786133980',
         },
       ],
     ];
@@ -274,48 +263,9 @@ describe('AaveV3Stata E2E', () => {
     });
   });
 
-  describe.skip('Optimism', () => {
+  // no tokens yet deployed
+  describe('Optimism', () => {
     const network = Network.OPTIMISM;
-
-    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
-      [
-        {
-          name: 'USDT',
-          amount: '100000',
-        },
-        {
-          name: 'stataUSDT',
-          amount: '100000',
-        },
-      ],
-      [
-        {
-          name: 'aaveUSDT',
-          amount: '100000',
-          skipBuy: true,
-        },
-        {
-          name: 'stataUSDT',
-          amount: '100000',
-        },
-      ],
-    ];
-
-    pairs.forEach(pair => {
-      testForNetwork(
-        network,
-        dexKey,
-        pair[0].name,
-        pair[1].name,
-        pair[0].amount,
-        pair[1].amount,
-        pair[0].skipBuy,
-      );
-    });
-  });
-
-  describe.skip('Base', () => {
-    const network = Network.BASE;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
       [
@@ -330,13 +280,42 @@ describe('AaveV3Stata E2E', () => {
       ],
       [
         {
-          name: 'aaveUSDC',
+          name: 'aOptUSDCn',
           amount: '100000',
           skipBuy: true,
         },
         {
-          name: 'stataUSDC',
+          name: 'stataUSDC', // no holders
           amount: '100000',
+        },
+      ],
+    ];
+
+    pairs.forEach(pair => {
+      testForNetwork(
+        network,
+        dexKey,
+        pair[0].name,
+        pair[1].name,
+        pair[0].amount,
+        pair[1].amount,
+        pair[0].skipBuy,
+      );
+    });
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
+      [
+        {
+          name: 'WETH',
+          amount: '100000000000',
+        },
+        {
+          name: 'waBasWETH',
+          amount: '3792954988415750',
         },
       ],
     ];

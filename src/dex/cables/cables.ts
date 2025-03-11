@@ -399,11 +399,15 @@ export class Cables extends SimpleExchange implements IDex<any> {
       let decimals = baseToken.decimals;
       let out_decimals = quoteToken.decimals;
 
-      let price = this.calculatePriceSwap(
-        orderbook,
-        Number(amt) / 10 ** decimals,
-        isInputQuote,
-      );
+      let price = 0;
+
+      try {
+        price = this.calculatePriceSwap(
+          orderbook,
+          Number(amt) / 10 ** decimals,
+          isInputQuote,
+        );
+      } catch {}
       result.push(BigInt(Math.round(price * 10 ** out_decimals)));
     }
     return result;
@@ -416,10 +420,16 @@ export class Cables extends SimpleExchange implements IDex<any> {
   ) {
     let sumBaseQty = 0;
     let sumQuoteQty = 0;
+
     const selectedRows: string[][] = [];
 
     const isBase = qtyMode;
     const isQuote = !qtyMode;
+
+    const totalVolume: number = prices.reduce(
+      (sum, [, volume]) => sum + Number(volume),
+      0,
+    );
 
     for (const [price, volume] of prices) {
       if (isBase) {
@@ -460,6 +470,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
       selectedRows.push([price, currentBaseQty.toString()]);
     }
 
+    if (sumBaseQty == 0) {
+      return 0;
+    }
+
     const vSumBase = selectedRows.reduce((sum: number, [price, volume]) => {
       return sum + Number(price) * Number(volume);
     }, 0);
@@ -468,11 +482,24 @@ export class Cables extends SimpleExchange implements IDex<any> {
       .dividedBy(new BigNumber(sumBaseQty))
       .toNumber();
 
+    let result: any;
     if (isBase) {
-      return requiredQty / price;
+      result = requiredQty / price;
     } else {
-      return requiredQty * price;
+      result = requiredQty * price;
     }
+
+    if (isQuote) {
+      if (requiredQty > totalVolume) {
+        result = 0;
+      }
+    } else {
+      if (result > totalVolume) {
+        result = 0;
+      }
+    }
+
+    return result;
   }
 
   async getPricesVolume(
@@ -538,10 +565,10 @@ export class Cables extends SimpleExchange implements IDex<any> {
       const priceData = priceMap[pairKey];
 
       let orderbook: any[] = [];
-      if (side === SwapSide.BUY) {
+      orderbook = priceData.bids;
+      // reverse orderbook if isInputQuote
+      if (isInputQuote) {
         orderbook = priceData.asks;
-      } else {
-        orderbook = priceData.bids;
       }
       if (orderbook?.length === 0) {
         throw new Error(`Empty orderbook for ${pairKey}`);
