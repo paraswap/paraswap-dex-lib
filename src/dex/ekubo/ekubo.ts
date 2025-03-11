@@ -323,7 +323,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
           prices: otherQuotes.map(quote => quote.calculatedAmount),
           unit: unitQuote.calculatedAmount,
           data: {
-            poolKey: pool.key,
+            poolKeyAbi: pool.key.toAbi(),
             isToken1: amountTokenAddress === token1,
             skipAhead: skipAheadMap,
           },
@@ -469,7 +469,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       exchangeData: this.routerIface.encodeFunctionData(
         'swap((address,address,bytes32),bool,int128,uint96,uint256,int256,address)',
         [
-          data.poolKey.toAbi(),
+          data.poolKeyAbi,
           data.isToken1,
           BigNumber.from(amount),
           isPriceIncreasing(amount, data.isToken1)

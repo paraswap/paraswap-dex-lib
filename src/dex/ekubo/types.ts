@@ -312,7 +312,7 @@ export namespace PoolState {
 }
 
 export type EkuboData = {
-  poolKey: PoolKey;
+  poolKeyAbi: AbiPoolKey;
   isToken1: boolean;
   skipAhead: Map<bigint, number>;
 };
