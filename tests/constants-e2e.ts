@@ -1782,6 +1782,10 @@ export const Tokens: {
       address: `0x978206fae13faf5a8d293fb614326b237684b750`,
       decimals: 6,
     },
+    DAI: {
+      address: `0xB77EB1A70A96fDAAeB31DB1b42F2b8b5846b2613`,
+      decimals: 18,
+    },
   },
 };
 
@@ -2198,6 +2202,7 @@ export const Holders: {
     stataUSDC: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
     stataUSDT: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
     usdcAave: '0xdD5De55eA6804EFb283f43b0C091C25000a6486c',
+    DAI: '0x90347b9CC81a4a28aAc74E8B134040d5ce2eaB6D',
   },
 };
 

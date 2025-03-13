@@ -1,14 +1,16 @@
 import axios from 'axios';
 import { apiUrl, BalancerV3Config, disabledPoolIds } from './config';
 import { HooksConfigMap } from './hooks/balancer-hook-event-subscriber';
+import { getUniqueHookNames } from './utils';
 
 interface PoolToken {
   address: string;
   decimals: number;
-  underlyingToken?: {
+  canUseBufferForSwaps: boolean | null;
+  underlyingToken: {
     address: string;
     decimals: number;
-  };
+  } | null;
 }
 
 export interface Pool {
@@ -24,13 +26,14 @@ export interface Pool {
 
 interface QueryResponse {
   data: {
-    poolGetAggregatorPools: Pool[];
+    aggregatorPools: Pool[];
   };
 }
 
 function createQuery(
   networkId: number,
   poolsFilter: string[],
+  hooks: string,
   count: number,
 ): string {
   const disabledPoolIdsString = disabledPoolIds.BalancerV3[networkId]
@@ -45,6 +48,7 @@ function createQuery(
     protocolVersionIn: 3,
     idIn: `[${poolIdString}]`,
     ...(disabledPoolIdsString && { idNotIn: `[${disabledPoolIdsString}]` }),
+    includeHooks: `[${hooks}]`,
   };
 
   // Convert where clause to string, filtering out undefined values
@@ -53,7 +57,7 @@ function createQuery(
     .join(', ');
   return `
     query MyQuery {
-      poolGetAggregatorPools(
+      aggregatorPools(
         where: {${whereString}}
         first: ${count}
         orderBy: totalLiquidity
@@ -63,6 +67,7 @@ function createQuery(
         poolTokens {
           address
           decimals
+          canUseBufferForSwaps
           underlyingToken {
             address
             decimals
@@ -83,10 +88,15 @@ export async function getTopPoolsApi(
   networkId: number,
   poolsFilter: string[],
   count: number,
-  hooksTypeMap: HooksConfigMap,
+  hooksConfigMap: HooksConfigMap,
 ): Promise<Pool[]> {
   try {
-    const query = createQuery(networkId, poolsFilter, count);
+    const query = createQuery(
+      networkId,
+      poolsFilter,
+      getUniqueHookNames(hooksConfigMap),
+      count,
+    );
     const response = await axios.post<QueryResponse>(
       apiUrl,
       {
@@ -99,11 +109,19 @@ export async function getTopPoolsApi(
       },
     );
 
-    const pools = response.data.data.poolGetAggregatorPools.filter(
-      pool =>
-        !pool.hook ||
-        (pool.hook && pool.hook.address.toLowerCase() in hooksTypeMap),
-    );
+    const pools = response.data.data.aggregatorPools
+      .filter(
+        pool =>
+          !pool.hook ||
+          (pool.hook && pool.hook.address.toLowerCase() in hooksConfigMap),
+      )
+      .map(pool => ({
+        ...pool,
+        poolTokens: pool.poolTokens.map(t => ({
+          ...t,
+          underlyingToken: t.canUseBufferForSwaps ? t.underlyingToken : null,
+        })),
+      }));
     return pools;
   } catch (error) {
     // console.error('Error executing GraphQL query:', error);
