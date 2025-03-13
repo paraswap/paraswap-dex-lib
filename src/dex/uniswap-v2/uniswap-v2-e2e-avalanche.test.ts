@@ -2,10 +2,112 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
+import {
+  Tokens,
+  Holders,
+  NativeTokenSymbols,
+} from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+
+function testForNetwork(
+  network: Network,
+  dexKey: string,
+  tokenASymbol: string,
+  tokenBSymbol: string,
+  tokenAAmount: string,
+  tokenBAmount: string,
+  nativeTokenAmount: string,
+) {
+  const provider = new StaticJsonRpcProvider(
+    generateConfig(network).privateHttpProvider,
+    network,
+  );
+  const tokens = Tokens[network];
+  const holders = Holders[network];
+  const nativeTokenSymbol = NativeTokenSymbols[network];
+
+  const sideToContractMethods = new Map([
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.swapExactAmountInOnUniswapV2,
+        ContractMethod.swapExactAmountIn,
+      ],
+    ],
+    [
+      SwapSide.BUY,
+      [
+        ContractMethod.swapExactAmountOutOnUniswapV2,
+        ContractMethod.swapExactAmountOut,
+      ],
+    ],
+  ]);
+
+  describe(`${network}`, () => {
+    sideToContractMethods.forEach((contractMethods, side) =>
+      describe(`${side}`, () => {
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[nativeTokenSymbol],
+                tokens[tokenASymbol],
+                holders[nativeTokenSymbol],
+                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[nativeTokenSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        });
+      }),
+    );
+  });
+}
 
 describe('UniswapV2 E2E Avalanche', () => {
   const network = Network.AVALANCHE;
@@ -198,85 +300,16 @@ describe('UniswapV2 E2E Avalanche', () => {
 
   describe('ArenaDex', () => {
     const dexKey = 'ArenaDex';
-    describe('ArenaDex_simpleSwapSell', () => {
-      it('AVAX -> ARENA', async () => {
-        await testE2E(
-          tokens.ARENA,
-          tokens.WAVAX,
-          holders.ARENA,
-          '10000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-    });
 
-    describe('ArenaDex_simpleSwapBuy', () => {
-      it('AVAX -> ARENA', async () => {
-        await testE2E(
-          tokens.ARENA,
-          tokens.WAVAX,
-          holders.ARENA,
-          '20000000',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('ArenaDex_swapExactAmountIn', () => {
-      it('ARENA -> WAVAX', async () => {
-        await testE2E(
-          tokens.ARENA,
-          tokens.WAVAX,
-          holders.ARENA,
-          '10000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.swapExactAmountIn,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('ArenaDex_swapExactAmountOut', () => {
-      it('ARENA -> WAVAX', async () => {
-        await testE2E(
-          tokens.ARENA,
-          tokens.WAVAX,
-          holders.ARENA,
-          '10000001',
-          SwapSide.BUY,
-          dexKey,
-          ContractMethod.swapExactAmountOut,
-          network,
-          provider,
-        );
-      });
-    });
-
-    describe('ArenaDex_multiSwap', () => {
-      it('ARENA -> WAVAX', async () => {
-        await testE2E(
-          tokens.ARENA,
-          tokens.WAVAX,
-          holders.ARENA,
-          '1000000000000000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.multiSwap,
-          network,
-          provider,
-        );
-      });
-    });
+    testForNetwork(
+      network,
+      dexKey,
+      'ARENA',
+      'WAVAX',
+      '10000000',
+      '10000000',
+      '10000000',
+    );
   });
 
   describe('TraderJoe', () => {
