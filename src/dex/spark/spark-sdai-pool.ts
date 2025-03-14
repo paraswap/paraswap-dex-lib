@@ -62,7 +62,7 @@ export class SparkSDaiEventPool extends StatefulEventSubscriber<SparkSDaiPoolSta
     private potInterface: Interface,
     logger: Logger,
     private savingsRateTopic: string,
-    private savingsRateSymbol: 'ssr' | 'dsr',
+    private savingsRateSymbol: 'ssr' | 'dsr' | 'ssrOracle',
   ) {
     super(parentName, poolName, dexHelper, logger);
     this.addressesSubscribed = [potAddress];
