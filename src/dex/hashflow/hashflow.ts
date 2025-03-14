@@ -287,8 +287,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     destToken: Token,
     side: SwapSide,
   ): bigint[] {
-    assert(levels.length > 0, 'Levels should not be empty');
-
     const outputs = new Array<BigNumber>(amounts.length).fill(BN_0);
     // FIXME: There is still case when last amount is fillable, but in between
     // we may have splits that are less than min. amount. I assume that case is very
@@ -356,11 +354,14 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
     for (let i = 1; i < levels.length; i++) {
       const nextLevel = levels[i]!;
-      const nextLevelDepth = nextLevel.level.minus(levels[i - 1]!.level);
+      const nextLevelDepth = nextLevel.level;
       const nextLevelQuote = quote.quoteAmount.plus(
         nextLevelDepth.multipliedBy(nextLevel.price),
       );
-      if (reqBaseAmount && reqBaseAmount.lte(nextLevel.level)) {
+      if (
+        reqBaseAmount &&
+        reqBaseAmount.lte(quote.baseAmount.plus(nextLevel.level))
+      ) {
         const baseDifference = reqBaseAmount.minus(quote.baseAmount);
         const quoteAmount = quote.quoteAmount.plus(
           baseDifference.multipliedBy(nextLevel.price),
@@ -374,7 +375,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         return baseAmount;
       }
 
-      quote.baseAmount = nextLevel.level;
+      quote.baseAmount = quote.baseAmount.plus(nextLevel.level);
       quote.quoteAmount = nextLevelQuote;
     }
 
@@ -480,11 +481,6 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
         if (amountsRaw[amountsRaw.length - 1].lt(firstLevelAmountBN)) {
           return null;
-        }
-
-        if (firstLevelAmountBN.gt(0)) {
-          // Add zero level for price computation
-          levels.unshift({ q: '0', p: firstLevelRaw.p });
         }
 
         const unitPrice = this.computePricesFromLevels(
