@@ -163,7 +163,13 @@ export class ERC4626
         unit: BI_POWS[18],
         prices: amounts.map(amount => calcFunction(amount, state)),
         gasCost: isWrap ? 60000 : 70000,
-        data: { exchange: `${this.vault}` },
+        data: {
+          exchange: `${this.vault}`,
+          state: {
+            totalShares: state.totalShares.toString(),
+            totalAssets: state.totalAssets.toString(),
+          },
+        },
         poolAddresses: [this.vault],
         exchange: this.dexKey,
       },

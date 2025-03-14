@@ -7,6 +7,10 @@ export type ERC4626PoolState = {
 
 export type ERC4626Data = {
   exchange: string;
+  state: {
+    totalShares: string;
+    totalAssets: string;
+  };
 };
 
 export enum ERC4626Functions {
