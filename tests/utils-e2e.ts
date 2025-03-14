@@ -394,208 +394,103 @@ export async function testE2E(
   replaceTenderlyWithEstimateGas?: boolean,
   forceRoute?: AddressOrSymbol[],
 ) {
+  assert(
+    testingEndpoint,
+    'Estimation can only be tested with testing endpoint',
+  );
+  // initialize pricing
+  const sdk = new APIParaswapSDK(network, dexKeys);
+  await sdk.initializePricing();
+  // fetch the route
   const amount = BigInt(_amount);
-
-  const ts: TransactionSimulator = replaceTenderlyWithEstimateGas
-    ? new EstimateGasSimulation(new DummyDexHelper(network).provider)
-    : new TenderlySimulation(network);
-  await ts.setup();
-
-  if (srcToken.address.toLowerCase() !== ETHER_ADDRESS.toLowerCase()) {
-    // check if v5 is available in the config
-    if (generateConfig(network).tokenTransferProxyAddress !== NULL_ADDRESS) {
-      const allowanceTx = await ts.simulate(
-        allowTokenTransferProxyParams(srcToken.address, senderAddress, network),
-      );
-      if (!allowanceTx.success) console.log(allowanceTx.url);
-      expect(allowanceTx!.success).toEqual(true);
-    }
-    const augustusV6Allowance = await ts.simulate(
-      allowAugustusV6(srcToken.address, senderAddress, network),
+  const priceRoute = await sdk.getPrices(
+    srcToken,
+    destToken,
+    amount,
+    swapSide,
+    contractMethod,
+    poolIdentifiers,
+    transferFees,
+    forceRoute,
+  );
+  // log the route for visibility
+  console.log({ priceRoute: JSON.stringify(priceRoute, null, 2) });
+  // prepare state overrides
+  const tenderlySimulator = TenderlySimulatorNew.getInstance();
+  // init `StateOverride` object
+  const stateOverride: StateOverride = {};
+  // fund x2 just in case
+  const amountToFund = amount * 2n;
+  // add overrides for src token
+  if (srcToken.address.toLowerCase() === ETHER_ADDRESS) {
+    // add eth balance to user
+    tenderlySimulator.addBalanceOverride(
+      stateOverride,
+      senderAddress,
+      amountToFund,
     );
-    if (!augustusV6Allowance.success) console.log(augustusV6Allowance.url);
-    expect(augustusV6Allowance!.success).toEqual(true);
+  } else {
+    // add token balance and allowance to Augustus
+    await tenderlySimulator.addTokenBalanceOverride(
+      stateOverride,
+      network,
+      srcToken.address,
+      senderAddress,
+      amountToFund,
+    );
+    await tenderlySimulator.addAllowanceOverride(
+      stateOverride,
+      network,
+      srcToken.address,
+      senderAddress,
+      priceRoute.tokenTransferProxy,
+      amountToFund,
+    );
   }
-
-  if (deployedTestContractAddress) {
-    const whitelistTx = await ts.simulate(
-      augustusGrantRoleParams(
-        deployedTestContractAddress,
-        network,
-        testContractType || 'adapter',
-      ),
-    );
-    expect(whitelistTx.success).toEqual(true);
-    console.log(`Successfully whitelisted ${deployedTestContractAddress}`);
-
-    if (testContractType === 'router') {
-      const setImplementationTx = await ts.simulate(
-        augustusSetImplementationParams(
-          deployedTestContractAddress,
-          network,
-          contractMethod,
-        ),
-      );
-      expect(setImplementationTx.success).toEqual(true);
-    }
-  } else if (testContractBytecode) {
-    const deployTx = await ts.simulate(
-      deployContractParams(testContractBytecode, network),
-    );
-
-    expect(deployTx.success).toEqual(true);
-
-    const contractAddress =
-      deployTx.transaction?.transaction_info.contract_address;
-    console.log(
-      formatDeployMessage(
-        'adapter',
-        contractAddress,
-        ts.vnetId,
-        testContractName || '',
-        testContractRelativePath || '',
-      ),
-    );
-    const whitelistTx = await ts.simulate(
-      augustusGrantRoleParams(
-        contractAddress,
-        network,
-        testContractType || 'adapter',
-      ),
-    );
-    expect(whitelistTx.success).toEqual(true);
-
-    if (testContractType === 'router') {
-      const setImplementationTx = await ts.simulate(
-        augustusSetImplementationParams(
-          contractAddress,
-          network,
-          contractMethod,
-        ),
-      );
-      expect(setImplementationTx.success).toEqual(true);
-    }
-  }
-
-  const useAPI = testingEndpoint && !poolIdentifiers;
-  // The API currently doesn't allow for specifying poolIdentifiers
-  const paraswap: IParaSwapSDK = useAPI
-    ? new APIParaswapSDK(network, dexKeys, '')
-    : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
-
-  await paraswap.initializePricing?.();
-
+  // if sleepMs is provided, pause simulation for specified time
   if (sleepMs) {
     await sleep(sleepMs);
   }
-
-  if (paraswap.dexHelper?.replaceProviderWithRPC) {
-    paraswap.dexHelper?.replaceProviderWithRPC(ts.rpcURL);
-  }
-
-  try {
-    const priceRoute = await paraswap.getPrices(
-      srcToken,
-      destToken,
-      amount,
-      swapSide,
-      contractMethod,
-      poolIdentifiers,
-      transferFees,
-      forceRoute,
-    );
-
-    console.log('PRICE ROUTE: ', util.inspect(priceRoute, false, null, true));
-    expect(parseFloat(priceRoute.destAmount)).toBeGreaterThan(0);
-
-    // send 1 wei of src token to AugustusV6 and Executors
-    // const config = generateConfig(network);
-    // const augustusV6Address = config.augustusV6Address!;
-    // const executorsAddresses = Object.values(config.executorsAddresses!);
-    // const addresses = [...executorsAddresses, augustusV6Address];
-
-    // for await (const a of addresses) {
-    //   const src =
-    //     srcToken.address.toLowerCase() === ETHER_ADDRESS
-    //       ? config.wrappedNativeTokenAddress
-    //       : srcToken.address.toLowerCase();
-    //   const dest =
-    //     destToken.address.toLowerCase() === ETHER_ADDRESS
-    //       ? config.wrappedNativeTokenAddress
-    //       : destToken.address.toLowerCase();
-    //
-    //   if (priceRoute.bestRoute[0].swaps.length > 0) {
-    //     const intermediateToken =
-    //       priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
-    //       ETHER_ADDRESS
-    //         ? config.wrappedNativeTokenAddress
-    //         : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
-    //
-    //     await ts.simulate(send1WeiTo(intermediateToken, a, network));
-    //   }
-    //
-    //   await ts.simulate(send1WeiTo(src, a, network));
-    //   await ts.simulate(send1WeiTo(dest, a, network));
-    // }
-    //
-    // for await (const a of addresses) {
-    //   const src =
-    //     srcToken.address.toLowerCase() === ETHER_ADDRESS
-    //       ? config.wrappedNativeTokenAddress
-    //       : srcToken.address.toLowerCase();
-    //   const dest =
-    //     destToken.address.toLowerCase() === ETHER_ADDRESS
-    //       ? config.wrappedNativeTokenAddress
-    //       : destToken.address.toLowerCase();
-    //
-    //   if (priceRoute.bestRoute[0].swaps.length > 0) {
-    //     const intermediateToken =
-    //       priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase() ===
-    //       ETHER_ADDRESS
-    //         ? config.wrappedNativeTokenAddress
-    //         : priceRoute.bestRoute[0].swaps[0].destToken.toLowerCase();
-    //
-    //     await ts.simulate(checkBalanceOf(intermediateToken, a));
-    //   }
-    //
-    //   await ts.simulate(checkBalanceOf(src, a));
-    //   await ts.simulate(checkBalanceOf(dest, a));
-    // }
-
-    // Calculate slippage. Default is 1%
-    const _slippage = slippage || 100;
-    const minMaxAmount =
-      (swapSide === SwapSide.SELL
-        ? BigInt(priceRoute.destAmount) * (10000n - BigInt(_slippage))
-        : BigInt(priceRoute.srcAmount) * (10000n + BigInt(_slippage))) / 10000n;
-    const swapParams = await paraswap.buildTransaction(
-      priceRoute,
-      minMaxAmount,
-      senderAddress,
-    );
-
-    const swapTx = await ts.simulate(swapParams);
-
-    // Only log gas estimate if testing against API
-    if (useAPI) {
-      const gasUsed = swapTx.gasUsed || '0';
-      console.log(
-        `Gas Estimate API: ${priceRoute.gasCost}, Simulated: ${
-          swapTx!.gasUsed
-        }, Difference: ${parseInt(priceRoute.gasCost) - parseInt(gasUsed)}`,
-      );
-    }
-    console.log(
-      `${swapSide}: ${srcToken.address} -> ${destToken.address} (${
-        priceRoute.contractMethod
-      })\nTenderly URL: ${swapTx!.url}`,
-    );
-    expect(swapTx!.success).toEqual(true);
-  } finally {
-    if (paraswap.releaseResources) {
-      await paraswap.releaseResources();
-    }
-  }
+  // build swap transaction
+  const _slippage = slippage !== undefined ? BigInt(slippage) : 100n;
+  const minMaxAmount =
+    (swapSide === SwapSide.SELL
+      ? BigInt(priceRoute.destAmount) * (10000n - _slippage)
+      : BigInt(priceRoute.srcAmount) * (10000n + _slippage)) / 10000n;
+  const swapParams = await sdk.buildTransaction(
+    priceRoute,
+    minMaxAmount,
+    senderAddress,
+  );
+  assert(
+    swapParams.to !== undefined,
+    'Transaction params missing `to` property',
+  );
+  // assemble `SimulationRequest`
+  const { from, to, data, value } = swapParams;
+  const simulationRequest = {
+    chainId: network,
+    from,
+    to,
+    data,
+    value,
+    blockNumber: priceRoute.blockNumber,
+    stateOverride,
+  };
+  // simulate the transaction with overrides
+  const simulation = await tenderlySimulator.simulateTransaction(
+    simulationRequest,
+  );
+  // log gas estimation
+  const estimatedGas = Number(priceRoute.gasCost);
+  const gasUsed = simulation.gas_used;
+  console.log(
+    `Gas Estimate API: ${
+      priceRoute.gasCost
+    }, Simulated: ${gasUsed}, Difference: ${estimatedGas - gasUsed}`,
+  );
+  // release
+  await sdk.releaseResources();
 }
 
 export type TestParamE2E = {
