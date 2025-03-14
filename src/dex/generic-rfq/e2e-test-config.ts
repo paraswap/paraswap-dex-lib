@@ -11,27 +11,15 @@ export const testConfig: {
   [Network.MAINNET]: [
     {
       srcToken: 'USDT',
-      destToken: 'WETH',
+      destToken: 'USDC',
+      amount: '10000',
       swapSide: SwapSide.BUY,
-      amount: '10000000000000000',
     },
     {
-      srcToken: 'WETH',
+      srcToken: 'USDC',
       destToken: 'USDT',
-      swapSide: SwapSide.BUY,
-      amount: '1000000',
-    },
-    {
-      srcToken: 'USDT',
-      destToken: 'WETH',
+      amount: '10000',
       swapSide: SwapSide.SELL,
-      amount: '1000000',
-    },
-    {
-      srcToken: 'WETH',
-      destToken: 'USDT',
-      swapSide: SwapSide.SELL,
-      amount: '10000000000000000',
     },
   ],
 };

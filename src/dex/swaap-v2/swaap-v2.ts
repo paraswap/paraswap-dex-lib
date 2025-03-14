@@ -10,8 +10,15 @@ import {
   ExchangeTxInfo,
   OptimalSwapExchange,
   PreprocessTransactionOptions,
+  DexExchangeParam,
 } from '../../types';
-import { SwapSide, Network, MAX_INT, MAX_UINT } from '../../constants';
+import {
+  SwapSide,
+  Network,
+  MAX_INT,
+  MAX_UINT,
+  CACHE_PREFIX,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork, isAxiosError } from '../../utils';
 import { IDex } from '../idex';
@@ -23,6 +30,7 @@ import {
   SwaapV2APIParameters,
   SwaapV2QuoteError,
   TokensMap,
+  SwaapV2NotificationResponse,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, SwaapV2Config } from './config';
@@ -31,20 +39,21 @@ import routerAbi from '../../abi/swaap-v2/vault.json';
 import BigNumber from 'bignumber.js';
 import { BN_0, BN_1, getBigNumberPow } from '../../bignumber-constants';
 import { Interface } from 'ethers/lib/utils';
-import { assert } from 'ts-essentials';
+import { AsyncOrSync, assert } from 'ts-essentials';
 import {
   SWAAP_RFQ_API_URL,
   SWAAP_RFQ_PRICES_ENDPOINT,
   SWAAP_RFQ_QUOTE_ENDPOINT,
   SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS,
   SWAAP_RFQ_PRICES_CACHES_TTL_S,
-  GAS_COST_ESTIMATION,
+  STABLE_SWAP_GAS_COST_ESTIMATION,
+  VOLATILE_SWAP_GAS_COST_ESTIMATION,
   BATCH_SWAP_SELECTOR,
   CALLER_SLOT,
-  SWAAP_BLACKLIST_TTL_S,
+  SWAAP_403_TTL_S,
+  SWAAP_429_TTL_S,
   SWAAP_RFQ_TOKENS_ENDPOINT,
-  SWAAP_RESTRICT_TTL_S,
-  SWAAP_RESTRICTED_CACHE_KEY,
+  SWAAP_POOL_RESTRICT_TTL_S,
   SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS,
   SWAAP_RFQ_TOKENS_CACHES_TTL_S,
   SWAAP_PRICES_CACHE_KEY,
@@ -52,14 +61,23 @@ import {
   SWAAP_ORDER_TYPE_SELL,
   SWAAP_ORDER_TYPE_BUY,
   SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION,
+  SWAAP_BANNED_CODE,
+  SWAAP_NOTIFY_ENDPOINT,
 } from './constants';
-import { getPoolIdentifier, normalizeTokenAddress, getPairName } from './utils';
+import {
+  getPoolIdentifier,
+  normalizeTokenAddress,
+  getPairName,
+  isStablePair,
+} from './utils';
 import { Method } from '../../dex-helper/irequest-wrapper';
 import {
   SlippageCheckError,
   TooStrictSlippageCheckError,
 } from '../generic-rfq/types';
 import { BI_MAX_UINT256 } from '../../bigint-constants';
+import { SpecialDex } from '../../executor/types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const BLACKLISTED = 'blacklisted';
 
@@ -71,6 +89,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   private rateFetcher: RateFetcher;
   private swaapV2AuthToken: string;
   private tokensMap: TokensMap = {};
+  private runtimeMMsRestrictHashMapKey: string;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SwaapV2Config);
@@ -113,6 +132,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         },
       },
     );
+
+    this.runtimeMMsRestrictHashMapKey =
+      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_restricted_mms`.toLowerCase();
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
@@ -256,10 +278,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async getCachedTokens(): Promise<TokensMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       SWAAP_TOKENS_CACHE_KEY,
+      SWAAP_RFQ_API_TOKENS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedTokens) {
@@ -270,10 +293,11 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   async getCachedLevels(): Promise<Record<string, SwaapV2PriceLevels> | null> {
-    const cachedLevels = await this.dexHelper.cache.get(
+    const cachedLevels = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       SWAAP_PRICES_CACHE_KEY,
+      SWAAP_RFQ_API_PRICES_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedLevels) {
@@ -298,21 +322,21 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SwaapV2Data>> {
+    const normalizedSrcToken = this.normalizeToken(srcToken);
+    const normalizedDestToken = this.normalizeToken(destToken);
+
+    const requestedPoolIdentifier: string = getPoolIdentifier(
+      this.dexKey,
+      normalizedSrcToken.address,
+      normalizedDestToken.address,
+    );
+
     try {
-      if (await this.isRestricted()) {
+      if (await this.isRestrictedPool(requestedPoolIdentifier)) {
         return null;
       }
 
       this.tokensMap = (await this.getCachedTokens()) || {};
-
-      const normalizedSrcToken = this.normalizeToken(srcToken);
-      const normalizedDestToken = this.normalizeToken(destToken);
-
-      const requestedPoolIdentifier: string = getPoolIdentifier(
-        this.dexKey,
-        normalizedSrcToken.address,
-        normalizedDestToken.address,
-      );
 
       if (normalizedSrcToken.address === normalizedDestToken.address) {
         return null;
@@ -391,8 +415,16 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           return null;
         }
 
+        const gasCost = isStablePair(
+          this.network,
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        )
+          ? STABLE_SWAP_GAS_COST_ESTIMATION
+          : VOLATILE_SWAP_GAS_COST_ESTIMATION;
+
         return {
-          gasCost: GAS_COST_ESTIMATION,
+          gasCost: gasCost,
           exchange: this.dexKey,
           data: {},
           prices,
@@ -413,6 +445,49 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
   getBaseToken(poolIdentifier: string): string {
     return poolIdentifier.split('_')[1];
+  }
+
+  getDexParam(
+    srcToken: string,
+    destToken: string,
+    srcAmount: string,
+    destAmount: string,
+    recipient: string,
+    data: SwaapV2Data,
+    side: SwapSide,
+  ): AsyncOrSync<DexExchangeParam> {
+    const { router, callData } = data;
+    const isBatchSwap = callData.slice(0, 10) === BATCH_SWAP_SELECTOR;
+
+    // at the moment of writing, batch swap is not supported by SwappV2 API
+    assert(isBatchSwap !== true, 'Batch swap is not supported');
+
+    assert(
+      router !== undefined,
+      `${this.dexKey}-${this.network}: router undefined`,
+    );
+
+    assert(
+      callData !== undefined,
+      `${this.dexKey}-${this.network}: callData undefined`,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      specialDexSupportsInsertFromAmount: true,
+      dexFuncHasRecipient: true,
+      exchangeData: callData,
+      specialDexFlag: SpecialDex.SWAP_ON_SWAAP_V2_SINGLE,
+      targetExchange: router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerInterface,
+              'swap',
+              'amountCalculated',
+            )
+          : undefined,
+    };
   }
 
   async preProcessTransaction(
@@ -451,8 +526,9 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         normalizedDestToken,
         isSell ? optimalSwapExchange.srcAmount : optimalSwapExchange.destAmount,
         isSell ? SWAAP_ORDER_TYPE_SELL : SWAAP_ORDER_TYPE_BUY,
-        options.txOrigin,
-        this.augustusAddress,
+        options.userAddress,
+        options.executionContractAddress,
+        options.recipient,
         tolerance,
         this.getQuoteReqParams(),
       );
@@ -561,13 +637,15 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         { deadline: minDeadline },
       ];
     } catch (e) {
-      if (
-        isAxiosError(e) &&
-        (e.response?.status === 403 || e.response?.status === 429)
-      ) {
-        await this.setBlacklist(options.txOrigin);
+      if (isAxiosError(e) && e.response?.status === 403) {
+        await this.setBlacklist(options.userAddress, SWAAP_403_TTL_S);
         this.logger.warn(
-          `${this.dexKey}-${this.network}: Encountered restricted user=${options.txOrigin}. Adding to local blacklist cache`,
+          `${this.dexKey}-${this.network}: Encountered blacklisted user=${options.userAddress}. Adding to local blacklist cache`,
+        );
+      } else if (isAxiosError(e) && e.response?.status === 429) {
+        await this.setBlacklist(options.userAddress, SWAAP_429_TTL_S);
+        this.logger.warn(
+          `${this.dexKey}-${this.network}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
         );
       } else {
         if (e instanceof TooStrictSlippageCheckError) {
@@ -578,7 +656,16 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           this.logger.warn(
             `${this.dexKey}-${this.network}: protocol is restricted`,
           );
-          await this.restrict();
+          const poolIdentifier = getPoolIdentifier(
+            this.dexKey,
+            normalizedSrcToken.address,
+            normalizedDestToken.address,
+          );
+          var message = 'Unknown error';
+          if (e instanceof Error) {
+            message = `${e.name}: ${e.message}`;
+          }
+          await this.restrictPool(message, poolIdentifier);
         }
       }
 
@@ -586,25 +673,45 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     }
   }
 
-  async restrict(ttl: number = SWAAP_RESTRICT_TTL_S): Promise<boolean> {
-    await this.dexHelper.cache.setex(
-      this.dexKey,
-      this.network,
-      SWAAP_RESTRICTED_CACHE_KEY,
-      ttl,
-      'true',
+  async restrictPool(message: string, poolIdentifier: string): Promise<void> {
+    this.logger.warn(
+      `${this.dexKey}-${this.network}: ${poolIdentifier} was restricted for ${SWAAP_POOL_RESTRICT_TTL_S} sec. due to fails`,
     );
-    return true;
+
+    // We use timestamp for creation date to later discern if it already expired or not
+    await this.dexHelper.cache.hset(
+      this.runtimeMMsRestrictHashMapKey,
+      poolIdentifier,
+      Date.now().toString(),
+    );
+
+    this.rateFetcher
+      .notify(SWAAP_BANNED_CODE, message, this.getNotifyReqParams())
+      .then((answer: SwaapV2NotificationResponse) => {
+        if (answer.success) {
+          this.logger.info(`Successfully notified Swaap API`);
+        } else {
+          this.logger.error(`Swaap API was not successfully notified`);
+        }
+      })
+      .catch(e => {
+        // Must never happen
+        this.logger.error(`Swaap API notification failed: ${e}`);
+      });
   }
 
-  async isRestricted(): Promise<boolean> {
-    const result = await this.dexHelper.cache.get(
-      this.dexKey,
-      this.network,
-      SWAAP_RESTRICTED_CACHE_KEY,
+  async isRestrictedPool(poolIdentifier: string): Promise<boolean> {
+    const expirationThreshold = Date.now() - SWAAP_POOL_RESTRICT_TTL_S * 1000;
+    const createdAt = await this.dexHelper.cache.hget(
+      this.runtimeMMsRestrictHashMapKey,
+      poolIdentifier,
     );
-
-    return result === 'true';
+    const wasNotRestricted = createdAt === null;
+    if (wasNotRestricted) {
+      return false;
+    }
+    const restrictionExpired = +createdAt < expirationThreshold;
+    return !restrictionExpired;
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
@@ -622,7 +729,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
   async setBlacklist(
     txOrigin: Address,
-    ttl: number = SWAAP_BLACKLIST_TTL_S,
+    ttl: number = SWAAP_403_TTL_S,
   ): Promise<boolean> {
     await this.dexHelper.cache.setex(
       this.dexKey,
@@ -866,10 +973,6 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (await this.isRestricted()) {
-      return [];
-    }
-
     this.tokensMap = (await this.getCachedTokens()) || {};
     const normalizedTokenAddress = normalizeTokenAddress(tokenAddress);
 
@@ -879,15 +982,34 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       return [];
     }
 
-    return Object.keys(pLevels)
-      .filter((pair: string) => {
+    const pLevelsWithRestriction = await Promise.all(
+      Object.keys(pLevels).map(async (pair: string) => {
         const { base, quote } = pLevels[pair];
 
-        return (
-          normalizedTokenAddress === base || normalizedTokenAddress === quote
+        const levelDoesNotIncludeToken =
+          normalizedTokenAddress !== base && normalizedTokenAddress !== quote;
+
+        const poolIdentifier: string = getPoolIdentifier(
+          this.dexKey,
+          base,
+          quote,
         );
-      })
-      .map((pair: string) => {
+        const isRestrictedPool = await this.isRestrictedPool(poolIdentifier);
+
+        return {
+          pair,
+          levelDoesNotIncludeToken,
+          isRestrictedPool,
+        };
+      }),
+    );
+
+    return pLevelsWithRestriction
+      .filter(
+        ({ levelDoesNotIncludeToken, isRestrictedPool }) =>
+          !levelDoesNotIncludeToken && !isRestrictedPool,
+      )
+      .map(({ pair }) => {
         return {
           exchange: this.dexKey,
           connectorTokens: [
@@ -922,6 +1044,10 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
   getQuoteReqParams(): SwaapV2APIParameters {
     return this.getAPIReqParams(SWAAP_RFQ_QUOTE_ENDPOINT, 'POST');
+  }
+
+  getNotifyReqParams(): SwaapV2APIParameters {
+    return this.getAPIReqParams(SWAAP_NOTIFY_ENDPOINT, 'POST');
   }
 
   getTokensReqParams(): SwaapV2APIParameters {

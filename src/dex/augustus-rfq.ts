@@ -7,7 +7,6 @@ import { SimpleExchange } from './simple-exchange';
 import AugustusRFQABI from '../abi/paraswap-limit-orders/AugustusRFQ.abi.json';
 import PermitABI from '../abi/permit/IERC20Permit.json';
 import PermitLegacyABI from '../abi/permit/IERC20PermitLegacy.json';
-import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 
 const PERMIT_SIGHASH = new Interface(PermitABI).getSighash('permit');
@@ -66,7 +65,6 @@ enum AugustusRFQFunctions {
 
 const AUGUSTUS_RFQ_ADDRESS: { [network: number]: Address } = {
   [Network.MAINNET]: '0xe92b586627ccA7a83dC919cc7127196d70f55a06',
-  [Network.ROPSTEN]: '0x34268C38fcbC798814b058656bC0156C7511c0E4',
   [Network.BSC]: '0x8DcDfe88EF0351f27437284D0710cD65b20288bb',
   [Network.POLYGON]: '0xF3CD476C3C4D3Ac5cA2724767f269070CA09A043',
   [Network.AVALANCHE]: '0x34302c4267d0dA0A8c65510282Cc22E9e39df51f',

@@ -58,8 +58,20 @@ export type AlgebraData = {
     tokenIn: Address;
     tokenOut: Address;
   }[];
+  feeOnTransfer: boolean;
   isApproved?: boolean;
 };
+
+export type AlgebraDataWithFee = {
+  tokenIn: Address;
+  tokenOut: Address;
+};
+
+export enum AlgebraFunctions {
+  exactInput = 'exactInput',
+  exactOutput = 'exactOutput',
+  exactInputWithFeeToken = 'exactInputSingleSupportingFeeOnTransferTokens',
+}
 
 export type DexParams = {
   router: Address;
@@ -72,7 +84,7 @@ export type DexParams = {
   deployer: Address;
   subgraphURL: string;
   initHash: string;
-  version: 'v1.1' | 'v1.9';
+  version: 'v1.1' | 'v1.9' | 'v1.9-bidirectional-fee';
   forceRPC?: boolean;
   forceManualStateGenerate?: boolean;
 };

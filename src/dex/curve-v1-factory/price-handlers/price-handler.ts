@@ -13,10 +13,12 @@ import get_D_precisions_Implementations from './functions/get_D_precisions';
 import get_D_Implementations from './functions/get_D';
 import get_dy_underlying_Implementations from './functions/get_dy_underlying';
 import get_dy_Implementations from './functions/get_dy';
+import get_dx_Implementations from './functions/get_dx';
 import get_y_D_Implementations from './functions/get_y_D';
 import get_y_Implementations from './functions/get_y';
 import constants_Implementations from './functions/constants';
 import { CONVERGENCE_ERROR_PREFIX } from '../constants';
+import { SwapSide } from '@paraswap/core/build/constants';
 
 export class PriceHandler {
   readonly priceHandler: IPoolContext;
@@ -48,6 +50,7 @@ export class PriceHandler {
       get_D: get_D_Implementations[implementationName],
       get_dy_underlying: get_dy_underlying_Implementations[implementationName],
       get_dy: get_dy_Implementations[implementationName],
+      get_dx: get_dx_Implementations[implementationName],
       get_y_D: get_y_D_Implementations[implementationName],
       get_y: get_y_Implementations[implementationName],
 
@@ -70,6 +73,7 @@ export class PriceHandler {
   }
 
   getOutputs(
+    side: SwapSide,
     state: PoolState,
     amounts: bigint[],
     i: number,
@@ -79,36 +83,47 @@ export class PriceHandler {
     return amounts.map(amount => {
       if (amount === 0n) {
         return 0n;
-      } else {
-        try {
-          return isUnderlying
-            ? this.priceHandler.get_dy_underlying(
-                this.priceHandler,
-                state,
-                i,
-                j,
-                amount,
-              )
-            : this.priceHandler.get_dy(this.priceHandler, state, i, j, amount);
-        } catch (e) {
-          if (
-            e instanceof Error &&
-            e.message.startsWith(CONVERGENCE_ERROR_PREFIX)
-          ) {
-            this.logger.trace(`Convergence Error: `, e);
-          } else if (
-            e instanceof Error &&
-            e.message.startsWith(`Division by zero`)
-          ) {
-            this.logger.trace(
-              `Zero division Error suppressed because mostly it is expected`,
-              e,
-            );
-          } else {
-            this.logger.error(`Unexpected error while calculating price: `, e);
-          }
+      }
+      if (side === SwapSide.BUY && state.balances[j] < amount) {
+        return 0n;
+      }
+      try {
+        const output = isUnderlying
+          ? this.priceHandler.get_dy_underlying(
+              this.priceHandler,
+              state,
+              i,
+              j,
+              amount,
+            )
+          : side === SwapSide.SELL
+          ? this.priceHandler.get_dy(this.priceHandler, state, i, j, amount)
+          : this.priceHandler.get_dx(this.priceHandler, state, i, j, amount);
+
+        // isUnderlying is always false for curve-v1-factory
+        if (side === SwapSide.SELL && state.balances[j] < output) {
           return 0n;
         }
+
+        return output;
+      } catch (e) {
+        if (
+          e instanceof Error &&
+          e.message.startsWith(CONVERGENCE_ERROR_PREFIX)
+        ) {
+          this.logger.trace(`Convergence Error: `, e);
+        } else if (
+          e instanceof Error &&
+          e.message.startsWith(`Division by zero`)
+        ) {
+          this.logger.trace(
+            `Zero division Error suppressed because mostly it is expected`,
+            e,
+          );
+        } else {
+          this.logger.error(`Unexpected error while calculating price: `, e);
+        }
+        return 0n;
       }
     });
   }

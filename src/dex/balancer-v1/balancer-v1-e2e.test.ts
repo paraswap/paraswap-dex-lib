@@ -32,12 +32,14 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -94,7 +96,7 @@ function testForNetwork(
 describe('BalancerV1 E2E', () => {
   const dexKey = 'BalancerV1';
 
-  describe('Mainnet', () => {
+  describe('Mainnet_V6', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'USDC';

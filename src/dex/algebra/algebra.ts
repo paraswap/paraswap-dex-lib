@@ -1,24 +1,39 @@
 import { defaultAbiCoder } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { AbiItem } from 'web3-utils';
 import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
 import {
-  Token,
-  Address,
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
   SimpleExchangeParam,
-  PoolLiquidity,
   Logger,
+  TransferFeeParams,
+  Address,
+  PoolLiquidity,
+  Token,
+  DexExchangeParam,
+  NumberAsString,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
-import { getBigIntPow, getDexKeysWithNetwork, interpolate } from '../../utils';
+import {
+  _require,
+  getBigIntPow,
+  getDexKeysWithNetwork,
+  interpolate,
+  isDestTokenTransferFeeToBeExchanged,
+  isSrcTokenTransferFeeToBeExchanged,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { AlgebraData, DexParams, IAlgebraPoolState } from './types';
+import {
+  AlgebraData,
+  AlgebraFunctions,
+  DexParams,
+  IAlgebraPoolState,
+} from './types';
 import {
   SimpleExchange,
   getLocalDeadlineAsFriendlyPlaceholder,
@@ -26,24 +41,25 @@ import {
 import { AlgebraConfig, Adapters } from './config';
 import { Contract } from 'web3-eth-contract';
 import { Interface } from 'ethers/lib/utils';
-import UniswapV3RouterABI from '../../abi/uniswap-v3/UniswapV3Router.abi.json';
+import SwapRouter from '../../abi/algebra/SwapRouter.json';
 import AlgebraQuoterABI from '../../abi/algebra/AlgebraQuoter.abi.json';
 import UniswapV3MultiABI from '../../abi/uniswap-v3/UniswapMulti.abi.json';
 import AlgebraStateMulticallABI from '../../abi/algebra/AlgebraStateMulticall.abi.json';
-import {
-  OutputResult,
-  UniswapV3Functions,
-  UniswapV3SimpleSwapParams,
-} from '../uniswap-v3/types';
+import { OutputResult } from '../uniswap-v3/types';
 import { AlgebraMath } from './lib/AlgebraMath';
 import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
+import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { AlgebraEventPoolV1_9_bidirectional_fee } from './algebra-pool-v1_9_bidirectional_fee';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
 };
+
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
 
 const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
@@ -53,16 +69,17 @@ const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
 const ALGEBRA_POOL_SEARCH_OVERHEAD = 10_000;
 const ALGEBRA_QUOTE_GASLIMIT = 2_000_000;
 
-const MAX_STALE_STATE_BLOCK_AGE = {
-  [Network.ZKEVM]: 150, // approximately 3min
-};
-
-type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
+type IAlgebraEventPool =
+  | AlgebraEventPoolV1_1
+  | AlgebraEventPoolV1_9
+  | AlgebraEventPoolV1_9_bidirectional_fee;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private readonly factory: AlgebraFactory;
-  readonly isFeeOnTransferSupported: boolean = false;
+  readonly isFeeOnTransferSupported: boolean = true;
   protected eventPools: Record<string, IAlgebraEventPool | null> = {};
+
+  private newlyCreatedPoolKeys: Set<string> = new Set();
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly needWrapNative = true;
@@ -81,14 +98,18 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
   private AlgebraPoolImplem:
     | typeof AlgebraEventPoolV1_1
-    | typeof AlgebraEventPoolV1_9;
+    | typeof AlgebraEventPoolV1_9
+    | typeof AlgebraEventPoolV1_9_bidirectional_fee;
+
+  readonly SRC_TOKEN_DEX_TRANSFERS = 1;
+  readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   constructor(
     protected network: Network,
     dexKey: string,
     protected dexHelper: IDexHelper,
     protected adapters = Adapters[network] || {},
-    readonly routerIface = new Interface(UniswapV3RouterABI), // same abi as uniswapV3
+    readonly routerIface = new Interface(SwapRouter),
     readonly quoterIface = new Interface(AlgebraQuoterABI),
     readonly config = AlgebraConfig[dexKey][network],
   ) {
@@ -115,7 +136,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
     this.AlgebraPoolImplem =
-      config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
+      config.version === 'v1.1'
+        ? AlgebraEventPoolV1_1
+        : config.version === 'v1.9-bidirectional-fee'
+        ? AlgebraEventPoolV1_9_bidirectional_fee
+        : AlgebraEventPoolV1_9;
 
     this.factory = new AlgebraFactory(
       dexHelper,
@@ -150,6 +175,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         );
       };
 
+      void cleanExpiredNotExistingPoolsKeys();
+
       this.intervalTask = setInterval(
         cleanExpiredNotExistingPoolsKeys.bind(this),
         ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
@@ -167,7 +194,9 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }) => {
     const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
     const [_token0, _token1] = this._sortTokens(token0, token1);
-    const poolKey = `${_token0}_${_token1}`;
+    const poolKey = `${_token0}_${_token1}`.toLowerCase();
+
+    this.newlyCreatedPoolKeys.add(poolKey);
 
     // consider doing it only from master pool for less calls to distant cache
 
@@ -207,20 +236,6 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     if (pool) {
       if (!pool.initFailed) {
-        if (this.network !== Network.ZKEVM) return pool;
-
-        if (
-          pool.getStaleState() === null ||
-          (pool.getState(blockNumber) === null &&
-            blockNumber - pool.getStateBlockNumber() >
-              MAX_STALE_STATE_BLOCK_AGE[this.network])
-        ) {
-          /* reload state, on zkEVM this would most likely timeout during request life
-           * but would allow to rely on staleState for couple of min for next requests
-           */
-          await pool.initialize(blockNumber, { forceRegenerate: true });
-        }
-
         return pool;
       } else {
         // if init failed then prefer to early return pool with empty state to fallback to rpc call
@@ -251,15 +266,6 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
         return null;
       }
-
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-        }),
-      );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -290,27 +296,43 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           pool!.initRetryAttemptCount = 0;
         },
       });
+
+      if (this.newlyCreatedPoolKeys.has(key)) {
+        this.newlyCreatedPoolKeys.delete(key);
+      }
     } catch (e) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-        // no need to await we want the set to have the pool key but it's not blocking
-        this.dexHelper.cache.zadd(
-          this.notExistingPoolSetKey,
-          [Date.now(), key],
-          'NX',
-        );
+        /*
+         protection against 2 race conditions
+          1/ if pool.initialize() promise rejects after the Pool creation event got treated
+          2/ if the rpc node we hit on the http request is lagging behind the one we got event from (websocket)
+        */
+        if (this.newlyCreatedPoolKeys.has(key)) {
+          this.logger.warn(
+            `[block=${blockNumber}][Pool=${key}] newly created pool failed to initialise, trying on next request`,
+          );
+        } else {
+          this.logger.info(
+            `[block=${blockNumber}][Pool=${key}] pool failed to initialize so it's marked as non existing`,
+            e,
+          );
 
-        // Pool does not exist for this pair, so we can set it to null
-        // to prevent more requests for this pool
-        pool = null;
-        this.logger.trace(
-          `${this.dexHelper}: Pool: srcAddress=${srcAddress}, destAddress=${destAddress} not found`,
-          e,
-        );
+          // no need to await we want the set to have the pool key but it's not blocking
+          this.dexHelper.cache.zadd(
+            this.notExistingPoolSetKey,
+            [Date.now(), key],
+            'NX',
+          );
+
+          // Pool does not exist for this pair, so we can set it to null
+          // to prevent more requests for this pool
+          pool = null;
+        }
       } else {
         // on unknown error mark as failed and increase retryCount for retry init strategy
         // note: state would be null by default which allows to fallback
         this.logger.warn(
-          `${this.dexKey}: Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
+          `[block=${blockNumber}][Pool=${key}] Can not generate pool state for srcAddress=${srcAddress}, destAddress=${destAddress} pool fallback to rpc and retry every ${this.config.initRetryFrequency} times, initRetryAttemptCount=${pool.initRetryAttemptCount}`,
           e,
         );
         pool.initFailed = true;
@@ -338,10 +360,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(
+      PoolsRegistryHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }
@@ -388,10 +413,23 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     amounts: bigint[],
     side: SwapSide,
     pool: IAlgebraEventPool,
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<ExchangePrices<AlgebraData> | null> {
-    this.logger.warn(
-      `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
-    );
+    if (!this.config.forceRPC) {
+      this.logger.warn(
+        `fallback to rpc for ${from.address}_${to.address}_${pool.name}_${pool.poolAddress} pool(s)`,
+      );
+    }
+
+    const _isSrcTokenTransferFeeToBeExchanged =
+      isSrcTokenTransferFeeToBeExchanged(transferFees);
+    const _isDestTokenTransferFeeToBeExchanged =
+      isDestTokenTransferFeeToBeExchanged(transferFees);
 
     const unitVolume = getBigIntPow(
       (side === SwapSide.SELL ? from : to).decimals,
@@ -407,7 +445,16 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       ),
     );
 
-    const calldata = _amounts.map(_amount => ({
+    const _amountsWithFee = _isSrcTokenTransferFeeToBeExchanged
+      ? applyTransferFee(
+          _amounts,
+          side,
+          transferFees.srcDexFee,
+          this.SRC_TOKEN_DEX_TRANSFERS,
+        )
+      : _amounts;
+
+    const calldata = _amountsWithFee.map(_amount => ({
       target: this.config.quoter,
       gasLimit: ALGEBRA_QUOTE_GASLIMIT,
       callData:
@@ -448,12 +495,22 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       : Math.round(totalGasCost / totalSuccessFullSwaps);
 
     let i = 0;
-    const _rates = _amounts.map(() => decode(i++));
-    const unit: bigint = _rates[0];
+    const _rates = _amountsWithFee.map(() => decode(i++));
+
+    const _ratesWithFee = _isDestTokenTransferFeeToBeExchanged
+      ? applyTransferFee(
+          _rates,
+          side,
+          transferFees.destDexFee,
+          this.DEST_TOKEN_DEX_TRANSFERS,
+        )
+      : _rates;
+
+    const unit: bigint = _ratesWithFee[0];
 
     const prices = interpolate(
-      _amounts.slice(1),
-      _rates.slice(1),
+      _amountsWithFee.slice(1),
+      _ratesWithFee.slice(1),
       amounts,
       side,
     );
@@ -463,6 +520,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         prices,
         unit,
         data: {
+          feeOnTransfer: _isSrcTokenTransferFeeToBeExchanged,
           path: [
             {
               tokenIn: from.address,
@@ -485,6 +543,12 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
+    transferFees: TransferFeeParams = {
+      srcFee: 0,
+      destFee: 0,
+      srcDexFee: 0,
+      destDexFee: 0,
+    },
   ): Promise<null | ExchangePrices<AlgebraData>> {
     try {
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
@@ -495,6 +559,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         _destToken,
       );
 
+      const _isSrcTokenTransferFeeToBeExchanged =
+        isSrcTokenTransferFeeToBeExchanged(transferFees);
+      const _isDestTokenTransferFeeToBeExchanged =
+        isDestTokenTransferFeeToBeExchanged(transferFees);
+
       if (_srcAddress === _destAddress) return null;
 
       if (
@@ -503,8 +572,14 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         return null;
 
       const pool = await this.getPool(_srcAddress, _destAddress, blockNumber);
-
       if (!pool) return null;
+
+      if (_isSrcTokenTransferFeeToBeExchanged && side == SwapSide.BUY) {
+        this.logger.error(
+          `pool: ${pool.poolAddress} doesn't support buy for tax srcToken ${srcToken.address}`,
+        );
+        return null;
+      }
 
       if (this.config.forceRPC) {
         const rpcPrice = await this.getPricingFromRpc(
@@ -513,6 +588,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
           amounts,
           side,
           pool,
+          transferFees,
         );
 
         return rpcPrice;
@@ -521,36 +597,16 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       let state = pool.getState(blockNumber);
 
       if (state === null) {
-        if (this.network === Network.ZKEVM) {
-          if (pool.initFailed) return null;
+        const rpcPrice = await this.getPricingFromRpc(
+          _srcToken,
+          _destToken,
+          amounts,
+          side,
+          pool,
+          transferFees,
+        );
 
-          if (
-            blockNumber - pool.getStateBlockNumber() <=
-            MAX_STALE_STATE_BLOCK_AGE[this.network]
-          ) {
-            this.logger.warn(
-              `${_srcAddress}_${_destAddress}_${pool.name}_${
-                pool.poolAddress
-              } state fallback to latest early enough state. Current blockNumber=${blockNumber}, stateBlockNumber=${pool.getStateBlockNumber()}`,
-            );
-            state = pool.getStaleState();
-          } else {
-            this.logger.warn(
-              `${_srcAddress}_${_destAddress}_${pool.name}_${pool.poolAddress} state is unhealthy, cannot compute price (no fallback on this chain)`,
-            );
-            return null; // never fallback as takes more time
-          }
-        } else {
-          const rpcPrice = await this.getPricingFromRpc(
-            _srcToken,
-            _destToken,
-            amounts,
-            side,
-            pool,
-          );
-
-          return rpcPrice;
-        }
+        return rpcPrice;
       }
 
       if (!state) return null;
@@ -578,16 +634,26 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       const balanceDestToken =
         _destAddress === pool.token0 ? state.balance0 : state.balance1;
 
+      const [unitAmountWithFee, ...amountsWithFee] =
+        _isSrcTokenTransferFeeToBeExchanged
+          ? applyTransferFee(
+              [unitAmount, ..._amounts],
+              side,
+              transferFees.srcDexFee,
+              this.SRC_TOKEN_DEX_TRANSFERS,
+            )
+          : [unitAmount, ..._amounts];
+
       const unitResult = this._getOutputs(
         state,
-        [unitAmount],
+        [unitAmountWithFee],
         zeroForOne,
         side,
         balanceDestToken,
       );
       const pricesResult = this._getOutputs(
         state,
-        _amounts,
+        amountsWithFee,
         zeroForOne,
         side,
         balanceDestToken,
@@ -598,10 +664,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         return null;
       }
 
-      const prices = [0n, ...pricesResult.outputs];
+      const [unitResultWithFee, ...pricesResultWithFee] =
+        _isDestTokenTransferFeeToBeExchanged
+          ? applyTransferFee(
+              [unitResult.outputs[0], ...pricesResult.outputs],
+              side,
+              transferFees.destDexFee,
+              this.DEST_TOKEN_DEX_TRANSFERS,
+            )
+          : [unitResult.outputs[0], ...pricesResult.outputs];
+
+      const prices = [0n, ...pricesResultWithFee];
       const gasCost = [
         0,
-        ...pricesResult.outputs.map((p, index) => {
+        ...pricesResultWithFee.map((p, index) => {
           if (p == 0n) {
             return 0;
           } else {
@@ -616,9 +692,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
       return [
         {
-          unit: unitResult.outputs[0],
+          unit: unitResultWithFee,
           prices,
           data: {
+            feeOnTransfer: _isSrcTokenTransferFeeToBeExchanged,
             path: [
               {
                 tokenIn: _srcAddress,
@@ -651,19 +728,20 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     data: AlgebraData,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const { path: rawPath } = data;
-    const path = this._encodePath(rawPath, side);
+    let path = this._encodePath(data.path, side);
 
     const payload = this.abiCoder.encodeParameter(
       {
         ParentStruct: {
           path: 'bytes',
           deadline: 'uint256',
+          feeOnTransfer: 'bool',
         },
       },
       {
         path,
         deadline: getLocalDeadlineAsFriendlyPlaceholder(), // FIXME: more gas efficient to pass block.timestamp in adapter
+        feeOnTransfer: data.feeOnTransfer,
       },
     );
 
@@ -707,30 +785,52 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     data: AlgebraData,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const swapFunction =
-      side === SwapSide.SELL
-        ? UniswapV3Functions.exactInput
-        : UniswapV3Functions.exactOutput;
+    let swapFunction;
+    let swapParams;
 
-    const path = this._encodePath(data.path, side);
-    const swapFunctionParams: UniswapV3SimpleSwapParams =
-      side === SwapSide.SELL
-        ? {
-            recipient: this.augustusAddress,
-            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-            amountIn: srcAmount,
-            amountOutMinimum: destAmount,
-            path,
-          }
-        : {
-            recipient: this.augustusAddress,
-            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
-            amountOut: destAmount,
-            amountInMaximum: srcAmount,
-            path,
-          };
+    if (data.feeOnTransfer) {
+      _require(
+        data.path.length === 1,
+        `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
+          .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
+          .join(' ')}`,
+      );
+      swapFunction = AlgebraFunctions.exactInputWithFeeToken;
+      swapParams = {
+        limitSqrtPrice: '0',
+        recipient: this.augustusAddress,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+        amountIn: srcAmount,
+        amountOutMinimum: destAmount,
+        tokenIn: data.path[0].tokenIn,
+        tokenOut: data.path[0].tokenOut,
+      };
+    } else {
+      swapFunction =
+        side === SwapSide.SELL
+          ? AlgebraFunctions.exactInput
+          : AlgebraFunctions.exactOutput;
+      const path = this._encodePath(data.path, side);
+      swapParams =
+        side === SwapSide.SELL
+          ? {
+              recipient: this.augustusAddress,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountIn: srcAmount,
+              amountOutMinimum: destAmount,
+              path,
+            }
+          : {
+              recipient: this.augustusAddress,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountOut: destAmount,
+              amountInMaximum: srcAmount,
+              path,
+            };
+    }
+
     const swapData = this.routerIface.encodeFunctionData(swapFunction, [
-      swapFunctionParams,
+      swapParams,
     ]);
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -741,6 +841,79 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       swapData,
       this.config.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AlgebraData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    let swapFunction;
+    let swapFunctionParams;
+
+    if (data.feeOnTransfer) {
+      _require(
+        data.path.length === 1,
+        `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
+          .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
+          .join(' ')}`,
+      );
+      swapFunction = AlgebraFunctions.exactInputWithFeeToken;
+      swapFunctionParams = {
+        limitSqrtPrice: '0',
+        recipient: recipient,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+        amountIn: srcAmount,
+        amountOutMinimum: destAmount,
+        tokenIn: data.path[0].tokenIn,
+        tokenOut: data.path[0].tokenOut,
+      };
+    } else {
+      swapFunction =
+        side === SwapSide.SELL
+          ? AlgebraFunctions.exactInput
+          : AlgebraFunctions.exactOutput;
+      const path = this._encodePath(data.path, side);
+      swapFunctionParams =
+        side === SwapSide.SELL
+          ? {
+              recipient: recipient,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountIn: srcAmount,
+              amountOutMinimum: destAmount,
+              path,
+            }
+          : {
+              recipient: recipient,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountOut: destAmount,
+              amountInMaximum: srcAmount,
+              path,
+            };
+    }
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
+    };
   }
 
   async getTopPoolsForToken(
@@ -860,6 +1033,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   ): OutputResult | null {
     try {
       const outputsResult = AlgebraMath.queryOutputs(
+        this.network,
         state,
         amounts,
         zeroForOne,
@@ -909,11 +1083,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     timeout = 30000,
   ) {
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {

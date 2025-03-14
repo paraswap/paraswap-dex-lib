@@ -19,7 +19,7 @@ import {
 } from './types';
 import {
   blacklistResponseValidator,
-  firmRateResponseValidator,
+  firmRateWithTakerValidator,
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
@@ -30,6 +30,9 @@ import { checkOrder } from './utils';
 import { validateAndCast } from '../../lib/validators';
 
 const network = 1;
+const AugustusAddress = {
+  1: '0xdef171fe48cf0115b1d80b88dc8eab59176fee57',
+};
 
 const getEnv = (envName: string): string => {
   if (!process.env[envName]) {
@@ -262,7 +265,7 @@ const mainFirm = async () => {
 
     const firmRateResp = validateAndCast<RFQFirmRateResponse>(
       res,
-      firmRateResponseValidator,
+      firmRateWithTakerValidator(AugustusAddress[network]),
     );
 
     await checkOrder(

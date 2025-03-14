@@ -28,7 +28,12 @@ import {
 } from '../uniswap-v3/contract-math/utils';
 import { Network } from '../../constants';
 import { TickTable } from './lib/TickTable';
-import { TICK_BITMAP_BUFFER, TICK_BITMAP_TO_USE } from './constants';
+import {
+  TICK_BITMAP_BUFFER,
+  TICK_BITMAP_BUFFER_BY_CHAIN,
+  TICK_BITMAP_TO_USE,
+  TICK_BITMAP_TO_USE_BY_CHAIN,
+} from './constants';
 
 export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9> {
   handlers: {
@@ -101,6 +106,13 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
     await super.initialize(blockNumber, options);
   }
 
+  protected getPoolIdentifierData() {
+    return {
+      token0: this.token0,
+      token1: this.token1,
+    };
+  }
+
   protected async processBlockLogs(
     state: DeepReadonly<PoolState_v1_9>,
     logs: Readonly<Log>[],
@@ -168,7 +180,14 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
   }
 
   getBitmapRangeToRequest() {
-    return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
+    const networkId = this.dexHelper.config.data.network;
+
+    const tickBitmapToUse =
+      TICK_BITMAP_TO_USE_BY_CHAIN[networkId] ?? TICK_BITMAP_TO_USE;
+    const tickBitmapBuffer =
+      TICK_BITMAP_BUFFER_BY_CHAIN[networkId] ?? TICK_BITMAP_BUFFER;
+
+    return tickBitmapToUse + tickBitmapBuffer;
   }
 
   private async _fetchPoolState_v1_9SingleStep(
@@ -403,6 +422,7 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
       const zeroForOne = amount0 > 0n;
 
       const [, , , , , communityFee] = AlgebraMath._calculateSwapAndLock(
+        this.dexHelper.config.data.network,
         pool,
         zeroForOne,
         newSqrtPriceX96,
@@ -460,6 +480,7 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     AlgebraMath._updatePositionTicksAndFees(
+      this.dexHelper.config.data.network,
       pool,
       bottomTick,
       topTick,
@@ -484,6 +505,7 @@ export class AlgebraEventPoolV1_9 extends StatefulEventSubscriber<PoolState_v1_9
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     AlgebraMath._updatePositionTicksAndFees(
+      this.dexHelper.config.data.network,
       pool,
       bottomTick,
       topTick,

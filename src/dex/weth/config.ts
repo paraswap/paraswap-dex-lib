@@ -10,9 +10,6 @@ export const WethConfig: DexConfigMap<DexParams> = {
     [Network.MAINNET]: {
       poolGasCost: WethGasCost,
     },
-    [Network.ROPSTEN]: {
-      poolGasCost: WethGasCost,
-    },
     [Network.RINKEBY]: {
       poolGasCost: WethGasCost,
     },
@@ -26,6 +23,9 @@ export const WethConfig: DexConfigMap<DexParams> = {
       poolGasCost: WethGasCost,
     },
     [Network.BASE]: {
+      poolGasCost: WethGasCost,
+    },
+    [Network.SEPOLIA]: {
       poolGasCost: WethGasCost,
     },
   },
@@ -46,6 +46,11 @@ export const WethConfig: DexConfigMap<DexParams> = {
   },
   Wavax: {
     [Network.AVALANCHE]: {
+      poolGasCost: WethGasCost,
+    },
+  },
+  Wxdai: {
+    [Network.GNOSIS]: {
       poolGasCost: WethGasCost,
     },
   },
@@ -72,5 +77,11 @@ export const Adapters: {
   },
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 1 }],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter02', index: 2 }],
+  },
+  [Network.ZKEVM]: {
+    [SwapSide.SELL]: [{ name: 'PolygonZkEvmAdapter01', index: 3 }],
   },
 };

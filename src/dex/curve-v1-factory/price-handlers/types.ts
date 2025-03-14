@@ -52,7 +52,12 @@ export type get_D_precisions = (
   amp: bigint,
 ) => bigint;
 
-export type get_D = (self: IPoolContext, xp: bigint[], amp: bigint) => bigint;
+export type get_D = (
+  self: IPoolContext,
+  xp: bigint[],
+  amp: bigint,
+  N_COINS?: number,
+) => bigint;
 
 export type get_dy_underlying = (
   self: IPoolContext,
@@ -70,6 +75,14 @@ export type get_dy = (
   dx: bigint,
 ) => bigint;
 
+export type get_dx = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dy: bigint,
+) => bigint;
+
 export type get_y_D = (
   self: IPoolContext,
   A: bigint,
@@ -85,6 +98,8 @@ export type get_y = (
   j: number,
   x: bigint,
   xp_: bigint[],
+  _amp?: bigint,
+  _D?: bigint,
 ) => bigint;
 
 /*
@@ -121,6 +136,7 @@ export interface IPoolContext {
   get_D: get_D;
   get_dy_underlying: get_dy_underlying;
   get_dy: get_dy;
+  get_dx: get_dx;
   get_y_D: get_y_D;
   get_y: get_y;
 }

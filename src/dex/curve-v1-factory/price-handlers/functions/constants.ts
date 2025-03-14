@@ -1,6 +1,4 @@
-import {} from 'ts-essentials';
 import { BI_POWS } from '../../../../bigint-constants';
-import { PRECISION } from '../../../kyberdmm/fee-formula';
 import { ImplementationNames, PoolContextConstants } from '../../types';
 
 const implementationConstants: Record<
@@ -580,6 +578,17 @@ const implementationConstants: Record<
     A_PRECISION: 100n,
   },
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: {
+    isWrapNative: false,
+    isFeeOnTransferSupported: false,
+    isLending: false,
+
+    N_COINS: 2,
+    BI_N_COINS: 2n,
+    PRECISION: BI_POWS[18],
+    FEE_DENOMINATOR: BI_POWS[10],
+    A_PRECISION: 100n,
+  },
+  [ImplementationNames.FACTORY_STABLE_NG]: {
     isWrapNative: false,
     isFeeOnTransferSupported: false,
     isLending: false,

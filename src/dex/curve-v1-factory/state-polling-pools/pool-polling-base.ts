@@ -5,7 +5,13 @@ import {
   MAX_ALLOWED_STATE_DELAY_FACTOR,
   MIN_LIQUIDITY_IN_USD,
 } from '../constants';
-import { CurveV1FactoryData, PoolConstants, PoolState } from '../types';
+import {
+  CurveV1FactoryData,
+  ImplementationNames,
+  PoolConstants,
+  PoolContextConstants,
+  PoolState,
+} from '../types';
 import { Address } from '@paraswap/core';
 
 export type MulticallReturnedTypes = bigint | bigint[];
@@ -38,11 +44,12 @@ export abstract class PoolPollingBase {
     readonly dexKey: string,
     readonly network: number,
     readonly cacheStateKey: string,
-    readonly implementationName: string,
+    readonly implementationName: ImplementationNames,
     readonly implementationAddress: Address,
     readonly stateUpdatePeriodMs: number,
     readonly poolIdentifier: string,
     readonly poolConstants: PoolConstants,
+    readonly poolContextConstants: PoolContextConstants,
     readonly address: Address,
     readonly curveLiquidityApiSlug: string,
     readonly isLendingPool: boolean,
@@ -53,6 +60,7 @@ export abstract class PoolPollingBase {
     this.fullName = `${dexKey}-${network}-${this.CLASS_NAME}-${this.implementationName}-${this.address}`;
     this.isMetaPool = baseStatePoolPolling !== undefined;
     this.coinsToIndices = this._reduceToIndexMapping(poolConstants.COINS);
+
     this.underlyingCoinsToIndices = baseStatePoolPolling
       ? this._reduceToIndexMapping([
           poolConstants.COINS[0],
@@ -119,10 +127,17 @@ export abstract class PoolPollingBase {
 
     if (iC !== undefined && jC !== undefined) {
       return {
-        exchange: this.address,
-        i: iC,
-        j: jC,
-        underlyingSwap: false,
+        path: [
+          {
+            tokenIn: srcAddress,
+            tokenOut: destAddress,
+            exchange: this.address,
+            i: iC,
+            j: jC,
+            underlyingSwap: false,
+            n_coins: this.poolConstants.COINS.length,
+          },
+        ],
       };
     }
 
@@ -139,10 +154,17 @@ export abstract class PoolPollingBase {
       // I expect them to be included in old CurveV1 implementation
       if (iU !== undefined && jU !== undefined && !(iU > 0 && jU > 0)) {
         return {
-          exchange: this.address,
-          i: iU,
-          j: jU,
-          underlyingSwap: true,
+          path: [
+            {
+              tokenIn: srcAddress,
+              tokenOut: destAddress,
+              exchange: this.address,
+              i: iU,
+              j: jU,
+              underlyingSwap: true,
+              n_coins: this.poolConstants.COINS.length,
+            },
+          ],
         };
       }
     }

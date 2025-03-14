@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { ImplementationNames, PoolState } from '../../types';
 import { get_dy, IPoolContext } from '../types';
 import { requireConstant, requireValue } from './utils';
+import get_y from './get_y';
 
 const _genericFactoryPlain2Basic = (
   self: IPoolContext,
@@ -162,6 +163,58 @@ const customPlain3CoinBtc: get_dy = (
   return dy - _fee;
 };
 
+const stableNg: get_dy = (
+  self: IPoolContext,
+  state: PoolState,
+  i: number,
+  j: number,
+  dx: bigint,
+) => {
+  const rates = requireValue(self, state, 'storedRates', 'stableNg');
+  const N_COINS = requireValue(self, state, 'n_coins', 'stableNg');
+  const A = requireValue(self, state, 'A', 'stableNg');
+  const stateFee = requireValue(self, state, 'fee', 'stableNg');
+  const offpeg_fee_multiplier = requireValue(
+    self,
+    state,
+    'offpeg_fee_multiplier',
+    'stableNg',
+  );
+
+  const { FEE_DENOMINATOR, PRECISION } = self.constants;
+  const xp: bigint[] = [];
+  const { balances } = state;
+
+  for (const idx of _.range(N_COINS)) {
+    xp.push((rates[idx] * balances[idx]) / PRECISION);
+  }
+
+  const amp = A;
+  const D = self.get_D(self, xp, amp, N_COINS);
+
+  const x = xp[i] + (dx * rates[i]) / PRECISION;
+  const y = self.get_y(self, state, i, j, x, xp, amp, D);
+  const dy = xp[j] - y - 1n;
+
+  if (y < 0n || x < 0n || dy < 0n) {
+    return 0n;
+  }
+
+  const base_fee = stateFee;
+  const fee_multiplier = offpeg_fee_multiplier;
+  const dynamic_fee = self._dynamic_fee(
+    self,
+    (xp[i] + x) / 2n,
+    (xp[j] + y) / 2n,
+    base_fee,
+    fee_multiplier,
+  );
+
+  const fee = (dynamic_fee * dy) / FEE_DENOMINATOR;
+
+  return ((dy - fee) * PRECISION) / rates[j];
+};
+
 const customAvalanche3CoinLending: get_dy = (
   self: IPoolContext,
   state: PoolState,
@@ -267,6 +320,8 @@ const implementations: Record<ImplementationNames, get_dy> = {
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: factoryPlain2Basic,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: factoryPlain2EthEma2,
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: factoryPlain2Basic,
+
+  [ImplementationNames.FACTORY_STABLE_NG]: stableNg,
 };
 
 export default implementations;

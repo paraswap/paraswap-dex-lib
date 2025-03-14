@@ -5,7 +5,7 @@ import {
   EventSubscriber,
   IRequestWrapper,
 } from './index';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Address, LoggerConstructor, Token } from '../types';
 // import { Contract } from '@ethersproject/contracts';
 import { StaticJsonRpcProvider, Provider } from '@ethersproject/providers';
@@ -19,12 +19,15 @@ import { MultiWrapper } from '../lib/multi-wrapper';
 import { Response, RequestConfig } from './irequest-wrapper';
 import { BlockHeader } from 'web3-eth';
 import { PromiseScheduler } from '../lib/promise-scheduler';
+import { AugustusApprovals } from '../dex/augustus-approvals';
+import { SUBGRAPH_TIMEOUT } from '../constants';
 
 const logger = getLogger('DummyDexHelper');
 
 // This is a dummy cache for testing purposes
 class DummyCache implements ICache {
   private storage: Record<string, string> = {};
+  private hashStorage: Record<string, Record<string, string>> = {};
 
   private setMap: Record<string, Set<string>> = {};
 
@@ -38,6 +41,23 @@ class DummyCache implements ICache {
       return this.storage[key];
     }
     return null;
+  }
+
+  async keys(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<string[]> {
+    return [];
+  }
+
+  async ttl(
+    dexKey: string,
+    network: number,
+    cacheKey: string,
+  ): Promise<number> {
+    const key = `${network}_${dexKey}_${cacheKey}`.toLowerCase();
+    return this.storage[key] ? 1 : -1;
   }
 
   async rawget(key: string): Promise<string | null> {
@@ -136,12 +156,34 @@ class DummyCache implements ICache {
     return set.has(key);
   }
 
+  async smembers(setKey: string): Promise<string[]> {
+    return Array.from(this.setMap[setKey] ?? []);
+  }
+
   async hset(mapKey: string, key: string, value: string): Promise<void> {
+    if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
+    this.hashStorage[mapKey][key] = value;
     return;
   }
 
   async hget(mapKey: string, key: string): Promise<string | null> {
-    return null;
+    return this.hashStorage[mapKey]?.[key] ?? null;
+  }
+
+  async hmget(mapKey: string, keys: string[]): Promise<(string | null)[]> {
+    return keys.map(key => this.hashStorage?.[mapKey]?.[key] ?? null);
+  }
+
+  // even though native hmset is deprecated in redis, use it to prevent changing implemented hset
+  async hmset(mapKey: string, mappings: Record<string, string>): Promise<void> {
+    if (!this.hashStorage[mapKey]) this.hashStorage[mapKey] = {};
+
+    this.hashStorage[mapKey] = {
+      ...this.hashStorage[mapKey],
+      ...mappings,
+    };
+
+    return;
   }
 
   async hgetAll(mapKey: string): Promise<Record<string, string>> {
@@ -171,6 +213,14 @@ class DummyCache implements ICache {
 }
 
 export class DummyRequestWrapper implements IRequestWrapper {
+  private apiKeyTheGraph?: string;
+
+  constructor(apiKeyTheGraph?: string) {
+    if (apiKeyTheGraph) {
+      this.apiKeyTheGraph = apiKeyTheGraph;
+    }
+  }
+
   async get(
     url: string,
     timeout?: number,
@@ -210,10 +260,29 @@ export class DummyRequestWrapper implements IRequestWrapper {
   request<T = any, R = Response<T>>(config: RequestConfig<any>): Promise<R> {
     return axios.request(config);
   }
+
+  async querySubgraph<T>(
+    subgraph: string,
+    data: { query: string; variables?: Record<string, any> },
+    { timeout = SUBGRAPH_TIMEOUT, type = 'subgraphs' },
+  ): Promise<T> {
+    if (!subgraph || !data.query || !this.apiKeyTheGraph)
+      throw new Error('Invalid TheGraph params');
+
+    let url = `https://gateway-arbitrum.network.thegraph.com/api/${this.apiKeyTheGraph}/${type}/id/${subgraph}`;
+
+    // support for the subgraphs that are on the studio and were not migrated to decentralized network yet (base and zkEVM)
+    if (subgraph.includes('studio.thegraph.com')) {
+      url = subgraph;
+    }
+
+    const response = await axios.post<T>(url, data, { timeout });
+    return response.data;
+  }
 }
 
 class DummyBlockManager implements IBlockManager {
-  constructor(public _blockNumber: number = 42) {}
+  constructor(public _blockNumber: number = 20569333) {}
 
   subscribeToLogs(
     subscriber: EventSubscriber,
@@ -245,6 +314,7 @@ export class DummyDexHelper implements IDexHelper {
   provider: Provider;
   multiContract: Contract;
   multiWrapper: MultiWrapper;
+  augustusApprovals: AugustusApprovals;
   promiseScheduler: PromiseScheduler;
   blockManager: IBlockManager;
   getLogger: LoggerConstructor;
@@ -254,11 +324,12 @@ export class DummyDexHelper implements IDexHelper {
   constructor(network: number, rpcUrl?: string) {
     this.config = new ConfigHelper(false, generateConfig(network), 'is');
     this.cache = new DummyCache();
-    this.httpRequest = new DummyRequestWrapper();
+    this.httpRequest = new DummyRequestWrapper(this.config.data.apiKeyTheGraph);
     this.provider = new StaticJsonRpcProvider(
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
       network,
     );
+
     this.web3Provider = new Web3(
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
     );
@@ -285,9 +356,24 @@ export class DummyDexHelper implements IDexHelper {
       5,
       this.getLogger(`PromiseScheduler-${network}`),
     );
+
+    this.augustusApprovals = new AugustusApprovals(
+      this.config,
+      this.cache,
+      this.multiWrapper,
+    );
   }
 
   replaceProviderWithRPC(rpcUrl: string) {
     this.provider = new StaticJsonRpcProvider(rpcUrl, this.config.data.network);
+    this.web3Provider = new Web3(rpcUrl);
+    this.multiContract = new this.web3Provider.eth.Contract(
+      multiABIV2 as any,
+      this.config.data.multicallV2Address,
+    );
+    this.multiWrapper = new MultiWrapper(
+      this.multiContract,
+      this.getLogger(`MultiWrapper-${this.config.data.network}`),
+    );
   }
 }

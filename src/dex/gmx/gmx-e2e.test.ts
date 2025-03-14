@@ -35,9 +35,10 @@ describe('GMX E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
     ]);
@@ -89,7 +90,7 @@ describe('GMX E2E', () => {
     );
   });
 
-  describe('GMX ARBITRUM', () => {
+  describe('GMX ARBITRUM_V6', () => {
     const network = Network.ARBITRUM;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -98,7 +99,8 @@ describe('GMX E2E', () => {
       network,
     );
 
-    const tokenASymbol: string = 'USDC';
+    // const tokenASymbol: string = 'USDC';
+    const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'WETH';
     const nativeTokenSymbol = NativeTokenSymbols[network];
 
@@ -110,9 +112,10 @@ describe('GMX E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
         ],
       ],
     ]);

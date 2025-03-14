@@ -15,8 +15,10 @@ import {
 import { Tokens } from '../../../tests/constants-e2e';
 import { Address } from '@paraswap/core';
 import StableSwap3PoolABI from '../../abi/curve-v1/StableSwap3Pool.json';
+import CurveV1StableNgPoolAbi from '../../abi/curve-v1/CurveV1StableNg.json';
+import * as util from 'util';
 
-function getReaderCalldata(
+export function getReaderCalldata(
   exchangeAddress: string,
   readerIface: Interface,
   amounts: bigint[],
@@ -30,7 +32,7 @@ function getReaderCalldata(
   }));
 }
 
-function decodeReaderResult(
+export function decodeReaderResult(
   results: Result,
   readerIface: Interface,
   funcName: string,
@@ -41,7 +43,7 @@ function decodeReaderResult(
   });
 }
 
-async function checkOnChainPricing(
+export async function checkOnChainPricing(
   curveV1Factory: CurveV1Factory,
   exchangeAddress: Address,
   funcName: string,
@@ -50,8 +52,9 @@ async function checkOnChainPricing(
   amounts: bigint[],
   i: number,
   j: number,
+  readerIface: Interface,
 ) {
-  const readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]);
+  // const readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]);
 
   const readerCallData = getReaderCalldata(
     exchangeAddress,
@@ -75,7 +78,7 @@ async function checkOnChainPricing(
   expect(prices).toEqual(expectedPrices);
 }
 
-async function testPricingOnNetwork(
+export async function testPricingOnNetwork(
   curveV1Factory: CurveV1Factory,
   network: Network,
   dexKey: string,
@@ -84,6 +87,8 @@ async function testPricingOnNetwork(
   destTokenSymbol: string,
   side: SwapSide,
   amounts: bigint[],
+  poolContractMethod = 'get_dy',
+  readerIface = new Interface(StableSwap3PoolABI as JsonFragment[]),
 ) {
   const networkTokens = Tokens[network];
 
@@ -110,7 +115,7 @@ async function testPricingOnNetwork(
   );
   console.log(
     `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
+    util.inspect(poolPrices, false, null, true),
   );
 
   expect(poolPrices).not.toBeNull();
@@ -123,13 +128,16 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     curveV1Factory,
-    poolPrices![0].data.exchange,
-    poolPrices![0].data.underlyingSwap ? 'get_dy_underlying' : 'get_dy',
+    poolPrices![0].data.path[0].exchange,
+    poolPrices![0].data.path[0].underlyingSwap
+      ? 'get_dy_underlying'
+      : poolContractMethod,
     blockNumber,
     poolPrices![0].prices,
     amounts,
-    poolPrices![0].data.i,
-    poolPrices![0].data.j,
+    poolPrices![0].data.path[0].i,
+    poolPrices![0].data.path[0].j,
+    readerIface,
   );
 }
 
@@ -220,6 +228,10 @@ describe('CurveV1Factory', function () {
     });
 
     describe(`crvUSD-GHO`, () => {
+      const readerIface = new Interface(
+        CurveV1StableNgPoolAbi as JsonFragment[],
+      );
+
       const srcTokenSymbol = 'crvUSD';
       const destTokenSymbol = 'GHO';
       const amountsForSell = [
@@ -236,6 +248,15 @@ describe('CurveV1Factory', function () {
         10n * BI_POWS[tokens[srcTokenSymbol].decimals],
       ];
 
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
       it('getPoolIdentifiers and getPricesVolume SELL', async function () {
         await testPricingOnNetwork(
           curveV1Factory,
@@ -246,6 +267,111 @@ describe('CurveV1Factory', function () {
           destTokenSymbol,
           SwapSide.SELL,
           amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        await testPricingOnNetwork(
+          curveV1Factory,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
+        );
+      });
+
+      it('getTopPoolsForToken', async function () {
+        // We have to check without calling initializePricing, because
+        // pool-tracker is not calling that function
+        const newCurveV1Factory = new CurveV1Factory(
+          network,
+          dexKey,
+          dexHelper,
+        );
+        if (newCurveV1Factory.updatePoolState) {
+          await newCurveV1Factory.updatePoolState();
+        }
+        const poolLiquidity = await newCurveV1Factory.getTopPoolsForToken(
+          tokens[srcTokenSymbol].address,
+          10,
+        );
+        console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
+
+        if (!newCurveV1Factory.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(
+            poolLiquidity,
+            Tokens[network][srcTokenSymbol].address,
+            dexKey,
+          );
+        }
+      });
+    });
+
+    describe(`crvUSD-USDT`, () => {
+      const readerIface = new Interface(
+        CurveV1StableNgPoolAbi as JsonFragment[],
+      );
+
+      const srcTokenSymbol = 'crvUSD';
+      const destTokenSymbol = 'USDT';
+      const amountsForSell = [
+        0n,
+        1n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        2n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        3n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        4n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        5n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        6n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        7n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        8n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        9n * BI_POWS[tokens[srcTokenSymbol].decimals],
+        10n * BI_POWS[tokens[srcTokenSymbol].decimals],
+      ];
+
+      const amountsForBuy = [
+        0n,
+        1n * BI_POWS[tokens[destTokenSymbol].decimals],
+        2n * BI_POWS[tokens[destTokenSymbol].decimals],
+        3n * BI_POWS[tokens[destTokenSymbol].decimals],
+        4n * BI_POWS[tokens[destTokenSymbol].decimals],
+        5n * BI_POWS[tokens[destTokenSymbol].decimals],
+      ];
+
+      it('getPoolIdentifiers and getPricesVolume SELL', async function () {
+        await testPricingOnNetwork(
+          curveV1Factory,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.SELL,
+          amountsForSell,
+          'get_dy',
+          readerIface,
+        );
+      });
+
+      it('getPoolIdentifiers and getPricesVolume BUY', async function () {
+        console.log('amountsForBuy: ', amountsForBuy);
+        await testPricingOnNetwork(
+          curveV1Factory,
+          network,
+          dexKey,
+          blockNumber,
+          srcTokenSymbol,
+          destTokenSymbol,
+          SwapSide.BUY,
+          amountsForBuy,
+          'get_dx',
+          readerIface,
         );
       });
 

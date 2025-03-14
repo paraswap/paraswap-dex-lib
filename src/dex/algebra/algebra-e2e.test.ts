@@ -11,45 +11,7 @@ import {
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
-
-/*
-  README
-  ======
-
-  This test script should add e2e tests for Algebra. The tests
-  should cover as many cases as possible. Most of the DEXes follow
-  the following test structure:
-    - DexName
-      - ForkName + Network
-        - ContractMethod
-          - ETH -> Token swap
-          - Token -> ETH swap
-          - Token -> Token swap
-
-  The template already enumerates the basic structure which involves
-  testing simpleSwap, multiSwap, megaSwap contract methods for
-  ETH <> TOKEN and TOKEN <> TOKEN swaps. You should replace tokenA and
-  tokenB with any two highly liquid tokens on Algebra for the tests
-  to work. If the tokens that you would like to use are not defined in
-  Tokens or Holders map, you can update the './tests/constants-e2e'
-
-  Other than the standard cases that are already added by the template
-  it is highly recommended to add test cases which could be specific
-  to testing Algebra (Eg. Tests based on poolType, special tokens,
-  etc).
-
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-e2e.test.ts`
-
-  e2e tests use the Tenderly fork api. Please add the following to your
-  .env file:
-  TENDERLY_TOKEN=Find this under Account>Settings>Authorization.
-  TENDERLY_ACCOUNT_ID=Your Tenderly account name.
-  TENDERLY_PROJECT=Name of a Tenderly project you have created in your
-  dashboard.
-
-  (This comment should be removed from the final implementation)
-*/
+import { TransferFeeParamsForRoute } from '../../types';
 
 function testForNetwork(
   network: Network,
@@ -59,6 +21,19 @@ function testForNetwork(
   tokenAAmount: string,
   tokenBAmount: string,
   nativeTokenAmount: string,
+  // To be tested against E2E endpoint
+  transferFees: TransferFeeParamsForRoute = {
+    srcTokenTransferFee: 0,
+    destTokenTransferFee: 0,
+    srcTokenDexTransferFee: 0,
+    destTokenDexTransferFee: 0,
+  },
+  // transferFees: TransferFeeParams = {
+  //   srcFee: 0,
+  //   destFee: 0,
+  //   srcDexFee: 0,
+  //   destDexFee: 0,
+  // },
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -73,13 +48,15 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
       ],
     ],
     // TODO: If buy is not supported remove the buy contract methods
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -87,6 +64,47 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
+            // if src token is tax token and BUY side, then should fail (skip)
+            if (!!transferFees?.srcTokenTransferFee && side === SwapSide.BUY)
+              return;
+
+            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
+              await testE2E(
+                tokens[tokenASymbol],
+                tokens[tokenBSymbol],
+                holders[tokenASymbol],
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                transferFees as any,
+              );
+            });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                undefined,
+                undefined,
+                // switch src and dest fee when tax token is dest token
+                {
+                  ...transferFees,
+                  srcTokenDexTransferFee: transferFees.destTokenDexTransferFee,
+                  destTokenDexTransferFee: transferFees.srcTokenDexTransferFee,
+                } as any,
+              );
+            });
             it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
               await testE2E(
                 tokens[nativeTokenSymbol],
@@ -98,6 +116,14 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                // switch src and dest fee when tax token is dest token
+                {
+                  ...transferFees,
+                  srcTokenDexTransferFee: transferFees.destTokenDexTransferFee,
+                  destTokenDexTransferFee: transferFees.srcTokenDexTransferFee,
+                } as any,
               );
             });
             it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
@@ -111,19 +137,9 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
+                undefined,
+                undefined,
+                transferFees as any,
               );
             });
           });
@@ -137,13 +153,13 @@ describe('Algebra', () => {
   describe('QuickSwapV3 E2E', () => {
     const dexKey = 'QuickSwapV3';
 
-    describe('Polygon', () => {
+    describe('Polygon_V6', () => {
       const network = Network.POLYGON;
-      const tokenASymbol: string = 'USDC';
-      const tokenBSymbol: string = 'DAI';
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDC';
 
       const tokenAAmount: string = '1000000000';
-      const tokenBAmount: string = '1000000000000000000000';
+      const tokenBAmount: string = '1000000000';
       const nativeTokenAmount = '1000000000000000000';
 
       testForNetwork(
@@ -202,13 +218,38 @@ describe('Algebra', () => {
     });
   });
 
-  describe('CamelotV3', () => {
+  describe('CamelotV3_V6', () => {
     const dexKey = 'CamelotV3';
+    const network = Network.ARBITRUM;
 
-    describe('Arbitrum', () => {
-      const network = Network.ARBITRUM;
-      const tokenASymbol: string = 'USDC';
-      const tokenBSymbol: string = 'USDT';
+    describe('Arbitrum: TaxTokens', () => {
+      const tokenASymbol: string = 'RDPX';
+      const tokenBSymbol: string = 'WETH';
+
+      const tokenAAmount: string = '100000000000000000000';
+      const tokenBAmount: string = '100000000000000000';
+      const nativeTokenAmount = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        {
+          srcTokenTransferFee: 0,
+          destTokenTransferFee: 0,
+          srcTokenDexTransferFee: 1000,
+          destTokenDexTransferFee: 0,
+        } as any,
+      );
+    });
+
+    describe('Arbitrum: Non-Tax tokens', () => {
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDCe';
 
       const tokenAAmount: string = '1000000000';
       const tokenBAmount: string = '1000000000';
@@ -224,5 +265,49 @@ describe('Algebra', () => {
         nativeTokenAmount,
       );
     });
+  });
+
+  describe('SwapBasedV3', () => {
+    const dexKey = 'SwapBasedV3';
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'WETH';
+
+    const tokenAAmount: string = '1000000000';
+    const tokenBAmount: string = '1000000000000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('SwaprV3', () => {
+    const dexKey = 'SwaprV3';
+    const network = Network.GNOSIS;
+
+    const tokenASymbol: string = 'WXDAI';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '1000000000000000000';
+    const tokenBAmount: string = '100000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
   });
 });

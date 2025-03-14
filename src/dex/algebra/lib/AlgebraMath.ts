@@ -48,13 +48,14 @@ interface PriceMovementCache {
 }
 
 const isPoolV1_9 = (
-  poolState: PoolStateV1_1 | PoolState_v1_9,
-): poolState is PoolState_v1_9 =>
+  poolState: DeepReadonly<PoolStateV1_1> | DeepReadonly<PoolState_v1_9>,
+): poolState is DeepReadonly<PoolState_v1_9> =>
   'feeZto' in poolState.globalState && 'feeOtz' in poolState.globalState;
 
 // % START OF COPY PASTA FROM UNISWAPV3 %
 function _priceComputationCycles(
-  poolState: DeepReadonly<PoolStateV1_1 | PoolState_v1_9>,
+  networkId: number,
+  poolState: DeepReadonly<PoolStateV1_1> | DeepReadonly<PoolState_v1_9>,
   ticksCopy: Record<NumberAsString, TickInfo>,
   state: PriceComputationState,
   cache: PriceComputationCache,
@@ -112,6 +113,7 @@ function _priceComputationCycles(
     try {
       [step.tickNext, step.initialized] =
         TickTable.nextInitializedTickWithinOneWord(
+          networkId,
           poolState,
           state.tick,
           zeroForOne,
@@ -228,6 +230,7 @@ function _priceComputationCycles(
 
 class AlgebraMathClass {
   queryOutputs(
+    networkId: number,
     poolState: DeepReadonly<PoolStateV1_1 | PoolState_v1_9>,
     amounts: bigint[],
     zeroForOne: boolean,
@@ -309,6 +312,7 @@ class AlgebraMathClass {
       if (!isOutOfRange) {
         const [finalState, { latestFullCycleState, latestFullCycleCache }] =
           _priceComputationCycles(
+            networkId,
             poolState,
             ticksCopy,
             state,
@@ -414,6 +418,7 @@ class AlgebraMathClass {
   }
 
   _updatePositionTicksAndFees(
+    networkId: number,
     state: PoolStateV1_1 | PoolState_v1_9,
     bottomTick: bigint,
     topTick: bigint,
@@ -447,6 +452,7 @@ class AlgebraMathClass {
       ) {
         toggledBottom = true;
         TickTable.toggleTick(
+          networkId,
           state,
           bottomTick,
           state.areTicksCompressed ? state.tickSpacing : undefined,
@@ -467,6 +473,7 @@ class AlgebraMathClass {
       ) {
         toggledTop = true;
         TickTable.toggleTick(
+          networkId,
           state,
           topTick,
           state.areTicksCompressed ? state.tickSpacing : undefined,
@@ -507,6 +514,7 @@ class AlgebraMathClass {
   }
 
   _calculateSwapAndLock(
+    networkId: number,
     poolState: PoolStateV1_1 | PoolState_v1_9,
     zeroToOne: boolean,
     newSqrtPriceX96: bigint,
@@ -571,12 +579,17 @@ class AlgebraMathClass {
       tickCount: 0,
     };
     // swap until there is remaining input or output tokens or we reach the price limit
+    let iterationsCount = 0;
     while (true) {
+      iterationsCount++;
+      _require(iterationsCount < 100, 'Max iteration reached on AlgebraMath');
+
       step.stepSqrtPrice = currentPrice;
 
       //equivalent of tickTable.nextTickInTheSameRow(currentTick, zeroToOne);
       [step.nextTick, step.initialized] =
         TickTable.nextInitializedTickWithinOneWord(
+          networkId,
           poolState,
           currentTick,
           zeroToOne,
@@ -588,7 +601,7 @@ class AlgebraMathClass {
 
       // equivalent of  PriceMovementMath.movePriceTowardsTarget
       const result = SwapMath.computeSwapStep(
-        poolState.globalState.price,
+        currentPrice,
         zeroToOne == step.nextTickPrice < newSqrtPriceX96
           ? newSqrtPriceX96
           : step.nextTickPrice,
@@ -642,14 +655,17 @@ class AlgebraMathClass {
       }
 
       // check stop condition
-      if (
-        amountRequired == 0n ||
-        currentPrice == newSqrtPriceX96 ||
-        currentTick === newTick // deviation from contract
-      ) {
+      if (amountRequired == 0n || currentPrice == newSqrtPriceX96) {
         break;
       }
     }
+
+    _require(
+      currentPrice === newSqrtPriceX96 && currentTick === newTick,
+      'LOGIC ERROR: calculated (currentPrice,currentTick) and (newSqrtPriceX96, newTick) from event should always be equal at the end',
+      { currentPrice, newSqrtPriceX96, currentTick, newTick },
+      'currentPrice === newSqrtPriceX96 && currentTick === newTick',
+    );
 
     let [amount0, amount1] =
       zeroToOne == cache.exactInput // the amount to provide could be less then initially specified (e.g. reached limit)

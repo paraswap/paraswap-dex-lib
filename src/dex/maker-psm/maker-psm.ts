@@ -11,19 +11,41 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
+  ExchangeTxInfo,
+  PreprocessTransactionOptions,
 } from '../../types';
-import { SwapSide, Network } from '../../constants';
+import { SwapSide, Network, NULL_ADDRESS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
-import { getDexKeysWithNetwork, getBigIntPow } from '../../utils';
+import {
+  getDexKeysWithNetwork,
+  getBigIntPow,
+  uuidToBytes16,
+} from '../../utils';
 import { IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { MakerPsmData, PoolState, PoolConfig } from './types';
+import {
+  MakerPsmData,
+  PoolState,
+  PoolConfig,
+  MakerPsmParams,
+  MakerPsmDirectPayload,
+} from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { MakerPsmConfig, Adapters } from './config';
 import PsmABI from '../../abi/maker-psm/psm.json';
 import VatABI from '../../abi/maker-psm/vat.json';
 import { BI_POWS } from '../../bigint-constants';
+import { SpecialDex } from '../../executor/types';
+import { hexConcat, hexZeroPad, hexlify } from '@ethersproject/bytes';
+import {
+  ContractMethodV6,
+  OptimalSwapExchange,
+  ParaSwapVersion,
+} from '@paraswap/core';
+import { BigNumber } from 'ethers';
 
 const vatInterface = new Interface(VatABI);
 const psmInterface = new Interface(PsmABI);
@@ -186,7 +208,10 @@ export class MakerPsmEventPool extends StatefulEventSubscriber<PoolState> {
   }
 }
 
-export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
+export class MakerPsm
+  extends SimpleExchange
+  implements IDex<MakerPsmData, MakerPsmDirectPayload>
+{
   protected eventPools: { [gemAddress: string]: MakerPsmEventPool };
 
   // warning: There is limit on swap
@@ -221,6 +246,10 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
           this.vatAddress,
         )),
     );
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [ContractMethodV6.swapExactAmountInOutOnMakerPSM];
   }
 
   async initializePricing(blockNumber: number) {
@@ -368,7 +397,7 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
         },
         poolAddresses: [eventPool.poolConfig.psmAddress],
         exchange: this.dexKey,
-        gasCost: 100 * 1000, //TODO: simulate and fix the gas cost
+        gasCost: 200 * 1000,
         poolIdentifier,
       },
     ];
@@ -489,6 +518,160 @@ export class MakerPsm extends SimpleExchange implements IDex<MakerPsmData> {
       data.psmAddress,
       isGemSell ? data.gemJoinAddress : data.psmAddress,
     );
+  }
+
+  getTokenFromAddress(address: Address): Token {
+    return { address, decimals: 0 };
+  }
+
+  async preProcessTransaction?(
+    optimalSwapExchange: OptimalSwapExchange<MakerPsmData>,
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): Promise<[OptimalSwapExchange<MakerPsmData>, ExchangeTxInfo]> {
+    if (!optimalSwapExchange.data) {
+      throw new Error(
+        `Error_${this.dexKey}_preProcessTransaction payload is not received`,
+      );
+    }
+
+    let isApproved = false;
+
+    // isApproved is only used in direct method and available only for v6, then no need to check approve for v5
+    // because it's either done in getSimpleParam or approve call in the adapter smart contract
+    if (options.version === ParaSwapVersion.V6 && options.isDirectMethod) {
+      isApproved = await this.dexHelper.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        srcToken.address,
+        srcToken.address.toLowerCase() === this.dai.address.toLowerCase()
+          ? optimalSwapExchange.data.psmAddress
+          : optimalSwapExchange.data.gemJoinAddress,
+      );
+    }
+
+    return [
+      {
+        ...optimalSwapExchange,
+        data: { ...optimalSwapExchange.data, isApproved },
+      },
+      {},
+    ];
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: MakerPsmData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { isGemSell, gemAmount } = this.getPsmParams(
+      srcToken,
+      srcAmount,
+      destAmount,
+      data,
+      side,
+    );
+
+    let exchangeData = psmInterface.encodeFunctionData(
+      isGemSell ? 'sellGem' : 'buyGem',
+      [recipient, gemAmount],
+    );
+
+    // append toll and to18ConversionFactor & set specialDexFlag = SWAP_ON_MAKER_PSM to
+    // - `buyGem` on Ex1 & Ex2
+    // - `sellGem` on Ex3
+    let specialDexFlag = SpecialDex.DEFAULT;
+    if (
+      (side === SwapSide.SELL && !isGemSell) ||
+      (side === SwapSide.BUY && isGemSell)
+    ) {
+      exchangeData = hexConcat([
+        exchangeData,
+        hexZeroPad(hexlify(BigInt(data.toll)), 32),
+        hexZeroPad(hexlify(getBigIntPow(18 - data.gemDecimals)), 32),
+      ]);
+      specialDexFlag = SpecialDex.SWAP_ON_MAKER_PSM;
+    }
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: data.psmAddress,
+      specialDexFlag,
+      spender: isGemSell ? data.gemJoinAddress : data.psmAddress,
+      returnAmountPos: undefined,
+    };
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: MakerPsmData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod: string,
+  ) {
+    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+    if (!MakerPsm.getDirectFunctionNameV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    const beneficiaryParam = BigNumber.from(beneficiary);
+
+    const approveParam = !data.isApproved
+      ? BigNumber.from(1).shl(255)
+      : BigNumber.from(0);
+    const directionParam =
+      side === SwapSide.SELL ? BigNumber.from(0) : BigNumber.from(1).shl(254);
+
+    const beneficiaryDirectionApproveFlag = beneficiaryParam
+      .or(directionParam)
+      .or(approveParam);
+
+    const to18ConversionFactor = getBigIntPow(18 - data.gemDecimals);
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const params: MakerPsmParams = [
+      srcToken,
+      // not used on the contract, but used for analytics
+      destToken,
+      fromAmount,
+      toAmount,
+      data.toll,
+      to18ConversionFactor.toString(),
+      data.psmAddress,
+      data.gemJoinAddress,
+      metadata,
+      beneficiaryDirectionApproveFlag.toString(),
+    ];
+
+    const payload: MakerPsmDirectPayload = [params, permit];
+
+    const encoder = (...params: (string | MakerPsmDirectPayload)[]) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        ContractMethodV6.swapExactAmountInOutOnMakerPSM,
+        [...params],
+      );
+    };
+
+    return { params: payload, encoder, networkFee: '0' };
   }
 
   // Returns list of top pools based on liquidity. Max

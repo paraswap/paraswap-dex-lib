@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { isEmpty } from 'lodash';
+import { isEmpty, omit } from 'lodash';
 import { SwapSide } from '@paraswap/core';
 import { BN_1 } from '../../bignumber-constants';
 import { IDexHelper } from '../../dex-helper';
@@ -25,7 +25,7 @@ import {
 import { checkOrder } from './utils';
 import {
   blacklistResponseValidator,
-  firmRateResponseValidator,
+  firmRateWithTakerValidator,
   pairsResponseValidator,
   pricesResponse,
   tokensResponseValidator,
@@ -228,6 +228,8 @@ export class RateFetcher {
 
     if (isEmpty(pairs)) return;
 
+    const currentPricePairs = new Set();
+
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
@@ -257,6 +259,7 @@ export class RateFetcher {
           this.config.rateConfig.dataTTLS,
           JSON.stringify(prices.bids),
         );
+        currentPricePairs.add(`${baseToken.address}_${quoteToken.address}`);
       }
 
       if (prices.asks.length) {
@@ -267,8 +270,19 @@ export class RateFetcher {
           this.config.rateConfig.dataTTLS,
           JSON.stringify(prices.asks),
         );
+        currentPricePairs.add(`${quoteToken.address}_${baseToken.address}`);
       }
     });
+
+    if (currentPricePairs.size > 0) {
+      this.dexHelper.cache.setex(
+        this.dexKey,
+        this.dexHelper.config.data.network,
+        `pairs`,
+        this.config.rateConfig.dataTTLS,
+        JSON.stringify(Array.from(currentPricePairs)),
+      );
+    }
   }
 
   checkHealth(): boolean {
@@ -307,6 +321,21 @@ export class RateFetcher {
       });
   }
 
+  public async getAvailablePairs(): Promise<string[]> {
+    const pairs = await this.dexHelper.cache.getAndCacheLocally(
+      this.dexKey,
+      this.dexHelper.config.data.network,
+      `pairs`,
+      this.config.rateConfig.intervalMs / 1000,
+    );
+
+    if (!pairs) {
+      return [];
+    }
+
+    return JSON.parse(pairs) as string[];
+  }
+
   public async getOrderPrice(
     srcToken: Token,
     destToken: Token,
@@ -316,32 +345,36 @@ export class RateFetcher {
 
     let pricesAsString: string | null = null;
     if (side === SwapSide.SELL) {
-      pricesAsString = await this.dexHelper.cache.get(
+      pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
         this.dexKey,
         this.dexHelper.config.data.network,
         `${srcToken.address}_${destToken.address}_bids`,
+        this.config.rateConfig.intervalMs / 1000,
       );
 
       if (!pricesAsString) {
-        pricesAsString = await this.dexHelper.cache.get(
+        pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
           this.dexKey,
           this.dexHelper.config.data.network,
           `${destToken.address}_${srcToken.address}_asks`,
+          this.config.rateConfig.intervalMs / 1000,
         );
         reversed = true;
       }
     } else {
-      pricesAsString = await this.dexHelper.cache.get(
+      pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
         this.dexKey,
         this.dexHelper.config.data.network,
         `${destToken.address}_${srcToken.address}_asks`,
+        this.config.rateConfig.intervalMs / 1000,
       );
 
       if (!pricesAsString) {
-        pricesAsString = await this.dexHelper.cache.get(
+        pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
           this.dexKey,
           this.dexHelper.config.data.network,
           `${srcToken.address}_${destToken.address}_bids`,
+          this.config.rateConfig.intervalMs / 1000,
         );
         reversed = true;
       }
@@ -375,8 +408,10 @@ export class RateFetcher {
     _destToken: Token,
     srcAmount: string,
     side: SwapSide,
+    takerAddress: Address,
     userAddress: Address,
     partner?: string,
+    special?: boolean,
   ): Promise<OrderInfo> {
     const srcToken = this.dexHelper.config.wrapETH(_srcToken);
     const destToken = this.dexHelper.config.wrapETH(_destToken);
@@ -391,7 +426,9 @@ export class RateFetcher {
       makerAmount: side === SwapSide.BUY ? srcAmount : undefined,
       takerAmount: side === SwapSide.SELL ? srcAmount : undefined,
       userAddress,
+      takerAddress,
       partner,
+      special: special || false,
     };
 
     try {
@@ -401,14 +438,15 @@ export class RateFetcher {
         timeout: GET_FIRM_RATE_TIMEOUT_MS,
       };
 
+      this.logger.info(
+        'FirmRate Request:',
+        JSON.stringify(omit(payload, 'secret')).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
+
       if (this.firmRateAuth) {
         this.firmRateAuth(payload);
         delete payload.secret;
       }
-      this.logger.info(
-        'FirmRate Request:',
-        JSON.stringify(payload).replace(/(?:\r\n|\r|\n)/g, ' '),
-      );
       const { data } = await this.dexHelper.httpRequest.request<unknown>(
         payload,
       );
@@ -418,7 +456,7 @@ export class RateFetcher {
       );
       const firmRateResp = validateAndCast<RFQFirmRateResponse>(
         data,
-        firmRateResponseValidator,
+        firmRateWithTakerValidator(takerAddress),
       );
 
       await checkOrder(

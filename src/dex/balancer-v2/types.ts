@@ -1,5 +1,6 @@
 import { NumberAsString } from '@paraswap/core';
 import { Address } from '../../types';
+import { DerivedGyroEParams, GyroEParams } from '@balancer-labs/sor';
 
 // These should match the Balancer Pool types available on Subgraph
 export enum BalancerPoolTypes {
@@ -20,6 +21,8 @@ export enum BalancerPoolTypes {
   SiloLinear = 'SiloLinear',
   TetuLinear = 'TetuLinear',
   YearnLinear = 'YearnLinear',
+  Gyro3 = 'Gyro3',
+  GyroE = 'GyroE',
 }
 
 export type TokenState = {
@@ -32,6 +35,10 @@ export type PoolState = {
   tokens: {
     [address: string]: TokenState;
   };
+  tokenRates?: bigint[];
+  rateProviders?: string[];
+  gyroParams?: GyroEParams;
+  gyroDerivedParams?: DerivedGyroEParams;
   swapFee: bigint;
   orderedTokens: string[];
   rate?: bigint;
@@ -71,12 +78,31 @@ export interface SubgraphPoolBase {
   id: string;
   address: string;
   poolType: BalancerPoolTypes;
+  poolTypeVersion: number;
   tokens: SubgraphToken[];
   tokensMap: { [tokenAddress: string]: SubgraphToken };
   mainIndex: number;
   wrappedIndex: number;
 
   mainTokens: SubgraphMainToken[];
+
+  // gyro3
+  root3Alpha: string;
+  // gyroE
+  alpha: string;
+  beta: string;
+  c: string;
+  s: string;
+  lambda: string;
+  tauAlphaX: string;
+  tauAlphaY: string;
+  tauBetaX: string;
+  tauBetaY: string;
+  u: string;
+  v: string;
+  w: string;
+  z: string;
+  dSq: string;
 }
 
 export type BalancerSwapV2 = {
@@ -110,7 +136,23 @@ export enum SwapTypes {
   SwapExactOut,
 }
 
-export type BalancerParam = [
+export type BalancerV2SingleSwap = {
+  poolId: string;
+  kind: SwapTypes;
+  assetIn: string;
+  assetOut: string;
+  amount: string;
+  userData: string;
+};
+
+export type BalancerV2SwapParam = [
+  singleSwap: BalancerV2SingleSwap,
+  funds: BalancerFunds,
+  limit: string,
+  deadline: string,
+];
+
+export type BalancerV2BatchSwapParam = [
   kind: SwapTypes,
   swaps: BalancerSwap[],
   assets: string[],
@@ -135,6 +177,21 @@ export type BalancerV2DirectParam = [
   beneficiary: Address,
   permit: string,
   uuid: string,
+];
+
+export type BalancerV2DirectParamV6 = [
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  quotedAmount: NumberAsString,
+  metadata: string,
+  beneficiaryAndApproveFlag: NumberAsString,
+];
+
+export type BalancerV2DirectParamV6Swap = [
+  params: BalancerV2DirectParamV6,
+  partnerAndFee: string,
+  permit: string,
+  balancerParams: string,
 ];
 
 export type BalancerV2Data = {

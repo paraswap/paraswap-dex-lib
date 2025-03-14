@@ -11,14 +11,22 @@ import {
   SwaapV2OrderType,
   SwaapV2TokensResponse,
   TokensMap,
+  SwaapV2NotificationRequest,
+  SwaapV2NotificationResponse,
 } from './types';
 import {
   priceLevelsResponseValidator,
   getQuoteResponseValidator,
   getTokensResponseValidator,
+  notifyResponseValidator,
+  getQuoteResponseWithRecipientValidator,
 } from './validators';
 import { normalizeTokenAddress } from './utils';
-import { SWAAP_RFQ_QUOTE_TIMEOUT_MS } from './constants';
+import {
+  SWAAP_RFQ_QUOTE_TIMEOUT_MS,
+  SWAAP_NOTIFY_TIMEOUT_MS,
+  SWAAP_NOTIFICATION_ORIGIN,
+} from './constants';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
 
 export class RateFetcher {
@@ -111,27 +119,28 @@ export class RateFetcher {
       return;
     }
 
-    const levels = Object.keys(resp.levels)
-      .map(pairName => {
-        const pair = resp.levels[pairName];
-        if (!pair) {
-          return;
-        }
-        const levels = resp.levels[pairName];
+    const levels = Object.keys(resp.levels).reduce<
+      Record<string, SwaapV2PriceLevels>
+    >((memo, pairName) => {
+      const pair = resp.levels[pairName];
+      if (!pair) {
+        return memo;
+      }
 
-        if (!levels.asks || !levels.bids) {
-          return;
-        }
+      if (!pair.asks || !pair.bids) {
+        return memo;
+      }
 
-        const pairSplit = pairName.split('/');
+      const pairSplit = pairName.split('/');
+      const baseAddress = pairSplit[0];
+      const quoteAddress = pairSplit[1];
+      pair.base = normalizeTokenAddress(baseAddress);
+      pair.quote = normalizeTokenAddress(quoteAddress);
 
-        const baseAddress = pairSplit[0];
-        const quoteAddress = pairSplit[1];
-        pair.base = normalizeTokenAddress(baseAddress);
-        pair.quote = normalizeTokenAddress(quoteAddress);
-        return pair;
-      })
-      .filter((p: SwaapV2PriceLevels | undefined) => p !== null);
+      memo[pairName] = pair;
+
+      return memo;
+    }, {});
 
     this.dexHelper.cache.setex(
       this.dexKey,
@@ -149,7 +158,8 @@ export class RateFetcher {
     srcAmount: string,
     side: SwaapV2OrderType,
     userAddress: Address,
-    aggregatorRecipient: Address,
+    sender: Address,
+    recipient: Address,
     tolerance: number,
     requestParameters: RequestConfig,
   ): Promise<SwaapV2QuoteResponse> {
@@ -163,8 +173,8 @@ export class RateFetcher {
     const _payload: SwaapV2QuoteRequest = {
       network_id: networkId,
       origin: userAddress,
-      sender: aggregatorRecipient,
-      recipient: aggregatorRecipient,
+      sender,
+      recipient,
       timestamp: Math.round(Date.now() / 1000),
       order_type: side,
       token_in: srcToken.address,
@@ -193,7 +203,7 @@ export class RateFetcher {
       );
       const quoteResp = validateAndCast<SwaapV2QuoteResponse>(
         data,
-        getQuoteResponseValidator,
+        getQuoteResponseWithRecipientValidator(recipient),
       );
 
       return {
@@ -205,6 +215,49 @@ export class RateFetcher {
         guaranteed_price: quoteResp.guaranteed_price,
         success: quoteResp.success,
         recipient: quoteResp.recipient,
+      };
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
+  }
+
+  async notify(
+    code: number,
+    message: string,
+    requestParameters: RequestConfig,
+  ): Promise<SwaapV2NotificationResponse> {
+    const _payload: SwaapV2NotificationRequest = {
+      origin: SWAAP_NOTIFICATION_ORIGIN,
+      code: code,
+      message: message,
+    };
+
+    try {
+      let payload: RequestConfig = {
+        data: _payload,
+        ...requestParameters,
+        timeout: SWAAP_NOTIFY_TIMEOUT_MS,
+      };
+
+      this.logger.info(
+        'Notify Request:',
+        JSON.stringify(payload).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
+      const { data } = await this.dexHelper.httpRequest.request<unknown>(
+        payload,
+      );
+      this.logger.info(
+        'Notify Response: ',
+        JSON.stringify(data).replace(/(?:\r\n|\r|\n)/g, ' '),
+      );
+      const notifyResp = validateAndCast<SwaapV2NotificationResponse>(
+        data,
+        notifyResponseValidator,
+      );
+
+      return {
+        success: notifyResp.success,
       };
     } catch (e) {
       this.logger.error(e);

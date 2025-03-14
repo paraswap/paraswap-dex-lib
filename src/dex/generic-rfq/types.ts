@@ -1,7 +1,10 @@
 import BigNumber from 'bignumber.js';
 import { RequestConfig } from '../../dex-helper/irequest-wrapper';
-import { Address, Token } from '../../types';
-import { AugustusOrderWithString } from '../paraswap-limit-orders/types';
+import { Address, NumberAsString, Token } from '../../types';
+import {
+  AugustusOrderWithString,
+  OrderInfo,
+} from '../paraswap-limit-orders/types';
 
 export type Pair = {
   base: string;
@@ -84,7 +87,9 @@ export type RFQPayload = {
   makerAmount?: string;
   takerAmount?: string;
   userAddress: Address;
+  takerAddress: Address;
   partner?: string;
+  special?: boolean;
 };
 
 export type AugustusOrderWithStringAndSignature = AugustusOrderWithString & {
@@ -99,3 +104,17 @@ export type RFQFirmRateResponse = {
 export class SlippageCheckError extends Error {}
 
 export class TooStrictSlippageCheckError extends Error {}
+
+export type RFQParams = [
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  wrapApproveDirection: NumberAsString,
+  metadata: string,
+  beneficiary: Address,
+];
+
+export type RFQDirectPayload = [
+  params: RFQParams,
+  orders: OrderInfo[],
+  permit: string,
+];

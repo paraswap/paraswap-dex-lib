@@ -9,6 +9,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import { getDexKeysWithNetwork, getBigIntPow, isTruthy } from '../../utils';
@@ -39,6 +40,8 @@ import {
 } from './subgraph-queries';
 import { SUBGRAPH_TIMEOUT } from '../../constants';
 import RouterABI from '../../abi/maverick-v1/router.json';
+import { NumberAsString } from '@paraswap/core';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const MAX_POOL_CNT = 1000;
 
@@ -135,10 +138,10 @@ export class MaverickV1
     this.logger.info(
       `Fetching ${this.dexKey}_${this.network} Pools from subgraph`,
     );
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
-      { query: fetchAllPools, count: MAX_POOL_CNT },
-      SUBGRAPH_TIMEOUT,
+      { query: fetchAllPools, variables: { count: MAX_POOL_CNT } },
+      { timeout: SUBGRAPH_TIMEOUT },
     );
     return data.pools;
   }
@@ -354,6 +357,63 @@ export class MaverickV1
     };
   }
 
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: MaverickV1Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapFunction =
+      side === SwapSide.SELL
+        ? MaverickV1Functions.exactInputSingle
+        : MaverickV1Functions.exactOutputSingle;
+
+    const swapFunctionParams: MaverickV1Param =
+      side === SwapSide.SELL
+        ? {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountIn: srcAmount,
+            amountOutMinimum: destAmount,
+            tokenIn: srcToken,
+            tokenOut: destToken,
+            pool: data.pool,
+            sqrtPriceLimitD18: '0',
+          }
+        : {
+            recipient,
+            deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+            amountOut: destAmount,
+            amountInMaximum: srcAmount,
+            tokenIn: srcToken,
+            tokenOut: destToken,
+            pool: data.pool,
+            sqrtPriceLimitD18: '0',
+          };
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.routerAddress,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              MaverickV1Functions.exactInputSingle,
+              'amountOut',
+            )
+          : undefined,
+    };
+  }
+
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -411,11 +471,10 @@ export class MaverickV1
     timeout = 30000,
   ) {
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {

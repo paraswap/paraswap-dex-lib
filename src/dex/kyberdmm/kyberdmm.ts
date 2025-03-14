@@ -19,6 +19,9 @@ import {
   PoolLiquidity,
   SimpleExchangeParam,
   Token,
+  NumberAsString,
+  Address,
+  DexExchangeParam,
 } from '../../types';
 import {
   KyberDmmData,
@@ -35,6 +38,7 @@ import kyberDmmFactoryABI from '../../abi/kyberdmm/kyber-dmm-factory.abi.json';
 import kyberDmmPoolABI from '../../abi/kyberdmm/kyber-dmm-pool.abi.json';
 import KyberDmmExchangeRouterABI from '../../abi/kyberdmm/kyber-dmm-exchange-router.abi.json';
 import { getBigIntPow, getDexKeysWithNetwork } from '../../utils';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 const MAX_TRACKED_PAIR_POOLS = 3;
 
@@ -137,13 +141,13 @@ export class KyberDmm
       }
     `;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.config.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -227,6 +231,48 @@ export class KyberDmm
       swapData,
       data.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: KyberDmmData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const isSell = side === SwapSide.SELL;
+    const swapFunctionParams: KyberDmmParam = [
+      isSell ? srcAmount : destAmount,
+      isSell ? destAmount : srcAmount,
+      data.pools.map(p => p.address),
+      data.path,
+      recipient,
+      Number.MAX_SAFE_INTEGER.toString(),
+    ];
+    const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+      isSell
+        ? KyberDMMFunctions.swapExactTokensForTokens
+        : KyberDMMFunctions.swapTokensForExactTokens,
+      swapFunctionParams,
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: data.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.exchangeRouterInterface,
+              KyberDMMFunctions.swapExactTokensForTokens,
+              'amounts',
+              data.path.length - 1, // last element is amount out
+            )
+          : undefined,
+    };
   }
 
   private async addPool(

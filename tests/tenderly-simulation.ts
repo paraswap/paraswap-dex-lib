@@ -1,15 +1,16 @@
 /* eslint-disable no-console */
 import axios from 'axios';
-import { Address } from '@paraswap/core';
-import { Provider } from '@ethersproject/providers';
 import { TxObject } from '../src/types';
 import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
+import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
+import { ethers } from 'ethers';
+import { Network } from '../build/constants';
+import { Address } from '@paraswap/core';
 
 const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
 const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID;
 const TENDERLY_PROJECT = process.env.TENDERLY_PROJECT;
-const TENDERLY_FORK_ID = process.env.TENDERLY_FORK_ID;
-const TENDERLY_FORK_LAST_TX_ID = process.env.TENDERLY_FORK_LAST_TX_ID;
+const TENDERLY_VNET_ID = process.env.TENDERLY_VNET_ID;
 
 export type SimulationResult = {
   success: boolean;
@@ -19,8 +20,11 @@ export type SimulationResult = {
 };
 
 export interface TransactionSimulator {
-  forkId: string;
+  vnetId: string;
+  rpcURL: string;
   setup(): Promise<void>;
+
+  getChainNameByChainId(network: number): string;
 
   simulate(
     params: TxObject,
@@ -29,11 +33,16 @@ export interface TransactionSimulator {
 }
 
 export class EstimateGasSimulation implements TransactionSimulator {
-  forkId: string = '0';
+  vnetId: string = '0';
+  rpcURL: string = '';
 
   constructor(private provider: Provider) {}
 
   async setup() {}
+
+  getChainNameByChainId(network: number) {
+    return '';
+  }
 
   async simulate(
     params: TxObject,
@@ -55,41 +64,106 @@ export class EstimateGasSimulation implements TransactionSimulator {
 }
 
 export class TenderlySimulation implements TransactionSimulator {
-  lastTx: string = '';
-  forkId: string = '';
+  vnetId: string = '';
+  rpcURL: string = '';
   maxGasLimit = 80000000;
 
-  constructor(private network: Number = 1) {}
+  private readonly chainIdToChainNameMap: { [key: number]: string } = {
+    [Network.MAINNET]: 'mainnet',
+    [Network.BSC]: 'bnb',
+    [Network.POLYGON]: 'polygon',
+    [Network.AVALANCHE]: 'avalanche-mainnet',
+    [Network.FANTOM]: 'fantom',
+    [Network.ARBITRUM]: 'arbitrum',
+    [Network.OPTIMISM]: 'optimistic',
+    [Network.GNOSIS]: 'gnosis-chain',
+    [Network.BASE]: 'base',
+  };
+
+  constructor(private network: number = 1) {}
+
+  getChainNameByChainId(network: number): string {
+    return this.chainIdToChainNameMap[network];
+  }
 
   async setup() {
-    // Fork the mainnet
     if (!TENDERLY_TOKEN)
       throw new Error(
         `TenderlySimulation_setup: TENDERLY_TOKEN not found in the env`,
       );
 
-    if (TENDERLY_FORK_ID) {
-      if (!TENDERLY_FORK_LAST_TX_ID) throw new Error('Always set last tx id');
-      this.forkId = TENDERLY_FORK_ID;
-      this.lastTx = TENDERLY_FORK_LAST_TX_ID;
+    const findAdminRPC = (rpcs: { name: string; url: string }[]) => {
+      return rpcs.find(
+        rpc => rpc.name.toLowerCase() === 'Admin RPC'.toLowerCase(),
+      );
+    };
+
+    if (TENDERLY_VNET_ID) {
+      this.vnetId = TENDERLY_VNET_ID;
+
+      try {
+        let res = await axios.get(
+          `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/vnets/${this.vnetId}`,
+          {
+            timeout: 200000,
+            headers: {
+              'x-access-key': TENDERLY_TOKEN,
+            },
+          },
+        );
+
+        const rpc = findAdminRPC(res.data.rpcs);
+
+        if (!rpc) {
+          throw new Error(`RPC url was not found for testnet: ${this.vnetId}`);
+        }
+
+        this.rpcURL = rpc.url;
+      } catch (e) {
+        console.error(`TenderlySimulation_setup:`, e);
+        throw e;
+      }
+
       return;
     }
 
     try {
+      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       let res = await axios.post(
-        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork`,
+        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/vnets`,
         {
-          network_id: this.network.toString(),
+          slug: `e2e-tests-testnetwork-${this.network.toString()}-${Date.now()}`,
+          fork_config: {
+            network_id: this.network,
+          },
+          virtual_network_config: {
+            chain_config: {
+              chain_id: this.network,
+            },
+          },
+          sync_state_config: {
+            enabled: false,
+          },
+          explorer_page_config: {
+            enabled: true,
+            verification_visibility: 'bytecode',
+          },
         },
         {
-          timeout: 20000,
+          timeout: 200000,
           headers: {
             'x-access-key': TENDERLY_TOKEN,
           },
         },
       );
-      this.forkId = res.data.simulation_fork.id;
-      this.lastTx = res.data.root_transaction.id;
+
+      this.vnetId = res.data.id;
+      const rpc = findAdminRPC(res.data.rpcs);
+      if (!rpc) {
+        throw new Error(`RPC url was not found for testnet: ${this.vnetId}`);
+      }
+
+      this.rpcURL = rpc.url;
     } catch (e) {
       console.error(`TenderlySimulation_setup:`, e);
       throw e;
@@ -97,21 +171,13 @@ export class TenderlySimulation implements TransactionSimulator {
   }
 
   async simulate(params: TxObject, stateOverrides?: StateOverrides) {
-    let _params = {
-      from: params.from,
-      to: params.to,
-      save: true,
-      root: this.lastTx,
-      value: params.value || '0',
-      gas: this.maxGasLimit,
-      input: params.data,
-      state_objects: {},
-    };
     try {
+      let stateOverridesParams = {};
+
       if (stateOverrides) {
+        await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
         const result = await axios.post(
-          `
-        https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
+          `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
           stateOverrides,
           {
             headers: {
@@ -120,7 +186,7 @@ export class TenderlySimulation implements TransactionSimulator {
           },
         );
 
-        _params.state_objects = Object.keys(result.data.stateOverrides).reduce(
+        stateOverridesParams = Object.keys(result.data.stateOverrides).reduce(
           (acc, contract) => {
             const _storage = result.data.stateOverrides[contract].value;
 
@@ -131,39 +197,93 @@ export class TenderlySimulation implements TransactionSimulator {
           },
           {} as Record<Address, StateSimulateApiOverride>,
         );
+
+        await this.executeStateOverrides(stateOverridesParams);
       }
 
+      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
       const { data } = await axios.post(
-        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
-        _params,
+        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/vnets/${this.vnetId}/transactions`,
         {
-          timeout: 20 * 1000,
+          callArgs: {
+            from: params.from,
+            to: params.to,
+            value:
+              params.value === '0'
+                ? '0x0'
+                : ethers.utils.hexStripZeros(
+                    ethers.utils.hexlify(BigInt(params.value)),
+                  ),
+            gas: ethers.utils.hexStripZeros(
+              ethers.utils.hexlify(BigInt(this.maxGasLimit)),
+            ),
+            data: params.data,
+          },
+          blockNumber: 'pending',
+        },
+        {
+          timeout: 30 * 1000,
           headers: {
             'x-access-key': TENDERLY_TOKEN!,
           },
         },
       );
-      const lastTx = data.simulation.id;
-      if (data.transaction.status) {
-        this.lastTx = lastTx;
+
+      if (data.status === 'success') {
         return {
           success: true,
-          gasUsed: data.transaction.gas_used,
-          url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
-          transaction: data.transaction,
+          gasUsed: data.gasUsed,
+          url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/testnet/${
+            this.vnetId
+          }/tx/${this.chainIdToChainNameMap[this.network]}/${data.id}`,
+          transaction: data.input,
         };
       } else {
         return {
           success: false,
-          url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
-          error: `Simulation failed: ${data.transaction.error_info.error_message} at ${data.transaction.error_info.address}`,
+          url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/testnet/${
+            this.vnetId
+          }/tx/${this.chainIdToChainNameMap[this.network]}/${data.id}`,
+          error: `Simulation failed ${data.error_reason}`,
         };
       }
     } catch (e) {
-      console.error(`TenderlySimulation_simulate:`, e);
+      console.error('TenderlySimulation_simulate_error', e);
       return {
         success: false,
       };
     }
+  }
+
+  async executeStateOverrides(
+    stateOverridesParams: Record<string, StateSimulateApiOverride>,
+  ) {
+    if (!this.rpcURL) {
+      throw new Error(
+        `rpcURL is not defined for testnet: ${this.vnetId} (https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/testnet/${this.vnetId}`,
+      );
+    }
+
+    const testNetRPC = new StaticJsonRpcProvider(this.rpcURL);
+    await Promise.all(
+      Object.keys(stateOverridesParams).map(async addr => {
+        const storage = stateOverridesParams[addr].storage;
+
+        await Promise.all(
+          Object.keys(storage).map(async slot => {
+            const txHash = await testNetRPC!.send('tenderly_setStorageAt', [
+              addr,
+              slot,
+              storage[slot],
+            ]);
+
+            const transaction = await testNetRPC!.waitForTransaction(txHash);
+            if (!transaction.status) {
+              console.log(`Transaction failed: ${txHash}`);
+            }
+          }),
+        );
+      }),
+    );
   }
 }

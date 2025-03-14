@@ -28,6 +28,28 @@ export enum UniswapV2Functions {
   buyOnUniswapV2ForkWithPermit = 'buyOnUniswapV2ForkWithPermit',
 }
 
+export enum UniswapV2FunctionsV6 {
+  swap = 'swapExactAmountInOnUniswapV2',
+  buy = 'swapExactAmountOutOnUniswapV2',
+}
+
+export type UniswapV2ParamsDirectBase = [
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  quotedAmount: NumberAsString,
+  metadata: string,
+  beneficiary: Address,
+  pools: string,
+];
+
+export type UniswapV2ParamsDirect = [
+  params: UniswapV2ParamsDirectBase,
+  partnerAndFee: string,
+  permit: string,
+];
+
 export type SwapOnUniswapParam = [
   amountIn: NumberAsString,
   amountOutMin: NumberAsString,
@@ -121,9 +143,10 @@ export type UniswapV2Data = {
 };
 
 export interface DexParams {
+  subgraphType?: 'subgraphs' | 'deployments';
   subgraphURL?: string;
   factoryAddress: Address;
-  initCode: string;
+  initCode: string; // deprecated
   poolGasCost?: number;
   feeCode: number;
   router?: Address;
