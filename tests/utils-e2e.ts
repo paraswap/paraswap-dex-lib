@@ -394,13 +394,13 @@ export async function testE2E(
   replaceTenderlyWithEstimateGas?: boolean,
   forceRoute?: AddressOrSymbol[],
 ) {
-  assert(
-    testingEndpoint,
-    'Estimation can only be tested with testing endpoint',
-  );
+  const useAPI = testingEndpoint && !poolIdentifiers;
+  // The API currently doesn't allow for specifying poolIdentifiers
+  const sdk: IParaSwapSDK = useAPI
+    ? new APIParaswapSDK(network, dexKeys, '')
+    : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
   // initialize pricing
-  const sdk = new APIParaswapSDK(network, dexKeys);
-  await sdk.initializePricing();
+  await sdk.initializePricing?.();
   // fetch the route
   const amount = BigInt(_amount);
   const priceRoute = await sdk.getPrices(
@@ -481,16 +481,20 @@ export async function testE2E(
   const simulation = await tenderlySimulator.simulateTransaction(
     simulationRequest,
   );
-  // log gas estimation
-  const estimatedGas = Number(priceRoute.gasCost);
-  const gasUsed = simulation.gas_used;
-  console.log(
-    `Gas Estimate API: ${
-      priceRoute.gasCost
-    }, Simulated: ${gasUsed}, Difference: ${estimatedGas - gasUsed}`,
-  );
+  // log gas estimation if testing against API
+  if (useAPI) {
+    const estimatedGas = Number(priceRoute.gasCost);
+    const gasUsed = simulation.gas_used;
+    console.log(
+      `Gas Estimate API: ${
+        priceRoute.gasCost
+      }, Simulated: ${gasUsed}, Difference: ${estimatedGas - gasUsed}`,
+    );
+  }
   // release
-  await sdk.releaseResources();
+  if (sdk.releaseResources) {
+    await sdk.releaseResources();
+  }
 }
 
 export type TestParamE2E = {
