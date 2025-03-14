@@ -17,13 +17,17 @@ export class ERC4626EventPool extends StatefulEventSubscriber<ERC4626PoolState> 
     poolName: string,
     protected dexHelper: IDexHelper,
     private vault: Address,
+    private asset: Address,
     private wrapperInterface: Interface,
     logger: Logger,
     private depositTopic: string,
     private withdrawTopic: string,
+    private transferTopic: string,
   ) {
     super(parentName, poolName, dexHelper, logger);
-    this.addressesSubscribed = [vault];
+    this.addressesSubscribed = [vault, asset];
+    this.vault = vault.toLowerCase();
+    this.asset = asset.toLowerCase();
     this.logDecoder = (log: Log) => this.wrapperInterface.parseLog(log);
   }
 
@@ -33,6 +37,13 @@ export class ERC4626EventPool extends StatefulEventSubscriber<ERC4626PoolState> 
     blockHeader: Readonly<BlockHeader>,
   ): Promise<DeepReadonly<ERC4626PoolState> | null> {
     const event = this.logDecoder(log);
+    if (
+      log.topics[0] === this.transferTopic &&
+      log.address.toLowerCase() === this.asset &&
+      event.args.to.toLowerCase() === this.vault
+    ) {
+      return this.handleAssetTransferToVault(event, state, log);
+    }
     if (log.topics[0] === this.depositTopic) {
       return this.handleDeposit(event, state, log);
     }
@@ -86,8 +97,20 @@ export class ERC4626EventPool extends StatefulEventSubscriber<ERC4626PoolState> 
     log: Readonly<Log>,
   ): Promise<DeepReadonly<ERC4626PoolState>> {
     return {
-      totalAssets: state.totalAssets + BigInt(event.args.assets),
+      // skip assets update, as it should be already handled in handleAssetTransferToVault
+      totalAssets: state.totalAssets,
       totalShares: state.totalShares + BigInt(event.args.shares),
+    };
+  }
+
+  async handleAssetTransferToVault(
+    event: any,
+    state: DeepReadonly<ERC4626PoolState>,
+    log: Readonly<Log>,
+  ): Promise<DeepReadonly<ERC4626PoolState>> {
+    return {
+      totalAssets: state.totalAssets + BigInt(event.args.value),
+      totalShares: state.totalShares,
     };
   }
 

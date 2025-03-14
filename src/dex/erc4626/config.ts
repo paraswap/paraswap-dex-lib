@@ -25,7 +25,6 @@ export const ERC4626Config: DexConfigMap<ERC4626Params> = {
       asset: '0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C',
     },
   },
-  // not really wUSDM, but works in the same way
   // might give 1wei difference on BUY
   sDAI: {
     [Network.GNOSIS]: {
@@ -33,7 +32,6 @@ export const ERC4626Config: DexConfigMap<ERC4626Params> = {
       asset: '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d', // WXDAI
     },
   },
-
   wUSDL: {
     [Network.MAINNET]: {
       vault: '0x7751E2F4b8ae93EF6B79d86419d42FE3295A4559', // wUSDL
