@@ -1,22 +1,22 @@
 import { Address } from '../../types';
 
-export type WusdmPoolState = {
+export type ERC4626PoolState = {
   totalShares: bigint;
   totalAssets: bigint;
 };
 
-export type WUSDMData = {
+export type ERC4626Data = {
   exchange: string;
 };
 
-export enum WUSDMFunctions {
+export enum ERC4626Functions {
   deposit = 'deposit',
   redeem = 'redeem',
   withdraw = 'withdraw',
   mint = 'mint',
 }
 
-export type WusdmParams = {
-  wUSDMAddress: Address;
-  USDMAddress: Address;
+export type ERC4626Params = {
+  vault: Address;
+  asset: Address;
 };

@@ -14,55 +14,54 @@ import {
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { getDexKeysWithNetwork } from '../../utils';
-import { IDex, Context } from '../../dex/idex';
+import { IDex, Context } from '../idex';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
-  WUSDMData,
-  WUSDMFunctions,
-  WusdmParams,
-  WusdmPoolState,
+  ERC4626Data,
+  ERC4626Functions,
+  ERC4626Params,
+  ERC4626PoolState,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
-import { WUSDMConfig } from './config';
-import { Utils } from '../../utils';
+import { ERC4626Config } from './config';
 import { BI_POWS } from '../../bigint-constants';
-import { WusdmEventPool } from './wusdm-pool';
+import { ERC4626EventPool } from './erc-4626-pool';
 import { Interface } from '@ethersproject/abi';
-import wUSDM_ABI from '../../abi/wUSDM.json';
+import ERC4626_ABI from '../../abi/ERC4626.json';
 import { DEPOSIT_TOPIC, WITHDRAW_TOPIC } from './constants';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
-export class WUSDM
+export class ERC4626
   extends SimpleExchange
-  implements IDex<WUSDMData, WusdmParams>
+  implements IDex<ERC4626Data, ERC4626Params>
 {
   readonly hasConstantPriceLargeAmounts = true;
   readonly isFeeOnTransferSupported = false;
   readonly needWrapNative: boolean = true;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(WUSDMConfig);
+    getDexKeysWithNetwork(ERC4626Config);
 
-  public readonly eventPool: WusdmEventPool;
+  public readonly eventPool: ERC4626EventPool;
   logger: Logger;
 
   constructor(
     readonly network: Network,
     readonly dexKey: string,
     readonly dexHelper: IDexHelper,
-    readonly wUSDMAddress: string = WUSDMConfig[dexKey][network].wUSDMAddress,
-    readonly USDMAddress: string = WUSDMConfig[dexKey][network].USDMAddress,
-    readonly wUSDMInterface: Interface = new Interface(wUSDM_ABI),
+    readonly vault: string = ERC4626Config[dexKey][network].vault,
+    readonly asset: string = ERC4626Config[dexKey][network].asset,
+    readonly erc4626Interface: Interface = new Interface(ERC4626_ABI),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPool = new WusdmEventPool(
+    this.eventPool = new ERC4626EventPool(
       this.dexKey,
       this.network,
-      `${this.wUSDMAddress}_${this.USDMAddress}`,
+      `${this.vault}_${this.asset}`,
       dexHelper,
-      this.wUSDMAddress,
-      this.wUSDMInterface,
+      this.vault,
+      this.erc4626Interface,
       this.logger,
       DEPOSIT_TOPIC,
       WITHDRAW_TOPIC,
@@ -75,8 +74,8 @@ export class WUSDM
 
   isAppropriatePair(srcToken: Token, destToken: Token): boolean {
     return (
-      (this.isUSDM(srcToken.address) && this.isWUSDM(destToken.address)) ||
-      (this.isWUSDM(srcToken.address) && this.isUSDM(destToken.address))
+      (this.isAsset(srcToken.address) && this.isVault(destToken.address)) ||
+      (this.isVault(srcToken.address) && this.isAsset(destToken.address))
     );
   }
 
@@ -94,23 +93,23 @@ export class WUSDM
     const _destToken = this.dexHelper.config.wrapETH(destToken);
 
     return this.isAppropriatePair(_srcToken, _destToken)
-      ? [`${this.dexKey}_${this.wUSDMAddress}`]
+      ? [`${this.dexKey}_${this.vault}`]
       : [];
   }
 
-  isUSDM(tokenAddress: Address) {
-    return this.USDMAddress.toLowerCase() === tokenAddress.toLowerCase();
+  isAsset(tokenAddress: Address) {
+    return this.asset.toLowerCase() === tokenAddress.toLowerCase();
   }
 
-  isWUSDM(tokenAddress: Address) {
-    return this.wUSDMAddress.toLowerCase() === tokenAddress.toLowerCase();
+  isVault(tokenAddress: Address) {
+    return this.vault.toLowerCase() === tokenAddress.toLowerCase();
   }
 
   isWrap(srcToken: Token, destToken: Token, side: SwapSide) {
     if (side === SwapSide.SELL) {
-      return this.isUSDM(srcToken.address) && this.isWUSDM(destToken.address);
+      return this.isAsset(srcToken.address) && this.isVault(destToken.address);
     }
-    return this.isWUSDM(srcToken.address) && this.isUSDM(destToken.address);
+    return this.isVault(srcToken.address) && this.isAsset(destToken.address);
   }
 
   // Returns pool prices for amounts.
@@ -124,7 +123,7 @@ export class WUSDM
     side: SwapSide,
     blockNumber: number,
     limitPools?: string[],
-  ): Promise<null | ExchangePrices<WUSDMData>> {
+  ): Promise<null | ExchangePrices<ERC4626Data>> {
     const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
 
@@ -132,7 +131,7 @@ export class WUSDM
     const state = this.eventPool.getState(blockNumber);
     if (!state) return null;
 
-    const isSrcAsset = this.isUSDM(_srcToken.address);
+    const isSrcAsset = this.isAsset(_srcToken.address);
 
     const isWrap = this.isWrap(_srcToken, _destToken, side);
 
@@ -156,15 +155,15 @@ export class WUSDM
         unit: BI_POWS[18],
         prices: amounts.map(amount => calcFunction(amount, state)),
         gasCost: isWrap ? 60000 : 70000,
-        data: { exchange: `${this.wUSDMAddress}` },
-        poolAddresses: [this.wUSDMAddress],
+        data: { exchange: `${this.vault}` },
+        poolAddresses: [this.vault],
         exchange: this.dexKey,
       },
     ];
   }
 
   // Returns estimated gas cost of calldata for this DEX in multiSwap
-  getCalldataGasCost(poolPrices: PoolPrices<WUSDMData>): number | number[] {
+  getCalldataGasCost(poolPrices: PoolPrices<ERC4626Data>): number | number[] {
     // TODO: update if there is any payload in getAdapterParam
     return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
   }
@@ -173,18 +172,16 @@ export class WUSDM
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    if (!this.isUSDM(tokenAddress) && !this.isWUSDM(tokenAddress)) return [];
+    if (!this.isAsset(tokenAddress) && !this.isVault(tokenAddress)) return [];
 
     return [
       {
         exchange: this.dexKey,
-        address: this.wUSDMAddress,
+        address: this.vault,
         connectorTokens: [
           {
             decimals: 18,
-            address: this.isUSDM(tokenAddress)
-              ? this.wUSDMAddress
-              : this.USDMAddress,
+            address: this.isAsset(tokenAddress) ? this.vault : this.asset,
           },
         ],
         liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
@@ -197,21 +194,21 @@ export class WUSDM
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: WUSDMData,
+    data: ERC4626Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
     const isSell = side === SwapSide.SELL;
     const { exchange } = data;
 
     let swapData: string;
-    if (this.isUSDM(srcToken)) {
-      swapData = this.wUSDMInterface.encodeFunctionData(
-        isSell ? WUSDMFunctions.deposit : WUSDMFunctions.mint,
+    if (this.isAsset(srcToken)) {
+      swapData = this.erc4626Interface.encodeFunctionData(
+        isSell ? ERC4626Functions.deposit : ERC4626Functions.mint,
         [isSell ? srcAmount : destAmount, this.augustusAddress],
       );
     } else {
-      swapData = this.wUSDMInterface.encodeFunctionData(
-        isSell ? WUSDMFunctions.redeem : WUSDMFunctions.withdraw,
+      swapData = this.erc4626Interface.encodeFunctionData(
+        isSell ? ERC4626Functions.redeem : ERC4626Functions.withdraw,
         [
           isSell ? srcAmount : destAmount,
           this.augustusAddress,
@@ -230,7 +227,7 @@ export class WUSDM
       undefined,
       undefined,
       undefined,
-      isSell && this.isUSDM(destToken),
+      isSell && this.isAsset(destToken),
     );
   }
 
@@ -240,7 +237,7 @@ export class WUSDM
     srcAmount: NumberAsString,
     destAmount: NumberAsString,
     recipient: Address,
-    data: WUSDMData,
+    data: ERC4626Data,
     side: SwapSide,
     _: Context,
     executorAddress: Address,
@@ -249,14 +246,14 @@ export class WUSDM
     const { exchange } = data;
 
     let swapData: string;
-    if (this.isUSDM(srcToken)) {
-      swapData = this.wUSDMInterface.encodeFunctionData(
-        isSell ? WUSDMFunctions.deposit : WUSDMFunctions.mint,
+    if (this.isAsset(srcToken)) {
+      swapData = this.erc4626Interface.encodeFunctionData(
+        isSell ? ERC4626Functions.deposit : ERC4626Functions.mint,
         [isSell ? srcAmount : destAmount, recipient],
       );
     } else {
-      swapData = this.wUSDMInterface.encodeFunctionData(
-        isSell ? WUSDMFunctions.redeem : WUSDMFunctions.withdraw,
+      swapData = this.erc4626Interface.encodeFunctionData(
+        isSell ? ERC4626Functions.redeem : ERC4626Functions.withdraw,
         [isSell ? srcAmount : destAmount, recipient, executorAddress],
       );
     }
@@ -268,13 +265,13 @@ export class WUSDM
       targetExchange: exchange,
       returnAmountPos: isSell
         ? extractReturnAmountPosition(
-            this.wUSDMInterface,
-            this.isUSDM(srcToken)
-              ? WUSDMFunctions.deposit
-              : WUSDMFunctions.redeem,
+            this.erc4626Interface,
+            this.isAsset(srcToken)
+              ? ERC4626Functions.deposit
+              : ERC4626Functions.redeem,
           )
         : undefined,
-      skipApproval: this.isUSDM(destToken),
+      skipApproval: this.isAsset(destToken),
     };
   }
 
@@ -287,7 +284,7 @@ export class WUSDM
     destToken: string,
     srcAmount: string,
     destAmount: string,
-    data: WUSDMData,
+    data: ERC4626Data,
     side: SwapSide,
   ): AdapterExchangeParam {
     const { exchange } = data;
@@ -299,7 +296,7 @@ export class WUSDM
         },
       },
       {
-        toStaked: this.isUSDM(srcToken),
+        toStaked: this.isAsset(srcToken),
       },
     );
 
@@ -310,19 +307,19 @@ export class WUSDM
     };
   }
 
-  previewRedeem(shares: bigint, state: WusdmPoolState) {
+  previewRedeem(shares: bigint, state: ERC4626PoolState) {
     return (shares * state.totalAssets) / state.totalShares;
   }
 
-  previewMint(shares: bigint, state: WusdmPoolState) {
+  previewMint(shares: bigint, state: ERC4626PoolState) {
     return (shares * state.totalAssets) / state.totalShares;
   }
 
-  previewWithdraw(assets: bigint, state: WusdmPoolState) {
+  previewWithdraw(assets: bigint, state: ERC4626PoolState) {
     return (assets * state.totalShares) / state.totalAssets;
   }
 
-  previewDeposit(assets: bigint, state: WusdmPoolState) {
+  previewDeposit(assets: bigint, state: ERC4626PoolState) {
     return (assets * state.totalShares) / state.totalAssets;
   }
 }

@@ -2,14 +2,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-import { WusdmEventPool } from './wusdm-pool';
-import { WUSDMConfig } from './config';
+import { ERC4626EventPool } from './erc-4626-pool';
+import { ERC4626Config } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
-import wUSDM_ABI from '../../abi/wUSDM.json';
+import ERC4626_ABI from '../../abi/ERC4626.json';
 import { DEPOSIT_TOPIC, WITHDRAW_TOPIC } from './constants';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { WusdmPoolState } from './types';
+import { ERC4626PoolState } from './types';
 
 import { Interface } from '@ethersproject/abi';
 import _ from 'lodash';
@@ -24,9 +24,9 @@ const networks = [
 ];
 
 async function fetchPoolState(
-  wusdmPool: WusdmEventPool,
+  wusdmPool: ERC4626EventPool,
   blockNumber: number,
-): Promise<WusdmPoolState> {
+): Promise<ERC4626PoolState> {
   const eventState = wusdmPool.getState(blockNumber);
   if (eventState) return eventState;
   const onChainState = await wusdmPool.generateState(blockNumber);
@@ -63,8 +63,8 @@ describe('Wusdm', function () {
 
   networks.forEach(network => {
     describe(`${network}`, function () {
-      const wUSDMAddress = WUSDMConfig['wUSDM'][network].wUSDMAddress;
-      const wUSDMIface = new Interface(wUSDM_ABI);
+      const wUSDMAddress = ERC4626Config['wUSDM'][network].vault;
+      const wUSDMIface = new Interface(ERC4626_ABI);
 
       const blockNumbers = multichainBlockNumbers[network];
 
@@ -74,7 +74,7 @@ describe('Wusdm', function () {
             const dexHelper = new DummyDexHelper(network);
             const logger = dexHelper.getLogger(dexKey);
 
-            const wusdmPool = new WusdmEventPool(
+            const wusdmPool = new ERC4626EventPool(
               dexKey,
               network,
               `wusdm-pool`,
