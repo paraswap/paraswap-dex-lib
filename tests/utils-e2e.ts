@@ -445,7 +445,7 @@ export async function testE2E(
       network,
       srcToken.address,
       userAddress,
-      priceRoute.tokenTransferProxy,
+      priceRoute.contractAddress,
       amountToFund,
     );
   }
