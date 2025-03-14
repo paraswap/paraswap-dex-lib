@@ -11,11 +11,20 @@ export async function getOnChainState(
   multiContract: Contract,
   potAddress: string,
   potInterface: Interface,
-  savingsRateSymbol: 'dsr' | 'ssr',
+  savingsRateSymbol: 'dsr' | 'ssr' | 'ssrOracle',
   blockNumber: number | 'latest',
 ): Promise<SparkSDaiPoolState> {
   if (savingsRateSymbol === 'dsr') {
     return getOnChainStateSDAI(
+      multiContract,
+      potAddress,
+      potInterface,
+      blockNumber,
+    );
+  }
+
+  if (savingsRateSymbol === 'ssrOracle') {
+    return getOnChainStateUSDSOracle(
       multiContract,
       potAddress,
       potInterface,
@@ -69,6 +78,37 @@ export async function getOnChainStateSDAI(
     dsr,
     chi,
     rho,
+  };
+}
+
+export async function getOnChainStateUSDSOracle(
+  multiContract: Contract,
+  potAddress: string,
+  potInterface: Interface,
+  blockNumber: number | 'latest',
+): Promise<SparkSDaiPoolState> {
+  const calls = [
+    {
+      target: potAddress,
+      callData: potInterface.encodeFunctionData('getSUSDSData', []),
+    },
+  ];
+
+  const data: { returnData: any[] } = await multiContract.methods
+    .aggregate(calls)
+    .call({}, blockNumber);
+
+  const decoded = potInterface.decodeFunctionResult(
+    'getSUSDSData',
+    data.returnData[0],
+  );
+
+  return {
+    // 'hack' - sUSDS doesn't have global shutdown and no notion of `live`, so it's always `live`
+    live: true,
+    dsr: decoded[0].ssr.toString(),
+    chi: decoded[0].chi.toString(),
+    rho: decoded[0].rho.toString(),
   };
 }
 

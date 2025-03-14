@@ -83,6 +83,7 @@ import { Swell } from './swell/swell';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
+import { sUSDSPsm } from './spark/susds-psm';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 import { AaveV3StataV2 } from './aave-v3-stata-v2/aave-v3-stata-v2';
@@ -185,6 +186,7 @@ const Dexes = [
   Swell,
   PharaohV1,
   Spark,
+  sUSDSPsm,
   AaveV3Stata,
   AaveV3StataV2,
   OSwap,
