@@ -417,6 +417,8 @@ export async function testE2E(
   console.log('Price Route:', JSON.stringify(priceRoute, null, 2));
   // prepare state overrides
   const tenderlySimulator = TenderlySimulatorNew.getInstance();
+  // any address works
+  const userAddress = TenderlySimulatorNew.DEFAULT_OWNER;
   // init `StateOverride` object
   const stateOverride: StateOverride = {};
   // fund x2 just in case
@@ -426,7 +428,7 @@ export async function testE2E(
     // add eth balance to user
     tenderlySimulator.addBalanceOverride(
       stateOverride,
-      senderAddress,
+      userAddress,
       amountToFund,
     );
   } else {
@@ -435,14 +437,14 @@ export async function testE2E(
       stateOverride,
       network,
       srcToken.address,
-      senderAddress,
+      userAddress,
       amountToFund,
     );
     await tenderlySimulator.addAllowanceOverride(
       stateOverride,
       network,
       srcToken.address,
-      senderAddress,
+      userAddress,
       priceRoute.tokenTransferProxy,
       amountToFund,
     );
@@ -460,7 +462,7 @@ export async function testE2E(
   const swapParams = await sdk.buildTransaction(
     priceRoute,
     minMaxAmount,
-    senderAddress,
+    userAddress,
   );
   assert(
     swapParams.to !== undefined,
