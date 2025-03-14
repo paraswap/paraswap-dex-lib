@@ -969,7 +969,7 @@ export const testGasEstimation = async (
     'Price route has incorrect contract method!',
   );
   // log the route for visibility
-  console.log({ priceRoute: JSON.stringify(priceRoute, null, 2) });
+  console.log('Price Route:', JSON.stringify(priceRoute, null, 2));
   // prepare state overrides
   const tenderlySimulator = TenderlySimulatorNew.getInstance();
   // any address works
