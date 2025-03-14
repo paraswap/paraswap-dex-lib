@@ -414,7 +414,7 @@ export async function testE2E(
     forceRoute,
   );
   // log the route for visibility
-  console.log({ priceRoute: JSON.stringify(priceRoute, null, 2) });
+  console.log('Price Route:', JSON.stringify(priceRoute, null, 2));
   // prepare state overrides
   const tenderlySimulator = TenderlySimulatorNew.getInstance();
   // init `StateOverride` object
