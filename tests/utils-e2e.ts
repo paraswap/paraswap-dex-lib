@@ -493,6 +493,7 @@ export async function testE2E(
       }, Simulated: ${gasUsed}, Difference: ${estimatedGas - gasUsed}`,
     );
   }
+  expect(simulation.status).toEqual(true);
   // release
   if (sdk.releaseResources) {
     await sdk.releaseResources();
