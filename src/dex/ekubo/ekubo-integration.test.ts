@@ -147,14 +147,14 @@ describe('Ekubo', function () {
   let blockNumber: number;
   let ekubo: Ekubo;
 
-  describe('Sepolia', () => {
-    const network = Network.SEPOLIA;
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'TestToken';
-    const destTokenSymbol = 'TestToken2';
+    const srcTokenSymbol = 'USDC';
+    const destTokenSymbol = 'USDT';
 
     const amountsForSell = [
       0n,

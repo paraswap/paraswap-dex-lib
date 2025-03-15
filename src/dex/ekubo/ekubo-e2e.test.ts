@@ -88,15 +88,15 @@ function testForNetwork(
 describe('Ekubo E2E', () => {
   const dexKey = 'Ekubo';
 
-  describe('Sepolia', () => {
-    const network = Network.SEPOLIA;
+  describe('Mainnet', () => {
+    const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'TestToken';
-    const tokenBSymbol: string = 'TestToken2';
+    const tokenASymbol: string = 'USDC';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
-    const nativeTokenAmount = '10000';
+    const tokenAAmount: string = '10000000';
+    const tokenBAmount: string = '10000000';
+    const nativeTokenAmount = '1000000000000000';
 
     testForNetwork(
       network,
