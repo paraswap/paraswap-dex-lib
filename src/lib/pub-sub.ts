@@ -114,7 +114,7 @@ export class ExpKeyValuePubSub {
     this.localCacheMisses++;
     const cacheKey = `${this.dexKey}_${this.network}_${key}`;
 
-    this.logger.debug(`Cache miss for ${cacheKey} in local cache`);
+    this.logger.info(`Cache miss for ${cacheKey} in local cache`);
 
     try {
       const [value, ttl] = await Promise.all([
@@ -124,7 +124,7 @@ export class ExpKeyValuePubSub {
 
       if (value && ttl > 0) {
         this.redisCacheHits++;
-        this.logger.debug(`Redis cache hit for ${cacheKey} with TTL ${ttl}`);
+        this.logger.info(`Redis cache hit for ${cacheKey} with TTL ${ttl}`);
         const parsedValue = JSON.parse(value);
         this.localCache.set(key, parsedValue, ttl);
         return parsedValue;
@@ -135,11 +135,11 @@ export class ExpKeyValuePubSub {
         );
       } else {
         this.redisCacheMisses++;
-        this.logger.debug(`Redis cache miss for ${cacheKey}`);
+        this.logger.info(`Redis cache miss for ${cacheKey}`);
       }
 
       if (this.defaultValue && this.defaultTTL && this.defaultTTL > 0) {
-        this.logger.debug(
+        this.logger.info(
           `Using default value for ${cacheKey} with TTL ${this.defaultTTL}`,
         );
         this.localCache.set(key, this.defaultValue, this.defaultTTL);
