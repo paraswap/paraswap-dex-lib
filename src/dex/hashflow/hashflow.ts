@@ -1116,7 +1116,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   releaseResources(): void {
-    if (this.rateFetcher) {
+    if (this.rateFetcher && !this.dexHelper.config.isSlave) {
       this.rateFetcher.stop();
     }
   }
