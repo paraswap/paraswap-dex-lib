@@ -157,7 +157,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
+    this.logger.debug(
+      `Hashflow: Initializing pricing for ${this.dexKey}-${this.network}; isSlave=${this.dexHelper.config.isSlave}`,
+    );
     if (!this.dexHelper.config.isSlave) {
+      this.logger.info(
+        `Hashflow: Starting rate fetcher polling for ${this.dexKey}`,
+      );
       this.rateFetcher.start();
     }
 
