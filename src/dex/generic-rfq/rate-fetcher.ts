@@ -178,14 +178,28 @@ export class RateFetcher {
       );
     }
 
+    this.logger.info(
+      `Initializing RateFetcher for ${this.dexKey}, isSlave=${this.dexHelper.config.isSlave}`,
+    );
+
     if (this.dexHelper.config.isSlave) {
+      this.logger.info(
+        `Subscribing to price updates as slave for ${this.dexKey}`,
+      );
       this.pricesPubSub.subscribe();
       if (this.blacklistPubSub) {
         const initSet = await this.dexHelper.cache.smembers(
           this.blackListCacheKey,
         );
+        this.logger.info(
+          `Initializing blacklist with ${initSet.length} entries`,
+        );
         this.blacklistPubSub.initializeAndSubscribe(initSet);
       }
+    } else {
+      this.logger.info(
+        `Not subscribing to price updates as master for ${this.dexKey}`,
+      );
     }
   }
 
@@ -258,28 +272,37 @@ export class RateFetcher {
     const ttl = this.config.rateConfig.dataTTLS;
     const pairs = this.pairs;
 
-    if (isEmpty(pairs)) return;
+    if (isEmpty(pairs)) {
+      this.logger.debug(`No pairs available for ${this.dexKey}`);
+      return;
+    }
 
     const currentPricePairs = new Set();
+    let updatedPairsCount = 0;
 
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
+        this.logger.debug(`Pair ${pairName} not found in available pairs`);
         return;
       }
       const prices = resp.prices[pairName];
 
       if (!prices.asks || !prices.bids) {
+        this.logger.debug(`No asks or bids for pair ${pairName}`);
         return;
       }
 
-      if (isEmpty(this.tokens)) return;
+      if (isEmpty(this.tokens)) {
+        this.logger.debug(`No tokens available for ${this.dexKey}`);
+        return;
+      }
 
       const baseToken = this.tokens[pair.base];
       const quoteToken = this.tokens[pair.quote];
 
       if (!baseToken || !quoteToken) {
-        this.logger.warn(`missing base or quote token`);
+        this.logger.warn(`Missing base or quote token for pair ${pairName}`);
         return;
       }
 
@@ -287,6 +310,7 @@ export class RateFetcher {
         const key = `${baseToken.address}_${quoteToken.address}_bids`;
         const value = prices.bids;
         pubSubData[key] = value;
+        updatedPairsCount++;
 
         this.dexHelper.cache.setex(
           this.dexKey,
@@ -302,6 +326,7 @@ export class RateFetcher {
         const key = `${baseToken.address}_${quoteToken.address}_asks`;
         const value = prices.asks;
         pubSubData[key] = value;
+        updatedPairsCount++;
 
         this.dexHelper.cache.setex(
           this.dexKey,
@@ -326,9 +351,14 @@ export class RateFetcher {
         ttl,
         JSON.stringify(value),
       );
-    }
 
-    this.pricesPubSub.publish(pubSubData, ttl);
+      this.logger.info(
+        `Updated ${updatedPairsCount} price entries for ${currentPricePairs.size} pairs`,
+      );
+      this.pricesPubSub.publish(pubSubData, ttl);
+    } else {
+      this.logger.warn(`No price pairs were updated for ${this.dexKey}`);
+    }
   }
 
   checkHealth(): boolean {
@@ -382,35 +412,42 @@ export class RateFetcher {
     side: SwapSide,
   ): Promise<PriceAndAmountBigNumber[] | null> {
     let reversed = false;
+    const srcAddress = srcToken.address.toLowerCase();
+    const destAddress = destToken.address.toLowerCase();
 
     let prices: PriceAndAmount[] | null = null;
+    let cacheKey = '';
+
     if (side === SwapSide.SELL) {
-      prices = await this.pricesPubSub.getAndCache(
-        `${srcToken.address}_${destToken.address}_bids`,
-      );
+      cacheKey = `${srcAddress}_${destAddress}_bids`;
+      prices = await this.pricesPubSub.getAndCache(cacheKey);
 
       if (!prices) {
-        prices = await this.pricesPubSub.getAndCache(
-          `${destToken.address}_${srcToken.address}_asks`,
-        );
+        cacheKey = `${destAddress}_${srcAddress}_asks`;
+        prices = await this.pricesPubSub.getAndCache(cacheKey);
         reversed = true;
       }
     } else {
-      prices = await this.pricesPubSub.getAndCache(
-        `${destToken.address}_${srcToken.address}_asks`,
-      );
+      cacheKey = `${destAddress}_${srcAddress}_asks`;
+      prices = await this.pricesPubSub.getAndCache(cacheKey);
 
       if (!prices) {
-        prices = await this.pricesPubSub.getAndCache(
-          `${srcToken.address}_${destToken.address}_bids`,
-        );
+        cacheKey = `${srcAddress}_${destAddress}_bids`;
+        prices = await this.pricesPubSub.getAndCache(cacheKey);
         reversed = true;
       }
     }
 
     if (!prices) {
+      this.logger.debug(
+        `No prices found for ${srcAddress} to ${destAddress} (${side}) using key ${cacheKey}`,
+      );
       return null;
     }
+
+    this.logger.debug(
+      `Found ${prices.length} prices for ${srcAddress} to ${destAddress} (${side}), reversed=${reversed}`,
+    );
 
     let orderPrices = prices.map(price => [
       new BigNumber(price[0]),
