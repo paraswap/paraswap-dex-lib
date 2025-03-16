@@ -1107,7 +1107,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   releaseResources(): void {
-    if (this.rateFetcher) {
+    if (this.rateFetcher && !this.dexHelper.config.isSlave) {
       this.rateFetcher.stop();
     }
   }
