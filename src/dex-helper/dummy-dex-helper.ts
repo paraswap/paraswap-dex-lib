@@ -329,6 +329,7 @@ export class DummyDexHelper implements IDexHelper {
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
       network,
     );
+
     this.web3Provider = new Web3(
       rpcUrl ? rpcUrl : this.config.data.privateHttpProvider,
     );
@@ -365,5 +366,14 @@ export class DummyDexHelper implements IDexHelper {
 
   replaceProviderWithRPC(rpcUrl: string) {
     this.provider = new StaticJsonRpcProvider(rpcUrl, this.config.data.network);
+    this.web3Provider = new Web3(rpcUrl);
+    this.multiContract = new this.web3Provider.eth.Contract(
+      multiABIV2 as any,
+      this.config.data.multicallV2Address,
+    );
+    this.multiWrapper = new MultiWrapper(
+      this.multiContract,
+      this.getLogger(`MultiWrapper-${this.config.data.network}`),
+    );
   }
 }

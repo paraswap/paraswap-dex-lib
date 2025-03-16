@@ -12,29 +12,36 @@ import {
 
 export const AaveV3StataConfig: DexConfigMap<DexParams> = {
   AaveV3StataV2: {
-    [Network.MAINNET]: {
-      factoryAddresses: [
-        AaveV3Ethereum.STATA_FACTORY,
-        AaveV3EthereumLido.STATA_FACTORY,
-      ],
-      pool: AaveV3Ethereum.POOL,
-    },
-    [Network.GNOSIS]: {
-      factoryAddresses: [AaveV3Gnosis.STATA_FACTORY],
-      pool: AaveV3Gnosis.POOL,
-    },
-    // Waiting for BalancerV3 to get released on Optimism
-    // [Network.OPTIMISM]: {
-    //   factoryAddresses: [AaveV3Optimism.STATA_FACTORY],
-    //   pool: AaveV3Optimism.POOL,
-    // },
-    [Network.ARBITRUM]: {
-      factoryAddresses: [AaveV3Arbitrum.STATA_FACTORY],
-      pool: AaveV3Arbitrum.POOL,
-    },
-    [Network.BASE]: {
-      factoryAddresses: [AaveV3Base.STATA_FACTORY],
-      pool: AaveV3Base.POOL,
-    },
+    [Network.MAINNET]: [
+      { factory: AaveV3Ethereum.STATA_FACTORY, pool: AaveV3Ethereum.POOL },
+      {
+        factory: AaveV3EthereumLido.STATA_FACTORY,
+        pool: AaveV3EthereumLido.POOL,
+      },
+    ],
+    [Network.GNOSIS]: [
+      {
+        factory: AaveV3Gnosis.STATA_FACTORY,
+        pool: AaveV3Gnosis.POOL,
+      },
+    ],
+    [Network.OPTIMISM]: [
+      {
+        factory: AaveV3Optimism.STATA_FACTORY,
+        pool: AaveV3Optimism.POOL,
+      },
+    ],
+    [Network.ARBITRUM]: [
+      {
+        factory: AaveV3Arbitrum.STATA_FACTORY,
+        pool: AaveV3Arbitrum.POOL,
+      },
+    ],
+    [Network.BASE]: [
+      {
+        factory: AaveV3Base.STATA_FACTORY,
+        pool: AaveV3Base.POOL,
+      },
+    ],
   },
 };

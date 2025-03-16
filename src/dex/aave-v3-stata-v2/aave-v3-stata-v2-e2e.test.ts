@@ -264,28 +264,28 @@ describe('AaveV3Stata E2E', () => {
   });
 
   // no tokens yet deployed
-  describe.skip('Optimism', () => {
+  describe('Optimism', () => {
     const network = Network.OPTIMISM;
 
     const pairs: { name: string; amount: string; skipBuy?: boolean }[][] = [
       [
         {
-          name: 'USDT',
+          name: 'USDC',
           amount: '100000',
         },
         {
-          name: 'stataUSDT',
+          name: 'stataUSDC',
           amount: '100000',
         },
       ],
       [
         {
-          name: 'aaveUSDT',
+          name: 'aOptUSDCn',
           amount: '100000',
           skipBuy: true,
         },
         {
-          name: 'stataUSDT',
+          name: 'stataUSDC', // no holders
           amount: '100000',
         },
       ],
