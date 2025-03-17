@@ -1033,7 +1033,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
   }
 
   releaseResources(): void {
-    if (this.rateFetcher && !this.dexHelper.config.isSlave) {
+    if (this.rateFetcher) {
       this.rateFetcher.stop();
     }
   }
