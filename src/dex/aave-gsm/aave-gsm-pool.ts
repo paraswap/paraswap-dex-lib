@@ -7,6 +7,7 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
 import GSM_ABI from '../../abi/aave-gsm/Aave_GSM.json';
 import FEE_STRATEGY_ABI from '../../abi/aave-gsm/IFeeStrategy.json';
+import STATA_ABI from '../../abi/aavev3stata/Token.json';
 import {
   addressDecode,
   booleanDecode,
@@ -14,6 +15,8 @@ import {
 } from '../../lib/decoders';
 
 export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
+  RAY = 10n ** 27n;
+
   handlers: {
     [event: string]: (
       event: any,
@@ -28,11 +31,13 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
 
   constructor(
     readonly gsm: string,
+    readonly underlying: string,
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
     protected aaveGsmIface = new Interface(GSM_ABI),
+    protected aaveStataIface = new Interface(STATA_ABI),
     protected feeStrategyIface = new Interface(FEE_STRATEGY_ABI),
     protected PERCENT_FACTOR = 10_000n,
   ) {
@@ -115,6 +120,13 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
         callData: this.aaveGsmIface.encodeFunctionData('getExposureCap', []),
         decodeFunction: uint256ToBigInt,
       },
+      {
+        target: this.underlying,
+        callData: this.aaveStataIface.encodeFunctionData('convertToAssets', [
+          this.RAY,
+        ]),
+        decodeFunction: uint256ToBigInt,
+      },
     ];
 
     const results = await this.dexHelper.multiWrapper.tryAggregate<
@@ -122,12 +134,14 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     >(true, callData, blockNumber);
 
     return {
+      blockNumber: 0,
       buyFee: results[0].returnData as bigint,
       sellFee: results[1].returnData as bigint,
       underlyingLiquidity: results[2].returnData as bigint,
       isFrozen: results[3].returnData as boolean,
       isSeized: results[4].returnData as boolean,
       exposureCap: results[5].returnData as bigint,
+      rate: results[6].returnData as bigint,
     };
   }
 
@@ -152,6 +166,13 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
       feeStrategy[0].returnData,
       blockNumber,
     );
+
+    if (typeof blockNumber === 'number') {
+      result.blockNumber = blockNumber;
+    } else {
+      const block = await this.dexHelper.provider.getBlock(blockNumber);
+      result.blockNumber = block.number;
+    }
 
     return result;
   }
@@ -204,11 +225,16 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState> | null> {
-    return {
-      ...state,
-      underlyingLiquidity:
-        state.underlyingLiquidity - BigInt(event.args.underlyingAmount),
-    };
+    // return {
+    //   ...state,
+    //   underlyingLiquidity:
+    //     state.underlyingLiquidity - BigInt(event.args.underlyingAmount),
+    // };
+    if (state.blockNumber >= log.blockNumber) {
+      return state;
+    }
+
+    return await this.generateState(log.blockNumber);
   }
 
   async handleSellAsset(
@@ -216,10 +242,15 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState> | null> {
-    return {
-      ...state,
-      underlyingLiquidity:
-        state.underlyingLiquidity + BigInt(event.args.underlyingAmount),
-    };
+    // return {
+    //   ...state,
+    //   underlyingLiquidity:
+    //     state.underlyingLiquidity + BigInt(event.args.underlyingAmount),
+    // };
+    if (state.blockNumber >= log.blockNumber) {
+      return state;
+    }
+
+    return await this.generateState(log.blockNumber);
   }
 }
