@@ -7,7 +7,6 @@ import type { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import type { Address, BlockHeader, Log, Logger } from '../../types';
 import type { SparkSDaiPoolState } from './types';
 import { getOnChainState } from './utils';
-import { SDaiConfig } from './config';
 import { Network } from '../../constants';
 
 export const RAY = BI_POWS[27];

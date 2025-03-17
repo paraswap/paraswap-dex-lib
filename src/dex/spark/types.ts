@@ -5,7 +5,11 @@ export type SparkData = { exchange: Address };
 
 export type SparkParams = {
   sdaiAddress: Address;
+  sdaiDecimals?: number;
   daiAddress: Address;
+  daiDecimals?: number;
+  usdcAddress?: Address;
+  usdcDecimals?: number;
   potAddress: Address;
   psmAddress?: Address;
   savingsRate: {
