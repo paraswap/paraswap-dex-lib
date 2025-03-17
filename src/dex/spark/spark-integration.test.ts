@@ -9,6 +9,9 @@ import { BI_POWS } from '../../bigint-constants';
 import { Spark } from './spark';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { uint256ToBigInt } from '../../lib/decoders';
+import { sUSDSPsm } from './susds-psm';
+import SparkPSM3Abi from '../../abi/sdai/PSM3.abi.json';
+import { Interface } from 'ethers/lib/utils';
 
 const network = Network.MAINNET;
 
@@ -424,6 +427,247 @@ describe('sUSDS', function () {
 
   it('sUSDS getTopPoolsForToken', async function () {
     const poolLiquidity = await spark.getTopPoolsForToken(
+      SDaiToken.address,
+      10,
+    );
+    console.log(`${SDaiSymbol} Top Pools:`, poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, SDaiToken.address, dexKey);
+  });
+});
+
+describe('sUSDSPsm', () => {
+  const network = Network.ARBITRUM;
+  const dexHelper = new DummyDexHelper(network);
+
+  const dexKey = 'sUSDSPsm';
+  const SDaiSymbol = 'sUSDS';
+  const SDaiToken = Tokens[network][SDaiSymbol];
+
+  let susds: sUSDSPsm;
+
+  const DaiSymbol = 'USDS';
+  const DaiToken = Tokens[network][DaiSymbol];
+
+  const psmIface = new Interface(SparkPSM3Abi);
+
+  beforeAll(async () => {
+    blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    susds = new sUSDSPsm(network, dexKey, dexHelper);
+    if (susds.initializePricing) {
+      await susds.initializePricing(blocknumber);
+    }
+  });
+
+  it('getPoolIdentifiers and getPricesVolume USDS -> sUSDS SELL', async () => {
+    const pools = await susds.getPoolIdentifiers(
+      DaiToken,
+      SDaiToken,
+      SwapSide.SELL,
+      blocknumber,
+    );
+    console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await susds.getPricesVolume(
+      DaiToken,
+      SDaiToken,
+      amounts,
+      SwapSide.SELL,
+      blocknumber,
+      pools,
+    );
+    console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Prices: `, poolPrices);
+
+    const onChainPrices = await Promise.all(
+      amounts.map(async amount => {
+        const callData: MultiCallParams<bigint>[] = [
+          {
+            target: '0x2B05F8e1cACC6974fD79A673a341Fe1f58d27266',
+            callData: psmIface.encodeFunctionData('previewSwapExactIn', [
+              DaiToken.address,
+              SDaiToken.address,
+              amount,
+            ]),
+            decodeFunction: uint256ToBigInt,
+          },
+        ];
+
+        const results = await susds.dexHelper.multiWrapper.aggregate<bigint>(
+          callData,
+          blocknumber,
+        );
+        return results[0];
+      }),
+    );
+
+    console.log('On-chain price:', onChainPrices);
+
+    expect(poolPrices).not.toBeNull();
+    expect(poolPrices?.[0].prices).toEqual(onChainPrices);
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume sUSDS -> USDS SELL', async () => {
+    const pools = await susds.getPoolIdentifiers(
+      SDaiToken,
+      DaiToken,
+      SwapSide.SELL,
+      blocknumber,
+    );
+    console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await susds.getPricesVolume(
+      SDaiToken,
+      DaiToken,
+      amounts,
+      SwapSide.SELL,
+      blocknumber,
+      pools,
+    );
+    console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Prices: `, poolPrices);
+
+    const onChainPrices = await Promise.all(
+      amounts.map(async amount => {
+        const callData: MultiCallParams<bigint>[] = [
+          {
+            target: '0x2B05F8e1cACC6974fD79A673a341Fe1f58d27266',
+            callData: psmIface.encodeFunctionData('previewSwapExactIn', [
+              SDaiToken.address,
+              DaiToken.address,
+              amount,
+            ]),
+            decodeFunction: uint256ToBigInt,
+          },
+        ];
+
+        const results = await susds.dexHelper.multiWrapper.aggregate<bigint>(
+          callData,
+          blocknumber,
+        );
+        return results[0];
+      }),
+    );
+
+    console.log('On-chain price:', onChainPrices);
+
+    expect(poolPrices).not.toBeNull();
+    expect(poolPrices?.[0].prices).toEqual(onChainPrices);
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume USDS -> sUSDS BUY', async () => {
+    const pools = await susds.getPoolIdentifiers(
+      DaiToken,
+      SDaiToken,
+      SwapSide.BUY,
+      blocknumber,
+    );
+    console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await susds.getPricesVolume(
+      DaiToken,
+      SDaiToken,
+      amounts,
+      SwapSide.BUY,
+      blocknumber,
+      pools,
+    );
+    console.log(`${DaiSymbol} <> ${SDaiSymbol} Pool Prices: `, poolPrices);
+
+    const onChainPrices = await Promise.all(
+      amounts.map(async amount => {
+        const callData: MultiCallParams<bigint>[] = [
+          {
+            target: '0x2B05F8e1cACC6974fD79A673a341Fe1f58d27266',
+            callData: psmIface.encodeFunctionData('previewSwapExactOut', [
+              DaiToken.address,
+              SDaiToken.address,
+              amount,
+            ]),
+            decodeFunction: uint256ToBigInt,
+          },
+        ];
+
+        const results = await susds.dexHelper.multiWrapper.aggregate<bigint>(
+          callData,
+          blocknumber,
+        );
+        return results[0];
+      }),
+    );
+
+    console.log('On-chain price:', onChainPrices);
+
+    expect(poolPrices).not.toBeNull();
+    expect(poolPrices?.[0].prices).toEqual(onChainPrices);
+    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+  });
+
+  it('getPoolIdentifiers and getPricesVolume sUSDS -> USDS BUY', async () => {
+    const pools = await susds.getPoolIdentifiers(
+      SDaiToken,
+      DaiToken,
+      SwapSide.BUY,
+      blocknumber,
+    );
+    console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Identifiers: `, pools);
+
+    expect(pools.length).toBeGreaterThan(0);
+
+    const poolPrices = await susds.getPricesVolume(
+      SDaiToken,
+      DaiToken,
+      amounts,
+      SwapSide.BUY,
+      blocknumber,
+      pools,
+    );
+    console.log(`${SDaiSymbol} <> ${DaiSymbol} Pool Prices: `, poolPrices);
+
+    const onChainPrices = await Promise.all(
+      amounts.map(async amount => {
+        const callData: MultiCallParams<bigint>[] = [
+          {
+            target: '0x2B05F8e1cACC6974fD79A673a341Fe1f58d27266',
+            callData: psmIface.encodeFunctionData('previewSwapExactOut', [
+              SDaiToken.address,
+              DaiToken.address,
+              amount,
+            ]),
+            decodeFunction: uint256ToBigInt,
+          },
+        ];
+
+        const results = await susds.dexHelper.multiWrapper.aggregate<bigint>(
+          callData,
+          blocknumber,
+        );
+        return results[0];
+      }),
+    );
+
+    console.log('On-chain price:', onChainPrices);
+
+    expect(poolPrices).not.toBeNull();
+    expect(poolPrices?.[0].prices).toEqual(onChainPrices);
+    checkPoolPrices(poolPrices!, amounts, SwapSide.BUY, dexKey);
+  });
+
+  it('USDS getTopPoolsForToken', async () => {
+    const poolLiquidity = await susds.getTopPoolsForToken(DaiToken.address, 10);
+    console.log(`${DaiSymbol} Top Pools:`, poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, DaiToken.address, dexKey);
+  });
+
+  it('sUSDS getTopPoolsForToken', async () => {
+    const poolLiquidity = await susds.getTopPoolsForToken(
       SDaiToken.address,
       10,
     );
