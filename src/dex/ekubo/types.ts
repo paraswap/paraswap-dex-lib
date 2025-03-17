@@ -314,7 +314,7 @@ export namespace PoolState {
 export type EkuboData = {
   poolKeyAbi: AbiPoolKey;
   isToken1: boolean;
-  skipAhead: Map<bigint, number>;
+  skipAhead: Record<string, number>;
 };
 
 export type DexParams = {

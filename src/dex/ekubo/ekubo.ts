@@ -290,7 +290,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
       try {
         const quotes = [];
-        const skipAheadMap: Map<bigint, number> = new Map();
+        const skipAheadMap: Record<string, number> = {};
 
         for (const amount of [unitAmount, ...amounts]) {
           const inputAmount = isExactOut ? -amount : amount;
@@ -314,7 +314,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
           }
 
           quotes.push(quote);
-          skipAheadMap.set(amount, quote.skipAhead);
+          skipAheadMap[amount.toString()] = quote.skipAhead;
         }
 
         const [unitQuote, ...otherQuotes] = quotes;
@@ -463,6 +463,9 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     _executorAddress: Address,
   ): DexExchangeParam {
     const amount = BigInt(side === SwapSide.BUY ? `-${destAmount}` : srcAmount);
+    const amountStr = (
+      side === SwapSide.SELL ? srcAmount : destAmount
+    ).toString();
 
     return {
       needWrapNative: this.needWrapNative,
@@ -475,11 +478,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
           isPriceIncreasing(amount, data.isToken1)
             ? MAX_SQRT_RATIO_FLOAT
             : MIN_SQRT_RATIO_FLOAT,
-          BigNumber.from(
-            data.skipAhead.get(
-              BigInt(side === SwapSide.SELL ? srcAmount : destAmount),
-            ) ?? 0,
-          ),
+          BigNumber.from(data.skipAhead[amountStr] ?? 0),
           MIN_I256,
           recipient,
         ],
