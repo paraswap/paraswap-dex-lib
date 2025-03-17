@@ -159,12 +159,17 @@ describe('Ekubo Mainnet', function () {
             pool: BasePool,
             key: baseEthUsdcPoolKey,
           },
+        ],
+        22048500, // https://etherscan.io/tx/0xc401cc3007a2c0efd705c4c0dee5690ce8592858476b32cda8a4b000ceda0f24
+      ],
+      [
+        [
           {
             pool: OraclePool,
             key: oracleUsdcPoolKey,
           },
         ],
-        22048500, // multiMultihopSwap https://etherscan.io/tx/0xc401cc3007a2c0efd705c4c0dee5690ce8592858476b32cda8a4b000ceda0f24
+        22063200, // https://etherscan.io/tx/0xe689fb49b9627504d014a9b4663a6f0ec38ebfdc5642e261bb4bcd229d58206d
       ],
     ],
   };
