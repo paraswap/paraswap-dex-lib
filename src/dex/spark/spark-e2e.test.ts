@@ -88,21 +88,138 @@ describe('Spark E2E', () => {
 
   describe('sUSDS', () => {
     const dexKey = 'sUSDS';
-    const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USDS';
-    const tokenBSymbol: string = 'sUSDS';
+    describe('Mainnet', () => {
+      const network = Network.MAINNET;
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+      const tokenASymbol: string = 'USDS';
+      const tokenBSymbol: string = 'sUSDS';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
+
+  describe('SparkPsm', () => {
+    const dexKey = 'SparkPsm';
+
+    describe('Arbitrum', () => {
+      const network = Network.ARBITRUM;
+
+      describe('USDS -> sUSDS', () => {
+        const tokenASymbol: string = 'USDS';
+        const tokenBSymbol: string = 'sUSDS';
+
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '1000000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+
+      describe('USDS -> USDC', () => {
+        const tokenASymbol: string = 'USDS';
+        const tokenBSymbol: string = 'USDC';
+
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '1000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+
+      describe('USDC -> sUSDS', () => {
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'sUSDS';
+
+        const tokenAAmount: string = '1000000';
+        const tokenBAmount: string = '1000000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+    });
+
+    describe('Base', () => {
+      const network = Network.BASE;
+
+      describe('USDS -> sUSDS', () => {
+        const tokenASymbol: string = 'USDS';
+        const tokenBSymbol: string = 'sUSDS';
+
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '1000000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+
+      describe('USDS -> USDC', () => {
+        const tokenASymbol: string = 'USDS';
+        const tokenBSymbol: string = 'USDC';
+
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '1000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+
+      describe('USDC -> sUSDS', () => {
+        const tokenASymbol: string = 'USDC';
+        const tokenBSymbol: string = 'sUSDS';
+
+        const tokenAAmount: string = '1000000';
+        const tokenBAmount: string = '1000000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+    });
   });
 });
