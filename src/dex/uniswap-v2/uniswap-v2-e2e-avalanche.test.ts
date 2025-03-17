@@ -196,6 +196,89 @@ describe('UniswapV2 E2E Avalanche', () => {
     });
   });
 
+  describe('ArenaDex', () => {
+    const dexKey = 'ArenaDex';
+    describe('ArenaDex_simpleSwapSell', () => {
+      it('AVAX -> ARENA', async () => {
+        await testE2E(
+          tokens.ARENA,
+          tokens.WAVAX,
+          holders.ARENA,
+          '10000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('ArenaDex_simpleSwapBuy', () => {
+      it('AVAX -> ARENA', async () => {
+        await testE2E(
+          tokens.ARENA,
+          tokens.WAVAX,
+          holders.ARENA,
+          '20000000',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.simpleSwap,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('ArenaDex_swapExactAmountIn', () => {
+      it('ARENA -> WAVAX', async () => {
+        await testE2E(
+          tokens.ARENA,
+          tokens.WAVAX,
+          holders.ARENA,
+          '10000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.swapExactAmountIn,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('ArenaDex_swapExactAmountOut', () => {
+      it('ARENA -> WAVAX', async () => {
+        await testE2E(
+          tokens.ARENA,
+          tokens.WAVAX,
+          holders.ARENA,
+          '10000001',
+          SwapSide.BUY,
+          dexKey,
+          ContractMethod.swapExactAmountOut,
+          network,
+          provider,
+        );
+      });
+    });
+
+    describe('ArenaDex_multiSwap', () => {
+      it('ARENA -> WAVAX', async () => {
+        await testE2E(
+          tokens.ARENA,
+          tokens.WAVAX,
+          holders.ARENA,
+          '1000000000000000000',
+          SwapSide.SELL,
+          dexKey,
+          ContractMethod.multiSwap,
+          network,
+          provider,
+        );
+      });
+    });
+  });
+
   describe('TraderJoe', () => {
     const dexKey = 'TraderJoe';
     describe('TraderJoe: Fail: (Joe: K)', () => {
