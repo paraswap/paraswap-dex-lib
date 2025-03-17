@@ -406,22 +406,22 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     // return poolLiquidities;
   }
 
-  private async getDecimals(paraswapToken: string): Promise<number> {
-    const cached = this.decimals[paraswapToken];
-    if (typeof cached === 'number') {
-      return cached;
-    }
+  // private async getDecimals(paraswapToken: string): Promise<number> {
+  //   const cached = this.decimals[paraswapToken];
+  //   if (typeof cached === 'number') {
+  //     return cached;
+  //   }
 
-    const decimals: number = await new Contract(
-      paraswapToken,
-      erc20Iface,
-      this.dexHelper.provider,
-    ).decimals();
+  //   const decimals: number = await new Contract(
+  //     paraswapToken,
+  //     erc20Iface,
+  //     this.dexHelper.provider,
+  //   ).decimals();
 
-    this.decimals[paraswapToken] = decimals;
+  //   this.decimals[paraswapToken] = decimals;
 
-    return decimals;
-  }
+  //   return decimals;
+  // }
 
   public getDexParam(
     _srcToken: Address,
