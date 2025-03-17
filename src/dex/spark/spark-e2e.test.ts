@@ -109,8 +109,8 @@ describe('Spark E2E', () => {
     });
   });
 
-  describe('sUSDSPsm', () => {
-    const dexKey = 'sUSDSPsm';
+  describe('SparkPsm', () => {
+    const dexKey = 'SparkPsm';
 
     describe('Arbitrum', () => {
       const network = Network.ARBITRUM;

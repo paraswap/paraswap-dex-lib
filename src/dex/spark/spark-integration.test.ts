@@ -9,7 +9,7 @@ import { BI_POWS } from '../../bigint-constants';
 import { Spark } from './spark';
 import { MultiCallParams } from '../../lib/multi-wrapper';
 import { uint256ToBigInt } from '../../lib/decoders';
-import { sUSDSPsm } from './susds-psm';
+import { SparkPsm } from './spark-psm';
 import SparkPSM3Abi from '../../abi/sdai/PSM3.abi.json';
 import { Interface } from 'ethers/lib/utils';
 
@@ -436,15 +436,15 @@ describe('sUSDS', function () {
   });
 });
 
-describe('sUSDSPsm', () => {
+describe('SparkPsm', () => {
   const network = Network.ARBITRUM;
   const dexHelper = new DummyDexHelper(network);
 
-  const dexKey = 'sUSDSPsm';
+  const dexKey = 'SparkPsm';
   const SDaiSymbol = 'sUSDS';
   const SDaiToken = Tokens[network][SDaiSymbol];
 
-  let susds: sUSDSPsm;
+  let sparkPsm: SparkPsm;
 
   const DaiSymbol = 'USDS';
   const DaiToken = Tokens[network][DaiSymbol];
@@ -453,14 +453,14 @@ describe('sUSDSPsm', () => {
 
   beforeAll(async () => {
     blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    susds = new sUSDSPsm(network, dexKey, dexHelper);
-    if (susds.initializePricing) {
-      await susds.initializePricing(blocknumber);
+    sparkPsm = new SparkPsm(network, dexKey, dexHelper);
+    if (sparkPsm.initializePricing) {
+      await sparkPsm.initializePricing(blocknumber);
     }
   });
 
   it('getPoolIdentifiers and getPricesVolume USDS -> sUSDS SELL', async () => {
-    const pools = await susds.getPoolIdentifiers(
+    const pools = await sparkPsm.getPoolIdentifiers(
       DaiToken,
       SDaiToken,
       SwapSide.SELL,
@@ -470,7 +470,7 @@ describe('sUSDSPsm', () => {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await susds.getPricesVolume(
+    const poolPrices = await sparkPsm.getPricesVolume(
       DaiToken,
       SDaiToken,
       amounts,
@@ -494,7 +494,7 @@ describe('sUSDSPsm', () => {
           },
         ];
 
-        const results = await susds.dexHelper.multiWrapper.aggregate<bigint>(
+        const results = await sparkPsm.dexHelper.multiWrapper.aggregate<bigint>(
           callData,
           blocknumber,
         );
@@ -510,7 +510,7 @@ describe('sUSDSPsm', () => {
   });
 
   it('getPoolIdentifiers and getPricesVolume sUSDS -> USDS SELL', async () => {
-    const pools = await susds.getPoolIdentifiers(
+    const pools = await sparkPsm.getPoolIdentifiers(
       SDaiToken,
       DaiToken,
       SwapSide.SELL,
@@ -520,7 +520,7 @@ describe('sUSDSPsm', () => {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await susds.getPricesVolume(
+    const poolPrices = await sparkPsm.getPricesVolume(
       SDaiToken,
       DaiToken,
       amounts,
@@ -544,7 +544,7 @@ describe('sUSDSPsm', () => {
           },
         ];
 
-        const results = await susds.dexHelper.multiWrapper.aggregate<bigint>(
+        const results = await sparkPsm.dexHelper.multiWrapper.aggregate<bigint>(
           callData,
           blocknumber,
         );
@@ -560,7 +560,7 @@ describe('sUSDSPsm', () => {
   });
 
   it('getPoolIdentifiers and getPricesVolume USDS -> sUSDS BUY', async () => {
-    const pools = await susds.getPoolIdentifiers(
+    const pools = await sparkPsm.getPoolIdentifiers(
       DaiToken,
       SDaiToken,
       SwapSide.BUY,
@@ -570,7 +570,7 @@ describe('sUSDSPsm', () => {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await susds.getPricesVolume(
+    const poolPrices = await sparkPsm.getPricesVolume(
       DaiToken,
       SDaiToken,
       amounts,
@@ -594,7 +594,7 @@ describe('sUSDSPsm', () => {
           },
         ];
 
-        const results = await susds.dexHelper.multiWrapper.aggregate<bigint>(
+        const results = await sparkPsm.dexHelper.multiWrapper.aggregate<bigint>(
           callData,
           blocknumber,
         );
@@ -610,7 +610,7 @@ describe('sUSDSPsm', () => {
   });
 
   it('getPoolIdentifiers and getPricesVolume sUSDS -> USDS BUY', async () => {
-    const pools = await susds.getPoolIdentifiers(
+    const pools = await sparkPsm.getPoolIdentifiers(
       SDaiToken,
       DaiToken,
       SwapSide.BUY,
@@ -620,7 +620,7 @@ describe('sUSDSPsm', () => {
 
     expect(pools.length).toBeGreaterThan(0);
 
-    const poolPrices = await susds.getPricesVolume(
+    const poolPrices = await sparkPsm.getPricesVolume(
       SDaiToken,
       DaiToken,
       amounts,
@@ -644,7 +644,7 @@ describe('sUSDSPsm', () => {
           },
         ];
 
-        const results = await susds.dexHelper.multiWrapper.aggregate<bigint>(
+        const results = await sparkPsm.dexHelper.multiWrapper.aggregate<bigint>(
           callData,
           blocknumber,
         );
@@ -660,14 +660,17 @@ describe('sUSDSPsm', () => {
   });
 
   it('USDS getTopPoolsForToken', async () => {
-    const poolLiquidity = await susds.getTopPoolsForToken(DaiToken.address, 10);
+    const poolLiquidity = await sparkPsm.getTopPoolsForToken(
+      DaiToken.address,
+      10,
+    );
     console.log(`${DaiSymbol} Top Pools:`, poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, DaiToken.address, dexKey);
   });
 
   it('sUSDS getTopPoolsForToken', async () => {
-    const poolLiquidity = await susds.getTopPoolsForToken(
+    const poolLiquidity = await sparkPsm.getTopPoolsForToken(
       SDaiToken.address,
       10,
     );

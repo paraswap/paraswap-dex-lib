@@ -11,7 +11,7 @@ import { SparkSDaiPoolState } from './types';
 import PotAbi from '../../abi/maker-psm/pot.json';
 import { Interface } from '@ethersproject/abi';
 import _ from 'lodash';
-import { sUSDSPsmConfig } from './susds-psm';
+import { sUSDSPsmConfig } from './spark-psm';
 
 jest.setTimeout(50 * 1000);
 const network = Network.MAINNET;
@@ -117,8 +117,8 @@ describe('sUSDS', function () {
   });
 });
 
-describe('sUSDSPsm', () => {
-  const dexKey = 'sUSDSPsm';
+describe('SparkPsm', () => {
+  const dexKey = 'SparkPsm';
 
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;

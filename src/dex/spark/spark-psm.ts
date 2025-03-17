@@ -26,7 +26,7 @@ import { BI_POWS } from '../../bigint-constants';
 import { SDAI_DEPOSIT_GAS_COST } from './constants';
 
 export const sUSDSPsmConfig: DexConfigMap<SparkParams> = {
-  sUSDSPsm: {
+  SparkPsm: {
     [Network.ARBITRUM]: {
       sdaiAddress: '0xdDb46999F8891663a8F2828d25298f70416d7610', // sUSDS
       sdaiDecimals: 18,
@@ -68,7 +68,7 @@ export const sUSDSPsmConfig: DexConfigMap<SparkParams> = {
   },
 };
 
-export class sUSDSPsm extends Spark {
+export class SparkPsm extends Spark {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(sUSDSPsmConfig);
 
