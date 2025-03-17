@@ -225,31 +225,15 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       }
     }
 
-    const uninitializedPoolKeys: PoolKey[] = [];
-    const initializedPoolKeys: PoolKey[] = [];
+    const ids = [];
 
     for (const poolKey of poolKeys) {
-      (this.pools.has(poolKey.string_id)
-        ? initializedPoolKeys
-        : uninitializedPoolKeys
-      ).push(poolKey);
+      if (this.pools.has(poolKey.string_id)) {
+        ids.push(poolKey.string_id);
+      }
     }
 
-    const promises = this.initializePools(uninitializedPoolKeys, blockNumber);
-
-    const oldPoolIds = initializedPoolKeys.map(poolKey => poolKey.string_id);
-    const newPoolIds = (await Promise.allSettled(promises)).flatMap(res => {
-      if (res.status === 'rejected') {
-        this.logger.error(
-          `Fetching batch failed. Pool keys: ${res.reason.batch}. Error: ${res.reason.err}`,
-        );
-        return [];
-      } else {
-        return res.value;
-      }
-    });
-
-    return oldPoolIds.concat(newPoolIds);
+    return ids;
   }
 
   public async getPricesVolume(
