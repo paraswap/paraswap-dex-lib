@@ -306,6 +306,10 @@ export async function testE2E(
     : new LocalParaswapSDK(network, dexKeys, '', limitOrderProvider);
   // initialize pricing
   await sdk.initializePricing?.();
+  // if sleepMs is provided, pause simulation for specified time
+  if (sleepMs) {
+    await sleep(sleepMs);
+  }
   // fetch the route
   const amount = BigInt(_amount);
   const priceRoute = await sdk.getPrices(
@@ -353,10 +357,6 @@ export async function testE2E(
       priceRoute.contractAddress,
       amountToFund,
     );
-  }
-  // if sleepMs is provided, pause simulation for specified time
-  if (sleepMs) {
-    await sleep(sleepMs);
   }
   // build swap transaction
   const _slippage = slippage !== undefined ? BigInt(slippage) : 100n;
