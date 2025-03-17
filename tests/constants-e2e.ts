@@ -88,6 +88,10 @@ export const Tokens: {
       address: '0x4c9edd5852cd905f086c759e8383e09bff1e68b3',
       decimals: 18,
     },
+    EKUBO: {
+      address: '0x04C46E830Bb56ce22735d5d8Fc9CB90309317d0f',
+      decimals: 18,
+    },
     ETH: {
       address: ETHER_ADDRESS,
       decimals: 18,
@@ -1920,6 +1924,7 @@ export const Holders: {
     USDL: '0xAb96AA0ee764924f49fbB372f3B4db9c2cB24Ea2',
     wUSDL: '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb',
     UsualM: '0xE3f7A0c4a44b740328157A5152A85c3bCB54DA09',
+    EKUBO: '0xF5b6Ee2CAEb6769659f6C091D209DfdCaF3F69Eb',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
