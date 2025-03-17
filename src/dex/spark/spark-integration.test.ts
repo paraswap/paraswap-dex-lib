@@ -443,6 +443,8 @@ describe('SparkPsm', () => {
   const dexKey = 'SparkPsm';
   const SDaiSymbol = 'sUSDS';
   const SDaiToken = Tokens[network][SDaiSymbol];
+  const USDCSymbol = 'USDC';
+  const USDC = Tokens[network][USDCSymbol];
 
   let sparkPsm: SparkPsm;
 
@@ -677,5 +679,12 @@ describe('SparkPsm', () => {
     console.log(`${SDaiSymbol} Top Pools:`, poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, SDaiToken.address, dexKey);
+  });
+
+  it('USDC getTopPoolsForToken', async () => {
+    const poolLiquidity = await sparkPsm.getTopPoolsForToken(USDC.address, 10);
+    console.log(`${USDCSymbol} Top Pools:`, poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, USDC.address, dexKey);
   });
 });

@@ -12,6 +12,7 @@ import {
   DexConfigMap,
   DexExchangeParam,
   ExchangePrices,
+  PoolLiquidity,
   Token,
 } from '../../types';
 import { Network } from '../../constants';
@@ -81,7 +82,7 @@ export class SparkPsm extends Spark {
     protected network: Network,
     dexKey: string,
     readonly dexHelper: IDexHelper,
-    readonly config = sUSDSPsmConfig[dexKey][network],
+    protected readonly config = sUSDSPsmConfig[dexKey][network],
     readonly daiAddress: string = sUSDSPsmConfig[dexKey][network].daiAddress,
     readonly sdaiAddress: string = sUSDSPsmConfig[dexKey][network].sdaiAddress,
     readonly potAddress: string = sUSDSPsmConfig[dexKey][network].potAddress,
@@ -118,20 +119,24 @@ export class SparkPsm extends Spark {
     return this.usdcAddress.toLowerCase() === tokenAddress.toLowerCase();
   }
 
-  isAppropriatePair(srcToken: Token, destToken: Token) {
-    if (srcToken.address.toLowerCase() === destToken.address.toLowerCase()) {
-      return false;
-    }
-
+  isAppropriateTokenAddress(tokenAddress: string): boolean {
     const supportedTokens = [
       this.daiAddress.toLowerCase(),
       this.usdcAddress.toLowerCase(),
       this.sdaiAddress.toLowerCase(),
     ];
 
+    return supportedTokens.indexOf(tokenAddress.toLowerCase()) > -1;
+  }
+
+  isAppropriatePair(srcToken: Token, destToken: Token): boolean {
+    if (srcToken.address.toLowerCase() === destToken.address.toLowerCase()) {
+      return false;
+    }
+
     return (
-      supportedTokens.indexOf(srcToken.address.toLowerCase()) > -1 &&
-      supportedTokens.indexOf(destToken.address.toLowerCase()) > -1
+      this.isAppropriateTokenAddress(srcToken.address) &&
+      this.isAppropriateTokenAddress(destToken.address)
     );
   }
 
@@ -269,6 +274,40 @@ export class SparkPsm extends Spark {
         poolAddresses: [`${this.sdaiAddress}`],
       },
     ];
+  }
+
+  async getTopPoolsForToken(
+    tokenAddress: Address,
+    limit: number,
+  ): Promise<PoolLiquidity[]> {
+    if (!this.isAppropriateTokenAddress(tokenAddress)) return [];
+
+    const connectors = [
+      {
+        decimals: this.config.daiDecimals,
+        address: this.daiAddress,
+      },
+      {
+        decimals: this.config.sdaiDecimals,
+        address: this.sdaiAddress,
+      },
+      {
+        decimals: this.config.usdcDecimals,
+        address: this.usdcAddress,
+      },
+    ] as Token[];
+
+    const allPossiblePools = connectors.map(connenctor => ({
+      exchange: this.dexKey,
+      address: this.config.psmAddress!,
+      connectorTokens: [{ ...connenctor }],
+      liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+    }));
+
+    return allPossiblePools.filter(pool => {
+      const token = pool.connectorTokens[0];
+      return token.address.toLowerCase() !== tokenAddress.toLowerCase();
+    });
   }
 
   getDexParam(

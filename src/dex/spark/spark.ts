@@ -41,7 +41,7 @@ export class Spark
     protected network: Network,
     dexKey: string,
     readonly dexHelper: IDexHelper,
-    readonly config = SDaiConfig[dexKey][network],
+    protected readonly config = SDaiConfig[dexKey][network],
     readonly daiAddress: string = SDaiConfig[dexKey][network].daiAddress,
     readonly sdaiAddress: string = SDaiConfig[dexKey][network].sdaiAddress,
     readonly potAddress: string = SDaiConfig[dexKey][network].potAddress,
