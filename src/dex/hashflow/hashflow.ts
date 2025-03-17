@@ -157,7 +157,13 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   async initializePricing(blockNumber: number): Promise<void> {
+    this.logger.debug(
+      `Hashflow: Initializing pricing for ${this.dexKey}-${this.network}; isSlave=${this.dexHelper.config.isSlave}`,
+    );
     if (!this.dexHelper.config.isSlave) {
+      this.logger.info(
+        `Hashflow: Starting rate fetcher polling for ${this.dexKey}`,
+      );
       this.rateFetcher.start();
     }
 
@@ -191,6 +197,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
+    this.logger.debug(
+      `Getting pool identifiers for ${srcToken.address} to ${destToken.address} (${side}) for ${this.dexKey}-${this.network}`,
+    );
     const _srcToken = this.dexHelper.config.wrapETH(srcToken);
     const _destToken = this.dexHelper.config.wrapETH(destToken);
 
@@ -398,6 +407,9 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   async getCachedLevels(): Promise<PriceLevelsResponse['levels'] | null> {
+    this.logger.debug(
+      `Getting cached levels for ${this.pricesCacheKey} for ${this.dexKey}-${this.network}`,
+    );
     const cachedLevels = await this.dexHelper.cache.rawget(this.pricesCacheKey);
 
     if (cachedLevels) {
@@ -416,6 +428,11 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<HashflowData>> {
     try {
+      this.logger.debug(
+        `Getting prices volume for ${srcToken.symbol || srcToken.address}, ${
+          destToken.symbol || destToken.address
+        }, ${side} for ${this.dexKey}-${this.network}`,
+      );
       const _srcToken = this.dexHelper.config.wrapETH(srcToken);
       const _destToken = this.dexHelper.config.wrapETH(destToken);
 
@@ -916,6 +933,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
   }
 
   async isBlacklisted(txOrigin: Address): Promise<boolean> {
+    this.logger.debug(`Checking if ${txOrigin} is blacklisted for Hashflow`);
     const result = await this.dexHelper.cache.get(
       this.dexKey,
       this.network,

@@ -37,6 +37,7 @@ import {
   ERC1271Contract,
 } from '../../lib/erc1271-utils';
 import { isContractAddress } from '../../utils';
+import { ExpKeyValuePubSub, NonExpSetPubSub } from '../../lib/pub-sub';
 
 const GET_FIRM_RATE_TIMEOUT_MS = 2000;
 export const reversePrice = (price: PriceAndAmountBigNumber) =>
@@ -54,6 +55,9 @@ export class RateFetcher {
   private tokens: Record<string, TokenWithInfo> = {};
   private addressToTokenMap: Record<string, TokenWithInfo> = {};
   private pairs: PairMap = {};
+
+  private pricesPubSub: ExpKeyValuePubSub;
+  private blacklistPubSub?: NonExpSetPubSub;
 
   private firmRateAuth?: (options: RequestConfig) => void;
 
@@ -123,6 +127,13 @@ export class RateFetcher {
       logger,
     );
 
+    this.pricesPubSub = new ExpKeyValuePubSub(
+      this.dexHelper,
+      this.dexKey,
+      'prices',
+    );
+
+    this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (config.blacklistConfig) {
       this.blackListFetcher = new Fetcher<BlackListResponse>(
         dexHelper.httpRequest,
@@ -142,9 +153,14 @@ export class RateFetcher {
         config.blacklistConfig.intervalMs,
         logger,
       );
+
+      this.blacklistPubSub = new NonExpSetPubSub(
+        this.dexHelper,
+        this.dexKey,
+        'blacklist',
+      );
     }
 
-    this.blackListCacheKey = `${this.dexHelper.config.data.network}_${this.dexKey}_blacklist`;
     if (this.config.firmRateConfig.secret) {
       this.firmRateAuth = this.authHttp(this.config.firmRateConfig.secret);
     }
@@ -159,6 +175,30 @@ export class RateFetcher {
       this.verifierContract = createERC1271Contract(
         this.dexHelper.web3Provider,
         this.config.maker,
+      );
+    }
+
+    this.logger.info(
+      `Initializing RateFetcher for ${this.dexKey}, isSlave=${this.dexHelper.config.isSlave}`,
+    );
+
+    if (this.dexHelper.config.isSlave) {
+      this.logger.info(
+        `Subscribing to price updates as slave for ${this.dexKey}`,
+      );
+      this.pricesPubSub.subscribe();
+      if (this.blacklistPubSub) {
+        const initSet = await this.dexHelper.cache.smembers(
+          this.blackListCacheKey,
+        );
+        this.logger.info(
+          `Initializing blacklist with ${initSet.length} entries`,
+        );
+        this.blacklistPubSub.initializeAndSubscribe(initSet);
+      }
+    } else {
+      this.logger.info(
+        `Not subscribing to price updates as master for ${this.dexKey}`,
       );
     }
   }
@@ -214,74 +254,110 @@ export class RateFetcher {
     for (const address of resp.blacklist) {
       this.dexHelper.cache.sadd(this.blackListCacheKey, address.toLowerCase());
     }
+
+    if (this.blacklistPubSub) {
+      this.blacklistPubSub.publish(resp.blacklist);
+    }
   }
 
   public isBlackListed(userAddress: string) {
-    return this.dexHelper.cache.sismember(
-      this.blackListCacheKey,
-      userAddress.toLowerCase(),
-    );
+    if (this.blacklistPubSub) {
+      return this.blacklistPubSub.has(userAddress.toLowerCase());
+    }
+    return false;
   }
 
   private handleRatesResponse(resp: RatesResponse) {
+    const pubSubData: Record<string, unknown> = {};
+    const ttl = this.config.rateConfig.dataTTLS;
     const pairs = this.pairs;
 
-    if (isEmpty(pairs)) return;
+    if (isEmpty(pairs)) {
+      this.logger.debug(`No pairs available for ${this.dexKey}`);
+      return;
+    }
 
     const currentPricePairs = new Set();
+    let updatedPairsCount = 0;
 
     Object.keys(resp.prices).forEach(pairName => {
       const pair = pairs[pairName];
       if (!pair) {
+        this.logger.debug(`Pair ${pairName} not found in available pairs`);
         return;
       }
       const prices = resp.prices[pairName];
 
       if (!prices.asks || !prices.bids) {
+        this.logger.debug(`No asks or bids for pair ${pairName}`);
         return;
       }
 
-      if (isEmpty(this.tokens)) return;
+      if (isEmpty(this.tokens)) {
+        this.logger.debug(`No tokens available for ${this.dexKey}`);
+        return;
+      }
 
       const baseToken = this.tokens[pair.base];
       const quoteToken = this.tokens[pair.quote];
 
       if (!baseToken || !quoteToken) {
-        this.logger.warn(`missing base or quote token`);
+        this.logger.warn(`Missing base or quote token for pair ${pairName}`);
         return;
       }
 
       if (prices.bids.length) {
+        const key = `${baseToken.address}_${quoteToken.address}_bids`;
+        const value = prices.bids;
+        pubSubData[key] = value;
+        updatedPairsCount++;
+
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          `${baseToken.address}_${quoteToken.address}_bids`,
-          this.config.rateConfig.dataTTLS,
-          JSON.stringify(prices.bids),
+          key,
+          ttl,
+          JSON.stringify(value),
         );
         currentPricePairs.add(`${baseToken.address}_${quoteToken.address}`);
       }
 
       if (prices.asks.length) {
+        const key = `${baseToken.address}_${quoteToken.address}_asks`;
+        const value = prices.asks;
+        pubSubData[key] = value;
+        updatedPairsCount++;
+
         this.dexHelper.cache.setex(
           this.dexKey,
           this.dexHelper.config.data.network,
-          `${baseToken.address}_${quoteToken.address}_asks`,
-          this.config.rateConfig.dataTTLS,
-          JSON.stringify(prices.asks),
+          key,
+          ttl,
+          JSON.stringify(value),
         );
         currentPricePairs.add(`${quoteToken.address}_${baseToken.address}`);
       }
     });
 
     if (currentPricePairs.size > 0) {
+      const key = `pairs`;
+      const value = Array.from(currentPricePairs);
+      pubSubData[key] = value;
+
       this.dexHelper.cache.setex(
         this.dexKey,
         this.dexHelper.config.data.network,
-        `pairs`,
-        this.config.rateConfig.dataTTLS,
-        JSON.stringify(Array.from(currentPricePairs)),
+        key,
+        ttl,
+        JSON.stringify(value),
       );
+
+      this.logger.info(
+        `Updated ${updatedPairsCount} price entries for ${currentPricePairs.size} pairs`,
+      );
+      this.pricesPubSub.publish(pubSubData, ttl);
+    } else {
+      this.logger.warn(`No price pairs were updated for ${this.dexKey}`);
     }
   }
 
@@ -322,18 +398,12 @@ export class RateFetcher {
   }
 
   public async getAvailablePairs(): Promise<string[]> {
-    const pairs = await this.dexHelper.cache.getAndCacheLocally(
-      this.dexKey,
-      this.dexHelper.config.data.network,
-      `pairs`,
-      this.config.rateConfig.intervalMs / 1000,
-    );
-
+    const pairs = await this.pricesPubSub.getAndCache<string[]>(`pairs`);
     if (!pairs) {
       return [];
     }
 
-    return JSON.parse(pairs) as string[];
+    return pairs;
   }
 
   public async getOrderPrice(
@@ -342,54 +412,44 @@ export class RateFetcher {
     side: SwapSide,
   ): Promise<PriceAndAmountBigNumber[] | null> {
     let reversed = false;
+    const srcAddress = srcToken.address.toLowerCase();
+    const destAddress = destToken.address.toLowerCase();
 
-    let pricesAsString: string | null = null;
+    let prices: PriceAndAmount[] | null = null;
+    let cacheKey = '';
+
     if (side === SwapSide.SELL) {
-      pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
-        this.dexKey,
-        this.dexHelper.config.data.network,
-        `${srcToken.address}_${destToken.address}_bids`,
-        this.config.rateConfig.intervalMs / 1000,
-      );
+      cacheKey = `${srcAddress}_${destAddress}_bids`;
+      prices = await this.pricesPubSub.getAndCache(cacheKey);
 
-      if (!pricesAsString) {
-        pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
-          this.dexKey,
-          this.dexHelper.config.data.network,
-          `${destToken.address}_${srcToken.address}_asks`,
-          this.config.rateConfig.intervalMs / 1000,
-        );
+      if (!prices) {
+        cacheKey = `${destAddress}_${srcAddress}_asks`;
+        prices = await this.pricesPubSub.getAndCache(cacheKey);
         reversed = true;
       }
     } else {
-      pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
-        this.dexKey,
-        this.dexHelper.config.data.network,
-        `${destToken.address}_${srcToken.address}_asks`,
-        this.config.rateConfig.intervalMs / 1000,
-      );
+      cacheKey = `${destAddress}_${srcAddress}_asks`;
+      prices = await this.pricesPubSub.getAndCache(cacheKey);
 
-      if (!pricesAsString) {
-        pricesAsString = await this.dexHelper.cache.getAndCacheLocally(
-          this.dexKey,
-          this.dexHelper.config.data.network,
-          `${srcToken.address}_${destToken.address}_bids`,
-          this.config.rateConfig.intervalMs / 1000,
-        );
+      if (!prices) {
+        cacheKey = `${srcAddress}_${destAddress}_bids`;
+        prices = await this.pricesPubSub.getAndCache(cacheKey);
         reversed = true;
       }
     }
 
-    if (!pricesAsString) {
+    if (!prices) {
+      this.logger.debug(
+        `No prices found for ${srcAddress} to ${destAddress} (${side}) using key ${cacheKey}`,
+      );
       return null;
     }
 
-    const orderPricesAsString: PriceAndAmount[] = JSON.parse(pricesAsString);
-    if (!orderPricesAsString) {
-      return null;
-    }
+    this.logger.debug(
+      `Found ${prices.length} prices for ${srcAddress} to ${destAddress} (${side}), reversed=${reversed}`,
+    );
 
-    let orderPrices = orderPricesAsString.map(price => [
+    let orderPrices = prices.map(price => [
       new BigNumber(price[0]),
       new BigNumber(price[1]),
     ]);
@@ -487,5 +547,17 @@ export class RateFetcher {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  async setBlacklist(userAddress: string): Promise<boolean> {
+    await this.dexHelper.cache.hset(
+      this.blackListCacheKey,
+      userAddress.toLowerCase(),
+      'true',
+    );
+    if (this.blacklistPubSub) {
+      this.blacklistPubSub.publish([userAddress.toLowerCase()]);
+    }
+    return true;
   }
 }

@@ -26,6 +26,9 @@ export class RateFetcher {
     private logger: Logger,
     config: HashflowRateFetcherConfig,
   ) {
+    this.logger.info(
+      `Creating RateFetcher for ${this.dexKey} on network ${this.network}, isSlave=${this.dexHelper.config.isSlave}`,
+    );
     this.pricesCacheKey = config.rateConfig.pricesCacheKey;
     this.pricesCacheTTL = config.rateConfig.pricesCacheTTLSecs;
     this.marketMakersCacheKey = config.rateConfig.marketMakersCacheKey;
@@ -89,30 +92,68 @@ export class RateFetcher {
   }
 
   start() {
+    this.logger.info(
+      `RateFetcher.start() called for ${this.dexKey} on network ${this.network}, isSlave=${this.dexHelper.config.isSlave}`,
+    );
+    this.logger.info(`Call stack: ${new Error().stack}`);
     this.marketMakersFetcher.startPolling();
+    this.logger.info(
+      `Started market makers fetcher polling for ${this.dexKey}`,
+    );
     this.rateFetcher.startPolling();
+    this.logger.info(`Started rates fetcher polling for ${this.dexKey}`);
   }
 
   stop() {
     this.marketMakersFetcher.stopPolling();
     this.rateFetcher.stopPolling();
+    this.logger.info(
+      `RateFetcher.stop() called for ${this.dexKey} on network ${this.network}, isSlave=${this.dexHelper.config.isSlave}`,
+    );
+    if (this.marketMakersFetcher.isPolling()) {
+      this.logger.info(
+        `Stopping market makers fetcher polling for ${this.dexKey}`,
+      );
+    } else {
+      this.logger.info(
+        `Market makers fetcher for ${this.dexKey} was not polling`,
+      );
+    }
+    if (this.rateFetcher.isPolling()) {
+      this.logger.info(`Stopping rates fetcher polling for ${this.dexKey}`);
+    } else {
+      this.logger.info(`Rates fetcher for ${this.dexKey} was not polling`);
+    }
   }
 
   private handleMarketMakersResponse(resp: HashflowMarketMakersResponse): void {
+    this.logger.debug(
+      `Handling market makers response for ${this.dexKey}, isSlave=${this.dexHelper.config.isSlave}, received ${resp.marketMakers.length} market makers`,
+    );
     const { marketMakers } = resp;
     this.dexHelper.cache.rawset(
       this.marketMakersCacheKey,
       JSON.stringify(marketMakers),
       this.marketMakersCacheTTL,
     );
+    this.logger.debug(
+      `Set ${marketMakers.length} market makers in cache with key ${this.marketMakersCacheKey} and TTL ${this.marketMakersCacheTTL}s`,
+    );
   }
 
   private handleRatesResponse(resp: HashflowRatesResponse): void {
+    const levelsCount = Object.keys(resp.levels).length;
+    this.logger.debug(
+      `Handling rates response for ${this.dexKey}, isSlave=${this.dexHelper.config.isSlave}, received levels for ${levelsCount} market makers`,
+    );
     const { levels } = resp;
     this.dexHelper.cache.rawset(
       this.pricesCacheKey,
       JSON.stringify(levels),
       this.pricesCacheTTL,
+    );
+    this.logger.debug(
+      `Set price levels in cache with key ${this.pricesCacheKey} and TTL ${this.pricesCacheTTL}s`,
     );
   }
 }
