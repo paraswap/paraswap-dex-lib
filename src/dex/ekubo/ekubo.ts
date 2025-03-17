@@ -351,69 +351,59 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    // The integration tests skip initializePricing, hence this check
-    if (this.pools.size === 0) {
-      await this.updatePoolMap(await this.dexHelper.provider.getBlockNumber());
-    }
-
-    const token = convertParaSwapToEkubo(tokenAddress);
-
-    const settledPromises = await Promise.allSettled(
-      Array.from(this.pools.entries()).map(async ([poolId, pool]) => {
-        const tokenPair = [pool.key.token0, pool.key.token1];
-        if (!tokenPair.includes(token)) {
-          return null;
-        }
-
-        const tvlRes = pool.computeTvl();
-        if (tvlRes === null) {
-          throw new Error(`failed to compute TVL for pool ${poolId}`);
-        }
-
-        const [info0, info1] = await Promise.all(
-          tokenPair.map((ekuboToken, i) =>
-            (async () => {
-              const paraswapToken = convertEkuboToParaSwap(ekuboToken);
-              const decimals = await this.getDecimals(paraswapToken);
-
-              const token = {
-                address: paraswapToken,
-                decimals,
-              };
-
-              return {
-                token,
-                tvl: await this.dexHelper.getTokenUSDPrice(token, tvlRes[i]),
-              };
-            })(),
-          ),
-        );
-
-        return {
-          exchange: this.dexKey,
-          address: this.config.core,
-          connectorTokens: [
-            (info0.token.address !== tokenAddress ? info0 : info1).token,
-          ],
-          liquidityUSD: info0.tvl + info1.tvl,
-        };
-      }),
-    );
-
-    const poolLiquidities = settledPromises.flatMap(res => {
-      if (res.status === 'rejected') {
-        this.logger.error('TVL computation failed:', res.reason);
-        return [];
-      }
-
-      return res.value ? [res.value] : [];
-    });
-
-    poolLiquidities
-      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
-      .splice(limit, Infinity);
-
-    return poolLiquidities;
+    return [];
+    // // The integration tests skip initializePricing, hence this check
+    // if (this.pools.size === 0) {
+    //   await this.updatePoolMap(await this.dexHelper.provider.getBlockNumber());
+    // }
+    // const token = convertParaSwapToEkubo(tokenAddress);
+    // const settledPromises = await Promise.allSettled(
+    //   Array.from(this.pools.entries()).map(async ([poolId, pool]) => {
+    //     const tokenPair = [pool.key.token0, pool.key.token1];
+    //     if (!tokenPair.includes(token)) {
+    //       return null;
+    //     }
+    //     const tvlRes = pool.computeTvl();
+    //     if (tvlRes === null) {
+    //       throw new Error(`failed to compute TVL for pool ${poolId}`);
+    //     }
+    //     const [info0, info1] = await Promise.all(
+    //       tokenPair.map((ekuboToken, i) =>
+    //         (async () => {
+    //           const paraswapToken = convertEkuboToParaSwap(ekuboToken);
+    //           const decimals = await this.getDecimals(paraswapToken);
+    //           const token = {
+    //             address: paraswapToken,
+    //             decimals,
+    //           };
+    //           return {
+    //             token,
+    //             tvl: await this.dexHelper.getTokenUSDPrice(token, tvlRes[i]),
+    //           };
+    //         })(),
+    //       ),
+    //     );
+    //     return {
+    //       exchange: this.dexKey,
+    //       address: this.config.core,
+    //       connectorTokens: [
+    //         (info0.token.address !== tokenAddress ? info0 : info1).token,
+    //       ],
+    //       liquidityUSD: info0.tvl + info1.tvl,
+    //     };
+    //   }),
+    // );
+    // const poolLiquidities = settledPromises.flatMap(res => {
+    //   if (res.status === 'rejected') {
+    //     this.logger.error('TVL computation failed:', res.reason);
+    //     return [];
+    //   }
+    //   return res.value ? [res.value] : [];
+    // });
+    // poolLiquidities
+    //   .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
+    //   .splice(limit, Infinity);
+    // return poolLiquidities;
   }
 
   private async getDecimals(paraswapToken: string): Promise<number> {
