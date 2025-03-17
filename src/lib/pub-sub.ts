@@ -63,7 +63,7 @@ export class ExpKeyValuePubSub {
 
   publish(data: Record<string, unknown>, ttl: number) {
     const expiresAt = Math.round(Date.now() / 1000) + ttl;
-    this.logger.debug(
+    this.logger.info(
       `Publishing to ${this.channel} with keys: ${Object.keys(data).join(
         ', ',
       )}, TTL: ${ttl}`,
@@ -84,7 +84,7 @@ export class ExpKeyValuePubSub {
     if (ttl > 0) {
       const keys = Object.keys(data);
       for (const key of keys) {
-        this.logger.debug(`Setting local cache for ${key} with TTL ${ttl}`);
+        this.logger.info(`Setting local cache for ${key} with TTL ${ttl}`);
         this.localCache.set(key, data[key], ttl);
       }
     } else {
