@@ -16,9 +16,6 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import {
   EkuboData,
   GetQuoteDataResponse,
-  PoolConfig,
-  PoolKey,
-  PoolState,
   VanillaPoolParameters,
 } from './types';
 import { SimpleExchange } from '../simple-exchange';
@@ -46,6 +43,7 @@ import { erc20Iface } from '../../lib/tokens/utils';
 import { AsyncOrSync } from 'ts-essentials';
 import { MAX_SQRT_RATIO_FLOAT, MIN_SQRT_RATIO_FLOAT } from './pools/math/price';
 import { MIN_I256 } from './pools/math/constants';
+import { PoolKey, PoolConfig, PoolState } from './pools/pool-utils';
 
 const FALLBACK_POOL_PARAMETERS: VanillaPoolParameters[] = [
   {

@@ -2,8 +2,8 @@ import { Contract } from 'ethers';
 import { IDexHelper } from '../../../dex-helper';
 import { Logger } from '../../../types';
 import { BasePool, Quote } from './base-pool';
-import { PoolKey } from '../types';
 import { Interface } from '@ethersproject/abi';
+import { PoolKey } from './pool-utils';
 
 const GAS_COST_OF_UPDATING_ORACLE_SNAPSHOT = 15_000;
 

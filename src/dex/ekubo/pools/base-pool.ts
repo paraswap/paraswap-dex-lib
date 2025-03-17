@@ -4,7 +4,6 @@ import { Log, Logger } from '../../../types';
 import { catchParseLogError } from '../../../utils';
 import { StatefulEventSubscriber } from '../../../stateful-event-subscriber';
 import { IDexHelper } from '../../../dex-helper/idex-helper';
-import { PoolKey, PoolState } from '../types';
 import { Contract } from 'ethers';
 import _ from 'lodash';
 import { computeStep, isPriceIncreasing } from './math/swap';
@@ -16,6 +15,7 @@ import {
   toSqrtRatio,
 } from './math/tick';
 import { floatSqrtRatioToFixed } from './math/price';
+import { PoolState, PoolKey } from './pool-utils';
 
 export interface Quote {
   consumedAmount: bigint;
