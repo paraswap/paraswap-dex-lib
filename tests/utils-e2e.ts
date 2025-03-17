@@ -9,11 +9,7 @@ import {
   IParaSwapSDK,
   LocalParaswapSDK,
 } from '../src/implementations/local-paraswap-sdk';
-import {
-  EstimateGasSimulation,
-  TenderlySimulation,
-  TransactionSimulator,
-} from './tenderly-simulation';
+import { TenderlySimulation } from './tenderly-simulation';
 import { TenderlySimulatorNew, StateOverride } from './tenderly-simulation-new';
 import {
   SwapSide,
@@ -71,15 +67,7 @@ const testContractRelativePath = process.env.TEST_CONTRACT_RELATIVE_PATH;
 const testContractDeployArgs = process.env.TEST_CONTRACT_DEPLOY_ARGS;
 
 // If you want to test against deployed and verified contract
-const deployedTestContractAddress = process.env.DEPLOYED_TEST_CONTRACT_ADDRESS;
 const testContractType = process.env.TEST_CONTRACT_TYPE;
-
-// Only for router tests
-const testDirectRouterAbiPath = process.env.TEST_DIRECT_ROUTER_ABI_PATH;
-
-const directRouterIface = new Interface(
-  testDirectRouterAbiPath ? require(testDirectRouterAbiPath) : '[]',
-);
 
 const testContractBytecode = generateDeployBytecode(
   testContractProjectRootPath,
@@ -231,96 +219,12 @@ class APIParaswapSDK implements IParaSwapSDK {
   }
 }
 
-function send1WeiTo(token: Address, to: Address, network: Network) {
-  const tokens = Tokens[network];
-
-  const tokenSymbol = Object.keys(tokens).find(tokenSymbol => {
-    const curToken = tokens[tokenSymbol];
-    return curToken.address === token;
-  });
-
-  const holders = Holders[network];
-  const holder = holders[tokenSymbol!];
-
-  return {
-    from: holder,
-    to: token,
-    data: erc20Interface.encodeFunctionData('transfer', [to, '1']),
-    value: '0',
-  };
-}
-
-function checkBalanceOf(token: Address, holder: Address) {
-  return {
-    from: NULL_ADDRESS,
-    to: token,
-    data: erc20Interface.encodeFunctionData('balanceOf', [holder]),
-    value: '0',
-  };
-}
-
-function allowAugustusV6(
-  tokenAddress: Address,
-  holderAddress: Address,
-  network: Network,
-) {
-  const augustusV6Address = generateConfig(network).augustusV6Address;
-
-  return {
-    from: holderAddress,
-    to: tokenAddress,
-    data: erc20Interface.encodeFunctionData('approve', [
-      augustusV6Address,
-      MAX_UINT,
-    ]),
-    value: '0',
-  };
-}
-
-function allowTokenTransferProxyParams(
-  tokenAddress: Address,
-  holderAddress: Address,
-  network: Network,
-) {
-  const tokenTransferProxy = generateConfig(network).tokenTransferProxyAddress;
-  return {
-    from: holderAddress,
-    to: tokenAddress,
-    data: erc20Interface.encodeFunctionData('approve', [
-      tokenTransferProxy,
-      MAX_UINT,
-    ]),
-    value: '0',
-  };
-}
-
 function deployContractParams(bytecode: string, network = Network.MAINNET) {
   const ownerAddress = DEPLOYER_ADDRESS[network];
   if (!ownerAddress) throw new Error('No deployer address set for network');
   return {
     from: ownerAddress,
     data: bytecode,
-    value: '0',
-  };
-}
-
-function augustusSetImplementationParams(
-  contractAddress: Address,
-  network: Network,
-  functionName: string,
-) {
-  const augustusAddress = generateConfig(network).augustusAddress;
-  if (!augustusAddress) throw new Error('No whitelist address set for network');
-  const ownerAddress = MULTISIG[network];
-  if (!ownerAddress) throw new Error('No whitelist owner set for network');
-
-  return {
-    from: ownerAddress,
-    to: augustusAddress,
-    data: augustusInterface.encodeFunctionData('setImplementation', [
-      directRouterIface.getSighash(functionName),
-      contractAddress,
-    ]),
     value: '0',
   };
 }
@@ -391,6 +295,7 @@ export async function testE2E(
   // Specified in BPS: part of 10000
   slippage?: number,
   sleepMs?: number,
+  // could be used for networks without tenderly support (e.g. zkEVM)
   replaceTenderlyWithEstimateGas?: boolean,
   forceRoute?: AddressOrSymbol[],
 ) {
