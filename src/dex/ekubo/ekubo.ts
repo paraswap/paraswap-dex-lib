@@ -261,12 +261,12 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
       const poolId = pool.key.string_id;
 
       if (pool.key.token0 !== token0 || pool.key.token1 !== token1) {
-        this.logger.error(
-          `Can't quote pair ${hexStringTokenPair(
-            token0,
-            token1,
-          )} on pool ${poolId}`,
-        );
+        // this.logger.error(
+        //   `Can't quote pair ${hexStringTokenPair(
+        //     token0,
+        //     token1,
+        //   )} on pool ${poolId}`,
+        // );
         continue;
       }
 
