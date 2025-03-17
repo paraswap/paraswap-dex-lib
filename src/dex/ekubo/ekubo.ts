@@ -193,13 +193,12 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
     const pair = hexStringTokenPair(token0, token1);
 
     let poolKeys: PoolKey[];
-    try {
-      poolKeys = this.poolKeys.filter(
-        poolKey => poolKey.token0 === token0 && poolKey.token1 === token1,
-      );
-    } catch (err) {
+    poolKeys = this.poolKeys.filter(
+      poolKey => poolKey.token0 === token0 && poolKey.token1 === token1,
+    );
+    if (poolKeys.length === 0) {
       this.logger.error(
-        `Fetching pools from Ekubo API for token pair ${pair} failed, falling back to default pool parameters: ${err}`,
+        `Pool keys for token pair ${pair} not found, falling back to default pool parameters`,
       );
 
       poolKeys = FALLBACK_POOL_PARAMETERS.map(
