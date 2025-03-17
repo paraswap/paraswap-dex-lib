@@ -114,7 +114,7 @@ const allPoolsSchema = Joi.array<
 const MIN_TICK_SPACINGS_PER_POOL = 2;
 const MAX_BATCH_SIZE = 100;
 
-const POOL_MAP_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
+const POOL_MAP_UPDATE_INTERVAL_MS = 1 * 60 * 1000;
 
 // Ekubo Protocol https://ekubo.org/
 export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
@@ -125,6 +125,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(EkuboConfig);
 
+  private poolKeys: PoolKey[] = [];
   private readonly pools: Map<string, BasePool> = new Map();
 
   public logger;
@@ -193,7 +194,7 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
 
     let poolKeys: PoolKey[];
     try {
-      poolKeys = (await this.fetchAllPoolKeys()).filter(
+      poolKeys = this.poolKeys.filter(
         poolKey => poolKey.token0 === token0 && poolKey.token1 === token1,
       );
     } catch (err) {
@@ -524,16 +525,15 @@ export class Ekubo extends SimpleExchange implements IDex<EkuboData> {
   }
 
   private async updatePoolMap(blockNumber: number) {
-    let poolKeys: PoolKey[];
     try {
-      poolKeys = await this.fetchAllPoolKeys();
+      this.poolKeys = await this.fetchAllPoolKeys();
     } catch (err) {
       this.logger.error(`Updating pool map from Ekubo API failed: ${err}`);
 
       return;
     }
 
-    const uninitializedPoolKeys = poolKeys.filter(
+    const uninitializedPoolKeys = this.poolKeys.filter(
       poolKey => !this.pools.has(poolKey.string_id),
     );
     const promises = this.initializePools(uninitializedPoolKeys, blockNumber);

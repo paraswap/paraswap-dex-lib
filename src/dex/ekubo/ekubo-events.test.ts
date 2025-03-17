@@ -10,7 +10,7 @@ import {
   PoolConfig,
   PoolKey,
   PoolState,
-} from './types';
+} from './pools/pool-utils';
 import { EkuboConfig } from './config';
 import { Contract } from 'ethers';
 import CoreABI from '../../abi/ekubo/core.json';
