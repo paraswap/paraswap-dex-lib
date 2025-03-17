@@ -398,11 +398,12 @@ export async function testE2E(
       }, Simulated: ${gasUsed}, Difference: ${estimatedGas - gasUsed}`,
     );
   }
-  expect(simulation.status).toEqual(true);
   // release
   if (sdk.releaseResources) {
     await sdk.releaseResources();
   }
+  // assert simulation status
+  expect(simulation.status).toEqual(true);
 }
 
 export type TestParamE2E = {
