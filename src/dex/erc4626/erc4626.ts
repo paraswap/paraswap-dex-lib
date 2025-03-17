@@ -28,7 +28,6 @@ import { BI_POWS } from '../../bigint-constants';
 import { ERC4626EventPool } from './erc-4626-pool';
 import { Interface } from '@ethersproject/abi';
 import ERC4626_ABI from '../../abi/ERC4626.json';
-import ERC20ABI from '../../abi/erc20.json';
 import { DEPOSIT_TOPIC, TRANSFER_TOPIC, WITHDRAW_TOPIC } from './constants';
 import { extractReturnAmountPosition } from '../../executor/utils';
 
@@ -52,12 +51,7 @@ export class ERC4626
     readonly dexHelper: IDexHelper,
     readonly vault: string = ERC4626Config[dexKey][network].vault,
     readonly asset: string = ERC4626Config[dexKey][network].asset,
-    readonly erc4626Interface: Interface = new Interface([
-      // Vault abi
-      ...ERC4626_ABI,
-      // asset abi (specifically to handle Transfer to vault event)
-      ...ERC20ABI,
-    ]),
+    readonly erc4626Interface: Interface = new Interface(ERC4626_ABI),
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);

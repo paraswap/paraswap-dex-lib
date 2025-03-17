@@ -7,7 +7,6 @@ import { ERC4626Config } from './config';
 import { Network } from '../../constants';
 import { DummyDexHelper } from '../../dex-helper/index';
 import ERC4626_ABI from '../../abi/ERC4626.json';
-import ERC20ABI from '../../abi/erc20.json';
 import { DEPOSIT_TOPIC, TRANSFER_TOPIC, WITHDRAW_TOPIC } from './constants';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { ERC4626PoolState } from './types';
@@ -83,12 +82,7 @@ describe('Wusdm', function () {
       const wUSDMAddress = ERC4626Config[dexKey][network].vault;
       const USDMAddress = ERC4626Config[dexKey][network].asset;
 
-      const wUSDMIface: Interface = new Interface([
-        // Vault abi
-        ...ERC4626_ABI,
-        // asset abi (specifically to handle Transfer to vault event)
-        ...ERC20ABI,
-      ]);
+      const wUSDMIface: Interface = new Interface(ERC4626_ABI);
 
       const blockNumbers = Array.from(
         new Set(
