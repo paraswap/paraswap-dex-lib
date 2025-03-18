@@ -1206,6 +1206,10 @@ export const Tokens: {
       address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
       decimals: 6,
     },
+    TRYB: {
+      address: '0x564a341df6c126f90cf3ecb92120fd7190acb401',
+      decimals: 6,
+    },
   },
   [Network.ARBITRUM]: {
     SEN: {
@@ -2065,6 +2069,7 @@ export const Holders: {
     PHAR: '0x654296D56532f62B7d91d335791d3c364a9385b5',
     stataUSDT: '', // no holders yet
     aaveUSDT: '0xB2d3ad6e99D2A043EF77e3812461Ad2D4Ae3da8B',
+    TRYB: '0x7137FdccfB6Ee406771E8F5c1B466e4d3074dd45',
   },
   [Network.ARBITRUM]: {
     SEN: '0x76d39045d856caf9bfae12ba611ca4a94449a4f1',
@@ -2181,7 +2186,7 @@ export const Holders: {
     ETH: '0xd34ea7278e6bd48defe656bbe263aef11101469c',
     MAV: '0xf977814e90da44bfa03b6295a0616a897441acec',
     USDC: '0x21bD501F86A0B5cE0907651Df3368DA905B300A9',
-    USDbC: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
+    USDbC: '0x989BA24cb7938C1672B1e9Cea873cf4d7629a5FE',
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
     BAL: '0x854b004700885a61107b458f11ecc169a019b764',
     GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
