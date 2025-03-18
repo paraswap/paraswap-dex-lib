@@ -225,11 +225,6 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState> | null> {
-    // return {
-    //   ...state,
-    //   underlyingLiquidity:
-    //     state.underlyingLiquidity - BigInt(event.args.underlyingAmount),
-    // };
     if (state.blockNumber >= log.blockNumber) {
       return state;
     }
@@ -242,11 +237,6 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState> | null> {
-    // return {
-    //   ...state,
-    //   underlyingLiquidity:
-    //     state.underlyingLiquidity + BigInt(event.args.underlyingAmount),
-    // };
     if (state.blockNumber >= log.blockNumber) {
       return state;
     }
