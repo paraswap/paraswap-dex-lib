@@ -5,7 +5,7 @@ dotenv.config();
 import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
-import { WUSDM } from './wusdm';
+import { ERC4626 } from './erc4626';
 import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
@@ -29,12 +29,12 @@ describe('WUSDM', function () {
       const amounts = [0n, BI_POWS[18], 2000000000000000000n];
       let dexHelper: DummyDexHelper;
       let blocknumber: number;
-      let wusdm: WUSDM;
+      let wusdm: ERC4626;
 
       beforeAll(async () => {
         dexHelper = new DummyDexHelper(network);
         blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-        wusdm = new WUSDM(network, dexKey, dexHelper);
+        wusdm = new ERC4626(network, dexKey, dexHelper);
         if (wusdm.initializePricing) {
           await wusdm.initializePricing(blocknumber);
         }
