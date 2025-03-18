@@ -6,11 +6,11 @@ import { AaveV3Ethereum, GhoEthereum } from '@bgd-labs/aave-address-book';
 export const AaveGsmConfig: DexConfigMap<DexParams> = {
   AaveGsm: {
     [Network.MAINNET]: {
-      GSM_USDT: GhoEthereum.GSM_USDT,
-      GSM_USDC: GhoEthereum.GSM_USDC,
-      USDT: AaveV3Ethereum.ASSETS.USDT.UNDERLYING,
-      USDC: AaveV3Ethereum.ASSETS.USDC.UNDERLYING,
-      GHO: AaveV3Ethereum.ASSETS.GHO.UNDERLYING,
+      GSM_USDT: '0x535b2f7C20B9C83d70e519cf9991578eF9816B7B'.toLowerCase(),
+      GSM_USDC: '0xFeeb6FE430B7523fEF2a38327241eE7153779535'.toLowerCase(),
+      waEthUSDT: AaveV3Ethereum.ASSETS.USDT.STATA_TOKEN.toLowerCase(),
+      waEthUSDC: AaveV3Ethereum.ASSETS.USDC.STATA_TOKEN.toLowerCase(),
+      GHO: AaveV3Ethereum.ASSETS.GHO.UNDERLYING.toLowerCase(),
     },
   },
 };

@@ -41,12 +41,12 @@ function decodeReaderResult(
 
 async function checkOnChainPricing(
   aaveGsm: AaveGsm,
+  exchangeAddress: string,
   funcName: string,
   blockNumber: number,
   prices: bigint[],
   amounts: bigint[],
 ) {
-  const exchangeAddress = '0x686F8D21520f4ecEc7ba577be08354F4d1EB8262'; // TODO: Put here the real exchange address
   const readerIface = new Interface(GSM_ABI);
 
   const readerCallData = getReaderCalldata(
@@ -70,7 +70,9 @@ async function checkOnChainPricing(
     ),
   );
 
-  expect(prices).toEqual(expectedPrices);
+  expect(JSON.stringify(prices.map(n => n.toString()))).toEqual(
+    JSON.stringify(expectedPrices.map(n => n.toString())),
+  );
 }
 
 async function testPricingOnNetwork(
@@ -122,6 +124,7 @@ async function testPricingOnNetwork(
   // Check if onchain pricing equals to calculated ones
   await checkOnChainPricing(
     aaveGsm,
+    poolPrices![0].poolAddresses![0],
     funcNameToCheck,
     blockNumber,
     poolPrices![0].prices,
@@ -134,13 +137,13 @@ describe('AaveGsm', function () {
   let blockNumber: number;
   let aaveGsm: AaveGsm;
 
-  describe('Mainnet GSM_USDT: USDT -> GHO', () => {
+  describe('Mainnet GSM_USDT: waEthUSDT -> GHO', () => {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
-    const srcTokenSymbol = 'USDT';
+    const srcTokenSymbol = 'waEthUSDT';
     const destTokenSymbol = 'GHO';
 
     const amountsForSell = [
@@ -211,9 +214,6 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (newAaveGsm.updatePoolState) {
-        await newAaveGsm.updatePoolState();
-      }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
@@ -230,14 +230,14 @@ describe('AaveGsm', function () {
     });
   });
 
-  describe('Mainnet GSM_USDT: GHO -> USDT', () => {
+  describe('Mainnet GSM_USDT: GHO -> waEthUSDT', () => {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
     const srcTokenSymbol = 'GHO';
-    const destTokenSymbol = 'USDT';
+    const destTokenSymbol = 'waEthUSDT';
 
     const amountsForSell = [
       0n,
@@ -307,9 +307,6 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (newAaveGsm.updatePoolState) {
-        await newAaveGsm.updatePoolState();
-      }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
@@ -326,14 +323,14 @@ describe('AaveGsm', function () {
     });
   });
 
-  describe('Mainnet GSM_USDC: USDC -> GHO', () => {
+  describe('Mainnet GSM_USDC: waEthUSDC -> GHO', () => {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
     const tokens = Tokens[network];
 
     // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'USDC';
+    const srcTokenSymbol = 'waEthUSDC';
     const destTokenSymbol = 'GHO';
 
     const amountsForSell = [
@@ -404,9 +401,6 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (newAaveGsm.updatePoolState) {
-        await newAaveGsm.updatePoolState();
-      }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,
@@ -423,7 +417,7 @@ describe('AaveGsm', function () {
     });
   });
 
-  describe('Mainnet GSM_USDC: GHO -> USDC', () => {
+  describe('Mainnet GSM_USDC: GHO -> waEthUSDC', () => {
     const network = Network.MAINNET;
     const dexHelper = new DummyDexHelper(network);
 
@@ -431,7 +425,7 @@ describe('AaveGsm', function () {
 
     // Don't forget to update relevant tokens in constant-e2e.ts
     const srcTokenSymbol = 'GHO';
-    const destTokenSymbol = 'USDC';
+    const destTokenSymbol = 'waEthUSDC';
 
     const amountsForSell = [
       0n,
@@ -501,9 +495,6 @@ describe('AaveGsm', function () {
       // We have to check without calling initializePricing, because
       // pool-tracker is not calling that function
       const newAaveGsm = new AaveGsm(network, dexKey, dexHelper);
-      if (newAaveGsm.updatePoolState) {
-        await newAaveGsm.updatePoolState();
-      }
       const poolLiquidity = await newAaveGsm.getTopPoolsForToken(
         tokens[srcTokenSymbol].address,
         10,

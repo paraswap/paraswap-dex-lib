@@ -69,15 +69,14 @@ function testForNetwork(
 describe('AaveGsm E2E', () => {
   const dexKey = 'AaveGsm';
 
-  describe('Mainnet GHO -> USDT', () => {
+  describe('Mainnet GHO -> waEthUSDT', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'GHO';
-    const tokenBSymbol: string = 'USDT';
+    const tokenBSymbol: string = 'waEthUSDT';
 
     const tokenAAmount: string = '1000000000000000000';
     const tokenBAmount: string = '47166262';
-    // const tokenBAmount: string = '47166263';
 
     testForNetwork(
       network,
@@ -89,11 +88,11 @@ describe('AaveGsm E2E', () => {
     );
   });
 
-  describe('Mainnet GHO -> USDC', () => {
+  describe('Mainnet GHO -> waEthUSDC', () => {
     const network = Network.MAINNET;
 
     const tokenASymbol: string = 'GHO';
-    const tokenBSymbol: string = 'USDC';
+    const tokenBSymbol: string = 'waEthUSDC';
 
     const tokenAAmount: string = '1000000000000000000';
     const tokenBAmount: string = '1000000';
