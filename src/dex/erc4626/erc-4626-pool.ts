@@ -4,11 +4,11 @@ import { Interface } from '@ethersproject/abi';
 import type { IDexHelper } from '../../dex-helper';
 import type { DeepReadonly } from 'ts-essentials';
 import type { Address, BlockHeader, Log, Logger } from '../../types';
-import type { WusdmPoolState } from './types';
+import type { ERC4626PoolState } from './types';
 import { uint256ToBigInt } from '../../lib/decoders';
 import { Network } from '../../constants';
 
-export class WusdmEventPool extends StatefulEventSubscriber<WusdmPoolState> {
+export class ERC4626EventPool extends StatefulEventSubscriber<ERC4626PoolState> {
   logDecoder: (log: Log) => any;
 
   constructor(
@@ -16,43 +16,59 @@ export class WusdmEventPool extends StatefulEventSubscriber<WusdmPoolState> {
     network: Network,
     poolName: string,
     protected dexHelper: IDexHelper,
-    private wrapperAddress: Address,
+    private vault: Address,
+    private asset: Address,
     private wrapperInterface: Interface,
     logger: Logger,
     private depositTopic: string,
     private withdrawTopic: string,
+    private transferTopic: string,
   ) {
     super(parentName, poolName, dexHelper, logger);
-    this.addressesSubscribed = [wrapperAddress];
+    this.addressesSubscribed = [vault, asset];
+    this.vault = vault.toLowerCase();
+    this.asset = asset.toLowerCase();
     this.logDecoder = (log: Log) => this.wrapperInterface.parseLog(log);
   }
 
   protected async processLog(
-    state: DeepReadonly<WusdmPoolState>,
+    state: DeepReadonly<ERC4626PoolState>,
     log: Readonly<Log>,
     blockHeader: Readonly<BlockHeader>,
-  ): Promise<DeepReadonly<WusdmPoolState> | null> {
-    const event = this.logDecoder(log);
-    if (log.topics[0] === this.depositTopic) {
-      return this.handleDeposit(event, state, log);
+  ): Promise<DeepReadonly<ERC4626PoolState> | null> {
+    try {
+      const event = this.logDecoder(log);
+      if (
+        log.topics[0] === this.transferTopic &&
+        log.address.toLowerCase() === this.asset &&
+        event.args.to.toLowerCase() === this.vault
+      ) {
+        return this.handleAssetTransferToVault(event, state, log);
+      }
+      if (log.topics[0] === this.depositTopic) {
+        return this.handleDeposit(event, state, log);
+      }
+      if (log.topics[0] === this.withdrawTopic) {
+        return this.handleWithdraw(event, state, log);
+      }
+      return null;
+    } catch (error) {
+      this.logger.error(`Error processing log: ${log}, error: ${error}`);
+      return null;
     }
-    if (log.topics[0] === this.withdrawTopic) {
-      return this.handleWithdraw(event, state, log);
-    }
-    return null;
   }
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<WusdmPoolState>> {
+  ): Promise<DeepReadonly<ERC4626PoolState>> {
     const calls = [
       {
-        target: this.wrapperAddress,
+        target: this.vault,
         callData: this.wrapperInterface.encodeFunctionData('totalAssets', []),
         decodeFunction: uint256ToBigInt,
       },
       {
-        target: this.wrapperAddress,
+        target: this.vault,
         callData: this.wrapperInterface.encodeFunctionData('totalSupply', []),
         decodeFunction: uint256ToBigInt,
       },
@@ -71,7 +87,7 @@ export class WusdmEventPool extends StatefulEventSubscriber<WusdmPoolState> {
     };
   }
 
-  async getOrGenerateState(blockNumber: number): Promise<WusdmPoolState> {
+  async getOrGenerateState(blockNumber: number): Promise<ERC4626PoolState> {
     let state = this.getState(blockNumber);
     if (!state) {
       state = await this.generateState(blockNumber);
@@ -82,20 +98,32 @@ export class WusdmEventPool extends StatefulEventSubscriber<WusdmPoolState> {
 
   async handleDeposit(
     event: any,
-    state: DeepReadonly<WusdmPoolState>,
+    state: DeepReadonly<ERC4626PoolState>,
     log: Readonly<Log>,
-  ): Promise<DeepReadonly<WusdmPoolState>> {
+  ): Promise<DeepReadonly<ERC4626PoolState>> {
     return {
-      totalAssets: state.totalAssets + BigInt(event.args.assets),
+      // skip assets update, as it should be already handled in handleAssetTransferToVault
+      totalAssets: state.totalAssets,
       totalShares: state.totalShares + BigInt(event.args.shares),
+    };
+  }
+
+  async handleAssetTransferToVault(
+    event: any,
+    state: DeepReadonly<ERC4626PoolState>,
+    log: Readonly<Log>,
+  ): Promise<DeepReadonly<ERC4626PoolState>> {
+    return {
+      totalAssets: state.totalAssets + BigInt(event.args.value),
+      totalShares: state.totalShares,
     };
   }
 
   async handleWithdraw(
     event: any,
-    state: DeepReadonly<WusdmPoolState>,
+    state: DeepReadonly<ERC4626PoolState>,
     log: Readonly<Log>,
-  ): Promise<DeepReadonly<WusdmPoolState>> {
+  ): Promise<DeepReadonly<ERC4626PoolState>> {
     return {
       totalAssets: BigInt(state.totalAssets) - BigInt(event.args.assets),
       totalShares: BigInt(state.totalShares) - BigInt(event.args.shares),
