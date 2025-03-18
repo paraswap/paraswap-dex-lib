@@ -315,6 +315,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
         } catch (err) {
           const errorMessage =
             err instanceof Error ? `error: ${err.message}` : `error: ${err}`;
+          const stack = err instanceof Error ? err.stack : '';
           // Ignore some sort of errors
           // minimum trade amount - https://github.com/balancer/balancer-maths/blob/main/typescript/src/vault/vault.ts#L39
           // wrapAmountTooSmall - https://github.com/balancer/balancer-maths/blob/main/typescript/src/buffer/erc4626BufferWrapOrUnwrap.ts#L17
@@ -323,7 +324,8 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
             !errorMessage.includes('wrapAmountTooSmall')
           ) {
             this.logger.error(
-              `error fetching prices for pool: ${pool.poolAddress}, error: ${errorMessage}`,
+              `error fetching prices for pool: ${pool.poolAddress}, msg: ${errorMessage}`,
+              stack,
             );
           }
         }
