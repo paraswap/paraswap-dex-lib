@@ -293,4 +293,50 @@ describe('BalancerV3 EventPool', function () {
       },
     );
   });
+  describe('Base', function () {
+    const network = Network.BASE;
+    const dexHelper = new DummyDexHelper(network);
+    const logger = dexHelper.getLogger(dexKey);
+    let balancerV3Pool: BalancerV3EventPool;
+
+    const END_BLOCK = 27675048;
+    const BLOCKS_TO_CHECK = 1000;
+    const START_BLOCK = END_BLOCK - BLOCKS_TO_CHECK;
+
+    const vaultAddress = BalancerV3Config.BalancerV3[network].vaultAddress;
+
+    beforeEach(async () => {
+      balancerV3Pool = new BalancerV3EventPool(
+        dexKey,
+        network,
+        dexHelper,
+        logger,
+      );
+    });
+
+    describe(`Events for Vault: ${vaultAddress} blocks ${START_BLOCK} to ${END_BLOCK}`, () => {
+      for (
+        let blockNumber = START_BLOCK;
+        blockNumber <= END_BLOCK;
+        blockNumber++
+      ) {
+        it(`Check state for block ${blockNumber}`, async function () {
+          await testEventSubscriber(
+            balancerV3Pool,
+            balancerV3Pool.addressesSubscribed,
+            (_blockNumber: number) =>
+              fetchPoolState(
+                balancerV3Pool,
+                _blockNumber,
+                '0x0657c3467f3bf465fab59b10f1453d665abe507e',
+              ),
+            blockNumber,
+            `${dexKey}_${vaultAddress}`,
+            dexHelper.provider,
+            stateCompare,
+          );
+        });
+      }
+    });
+  });
 });

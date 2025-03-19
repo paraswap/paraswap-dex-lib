@@ -324,8 +324,7 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
             !errorMessage.includes('wrapAmountTooSmall')
           ) {
             this.logger.error(
-              `error fetching prices for pool: ${pool.poolAddress}, msg: ${errorMessage}`,
-              stack,
+              `error fetching prices for pool: ${pool.poolAddress}, msg: ${errorMessage}, stack: ${stack}`,
             );
           }
         }

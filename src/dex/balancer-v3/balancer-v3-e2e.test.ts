@@ -119,6 +119,7 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                { BalancerV3: ['0x0657c3467f3bf465fab59b10f1453d665abe507e'] },
               );
             });
             // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
