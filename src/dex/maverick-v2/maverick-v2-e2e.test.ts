@@ -70,7 +70,7 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    // [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -92,19 +92,19 @@ function testForNetwork(
                 provider,
               );
             });
-            // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenBSymbol],
-            //     tokens[tokenASymbol],
-            //     holders[tokenBSymbol],
-            //     side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),
@@ -116,41 +116,41 @@ describe('MaverickV2 E2E', () => {
   const dexKey = 'MaverickV2';
 
   const testCases = [
-    // {
-    //   network: Network.BASE,
-    //   tokenASymbol: 'USDC',
-    //   tokenBSymbol: 'ETH',
-    //   tokenAAmount: '1000000000',
-    //   tokenBAmount: '1000000000000000000',
-    // },
+    {
+      network: Network.BASE,
+      tokenASymbol: 'USDC',
+      tokenBSymbol: 'ETH',
+      tokenAAmount: '1000000000',
+      tokenBAmount: '1000000000000000000',
+    },
     {
       network: Network.ARBITRUM,
       tokenASymbol: 'USDC',
-      tokenBSymbol: 'WETH',
+      tokenBSymbol: 'ETH',
       tokenAAmount: '1000000',
       tokenBAmount: '1000000000000000000',
     },
-    // {
-    //   network: Network.BSC,
-    //   tokenASymbol: 'USDC',
-    //   tokenBSymbol: 'USDT',
-    //   tokenAAmount: '100000000',
-    //   tokenBAmount: '100000000',
-    // },
-    // {
-    //   network: Network.MAINNET,
-    //   tokenASymbol: 'GHO',
-    //   tokenBSymbol: 'USDC',
-    //   tokenAAmount: '1000000000000000000000',
-    //   tokenBAmount: '100000000000',
-    // },
-    // {
-    //   network: Network.MAINNET,
-    //   tokenASymbol: 'ETH',
-    //   tokenBSymbol: 'USDC',
-    //   tokenAAmount: '1000000000000000000',
-    //   tokenBAmount: '1000000',
-    // },
+    {
+      network: Network.BSC,
+      tokenASymbol: 'USDC',
+      tokenBSymbol: 'USDT',
+      tokenAAmount: '100000000',
+      tokenBAmount: '100000000',
+    },
+    {
+      network: Network.MAINNET,
+      tokenASymbol: 'GHO',
+      tokenBSymbol: 'USDC',
+      tokenAAmount: '1000000000000000000000',
+      tokenBAmount: '100000000000',
+    },
+    {
+      network: Network.MAINNET,
+      tokenASymbol: 'ETH',
+      tokenBSymbol: 'USDC',
+      tokenAAmount: '1000000000000000000',
+      tokenBAmount: '1000000',
+    },
   ];
 
   testCases.forEach(
