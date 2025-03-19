@@ -253,7 +253,7 @@ export class SparkPsm extends Spark {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SparkData>> {
     if (!this.isAppropriatePair(srcToken, destToken)) return null;
-    const state = this.eventPool.getState(blockNumber);
+    const state = await this.eventPool.getOrGenerateState(blockNumber);
     if (!state) return null;
 
     let results: bigint[];
