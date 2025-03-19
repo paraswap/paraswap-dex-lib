@@ -2,19 +2,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /* eslint-disable no-console */
-import { Interface } from '@ethersproject/abi';
 import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
-
 import {
   IParaSwapSDK,
   LocalParaswapSDK,
 } from '../src/implementations/local-paraswap-sdk';
-import { TenderlySimulation } from './tenderly-simulation';
 import { TenderlySimulatorNew, StateOverride } from './tenderly-simulation-new';
 import {
   SwapSide,
   ETHER_ADDRESS,
-  MAX_UINT,
   Network,
   ContractMethod,
   NULL_ADDRESS,
@@ -27,8 +23,6 @@ import {
   TransferFeeParams,
   Config,
 } from '../src/types';
-import Erc20ABI from '../src/abi/erc20.json';
-import AugustusABI from '../src/abi/augustus.json';
 import { generateConfig } from '../src/config';
 import {
   DummyDexHelper,
@@ -42,65 +36,14 @@ import {
 } from '@paraswap/sdk';
 import { ParaSwapVersion } from '@paraswap/core';
 import axios from 'axios';
-import { SmartToken, StateOverrides } from './smart-tokens';
-import {
-  GIFTER_ADDRESS,
-  Holders,
-  NativeTokenSymbols,
-  Tokens,
-  WrappedNativeTokenSymbols,
-} from './constants-e2e';
-import { generateDeployBytecode, sleep } from './utils';
+import { Holders, Tokens } from './constants-e2e';
+import { sleep } from './utils';
 import { assert } from 'ts-essentials';
-import * as util from 'util';
 import { GenericSwapTransactionBuilder } from '../src/generic-swap-transaction-builder';
 import { DexAdapterService, PricingHelper } from '../src';
 import { v4 as uuid } from 'uuid';
 
 export const testingEndpoint = process.env.E2E_TEST_ENDPOINT;
-
-const testContractProjectRootPath = process.env.TEST_CONTRACT_PROJECT_ROOT_PATH;
-const testContractName = process.env.TEST_CONTRACT_NAME;
-const testContractConfigFileName = process.env.TEST_CONTRACT_CONFIG_FILE_NAME;
-const testContractRelativePath = process.env.TEST_CONTRACT_RELATIVE_PATH;
-// Comma separated fields from config or actual values
-const testContractDeployArgs = process.env.TEST_CONTRACT_DEPLOY_ARGS;
-
-// If you want to test against deployed and verified contract
-const testContractType = process.env.TEST_CONTRACT_TYPE;
-
-const testContractBytecode = generateDeployBytecode(
-  testContractProjectRootPath,
-  testContractName,
-  testContractConfigFileName,
-  testContractRelativePath,
-  testContractDeployArgs,
-  testContractType,
-);
-
-const erc20Interface = new Interface(Erc20ABI);
-const augustusInterface = new Interface(AugustusABI);
-
-const DEPLOYER_ADDRESS: { [nid: number]: string } = {
-  [Network.MAINNET]: '0xbe0eb53f46cd790cd13851d5eff43d12404d33e8',
-  [Network.BSC]: '0xf68a4b64162906eff0ff6ae34e2bb1cd42fef62d',
-  [Network.POLYGON]: '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
-  [Network.FANTOM]: '0x05182E579FDfCf69E4390c3411D8FeA1fb6467cf',
-  [Network.AVALANCHE]: '0xD6216fC19DB775Df9774a6E33526131dA7D19a2c',
-  [Network.OPTIMISM]: '0xf01121e808F782d7F34E857c27dA31AD1f151b39',
-  [Network.ARBITRUM]: '0xb38e8c17e38363af6ebdcb3dae12e0243582891d',
-};
-
-const MULTISIG: { [nid: number]: string } = {
-  [Network.MAINNET]: '0x36fEDC70feC3B77CAaf50E6C524FD7e5DFBD629A',
-  [Network.BSC]: '0xf14bed2cf725E79C46c0Ebf2f8948028b7C49659',
-  [Network.POLYGON]: '0x46DF4eb6f7A3B0AdF526f6955b15d3fE02c618b7',
-  [Network.FANTOM]: '0xECaB2dac955b94e49Ec09D6d68672d3B397BbdAd',
-  [Network.AVALANCHE]: '0x1e2ECA5e812D08D2A7F8664D69035163ff5BfEC2',
-  [Network.OPTIMISM]: '0x3b28A6f6291f7e8277751f2911Ac49C585d049f6',
-  [Network.ARBITRUM]: '0x90DfD8a6454CFE19be39EaB42ac93CD850c7f339',
-  [Network.BASE]: '0x6C674c8Df1aC663b822c4B6A56B4E5e889379AE0',
-};
 
 class APIParaswapSDK implements IParaSwapSDK {
   paraSwap: SimpleFetchSDK;
@@ -217,66 +160,6 @@ class APIParaswapSDK implements IParaSwapSDK {
   async releaseResources(): Promise<void> {
     await this.pricingHelper.releaseResources(this.dexKeys);
   }
-}
-
-function deployContractParams(bytecode: string, network = Network.MAINNET) {
-  const ownerAddress = DEPLOYER_ADDRESS[network];
-  if (!ownerAddress) throw new Error('No deployer address set for network');
-  return {
-    from: ownerAddress,
-    data: bytecode,
-    value: '0',
-  };
-}
-
-function augustusGrantRoleParams(
-  contractAddress: Address,
-  network: Network,
-  type: string = 'adapter',
-) {
-  const augustusAddress = generateConfig(network).augustusAddress;
-  if (!augustusAddress) throw new Error('No whitelist address set for network');
-  const ownerAddress = MULTISIG[network];
-  if (!ownerAddress) throw new Error('No whitelist owner set for network');
-
-  let role: string;
-  switch (type) {
-    case 'adapter':
-      role =
-        '0x8429d542926e6695b59ac6fbdcd9b37e8b1aeb757afab06ab60b1bb5878c3b49';
-      break;
-    case 'router':
-      role =
-        '0x7a05a596cb0ce7fdea8a1e1ec73be300bdb35097c944ce1897202f7a13122eb2';
-      break;
-    default:
-      throw new Error(`Unrecognized type ${type}`);
-  }
-
-  return {
-    from: ownerAddress,
-    to: augustusAddress,
-    data: augustusInterface.encodeFunctionData('grantRole', [
-      role,
-      contractAddress,
-    ]),
-    value: '0',
-  };
-}
-
-export function formatDeployMessage(
-  type: 'router' | 'adapter',
-  address: Address,
-  forkId: string,
-  contractName: string,
-  contractPath: string,
-) {
-  // This formatting is useful for verification on Tenderly
-  return `Deployed ${type} contract with env params:
-    TENDERLY_FORK_ID=${forkId}
-    TENDERLY_VERIFY_CONTRACT_ADDRESS=${address}
-    TENDERLY_VERIFY_CONTRACT_NAME=${contractName}
-    TENDERLY_VERIFY_CONTRACT_PATH=${contractPath}`;
 }
 
 export async function testE2E(
@@ -424,22 +307,6 @@ export type TestParamE2E = {
   skipTenderly?: boolean;
 };
 
-const makeFakeTransferToSenderAddress = (
-  senderAddress: string,
-  token: Token,
-  amount: string,
-) => {
-  return {
-    from: GIFTER_ADDRESS,
-    to: token.address,
-    data: erc20Interface.encodeFunctionData('transfer', [
-      senderAddress,
-      amount,
-    ]),
-    value: '0',
-  };
-};
-
 export async function newTestE2E({
   config,
   srcToken,
@@ -576,128 +443,6 @@ export const getEnv = (envName: string, optional: boolean = false): string => {
 
   return process.env[envName]!;
 };
-
-// poolIdentifiers?: { [key: string]: string[] | null } | null,
-// limitOrderProvider?: DummyLimitOrderProvider,
-// transferFees?: TransferFeeParams,
-// // Specified in BPS: part of 10000
-// slippage?: number,
-// sleepMs?: number,
-// replaceTenderlyWithEstimateGas?: boolean,
-// forceRoute?: AddressOrSymbol[],
-export function testE2E_V6(
-  network: Network,
-  dexKey: string,
-  tokenASymbol: string,
-  tokenBSymbol: string,
-  tokenAAmount: string,
-  tokenBAmount: string,
-  nativeTokenAmount: string,
-  forceRoute: AddressOrSymbol[],
-) {
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
-  const tokens = Tokens[network];
-  const holders = Holders[network];
-  const nativeTokenSymbol = NativeTokenSymbols[network];
-  const wrappedNativeTokenSymbol = WrappedNativeTokenSymbols[network];
-
-  const sideToContractMethods = new Map([
-    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-  ]);
-
-  describe(`${network}`, () => {
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
-          describe(`${contractMethod}`, () => {
-            it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[nativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[nativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[nativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${wrappedNativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[wrappedNativeTokenSymbol],
-                tokens[tokenASymbol],
-                holders[wrappedNativeTokenSymbol],
-                side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${wrappedNativeTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[wrappedNativeTokenSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
-              await testE2E(
-                tokens[tokenASymbol],
-                tokens[tokenBSymbol],
-                holders[tokenASymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-          });
-        });
-      }),
-    );
-  });
-}
-/// EXPERIMENTAL MEANT TO BE ADJUSTED OVERTIME
 
 type Pairs = { name: string; sellAmount: string; buyAmount: string }[][];
 type DexToPair = Record<string, Pairs>;
