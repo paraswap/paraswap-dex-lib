@@ -460,6 +460,15 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           hookState = {
             ...poolHookState,
             amp: step.poolState.amp,
+            // TODO: Is it needed
+            // surgeThresholdPercentage:
+            //   typeof poolHookState.surgeThresholdPercentage === 'bigint'
+            //     ? poolHookState.surgeThresholdPercentage
+            //     : BigInt(poolHookState.surgeThresholdPercentage || 0),
+            // maxSurgeFeePercentage:
+            //   typeof poolHookState.maxSurgeFeePercentage === 'bigint'
+            //     ? poolHookState.maxSurgeFeePercentage
+            //     : BigInt(poolHookState.maxSurgeFeePercentage || 0),
           };
         }
       }
