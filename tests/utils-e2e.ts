@@ -7,7 +7,7 @@ import {
   IParaSwapSDK,
   LocalParaswapSDK,
 } from '../src/implementations/local-paraswap-sdk';
-import { TenderlySimulatorNew, StateOverride } from './tenderly-simulation-new';
+import { TenderlySimulator, StateOverride } from './tenderly-simulation';
 import {
   SwapSide,
   ETHER_ADDRESS,
@@ -208,9 +208,9 @@ export async function testE2E(
   // log the route for visibility
   console.log('Price Route:', JSON.stringify(priceRoute, null, 2));
   // prepare state overrides
-  const tenderlySimulator = TenderlySimulatorNew.getInstance();
+  const tenderlySimulator = TenderlySimulator.getInstance();
   // any address works
-  const userAddress = TenderlySimulatorNew.DEFAULT_OWNER;
+  const userAddress = TenderlySimulator.DEFAULT_OWNER;
   // init `StateOverride` object
   const stateOverride: StateOverride = {};
   // fund x2 just in case
@@ -354,9 +354,9 @@ export async function newTestE2E({
     return;
   }
   // prepare state overrides
-  const tenderlySimulator = TenderlySimulatorNew.getInstance();
+  const tenderlySimulator = TenderlySimulator.getInstance();
   // any address works
-  const userAddress = TenderlySimulatorNew.DEFAULT_OWNER;
+  const userAddress = TenderlySimulator.DEFAULT_OWNER;
   // init `StateOverride` object
   const stateOverride: StateOverride = {};
   // fund x2 just in case
@@ -556,9 +556,9 @@ export const testGasEstimation = async (
   // log the route for visibility
   console.log('Price Route:', JSON.stringify(priceRoute, null, 2));
   // prepare state overrides
-  const tenderlySimulator = TenderlySimulatorNew.getInstance();
+  const tenderlySimulator = TenderlySimulator.getInstance();
   // any address works
-  const userAddress = TenderlySimulatorNew.DEFAULT_OWNER;
+  const userAddress = TenderlySimulator.DEFAULT_OWNER;
   // init `StateOverride` object
   const stateOverride: StateOverride = {};
   // fund x2 just in case

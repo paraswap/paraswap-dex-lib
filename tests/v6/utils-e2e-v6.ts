@@ -5,10 +5,7 @@ import {
   IParaSwapSDK,
   LocalParaswapSDK,
 } from '../../src/implementations/local-paraswap-sdk';
-import {
-  TenderlySimulatorNew,
-  StateOverride,
-} from '../tenderly-simulation-new';
+import { TenderlySimulator, StateOverride } from '../tenderly-simulation';
 import { assert } from 'ts-essentials';
 
 export type ContractsAugustusV6 = {
@@ -52,7 +49,7 @@ export async function runE2ETest(
   // initialize pricing
   await paraswap.initializePricing?.();
   // prepare state overrides
-  const tenderlySimulator = TenderlySimulatorNew.getInstance();
+  const tenderlySimulator = TenderlySimulator.getInstance();
   // init `StateOverride` object
   const stateOverride: StateOverride = {};
   // fund x2 just in case
