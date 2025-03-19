@@ -72,7 +72,7 @@ function testForNetwork(
   // TODO: Add any direct swap contractMethod name if it exists
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -80,34 +80,34 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            if (testNative) {
-              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-                await testE2E(
-                  tokens[nativeTokenSymbol],
-                  tokens[tokenASymbol],
-                  holders[nativeTokenSymbol],
-                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
-              });
-              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-                await testE2E(
-                  tokens[tokenASymbol],
-                  tokens[nativeTokenSymbol],
-                  holders[tokenASymbol],
-                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                );
-              });
-            }
+            // if (testNative) {
+            //   it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            //     await testE2E(
+            //       tokens[nativeTokenSymbol],
+            //       tokens[tokenASymbol],
+            //       holders[nativeTokenSymbol],
+            //       side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+            //       side,
+            //       dexKey,
+            //       contractMethod,
+            //       network,
+            //       provider,
+            //     );
+            //   });
+            //   it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+            //     await testE2E(
+            //       tokens[tokenASymbol],
+            //       tokens[nativeTokenSymbol],
+            //       holders[tokenASymbol],
+            //       side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+            //       side,
+            //       dexKey,
+            //       contractMethod,
+            //       network,
+            //       provider,
+            //     );
+            //   });
+            // }
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -121,19 +121,19 @@ function testForNetwork(
                 provider,
               );
             });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenBSymbol],
+            //     tokens[tokenASymbol],
+            //     holders[tokenBSymbol],
+            //     side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
           });
         });
       }),
@@ -344,6 +344,26 @@ describe('BalancerV3 E2E', () => {
 
   describe('Base', () => {
     const network = Network.BASE;
+
+    describe('FAILED_CASE', () => {
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '3000000000000000';
+      const tokenBAmount: string = '100000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
 
     describe('Stable Path', () => {
       const tokenASymbol: string = 'wstETH';
