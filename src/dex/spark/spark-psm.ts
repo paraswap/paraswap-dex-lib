@@ -59,7 +59,7 @@ export const sUSDSPsmConfig: DexConfigMap<SparkParams> = {
       savingsRate: {
         symbol: 'ssrOracle',
         topic:
-          '0x7373720000000000000000000000000000000000000000000000000000000000',
+          '0xc234856e2a0c5b406365714ced016892e7d98f7b1d49982cdd8db416a586d811', // SetSUSDSData event
       },
       poolInterface: new Interface(SSRAuthOracleAbi),
       exchangeInterface: new Interface(SparkPSM3Abi),
@@ -253,7 +253,7 @@ export class SparkPsm extends Spark {
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SparkData>> {
     if (!this.isAppropriatePair(srcToken, destToken)) return null;
-    const state = this.eventPool.getState(blockNumber);
+    const state = await this.eventPool.getOrGenerateState(blockNumber);
     if (!state) return null;
 
     let results: bigint[];
