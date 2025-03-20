@@ -10,16 +10,16 @@ import { ExchangePrices, Token } from '../../types';
 import { BalancerV3Data } from './types';
 
 const dexKey = 'BalancerV3';
-const blockNumber = 7651340;
+const blockNumber = 22086000;
 let balancerV3: BalancerV3;
-const network = Network.SEPOLIA;
+const network = Network.MAINNET;
 const dexHelper = new DummyDexHelper(network);
 const tokens = Tokens[network];
-const bal = tokens['bal'];
+const usdc = tokens['USDC'];
 const weth = tokens['WETH'];
-// https://sepolia.etherscan.io/address/0x132F4bAa39330d9062fC52d81dF72F601DF8C01f
+// https://etherscan.io/address/0x6b49054c350b47ca9aa1331ab156a1eedbe94e79
 const stableSurgePool =
-  '0x132F4bAa39330d9062fC52d81dF72F601DF8C01f'.toLowerCase();
+  '0x6b49054c350b47ca9aa1331ab156a1eedbe94e79'.toLowerCase();
 
 describe('BalancerV3 stableSurge hook tests', function () {
   beforeAll(async () => {
@@ -32,7 +32,7 @@ describe('BalancerV3 stableSurge hook tests', function () {
   describe('pool with stableSurge hook should be returned', function () {
     it('getPoolIdentifiers', async function () {
       const pools = await balancerV3.getPoolIdentifiers(
-        bal,
+        usdc,
         weth,
         SwapSide.SELL,
         blockNumber,
@@ -49,32 +49,32 @@ describe('BalancerV3 stableSurge hook tests', function () {
   describe('should match onchain pricing', function () {
     describe('using staticFee', function () {
       it('SELL', async function () {
-        const amounts = [0n, 10000000000000000n];
+        const amounts = [0n, 100000000n];
         const side = SwapSide.SELL;
-        await testPricesVsOnchain(amounts, weth, bal, side, blockNumber, [
+        await testPricesVsOnchain(amounts, usdc, weth, side, blockNumber, [
           stableSurgePool,
         ]);
       });
       it('BUY', async function () {
-        const amounts = [0n, 500000000000000000n];
+        const amounts = [0n, 500000n];
         const side = SwapSide.BUY;
-        await testPricesVsOnchain(amounts, weth, bal, side, blockNumber, [
+        await testPricesVsOnchain(amounts, weth, usdc, side, blockNumber, [
           stableSurgePool,
         ]);
       });
     });
     describe('using surge fee', function () {
       it('SELL', async function () {
-        const amounts = [0n, 8000000000000000000n];
+        const amounts = [0n, 1000000000000000000n];
         const side = SwapSide.SELL;
-        await testPricesVsOnchain(amounts, bal, weth, side, blockNumber, [
+        await testPricesVsOnchain(amounts, weth, usdc, side, blockNumber, [
           stableSurgePool,
         ]);
       });
       it('BUY', async function () {
-        const amounts = [0n, 4000000000000000n];
+        const amounts = [0n, 1976459205n];
         const side = SwapSide.BUY;
-        await testPricesVsOnchain(amounts, bal, weth, side, blockNumber, [
+        await testPricesVsOnchain(amounts, weth, usdc, side, blockNumber, [
           stableSurgePool,
         ]);
       });
@@ -99,6 +99,8 @@ async function testPricesVsOnchain(
     limitPools,
   );
   expect(prices).not.toBeNull();
+  expect(prices?.length).toBeGreaterThan(0);
+  expect(allPricesAreZero(prices!)).toBe(false);
   await checkOnChainPricingNonMulti(
     network,
     side,
@@ -107,4 +109,23 @@ async function testPricesVsOnchain(
     prices as ExchangePrices<BalancerV3Data>,
     amounts,
   );
+}
+
+function allPricesAreZero(arr: { prices: bigint[] }[]): boolean {
+  // Check if the array is empty first
+  if (arr.length === 0) return false;
+
+  // Iterate through each object in the array
+  for (const obj of arr) {
+    // Check if this object has any non-zero price
+    const hasNonZeroPrice = obj.prices.some(price => price !== 0n);
+
+    // If we found even one non-zero price, return false
+    if (hasNonZeroPrice) {
+      return false;
+    }
+  }
+
+  // If we got here, all prices in all objects are 0n
+  return true;
 }

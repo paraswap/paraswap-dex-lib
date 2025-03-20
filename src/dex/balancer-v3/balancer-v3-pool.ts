@@ -460,28 +460,23 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           hookState = {
             ...poolHookState,
             amp: step.poolState.amp,
-            // TODO: Is it needed
-            // surgeThresholdPercentage:
-            //   typeof poolHookState.surgeThresholdPercentage === 'bigint'
-            //     ? poolHookState.surgeThresholdPercentage
-            //     : BigInt(poolHookState.surgeThresholdPercentage || 0),
-            // maxSurgeFeePercentage:
-            //   typeof poolHookState.maxSurgeFeePercentage === 'bigint'
-            //     ? poolHookState.maxSurgeFeePercentage
-            //     : BigInt(poolHookState.maxSurgeFeePercentage || 0),
           };
         }
       }
-
-      outputAmountRaw = this.vault.swap(
-        {
-          ...step.swapInput,
-          amountRaw: amount,
-          swapKind,
-        },
-        step.poolState,
-        hookState,
-      );
+      // try/catch as the swap can fail for e.g. wrapAmountTooSmall, etc
+      try {
+        outputAmountRaw = this.vault.swap(
+          {
+            ...step.swapInput,
+            amountRaw: amount,
+            swapKind,
+          },
+          step.poolState,
+          hookState,
+        );
+      } catch (err) {
+        outputAmountRaw = 0n;
+      }
       // Next step uses output from previous step as input
       amount = outputAmountRaw;
     }
