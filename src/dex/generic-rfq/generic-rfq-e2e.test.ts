@@ -1,21 +1,16 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { ethers } from 'ethers';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { generateConfig } from '../../config';
 import { newTestE2E, getEnv } from '../../../tests/utils-e2e';
-import { GENERIC_ADDR1, Tokens } from '../../../tests/constants-e2e';
+import {
+  GENERIC_ADDR1,
+  GENERIC_ADDR2,
+  Tokens,
+} from '../../../tests/constants-e2e';
 import { RFQConfig } from './types';
 import { testConfig } from './e2e-test-config';
-
-const PK_KEY = process.env.TEST_PK_KEY;
-
-if (!PK_KEY) {
-  throw new Error('Missing TEST_PK_KEY');
-}
-
-const testAccount = new ethers.Wallet(PK_KEY!);
 
 jest.setTimeout(1000 * 60 * 3);
 
@@ -106,7 +101,7 @@ describe(`GenericRFQ ${dexKey} E2E`, () => {
               srcToken,
               destToken,
               senderAddress: GENERIC_ADDR1,
-              thirdPartyAddress: testAccount.address,
+              thirdPartyAddress: GENERIC_ADDR2,
               _amount: testCase.amount,
               swapSide: testCase.swapSide as SwapSide,
               dexKeys: [dexKey],
