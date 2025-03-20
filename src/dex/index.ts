@@ -58,7 +58,7 @@ import { CurveV1StableNg } from './curve-v1-stable-ng/curve-v1-stable-ng';
 import { curveV1Merge } from './curve-v1-factory/optimizer';
 import { GenericRFQ } from './generic-rfq/generic-rfq';
 import { WstETH } from './wsteth/wsteth';
-import { WUSDM } from './wusdm/wusdm';
+import { ERC4626 } from './erc4626/erc4626';
 import { Camelot } from './camelot/camelot';
 import { Hashflow } from './hashflow/hashflow';
 import { Infusion } from './infusion/infusion';
@@ -83,6 +83,7 @@ import { Swell } from './swell/swell';
 import { PharaohV1 } from './solidly/forks-override/pharaohV1';
 import { EtherFi } from './etherfi';
 import { Spark } from './spark/spark';
+import { SparkPsm } from './spark/spark-psm';
 import { VelodromeSlipstream } from './uniswap-v3/forks/velodrome-slipstream/velodrome-slipstream';
 import { AaveV3Stata } from './aave-v3-stata/aave-v3-stata';
 import { AaveV3StataV2 } from './aave-v3-stata-v2/aave-v3-stata-v2';
@@ -104,6 +105,7 @@ import { UsualMUsd0 } from './usual/usual-m-usd0';
 import { MWrappedM } from './usual/m-wrapped-m';
 import { WrappedMM } from './usual/wrapped-m-m';
 import { UsualPP } from './usual-pp/usual-pp';
+import { Ekubo } from './ekubo/ekubo';
 
 const LegacyDexes = [
   CurveV2,
@@ -169,7 +171,7 @@ const Dexes = [
   CurveV1Factory,
   CurveV1StableNg,
   WstETH,
-  WUSDM,
+  ERC4626,
   Hashflow,
   Infusion,
   MaverickV1,
@@ -185,6 +187,7 @@ const Dexes = [
   Swell,
   PharaohV1,
   Spark,
+  SparkPsm,
   AaveV3Stata,
   AaveV3StataV2,
   OSwap,
@@ -202,6 +205,7 @@ const Dexes = [
   WrappedMM,
   UsualMUsd0,
   UsualPP,
+  Ekubo,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
