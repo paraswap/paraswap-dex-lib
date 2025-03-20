@@ -1,15 +1,4 @@
-import {
-  SmartTokenParams,
-  balanceOfFn,
-  allowanceFn,
-  SmartToken,
-  balancesFn,
-  allowedFn,
-  _balancesFn,
-  _allowancesFn,
-  balanceAndBlacklistStatesFn,
-} from '../tests/smart-tokens';
-import { Address } from '../src/types';
+import { Address, Token } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
 
 export const GIFTER_ADDRESS = '0xb22fC4eC94D555A5049593ca4552c810Fb8a6d00';
@@ -17,7 +6,7 @@ export const GENERIC_ADDR1 = '0xbe9317f6711e2da074fe1f168fd9c402bc0a9d1b';
 export const GENERIC_ADDR2 = '0x230a1ac45690b9ae1176389434610b9526d2f21b';
 
 export const Tokens: {
-  [network: number]: { [symbol: string]: SmartTokenParams };
+  [network: number]: { [symbol: string]: Token };
 } = {
   [Network.MAINNET]: {
     sUSDS: {
@@ -128,8 +117,6 @@ export const Tokens: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
       symbol: 'USDC',
-      addBalance: balanceAndBlacklistStatesFn,
-      addAllowance: allowedFn,
     },
     INST: {
       address: '0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb',
@@ -162,8 +149,6 @@ export const Tokens: {
     WBTC: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
       decimals: 8,
-      addBalance: balancesFn,
-      addAllowance: allowedFn,
     },
     sBTC: {
       address: '0xfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6',
@@ -180,8 +165,6 @@ export const Tokens: {
     USDT: {
       address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimals: 6,
-      addBalance: balancesFn,
-      addAllowance: allowedFn,
     },
     STETH: {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -210,8 +193,6 @@ export const Tokens: {
     WETH: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     PSP: {
       address: '0xcafe001067cdef266afb7eb5a286dcfd277f3de5',
@@ -228,8 +209,6 @@ export const Tokens: {
     DAI: {
       address: '0x6b175474e89094c44da98b954eedeac495271d0f',
       decimals: 18,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     MLN: {
       address: '0xec67005c4e498ec7f55e092bd1d35cbc47c91892',
@@ -613,8 +592,6 @@ export const Tokens: {
     USDCe: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
       decimals: 6,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
     },
     MLN: {
       address: '0xa9f37d84c856fda3812ad0519dad44fa0a3fe207',
@@ -673,8 +650,6 @@ export const Tokens: {
     WMATIC: {
       address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
       decimals: 18,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     AMWMATIC: {
       address: '0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4',
@@ -1056,8 +1031,6 @@ export const Tokens: {
     USDT: {
       address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
       decimals: 6,
-      addAllowance: _allowancesFn,
-      addBalance: balanceOfFn,
     },
     POPS: {
       address: '0x240248628B7B6850352764C5dFa50D1592A033A8',
@@ -1066,8 +1039,6 @@ export const Tokens: {
     WAVAX: {
       address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       decimals: 18,
-      addAllowance: allowanceFn,
-      addBalance: balanceOfFn,
     },
     sAVAX: {
       address: '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE',
@@ -1223,8 +1194,6 @@ export const Tokens: {
     WETH: {
       address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
       decimals: 18,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
     },
     waArbWETH: {
       address: '0x4ce13a79f45c1be00bdabd38b764ac28c082704e',
@@ -1239,8 +1208,6 @@ export const Tokens: {
       address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       decimals: 6,
       symbol: 'USDC',
-      addBalance: balanceAndBlacklistStatesFn,
-      addAllowance: allowedFn,
     },
     SUSHI: {
       address: '0xd4d42F0b6DEF4CE0383636770eF773390d85c61A',
@@ -1261,8 +1228,6 @@ export const Tokens: {
     USDT: {
       address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
       decimals: 6,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
     },
     waArbUSDT: {
       address: '0xa6D12574eFB239FC1D2099732bd8b5dC6306897F',
@@ -1399,8 +1364,6 @@ export const Tokens: {
     WETH: {
       address: '0x4200000000000000000000000000000000000006',
       decimals: 18,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
     USDCe: {
@@ -2200,20 +2163,6 @@ export const Holders: {
     usdcAave: '0xdD5De55eA6804EFb283f43b0C091C25000a6486c',
   },
 };
-
-export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
-  const network = parseInt(_network, 10);
-  acc[+network] = Object.keys(Tokens[network]).reduce((_acc, tokenName) => {
-    const token: SmartTokenParams = Tokens[network][tokenName]!;
-
-    if (token.addAllowance && token.addBalance) {
-      _acc[tokenName] = new SmartToken(token);
-    }
-
-    return _acc;
-  }, {} as Record<string, SmartToken>);
-  return acc;
-}, {} as Record<number, Record<string, SmartToken>>);
 
 export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.MAINNET]: 'ETH',
