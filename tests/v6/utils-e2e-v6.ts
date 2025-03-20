@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { OptimalRate, SwapSide } from '@paraswap/core';
 import { ETHER_ADDRESS } from '../../src/constants';
 import {
