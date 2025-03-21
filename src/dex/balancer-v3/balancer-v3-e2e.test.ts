@@ -214,7 +214,7 @@ describe('BalancerV3 E2E', () => {
       );
     });
 
-    describe.only('GyroE Path', () => {
+    describe('GyroE Path', () => {
       const tokenASymbol: string = 'bal';
       const tokenBSymbol: string = 'DAI';
 
