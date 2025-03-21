@@ -31,6 +31,20 @@ describe('Balancer API Tests', function () {
         hookAddress: undefined,
         hookType: undefined,
         supportsUnbalancedLiquidity: true,
+        dSq: 0n,
+        paramsAlpha: 0n,
+        paramsBeta: 0n,
+        paramsC: 0n,
+        paramsLambda: 0n,
+        paramsS: 0n,
+        tauAlphaX: 0n,
+        tauAlphaY: 0n,
+        tauBetaX: 0n,
+        tauBetaY: 0n,
+        u: 0n,
+        v: 0n,
+        w: 0n,
+        z: 0n,
       };
       expect(pools[rstETHLidoPoolAddr]).toEqual(expectedPool);
     });
@@ -48,6 +62,20 @@ describe('Balancer API Tests', function () {
         hookAddress: '0xb18fa0cb5de8cecb8899aae6e38b1b7ed77885da',
         hookType: 'StableSurge',
         supportsUnbalancedLiquidity: true,
+        dSq: 0n,
+        paramsAlpha: 0n,
+        paramsBeta: 0n,
+        paramsC: 0n,
+        paramsLambda: 0n,
+        paramsS: 0n,
+        tauAlphaX: 0n,
+        tauAlphaY: 0n,
+        tauBetaX: 0n,
+        tauBetaY: 0n,
+        u: 0n,
+        v: 0n,
+        w: 0n,
+        z: 0n,
       };
       expect(pools[stableSurgePoolAddr]).toEqual(expectedPool);
     });

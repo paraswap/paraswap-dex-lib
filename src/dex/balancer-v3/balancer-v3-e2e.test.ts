@@ -376,8 +376,8 @@ describe('BalancerV3 E2E', () => {
       const tokenASymbol: string = 'WETH';
       const tokenBSymbol: string = 'USDC';
 
-      const tokenAAmount: string = '3000000000000000';
-      const tokenBAmount: string = '100000000000000';
+      const tokenAAmount: string = '300000000000000';
+      const tokenBAmount: string = '100000000';
       const nativeTokenAmount = '0';
 
       testForNetwork(
