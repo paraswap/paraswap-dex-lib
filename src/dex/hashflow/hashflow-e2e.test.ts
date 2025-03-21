@@ -33,16 +33,7 @@ function testForNetwork(
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.swapExactAmountIn,
-        // ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-      ],
-    ],
-    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -298,11 +289,11 @@ describe('Hashflow E2E', () => {
   describe('Optimism', () => {
     const network = Network.OPTIMISM;
 
-    const tokenASymbol: string = 'ETH';
-    const tokenBSymbol: string = 'DAI';
+    const tokenASymbol: string = 'OP';
+    const tokenBSymbol: string = 'USDT';
 
-    const tokenAAmount: string = '10000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+    const tokenAAmount: string = '12000000000000000000';
+    const tokenBAmount: string = '11000000';
 
     testForNetwork(
       network,
@@ -318,12 +309,33 @@ describe('Hashflow E2E', () => {
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 
-    const tokenASymbol: string = 'AVAX';
+    const tokenASymbol: string = 'USDT';
     const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '10000000';
-    const nativeTokenAmount = '1000000000000000000';
+    const tokenAAmount: string = '1100000';
+    const tokenBAmount: string = '1100000';
+    const nativeTokenAmount = '0';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+      true,
+    );
+  });
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'WETH';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '1000000000000000';
+    const tokenBAmount: string = '4000000';
+    const nativeTokenAmount = '0';
 
     testForNetwork(
       network,

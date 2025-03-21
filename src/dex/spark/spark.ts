@@ -41,7 +41,7 @@ export class Spark
     protected network: Network,
     dexKey: string,
     readonly dexHelper: IDexHelper,
-
+    protected readonly config = SDaiConfig[dexKey][network],
     readonly daiAddress: string = SDaiConfig[dexKey][network].daiAddress,
     readonly sdaiAddress: string = SDaiConfig[dexKey][network].sdaiAddress,
     readonly potAddress: string = SDaiConfig[dexKey][network].potAddress,
@@ -63,8 +63,8 @@ export class Spark
       this.potAddress,
       this.abiInterface,
       this.logger,
-      SDaiConfig[dexKey][network].savingsRate.topic,
-      SDaiConfig[dexKey][network].savingsRate.symbol,
+      config.savingsRate.topic,
+      config.savingsRate.symbol,
     );
   }
 
@@ -111,7 +111,7 @@ export class Spark
     limitPools?: string[],
   ): Promise<null | ExchangePrices<SparkData>> {
     if (!this.isAppropriatePair(srcToken, destToken)) return null;
-    const state = this.eventPool.getState(blockNumber);
+    const state = await this.eventPool.getOrGenerateState(blockNumber);
     if (!state) return null;
 
     const isSrcAsset = this.isDai(srcToken.address);
@@ -236,6 +236,7 @@ export class Spark
     const { exchange } = data;
 
     let swapData: string;
+
     if (this.isDai(srcToken)) {
       const calldata = [isSell ? srcAmount : destAmount, recipient];
 
