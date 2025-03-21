@@ -8,15 +8,15 @@ import { BalancerV3 } from './balancer-v3';
 import { testPricesVsOnchain } from './balancer-test-helpers';
 
 const dexKey = 'BalancerV3';
-const blockNumber = 7800000;
+const blockNumber = 317980000;
 let balancerV3: BalancerV3;
-const network = Network.SEPOLIA;
+const network = Network.ARBITRUM;
 const dexHelper = new DummyDexHelper(network);
 const tokens = Tokens[network];
-const bal = tokens['bal'];
-const dai = tokens['DAI'];
-// https://sepolia.etherscan.io/address/0x80fd5bc9d4fA6C22132f8bb2d9d30B01c3336FB3#readContract
-const gyroECLPPool = '0x80fd5bc9d4fA6C22132f8bb2d9d30B01c3336FB3'.toLowerCase();
+const eBTC = tokens['eBTC'];
+const usdc = tokens['USDC'];
+// https://arbiscan.io/address/0xa0e5e7728e026bde02810d255a6b94a9aa47b5f9
+const gyroECLPPool = '0xa0e5e7728e026bde02810d255a6b94a9aa47b5f9'.toLowerCase();
 
 describe('BalancerV3 GyroECLP tests', function () {
   beforeAll(async () => {
@@ -29,8 +29,8 @@ describe('BalancerV3 GyroECLP tests', function () {
   describe('GyroECLP pool should be returned', function () {
     it('getPoolIdentifiers', async function () {
       const pools = await balancerV3.getPoolIdentifiers(
-        bal,
-        dai,
+        eBTC,
+        usdc,
         SwapSide.SELL,
         blockNumber,
       );
@@ -38,34 +38,34 @@ describe('BalancerV3 GyroECLP tests', function () {
     });
 
     it('getTopPoolsForToken', async function () {
-      const pools = await balancerV3.getTopPoolsForToken(dai.address, 10);
+      const pools = await balancerV3.getTopPoolsForToken(usdc.address, 10);
       expect(pools.some(pool => pool.address === gyroECLPPool)).toBe(true);
     });
 
     describe('should match onchain pricing', function () {
       it('SELL', async function () {
-        const amounts = [0n, 1000000000000000000n];
+        const amounts = [0n, 10000000n];
         const side = SwapSide.SELL;
         await testPricesVsOnchain(
           balancerV3,
           network,
           amounts,
-          dai,
-          bal,
+          usdc,
+          eBTC,
           side,
           blockNumber,
           [gyroECLPPool],
         );
       });
       it('BUY', async function () {
-        const amounts = [0n, 10000000000000n];
+        const amounts = [0n, 10000000n];
         const side = SwapSide.BUY;
         await testPricesVsOnchain(
           balancerV3,
           network,
           amounts,
-          dai,
-          bal,
+          eBTC,
+          usdc,
           side,
           blockNumber,
           [gyroECLPPool],

@@ -1390,6 +1390,10 @@ export const Tokens: {
       address: '0xe98fc055c99decd8da0c111b090885d5d15c774e',
       decimals: 18,
     },
+    eBTC: {
+      address: '0x657e8c867d8b37dcc18fa4caead9c45eb088c642',
+      decimals: 8,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {

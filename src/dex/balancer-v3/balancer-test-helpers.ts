@@ -200,6 +200,25 @@ function getQuerySwapMultiTokenCalldata(
     });
 }
 
+function allPricesAreZero(arr: { prices: bigint[] }[]): boolean {
+  // Check if the array is empty first
+  if (arr.length === 0) return false;
+
+  // Iterate through each object in the array
+  for (const obj of arr) {
+    // Check if this object has any non-zero price
+    const hasNonZeroPrice = obj.prices.some(price => price !== 0n);
+
+    // If we found even one non-zero price, return false
+    if (hasNonZeroPrice) {
+      return false;
+    }
+  }
+
+  // If we got here, all prices in all objects are 0n
+  return true;
+}
+
 export async function testPricesVsOnchain(
   balancerV3: BalancerV3,
   network: number,
@@ -219,6 +238,8 @@ export async function testPricesVsOnchain(
     limitPools,
   );
   expect(prices).not.toBeNull();
+  expect(prices?.length).toBeGreaterThan(0);
+  expect(allPricesAreZero(prices!)).toBe(false);
   await checkOnChainPricingNonMulti(
     network,
     side,
