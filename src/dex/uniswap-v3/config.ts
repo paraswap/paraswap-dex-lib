@@ -390,9 +390,10 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       quoter: '0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0',
       router: '0x1b2b6cE813b99b840Fe632c63bcA5394938Ef01e',
       supportedFees: SUPPORTED_FEES,
-      tickSpacings: [1n, 50n, 100n, 200n, 2000n],
+      tickSpacings: [1n, 10n, 50n, 100n, 200n, 2000n],
       tickSpacingsToFees: {
         '1': 100n,
+        '10': 500n,
         '50': 500n,
         '100': 500n,
         '200': 3000n,
