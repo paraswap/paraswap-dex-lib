@@ -1,4 +1,4 @@
-// npx jest src/dex/balancer-v3/balancer-stableSurge.test.ts
+// npx jest src/dex/balancer-v3/balancer-test-weighted.test.ts
 import dotenv from 'dotenv';
 dotenv.config();
 import { Tokens } from '../../../tests/constants-e2e';
@@ -13,18 +13,17 @@ import { ExchangePrices, Token } from '../../types';
 import { BalancerV3Data } from './types';
 
 const dexKey = 'BalancerV3';
-const blockNumber = 22086000;
+const blockNumber = 27675048;
 let balancerV3: BalancerV3;
-const network = Network.MAINNET;
+const network = Network.BASE;
 const dexHelper = new DummyDexHelper(network);
 const tokens = Tokens[network];
 const usdc = tokens['USDC'];
 const weth = tokens['WETH'];
-// https://etherscan.io/address/0x6b49054c350b47ca9aa1331ab156a1eedbe94e79
-const stableSurgePool =
-  '0x6b49054c350b47ca9aa1331ab156a1eedbe94e79'.toLowerCase();
+// https://basescan.org/address/0x0657c3467f3bf465fab59b10f1453d665abe507e
+const weightedPool = '0x0657c3467f3bf465fab59b10f1453d665abe507e'.toLowerCase();
 
-describe('BalancerV3 stableSurge hook tests', function () {
+describe('BalancerV3 Weighted pool tests', function () {
   beforeAll(async () => {
     balancerV3 = new BalancerV3(network, dexKey, dexHelper);
     if (balancerV3.initializePricing) {
@@ -32,55 +31,37 @@ describe('BalancerV3 stableSurge hook tests', function () {
     }
   });
 
-  describe('pool with stableSurge hook should be returned', function () {
+  describe('pool should be returned', function () {
     it('getPoolIdentifiers', async function () {
       const pools = await balancerV3.getPoolIdentifiers(
-        usdc,
         weth,
+        usdc,
         SwapSide.SELL,
         blockNumber,
       );
-      expect(pools.some(pool => pool === stableSurgePool)).toBe(true);
+      expect(pools.some(pool => pool === weightedPool)).toBe(true);
     });
 
     it('getTopPoolsForToken', async function () {
-      const pools = await balancerV3.getTopPoolsForToken(weth.address, 10);
-      expect(pools.some(pool => pool.address === stableSurgePool)).toBe(true);
+      const pools = await balancerV3.getTopPoolsForToken(weth.address, 100);
+      expect(pools.some(pool => pool.address === weightedPool)).toBe(true);
     });
   });
 
   describe('should match onchain pricing', function () {
-    describe('using staticFee', function () {
-      it('SELL', async function () {
-        const amounts = [0n, 100000000n];
-        const side = SwapSide.SELL;
-        await testPricesVsOnchain(amounts, usdc, weth, side, blockNumber, [
-          stableSurgePool,
-        ]);
-      });
-      it('BUY', async function () {
-        const amounts = [0n, 500000n];
-        const side = SwapSide.BUY;
-        await testPricesVsOnchain(amounts, weth, usdc, side, blockNumber, [
-          stableSurgePool,
-        ]);
-      });
+    it('SELL', async function () {
+      const amounts = [0n, 3000000000000000n];
+      const side = SwapSide.SELL;
+      await testPricesVsOnchain(amounts, weth, usdc, side, blockNumber, [
+        weightedPool,
+      ]);
     });
-    describe('using surge fee', function () {
-      it('SELL', async function () {
-        const amounts = [0n, 1000000000000000000n];
-        const side = SwapSide.SELL;
-        await testPricesVsOnchain(amounts, weth, usdc, side, blockNumber, [
-          stableSurgePool,
-        ]);
-      });
-      it('BUY', async function () {
-        const amounts = [0n, 1976459205n];
-        const side = SwapSide.BUY;
-        await testPricesVsOnchain(amounts, weth, usdc, side, blockNumber, [
-          stableSurgePool,
-        ]);
-      });
+    it('BUY', async function () {
+      const amounts = [0n, 5000000n];
+      const side = SwapSide.BUY;
+      await testPricesVsOnchain(amounts, weth, usdc, side, blockNumber, [
+        weightedPool,
+      ]);
     });
   });
 });
