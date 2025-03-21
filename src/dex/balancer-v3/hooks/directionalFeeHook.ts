@@ -8,10 +8,12 @@ import { HookStateMap } from './balancer-hook-event-subscriber';
 
 export const DirectionalFee = {
   type: 'DirectionalFee' as const,
+  apiName: 'DIRECTIONAL_FEE' as const,
 };
 
 export type DirectionalFeeConfig = {
   type: typeof DirectionalFee.type;
+  apiName: typeof DirectionalFee.apiName;
   address: string;
 };
 
