@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
-import { TenderlySimulatorNew } from './tenderly-simulation-new';
+import { TenderlySimulator } from './tenderly-simulation';
 
 describe('Tenderly', () => {
-  const tenderly = TenderlySimulatorNew.getInstance();
+  const tenderly = TenderlySimulator.getInstance();
   const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
   const USDT = '0xdac17f958d2ee523a2206206994597c13d831ec7';
   const account = '0x89f53c184ed91cd333fdec0eceeddcaea0cc28cf';
