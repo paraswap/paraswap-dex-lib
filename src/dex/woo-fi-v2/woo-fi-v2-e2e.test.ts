@@ -239,6 +239,7 @@ describe('WooFiV2 E2E', () => {
           ContractMethod.simpleSwap,
           ContractMethod.multiSwap,
           ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
         ],
       ],
     ]);

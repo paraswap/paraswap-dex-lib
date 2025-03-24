@@ -65,7 +65,7 @@ export const WooFiV2Config: DexConfigMap<DexParams> = {
       },
     },
     [Network.BASE]: {
-      wooPPV2Address: '0xEd9e3f98bBed560e66B89AaC922E29D4596A9642',
+      wooPPV2Address: '0x5520385bFcf07Ec87C4c53A7d8d65595Dff69FA4',
       wooOracleV2Address: '0x2A375567f5E13F6bd74fDa7627Df3b1Af6BfA5a6',
       integrationHelperAddress: '0xC4E9B633685461E7B7A807D12a246C81f96F31B8',
       // USDbC

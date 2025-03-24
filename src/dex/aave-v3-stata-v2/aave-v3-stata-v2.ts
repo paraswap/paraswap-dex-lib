@@ -103,7 +103,7 @@ export class AaveV3StataV2
 
     let tokenList = await fetchTokenList(
       this.dexHelper.web3Provider,
-      this.config.factoryAddresses,
+      this.config,
       this.dexHelper.multiWrapper,
       blockNumber,
     );
@@ -216,7 +216,7 @@ export class AaveV3StataV2
         true,
         [
           {
-            target: this.config.pool,
+            target: stataToken.pool,
             callData: AaveV3StataV2.pool.encodeFunctionData(
               'getReserveNormalizedIncome',
               [stataToken.underlying],
