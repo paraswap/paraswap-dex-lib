@@ -1177,6 +1177,10 @@ export const Tokens: {
       address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
       decimals: 6,
     },
+    ARENA: {
+      address: '0xB8d7710f7d8349A506b75dD184F05777c82dAd0C',
+      decimals: 18,
+    },
     TRYB: {
       address: '0x564a341df6c126f90cf3ecb92120fd7190acb401',
       decimals: 6,
@@ -2032,6 +2036,7 @@ export const Holders: {
     PHAR: '0x654296D56532f62B7d91d335791d3c364a9385b5',
     stataUSDT: '', // no holders yet
     aaveUSDT: '0xB2d3ad6e99D2A043EF77e3812461Ad2D4Ae3da8B',
+    ARENA: '0xEBf747761b6942adaBAA58A594BA24931AfA0a3F',
     TRYB: '0x7137FdccfB6Ee406771E8F5c1B466e4d3074dd45',
   },
   [Network.ARBITRUM]: {
