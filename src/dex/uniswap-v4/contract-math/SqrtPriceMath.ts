@@ -1,4 +1,3 @@
-import { BI_MAX_UINT160 } from '../../../bigint-constants';
 import { FixedPoint96 } from './FixedPoint96';
 import { FullMath } from './FullMath';
 import { UnsafeMath } from './UnsafeMath';
@@ -12,36 +11,17 @@ export class SqrtPriceMath {
     add: boolean,
   ): bigint {
     if (amount === 0n) return sqrtPX96;
-    const numerator1 =
-      BigInt.asUintN(256, liquidity) << FixedPoint96.RESOLUTION;
+    let numerator1 = liquidity << 96n;
 
-    const product = amount * sqrtPX96;
     if (add) {
-      if (product / amount === sqrtPX96) {
-        const denominator = numerator1 + product;
-        if (denominator >= numerator1) {
-          return BigInt.asUintN(
-            160,
-            FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator),
-          );
-        }
-      }
-      return BigInt.asUintN(
-        160,
-        UnsafeMath.divRoundingUp(numerator1, numerator1 / sqrtPX96 + amount),
-      );
+      let product = amount * sqrtPX96;
+      let denominator = numerator1 + product;
+      return (numerator1 * sqrtPX96 + denominator - 1n) / denominator;
     } else {
-      _require(
-        product / amount === sqrtPX96 && numerator1 > product,
-        '',
-        { product, amount, sqrtPX96, numerator1 },
-        'product / amount === sqrtPX96 && numerator1 > product',
-      );
-      const denominator = numerator1 - product;
-      return BigInt.asUintN(
-        160,
-        FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator),
-      );
+      let product = amount * sqrtPX96;
+      if (product >= numerator1) throw new Error('PriceOverflow');
+      let denominator = numerator1 - product;
+      return (numerator1 * sqrtPX96 + denominator - 1n) / denominator;
     }
   }
 
@@ -52,27 +32,12 @@ export class SqrtPriceMath {
     add: boolean,
   ): bigint {
     if (add) {
-      const quotient =
-        amount <= BI_MAX_UINT160
-          ? (amount << FixedPoint96.RESOLUTION) / liquidity
-          : FullMath.mulDiv(amount, FixedPoint96.Q96, liquidity);
-      return BigInt.asUintN(160, BigInt.asUintN(256, sqrtPX96) + quotient);
+      let quotient = (amount * FixedPoint96.Q96) / liquidity;
+      return sqrtPX96 + quotient;
     } else {
-      const quotient =
-        amount <= BI_MAX_UINT160
-          ? UnsafeMath.divRoundingUp(
-              amount << FixedPoint96.RESOLUTION,
-              liquidity,
-            )
-          : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity);
-
-      _require(
-        sqrtPX96 > quotient,
-        '',
-        { sqrtPX96, quotient },
-        'sqrtPX96 > quotient',
-      );
-      return BigInt.asUintN(160, sqrtPX96 - quotient);
+      let quotient = (amount * FixedPoint96.Q96 + liquidity - 1n) / liquidity;
+      if (sqrtPX96 <= quotient) throw new Error('NotEnoughLiquidity');
+      return sqrtPX96 - quotient;
     }
   }
 
@@ -82,9 +47,8 @@ export class SqrtPriceMath {
     amountIn: bigint,
     zeroForOne: boolean,
   ): bigint {
-    _require(sqrtPX96 > 0n, '', { sqrtPX96 }, 'sqrtPX96 > 0n');
-    _require(liquidity > 0n, '', { liquidity }, 'liquidity > 0n');
-
+    if (sqrtPX96 === 0n || liquidity === 0n)
+      throw new Error('InvalidPriceOrLiquidity');
     return zeroForOne
       ? SqrtPriceMath.getNextSqrtPriceFromAmount0RoundingUp(
           sqrtPX96,
@@ -106,9 +70,8 @@ export class SqrtPriceMath {
     amountOut: bigint,
     zeroForOne: boolean,
   ): bigint {
-    _require(sqrtPX96 > 0n, '', { sqrtPX96 }, 'sqrtPX96 > 0n');
-    _require(liquidity > 0n, '', { liquidity }, 'liquidity > 0n');
-
+    if (sqrtPX96 === 0n || liquidity === 0n)
+      throw new Error('InvalidPriceOrLiquidity');
     return zeroForOne
       ? SqrtPriceMath.getNextSqrtPriceFromAmount1RoundingDown(
           sqrtPX96,
@@ -125,102 +88,85 @@ export class SqrtPriceMath {
   }
 
   static getAmount0Delta(
-    sqrtRatioAX96: bigint,
-    sqrtRatioBX96: bigint,
+    sqrtPriceAX96: bigint,
+    sqrtPriceBX96: bigint,
     liquidity: bigint,
     roundUp: boolean,
-  ) {
-    if (sqrtRatioAX96 > sqrtRatioBX96) {
-      [sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96];
-    }
+  ): bigint {
+    if (sqrtPriceAX96 > sqrtPriceBX96)
+      [sqrtPriceAX96, sqrtPriceBX96] = [sqrtPriceBX96, sqrtPriceAX96];
 
-    const numerator1 =
-      BigInt.asUintN(256, liquidity) << FixedPoint96.RESOLUTION;
-    const numerator2 = sqrtRatioBX96 - sqrtRatioAX96;
-
-    _require(sqrtRatioAX96 > 0, '', { sqrtRatioAX96 }, 'sqrtRatioAX96 > 0');
+    let numerator1 = liquidity << FixedPoint96.RESOLUTION;
+    let numerator2 = sqrtPriceBX96 - sqrtPriceAX96;
 
     return roundUp
       ? UnsafeMath.divRoundingUp(
-          FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioBX96),
-          sqrtRatioAX96,
+          FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtPriceBX96),
+          sqrtPriceAX96,
         )
-      : FullMath.mulDiv(numerator1, numerator2, sqrtRatioBX96) / sqrtRatioAX96;
+      : FullMath.mulDiv(numerator1, numerator2, sqrtPriceBX96) / sqrtPriceAX96;
+  }
+
+  static absDiff(a: bigint, b: bigint): bigint {
+    return a >= b ? a - b : b - a;
   }
 
   static getAmount1Delta(
-    sqrtRatioAX96: bigint,
-    sqrtRatioBX96: bigint,
+    sqrtPriceAX96: bigint,
+    sqrtPriceBX96: bigint,
     liquidity: bigint,
     roundUp: boolean,
-  ) {
-    if (sqrtRatioAX96 > sqrtRatioBX96)
-      [sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96];
-
+  ): bigint {
     return roundUp
       ? FullMath.mulDivRoundingUp(
           liquidity,
-          sqrtRatioBX96 - sqrtRatioAX96,
+          sqrtPriceBX96 - sqrtPriceAX96,
           FixedPoint96.Q96,
         )
       : FullMath.mulDiv(
           liquidity,
-          sqrtRatioBX96 - sqrtRatioAX96,
+          sqrtPriceBX96 - sqrtPriceAX96,
           FixedPoint96.Q96,
         );
   }
 
-  // Overloaded with different argument numbers
-  static _getAmount0DeltaO(
-    sqrtRatioAX96: bigint,
-    sqrtRatioBX96: bigint,
+  static getAmount0DeltaSigned(
+    sqrtPriceAX96: bigint,
+    sqrtPriceBX96: bigint,
     liquidity: bigint,
-  ) {
-    return liquidity < 0
-      ? -BigInt.asIntN(
-          256,
-          SqrtPriceMath.getAmount0Delta(
-            sqrtRatioAX96,
-            sqrtRatioBX96,
-            BigInt.asUintN(128, -liquidity),
-            false,
-          ),
+  ): bigint {
+    return liquidity < 0n
+      ? -SqrtPriceMath.getAmount0Delta(
+          sqrtPriceAX96,
+          sqrtPriceBX96,
+          -liquidity,
+          false,
         )
-      : BigInt.asIntN(
-          256,
-          SqrtPriceMath.getAmount0Delta(
-            sqrtRatioAX96,
-            sqrtRatioBX96,
-            BigInt.asUintN(128, liquidity),
-            true,
-          ),
+      : SqrtPriceMath.getAmount0Delta(
+          sqrtPriceAX96,
+          sqrtPriceBX96,
+          liquidity,
+          true,
         );
   }
 
-  // Overloaded with different argument numbers
-  static _getAmount1DeltaO(
-    sqrtRatioAX96: bigint,
-    sqrtRatioBX96: bigint,
+  static getAmount1DeltaSigned(
+    sqrtPriceAX96: bigint,
+    sqrtPriceBX96: bigint,
     liquidity: bigint,
-  ) {
-    return liquidity < 0
-      ? -BigInt.asIntN(
-          256,
-          SqrtPriceMath.getAmount1Delta(
-            sqrtRatioAX96,
-            sqrtRatioBX96,
-            BigInt.asUintN(128, -liquidity),
-            false,
-          ),
+  ): bigint {
+    return liquidity < 0n
+      ? -SqrtPriceMath.getAmount1Delta(
+          sqrtPriceAX96,
+          sqrtPriceBX96,
+          -liquidity,
+          false,
         )
-      : BigInt.asIntN(
-          256,
-          SqrtPriceMath.getAmount1Delta(
-            sqrtRatioAX96,
-            sqrtRatioBX96,
-            BigInt.asUintN(128, liquidity),
-            true,
-          ),
+      : SqrtPriceMath.getAmount1Delta(
+          sqrtPriceAX96,
+          sqrtPriceBX96,
+          liquidity,
+          true,
         );
   }
 }

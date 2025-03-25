@@ -69,11 +69,12 @@ export class TickBitMap {
     isWordPosOut(wordPos, state.startTickBitmap, false, state.networkId);
 
     const stringWordPos = wordPos.toString();
-    if (state.tickBitmap[stringWordPos] === undefined) {
-      state.tickBitmap[stringWordPos] = 0n;
-    }
+    // if (state.tickBitmap[stringWordPos] === undefined) {
+    //   state.tickBitmap[stringWordPos] = 0n;
+    // }
 
-    state.tickBitmap[stringWordPos] ^= mask;
+    state.tickBitmap[stringWordPos] =
+      state.tickBitmap[stringWordPos] || 0n ^ mask;
   }
 
   static nextInitializedTickWithinOneWord(

@@ -219,6 +219,7 @@
         "indexed": false,
         "internalType": "uint160",
         "name": "sqrtPriceX96",
+        "name": "sqrtPriceX96",
         "type": "uint160"
       },
       {

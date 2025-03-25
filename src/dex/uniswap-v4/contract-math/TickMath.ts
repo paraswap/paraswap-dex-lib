@@ -5,11 +5,14 @@ import { _require } from '../../../utils';
 export class TickMath {
   static readonly MIN_TICK = -887272n;
   static readonly MAX_TICK = -TickMath.MIN_TICK;
-  static readonly MIN_SQRT_RATIO = 4295128739n;
-  static readonly MAX_SQRT_RATIO =
-    1461446703485210103287273052203988822378723970342n;
 
-  static getSqrtRatioAtTick(tick: bigint): bigint {
+  static readonly MIN_SQRT_PRICE = 4295128739n;
+  static readonly MAX_SQRT_PRICE =
+    1461446703485210103287273052203988822378723970342n;
+  static readonly MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE =
+    1461446703485210103287273052203988822378723970342 - 4295128739 - 1;
+
+  static getSqrtPriceAtTick(tick: bigint): bigint {
     const absTick =
       tick < 0n
         ? BigInt.asUintN(256, -BigInt.asIntN(256, tick))
@@ -71,18 +74,19 @@ export class TickMath {
     );
   }
 
-  static getTickAtSqrtRatio(sqrtPriceX96: bigint): bigint {
+  static getTickAtSqrtPrice(sqrtPriceX96: bigint): bigint {
     _require(
-      sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO &&
-        sqrtPriceX96 < TickMath.MAX_SQRT_RATIO,
+      sqrtPriceX96 - TickMath.MIN_SQRT_PRICE >
+        TickMath.MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE,
       'R',
       { sqrtPriceX96 },
-      'sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO && sqrtPriceX96 < TickMath.MAX_SQRT_RATIO',
+      'InvalidSqrtPrice: sqrtPriceX96 - TickMath.MIN_SQRT_PRICE >\n' +
+        '        TickMath.MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE',
     );
 
-    let ratio = BigInt.asUintN(256, sqrtPriceX96) << 32n;
+    let price = BigInt.asUintN(256, sqrtPriceX96) << 32n;
 
-    let r = ratio;
+    let r = price;
     let msb = 0n;
 
     let f = _gt(r, 0xffffffffffffffffffffffffffffffffn) << 7n;
@@ -116,8 +120,8 @@ export class TickMath {
     f = _gt(r, 0x1n);
     msb = msb | f;
 
-    if (msb >= 128n) r = ratio >> (msb - 127n);
-    else r = ratio << (127n - msb);
+    if (msb >= 128n) r = price >> (msb - 127n);
+    else r = price << (127n - msb);
 
     let log_2 = (BigInt.asIntN(256, msb) - 128n) << 64n;
 
@@ -203,7 +207,7 @@ export class TickMath {
 
     return tickLow === tickHi
       ? tickLow
-      : TickMath.getSqrtRatioAtTick(tickHi) <= sqrtPriceX96
+      : TickMath.getSqrtPriceAtTick(tickHi) <= sqrtPriceX96
       ? tickHi
       : tickLow;
   }

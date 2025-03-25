@@ -2,34 +2,29 @@ import {
   InitializeStateOptions,
   StatefulEventSubscriber,
 } from '../../stateful-event-subscriber';
-import { Pool, PoolManagerState, PoolState, SubgraphPool } from './types';
+import { DexParams, Pool, PoolManagerState, SubgraphPool } from './types';
 import { Address, Log, Logger } from '../../types';
-import { BlockHeader } from 'web3-eth';
 import UniswapV4StateViewABI from '../../abi/uniswap-v4/state-view.abi.json';
 import UniswapV4PoolManagerABI from '../../abi/uniswap-v4/pool-manager.abi.json';
 import { Interface } from 'ethers/lib/utils';
 import { IDexHelper } from '../../dex-helper';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { LogDescription } from '@ethersproject/abi/lib.esm';
-import {
-  queryOnePageForAllAvailablePoolsFromSubgraph,
-  querySinglePoolFromSubgraphById,
-} from './subgraph';
+import { queryOnePageForAllAvailablePoolsFromSubgraph } from './subgraph';
 import { isETHAddress } from '../../utils';
 import { NULL_ADDRESS } from '../../constants';
 import { POOL_CACHE_REFRESH_INTERVAL } from './constants';
-import { logger } from 'ethers';
-import { sortPools } from './utils';
+import { FactoryState } from '../uniswap-v3/types';
+import { UniswapV4Pool } from './uniswap-v4-pool';
 
 export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerState> {
   handlers: {
-    [event: string]: (
-      event: any,
-      pool: PoolManagerState,
-      log: Log,
-      blockHeader: Readonly<BlockHeader>,
-    ) => AsyncOrSync<PoolManagerState>;
+    [event: string]: (event: any, log: Log) => AsyncOrSync<PoolManagerState>;
   } = {};
+
+  pools: SubgraphPool[] = [];
+
+  eventPools: Record<string, UniswapV4Pool> = {};
 
   logDecoder: (log: Log) => any;
 
@@ -43,9 +38,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     readonly dexHelper: IDexHelper,
     parentName: string,
     private readonly network: number,
-    private readonly poolManagerAddress: string,
-    private readonly stateViewAddress: string,
-    private readonly subgraphUrl: string,
+    private readonly config: DexParams,
     protected logger: Logger,
     mapKey: string = '',
   ) {
@@ -60,7 +53,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
 
     this.stateViewIface = new Interface(UniswapV4StateViewABI);
     this.poolManagerIface = new Interface(UniswapV4PoolManagerABI);
-    this.addressesSubscribed = [poolManagerAddress];
+    this.addressesSubscribed = [this.config.poolManager];
 
     this.logDecoder = (log: Log) => this.poolManagerIface.parseLog(log);
 
@@ -72,20 +65,52 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     blockNumber: number,
     options?: InitializeStateOptions<PoolManagerState>,
   ) {
-    await super.initialize(blockNumber, options);
+    this.pools = await this.queryAllAvailablePools(blockNumber);
+
+    this.eventPools = await this.pools.reduce<
+      Promise<Record<string, UniswapV4Pool>>
+    >(async (accum, pool) => {
+      const accumP = await accum;
+      const eventPool = new UniswapV4Pool(
+        this.dexHelper,
+        this.parentName,
+        this.network,
+        this.config,
+        this.logger,
+        '',
+        pool.id.toLowerCase(),
+        pool.token0.address.toLowerCase(),
+        pool.token1.address.toLowerCase(),
+        pool.fee,
+        pool.hooks,
+        0n,
+        pool.tick,
+        pool.tickSpacing,
+      );
+      await eventPool.initialize(blockNumber);
+
+      accumP[pool.id] = eventPool;
+
+      return accumP;
+    }, Promise.resolve({} as Record<string, UniswapV4Pool>));
+
+    return super.initialize(blockNumber, options);
+  }
+
+  generateState(): FactoryState {
+    return {};
   }
 
   protected async processLog(
-    state: PoolManagerState,
+    _: DeepReadonly<FactoryState>,
     log: Readonly<Log>,
-    blockHeader: Readonly<BlockHeader>,
-  ): Promise<DeepReadonly<PoolManagerState>> {
+  ): Promise<FactoryState> {
     const event = this.logDecoder(log);
     if (event.name in this.handlers) {
-      await this.handlers[event.name](event, state, log, blockHeader);
+      await this.handlers[event.name](event, log);
     }
 
-    return state;
+    return {};
   }
 
   public getAvailablePoolsForPair(
@@ -99,36 +124,27 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     const src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
     const dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
 
-    const state = this.getState(blockNumber);
-
-    if (!state) {
-      logger.info(
-        `${this.name} PoolManager: state was not found blocknumber: ${blockNumber}`,
-      );
-      return [];
-    }
-
-    const poolStates = state._pools.filter(
+    const pools = this.pools.filter(
       pool =>
-        (pool.token0 === src && pool.token1 === dest) ||
-        (pool.token0 === dest && pool.token1 === src),
+        (pool.token0.address === src && pool.token1.address === dest) ||
+        (pool.token0.address === dest && pool.token1.address === src),
     );
 
-    return poolStates.map(state => ({
-      id: state.id,
+    return pools.map(pool => ({
+      id: pool.id,
       key: {
-        currency0: state.token0,
-        currency1: state.token1,
-        fee: state.fee,
-        tickSpacing: state.tickSpacing,
-        hooks: state.hooks,
+        currency0: pool.token0.address,
+        currency1: pool.token1.address,
+        fee: pool.fee,
+        tickSpacing: parseInt(pool.tickSpacing),
+        hooks: pool.hooks,
       },
     }));
   }
 
   private async queryAllAvailablePools(
     blockNumber: number,
-  ): Promise<PoolState[]> {
+  ): Promise<SubgraphPool[]> {
     const cachedPools = await this.dexHelper.cache.getAndCacheLocally(
       this.parentName,
       this.network,
@@ -144,100 +160,92 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     let pools: SubgraphPool[] = [];
     let curPage = 0;
     const limit = 1000;
-    let currentPools: SubgraphPool[] =
+    let currentSubgraphPools: SubgraphPool[] =
       await queryOnePageForAllAvailablePoolsFromSubgraph(
         this.dexHelper,
         this.logger,
         this.parentName,
-        this.subgraphUrl,
+        this.config.subgraphURL,
         blockNumber,
         curPage * limit,
         limit,
       );
-    pools = pools.concat(currentPools);
+    pools = pools.concat(currentSubgraphPools);
 
-    while (currentPools.length === limit) {
+    while (currentSubgraphPools.length === limit) {
       curPage++;
-      currentPools = await queryOnePageForAllAvailablePoolsFromSubgraph(
+      currentSubgraphPools = await queryOnePageForAllAvailablePoolsFromSubgraph(
         this.dexHelper,
         this.logger,
         this.parentName,
-        this.subgraphUrl,
+        this.config.subgraphURL,
         blockNumber,
         curPage * limit,
         limit,
       );
 
-      pools = pools.concat(currentPools);
+      pools = pools.concat(currentSubgraphPools);
     }
-
-    const results = pools
-      .map(pool => ({
-        id: pool.id,
-        token0: pool.token0.address,
-        token1: pool.token1.address,
-        fee: pool.fee,
-        tickSpacing: pool.tickSpacing,
-        hooks: pool.hooks,
-        // tick: parseInt(pool.tick),
-        // ticks: pool.ticks,
-      }))
-      .sort(sortPools);
 
     this.dexHelper.cache.setexAndCacheLocally(
       this.parentName,
       this.network,
       this.poolsCacheKey,
       POOL_CACHE_REFRESH_INTERVAL,
-      JSON.stringify(results),
+      JSON.stringify(pools),
     );
 
-    return results;
-  }
-
-  async generateState(blockNumber: number): Promise<PoolManagerState> {
-    const pools = await this.queryAllAvailablePools(blockNumber);
-
-    return {
-      _pools: pools,
-    };
+    return pools;
   }
 
   async handleInitializeEvent(
     event: LogDescription,
-    state: PoolManagerState,
     log: Log,
   ): Promise<PoolManagerState> {
     const id = event.args.id.toLowerCase();
+    const currency0 = event.args.currency0;
+    const currency1 = event.args.currency1;
+    const fee = event.args.fee;
+    const tickSpacing = parseInt(event.args.tickSpacing);
+    const hooks = event.args.hooks;
+    const sqrtPriceX96 = BigInt(event.args.sqrtPriceX96);
+    const tick = parseInt(event.args.tick);
 
-    const subgraphPool = await querySinglePoolFromSubgraphById(
-      this.dexHelper,
-      this.subgraphUrl,
-      log.blockNumber,
+    this.pools.push({
       id,
+      fee,
+      hooks,
+      token0: {
+        address: currency0.toLowerCase(),
+      },
+      token1: {
+        address: currency1.toLowerCase(),
+      },
+      tick: tick.toString(),
+      tickSpacing: tickSpacing.toString(),
+      ticks: [],
+    });
+
+    const eventPool = new UniswapV4Pool(
+      this.dexHelper,
+      this.parentName,
+      this.network,
+      this.config,
+      this.logger,
+      '',
+      id,
+      currency0.toLowerCase(),
+      currency1.toLowerCase(),
+      fee,
+      hooks,
+      sqrtPriceX96,
+      tick.toString(),
+      tickSpacing.toString(),
     );
+    await eventPool.initialize(log.blockNumber);
 
-    if (subgraphPool) {
-      const newPool = {
-        id: subgraphPool.id,
-        token0: subgraphPool.token0.address,
-        token1: subgraphPool.token1.address,
-        fee: subgraphPool.fee,
-        tickSpacing: subgraphPool.tickSpacing,
-        hooks: subgraphPool.hooks,
-        // tick: parseInt(subgraphPool.tick),
-        // ticks: subgraphPool.ticks,
-      } as PoolState;
+    this.eventPools[id] = eventPool;
 
-      const pools = state._pools;
-      pools.push(newPool);
-
-      state = {
-        ...state,
-        _pools: pools.sort(sortPools),
-      };
-    }
-
-    return state;
+    return {};
   }
 }
