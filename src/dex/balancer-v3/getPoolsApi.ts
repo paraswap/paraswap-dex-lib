@@ -8,34 +8,36 @@ import {
 import { CommonImmutablePoolState, ImmutablePoolStateMap } from './types';
 import { parseUnits } from 'ethers/lib/utils';
 import { HooksConfigMap } from './hooks/balancer-hook-event-subscriber';
-
+import { getUniqueHookNames } from './utils';
+import { GyroECLPImmutableString } from './gyroECLPPool';
 interface PoolToken {
   address: string;
   weight: string | null;
-  isErc4626: boolean;
+  canUseBufferForSwaps: boolean | null;
   underlyingToken: {
     address: string;
   } | null;
 }
 
-interface Pool {
+type Pool = {
   id: string;
   type: string;
   poolTokens: PoolToken[];
   hook: {
     address: string;
   } | null;
-}
+} & GyroECLPImmutableString;
 
 interface QueryResponse {
   data: {
-    poolGetAggregatorPools: Pool[];
+    aggregatorPools: Pool[];
   };
 }
 
 function createQuery(
   networkId: number,
   poolTypes: SUPPORTED_POOLS[],
+  hooks: string,
   timestamp?: number,
 ): string {
   const poolTypesString = poolTypes.map(type => `${type}`).join(', ');
@@ -51,6 +53,7 @@ function createQuery(
     poolTypeIn: `[${poolTypesString}]`,
     ...(timestamp && { createTime: `{lt: ${timestamp}}` }),
     ...(disabledPoolIdsString && { idNotIn: `[${disabledPoolIdsString}]` }),
+    includeHooks: `[${hooks}]`,
   };
 
   // Convert where clause to string, filtering out undefined values
@@ -59,7 +62,7 @@ function createQuery(
     .join(', ');
   return `
     query MyQuery {
-      poolGetAggregatorPools(
+      aggregatorPools(
         where: {${whereString}}
       ) {
         id
@@ -67,7 +70,7 @@ function createQuery(
         poolTokens {
           address
           weight
-          isErc4626
+          canUseBufferForSwaps
           underlyingToken {
             address
           }
@@ -75,6 +78,20 @@ function createQuery(
         hook {
           address
         }
+        alpha
+        beta
+        c
+        s
+        lambda
+        tauAlphaX
+        tauAlphaY
+        tauBetaX
+        tauBetaY
+        u
+        v
+        w
+        z
+        dSq
       }
     }
   `;
@@ -97,22 +114,47 @@ function toImmutablePoolStateMap(
           poolAddress: pool.id,
           tokens: pool.poolTokens.map(t => t.address),
           tokensUnderlying: pool.poolTokens.map(t =>
-            t.underlyingToken ? t.underlyingToken.address : null,
+            t.underlyingToken && t.canUseBufferForSwaps
+              ? t.underlyingToken.address
+              : null,
           ),
-          weights: pool.poolTokens.map(t =>
-            t.weight ? parseUnits(t.weight, 18).toBigInt() : 0n,
-          ),
+          weights: pool.poolTokens.map(t => scaleOrDefault(t.weight, 18, 0n)),
           poolType: pool.type,
           hookAddress: pool.hook ? pool.hook.address.toLowerCase() : undefined,
           hookType: pool.hook
             ? hooksConfigMap[pool.hook.address.toLowerCase()].type
             : undefined,
           supportsUnbalancedLiquidity: true, // can default to true as only required for add/remove maths which we don't use
+          // GyroECLP
+          // Parameters to configure the E-CLP pool, with 18 decimals
+          paramsAlpha: scaleOrDefault(pool.alpha, 18, 0n),
+          paramsBeta: scaleOrDefault(pool.beta, 18, 0n),
+          paramsC: scaleOrDefault(pool.c, 18, 0n),
+          paramsS: scaleOrDefault(pool.s, 18, 0n),
+          paramsLambda: scaleOrDefault(pool.lambda, 18, 0n),
+          // Parameters calculated off-chain based on eclpParams. 38 decimals for higher precision
+          tauAlphaX: scaleOrDefault(pool.tauAlphaX, 38, 0n),
+          tauAlphaY: scaleOrDefault(pool.tauAlphaY, 38, 0n),
+          tauBetaX: scaleOrDefault(pool.tauBetaX, 38, 0n),
+          tauBetaY: scaleOrDefault(pool.tauBetaY, 38, 0n),
+          u: scaleOrDefault(pool.u, 38, 0n),
+          v: scaleOrDefault(pool.v, 38, 0n),
+          w: scaleOrDefault(pool.w, 38, 0n),
+          z: scaleOrDefault(pool.z, 38, 0n),
+          dSq: scaleOrDefault(pool.dSq, 38, 0n),
         };
         map[pool.id] = immutablePoolState;
         return map;
       }, {} as ImmutablePoolStateMap)
   );
+}
+
+function scaleOrDefault(
+  original: string | null,
+  decimals: number,
+  defaultValue: bigint,
+): bigint {
+  return original ? parseUnits(original, decimals).toBigInt() : defaultValue;
 }
 
 // Any data from API will be immutable. Mutable data such as balances, etc will be fetched via onchain/event state.
@@ -125,6 +167,7 @@ export async function getPoolsApi(
     const query = createQuery(
       network,
       Object.values(SUPPORTED_POOLS),
+      getUniqueHookNames(hooksConfigMap),
       timestamp,
     );
     const response = await axios.post<QueryResponse>(
@@ -139,7 +182,7 @@ export async function getPoolsApi(
       },
     );
 
-    const pools = response.data.data.poolGetAggregatorPools;
+    const pools = response.data.data.aggregatorPools;
     return toImmutablePoolStateMap(pools, hooksConfigMap);
   } catch (error) {
     // console.error('Error executing GraphQL query:', error);
