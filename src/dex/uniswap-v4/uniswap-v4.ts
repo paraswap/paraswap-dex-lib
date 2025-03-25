@@ -53,9 +53,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       dexHelper,
       dexKey,
       network,
-      UniswapV4Config[dexKey][network].poolManager,
-      UniswapV4Config[dexKey][network].stateView,
-      UniswapV4Config[dexKey][network].subgraphURL,
+      UniswapV4Config[dexKey][network],
       this.logger,
     );
   }
@@ -119,7 +117,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
           exchange: this.dexKey,
           pool: {
             id: pool.id,
-            key: omit(pool.key, ['tick', 'ticks']),
+            key: pool.key,
           },
           zeroForOne,
         },

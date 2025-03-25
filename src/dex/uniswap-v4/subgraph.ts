@@ -1,41 +1,29 @@
-import { SubgraphPool } from './types';
+import { SubgraphPool, Tick } from './types';
 import { SUBGRAPH_TIMEOUT } from './constants';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from 'log4js';
 
-export async function querySinglePoolFromSubgraphById(
+export async function queryTicksForPool(
   dexHelper: IDexHelper,
   subgraphUrl: string,
   blockNumber: number,
   id: string,
-): Promise<SubgraphPool | null> {
-  const ticksLimit = 200;
+): Promise<Tick[]> {
+  const ticksLimit = 300;
 
   const poolQuery = `query {
       pools(
         block: { number: ${blockNumber} },
         where: {id: "${id}"}
       ) {
-        id
-        fee: feeTier
-        tickSpacing
-        token0 {
-          address: id
+        ticks(first: ${ticksLimit}) {
+          id
+          liquidityGross
+          liquidityNet
+          tickIdx
         }
-        token1 {
-          address: id
-        }
-        hooks
       }
   }`;
-
-  //        tick
-  //        ticks(first: ${ticksLimit}) {
-  //           id
-  //           liquidityGross
-  //           liquidityNet
-  //           tickIdx
-  //         }
 
   const { data } = await dexHelper.httpRequest.querySubgraph<{
     data: {
@@ -50,7 +38,7 @@ export async function querySinglePoolFromSubgraphById(
     { timeout: SUBGRAPH_TIMEOUT },
   );
 
-  return data.pools[0] || null;
+  return data.pools[0]?.ticks || [];
 }
 
 export async function queryOnePageForAllAvailablePoolsFromSubgraph(
@@ -63,7 +51,7 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
   limit: number,
   latestBlock = false,
 ): Promise<SubgraphPool[]> {
-  const ticksLimit = 200;
+  const ticksLimit = 300;
 
   const poolsQuery = `query ($skip: Int!) {
       pools(
@@ -83,18 +71,17 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
           address: id
         }
         hooks
+        tick
+        ticks(first: ${ticksLimit}) {
+          id
+          liquidityGross
+          liquidityNet
+          tickIdx
+        }
       }
     }`;
 
   // console.log('poolsQuery: ', poolsQuery);
-
-  //tick
-  // ticks(first: ${ticksLimit}) {
-  //   id
-  //   liquidityGross
-  //   liquidityNet
-  //   tickIdx
-  // }
 
   const res = await dexHelper.httpRequest.querySubgraph<{
     data: {

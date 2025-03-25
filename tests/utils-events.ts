@@ -44,6 +44,7 @@ export async function testEventSubscriber<SubscriberState>(
   // Get state of the subscriber block before the event was released
   let poolState = getSavedState(blockNumber - 1, cacheKey);
   if (!poolState) {
+    console.log('INITIAL STATE BLOCK NUMBER: ', blockNumber - 1);
     poolState = await fetchState(blockNumber - 1);
     saveState(blockNumber - 1, cacheKey, poolState);
   }
@@ -89,6 +90,7 @@ export async function testEventSubscriber<SubscriberState>(
   // Get the expected state of the subscriber after the event
   let expectedNewPoolState = getSavedState(blockNumber, cacheKey);
   if (!expectedNewPoolState) {
+    console.log('UPDATED STATE BLOCK NUMBER: ', blockNumber);
     expectedNewPoolState = await fetchState(blockNumber);
     saveState(blockNumber, cacheKey, expectedNewPoolState);
   }
