@@ -37,10 +37,16 @@ describe('AaveGsm EventPool Mainnet', function () {
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     [AaveGsmConfig[dexKey][network].GSM_USDT]: {
-      FeeStrategyUpdated: [], // Hasn't been emitted yet
+      FeeStrategyUpdated: [],
       BuyAsset: [],
-      SellAsset: [22065512],
-      ExposureCapUpdated: [], // Hasn't been emitted yet
+      SellAsset: [22065512], // SellAsset, FeeStrategyUpdated,
+      ExposureCapUpdated: [22069460],
+    },
+    [AaveGsmConfig[dexKey][network].GSM_USDC]: {
+      FeeStrategyUpdated: [],
+      BuyAsset: [],
+      SellAsset: [22065512, 22130398], // SellAsset, FeeStrategyUpdated for first
+      ExposureCapUpdated: [22069460],
     },
   };
 
@@ -71,20 +77,20 @@ describe('AaveGsm EventPool Mainnet', function () {
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
-                    (state, expectedState) => {
-                      expect(state.buyFee).toBe(expectedState.buyFee);
-                      expect(state.sellFee).toBe(expectedState.sellFee);
-                      expect(state.exposureCap).toBe(expectedState.exposureCap);
-                      expect(state.isFrozen).toBe(expectedState.isFrozen);
-                      expect(state.isSeized).toBe(expectedState.isSeized);
-                      expect(state.blockNumber).toBe(expectedState.blockNumber);
-                      expect(state.rate.toString()).toBe(
-                        expectedState.rate.toString(),
-                      );
-                      expect(state.underlyingLiquidity).toBe(
-                        expectedState.underlyingLiquidity,
-                      );
-                    },
+                    // (state, expectedState) => {
+                    //   expect(state.buyFee).toBe(expectedState.buyFee);
+                    //   expect(state.sellFee).toBe(expectedState.sellFee);
+                    //   expect(state.exposureCap).toBe(expectedState.exposureCap);
+                    //   expect(state.isFrozen).toBe(expectedState.isFrozen);
+                    //   expect(state.isSeized).toBe(expectedState.isSeized);
+                    //   expect(state.blockNumber).toBe(expectedState.blockNumber);
+                    //   expect(state.rate.toString()).toBe(
+                    //     expectedState.rate.toString(),
+                    //   );
+                    //   expect(state.underlyingLiquidity).toBe(
+                    //     expectedState.underlyingLiquidity,
+                    //   );
+                    // },
                   );
                 });
               });
