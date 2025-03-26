@@ -538,12 +538,15 @@ export class UniswapV2
       return [];
     }
 
-    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
+    return [this.getPoolIdentifier(from.address, to.address)];
+  }
+
+  getPoolIdentifier(srcToken: string, destToken: string) {
+    const tokenAddress = [srcToken, destToken]
       .sort((a, b) => (a > b ? 1 : -1))
       .join('_');
 
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-    return [poolIdentifier];
+    return `${this.dexKey}_${tokenAddress}`.toLowerCase();
   }
 
   async getPricesVolume(
@@ -569,14 +572,7 @@ export class UniswapV2
         return null;
       }
 
-      const tokenAddress = [
-        from.address.toLowerCase(),
-        to.address.toLowerCase(),
-      ]
-        .sort((a, b) => (a > b ? 1 : -1))
-        .join('_');
-
-      const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+      const poolIdentifier = this.getPoolIdentifier(from.address, to.address);
 
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
@@ -731,6 +727,7 @@ export class UniswapV2
     const pools0 = _.map(data.pools0, pool => ({
       exchange: this.dexKey,
       address: pool.id.toLowerCase(),
+      poolIdentifier: this.getPoolIdentifier(pool.token0.id, pool.token1.id),
       connectorTokens: [
         {
           address: pool.token1.id.toLowerCase(),
@@ -743,6 +740,7 @@ export class UniswapV2
     const pools1 = _.map(data.pools1, pool => ({
       exchange: this.dexKey,
       address: pool.id.toLowerCase(),
+      poolIdentifier: this.getPoolIdentifier(pool.token0.id, pool.token1.id),
       connectorTokens: [
         {
           address: pool.token0.id.toLowerCase(),

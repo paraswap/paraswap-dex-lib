@@ -232,6 +232,7 @@ export type PoolPrices<T> = {
 };
 
 export type PoolLiquidity = {
+  poolIdentifier?: string;
   exchange: string;
   address: Address;
   connectorTokens: Token[];
