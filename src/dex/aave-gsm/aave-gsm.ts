@@ -52,6 +52,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     super(dexHelper, dexKey);
     const config = AaveGsmConfig[dexKey][network];
     this.config = {
+      POOL: config.POOL.toLowerCase(),
       GSM_USDT: config.GSM_USDT.toLowerCase(),
       GSM_USDC: config.GSM_USDC.toLowerCase(),
       waEthUSDT: config.waEthUSDT.toLowerCase(),
@@ -65,6 +66,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       [this.config.GSM_USDT]: new AaveGsmEventPool(
         this.config.GSM_USDT,
         this.config.waEthUSDT,
+        this.config.POOL,
         this.dexKey,
         this.network,
         this.dexHelper,
@@ -73,6 +75,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       [this.config.GSM_USDC]: new AaveGsmEventPool(
         this.config.GSM_USDC,
         this.config.waEthUSDC,
+        this.config.POOL,
         this.dexKey,
         this.network,
         this.dexHelper,

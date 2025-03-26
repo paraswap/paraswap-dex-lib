@@ -8,6 +8,7 @@ import { PoolState } from './types';
 import GSM_ABI from '../../abi/aave-gsm/Aave_GSM.json';
 import FEE_STRATEGY_ABI from '../../abi/aave-gsm/IFeeStrategy.json';
 import STATA_ABI from '../../abi/aavev3stata/Token.json';
+import POOL_ABI from '../../abi/aave-gsm/Pool.json';
 import {
   addressDecode,
   booleanDecode,
@@ -32,6 +33,7 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
   constructor(
     readonly gsm: string,
     readonly underlying: string,
+    readonly pool: string,
     readonly parentName: string,
     protected network: number,
     protected dexHelper: IDexHelper,
@@ -39,12 +41,20 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     protected aaveGsmIface = new Interface(GSM_ABI),
     protected aaveStataIface = new Interface(STATA_ABI),
     protected feeStrategyIface = new Interface(FEE_STRATEGY_ABI),
+    protected poolIface = new Interface(POOL_ABI),
     protected PERCENT_FACTOR = 10_000n,
   ) {
     super(parentName, `${parentName}_${gsm}`, dexHelper, logger);
 
-    this.logDecoder = (log: Log) => this.aaveGsmIface.parseLog(log);
-    this.addressesSubscribed = [gsm];
+    this.logDecoder = (log: Log) => {
+      let decodedLog = this.aaveGsmIface.parseLog(log);
+      if (decodedLog == null) {
+        decodedLog = this.poolIface.parseLog(log);
+      }
+
+      return decodedLog;
+    };
+    this.addressesSubscribed = [gsm, pool];
 
     // Add handlers
     this.handlers['FeeStrategyUpdated'] =
@@ -56,6 +66,8 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
       this.handleExposureCapUpdated.bind(this);
     this.handlers['BuyAsset'] = this.handleBuyAsset.bind(this);
     this.handlers['SellAsset'] = this.handleSellAsset.bind(this);
+    this.handlers['ReserveDataUpdated'] =
+      this.handleReserveDataUpdated.bind(this);
   }
 
   getIdentifier(): string {
@@ -127,14 +139,18 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
         ]),
         decodeFunction: uint256ToBigInt,
       },
+      {
+        target: this.underlying,
+        callData: this.aaveStataIface.encodeFunctionData('asset'),
+        decodeFunction: addressDecode,
+      },
     ];
 
     const results = await this.dexHelper.multiWrapper.tryAggregate<
-      bigint | boolean
+      bigint | boolean | string
     >(true, callData, blockNumber);
 
     return {
-      blockNumber: 0,
       buyFee: results[0].returnData as bigint,
       sellFee: results[1].returnData as bigint,
       underlyingLiquidity: results[2].returnData as bigint,
@@ -142,6 +158,7 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
       isSeized: results[4].returnData as boolean,
       exposureCap: results[5].returnData as bigint,
       rate: results[6].returnData as bigint,
+      asset: results[7].returnData as string,
     };
   }
 
@@ -166,13 +183,6 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
       feeStrategy[0].returnData,
       blockNumber,
     );
-
-    if (typeof blockNumber === 'number') {
-      result.blockNumber = blockNumber;
-    } else {
-      const block = await this.dexHelper.provider.getBlock(blockNumber);
-      result.blockNumber = block.number;
-    }
 
     return result;
   }
@@ -225,11 +235,11 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState> | null> {
-    if (state.blockNumber >= log.blockNumber) {
-      return state;
-    }
-
-    return await this.generateState(log.blockNumber);
+    return {
+      ...state,
+      underlyingLiquidity:
+        state.underlyingLiquidity - BigInt(event.args.underlyingAmount),
+    };
   }
 
   async handleSellAsset(
@@ -237,10 +247,25 @@ export class AaveGsmEventPool extends StatefulEventSubscriber<PoolState> {
     state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState> | null> {
-    if (state.blockNumber >= log.blockNumber) {
+    return {
+      ...state,
+      underlyingLiquidity:
+        state.underlyingLiquidity - BigInt(event.args.underlyingAmount),
+    };
+  }
+
+  async handleReserveDataUpdated(
+    event: any,
+    state: DeepReadonly<PoolState>,
+    log: Readonly<Log>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    if (state.asset !== event.args.reserve) {
       return state;
     }
 
-    return await this.generateState(log.blockNumber);
+    return {
+      ...state,
+      rate: BigInt(event.args.liquidityIndex),
+    };
   }
 }
