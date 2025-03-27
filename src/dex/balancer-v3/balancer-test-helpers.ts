@@ -1,4 +1,6 @@
 /* eslint-disable no-console */
+import { Token } from '../../types';
+
 // Note - this is currently needed because queries won't work with multicall but should be updated in future
 export async function checkOnChainPricingNonMulti(
   network: number,
@@ -196,4 +198,54 @@ function getQuerySwapMultiTokenCalldata(
         ),
       };
     });
+}
+
+export function allPricesAreZero(arr: { prices: bigint[] }[]): boolean {
+  // Check if the array is empty first
+  if (arr.length === 0) return false;
+
+  // Iterate through each object in the array
+  for (const obj of arr) {
+    // Check if this object has any non-zero price
+    const hasNonZeroPrice = obj.prices.some(price => price !== 0n);
+
+    // If we found even one non-zero price, return false
+    if (hasNonZeroPrice) {
+      return false;
+    }
+  }
+
+  // If we got here, all prices in all objects are 0n
+  return true;
+}
+
+export async function testPricesVsOnchain(
+  balancerV3: BalancerV3,
+  network: number,
+  amounts: bigint[],
+  srcToken: Token,
+  dstToken: Token,
+  side: SwapSide,
+  blockNumber: number,
+  limitPools: string[],
+) {
+  const prices = await balancerV3.getPricesVolume(
+    srcToken,
+    dstToken,
+    amounts,
+    side,
+    blockNumber,
+    limitPools,
+  );
+  expect(prices).not.toBeNull();
+  expect(prices?.length).toBeGreaterThan(0);
+  expect(allPricesAreZero(prices!)).toBe(false);
+  await checkOnChainPricingNonMulti(
+    network,
+    side,
+    balancerV3,
+    blockNumber,
+    prices as ExchangePrices<BalancerV3Data>,
+    amounts,
+  );
 }

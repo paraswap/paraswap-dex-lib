@@ -1,15 +1,4 @@
-import {
-  SmartTokenParams,
-  balanceOfFn,
-  allowanceFn,
-  SmartToken,
-  balancesFn,
-  allowedFn,
-  _balancesFn,
-  _allowancesFn,
-  balanceAndBlacklistStatesFn,
-} from '../tests/smart-tokens';
-import { Address } from '../src/types';
+import { Address, Token } from '../src/types';
 import { ETHER_ADDRESS, Network } from '../src/constants';
 
 export const GIFTER_ADDRESS = '0xb22fC4eC94D555A5049593ca4552c810Fb8a6d00';
@@ -17,7 +6,7 @@ export const GENERIC_ADDR1 = '0xbe9317f6711e2da074fe1f168fd9c402bc0a9d1b';
 export const GENERIC_ADDR2 = '0x230a1ac45690b9ae1176389434610b9526d2f21b';
 
 export const Tokens: {
-  [network: number]: { [symbol: string]: SmartTokenParams };
+  [network: number]: { [symbol: string]: Token };
 } = {
   [Network.MAINNET]: {
     sUSDS: {
@@ -88,6 +77,10 @@ export const Tokens: {
       address: '0x4c9edd5852cd905f086c759e8383e09bff1e68b3',
       decimals: 18,
     },
+    EKUBO: {
+      address: '0x04C46E830Bb56ce22735d5d8Fc9CB90309317d0f',
+      decimals: 18,
+    },
     ETH: {
       address: ETHER_ADDRESS,
       decimals: 18,
@@ -128,8 +121,6 @@ export const Tokens: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
       symbol: 'USDC',
-      addBalance: balanceAndBlacklistStatesFn,
-      addAllowance: allowedFn,
     },
     INST: {
       address: '0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb',
@@ -162,8 +153,6 @@ export const Tokens: {
     WBTC: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
       decimals: 8,
-      addBalance: balancesFn,
-      addAllowance: allowedFn,
     },
     sBTC: {
       address: '0xfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6',
@@ -180,8 +169,6 @@ export const Tokens: {
     USDT: {
       address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimals: 6,
-      addBalance: balancesFn,
-      addAllowance: allowedFn,
     },
     STETH: {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -210,8 +197,6 @@ export const Tokens: {
     WETH: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     PSP: {
       address: '0xcafe001067cdef266afb7eb5a286dcfd277f3de5',
@@ -228,8 +213,6 @@ export const Tokens: {
     DAI: {
       address: '0x6b175474e89094c44da98b954eedeac495271d0f',
       decimals: 18,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     MLN: {
       address: '0xec67005c4e498ec7f55e092bd1d35cbc47c91892',
@@ -613,8 +596,6 @@ export const Tokens: {
     USDCe: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
       decimals: 6,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
     },
     MLN: {
       address: '0xa9f37d84c856fda3812ad0519dad44fa0a3fe207',
@@ -673,8 +654,6 @@ export const Tokens: {
     WMATIC: {
       address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
       decimals: 18,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     AMWMATIC: {
       address: '0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4',
@@ -1056,8 +1035,6 @@ export const Tokens: {
     USDT: {
       address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
       decimals: 6,
-      addAllowance: _allowancesFn,
-      addBalance: balanceOfFn,
     },
     POPS: {
       address: '0x240248628B7B6850352764C5dFa50D1592A033A8',
@@ -1066,8 +1043,6 @@ export const Tokens: {
     WAVAX: {
       address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
       decimals: 18,
-      addAllowance: allowanceFn,
-      addBalance: balanceOfFn,
     },
     sAVAX: {
       address: '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE',
@@ -1202,6 +1177,14 @@ export const Tokens: {
       address: '0x6ab707aca953edaefbc4fd23ba73294241490620',
       decimals: 6,
     },
+    ARENA: {
+      address: '0xB8d7710f7d8349A506b75dD184F05777c82dAd0C',
+      decimals: 18,
+    },
+    TRYB: {
+      address: '0x564a341df6c126f90cf3ecb92120fd7190acb401',
+      decimals: 6,
+    },
   },
   [Network.ARBITRUM]: {
     SEN: {
@@ -1223,8 +1206,6 @@ export const Tokens: {
     WETH: {
       address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
       decimals: 18,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
     },
     waArbWETH: {
       address: '0x4ce13a79f45c1be00bdabd38b764ac28c082704e',
@@ -1239,8 +1220,6 @@ export const Tokens: {
       address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       decimals: 6,
       symbol: 'USDC',
-      addBalance: balanceAndBlacklistStatesFn,
-      addAllowance: allowedFn,
     },
     SUSHI: {
       address: '0xd4d42F0b6DEF4CE0383636770eF773390d85c61A',
@@ -1261,8 +1240,6 @@ export const Tokens: {
     USDT: {
       address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
       decimals: 6,
-      addBalance: _balancesFn,
-      addAllowance: _allowancesFn,
     },
     waArbUSDT: {
       address: '0xa6D12574eFB239FC1D2099732bd8b5dC6306897F',
@@ -1390,6 +1367,18 @@ export const Tokens: {
       address: '0xe98fc055c99decd8da0c111b090885d5d15c774e',
       decimals: 18,
     },
+    eBTC: {
+      address: '0x657e8c867d8b37dcc18fa4caead9c45eb088c642',
+      decimals: 8,
+    },
+    USDS: {
+      address: '0x6491c05A82219b8D1479057361ff1654749b876b',
+      decimals: 18,
+    },
+    sUSDS: {
+      address: '0xdDb46999F8891663a8F2828d25298f70416d7610',
+      decimals: 18,
+    },
   },
   [Network.OPTIMISM]: {
     DAI: {
@@ -1399,8 +1388,6 @@ export const Tokens: {
     WETH: {
       address: '0x4200000000000000000000000000000000000006',
       decimals: 18,
-      addBalance: balanceOfFn,
-      addAllowance: allowanceFn,
     },
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
     USDCe: {
@@ -1743,6 +1730,10 @@ export const Tokens: {
       address: '0x5875eee11cf8398102fdad704c9e96607675467a',
       decimals: 18,
     },
+    USDS: {
+      address: '0x820C137fa70C8691f0e44Dc420a5e53c168921Dc',
+      decimals: 18,
+    },
     smUSDC: {
       address: '0x616a4e1db48e22028f6bbf20444cd3b8e3273738',
       decimals: 18,
@@ -1782,6 +1773,10 @@ export const Tokens: {
       address: `0x978206fae13faf5a8d293fb614326b237684b750`,
       decimals: 6,
     },
+    DAI: {
+      address: `0xB77EB1A70A96fDAAeB31DB1b42F2b8b5846b2613`,
+      decimals: 18,
+    },
   },
 };
 
@@ -1790,8 +1785,8 @@ export const Holders: {
 } = {
   [Network.MAINNET]: {
     FLUID: '0x2d675D4C52a8aE117b935fF98c6F9f29A15827F0',
-    USDS: '0xB1796E8f1eEcF23027c1E3C00fE303629A189d10',
-    sUSDS: '0xd564B3aE673CAa49D054Bf185bD72a6853763eE7',
+    USDS: '0x67A9e0F4Cc10C3F6cb55503e0888129039Ea7C90',
+    sUSDS: '0x0955F0D3729E035B9f5b808fEcd602B2891A32fc',
     SKY: '0x0ddda327A6614130CCb20bc0097313A282176A01',
     MKR: '0xe9aAA7A9DDc0877626C1779AbC29993aD89A6c1f',
     // Idle tokens
@@ -1908,6 +1903,7 @@ export const Holders: {
     USDL: '0xAb96AA0ee764924f49fbB372f3B4db9c2cB24Ea2',
     wUSDL: '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb',
     UsualM: '0xE3f7A0c4a44b740328157A5152A85c3bCB54DA09',
+    EKUBO: '0xF5b6Ee2CAEb6769659f6C091D209DfdCaF3F69Eb',
   },
   [Network.POLYGON]: {
     jGBP: '0x02aa0B826c7BA6386DdBE04C0a8715A1c0A16B24',
@@ -2048,6 +2044,8 @@ export const Holders: {
     PHAR: '0x654296D56532f62B7d91d335791d3c364a9385b5',
     stataUSDT: '', // no holders yet
     aaveUSDT: '0xB2d3ad6e99D2A043EF77e3812461Ad2D4Ae3da8B',
+    ARENA: '0xEBf747761b6942adaBAA58A594BA24931AfA0a3F',
+    TRYB: '0x7137FdccfB6Ee406771E8F5c1B466e4d3074dd45',
   },
   [Network.ARBITRUM]: {
     SEN: '0x76d39045d856caf9bfae12ba611ca4a94449a4f1',
@@ -2093,6 +2091,8 @@ export const Holders: {
     USDM: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     wUSDM: '0x12c9cE6b155c8aaC74004732A621B64bC669bb79',
     waArbWETH: '0x854B004700885A61107B458f11eCC169A019b764',
+    USDS: '0x2f47a6D6115AF4fC1935f5C9079C8aCBA92E5aB4',
+    sUSDS: '0x999F26D47B916340E62A6bb924708A5007eb80Cb',
   },
   [Network.OPTIMISM]: {
     ETH: '0xF6D4E5a7c5215F91f59a95065190CCa24bf64554',
@@ -2162,7 +2162,7 @@ export const Holders: {
     ETH: '0xd34ea7278e6bd48defe656bbe263aef11101469c',
     MAV: '0xf977814e90da44bfa03b6295a0616a897441acec',
     USDC: '0x21bD501F86A0B5cE0907651Df3368DA905B300A9',
-    USDbC: '0x4bb6b2efe7036020ba6f02a05602546c9f25bf28',
+    USDbC: '0x989BA24cb7938C1672B1e9Cea873cf4d7629a5FE',
     DAI: '0x20f03e26968b179025f65c1f4afadfd3959c8d03',
     BAL: '0x854b004700885a61107b458f11ecc169a019b764',
     GOLD: '0x1374c25b3710758c326ee0c70ec48b595d5ccf8c',
@@ -2186,9 +2186,10 @@ export const Holders: {
     waBasWETH: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
     wstETH: '0x96892b8FBd24e0aC40BD98A304095a6c485A6A68',
     waBaswstETH: '0x854B004700885A61107B458f11eCC169A019b764',
-    sUSDS: '0xC9716E991396AA933Fa7A481003a5953bcBabC17',
     smUSDC: '0x88457F47c9BEC8379eB90d8dC3592F79084e555d',
     waBasGHO: '0x450C01300B83bE379113256038b4Dd3b45d23B5e',
+    USDS: '0x87549A7DF7a002f756118EB19b59C2317E227017',
+    sUSDS: '0xC9716E991396AA933Fa7A481003a5953bcBabC17',
   },
   [Network.SEPOLIA]: {
     bal: '0xDb4ff41B4C1222c2b1869A67Be115070688989a2',
@@ -2198,22 +2199,9 @@ export const Holders: {
     stataUSDC: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
     stataUSDT: '0x75D06bae37a9c349142fE7cee77804900b1C0EC3',
     usdcAave: '0xdD5De55eA6804EFb283f43b0C091C25000a6486c',
+    DAI: '0x90347b9CC81a4a28aAc74E8B134040d5ce2eaB6D',
   },
 };
-
-export const SmartTokens = Object.keys(Tokens).reduce((acc, _network) => {
-  const network = parseInt(_network, 10);
-  acc[+network] = Object.keys(Tokens[network]).reduce((_acc, tokenName) => {
-    const token: SmartTokenParams = Tokens[network][tokenName]!;
-
-    if (token.addAllowance && token.addBalance) {
-      _acc[tokenName] = new SmartToken(token);
-    }
-
-    return _acc;
-  }, {} as Record<string, SmartToken>);
-  return acc;
-}, {} as Record<number, Record<string, SmartToken>>);
 
 export const NativeTokenSymbols: { [network: number]: string } = {
   [Network.MAINNET]: 'ETH',

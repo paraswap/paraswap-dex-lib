@@ -348,10 +348,10 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/balancer-maths@^0.0.19":
-  version "0.0.19"
-  resolved "https://registry.yarnpkg.com/@balancer-labs/balancer-maths/-/balancer-maths-0.0.19.tgz#d3b92c4b17caca67894806bd7768af1ea31cb956"
-  integrity sha512-x8t17q8fbXYZJSaidr4BWBg3O9jVnF6xoAsoMWWyUd6AnaxPyFnxAGs76+iQln4WEmC7S5G5uufWJ0OefvcqXQ==
+"@balancer-labs/balancer-maths@^0.0.26":
+  version "0.0.26"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/balancer-maths/-/balancer-maths-0.0.26.tgz#84b96bc352f4ee10cb51febbcb5600a2a27f1ba5"
+  integrity sha512-1a2z7H0brzD3YW2yIqd4YiDY0p8L6P3TNSSizVqfM7Dgh/r2Ya+5xHvsavECh8u509+ZySInh/0ymausIidKxw==
 
 "@balancer-labs/sor@4.1.3":
   version "4.1.3"
@@ -806,17 +806,17 @@
   dependencies:
     "@hapi/hoek" "^9.0.0"
 
-"@hashflow/contracts-evm@2.0.12":
-  version "2.0.12"
-  resolved "https://registry.yarnpkg.com/@hashflow/contracts-evm/-/contracts-evm-2.0.12.tgz#4508e05c237462472157952324227ecd3b34436a"
-  integrity sha512-2RenxU/8vROyWzF0ooVuGa1Rk3Ko2M/cTpcbDNsBuHDamBGnZh9rIzWE2mwPoHaFU/t/yjIWDL8OxcySblE5Dw==
-  dependencies:
-    "@openzeppelin/contracts" "4.9.2"
-
 "@hashflow/contracts-evm@2.0.15":
   version "2.0.15"
   resolved "https://registry.yarnpkg.com/@hashflow/contracts-evm/-/contracts-evm-2.0.15.tgz#7100a24330b2fc0656a2ac6a96c008845fe66398"
   integrity sha512-HIsjLo7U767FEPUAWJKbsaFco22X1BUHLlph52rohVS7Y6kIWOWRBc653Sw9UcZibirgxCPbWOvX5CsPXNOuPA==
+  dependencies:
+    "@openzeppelin/contracts" "4.9.2"
+
+"@hashflow/contracts-evm@2.0.17":
+  version "2.0.17"
+  resolved "https://registry.yarnpkg.com/@hashflow/contracts-evm/-/contracts-evm-2.0.17.tgz#cb6a88b80d3e64b9519b6fa1cdc47f529283b14c"
+  integrity sha512-91Rz3ZxCjDfYeYhBP4qftUTG23Y4q9DK5klzSAPugYErXBS5c/QYOvVyWL+a85kDAzEaaDYaAmQj+MiJeGQEmw==
   dependencies:
     "@openzeppelin/contracts" "4.9.2"
 
@@ -834,10 +834,26 @@
   dependencies:
     "@openzeppelin/contracts" "^4.7.3"
 
+"@hashflow/governance@1.0.6":
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/@hashflow/governance/-/governance-1.0.6.tgz#eb77580ba983830a4c0cd0f5dd01d11714b497ba"
+  integrity sha512-9ofK75saozWv5R78pCcHXHZPyBf9VSkmls4ciO7W5IPH4GTpJpQbyzat3pMcKCVUrIGEPMjc/k472KehGZONqQ==
+  dependencies:
+    "@openzeppelin/contracts" "^4.7.3"
+
 "@hashflow/hashverse-contracts-evm@1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@hashflow/hashverse-contracts-evm/-/hashverse-contracts-evm-1.0.0.tgz#2689a2dfc576a88a70f244a839f1d76bcf198520"
   integrity sha512-ZFSdSFF9XvfWCCkJGzimYJFsXFhD0uyz5nOCnjSk7dX3o3lncUvTWTWa3XZfzcp6WfPmIoEmOY4OIf8+xOA/AA==
+  dependencies:
+    "@hashflow/contracts-evm" "2.0.8"
+    "@openzeppelin/contracts" "4.9.2"
+    "@openzeppelin/contracts-upgradeable" "4.9.2"
+
+"@hashflow/hashverse-contracts-evm@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@hashflow/hashverse-contracts-evm/-/hashverse-contracts-evm-1.1.0.tgz#d23e85eeae0411af97402d8581745f3d08a30884"
+  integrity sha512-ue2q9xQCpS7s0FgAiYVVL0W7YlJAI8X8WfrpzLUPGjaMyR7eNzqNdDbSn0lkOxfA2oa1hbkIkxl22ac7NMcAVA==
   dependencies:
     "@hashflow/contracts-evm" "2.0.8"
     "@openzeppelin/contracts" "4.9.2"
@@ -856,17 +872,6 @@
     "@openzeppelin/contracts" "^4.7.3"
     "@openzeppelin/contracts-upgradeable" "^4.7.3"
 
-"@hashflow/sdk@^2.2.0":
-  version "2.2.3"
-  resolved "https://registry.yarnpkg.com/@hashflow/sdk/-/sdk-2.2.3.tgz#05c7f50334b8821b154a33951fbb4a44a78734f3"
-  integrity sha512-y7mfP7B7EP8Yyggd0N3PxNDlMnIW9uxVjbEmjKUknAAOYiRdFjS9RH6OFxrXiTeRwcC6svPnbUQHYKKbouRXog==
-  dependencies:
-    "@hashflow/contracts-evm" "2.0.12"
-    "@hashflow/governance" "1.0.4"
-    "@hashflow/hashverse-contracts" "1.3.1"
-    "@hashflow/hashverse-contracts-evm" "1.0.0"
-    "@hashflow/protocol" "1.0.3"
-
 "@hashflow/sdk@^2.2.7":
   version "2.2.7"
   resolved "https://registry.yarnpkg.com/@hashflow/sdk/-/sdk-2.2.7.tgz#2971da70a2f5a5fce3637d320152f26936786d0a"
@@ -878,12 +883,23 @@
     "@hashflow/hashverse-contracts-evm" "1.0.0"
     "@hashflow/protocol" "1.0.3"
 
-"@hashflow/taker-js@^0.3.7":
-  version "0.3.7"
-  resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.3.7.tgz#43c2dc12bc403821c3d3102b2873c599d9a9505a"
-  integrity sha512-9LLW4uySwCT4SrtpbMPWtbHi9RLrBU7SwnwV2Ak9XlMXe34xJy9CBqu8fHI5PPNkktsLshpFxF5Vw7MrQ0UQPw==
+"@hashflow/sdk@^2.3.4":
+  version "2.3.4"
+  resolved "https://registry.yarnpkg.com/@hashflow/sdk/-/sdk-2.3.4.tgz#b6686b4cc00f97830362149a1ba341f60ff6aea1"
+  integrity sha512-yCfyvrTop3pj8qH6DzJPJU7x+RDinWY2022Id2Azigeh2Y4jz91kPDWvcc9AWyabUnkUJC5CYgU5zzP+ASFJ9A==
   dependencies:
-    "@hashflow/sdk" "^2.2.0"
+    "@hashflow/contracts-evm" "2.0.17"
+    "@hashflow/governance" "1.0.6"
+    "@hashflow/hashverse-contracts" "1.3.1"
+    "@hashflow/hashverse-contracts-evm" "1.1.0"
+    "@hashflow/protocol" "1.0.3"
+
+"@hashflow/taker-js@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.4.1.tgz#ead065ab6d4b400210c7e9c2bdfd3fb336d6a2f3"
+  integrity sha512-X1eK5um02y4xNczuRSpFR2jUZPSeJ2jeuRqDr1kx7gMcvFQzo/vr0JfKgLRt1aIJO+wwoiL7CS32gCJuY5VfHQ==
+  dependencies:
+    "@hashflow/sdk" "^2.3.4"
     "@solana/web3.js" "^1.87.5"
     axios "^0.27.2"
     ethers "^6.7.0"
