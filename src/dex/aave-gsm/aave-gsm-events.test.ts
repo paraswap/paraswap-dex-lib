@@ -38,8 +38,8 @@ describe('AaveGsm EventPool Mainnet', function () {
   const eventsToTest: Record<Address, EventMappings> = {
     [AaveGsmConfig[dexKey][network].GSM_USDT]: {
       FeeStrategyUpdated: [], // Hasn't been emitted yet
-      BuyAsset: [20634073],
-      SellAsset: [20641217, 20641520, 20641913],
+      BuyAsset: [],
+      SellAsset: [22065512],
       ExposureCapUpdated: [], // Hasn't been emitted yet
     },
   };
@@ -47,6 +47,8 @@ describe('AaveGsm EventPool Mainnet', function () {
   beforeEach(async () => {
     aaveGsmPool = new AaveGsmEventPool(
       AaveGsmConfig[dexKey][network].GSM_USDT,
+      AaveGsmConfig[dexKey][network].waEthUSDT,
+      AaveGsmConfig[dexKey][network].POOL,
       dexKey,
       network,
       dexHelper,
@@ -62,7 +64,7 @@ describe('AaveGsm EventPool Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
-                  await testEventSubscriber(
+                  await testEventSubscriber<PoolState>(
                     aaveGsmPool,
                     aaveGsmPool.addressesSubscribed,
                     (_blockNumber: number) =>
@@ -70,6 +72,23 @@ describe('AaveGsm EventPool Mainnet', function () {
                     blockNumber,
                     `${dexKey}_${poolAddress}`,
                     dexHelper.provider,
+                    (state, expectedState) => {
+                      console.log(state, expectedState);
+                      expect(state.buyFee).toBe(expectedState.buyFee);
+                      expect(state.sellFee).toBe(expectedState.sellFee);
+                      expect(state.exposureCap.toString()).toBe(
+                        expectedState.exposureCap.toString(),
+                      );
+                      expect(state.isFrozen).toBe(expectedState.isFrozen);
+                      expect(state.isSeized).toBe(expectedState.isSeized);
+                      expect(state.rate.toString()).toBe(
+                        expectedState.rate.toString(),
+                      );
+                      expect(state.underlyingLiquidity).toBe(
+                        expectedState.underlyingLiquidity,
+                      );
+                      expect(state.asset).toBe(expectedState.asset);
+                    },
                   );
                 });
               });
