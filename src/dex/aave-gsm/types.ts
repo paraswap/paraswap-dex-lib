@@ -1,7 +1,6 @@
 import { Address } from '../../types';
 
 export type PoolState = {
-  blockNumber: number;
   buyFee: bigint;
   sellFee: bigint;
   underlyingLiquidity: bigint;
@@ -9,6 +8,7 @@ export type PoolState = {
   isSeized: boolean;
   exposureCap: bigint;
   rate: bigint;
+  asset: string;
 };
 
 export type AaveGsmData = {
@@ -18,6 +18,7 @@ export type AaveGsmData = {
 };
 
 export type DexParams = {
+  POOL: string;
   GSM_USDT: string;
   GSM_USDC: string;
   waEthUSDT: string;
