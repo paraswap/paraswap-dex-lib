@@ -7,6 +7,8 @@ export type PoolState = {
   isFrozen: boolean;
   isSeized: boolean;
   exposureCap: bigint;
+  rate: bigint;
+  asset: string;
 };
 
 export type AaveGsmData = {
@@ -16,9 +18,10 @@ export type AaveGsmData = {
 };
 
 export type DexParams = {
+  POOL: string;
   GSM_USDT: string;
   GSM_USDC: string;
-  USDT: string;
-  USDC: string;
+  waEthUSDT: string;
+  waEthUSDC: string;
   GHO: string;
 };

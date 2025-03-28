@@ -93,8 +93,7 @@ export const PancakeswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0x6ce8eb472fa82df5469c6ab6d485f17c3ad13c8cd7af59b3d4a8026c5ce0f7e2`,
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/67101/swapbased-pcsv3-core/version/latest',
+      subgraphURL: 'Bj8g9Kso3a2fkhp8S3vBkHYq7FVPV1hVboThRtgdPwRF',
     },
   },
 };
