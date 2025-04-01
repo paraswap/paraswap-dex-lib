@@ -384,6 +384,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const amount1 = bigIntify(event.args.amount1);
     const newTick = bigIntify(event.args.tick);
     const newLiquidity = bigIntify(event.args.liquidity);
+
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     if (amount0 <= 0n && amount1 <= 0n) {

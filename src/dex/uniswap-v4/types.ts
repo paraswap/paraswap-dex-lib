@@ -38,13 +38,12 @@ export type PoolState = {
   hooks: string;
   feeGrowthGlobal0X128: bigint;
   feeGrowthGlobal1X128: bigint;
-  liquidity?: bigint;
+  liquidity: bigint;
   slot0: Slot0;
-  tick: number;
   tickSpacing: number;
   ticks: Record<NumberAsString, TickInfo>;
   positions: Record<string, PositionState>;
-  tickBitmap?: Record<NumberAsString, bigint>;
+  tickBitmap: Record<NumberAsString, bigint>;
 };
 
 export type FeeGrowthGlobals = {

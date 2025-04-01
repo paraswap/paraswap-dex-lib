@@ -95,9 +95,9 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
         token1: this.token1.toLowerCase(),
         fee: this.fee,
         hooks: this.hooks,
-        tick: parseInt(this.tick),
         tickSpacing: parseInt(this.tickSpacing),
         ticks: {},
+        tickBitmap: {},
         positions: {},
         feeGrowthGlobal0X128: 0n,
         feeGrowthGlobal1X128: 0n,
@@ -352,7 +352,6 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
             ? this.sqrtPriceX96
             : slot0Result.sqrtPriceX96,
       },
-      tick: parseInt(this.tick),
       tickSpacing: parseInt(this.tickSpacing),
       ticks: ticksResults,
       tickBitmap: tickBitMapResults,
@@ -419,20 +418,55 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     return null;
   }
 
-  handleProtocolFeeUpdatedEvent(event: any, state: PoolState) {
-    this.logger.info(`handle FeeUpdated event`);
-    return state;
+  handleProtocolFeeUpdatedEvent(event: any, poolState: PoolState) {
+    const protocolFee = event.args.protocolFee;
+
+    uniswapV4PoolMath.checkPoolInitialized(poolState);
+    uniswapV4PoolMath.setProtocolFee(poolState, protocolFee);
+
+    return poolState;
   }
 
-  handleDonateEvent(event: any, state: PoolState) {
-    this.logger.info(`handle Donate event`);
-    return state;
+  handleDonateEvent(event: any, poolState: PoolState) {
+    const amount0 = BigInt(event.args.amount0);
+    const amount1 = BigInt(event.args.amount1);
+
+    uniswapV4PoolMath.checkPoolInitialized(poolState);
+    uniswapV4PoolMath.donate(poolState, amount0, amount1);
+
+    return poolState;
   }
 
-  handleSwapEvent(event: any, state: PoolState) {
-    this.logger.info(`handle Swap event`);
+  handleSwapEvent(event: any, poolState: PoolState) {
+    const amount0 = BigInt(event.args.amount0);
+    const amount1 = BigInt(event.args.amount1);
 
-    return state;
+    const resultSqrtPriceX96 = BigInt(event.args.sqrtPriceX96);
+    const resultLiquidity = BigInt(event.args.liquidity);
+    const resultTick = BigInt(event.args.tick);
+    const resultSwapFee = BigInt(event.args.fee);
+
+    const zeroForOne = amount0 < 0n;
+
+    // console.log('HANDLE SWAP EVENT ARGS: ', event.args);
+    //
+    // console.log('amount0: ', amount0);
+    // console.log('amount1: ', amount1);
+    //
+    // console.log('zeroForOne: ', zeroForOne);
+
+    uniswapV4PoolMath.checkPoolInitialized(poolState);
+
+    uniswapV4PoolMath.swapFromEvent(
+      poolState,
+      zeroForOne,
+      resultSqrtPriceX96,
+      resultTick,
+      resultLiquidity,
+      resultSwapFee,
+    );
+
+    return poolState;
   }
 
   async handleModifyLiquidityEvent(event: any, poolState: PoolState, log: Log) {

@@ -35,6 +35,24 @@ export class Tick {
     };
   }
 
+  static cross(
+    poolState: PoolState,
+    tick: bigint,
+    feeGrowthGlobal0X128: bigint,
+    feeGrowthGlobal1X128: bigint,
+  ): bigint {
+    const info = poolState.ticks[Number(tick)];
+
+    _require(Boolean(info), 'Tick not initialized');
+
+    info.feeGrowthOutside0X128 =
+      feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
+    info.feeGrowthOutside1X128 =
+      feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
+
+    return info.liquidityNet;
+  }
+
   static update(
     poolState: PoolState,
     tick: bigint,
