@@ -21,7 +21,12 @@ describe('Kelp Gas Estimation', () => {
     const testAmount = 1000000000000000000n;
 
     srcTokens.forEach(srcToken => {
-      it('depositAsset', async () => {
+      const testName =
+        srcToken.symbol === 'ETH' || srcToken.symbol === 'WETH'
+          ? 'depositETH'
+          : 'depositAsset';
+
+      it(`${testName}`, async () => {
         await testGasEstimation(
           network,
           srcToken,
