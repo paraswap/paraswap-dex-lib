@@ -288,7 +288,7 @@ class UniswapV4PoolMath {
     // console.log('newSqrtPriceX96: ', newSqrtPriceX96);
     // console.log('newLiquidity: ', newLiquidity);
 
-    let amountSpecifiedRemaining = 5831943825102912n;
+    let amountSpecifiedRemaining = BI_MAX_INT;
 
     const lpFee = slot0Start.lpFee;
     const swapFee =

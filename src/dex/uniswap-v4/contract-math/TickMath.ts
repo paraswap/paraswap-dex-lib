@@ -76,11 +76,11 @@ export class TickMath {
 
   static getTickAtSqrtPrice(sqrtPriceX96: bigint): bigint {
     _require(
-      sqrtPriceX96 - TickMath.MIN_SQRT_PRICE >
+      sqrtPriceX96 - TickMath.MIN_SQRT_PRICE <=
         TickMath.MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE,
       'R',
       { sqrtPriceX96 },
-      'InvalidSqrtPrice: sqrtPriceX96 - TickMath.MIN_SQRT_PRICE >\n' +
+      'InvalidSqrtPrice: sqrtPriceX96 - TickMath.MIN_SQRT_PRICE <=\n' +
         '        TickMath.MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE',
     );
 
