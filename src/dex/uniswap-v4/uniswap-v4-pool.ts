@@ -448,13 +448,6 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
 
     const zeroForOne = amount0 < 0n;
 
-    // console.log('HANDLE SWAP EVENT ARGS: ', event.args);
-    //
-    // console.log('amount0: ', amount0);
-    // console.log('amount1: ', amount1);
-    //
-    // console.log('zeroForOne: ', zeroForOne);
-
     uniswapV4PoolMath.checkPoolInitialized(poolState);
 
     uniswapV4PoolMath.swapFromEvent(
@@ -464,6 +457,8 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
       resultTick,
       resultLiquidity,
       resultSwapFee,
+      amount0,
+      amount1,
     );
 
     return poolState;

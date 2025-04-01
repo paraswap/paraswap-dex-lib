@@ -274,21 +274,18 @@ class UniswapV4PoolMath {
     newTick: bigint,
     newLiquidity: bigint,
     newSwapFee: bigint,
+    amount0: bigint,
+    amount1: bigint,
   ) {
     const slot0Start = poolState.slot0;
-    // let result = {};
 
     const protocolFee = zeroForOne
       ? ProtocolFeeLibrary.getZeroForOneFee(slot0Start.protocolFee)
       : ProtocolFeeLibrary.getOneForZeroFee(slot0Start.protocolFee);
 
-    // console.log('CUR POOL STATE Slot0 TICK: ', poolState.slot0.tick);
-    // console.log('NEW TICK: ', newTick);
-    //
-    // console.log('newSqrtPriceX96: ', newSqrtPriceX96);
-    // console.log('newLiquidity: ', newLiquidity);
-
-    let amountSpecifiedRemaining = BI_MAX_INT;
+    const amountSpecified = zeroForOne ? amount0 : amount1;
+    let amountSpecifiedRemaining = amountSpecified;
+    let amountCalculated = 0n;
 
     const lpFee = slot0Start.lpFee;
     const swapFee =
@@ -301,11 +298,13 @@ class UniswapV4PoolMath {
       ? poolState.feeGrowthGlobal0X128
       : poolState.feeGrowthGlobal1X128;
 
+    let counter = 0;
+    const MAX_CYCLES = 100;
     while (
-      BigInt(poolState.slot0.tick) !== newTick &&
-      poolState.slot0.sqrtPriceX96 !== newSqrtPriceX96
+      (BigInt(poolState.slot0.tick) !== newTick ||
+        poolState.slot0.sqrtPriceX96 !== newSqrtPriceX96) &&
+      counter < MAX_CYCLES
     ) {
-      // console.log('CUR TICK: ', poolState.slot0.tick);
       step.sqrtPriceStartX96 = poolState.slot0.sqrtPriceX96;
 
       const [next, initialized] = TickBitmap.nextInitializedTickWithinOneWord(
@@ -314,9 +313,6 @@ class UniswapV4PoolMath {
         BigInt(poolState.tickSpacing),
         zeroForOne,
       );
-
-      // console.log('NEXT TICK: ', next);
-      // console.log('initialized: ', initialized);
 
       step.tickNext = next;
       step.initialized = initialized;
@@ -329,9 +325,7 @@ class UniswapV4PoolMath {
         step.tickNext = TickMath.MAX_TICK;
       }
 
-      const sqrt = TickMath.getSqrtPriceAtTick(step.tickNext);
-      // console.log('sqrtPriceNextX96: ', sqrt);
-      step.sqrtPriceNextX96 = sqrt;
+      step.sqrtPriceNextX96 = TickMath.getSqrtPriceAtTick(step.tickNext);
 
       const {
         sqrtPriceNextX96: resultSqrtPriceNextX96,
@@ -350,21 +344,19 @@ class UniswapV4PoolMath {
         BigInt(swapFee),
       );
 
-      // console.log('resultSqrtPriceNextX96: ', resultSqrtPriceNextX96);
-
       poolState.slot0.sqrtPriceX96 = resultSqrtPriceNextX96;
 
       step.amountIn = stepAmountIn;
       step.amountOut = stepAmountOut;
       step.feeAmount = stepFeeAmount;
-      //
-      // if (params.amountSpecified > 0n) {
-      //   amountSpecifiedRemaining -= step.amountOut;
-      //   // amountCalculated -= step.amountIn + step.feeAmount;
-      // } else {
-      //   amountSpecifiedRemaining += step.amountIn + step.feeAmount;
-      //   // amountCalculated += step.amountOut;
-      // }
+
+      if (amountSpecified > 0n) {
+        amountSpecifiedRemaining -= step.amountOut;
+        amountCalculated -= step.amountIn + step.feeAmount;
+      } else {
+        amountSpecifiedRemaining += step.amountIn + step.feeAmount;
+        amountCalculated += step.amountOut;
+      }
 
       if (protocolFee > 0) {
         const delta =
@@ -375,11 +367,11 @@ class UniswapV4PoolMath {
         step.feeAmount -= delta;
       }
 
-      if (poolState.liquidity > 0) {
+      if (poolState.liquidity > 0n) {
         step.feeGrowthGlobalX128 += UnsafeMath.simpleMulDiv(
           step.feeAmount,
           FixedPoint128.Q128,
-          newLiquidity,
+          poolState.liquidity,
         );
       }
 
@@ -414,6 +406,8 @@ class UniswapV4PoolMath {
           TickMath.getTickAtSqrtPrice(poolState.slot0.sqrtPriceX96),
         );
       }
+
+      counter++;
     }
 
     poolState.slot0.tick = Number(newTick);
@@ -428,21 +422,6 @@ class UniswapV4PoolMath {
     } else {
       poolState.feeGrowthGlobal0X128 = step.feeGrowthGlobalX128;
     }
-    //
-    // let swapDelta: bigint;
-    // if (zeroForOne !== params.amountSpecified < 0) {
-    //   swapDelta = toBalanceDelta(
-    //     amountCalculated,
-    //     params.amountSpecified - amountSpecifiedRemaining,
-    //   );
-    // } else {
-    //   swapDelta = toBalanceDelta(
-    //     params.amountSpecified - amountSpecifiedRemaining,
-    //     amountCalculated,
-    //   );
-    // }
-
-    // return { swapDelta, result, amountToProtocol };
   }
 }
 
