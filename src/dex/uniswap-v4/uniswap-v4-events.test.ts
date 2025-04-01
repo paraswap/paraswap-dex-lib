@@ -7,16 +7,20 @@ import { UniswapV4Config } from '../uniswap-v4/config';
 import { DummyDexHelper } from '../../dex-helper';
 import { testEventSubscriber } from '../../../tests/utils-events';
 import { UniswapV4PoolManager } from './uniswap-v4-pool-manager';
-import { PoolManagerState } from './types';
+import { PoolManagerState, PoolState } from './types';
+import { UniswapV4Pool } from './uniswap-v4-pool';
+import { Contract, ethers } from 'ethers';
+import UniswapV4PoolManagerABI from '../../abi/uniswap-v4/pool-manager.abi.json';
+import { Log } from 'web3-core';
 
 jest.setTimeout(500 * 1000);
 const dexKey = 'UniswapV4';
 
-async function fetchPoolManagerStateFromContract(
-  poolManager: UniswapV4PoolManager,
+async function fetchPoolStateFromContract(
+  pool: UniswapV4Pool,
   blockNumber: number,
   poolAddress: string,
-): Promise<PoolManagerState> {
+): Promise<PoolState> {
   const message = `UniswapV4: ${poolAddress} blockNumber ${blockNumber}`;
   console.log(`Fetching state ${message}`);
   // Be careful to not request state prior to contract deployment
@@ -24,42 +28,117 @@ async function fetchPoolManagerStateFromContract(
   // We had that mechanism, but removed it with this commit
   // You can restore it, but better just to find block after state multicall
   // deployment
-  const state = poolManager.generateState(blockNumber);
+  const state = await pool.generateState(blockNumber);
+  console.log('state: ', state);
   console.log(`Done ${message}`);
   return state;
 }
 
-describe('UniswapV4 events', () => {
-  const blockNumbers: { [eventName: string]: number[] } = {
-    ['Initialize']: [21983404, 21983412, 21983413, 21983417, 21983421],
-  };
+// async function fetchPoolManagerStateFromContract(
+//   poolManager: UniswapV4PoolManager,
+//   blockNumber: number,
+//   poolAddress: string,
+// ): Promise<PoolManagerState> {
+//   const message = `UniswapV4: ${poolAddress} blockNumber ${blockNumber}`;
+//   console.log(`Fetching state ${message}`);
+//   // Be careful to not request state prior to contract deployment
+//   // Otherwise need to use manual state sourcing from multicall
+//   // We had that mechanism, but removed it with this commit
+//   // You can restore it, but better just to find block after state multicall
+//   // deployment
+//   const state = await poolManager.generateState(blockNumber);
+//   console.log('state: ', state);
+//   console.log(`Done ${message}`);
+//   return state;
+// }
 
+describe('UniswapV4 events', () => {
   describe('Mainnet', () => {
     const network = Network.MAINNET;
     const config = UniswapV4Config[dexKey][network];
 
-    describe('UniswapV4PoolManager', () => {
+    describe('UniswapV4Pool', () => {
+      const blockNumbers: { [eventName: string]: number[] } = {
+        // ['Donate']: // Donate event was never triggered
+        // ['ProtocolFeeUpdated']: // Donate event was never triggered
+        ['ModifyLiquidity']: [
+          21752580, // https://etherscan.io/tx/0xe589ba9c13d857e3cb513d46d4adc47bb07bc722f1346394ff33f0b0d3239774#eventlog
+          21779396, // https://etherscan.io/tx/0x74fca175197dd0dd562f6f3c9a86174122c7b0d0908ca2018b7f599c690998bd#eventlog
+          21858734, // https://etherscan.io/tx/0xe242aa2c74bf87a26be0121724b2aebdb92d3e43dffd79d13390b8ea9db85ac2#eventlog
+          21896080, // https://etherscan.io/tx/0x057babfb1612827bdcb9d602cbe2dc68845eab4b28aabdded1aed36da7439721#eventlog
+          21936463, // https://etherscan.io/tx/0x61a4d0f824783f8488c60680a41668a1b5789f7635b6d4b690dc31330acad3ec#eventlog
+          21936548, // https://etherscan.io/tx/0x12b182a4029b1922ff16f1be933c4f98b4adb8d35690a5455311c3f9984bbcbf#eventlog
+          21946356, // https://etherscan.io/tx/0x2cebd437deaab46b7bfc5c2bc66e1774041eaf19e662fd722029662bb8678f2a#eventlog
+          21952223, // https://etherscan.io/tx/0x1ec6671456e6b63182f8c7d39d1b106dbe9c6a1431bdfd32ce1bac97b9d76d3f#eventlog
+          21971475, // https://etherscan.io/tx/0x13d9db5d359e375d0903400b3e4d1236a91bb2ab893192e6d9428073ca896561#eventlog
+          21976909, // https://etherscan.io/tx/0xbd67fab1eb6b9ea262d2265ce1f74b80009cecb8e336d4e55a2f6fadf32fa6c4#eventlog
+          21976916, // https://etherscan.io/tx/0x4a3466551f596ae4d1a8ae85d4b03ad0fd0aad92c2de887bf3b24fe26a439c14#eventlog
+          22084065, // https://etherscan.io/tx/0x8669878222dcd5b43da1a2e53890adb66e18df4d1c70b2bbc4689e5b35c2bf50#eventlog
+          22084366, // https://etherscan.io/tx/0x8791aae46a8a38a7a75aec9df7eedf5d013a26490463537f1dfdba9cb9b784dd#eventlog
+        ],
+        ['Swap']: [
+          21768564, // https://etherscan.io/tx/0xc5a568180b54e20ba457832f53a19b1623b8abbe446969fa28890de9661429ce#eventlog
+          21768635, // https://etherscan.io/tx/0x7b3aea782a6710caf5d129d7e67d402fe9b94f73d80b8bfc67948ca6a9ed2f10#eventlog
+          21771588, // https://etherscan.io/tx/0x04f769d4ef0d14d70900e54917531d469310d13dfe80f587d058363f090e3a5a#eventlog
+          21771626, // https://etherscan.io/tx/0x3780ba5e4c2e75f17d40604238aaaca7b778c48b2da2e07d348ae3af3d470475#eventlog
+          21773323, // https://etherscan.io/tx/0x54ae99e0d81fa4c6c746fc5f432da1a6cf3ffdfef87c1a35b33d18b3520dfd14#eventlog
+          21774365, // https://etherscan.io/tx/0xdc65b4367f2b9ea8a2c59fae51d2bb64dd1f3a3bdc4a8ae27118589c1ceea29d#eventlog
+          21775142, // https://etherscan.io/tx/0xffe17b60cb6bf50282480d2aee0fbbd04dd3b2ec503b2abf115c486b1ada4f36#eventlog
+          21775682, // https://etherscan.io/tx/0x4cac2f7040d145c0b04ba03c8fd071073189cab3dbc4ab378b18b6f772cca5d5#eventlog
+          21776125, // https://etherscan.io/tx/0x93d559cb54daa2bb323f16ed07ec50e8838195ea9ed9fbe78fdaa1173f55e52e#eventlog
+          21776131, // https://etherscan.io/tx/0x839b6a1ce4bc7f19dec96868ef59c1774c88fc6698e843c08c0ea09d5d00ea12#eventlog
+          21776132, // https://etherscan.io/tx/0x510bc279b57093adc92b9d28230391cd0972e596e2dec25cdf6cb872612a5ce3#eventlog
+          21776168, // https://etherscan.io/tx/0x2761f08cf73a377cca6c248acc85e998e3155f5f8b8ace2e4ccd651fcc760d63#eventlog
+          21777204, // https://etherscan.io/tx/0x3d8f4dd2d4a9ac8f03929efb3e2c0b697190dd8c27a410922d1c37e7b7b7d76a#eventlog
+          21777469, // https://etherscan.io/tx/0x01bfd1136f451361db76340b350acbfa22acaaa3c9a58f660d392ea3b16bdd71#eventlog
+          21777804, // https://etherscan.io/tx/0x98b6da140a70de1386f339aa8e486dccd75b0c4e62fabd43cec892e6e871fbae#eventlog
+          21779284, // https://etherscan.io/tx/0x91625b97865d817f70cc24b4ce86f9997efd319a5840223b27128cc35ca09079#eventlog
+          21858738, // https://etherscan.io/tx/0x4aac0b8b38d9dfc89480e41518265405e60a78cea6962a49790249560e8bbba5#eventlog
+          21858872, // https://etherscan.io/tx/0xd318d4486cfd49afe9d3fee54f2857747fe685a9e921c4aa9df794fc161fdd38#eventlog
+          21859176, // https://etherscan.io/tx/0x6535f96a6dac9a7353cf7bdafd1ecc9b1abc82cdd37b988c63acfeb823f138e5#eventlog
+          21859639, // https://etherscan.io/tx/0x3b2506a09a779f8e9a2330b236d843a7c979f8962751f5fbe161836422978739#eventlog
+          21859691, // https://etherscan.io/tx/0x7c186ec989254079c1fd92a444745cf6378eb3a6d31d726ba89ae2ba4ef9f033#eventlog
+          21860941, // https://etherscan.io/tx/0xfdbb947c1645d70927885401b0c0d5ce2823b0aeacf185c76ed3714ab7c84e9f#eventlog
+          21862001, // https://etherscan.io/tx/0x464f456bc7b38c6b544aa44481560d6a5e17661615098bc96ab1dba597d7b6a9#eventlog
+          21862706, // https://etherscan.io/tx/0x66d7808ca65b0eba8fd3b1c617229d728390b4aa07cd8a283fa4482ad14eaa3e#eventlog
+          21862782, // https://etherscan.io/tx/0xb206c313365e9f12017750ef0a2a0f929f8fb2bec8cf13a2718e5c2dbb67d437#eventlog
+          21863208, // https://etherscan.io/tx/0xa2e876a9fb4cf542bc7187742f538fe469839b5bf4bcd8e901edb2b880dc0fc0#eventlog
+          21864617, // https://etherscan.io/tx/0x7333cf48923502816f288d65f12ac73b79cdd388b8b88e5e4ace502631dcad75#eventlog
+        ],
+      };
+
       Object.keys(blockNumbers).forEach((event: string) => {
         blockNumbers[event].forEach((blockNumber: number) => {
           it(`${event}:${blockNumber} - should return correct state`, async function () {
             const dexHelper = new DummyDexHelper(network);
 
             const logger = dexHelper.getLogger(dexKey);
-            const uniswapV4PoolManager = new UniswapV4PoolManager(
+
+            const uniswapV4Pool = new UniswapV4Pool(
               dexHelper,
               dexKey,
-              config.poolManager,
-              config.stateView,
-              config.subgraphURL,
+              network,
+              config,
               logger,
+              '',
+              '0x8f4abe8df5872097e9f70f8b7141fcf6f42a7a176a35e6f2a998308acf0abd4e', // initial params from Initialize event
+              '0x0000000000000000000000000000000000000000',
+              '0xF19308F923582A6f7c465e5CE7a9Dc1BEC6665B1',
+              '10000',
+              '0x0000000000000000000000000000000000000000',
+              7446534289545374680448599517924334n,
+              '229030',
+              '200',
             );
 
+            await uniswapV4Pool.initialize(blockNumber);
+
             await testEventSubscriber(
-              uniswapV4PoolManager,
-              uniswapV4PoolManager.addressesSubscribed,
+              uniswapV4Pool,
+              uniswapV4Pool.addressesSubscribed,
               (_blockNumber: number) =>
-                fetchPoolManagerStateFromContract(
-                  uniswapV4PoolManager,
+                fetchPoolStateFromContract(
+                  uniswapV4Pool,
                   _blockNumber,
                   config.poolManager,
                 ),
@@ -71,5 +150,76 @@ describe('UniswapV4 events', () => {
         });
       });
     });
+
+    it('get logs', async () => {
+      const dexHelper = new DummyDexHelper(network);
+      const contractAddr = '0x000000000004444c5dc75cb358380d2e3de08a90';
+
+      const filter = {
+        address: contractAddr,
+        topics: [
+          // ethers.utils.id('ProtocolFeeUpdated(bytes32,uint24)'), // no logs
+          // ethers.utils.id('Donate(bytes32,address,uint256,uint256)'),
+          // ethers.utils.id(
+          //   'Swap(bytes32,address,int128,int128,uint160,uint128,int24,uint24)',
+          // ),
+          // '0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f', // Swap
+        ],
+      };
+
+      const fromBlock = 21688329;
+      const toBlock = 22130455;
+
+      const blocksLimit = 10_000;
+
+      let logs: Log[] = [];
+      let latestBlock = fromBlock;
+
+      while (latestBlock <= toBlock) {
+        logs = logs.concat(
+          await dexHelper.provider.getLogs({
+            ...filter,
+            fromBlock: latestBlock,
+            toBlock: latestBlock + blocksLimit,
+          }),
+        );
+        latestBlock = latestBlock + blocksLimit;
+      }
+
+      console.log('LOGS: ', logs);
+    });
   });
 });
+
+// describe('UniswapV4PoolManager', () => {
+//   Object.keys(blockNumbers).forEach((event: string) => {
+//     blockNumbers[event].forEach((blockNumber: number) => {
+//       it(`${event}:${blockNumber} - should return correct state`, async function () {
+//         const dexHelper = new DummyDexHelper(network);
+//
+//         const logger = dexHelper.getLogger(dexKey);
+//         const uniswapV4PoolManager = new UniswapV4PoolManager(
+//           dexHelper,
+//           dexKey,
+//           network,
+//           config,
+//           logger,
+//         );
+//
+//         await testEventSubscriber(
+//           uniswapV4PoolManager,
+//           uniswapV4PoolManager.addressesSubscribed,
+//           (_blockNumber: number) =>
+//             fetchPoolManagerStateFromContract(
+//               uniswapV4PoolManager,
+//               _blockNumber,
+//               config.poolManager,
+//             ),
+//           blockNumber,
+//           `${dexKey}_${config.poolManager}`,
+//           dexHelper.provider,
+//         );
+//       });
+//     });
+//   });
+// });

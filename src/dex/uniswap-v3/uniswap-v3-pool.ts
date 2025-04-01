@@ -90,8 +90,10 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     // Add handlers
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
+
     this.handlers['Burn'] = this.handleBurnEvent.bind(this);
     this.handlers['Mint'] = this.handleMintEvent.bind(this);
+
     this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
     this.handlers['IncreaseObservationCardinalityNext'] =
       this.handleIncreaseObservationCardinalityNextEvent.bind(this);
@@ -382,6 +384,7 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const amount1 = bigIntify(event.args.amount1);
     const newTick = bigIntify(event.args.tick);
     const newLiquidity = bigIntify(event.args.liquidity);
+
     pool.blockTimestamp = bigIntify(blockHeader.timestamp);
 
     if (amount0 <= 0n && amount1 <= 0n) {
