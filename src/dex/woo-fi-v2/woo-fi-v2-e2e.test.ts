@@ -152,7 +152,8 @@ describe('WooFiV2 E2E', () => {
     );
   });
 
-  describe('Fantom', () => {
+  // deprecated
+  describe.skip('Fantom', () => {
     const network = Network.FANTOM;
 
     const baseATokenSymbol = 'WFTM';

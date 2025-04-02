@@ -52,10 +52,11 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     super(dexHelper, dexKey);
     const config = AaveGsmConfig[dexKey][network];
     this.config = {
+      POOL: config.POOL.toLowerCase(),
       GSM_USDT: config.GSM_USDT.toLowerCase(),
       GSM_USDC: config.GSM_USDC.toLowerCase(),
-      USDT: config.USDT.toLowerCase(),
-      USDC: config.USDC.toLowerCase(),
+      waEthUSDT: config.waEthUSDT.toLowerCase(),
+      waEthUSDC: config.waEthUSDC.toLowerCase(),
       GHO: config.GHO.toLowerCase(),
     };
 
@@ -64,6 +65,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     this.eventPools = {
       [this.config.GSM_USDT]: new AaveGsmEventPool(
         this.config.GSM_USDT,
+        this.config.waEthUSDT,
+        this.config.POOL,
         this.dexKey,
         this.network,
         this.dexHelper,
@@ -71,6 +74,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       ),
       [this.config.GSM_USDC]: new AaveGsmEventPool(
         this.config.GSM_USDC,
+        this.config.waEthUSDC,
+        this.config.POOL,
         this.dexKey,
         this.network,
         this.dexHelper,
@@ -113,15 +118,15 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
 
     if (
       (srcTokenAddress === this.config.GHO &&
-        destTokenAddress === this.config.USDT) ||
-      (srcTokenAddress === this.config.USDT &&
+        destTokenAddress === this.config.waEthUSDT) ||
+      (srcTokenAddress === this.config.waEthUSDT &&
         destTokenAddress === this.config.GHO)
     ) {
       return [`${this.dexKey}_${this.config.GSM_USDT}`];
     } else if (
       (srcTokenAddress === this.config.GHO &&
-        destTokenAddress === this.config.USDC) ||
-      (srcTokenAddress === this.config.USDC &&
+        destTokenAddress === this.config.waEthUSDC) ||
+      (srcTokenAddress === this.config.waEthUSDC &&
         destTokenAddress === this.config.GHO)
     ) {
       return [`${this.dexKey}_${this.config.GSM_USDC}`];
@@ -157,7 +162,13 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       return 0n;
     }
 
-    const grossAmount = assetAmount * 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
+    let grossAmount = MMath.mulDiv(
+      assetAmount,
+      state.rate,
+      1_000_000_000_000_000_000_000_000_000n,
+      true,
+    );
+    grossAmount *= 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
     const fee = MMath.mulDiv(grossAmount, state.buyFee, 10_000n, true);
 
     const result = grossAmount + fee;
@@ -166,9 +177,26 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
   }
 
   getAssetAmountForBuyAsset(ghoAmount: bigint, state: PoolState) {
-    const grossAmount = (ghoAmount * 10_000n) / (10_000n + state.buyFee);
+    const grossAmount = MMath.mulDiv(
+      ghoAmount,
+      10_000n,
+      10_000n + state.buyFee,
+      false,
+    );
 
-    const result = grossAmount / 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
+    const vaultAssets = MMath.mulDiv(
+      grossAmount,
+      1n,
+      1_000_000_000_000n, // 18 - 6 = 12 (decimals)
+      false,
+    );
+
+    const result = MMath.mulDiv(
+      vaultAssets,
+      1_000_000_000_000_000_000_000_000_000n,
+      state.rate,
+      false,
+    );
 
     if (this.canBuyAsset(result, state)) {
       return result;
@@ -181,8 +209,15 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       return 0n;
     }
 
-    const grossAmount = assetAmount * 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
-    const fee = MMath.mulDiv(grossAmount, state.sellFee, 10_000n, true);
+    let grossAmount = MMath.mulDiv(
+      assetAmount,
+      state.rate,
+      1_000_000_000_000_000_000_000_000_000n,
+      false,
+    );
+
+    grossAmount *= 1_000_000_000_000n; // 18 - 6 = 12 (decimals)
+    const fee = MMath.mulDiv(grossAmount, state.sellFee, 10_000n, false);
 
     return grossAmount - fee;
   }
@@ -195,7 +230,19 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
       true,
     );
 
-    const result = MMath.mulDiv(grossAmount, 1n, 1_000_000_000_000n, true); // 18 - 6 = 12 (decimals)
+    const vaultAssets = MMath.mulDiv(
+      grossAmount,
+      1n,
+      1_000_000_000_000n, // 18 - 6 = 12 (decimals)
+      false,
+    );
+
+    const result = MMath.mulDiv(
+      vaultAssets,
+      1_000_000_000_000_000_000_000_000_000n,
+      state.rate,
+      true,
+    );
 
     if (this.canSellAsset(result, state)) {
       return result;
@@ -217,11 +264,11 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     if (
       !(
         (srcTokenAddress === this.config.GHO &&
-          (destTokenAddress === this.config.USDC ||
-            destTokenAddress === this.config.USDT)) ||
+          (destTokenAddress === this.config.waEthUSDC ||
+            destTokenAddress === this.config.waEthUSDT)) ||
         (destTokenAddress === this.config.GHO &&
-          (srcTokenAddress === this.config.USDC ||
-            srcTokenAddress === this.config.USDT))
+          (srcTokenAddress === this.config.waEthUSDC ||
+            srcTokenAddress === this.config.waEthUSDT))
       )
     ) {
       return null;
@@ -232,8 +279,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     let gas: number;
 
     if (
-      srcTokenAddress === this.config.USDT ||
-      destTokenAddress === this.config.USDT
+      srcTokenAddress === this.config.waEthUSDT ||
+      destTokenAddress === this.config.waEthUSDT
     ) {
       target = this.config.GSM_USDT;
     } else {
@@ -243,19 +290,19 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     if (srcTokenAddress === this.config.GHO && side === SwapSide.BUY) {
       // amount = destAmount = assetAmount
       endpoint = this.getGhoAmountForBuyAsset.bind(this);
-      gas = 80_000;
+      gas = 300_000;
     } else if (srcTokenAddress === this.config.GHO && side === SwapSide.SELL) {
       // amount = srcAmount = ghoAmount
       endpoint = this.getAssetAmountForBuyAsset.bind(this);
-      gas = 80_000;
+      gas = 300_000;
     } else if (destTokenAddress === this.config.GHO && side === SwapSide.SELL) {
       // amount = srcAmount = assetAmount
       endpoint = this.getGhoAmountForSellAsset.bind(this);
-      gas = 70_000;
+      gas = 200_000;
     } else {
       // amount = destAmount = ghoAmount
       endpoint = this.getAssetAmountForSellAsset.bind(this);
-      gas = 70_000;
+      gas = 200_000;
     }
 
     const unit = parseUnits(
@@ -321,8 +368,8 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
     const ghoAmount = isSrcGho ? srcAmount : destAmount;
     let assetAmount = isSrcGho ? destAmount : srcAmount;
     const targetExchange =
-      srcToken.toLowerCase() === this.config.USDT ||
-      destToken.toLowerCase() === this.config.USDT
+      srcToken.toLowerCase() === this.config.waEthUSDT ||
+      destToken.toLowerCase() === this.config.waEthUSDT
         ? this.config.GSM_USDT
         : this.config.GSM_USDC;
 
@@ -375,7 +422,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
           connectorTokens: [
             {
               decimals: 6,
-              address: this.config.USDT,
+              address: this.config.waEthUSDT,
             },
           ],
           liquidityUSD: usdtState
@@ -388,7 +435,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
           connectorTokens: [
             {
               decimals: 6,
-              address: this.config.USDC,
+              address: this.config.waEthUSDC,
             },
           ],
           liquidityUSD: usdcState
@@ -396,7 +443,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
             : 1000000000,
         },
       ];
-    } else if (tokenAddress === this.config.USDC) {
+    } else if (tokenAddress === this.config.waEthUSDC) {
       return [
         {
           exchange: this.dexKey,
@@ -410,7 +457,7 @@ export class AaveGsm extends SimpleExchange implements IDex<AaveGsmData> {
           liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
         },
       ];
-    } else if (tokenAddress === this.config.USDT) {
+    } else if (tokenAddress === this.config.waEthUSDT) {
       return [
         {
           exchange: this.dexKey,

@@ -12,10 +12,8 @@ describe('AaveGsm Gas Estimation', () => {
   const network = Network.MAINNET;
 
   it('swapExactAmountIn', async () => {
-    const network = Network.MAINNET;
-
     const srcToken = Tokens[network]['GHO'];
-    const destToken = Tokens[network]['USDT'];
+    const destToken = Tokens[network]['waEthUSDT'];
 
     const amount = 1000000000000000000n;
 
