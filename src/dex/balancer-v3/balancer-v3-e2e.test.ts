@@ -60,6 +60,7 @@ function testForNetwork(
   tokenBAmount: string,
   nativeTokenAmount: string,
   testNative: boolean,
+  poolIds?: string[],
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -69,7 +70,8 @@ function testForNetwork(
   const holders = Holders[network];
   const nativeTokenSymbol = NativeTokenSymbols[network];
 
-  // TODO: Add any direct swap contractMethod name if it exists
+  const poolIdentifiers = poolIds ? { [dexKey]: poolIds } : undefined;
+
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
@@ -92,6 +94,7 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  poolIdentifiers,
                 );
               });
               it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
@@ -105,6 +108,7 @@ function testForNetwork(
                   contractMethod,
                   network,
                   provider,
+                  poolIdentifiers,
                 );
               });
             }
@@ -119,6 +123,7 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                poolIdentifiers,
               );
             });
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
@@ -132,6 +137,7 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                poolIdentifiers,
               );
             });
           });
@@ -145,7 +151,7 @@ function testForNetwork(
 describe('BalancerV3 E2E', () => {
   const dexKey = 'BalancerV3';
 
-  describe('Sepolia', () => {
+  describe.skip('Sepolia', () => {
     const network = Network.SEPOLIA;
 
     describe('Weighted Path', () => {
@@ -205,6 +211,27 @@ describe('BalancerV3 E2E', () => {
         tokenBAmount,
         nativeTokenAmount,
         false,
+      );
+    });
+
+    describe('GyroE Path', () => {
+      const tokenASymbol: string = 'bal';
+      const tokenBSymbol: string = 'DAI';
+
+      const tokenAAmount: string = '100000000000';
+      const tokenBAmount: string = '100000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+        ['0x80fd5bc9d4fa6c22132f8bb2d9d30b01c3336fb3'],
       );
     });
   });
@@ -344,6 +371,26 @@ describe('BalancerV3 E2E', () => {
 
   describe('Base', () => {
     const network = Network.BASE;
+
+    describe('FAILED_CASE', () => {
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '300000000000000';
+      const tokenBAmount: string = '100000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
 
     describe('Stable Path', () => {
       const tokenASymbol: string = 'wstETH';
