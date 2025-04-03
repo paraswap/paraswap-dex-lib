@@ -51,11 +51,14 @@ describe('UniswapV2', function () {
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
   });
 
-  it('getTopPoolsForToken', async function () {
-    const dexHelper = new DummyDexHelper(Network.MAINNET);
-    const uniswapV2 = new UniswapV2(Network.MAINNET, dexKey, dexHelper);
+  it.only('getTopPoolsForToken', async function () {
+    const dexHelper = new DummyDexHelper(Network.BASE);
+    const uniswapV2 = new UniswapV2(Network.BASE, dexKey, dexHelper);
 
-    const poolLiquidity = await uniswapV2.getTopPoolsForToken(WETH.address, 10);
+    const poolLiquidity = await uniswapV2.getTopPoolsForToken(
+      '0xca72827a3d211cfd8f6b00ac98824872b72cab49',
+      10,
+    );
     console.log('WETH Top Pools:', poolLiquidity);
 
     checkPoolsLiquidity(poolLiquidity, WETH.address, dexKey);

@@ -313,10 +313,20 @@ export class BalancerV3 extends SimpleExchange implements IDex<BalancerV3Data> {
           }
           poolPrices.push(poolExchangePrice);
         } catch (err) {
-          this.logger.error(
-            `error fetching prices for pool: ${pool.poolAddress}`,
-          );
-          this.logger.error(err);
+          const errorMessage =
+            err instanceof Error ? `error: ${err.message}` : `error: ${err}`;
+          const stack = err instanceof Error ? err.stack : '';
+          // Ignore some sort of errors
+          // minimum trade amount - https://github.com/balancer/balancer-maths/blob/main/typescript/src/vault/vault.ts#L39
+          // wrapAmountTooSmall - https://github.com/balancer/balancer-maths/blob/main/typescript/src/buffer/erc4626BufferWrapOrUnwrap.ts#L17
+          if (
+            !errorMessage.includes('TradeAmountTooSmall') &&
+            !errorMessage.includes('wrapAmountTooSmall')
+          ) {
+            this.logger.error(
+              `error fetching prices for pool: ${pool.poolAddress}, msg: ${errorMessage}, stack: ${stack}`,
+            );
+          }
         }
       }
 
