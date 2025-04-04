@@ -143,7 +143,7 @@ export class AngleTransmuter
       return null;
     }
 
-    const fiat = knownInfo.fiatName! as keyof DexParams;
+    const fiat = knownInfo.fiatName as keyof DexParams;
     const preProcessDecimals =
       side === SwapSide.SELL ? srcToken.decimals : destToken.decimals;
     const postProcessDecimals =
