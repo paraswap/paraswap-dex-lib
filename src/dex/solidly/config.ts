@@ -136,6 +136,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       stableFee: 5,
       volatileFee: 25,
       feeCode: 0,
+      subgraphURL: 'CTq73v4Bm3PVb2aHjB1ikgmpicj3Zswn4bdVaXCcUzqA',
     },
   },
   Equalizer: {
