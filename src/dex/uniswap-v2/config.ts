@@ -183,9 +183,10 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xf4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b',
       poolGasCost: 100 * 1000,
       feeCode: 20,
+      subgraphURL: '4jGhpKjW4prWoyt5Bwk1ZHUwdEmNWveJcjEyjoTZWCY9',
     },
     [Network.POLYGON]: {
-      subgraphURL: '32BWziYZT6en9rVM9L3sDonnjHGtKvfsiJyMDv3T7Dx1',
+      subgraphURL: '2x478mWv6rECUcJR4VxNxRnuMuRsY22Jxy7xxXJu4Q7F',
       factoryAddress: '0xcf083be4164828f00cae704ec15a36d711491284',
       initCode:
         '0x511f0f358fe530cda0859ec20becf391718fdf5a329be02f4c95361f3d6a42d8',
