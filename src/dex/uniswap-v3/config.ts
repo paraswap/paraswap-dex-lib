@@ -269,7 +269,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         decodeStateMultiCallResultWithRelativeBitmapsForRamses,
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
-      subgraphURL: '3XdQYqeSEH9gwZYwx5A7UJBPp4f8zdDac69GMRZqdg9g',
+      subgraphURL: 'NFHumrUD9wtBRnZnrvkQksZzKpic26uMM5RbZR56Gns',
     },
   },
   'QuickSwapV3.1': {
