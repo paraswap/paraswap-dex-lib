@@ -135,6 +135,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      subgraphURL: 'CStW6CSQbHoXsgKuVCrk3uShGA4JX3CAzzv2x9zaGf8w',
     },
     [Network.AVALANCHE]: {
       factoryAddress: '0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C',
@@ -149,6 +150,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      subgraphURL: '8EjCaWZumyAfN3wyB4QnibeeXaYS8i4sp1PiWT91AGrt',
     },
     [Network.BASE]: {
       factoryAddress: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
@@ -171,6 +173,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      subgraphURL: 'EXBcAqmvQi6VAnE9X4MNK83LPeA6c1PsGskffbmThoeK',
     },
   },
   ApeSwap: {
