@@ -10,10 +10,16 @@ import { Interface } from 'ethers/lib/utils';
 import { IDexHelper } from '../../dex-helper';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { LogDescription } from '@ethersproject/abi/lib.esm';
-import { queryOnePageForAllAvailablePoolsFromSubgraph } from './subgraph';
+import {
+  queryAvailablePoolsForPairFromSubgraph,
+  queryOnePageForAllAvailablePoolsFromSubgraph,
+} from './subgraph';
 import { isETHAddress } from '../../utils';
 import { NULL_ADDRESS } from '../../constants';
-import { POOL_CACHE_REFRESH_INTERVAL } from './constants';
+import {
+  POOL_CACHE_REFRESH_INTERVAL,
+  POOLS_INITIALIZATION_LIMIT,
+} from './constants';
 import { FactoryState } from '../uniswap-v3/types';
 import { UniswapV4Pool } from './uniswap-v4-pool';
 
@@ -66,8 +72,9 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     options?: InitializeStateOptions<PoolManagerState>,
   ) {
     this.pools = await this.queryAllAvailablePools(blockNumber);
+    const poolsToInit = this.pools.slice(0, POOLS_INITIALIZATION_LIMIT);
 
-    this.eventPools = await this.pools.reduce<
+    this.eventPools = await poolsToInit.reduce<
       Promise<Record<string, UniswapV4Pool>>
     >(async (accum, pool) => {
       const accumP = await accum;
@@ -113,22 +120,59 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     return {};
   }
 
-  public getAvailablePoolsForPair(
+  public async getAvailablePoolsForPair(
     srcToken: Address,
     destToken: Address,
     blockNumber: number,
-  ): Pool[] {
+  ): Promise<Pool[]> {
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
     const src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
     const dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
 
-    const pools = this.pools.filter(
+    let pools = this.pools.filter(
       pool =>
         (pool.token0.address === src && pool.token1.address === dest) ||
         (pool.token0.address === dest && pool.token1.address === src),
     );
+
+    if (pools.length === 0) {
+      const newPoolsToInit = await this.queryPoolsForPair(srcToken, destToken);
+
+      await Promise.all(
+        newPoolsToInit.map(async pool => {
+          const eventPool = new UniswapV4Pool(
+            this.dexHelper,
+            this.parentName,
+            this.network,
+            this.config,
+            this.logger,
+            '',
+            pool.id.toLowerCase(),
+            pool.token0.address.toLowerCase(),
+            pool.token1.address.toLowerCase(),
+            pool.fee,
+            pool.hooks,
+            0n,
+            pool.tick,
+            pool.tickSpacing,
+          );
+          await eventPool.initialize(blockNumber);
+
+          this.pools.push(pool);
+          this.eventPools[pool.id] = eventPool;
+        }),
+      );
+
+      if (newPoolsToInit.length > 0) {
+        pools = this.pools.filter(
+          pool =>
+            (pool.token0.address === src && pool.token1.address === dest) ||
+            (pool.token0.address === dest && pool.token1.address === src),
+        );
+      }
+    }
 
     return pools.map(pool => ({
       id: pool.id,
@@ -140,6 +184,18 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
         hooks: pool.hooks,
       },
     }));
+  }
+
+  private async queryPoolsForPair(
+    srcToken: Address,
+    destToken: Address,
+  ): Promise<SubgraphPool[]> {
+    return queryAvailablePoolsForPairFromSubgraph(
+      this.dexHelper,
+      this.config.subgraphURL,
+      srcToken,
+      destToken,
+    );
   }
 
   private async queryAllAvailablePools(

@@ -1,3 +1,5 @@
+import { _require } from '../../../utils';
+
 export class LPFeeLibrary {
   static readonly DYNAMIC_FEE_FLAG: number = 0x800000;
   static readonly OVERRIDE_FEE_FLAG: number = 0x400000;
@@ -13,9 +15,7 @@ export class LPFeeLibrary {
   }
 
   static validate(fee: number): void {
-    if (!this.isValid(fee)) {
-      throw new Error(`LPFeeTooLarge: ${fee}`);
-    }
+    _require(this.isValid(fee), `LPFeeTooLarge: ${fee}`, { fee });
   }
 
   static getInitialLPFee(fee: number): number {

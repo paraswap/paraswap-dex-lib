@@ -1,30 +1,30 @@
-import { BI_MAX_UINT256 } from '../../../bigint-constants';
 import { _require } from '../../../utils';
 
 export class FullMath {
-  static mulDiv(a: bigint, b: bigint, denominator: bigint) {
-    const result = (a * b) / denominator;
-
+  static mulDiv(a: bigint, b: bigint, denominator: bigint): bigint {
     _require(
-      result <= BI_MAX_UINT256,
-      '',
-      { result, BI_MAX_UINT: BI_MAX_UINT256 },
-      'result <= BI_MAX_UINT',
+      denominator !== 0n,
+      'Denominator cannot be zero',
+      { denominator },
+      'denominator !== 0n',
     );
 
-    return result;
+    const product = a * b;
+    return product / denominator;
   }
 
-  static mulDivRoundingUp(a: bigint, b: bigint, denominator: bigint) {
-    const result = (a * b + denominator - 1n) / denominator;
-
+  static mulDivRoundingUp(a: bigint, b: bigint, denominator: bigint): bigint {
     _require(
-      result <= BI_MAX_UINT256,
-      '',
-      { result, BI_MAX_UINT: BI_MAX_UINT256 },
-      'result <= BI_MAX_UINT',
+      denominator !== 0n,
+      'Denominator cannot be zero',
+      { denominator },
+      'denominator !== 0n',
     );
 
-    return result;
+    const product = a * b;
+    const result = product / denominator;
+    const remainder = product % denominator;
+
+    return remainder === 0n ? result : result + 1n;
   }
 }

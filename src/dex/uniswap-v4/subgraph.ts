@@ -2,6 +2,8 @@ import { SubgraphPool, Tick } from './types';
 import { SUBGRAPH_TIMEOUT } from './constants';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from 'log4js';
+import { Address } from '@paraswap/core';
+import { NULL_ADDRESS } from '../../constants';
 
 export async function queryTicksForPool(
   dexHelper: IDexHelper,
@@ -41,6 +43,62 @@ export async function queryTicksForPool(
   return data.pools[0]?.ticks || [];
 }
 
+export async function queryAvailablePoolsForPairFromSubgraph(
+  dexHelper: IDexHelper,
+  subgraphUrl: string,
+  srcToken: Address,
+  destToken: Address,
+): Promise<SubgraphPool[]> {
+  const ticksLimit = 300;
+
+  const poolsQuery = `query ($token0: Bytes!, $token1: Bytes!, $hooks: Bytes!) {
+      pools(
+        where: { token0: $token0, token1: $token1, hooks: $hooks, volumeUSD_gt: 0 },
+        orderBy: volumeUSD
+        orderDirection: desc
+      ) {
+        id
+        fee: feeTier
+        tickSpacing
+        token0 {
+          address: id
+        }
+        token1 {
+          address: id
+        }
+        hooks
+        tick
+        ticks(first: ${ticksLimit}) {
+          id
+          liquidityGross
+          liquidityNet
+          tickIdx
+        }
+      }
+    }`;
+
+  const [token0, token1] =
+    parseInt(srcToken, 16) < parseInt(destToken, 16)
+      ? [srcToken, destToken]
+      : [destToken, srcToken];
+
+  const res = await dexHelper.httpRequest.querySubgraph<{
+    data: {
+      pools: SubgraphPool[];
+    };
+    errors?: { message: string }[];
+  }>(
+    subgraphUrl,
+    {
+      query: poolsQuery,
+      variables: { token0, token1, hooks: NULL_ADDRESS },
+    },
+    { timeout: SUBGRAPH_TIMEOUT },
+  );
+
+  return res.data.pools;
+}
+
 export async function queryOnePageForAllAvailablePoolsFromSubgraph(
   dexHelper: IDexHelper,
   logger: Logger,
@@ -53,8 +111,9 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
 ): Promise<SubgraphPool[]> {
   const ticksLimit = 300;
 
-  const poolsQuery = `query ($skip: Int!) {
+  const poolsQuery = `query ($skip: Int!, $hooks: Bytes!) {
       pools(
+        where: { hooks: $hooks, volumeUSD_gt: 0 },
         ${latestBlock ? '' : `block: { number: ${blockNumber} }`}
         orderBy: volumeUSD
         orderDirection: desc
@@ -81,8 +140,6 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
       }
     }`;
 
-  // console.log('poolsQuery: ', poolsQuery);
-
   const res = await dexHelper.httpRequest.querySubgraph<{
     data: {
       pools: SubgraphPool[];
@@ -92,7 +149,7 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
     subgraphUrl,
     {
       query: poolsQuery,
-      variables: { skip: skip },
+      variables: { skip: skip, hooks: NULL_ADDRESS },
     },
     { timeout: SUBGRAPH_TIMEOUT },
   );

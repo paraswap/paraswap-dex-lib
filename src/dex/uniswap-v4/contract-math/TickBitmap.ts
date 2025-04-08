@@ -3,6 +3,13 @@ import { _require } from '../../../utils';
 import { DeepReadonly } from 'ts-essentials';
 import { BitMath } from '../../uniswap-v3/contract-math/BitMath';
 import { BI_MAX_UINT8 } from '../../../bigint-constants';
+import {
+  OUT_OF_RANGE_ERROR_POSTFIX,
+  TICK_BITMAP_BUFFER,
+  TICK_BITMAP_BUFFER_BY_CHAIN,
+  TICK_BITMAP_TO_USE,
+  TICK_BITMAP_TO_USE_BY_CHAIN,
+} from '../../uniswap-v3/constants';
 
 export class TickBitmap {
   static readonly MAX_UINT256: bigint = BigInt(
@@ -64,6 +71,7 @@ export class TickBitmap {
     tick: bigint,
     tickSpacing: bigint,
     lte: boolean,
+    isPricing: boolean = false,
   ): [bigint, boolean] {
     let compressed = BigInt(
       TickBitmap.compress(Number(tick), Number(tickSpacing)),
@@ -91,11 +99,13 @@ export class TickBitmap {
       const masked = value & mask;
 
       initialized = masked !== 0n;
+
       next = initialized
         ? (compressed +
+            1n +
             BigInt.asIntN(24, BitMath.leastSignificantBit(masked) - bitPos)) *
           tickSpacing
-        : (compressed + BigInt.asIntN(24, TickBitmap.MAX_UINT8 - bitPos)) *
+        : (compressed + 1n + BigInt.asIntN(24, TickBitmap.MAX_UINT8 - bitPos)) *
           tickSpacing;
     }
 

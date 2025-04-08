@@ -74,26 +74,4 @@ export class Position {
 
     return { feesOwed0, feesOwed1 };
   }
-  //
-  // static addPosition(
-  //   owner: string,
-  //   tickLower: number,
-  //   tickUpper: number,
-  //   salt: string,
-  //   liquidity: bigint,
-  //   feeGrowthInside0X128: bigint,
-  //   feeGrowthInside1X128: bigint,
-  // ): void {
-  //   const positionKey = Position.calculatePositionKey(
-  //     owner,
-  //     tickLower,
-  //     tickUpper,
-  //     salt,
-  //   );
-  //   Position.positions.set(positionKey, {
-  //     liquidity,
-  //     feeGrowthInside0LastX128: feeGrowthInside0X128,
-  //     feeGrowthInside1LastX128: feeGrowthInside1X128,
-  //   });
-  // }
 }

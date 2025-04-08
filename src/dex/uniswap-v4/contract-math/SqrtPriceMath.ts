@@ -19,7 +19,12 @@ export class SqrtPriceMath {
       return (numerator1 * sqrtPX96 + denominator - 1n) / denominator;
     } else {
       let product = amount * sqrtPX96;
-      if (product >= numerator1) throw new Error('PriceOverflow');
+      _require(
+        product < numerator1,
+        'PriceOverflow',
+        { product, numerator1 },
+        'product < numerator1',
+      );
       let denominator = numerator1 - product;
       return (numerator1 * sqrtPX96 + denominator - 1n) / denominator;
     }
@@ -36,7 +41,12 @@ export class SqrtPriceMath {
       return sqrtPX96 + quotient;
     } else {
       let quotient = (amount * FixedPoint96.Q96 + liquidity - 1n) / liquidity;
-      if (sqrtPX96 <= quotient) throw new Error('NotEnoughLiquidity');
+      _require(
+        sqrtPX96 > quotient,
+        'NotEnoughLiquidity',
+        { sqrtPX96, quotient },
+        'sqrtPX96 > quotient',
+      );
       return sqrtPX96 - quotient;
     }
   }
@@ -47,8 +57,13 @@ export class SqrtPriceMath {
     amountIn: bigint,
     zeroForOne: boolean,
   ): bigint {
-    if (sqrtPX96 === 0n || liquidity === 0n)
-      throw new Error('InvalidPriceOrLiquidity');
+    _require(
+      sqrtPX96 !== 0n && liquidity !== 0n,
+      'InvalidPriceOrLiquidity',
+      { sqrtPX96, liquidity },
+      'sqrtPX96 !== 0n && liquidity !== 0n',
+    );
+
     return zeroForOne
       ? SqrtPriceMath.getNextSqrtPriceFromAmount0RoundingUp(
           sqrtPX96,
@@ -70,8 +85,13 @@ export class SqrtPriceMath {
     amountOut: bigint,
     zeroForOne: boolean,
   ): bigint {
-    if (sqrtPX96 === 0n || liquidity === 0n)
-      throw new Error('InvalidPriceOrLiquidity');
+    _require(
+      sqrtPX96 !== 0n && liquidity !== 0n,
+      'InvalidPriceOrLiquidity',
+      { sqrtPX96, liquidity },
+      'sqrtPX96 !== 0n && liquidity !== 0n',
+    );
+
     return zeroForOne
       ? SqrtPriceMath.getNextSqrtPriceFromAmount1RoundingDown(
           sqrtPX96,
@@ -86,6 +106,17 @@ export class SqrtPriceMath {
           false,
         );
   }
+  //
+  // static getAmount0Delta(
+  //   sqrtPriceAX96: bigint,
+  //   sqrtPriceBX96: bigint,
+  //   liquidity: bigint,
+  //   roundUp?: boolean,
+  // ): bigint {
+  //   return liquidity < 0n
+  //     ? this._getAmount0Delta(sqrtPriceAX96, sqrtPriceBX96, -liquidity, false)
+  //     : -this._getAmount0Delta(sqrtPriceAX96, sqrtPriceBX96, liquidity, true);
+  // }
 
   static getAmount0Delta(
     sqrtPriceAX96: bigint,
@@ -96,7 +127,7 @@ export class SqrtPriceMath {
     if (sqrtPriceAX96 > sqrtPriceBX96)
       [sqrtPriceAX96, sqrtPriceBX96] = [sqrtPriceBX96, sqrtPriceAX96];
 
-    let numerator1 = liquidity << FixedPoint96.RESOLUTION;
+    let numerator1 = BigInt.asIntN(256, liquidity) << FixedPoint96.RESOLUTION;
     let numerator2 = sqrtPriceBX96 - sqrtPriceAX96;
 
     return roundUp

@@ -69,6 +69,11 @@ export type Pool = {
   key: PoolKey;
 };
 
+export type OutputResult = {
+  outputs: bigint[];
+  tickCounts: number[];
+};
+
 export type SubgraphPool = {
   id: string;
   fee: string;

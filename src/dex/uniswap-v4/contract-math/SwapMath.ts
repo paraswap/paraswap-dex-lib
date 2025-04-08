@@ -10,8 +10,26 @@ export class SwapMath {
     sqrtPriceNextX96: bigint,
     sqrtPriceLimitX96: bigint,
   ): bigint {
-    const nextOrLimit = sqrtPriceNextX96 < sqrtPriceLimitX96 !== zeroForOne;
-    return nextOrLimit ? sqrtPriceLimitX96 : sqrtPriceNextX96;
+    // const MAX_UINT160 = BigInt('0xffffffffffffffffffffffffffffffffffffffff');
+    //
+    // sqrtPriceNextX96 &= MAX_UINT160;
+    // sqrtPriceLimitX96 &= MAX_UINT160;
+    //
+    // const nextOrLimit = Number(
+    //   sqrtPriceNextX96 < sqrtPriceLimitX96 !== zeroForOne,
+    // );
+    // const symDiff = sqrtPriceNextX96 ^ sqrtPriceLimitX96;
+    //
+    // return sqrtPriceLimitX96 ^ (symDiff * BigInt(nextOrLimit));
+    //
+    // const nextOrLimit = sqrtPriceNextX96 < sqrtPriceLimitX96 !== zeroForOne;
+    // return nextOrLimit ? sqrtPriceLimitX96 : sqrtPriceNextX96;
+
+    const nextOrLimit =
+      (sqrtPriceNextX96 < sqrtPriceLimitX96 ? 1 : 0) ^ (zeroForOne ? 1 : 0);
+
+    const symDiff = sqrtPriceNextX96 ^ sqrtPriceLimitX96;
+    return sqrtPriceLimitX96 ^ (symDiff * BigInt(nextOrLimit));
   }
 
   static computeSwapStep(

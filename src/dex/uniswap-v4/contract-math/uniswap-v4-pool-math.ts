@@ -1,4 +1,4 @@
-import { PoolState, TickInfo, ModifyLiquidityParams } from '../types';
+import { PoolState, TickInfo, ModifyLiquidityParams, Pool } from '../types';
 import { TickMath } from './TickMath';
 import { TickBitmap } from './TickBitmap';
 import { Tick } from './Tick';
@@ -10,8 +10,12 @@ import { UnsafeMath } from './UnsafeMath';
 import { FixedPoint128 } from './FixedPoint128';
 import { ProtocolFeeLibrary } from './ProtocolFeeLibrary';
 import { SwapMath } from './SwapMath';
-import { toBalanceDelta } from './BalanceDelta';
-import { BI_MAX_INT } from '../../../bigint-constants';
+import { BalanceDelta, toBalanceDelta } from './BalanceDelta';
+import { DeepReadonly } from 'ts-essentials';
+import { SwapSide } from '@paraswap/core';
+import { SWAP_EVENT_MAX_CYCLES } from '../constants';
+import { LPFeeLibrary } from './LPFeeLibrary';
+import _ from 'lodash';
 
 type StepComputations = {
   sqrtPriceStartX96: bigint;
@@ -24,7 +28,291 @@ type StepComputations = {
   feeGrowthGlobalX128: bigint;
 };
 
+type SwapParams = {
+  amountSpecified: bigint;
+  tickSpacing: bigint;
+  zeroForOne: boolean;
+  sqrtPriceLimitX96: bigint;
+  lpFeeOverride: number;
+};
+
 class UniswapV4PoolMath {
+  public queryOutputs(
+    pool: Pool,
+    poolState: DeepReadonly<PoolState>,
+    amounts: bigint[],
+    zeroForOne: boolean,
+    side: SwapSide,
+  ): bigint[] | null {
+    const isSell = side === SwapSide.SELL;
+
+    if (isSell) {
+      return amounts.map(amount => {
+        if (amount === 0n) {
+          return 0n;
+        }
+
+        const [amount0, amount1] = this._swap(poolState, {
+          zeroForOne,
+          amountSpecified: -amount,
+          tickSpacing: BigInt(pool.key.tickSpacing),
+          sqrtPriceLimitX96: zeroForOne
+            ? TickMath.MIN_SQRT_PRICE + 1n
+            : TickMath.MAX_SQRT_PRICE - 1n,
+        } as SwapParams);
+
+        return zeroForOne ? amount1 : amount0;
+      });
+    } else {
+      return amounts.map(amount => {
+        if (amount === 0n) {
+          return 0n;
+        }
+
+        const [amount0, amount1] = this._swap(poolState, {
+          zeroForOne,
+          amountSpecified: amount,
+          tickSpacing: BigInt(pool.key.tickSpacing),
+          sqrtPriceLimitX96: zeroForOne
+            ? TickMath.MIN_SQRT_PRICE + 1n
+            : TickMath.MAX_SQRT_PRICE - 1n,
+        } as SwapParams);
+
+        return zeroForOne ? -amount0 : -amount1;
+      });
+    }
+  }
+
+  _swap(poolState: PoolState, params: SwapParams): [bigint, bigint] {
+    const _poolState = _.cloneDeep(poolState); // we don't need to modify existing poolState
+    // const _poolState = poolState; // we don't need to modify existing poolState
+    const slot0Start = _poolState.slot0;
+    const zeroForOne = params.zeroForOne;
+
+    const protocolFee = zeroForOne
+      ? ProtocolFeeLibrary.getZeroForOneFee(slot0Start.protocolFee)
+      : ProtocolFeeLibrary.getOneForZeroFee(slot0Start.protocolFee);
+
+    let amountSpecifiedRemaining = params.amountSpecified;
+    let amountCalculated = 0n;
+
+    let result = {
+      sqrtPriceX96: slot0Start.sqrtPriceX96,
+      liquidity: _poolState.liquidity,
+      tick: slot0Start.tick,
+    };
+
+    const lpFee = LPFeeLibrary.isOverride(params.lpFeeOverride)
+      ? LPFeeLibrary.removeOverrideFlag(params.lpFeeOverride)
+      : slot0Start.lpFee;
+
+    const swapFee =
+      protocolFee === 0
+        ? lpFee
+        : ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee);
+
+    if (swapFee >= SwapMath.MAX_SWAP_FEE) {
+      _require(
+        params.amountSpecified < 0n,
+        'Invalid fee for exact out',
+        { amountSpecified: params.amountSpecified },
+        'params.amountSpecified < 0n',
+      );
+    }
+
+    if (params.amountSpecified === 0n) {
+      return [BalanceDelta.ZERO_DELTA, BalanceDelta.ZERO_DELTA];
+    }
+
+    if (zeroForOne) {
+      _require(
+        params.sqrtPriceLimitX96 < slot0Start.sqrtPriceX96,
+        'Price limit already exceeded',
+        {
+          sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+          sqrtPriceX96: slot0Start.sqrtPriceX96,
+        },
+        'params.sqrtPriceLimitX96 < slot0Start.sqrtPriceX96',
+      );
+
+      _require(
+        params.sqrtPriceLimitX96 > TickMath.MIN_SQRT_PRICE,
+        'Price limit out of bounds',
+        {
+          sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+          minSqrtPrice: TickMath.MIN_SQRT_PRICE,
+        },
+        'params.sqrtPriceLimitX96 > TickMath.MIN_SQRT_PRICE',
+      );
+    } else {
+      _require(
+        params.sqrtPriceLimitX96 > slot0Start.sqrtPriceX96,
+        'Price limit already exceeded',
+        {
+          sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+          sqrtPriceX96: slot0Start.sqrtPriceX96,
+        },
+        'params.sqrtPriceLimitX96 > slot0Start.sqrtPriceX96',
+      );
+
+      _require(
+        params.sqrtPriceLimitX96 < TickMath.MAX_SQRT_PRICE,
+        'Price limit out of bounds',
+        {
+          sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+          minSqrtPrice: TickMath.MIN_SQRT_PRICE,
+        },
+        'params.sqrtPriceLimitX96 < TickMath.MAX_SQRT_PRICE',
+      );
+    }
+
+    let step = {
+      feeGrowthGlobalX128: zeroForOne
+        ? poolState.feeGrowthGlobal0X128
+        : poolState.feeGrowthGlobal1X128,
+      feeAmount: 0n,
+      sqrtPriceStartX96: 0n,
+      sqrtPriceNextX96: 0n,
+      amountIn: 0n,
+      amountOut: 0n,
+    } as StepComputations;
+
+    let counter = 0;
+    while (
+      !(
+        amountSpecifiedRemaining === 0n ||
+        result.sqrtPriceX96 === params.sqrtPriceLimitX96
+      ) &&
+      counter <= SWAP_EVENT_MAX_CYCLES
+    ) {
+      step.sqrtPriceStartX96 = result.sqrtPriceX96;
+
+      const [next, initialized] = TickBitmap.nextInitializedTickWithinOneWord(
+        _poolState,
+        BigInt(result.tick),
+        BigInt(params.tickSpacing),
+        zeroForOne,
+      );
+      step.tickNext = next;
+      step.initialized = initialized;
+
+      if (step.tickNext <= TickMath.MIN_TICK) {
+        step.tickNext = TickMath.MIN_TICK;
+      }
+
+      if (step.tickNext >= TickMath.MAX_TICK) {
+        step.tickNext = TickMath.MAX_TICK;
+      }
+
+      step.sqrtPriceNextX96 = TickMath.getSqrtPriceAtTick(step.tickNext);
+
+      const {
+        sqrtPriceNextX96: resultSqrtPriceNextX96,
+        amountIn: stepAmountIn,
+        amountOut: stepAmountOut,
+        feeAmount: stepFeeAmount,
+      } = SwapMath.computeSwapStep(
+        result.sqrtPriceX96,
+        SwapMath.getSqrtPriceTarget(
+          zeroForOne,
+          step.sqrtPriceNextX96,
+          params.sqrtPriceLimitX96,
+        ),
+        result.liquidity,
+        amountSpecifiedRemaining,
+        BigInt(swapFee),
+      );
+
+      result.sqrtPriceX96 = resultSqrtPriceNextX96;
+      step.amountIn = stepAmountIn;
+      step.amountOut = stepAmountOut;
+      step.feeAmount = stepFeeAmount;
+
+      if (params.amountSpecified > 0n) {
+        amountSpecifiedRemaining -= step.amountOut;
+        amountCalculated -= step.amountIn + step.feeAmount;
+      } else {
+        amountSpecifiedRemaining += step.amountIn + step.feeAmount;
+        amountCalculated += step.amountOut;
+      }
+
+      if (protocolFee > 0) {
+        const delta =
+          swapFee === protocolFee
+            ? step.feeAmount
+            : ((step.amountIn + step.feeAmount) * BigInt(protocolFee)) /
+              BigInt(ProtocolFeeLibrary.PIPS_DENOMINATOR);
+        step.feeAmount -= delta;
+      }
+
+      if (result.liquidity > 0) {
+        step.feeGrowthGlobalX128 += UnsafeMath.simpleMulDiv(
+          step.feeAmount,
+          FixedPoint128.Q128,
+          result.liquidity,
+        );
+      }
+
+      if (result.sqrtPriceX96 === step.sqrtPriceNextX96) {
+        if (step.initialized) {
+          const [feeGrowthGlobal0X128, feeGrowthGlobal1X128] = zeroForOne
+            ? [step.feeGrowthGlobalX128, _poolState.feeGrowthGlobal1X128]
+            : [
+                _poolState.feeGrowthGlobal0X128,
+                _poolState.feeGrowthGlobal1X128,
+              ];
+
+          let liquidityNet = Tick.cross(
+            _poolState,
+            step.tickNext,
+            feeGrowthGlobal0X128,
+            feeGrowthGlobal1X128,
+          );
+
+          if (zeroForOne) {
+            liquidityNet = -liquidityNet;
+          }
+
+          result.liquidity = LiquidityMath.addDelta(
+            result.liquidity,
+            liquidityNet,
+          );
+        }
+
+        result.tick = Number(zeroForOne ? step.tickNext - 1n : step.tickNext);
+      } else if (result.sqrtPriceX96 !== step.sqrtPriceStartX96) {
+        result.tick = Number(TickMath.getTickAtSqrtPrice(result.sqrtPriceX96));
+      }
+
+      counter++;
+    }
+
+    _poolState.slot0.tick = result.tick;
+    _poolState.slot0.sqrtPriceX96 = result.sqrtPriceX96;
+
+    if (_poolState.liquidity !== result.liquidity) {
+      _poolState.liquidity = result.liquidity;
+    }
+
+    if (!zeroForOne) {
+      _poolState.feeGrowthGlobal1X128 = step.feeGrowthGlobalX128;
+    } else {
+      _poolState.feeGrowthGlobal0X128 = step.feeGrowthGlobalX128;
+    }
+
+    if (zeroForOne !== params.amountSpecified < 0) {
+      return [
+        amountCalculated,
+        params.amountSpecified - amountSpecifiedRemaining,
+      ];
+    } else {
+      return [
+        params.amountSpecified - amountSpecifiedRemaining,
+        amountCalculated,
+      ];
+    }
+  }
+
   tickSpacingToMaxLiquidityPerTick(tickSpacing: bigint) {
     const MAX_TICK = TickMath.MAX_TICK;
     const MIN_TICK = TickMath.MIN_TICK;
@@ -287,30 +575,48 @@ class UniswapV4PoolMath {
     let amountSpecifiedRemaining = amountSpecified;
     let amountCalculated = 0n;
 
+    let result = {
+      sqrtPriceX96: slot0Start.sqrtPriceX96,
+      liquidity: poolState.liquidity,
+      tick: slot0Start.tick,
+    };
+
     const lpFee = slot0Start.lpFee;
     const swapFee =
       protocolFee === 0
         ? lpFee
         : ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee);
 
-    let step = {} as StepComputations;
-    step.feeGrowthGlobalX128 = zeroForOne
-      ? poolState.feeGrowthGlobal0X128
-      : poolState.feeGrowthGlobal1X128;
+    const paramsTickSpacing = poolState.tickSpacing;
+    const paramsSqrtPriceLimitX96 = zeroForOne
+      ? TickMath.MIN_SQRT_PRICE + 1n
+      : TickMath.MAX_SQRT_PRICE - 1n;
+
+    let step = {
+      feeGrowthGlobalX128: zeroForOne
+        ? poolState.feeGrowthGlobal0X128
+        : poolState.feeGrowthGlobal1X128,
+      feeAmount: 0n,
+      sqrtPriceStartX96: 0n,
+      sqrtPriceNextX96: 0n,
+      amountIn: 0n,
+      amountOut: 0n,
+    } as StepComputations;
 
     let counter = 0;
-    const MAX_CYCLES = 100;
     while (
-      (BigInt(poolState.slot0.tick) !== newTick ||
-        poolState.slot0.sqrtPriceX96 !== newSqrtPriceX96) &&
-      counter < MAX_CYCLES
+      !(
+        amountSpecifiedRemaining === 0n ||
+        result.sqrtPriceX96 === paramsSqrtPriceLimitX96
+      ) &&
+      counter < SWAP_EVENT_MAX_CYCLES
     ) {
-      step.sqrtPriceStartX96 = poolState.slot0.sqrtPriceX96;
+      step.sqrtPriceStartX96 = result.sqrtPriceX96;
 
       const [next, initialized] = TickBitmap.nextInitializedTickWithinOneWord(
         poolState,
-        BigInt(poolState.slot0.tick),
-        BigInt(poolState.tickSpacing),
+        BigInt(result.tick),
+        BigInt(paramsTickSpacing),
         zeroForOne,
       );
 
@@ -333,18 +639,18 @@ class UniswapV4PoolMath {
         amountOut: stepAmountOut,
         feeAmount: stepFeeAmount,
       } = SwapMath.computeSwapStep(
-        poolState.slot0.sqrtPriceX96,
+        result.sqrtPriceX96,
         SwapMath.getSqrtPriceTarget(
           zeroForOne,
           step.sqrtPriceNextX96,
-          poolState.slot0.sqrtPriceX96,
+          paramsSqrtPriceLimitX96,
         ),
-        poolState.liquidity,
+        result.liquidity,
         amountSpecifiedRemaining,
         BigInt(swapFee),
       );
 
-      poolState.slot0.sqrtPriceX96 = resultSqrtPriceNextX96;
+      result.sqrtPriceX96 = resultSqrtPriceNextX96;
 
       step.amountIn = stepAmountIn;
       step.amountOut = stepAmountOut;
@@ -367,15 +673,15 @@ class UniswapV4PoolMath {
         step.feeAmount -= delta;
       }
 
-      if (poolState.liquidity > 0n) {
+      if (result.liquidity > 0n) {
         step.feeGrowthGlobalX128 += UnsafeMath.simpleMulDiv(
           step.feeAmount,
           FixedPoint128.Q128,
-          poolState.liquidity,
+          result.liquidity,
         );
       }
 
-      if (poolState.slot0.sqrtPriceX96 === step.sqrtPriceNextX96) {
+      if (result.sqrtPriceX96 === step.sqrtPriceNextX96) {
         if (step.initialized) {
           const [feeGrowthGlobal0X128, feeGrowthGlobal1X128] = zeroForOne
             ? [step.feeGrowthGlobalX128, poolState.feeGrowthGlobal1X128]
@@ -392,19 +698,15 @@ class UniswapV4PoolMath {
             liquidityNet = -liquidityNet;
           }
 
-          poolState.liquidity = LiquidityMath.addDelta(
-            poolState.liquidity,
+          result.liquidity = LiquidityMath.addDelta(
+            result.liquidity,
             liquidityNet,
           );
         }
 
-        poolState.slot0.tick = Number(
-          zeroForOne ? step.tickNext - 1n : step.tickNext,
-        );
-      } else if (poolState.slot0.sqrtPriceX96 !== step.sqrtPriceStartX96) {
-        poolState.slot0.tick = Number(
-          TickMath.getTickAtSqrtPrice(poolState.slot0.sqrtPriceX96),
-        );
+        result.tick = Number(zeroForOne ? step.tickNext - 1n : step.tickNext);
+      } else if (result.sqrtPriceX96 !== step.sqrtPriceStartX96) {
+        result.tick = Number(TickMath.getTickAtSqrtPrice(result.sqrtPriceX96));
       }
 
       counter++;
@@ -413,8 +715,8 @@ class UniswapV4PoolMath {
     poolState.slot0.tick = Number(newTick);
     poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
 
-    if (poolState.liquidity !== newLiquidity) {
-      poolState.liquidity = newLiquidity;
+    if (poolState.liquidity !== result.liquidity) {
+      poolState.liquidity = result.liquidity;
     }
 
     if (!zeroForOne) {

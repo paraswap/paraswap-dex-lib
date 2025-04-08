@@ -26,7 +26,6 @@ export class Tick {
   }
 
   static clear(poolState: PoolState, tick: bigint): void {
-    // delete poolState.ticks[Number(tick)];
     poolState.ticks[Number(tick)] = {
       liquidityGross: 0n,
       liquidityNet: 0n,
