@@ -687,7 +687,7 @@ export class UniswapV2
     if (!this.subgraphURL) return [];
     const query = `
       query ($token: Bytes!, $count: Int) {
-        pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+        pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 0.001, reserve1_gt: 0.001}) {
         id
         token0 {
           id
@@ -699,7 +699,7 @@ export class UniswapV2
         }
         reserveUSD
       }
-      pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+      pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 0.001, reserve1_gt: 0.001}) {
         id
         token0 {
           id
