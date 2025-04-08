@@ -512,8 +512,7 @@ export class Solidly extends UniswapV2 {
           decimals: parseInt(pool.token1.decimals),
         },
       ],
-      liquidityUSD:
-        parseFloat(pool.reserveUSD) || (skipReserveCheck ? 10e5 : 0),
+      liquidityUSD: parseFloat(pool.reserveUSD),
     }));
 
     const pools1 = _.map(data.pools1, pool => ({
@@ -526,8 +525,7 @@ export class Solidly extends UniswapV2 {
           decimals: parseInt(pool.token0.decimals),
         },
       ],
-      liquidityUSD:
-        parseFloat(pool.reserveUSD) || (skipReserveCheck ? 10e5 : 0),
+      liquidityUSD: parseFloat(pool.reserveUSD),
     }));
 
     return _.slice(
