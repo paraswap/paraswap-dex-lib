@@ -227,9 +227,14 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       i < newState[poolAddress].balancesLiveScaled18.length;
       i++
     ) {
+      const totalSwapFeeAmountRaw = BigInt(event.args.swapFeeAmountsRaw[i]);
+      const aggregateSwapFeeAmountRaw = this.mulDown(
+        totalSwapFeeAmountRaw,
+        newState[poolAddress].aggregateSwapFee,
+      );
       newState[poolAddress].balancesLiveScaled18[i] +=
         this.toScaled18ApplyRateRoundDown(
-          BigInt(event.args.amountsAddedRaw[i]),
+          BigInt(event.args.amountsAddedRaw[i]) - aggregateSwapFeeAmountRaw,
           newState[poolAddress].scalingFactors[i],
           newState[poolAddress].tokenRates[i] || WAD,
         );
@@ -255,9 +260,14 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       i < newState[poolAddress].balancesLiveScaled18.length;
       i++
     ) {
+      const totalSwapFeeAmountRaw = BigInt(event.args.swapFeeAmountsRaw[i]);
+      const aggregateSwapFeeAmountRaw = this.mulDown(
+        totalSwapFeeAmountRaw,
+        newState[poolAddress].aggregateSwapFee,
+      );
       newState[poolAddress].balancesLiveScaled18[i] -=
         this.toScaled18ApplyRateRoundDown(
-          BigInt(event.args.amountsRemovedRaw[i]),
+          BigInt(event.args.amountsRemovedRaw[i]) + aggregateSwapFeeAmountRaw,
           newState[poolAddress].scalingFactors[i],
           newState[poolAddress].tokenRates[i] || WAD,
         );
@@ -288,9 +298,14 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       this.logger.error(`swapEvent - token index not found in pool state`);
       return null;
     }
+    const totalSwapFeeAmountRaw = BigInt(event.args.swapFeeAmount);
+    const aggregateSwapFeeAmountRaw = this.mulDown(
+      totalSwapFeeAmountRaw,
+      newState[poolAddress].aggregateSwapFee,
+    );
     newState[poolAddress].balancesLiveScaled18[tokenInIndex] +=
       this.toScaled18ApplyRateRoundDown(
-        BigInt(event.args.amountIn),
+        BigInt(event.args.amountIn) - aggregateSwapFeeAmountRaw,
         newState[poolAddress].scalingFactors[tokenInIndex],
         newState[poolAddress].tokenRates[tokenInIndex] || WAD,
       );
