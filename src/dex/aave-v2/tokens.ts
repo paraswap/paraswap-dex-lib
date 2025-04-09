@@ -23,7 +23,7 @@ export const Tokens: { [network: number]: { [symbol: string]: aToken } } = {};
 const TokensByAddress: { [network: number]: { [address: string]: aToken } } =
   {};
 
-const tokensByNetwork: { [network: number]: any } = {
+const tokensByNetwork: { [network: number]: aToken[] } = {
   [Network.MAINNET]: getTokensForPool(aaveLendingPool[Network.MAINNET]),
   [Network.POLYGON]: getTokensForPool(aaveLendingPool[Network.POLYGON]),
   [Network.AVALANCHE]: getTokensForPool(aaveLendingPool[Network.AVALANCHE]),
@@ -35,7 +35,8 @@ for (const [key, tokens] of Object.entries(tokensByNetwork)) {
   TokensByAddress[network] = {};
   for (const token of tokens) {
     Tokens[network][token.aSymbol] = token;
-    TokensByAddress[network][token.aAddress.toLowerCase()] = token;
+    TokensByAddress[network][token.aAddress] = token;
+    TokensByAddress[network][token.address] = token;
   }
 }
 
@@ -73,4 +74,12 @@ export function aaveV2GetToken(network: number, symbol: string): Token | null {
     decimals: aToken.decimals,
     symbol: aToken.aSymbol,
   };
+}
+
+// get aToken by aave/underlying token address
+export function getAaveV2TokenByAddress(
+  network: number,
+  address: string,
+): aToken | null {
+  return TokensByAddress[network][address.toLowerCase()] ?? null;
 }

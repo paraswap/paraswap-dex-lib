@@ -31,7 +31,7 @@ import {
   WETH_GATEWAY,
   aaveLendingPool,
 } from './config';
-import { isAaveV2Pair } from './tokens';
+import { isAaveV2Pair, getAaveV2TokenByAddress } from './tokens';
 
 const WETH_GATEWAY_ABI: any = {
   [Network.MAINNET]: WETH_GATEWAY_ABI_MAINNET,
@@ -404,6 +404,26 @@ export class AaveV2
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    return [];
+    const aToken = getAaveV2TokenByAddress(this.network, tokenAddress);
+
+    if (!aToken) {
+      return [];
+    }
+
+    const isAaveToken = tokenAddress.toLowerCase() === aToken.aAddress;
+
+    return [
+      {
+        exchange: this.dexKey,
+        address: aToken.aAddress,
+        connectorTokens: [
+          {
+            address: isAaveToken ? aToken.address : aToken.aAddress,
+            decimals: aToken.decimals,
+          },
+        ],
+        liquidityUSD: 1e9,
+      },
+    ];
   }
 }
