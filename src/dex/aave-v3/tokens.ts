@@ -1,11 +1,12 @@
-import { aToken, Token } from '../../types';
+import { Token } from '../../types';
 import { Network } from '../../constants';
 
 import { AaveToken } from './types';
 
-export const Tokens: { [network: number]: { [symbol: string]: aToken } } = {};
+export const Tokens: { [network: number]: { [symbol: string]: AaveToken } } =
+  {};
 
-const TokensByAddress: { [network: number]: { [address: string]: aToken } } =
+const TokensByAddress: { [network: number]: { [address: string]: AaveToken } } =
   {};
 
 // return null if the pair does not exists otherwise return the aToken
@@ -35,11 +36,19 @@ export function getATokenIfAaveV3Pair(
   return null;
 }
 
+// get aToken by aave/underlying token address
+export function getAaveV3TokenByAddress(
+  network: number,
+  address: string,
+): AaveToken | null {
+  return TokensByAddress[network][address.toLowerCase()] ?? null;
+}
+
 export function getTokenFromASymbol(
   network: number,
   symbol: string,
 ): Token | null {
-  const aToken = Tokens[network][symbol];
+  const aToken = TokensByAddress[network][symbol];
 
   if (!aToken) return null;
 
