@@ -135,6 +135,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      subgraphURL: 'CStW6CSQbHoXsgKuVCrk3uShGA4JX3CAzzv2x9zaGf8w',
     },
     [Network.AVALANCHE]: {
       factoryAddress: '0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C',
@@ -149,6 +150,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      subgraphURL: '8EjCaWZumyAfN3wyB4QnibeeXaYS8i4sp1PiWT91AGrt',
     },
     [Network.BASE]: {
       factoryAddress: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
@@ -156,6 +158,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      subgraphURL: '4jGhpKjW4prWoyt5Bwk1ZHUwdEmNWveJcjEyjoTZWCY9',
     },
     [Network.OPTIMISM]: {
       factoryAddress: '0x0c3c1c532F1e39EdF36BE9Fe0bE1410313E074Bf',
@@ -170,6 +173,7 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      subgraphURL: 'EXBcAqmvQi6VAnE9X4MNK83LPeA6c1PsGskffbmThoeK',
     },
   },
   ApeSwap: {
@@ -179,9 +183,10 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
         '0xf4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b',
       poolGasCost: 100 * 1000,
       feeCode: 20,
+      subgraphURL: '4jGhpKjW4prWoyt5Bwk1ZHUwdEmNWveJcjEyjoTZWCY9',
     },
     [Network.POLYGON]: {
-      subgraphURL: '32BWziYZT6en9rVM9L3sDonnjHGtKvfsiJyMDv3T7Dx1',
+      subgraphURL: '2x478mWv6rECUcJR4VxNxRnuMuRsY22Jxy7xxXJu4Q7F',
       factoryAddress: '0xcf083be4164828f00cae704ec15a36d711491284',
       initCode:
         '0x511f0f358fe530cda0859ec20becf391718fdf5a329be02f4c95361f3d6a42d8',

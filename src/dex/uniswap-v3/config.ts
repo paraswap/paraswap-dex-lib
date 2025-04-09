@@ -215,7 +215,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.studio.thegraph.com/query/32073/v3-base/v0.0.1',
+      subgraphURL: '8uLUEdRYmjGeMiSPLndQGm6WKV5LXur9F7YBodtpRUoc',
     },
   },
   ChronosV3: {
@@ -269,8 +269,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
         decodeStateMultiCallResultWithRelativeBitmapsForRamses,
       initHash:
         '0x1565b129f2d1790f12d45301b9b084335626f0c92410bc43130763b69971135d',
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/66247/pharaoh-cl/version/latest',
+      subgraphURL: 'NFHumrUD9wtBRnZnrvkQksZzKpic26uMM5RbZR56Gns',
     },
   },
   'QuickSwapV3.1': {
@@ -382,6 +381,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: '0xc28ad28853a547556780bebf7847628501a3bcbb', // pool implementation address from factory contract is used instead of initHash here
+      subgraphURL: 'BsBDqDf6rJJyxKACZrCHAa8Gaf384cmL2hxfLaDuB8XM',
     },
   },
   AerodromeSlipstream: {
@@ -409,6 +409,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: '0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831', // pool implementation address from factory contract is used instead of initHash here
+      subgraphURL: 'GENunSHWLBXm59mBSgPzQ8metBEp9YDfdqwFr91Av1UM',
     },
   },
 };
