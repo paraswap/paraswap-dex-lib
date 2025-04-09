@@ -7,15 +7,18 @@ import { NULL_ADDRESS } from '../../constants';
 
 export async function queryTicksForPool(
   dexHelper: IDexHelper,
+  logger: Logger,
+  dexKey: string,
   subgraphUrl: string,
   blockNumber: number,
   id: string,
+  latestBlock = false,
 ): Promise<Tick[]> {
   const ticksLimit = 300;
 
   const poolQuery = `query {
       pools(
-        block: { number: ${blockNumber} },
+        ${latestBlock ? '' : `block: { number: ${blockNumber} }`}
         where: {id: "${id}"}
       ) {
         ticks(first: ${ticksLimit}) {
@@ -27,10 +30,11 @@ export async function queryTicksForPool(
       }
   }`;
 
-  const { data } = await dexHelper.httpRequest.querySubgraph<{
+  const res = await dexHelper.httpRequest.querySubgraph<{
     data: {
       pools: SubgraphPool[];
     };
+    errors?: { message: string }[];
   }>(
     subgraphUrl,
     {
@@ -40,7 +44,26 @@ export async function queryTicksForPool(
     { timeout: SUBGRAPH_TIMEOUT },
   );
 
-  return data.pools[0]?.ticks || [];
+  if (res.errors && res.errors.length) {
+    if (res.errors[0].message.includes('missing block')) {
+      logger.info(
+        `${dexKey}: subgraph query ticks fallback to the latest block...`,
+      );
+      return queryTicksForPool(
+        dexHelper,
+        logger,
+        dexKey,
+        subgraphUrl,
+        blockNumber,
+        id,
+        true,
+      );
+    } else {
+      throw new Error(res.errors[0].message);
+    }
+  }
+
+  return res.data.pools[0]?.ticks || [];
 }
 
 export async function queryAvailablePoolsForPairFromSubgraph(
@@ -95,6 +118,10 @@ export async function queryAvailablePoolsForPairFromSubgraph(
     },
     { timeout: SUBGRAPH_TIMEOUT },
   );
+
+  if (res.errors && res.errors.length) {
+    throw new Error(res.errors[0].message);
+  }
 
   return res.data.pools;
 }
@@ -154,22 +181,22 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
     { timeout: SUBGRAPH_TIMEOUT },
   );
 
-  if (
-    res.errors &&
-    res.errors.length &&
-    res.errors[0].message.includes('missing block')
-  ) {
-    logger.info(`${dexKey}: subgraph fallback to the latest block...`);
-    return queryOnePageForAllAvailablePoolsFromSubgraph(
-      dexHelper,
-      logger,
-      dexKey,
-      subgraphUrl,
-      blockNumber,
-      skip,
-      limit,
-      true,
-    );
+  if (res.errors && res.errors.length) {
+    if (res.errors[0].message.includes('missing block')) {
+      logger.info(`${dexKey}: subgraph fallback to the latest block...`);
+      return queryOnePageForAllAvailablePoolsFromSubgraph(
+        dexHelper,
+        logger,
+        dexKey,
+        subgraphUrl,
+        blockNumber,
+        skip,
+        limit,
+        true,
+      );
+    } else {
+      throw new Error(res.errors[0].message);
+    }
   }
 
   return res.data.pools;

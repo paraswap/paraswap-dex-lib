@@ -52,14 +52,22 @@ class UniswapV4PoolMath {
           return 0n;
         }
 
+        const amountSpecified = -amount;
         const [amount0, amount1] = this._swap(poolState, {
           zeroForOne,
-          amountSpecified: -amount,
+          amountSpecified,
           tickSpacing: BigInt(pool.key.tickSpacing),
           sqrtPriceLimitX96: zeroForOne
             ? TickMath.MIN_SQRT_PRICE + 1n
             : TickMath.MAX_SQRT_PRICE - 1n,
         } as SwapParams);
+
+        const amountSpecifiedActual =
+          zeroForOne == amountSpecified < 0n ? amount0 : amount1;
+
+        if (amountSpecifiedActual != amountSpecified) {
+          return 0n;
+        }
 
         return zeroForOne ? amount1 : amount0;
       });
@@ -69,6 +77,8 @@ class UniswapV4PoolMath {
           return 0n;
         }
 
+        const amountSpecified = amount;
+
         const [amount0, amount1] = this._swap(poolState, {
           zeroForOne,
           amountSpecified: amount,
@@ -77,6 +87,13 @@ class UniswapV4PoolMath {
             ? TickMath.MIN_SQRT_PRICE + 1n
             : TickMath.MAX_SQRT_PRICE - 1n,
         } as SwapParams);
+
+        const amountSpecifiedActual =
+          zeroForOne == amountSpecified < 0n ? amount0 : amount1;
+
+        if (amountSpecifiedActual != amountSpecified) {
+          return 0n;
+        }
 
         return zeroForOne ? -amount0 : -amount1;
       });

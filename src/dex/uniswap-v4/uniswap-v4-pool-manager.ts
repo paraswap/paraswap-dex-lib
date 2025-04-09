@@ -71,36 +71,6 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     blockNumber: number,
     options?: InitializeStateOptions<PoolManagerState>,
   ) {
-    this.pools = await this.queryAllAvailablePools(blockNumber);
-    const poolsToInit = this.pools.slice(0, POOLS_INITIALIZATION_LIMIT);
-
-    this.eventPools = await poolsToInit.reduce<
-      Promise<Record<string, UniswapV4Pool>>
-    >(async (accum, pool) => {
-      const accumP = await accum;
-      const eventPool = new UniswapV4Pool(
-        this.dexHelper,
-        this.parentName,
-        this.network,
-        this.config,
-        this.logger,
-        '',
-        pool.id.toLowerCase(),
-        pool.token0.address.toLowerCase(),
-        pool.token1.address.toLowerCase(),
-        pool.fee,
-        pool.hooks,
-        0n,
-        pool.tick,
-        pool.tickSpacing,
-      );
-      await eventPool.initialize(blockNumber);
-
-      accumP[pool.id] = eventPool;
-
-      return accumP;
-    }, Promise.resolve({} as Record<string, UniswapV4Pool>));
-
     return super.initialize(blockNumber, options);
   }
 
@@ -128,17 +98,17 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
-    const src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
-    const dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
+    const _src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
+    const _dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
 
     let pools = this.pools.filter(
       pool =>
-        (pool.token0.address === src && pool.token1.address === dest) ||
-        (pool.token0.address === dest && pool.token1.address === src),
+        (pool.token0.address === _src && pool.token1.address === _dest) ||
+        (pool.token0.address === _dest && pool.token1.address === _src),
     );
 
     if (pools.length === 0) {
-      const newPoolsToInit = await this.queryPoolsForPair(srcToken, destToken);
+      const newPoolsToInit = await this.queryPoolsForPair(_src, _dest);
 
       await Promise.all(
         newPoolsToInit.map(async pool => {
@@ -161,15 +131,15 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
           await eventPool.initialize(blockNumber);
 
           this.pools.push(pool);
-          this.eventPools[pool.id] = eventPool;
+          this.eventPools[pool.id.toLowerCase()] = eventPool;
         }),
       );
 
       if (newPoolsToInit.length > 0) {
         pools = this.pools.filter(
           pool =>
-            (pool.token0.address === src && pool.token1.address === dest) ||
-            (pool.token0.address === dest && pool.token1.address === src),
+            (pool.token0.address === _src && pool.token1.address === _dest) ||
+            (pool.token0.address === _dest && pool.token1.address === _src),
         );
       }
     }
@@ -198,61 +168,62 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     );
   }
 
-  private async queryAllAvailablePools(
-    blockNumber: number,
-  ): Promise<SubgraphPool[]> {
-    const cachedPools = await this.dexHelper.cache.getAndCacheLocally(
-      this.parentName,
-      this.network,
-      this.poolsCacheKey,
-      POOL_CACHE_REFRESH_INTERVAL,
-    );
-
-    if (cachedPools) {
-      const pools = JSON.parse(cachedPools);
-      return pools;
-    }
-
-    let pools: SubgraphPool[] = [];
-    let curPage = 0;
-    const limit = 1000;
-    let currentSubgraphPools: SubgraphPool[] =
-      await queryOnePageForAllAvailablePoolsFromSubgraph(
-        this.dexHelper,
-        this.logger,
-        this.parentName,
-        this.config.subgraphURL,
-        blockNumber,
-        curPage * limit,
-        limit,
-      );
-    pools = pools.concat(currentSubgraphPools);
-
-    while (currentSubgraphPools.length === limit) {
-      curPage++;
-      currentSubgraphPools = await queryOnePageForAllAvailablePoolsFromSubgraph(
-        this.dexHelper,
-        this.logger,
-        this.parentName,
-        this.config.subgraphURL,
-        blockNumber,
-        curPage * limit,
-        limit,
-      );
-
-      pools = pools.concat(currentSubgraphPools);
-    }
-
-    this.dexHelper.cache.setexAndCacheLocally(
-      this.parentName,
-      this.network,
-      this.poolsCacheKey,
-      POOL_CACHE_REFRESH_INTERVAL,
-      JSON.stringify(pools),
-    );
-
-    return pools;
-  }
+  // private async queryAllAvailablePools(
+  //   blockNumber: number,
+  //   limit?: number,
+  // ): Promise<SubgraphPool[]> {
+  //   // const cachedPools = await this.dexHelper.cache.getAndCacheLocally(
+  //   //   this.parentName,
+  //   //   this.network,
+  //   //   this.poolsCacheKey,
+  //   //   POOL_CACHE_REFRESH_INTERVAL,
+  //   // );
+  //   //
+  //   // if (cachedPools) {
+  //   //   const pools = JSON.parse(cachedPools);
+  //   //   return pools;
+  //   // }
+  //
+  //   let pools: SubgraphPool[] = [];
+  //   let curPage = 0;
+  //   const defaultLimit = 1000;
+  //   let currentSubgraphPools: SubgraphPool[] =
+  //     await queryOnePageForAllAvailablePoolsFromSubgraph(
+  //       this.dexHelper,
+  //       this.logger,
+  //       this.parentName,
+  //       this.config.subgraphURL,
+  //       blockNumber,
+  //       curPage * limit,
+  //       limit || defaultLimit,
+  //     );
+  //   pools = pools.concat(currentSubgraphPools);
+  //
+  //   while (currentSubgraphPools.length === limit) {
+  //     curPage++;
+  //     currentSubgraphPools = await queryOnePageForAllAvailablePoolsFromSubgraph(
+  //       this.dexHelper,
+  //       this.logger,
+  //       this.parentName,
+  //       this.config.subgraphURL,
+  //       blockNumber,
+  //       curPage * limit,
+  //       limit,
+  //     );
+  //
+  //     pools = pools.concat(currentSubgraphPools);
+  //   }
+  //   //
+  //   // this.dexHelper.cache.setexAndCacheLocally(
+  //   //   this.parentName,
+  //   //   this.network,
+  //   //   this.poolsCacheKey,
+  //   //   POOL_CACHE_REFRESH_INTERVAL,
+  //   //   JSON.stringify(pools),
+  //   // );
+  //
+  //   return pools;
+  // }
 
   async handleInitializeEvent(
     event: LogDescription,

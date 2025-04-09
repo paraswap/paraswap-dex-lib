@@ -275,6 +275,8 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
   async generateState(blockNumber: number): Promise<PoolState> {
     const ticks = await queryTicksForPool(
       this.dexHelper,
+      this.logger,
+      this.parentName,
       this.config.subgraphURL,
       blockNumber,
       this.poolId,

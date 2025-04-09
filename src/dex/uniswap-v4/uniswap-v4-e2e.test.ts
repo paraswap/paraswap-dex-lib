@@ -25,6 +25,7 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -93,7 +94,7 @@ describe('UniswapV4 E2E', () => {
       const tokenBSymbol: string = 'USDC';
 
       const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '1000000';
+      const tokenBAmount: string = '100000000';
 
       testForNetwork(
         network,
