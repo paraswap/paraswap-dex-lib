@@ -28,11 +28,10 @@ export class TickBitmap {
     return Math.floor(Math.log2(value & -value));
   }
 
-  static compress(tick: number, tickSpacing: number): number {
-    const compressed =
-      tick < 0 ? Math.ceil(tick / tickSpacing) : Math.floor(tick / tickSpacing);
-    if (tick < 0 && tick % tickSpacing !== 0) {
-      return compressed - 1;
+  static compress(tick: bigint, tickSpacing: bigint): bigint {
+    const compressed = tick / tickSpacing;
+    if (tick < 0 && tick % tickSpacing !== 0n) {
+      return compressed - 1n;
     }
     return compressed;
   }
@@ -74,9 +73,7 @@ export class TickBitmap {
     lte: boolean,
     isPricing: boolean = false,
   ): [bigint, boolean] {
-    let compressed = BigInt(
-      TickBitmap.compress(Number(tick), Number(tickSpacing)),
-    );
+    let compressed = BigInt(TickBitmap.compress(tick, tickSpacing));
 
     let initialized: boolean;
     let next: bigint;
