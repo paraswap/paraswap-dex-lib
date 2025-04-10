@@ -33,8 +33,8 @@ export class TickBitmap {
       'tick % tickSpacing === 0n',
     );
 
-    const compressedTick = tick / tickSpacing;
-    const [wordPos, bitPos] = TickBitmap.position(compressedTick);
+    const compressed = TickBitmap.compress(tick, tickSpacing);
+    const [wordPos, bitPos] = TickBitmap.position(compressed);
 
     const mask = 1n << bitPos;
 
@@ -52,7 +52,6 @@ export class TickBitmap {
     tick: bigint,
     tickSpacing: bigint,
     lte: boolean,
-    isPriceQuery: boolean = false,
   ): [bigint, boolean] {
     const compressed = TickBitmap.compress(tick, tickSpacing);
 

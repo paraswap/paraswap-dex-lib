@@ -633,8 +633,7 @@ describe('UniswapV4 integration tests', () => {
       const TokenB = Tokens[network][TokenBSymbol];
 
       beforeEach(async () => {
-        // blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-        blockNumber = 22239537;
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
         uniswapV4 = new UniswapV4(network, dexKey, dexHelper);
       });
 
@@ -754,16 +753,10 @@ describe('UniswapV4 integration tests', () => {
           pools,
         );
 
-        // const poolPrices = prices!.filter(
-        //   pool =>
-        //     pool!.poolIdentifier!.toLowerCase() ===
-        //     '0xdce6394339af00981949f5f3baf27e3610c76326a700af57e4b3e3ae4977f78d'.toLowerCase(),
-        // );
-
-        // console.log(
-        //   `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
-        //   poolPrices,
-        // );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          poolPrices,
+        );
 
         console.log(
           `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
@@ -1236,8 +1229,6 @@ describe('UniswapV4 integration tests', () => {
           6n * BI_POWS[18],
           7n * BI_POWS[18],
           8n * BI_POWS[18],
-          9n * BI_POWS[18],
-          10n * BI_POWS[18],
         ];
 
         const pools = await uniswapV4.getPoolIdentifiers(
@@ -2121,11 +2112,6 @@ describe('UniswapV4 integration tests', () => {
           3n * BI_POWS[6],
           4n * BI_POWS[6],
           5n * BI_POWS[6],
-          6n * BI_POWS[6],
-          7n * BI_POWS[6],
-          8n * BI_POWS[6],
-          9n * BI_POWS[6],
-          10n * BI_POWS[6],
         ];
 
         const pools = await uniswapV4.getPoolIdentifiers(

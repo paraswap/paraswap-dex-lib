@@ -259,6 +259,34 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
       });
     }
 
+    ticks.map(tick => {
+      const compressed = TickBitmap.compress(
+        BigInt(tick.tickIdx),
+        BigInt(tickSpacing),
+      );
+      const [wordPos] = TickBitmap.position(compressed);
+
+      callData.push({
+        target: this.config.stateView,
+        callData: this.stateViewIface.encodeFunctionData('getTickBitmap', [
+          poolId,
+          wordPos,
+        ]),
+        decodeFunction: (
+          result: MultiResult<BytesLike> | BytesLike,
+        ): [bigint, bigint] => {
+          const [, toDecode] = extractSuccessAndValue(result);
+
+          const decoded = this.stateViewIface.decodeFunctionResult(
+            'getTickBitmap',
+            toDecode,
+          );
+
+          return [wordPos, BigInt(decoded[0])];
+        },
+      });
+    });
+
     return callData;
   }
 
@@ -332,7 +360,11 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
 
     let tickBitMapCounter = 0;
     const tickBitMapResults: Record<NumberAsString, bigint> = {};
-    for (let i = leftBitMapIndex; i <= rightBitMapIndex; i++) {
+    for (
+      let i = leftBitMapIndex;
+      i <= Number(rightBitMapIndex) + ticks.length;
+      i++
+    ) {
       const curResults = results[tickBitMapMinIndex + tickBitMapCounter] as {
         returnData: [bigint, bigint];
       };
@@ -382,7 +414,6 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
 
     const range = tickBitMapToUse + tickBitMapBuffer;
 
-    // const compressedTick = BigInt(tick) / BigInt(tickSpacing);
     const compressedTick = TickBitmap.compress(
       BigInt(tick),
       BigInt(tickSpacing),
@@ -419,7 +450,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
           return newState;
         } catch (e) {
           this.logger.error(
-            `${this.parentName}: Pool ${this.config.poolManager}, ` +
+            `${this.parentName}: PoolManagr ${this.config.poolManager} (pool id ${this.poolId}), ` +
               `network=${this.dexHelper.config.data.network}: Unexpected ` +
               `error while handling event on blockNumber=${blockHeader.number}, ` +
               `blockHash=${blockHeader.hash} and parentHash=${

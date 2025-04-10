@@ -1,4 +1,3 @@
-// This is used for price calculation. If out of scope, return 0n
 import { Network } from '../../constants';
 
 export const TICK_BITMAP_TO_USE = 4n;
