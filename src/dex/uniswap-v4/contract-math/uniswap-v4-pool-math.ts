@@ -63,7 +63,7 @@ class UniswapV4PoolMath {
         } as SwapParams);
 
         const amountSpecifiedActual =
-          zeroForOne == amountSpecified < 0n ? amount0 : amount1;
+          zeroForOne === amountSpecified < 0n ? amount0 : amount1;
 
         if (amountSpecifiedActual != amountSpecified) {
           return 0n;
@@ -89,7 +89,7 @@ class UniswapV4PoolMath {
         } as SwapParams);
 
         const amountSpecifiedActual =
-          zeroForOne == amountSpecified < 0n ? amount0 : amount1;
+          zeroForOne === amountSpecified < 0n ? amount0 : amount1;
 
         if (amountSpecifiedActual != amountSpecified) {
           return 0n;
@@ -101,10 +101,12 @@ class UniswapV4PoolMath {
   }
 
   _swap(poolState: PoolState, params: SwapParams): [bigint, bigint] {
+    // console.log('SWAP PARAMS: ', params);
     const _poolState = _.cloneDeep(poolState); // we don't need to modify existing poolState
-    // const _poolState = poolState; // we don't need to modify existing poolState
     const slot0Start = _poolState.slot0;
     const zeroForOne = params.zeroForOne;
+
+    // console.log('slot0Start: ', slot0Start);
 
     const protocolFee = zeroForOne
       ? ProtocolFeeLibrary.getZeroForOneFee(slot0Start.protocolFee)
@@ -221,7 +223,9 @@ class UniswapV4PoolMath {
         step.tickNext = TickMath.MAX_TICK;
       }
 
+      // console.log('step.tickNext: ', step.tickNext);
       step.sqrtPriceNextX96 = TickMath.getSqrtPriceAtTick(step.tickNext);
+      // console.log('getSqrtPriceAtTick: ', step.sqrtPriceNextX96);
 
       const {
         sqrtPriceNextX96: resultSqrtPriceNextX96,
@@ -245,12 +249,26 @@ class UniswapV4PoolMath {
       step.amountOut = stepAmountOut;
       step.feeAmount = stepFeeAmount;
 
+      // console.log('params.amountSpecified > 0n: ', params.amountSpecified > 0n);
+
       if (params.amountSpecified > 0n) {
         amountSpecifiedRemaining -= step.amountOut;
+
+        // console.log('CUR amountCalculated: ', amountCalculated);
+        // console.log('step.amountIn: ', step.amountIn);
+        // console.log('step.feeAmount: ', step.feeAmount);
+
         amountCalculated -= step.amountIn + step.feeAmount;
+
+        // console.log('CUR amountCalculated after: ', amountCalculated);
       } else {
         amountSpecifiedRemaining += step.amountIn + step.feeAmount;
+
+        // console.log('CUR amountCalculated: ', amountCalculated);
+        // console.log('step.amountOut: ', step.amountOut);
+
         amountCalculated += step.amountOut;
+        // console.log('CUR amountCalculated after: ', amountCalculated);
       }
 
       if (protocolFee > 0) {
@@ -317,12 +335,24 @@ class UniswapV4PoolMath {
       _poolState.feeGrowthGlobal0X128 = step.feeGrowthGlobalX128;
     }
 
+    // console.log(
+    //   'zeroForOne !== params.amountSpecified < 0: ',
+    //   zeroForOne !== params.amountSpecified < 0,
+    // );
     if (zeroForOne !== params.amountSpecified < 0) {
+      // console.log('RES: ', [
+      //   amountCalculated,
+      //   params.amountSpecified - amountSpecifiedRemaining,
+      // ]);
       return [
         amountCalculated,
         params.amountSpecified - amountSpecifiedRemaining,
       ];
     } else {
+      // console.log('RES: ', [
+      //   params.amountSpecified - amountSpecifiedRemaining,
+      //   amountCalculated,
+      // ]);
       return [
         params.amountSpecified - amountSpecifiedRemaining,
         amountCalculated,

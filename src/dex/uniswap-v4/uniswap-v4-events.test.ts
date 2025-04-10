@@ -150,44 +150,6 @@ describe('UniswapV4 events', () => {
         });
       });
     });
-
-    // it('get logs', async () => {
-    //   const dexHelper = new DummyDexHelper(network);
-    //   const contractAddr = '0x000000000004444c5dc75cb358380d2e3de08a90';
-    //
-    //   const filter = {
-    //     address: contractAddr,
-    //     topics: [
-    //       // ethers.utils.id('ProtocolFeeUpdated(bytes32,uint24)'), // no logs
-    //       // ethers.utils.id('Donate(bytes32,address,uint256,uint256)'),
-    //       // ethers.utils.id(
-    //       //   'Swap(bytes32,address,int128,int128,uint160,uint128,int24,uint24)',
-    //       // ),
-    //       // '0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f', // Swap
-    //     ],
-    //   };
-    //
-    //   const fromBlock = 21688329;
-    //   const toBlock = 22130455;
-    //
-    //   const blocksLimit = 10_000;
-    //
-    //   let logs: Log[] = [];
-    //   let latestBlock = fromBlock;
-    //
-    //   while (latestBlock <= toBlock) {
-    //     logs = logs.concat(
-    //       await dexHelper.provider.getLogs({
-    //         ...filter,
-    //         fromBlock: latestBlock,
-    //         toBlock: latestBlock + blocksLimit,
-    //       }),
-    //     );
-    //     latestBlock = latestBlock + blocksLimit;
-    //   }
-    //
-    //   console.log('LOGS: ', logs);
-    // });
   });
 });
 

@@ -10,21 +10,6 @@ export class SwapMath {
     sqrtPriceNextX96: bigint,
     sqrtPriceLimitX96: bigint,
   ): bigint {
-    // const MAX_UINT160 = BigInt('0xffffffffffffffffffffffffffffffffffffffff');
-    //
-    // sqrtPriceNextX96 &= MAX_UINT160;
-    // sqrtPriceLimitX96 &= MAX_UINT160;
-    //
-    // const nextOrLimit = Number(
-    //   sqrtPriceNextX96 < sqrtPriceLimitX96 !== zeroForOne,
-    // );
-    // const symDiff = sqrtPriceNextX96 ^ sqrtPriceLimitX96;
-    //
-    // return sqrtPriceLimitX96 ^ (symDiff * BigInt(nextOrLimit));
-    //
-    // const nextOrLimit = sqrtPriceNextX96 < sqrtPriceLimitX96 !== zeroForOne;
-    // return nextOrLimit ? sqrtPriceLimitX96 : sqrtPriceNextX96;
-
     const nextOrLimit =
       (sqrtPriceNextX96 < sqrtPriceLimitX96 ? 1 : 0) ^ (zeroForOne ? 1 : 0);
 
@@ -44,7 +29,7 @@ export class SwapMath {
     amountOut: bigint;
     feeAmount: bigint;
   } {
-    const _feePips = feePips;
+    const _feePips = BigInt.asUintN(256, feePips);
     const zeroForOne = sqrtPriceCurrentX96 >= sqrtPriceTargetX96;
     const exactIn = amountRemaining < 0n;
 
@@ -54,9 +39,13 @@ export class SwapMath {
     let sqrtPriceNextX96: bigint;
 
     if (exactIn) {
-      const amountRemainingLessFee =
-        (BigInt(-amountRemaining) * (SwapMath.MAX_SWAP_FEE - _feePips)) /
-        SwapMath.MAX_SWAP_FEE;
+      const amountRemainingLessFee = FullMath.mulDiv(
+        BigInt(-amountRemaining),
+        SwapMath.MAX_SWAP_FEE - _feePips,
+        SwapMath.MAX_SWAP_FEE,
+      );
+
+      // console.log('amountRemainingLessFee: ', amountRemainingLessFee);
 
       amountIn = zeroForOne
         ? SqrtPriceMath.getAmount0Delta(
@@ -72,15 +61,28 @@ export class SwapMath {
             true,
           );
 
+      // console.log(
+      //   'getAmount0Delta args: ',
+      //   sqrtPriceTargetX96,
+      //   sqrtPriceCurrentX96,
+      //   liquidity,
+      // );
+      // console.log('amountIn: ', amountIn);
+
       if (amountRemainingLessFee >= amountIn) {
-        sqrtPriceNextX96 = sqrtPriceTargetX96;
+        sqrtPriceNextX96 = BigInt(sqrtPriceTargetX96);
+        // console.log('SET sqrtPriceNextX96 eq to sqrtPriceTargetX96');
         feeAmount =
           _feePips === SwapMath.MAX_SWAP_FEE
             ? amountIn
-            : (amountIn * _feePips + (SwapMath.MAX_SWAP_FEE - _feePips - 1n)) /
-              (SwapMath.MAX_SWAP_FEE - _feePips);
+            : FullMath.mulDivRoundingUp(
+                amountIn,
+                _feePips,
+                SwapMath.MAX_SWAP_FEE - _feePips,
+              );
+        // console.log('feeAmount: ', feeAmount);
       } else {
-        amountIn = amountRemainingLessFee;
+        amountIn = BigInt(amountRemainingLessFee);
         sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
           sqrtPriceCurrentX96,
           liquidity,
@@ -89,6 +91,10 @@ export class SwapMath {
         );
         feeAmount = BigInt(-amountRemaining) - amountIn;
       }
+
+      // console.log('sqrtPriceNextX96: ', sqrtPriceNextX96);
+      // console.log('amountOut zeroForOne :', zeroForOne);
+
       amountOut = zeroForOne
         ? SqrtPriceMath.getAmount1Delta(
             sqrtPriceNextX96,
@@ -102,6 +108,8 @@ export class SwapMath {
             liquidity,
             false,
           );
+
+      // console.log('amountOut: ', amountOut);
     } else {
       amountOut = zeroForOne
         ? SqrtPriceMath.getAmount1Delta(
@@ -117,8 +125,8 @@ export class SwapMath {
             false,
           );
 
-      if (BigInt(amountRemaining) >= amountOut) {
-        sqrtPriceNextX96 = sqrtPriceTargetX96;
+      if (amountRemaining >= amountOut) {
+        sqrtPriceNextX96 = BigInt(sqrtPriceTargetX96);
       } else {
         amountOut = BigInt(amountRemaining);
         sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromOutput(
@@ -142,9 +150,11 @@ export class SwapMath {
             true,
           );
 
-      feeAmount =
-        (amountIn * _feePips + (SwapMath.MAX_SWAP_FEE - _feePips - 1n)) /
-        (SwapMath.MAX_SWAP_FEE - _feePips);
+      feeAmount = FullMath.mulDivRoundingUp(
+        amountIn,
+        _feePips,
+        SwapMath.MAX_SWAP_FEE - _feePips,
+      );
     }
 
     return { sqrtPriceNextX96, amountIn, amountOut, feeAmount };

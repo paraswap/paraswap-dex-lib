@@ -129,6 +129,12 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       limitPools?.filter(t => pools.find(p => p.id === t)) ??
       pools.map(t => t.id);
 
+    availablePools = availablePools.filter(
+      poolId =>
+        poolId.toLowerCase() ===
+        '0xdce6394339af00981949f5f3baf27e3610c76326a700af57e4b3e3ae4977f78d'.toLowerCase(),
+    );
+
     const pricesPromises = availablePools.map(async poolId => {
       const pool = pools.find(p => p.id === poolId)!;
 

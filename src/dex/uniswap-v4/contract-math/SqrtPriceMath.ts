@@ -106,17 +106,6 @@ export class SqrtPriceMath {
           false,
         );
   }
-  //
-  // static getAmount0Delta(
-  //   sqrtPriceAX96: bigint,
-  //   sqrtPriceBX96: bigint,
-  //   liquidity: bigint,
-  //   roundUp?: boolean,
-  // ): bigint {
-  //   return liquidity < 0n
-  //     ? this._getAmount0Delta(sqrtPriceAX96, sqrtPriceBX96, -liquidity, false)
-  //     : -this._getAmount0Delta(sqrtPriceAX96, sqrtPriceBX96, liquidity, true);
-  // }
 
   static getAmount0Delta(
     sqrtPriceAX96: bigint,
@@ -138,28 +127,47 @@ export class SqrtPriceMath {
       : FullMath.mulDiv(numerator1, numerator2, sqrtPriceBX96) / sqrtPriceAX96;
   }
 
-  static absDiff(a: bigint, b: bigint): bigint {
-    return a >= b ? a - b : b - a;
-  }
-
   static getAmount1Delta(
     sqrtPriceAX96: bigint,
     sqrtPriceBX96: bigint,
     liquidity: bigint,
     roundUp: boolean,
   ): bigint {
+    if (sqrtPriceAX96 > sqrtPriceBX96)
+      [sqrtPriceAX96, sqrtPriceBX96] = [sqrtPriceBX96, sqrtPriceAX96];
+
+    let numerator1 = BigInt.asIntN(256, liquidity);
+    let numerator2 = sqrtPriceBX96 - sqrtPriceAX96;
+
     return roundUp
-      ? FullMath.mulDivRoundingUp(
-          liquidity,
-          sqrtPriceBX96 - sqrtPriceAX96,
-          FixedPoint96.Q96,
-        )
-      : FullMath.mulDiv(
-          liquidity,
-          sqrtPriceBX96 - sqrtPriceAX96,
-          FixedPoint96.Q96,
-        );
+      ? FullMath.mulDivRoundingUp(numerator1, numerator2, FixedPoint96.Q96)
+      : FullMath.mulDiv(numerator1, numerator2, FixedPoint96.Q96);
   }
+
+  // static getAmount1Delta(
+  //   sqrtPriceAX96: bigint,
+  //   sqrtPriceBX96: bigint,
+  //   liquidity: bigint,
+  //   roundUp: boolean,
+  // ): bigint {
+  //   const numerator = SqrtPriceMath.absDiff(sqrtPriceAX96, sqrtPriceBX96);
+  //   const _liquidity = BigInt.asIntN(256, liquidity);
+  //
+  //   return roundUp
+  //     ? FullMath.mulDivRoundingUp(_liquidity, numerator, FixedPoint96.Q96)
+  //     : FullMath.mulDiv(_liquidity, numerator, FixedPoint96.Q96);
+  //   // return roundUp
+  //   //   ? FullMath.mulDivRoundingUp(
+  //   //       liquidity,
+  //   //       sqrtPriceBX96 - sqrtPriceAX96,
+  //   //       FixedPoint96.Q96,
+  //   //     )
+  //   //   : FullMath.mulDiv(
+  //   //       liquidity,
+  //   //       sqrtPriceBX96 - sqrtPriceAX96,
+  //   //       FixedPoint96.Q96,
+  //   //     );
+  // }
 
   static getAmount0DeltaSigned(
     sqrtPriceAX96: bigint,

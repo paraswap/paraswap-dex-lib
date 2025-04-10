@@ -10,6 +10,7 @@ import { checkPoolPrices } from '../../../tests/utils';
 import { Interface, Result } from '@ethersproject/abi';
 import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
 import { PoolKey } from './types';
+import * as util from 'util';
 
 const quoterIface = new Interface(QuoterAbi);
 
@@ -74,7 +75,7 @@ async function checkOnChainPricing(
     zeroForOne,
   );
 
-  // console.log('readerCallData: ', readerCallData);
+  console.log('readerCallData: ', readerCallData);
 
   let readerResult;
   try {
@@ -634,7 +635,8 @@ describe('UniswapV4 integration tests', () => {
       const TokenB = Tokens[network][TokenBSymbol];
 
       beforeEach(async () => {
-        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        // blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        blockNumber = 22232478;
         uniswapV4 = new UniswapV4(network, dexKey, dexHelper);
       });
 
@@ -644,15 +646,15 @@ describe('UniswapV4 integration tests', () => {
         const amounts = [
           0n,
           1n * BI_POWS[18],
-          // 2n * BI_POWS[18],
-          // 3n * BI_POWS[18],
-          // 4n * BI_POWS[18],
-          // 5n * BI_POWS[18],
-          // 6n * BI_POWS[18],
-          // 7n * BI_POWS[18],
-          // 8n * BI_POWS[18],
-          // 9n * BI_POWS[18],
-          // 10n * BI_POWS[18],
+          2n * BI_POWS[18],
+          3n * BI_POWS[18],
+          4n * BI_POWS[18],
+          5n * BI_POWS[18],
+          6n * BI_POWS[18],
+          7n * BI_POWS[18],
+          8n * BI_POWS[18],
+          9n * BI_POWS[18],
+          10n * BI_POWS[18],
         ];
 
         const pools = await uniswapV4.getPoolIdentifiers(
@@ -677,9 +679,20 @@ describe('UniswapV4 integration tests', () => {
           pools,
         );
 
+        // const poolPrices = prices!.filter(
+        //   pool =>
+        //     pool!.poolIdentifier!.toLowerCase() ===
+        //     '0xdce6394339af00981949f5f3baf27e3610c76326a700af57e4b3e3ae4977f78d'.toLowerCase(),
+        // );
+
+        // console.log(
+        //   `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        //   poolPrices,
+        // );
+
         console.log(
           `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
-          poolPrices,
+          util.inspect(poolPrices, false, null, true),
         );
 
         expect(poolPrices).not.toBeNull();
@@ -691,6 +704,84 @@ describe('UniswapV4 integration tests', () => {
             const res = await checkOnChainPricing(
               dexHelper,
               'quoteExactInputSingle',
+              blockNumber,
+              '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203',
+              price.prices,
+              price.data.pool.key,
+              price.data.zeroForOne,
+              amounts,
+            );
+            if (res === false) falseChecksCounter++;
+          }),
+        );
+
+        expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+
+      it('ETH -> USDC getPoolIdentifiers and getPricesVolume BUY', async () => {
+        console.log('BLOCK NUMBER: ', blockNumber);
+
+        const amounts = [
+          0n,
+          1n * BI_POWS[6],
+          2n * BI_POWS[6],
+          3n * BI_POWS[6],
+          4n * BI_POWS[6],
+          5n * BI_POWS[6],
+          6n * BI_POWS[6],
+          7n * BI_POWS[6],
+          8n * BI_POWS[6],
+          9n * BI_POWS[6],
+          10n * BI_POWS[6],
+        ];
+
+        const pools = await uniswapV4.getPoolIdentifiers(
+          TokenA,
+          TokenB,
+          SwapSide.BUY,
+          blockNumber,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await uniswapV4.getPricesVolume(
+          TokenA,
+          TokenB,
+          amounts,
+          SwapSide.BUY,
+          blockNumber,
+          pools,
+        );
+
+        // const poolPrices = prices!.filter(
+        //   pool =>
+        //     pool!.poolIdentifier!.toLowerCase() ===
+        //     '0xdce6394339af00981949f5f3baf27e3610c76326a700af57e4b3e3ae4977f78d'.toLowerCase(),
+        // );
+
+        // console.log(
+        //   `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+        //   poolPrices,
+        // );
+
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          util.inspect(poolPrices, false, null, true),
+        );
+
+        expect(poolPrices).not.toBeNull();
+        checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+
+        let falseChecksCounter = 0;
+        await Promise.all(
+          poolPrices!.map(async price => {
+            const res = await checkOnChainPricing(
+              dexHelper,
+              'quoteExactOutputSingle',
               blockNumber,
               '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203',
               price.prices,
