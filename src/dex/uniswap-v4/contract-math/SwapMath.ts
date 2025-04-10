@@ -45,8 +45,6 @@ export class SwapMath {
         SwapMath.MAX_SWAP_FEE,
       );
 
-      // console.log('amountRemainingLessFee: ', amountRemainingLessFee);
-
       amountIn = zeroForOne
         ? SqrtPriceMath.getAmount0Delta(
             sqrtPriceTargetX96,
@@ -61,17 +59,8 @@ export class SwapMath {
             true,
           );
 
-      // console.log(
-      //   'getAmount0Delta args: ',
-      //   sqrtPriceTargetX96,
-      //   sqrtPriceCurrentX96,
-      //   liquidity,
-      // );
-      // console.log('amountIn: ', amountIn);
-
       if (amountRemainingLessFee >= amountIn) {
         sqrtPriceNextX96 = BigInt(sqrtPriceTargetX96);
-        // console.log('SET sqrtPriceNextX96 eq to sqrtPriceTargetX96');
         feeAmount =
           _feePips === SwapMath.MAX_SWAP_FEE
             ? amountIn
@@ -80,7 +69,6 @@ export class SwapMath {
                 _feePips,
                 SwapMath.MAX_SWAP_FEE - _feePips,
               );
-        // console.log('feeAmount: ', feeAmount);
       } else {
         amountIn = BigInt(amountRemainingLessFee);
         sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
@@ -91,9 +79,6 @@ export class SwapMath {
         );
         feeAmount = BigInt(-amountRemaining) - amountIn;
       }
-
-      // console.log('sqrtPriceNextX96: ', sqrtPriceNextX96);
-      // console.log('amountOut zeroForOne :', zeroForOne);
 
       amountOut = zeroForOne
         ? SqrtPriceMath.getAmount1Delta(
@@ -108,8 +93,6 @@ export class SwapMath {
             liquidity,
             false,
           );
-
-      // console.log('amountOut: ', amountOut);
     } else {
       amountOut = zeroForOne
         ? SqrtPriceMath.getAmount1Delta(

@@ -33,7 +33,7 @@ type SwapParams = {
   tickSpacing: bigint;
   zeroForOne: boolean;
   sqrtPriceLimitX96: bigint;
-  lpFeeOverride: number;
+  lpFeeOverride: bigint;
 };
 
 class UniswapV4PoolMath {
@@ -60,12 +60,13 @@ class UniswapV4PoolMath {
           sqrtPriceLimitX96: zeroForOne
             ? TickMath.MIN_SQRT_PRICE + 1n
             : TickMath.MAX_SQRT_PRICE - 1n,
+          lpFeeOverride: 0n,
         } as SwapParams);
 
         const amountSpecifiedActual =
           zeroForOne === amountSpecified < 0n ? amount0 : amount1;
 
-        if (amountSpecifiedActual != amountSpecified) {
+        if (amountSpecifiedActual !== amountSpecified) {
           return 0n;
         }
 
@@ -86,12 +87,13 @@ class UniswapV4PoolMath {
           sqrtPriceLimitX96: zeroForOne
             ? TickMath.MIN_SQRT_PRICE + 1n
             : TickMath.MAX_SQRT_PRICE - 1n,
+          lpFeeOverride: 0n,
         } as SwapParams);
 
         const amountSpecifiedActual =
           zeroForOne === amountSpecified < 0n ? amount0 : amount1;
 
-        if (amountSpecifiedActual != amountSpecified) {
+        if (amountSpecifiedActual !== amountSpecified) {
           return 0n;
         }
 
@@ -101,16 +103,13 @@ class UniswapV4PoolMath {
   }
 
   _swap(poolState: PoolState, params: SwapParams): [bigint, bigint] {
-    // console.log('SWAP PARAMS: ', params);
     const _poolState = _.cloneDeep(poolState); // we don't need to modify existing poolState
     const slot0Start = _poolState.slot0;
     const zeroForOne = params.zeroForOne;
 
-    // console.log('slot0Start: ', slot0Start);
-
     const protocolFee = zeroForOne
-      ? ProtocolFeeLibrary.getZeroForOneFee(slot0Start.protocolFee)
-      : ProtocolFeeLibrary.getOneForZeroFee(slot0Start.protocolFee);
+      ? ProtocolFeeLibrary.getZeroForOneFee(BigInt(slot0Start.protocolFee))
+      : ProtocolFeeLibrary.getOneForZeroFee(BigInt(slot0Start.protocolFee));
 
     let amountSpecifiedRemaining = params.amountSpecified;
     let amountCalculated = 0n;
@@ -126,9 +125,9 @@ class UniswapV4PoolMath {
       : slot0Start.lpFee;
 
     const swapFee =
-      protocolFee === 0
+      protocolFee === 0n
         ? lpFee
-        : ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee);
+        : ProtocolFeeLibrary.calculateSwapFee(protocolFee, BigInt(lpFee));
 
     if (swapFee >= SwapMath.MAX_SWAP_FEE) {
       _require(
@@ -223,9 +222,7 @@ class UniswapV4PoolMath {
         step.tickNext = TickMath.MAX_TICK;
       }
 
-      // console.log('step.tickNext: ', step.tickNext);
       step.sqrtPriceNextX96 = TickMath.getSqrtPriceAtTick(step.tickNext);
-      // console.log('getSqrtPriceAtTick: ', step.sqrtPriceNextX96);
 
       const {
         sqrtPriceNextX96: resultSqrtPriceNextX96,
@@ -249,26 +246,12 @@ class UniswapV4PoolMath {
       step.amountOut = stepAmountOut;
       step.feeAmount = stepFeeAmount;
 
-      // console.log('params.amountSpecified > 0n: ', params.amountSpecified > 0n);
-
       if (params.amountSpecified > 0n) {
         amountSpecifiedRemaining -= step.amountOut;
-
-        // console.log('CUR amountCalculated: ', amountCalculated);
-        // console.log('step.amountIn: ', step.amountIn);
-        // console.log('step.feeAmount: ', step.feeAmount);
-
         amountCalculated -= step.amountIn + step.feeAmount;
-
-        // console.log('CUR amountCalculated after: ', amountCalculated);
       } else {
         amountSpecifiedRemaining += step.amountIn + step.feeAmount;
-
-        // console.log('CUR amountCalculated: ', amountCalculated);
-        // console.log('step.amountOut: ', step.amountOut);
-
         amountCalculated += step.amountOut;
-        // console.log('CUR amountCalculated after: ', amountCalculated);
       }
 
       if (protocolFee > 0) {
@@ -314,9 +297,9 @@ class UniswapV4PoolMath {
           );
         }
 
-        result.tick = Number(zeroForOne ? step.tickNext - 1n : step.tickNext);
+        result.tick = zeroForOne ? step.tickNext - 1n : step.tickNext;
       } else if (result.sqrtPriceX96 !== step.sqrtPriceStartX96) {
-        result.tick = Number(TickMath.getTickAtSqrtPrice(result.sqrtPriceX96));
+        result.tick = TickMath.getTickAtSqrtPrice(result.sqrtPriceX96);
       }
 
       counter++;
@@ -335,24 +318,12 @@ class UniswapV4PoolMath {
       _poolState.feeGrowthGlobal0X128 = step.feeGrowthGlobalX128;
     }
 
-    // console.log(
-    //   'zeroForOne !== params.amountSpecified < 0: ',
-    //   zeroForOne !== params.amountSpecified < 0,
-    // );
     if (zeroForOne !== params.amountSpecified < 0) {
-      // console.log('RES: ', [
-      //   amountCalculated,
-      //   params.amountSpecified - amountSpecifiedRemaining,
-      // ]);
       return [
         amountCalculated,
         params.amountSpecified - amountSpecifiedRemaining,
       ];
     } else {
-      // console.log('RES: ', [
-      //   params.amountSpecified - amountSpecifiedRemaining,
-      //   amountCalculated,
-      // ]);
       return [
         params.amountSpecified - amountSpecifiedRemaining,
         amountCalculated,
@@ -573,7 +544,7 @@ class UniswapV4PoolMath {
     }
   }
 
-  setProtocolFee(poolState: PoolState, protocolFee: number): void {
+  setProtocolFee(poolState: PoolState, protocolFee: bigint): void {
     poolState.slot0.lpFee = protocolFee;
   }
 
@@ -630,7 +601,7 @@ class UniswapV4PoolMath {
 
     const lpFee = slot0Start.lpFee;
     const swapFee =
-      protocolFee === 0
+      protocolFee === 0n
         ? lpFee
         : ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee);
 
@@ -751,15 +722,15 @@ class UniswapV4PoolMath {
           );
         }
 
-        result.tick = Number(zeroForOne ? step.tickNext - 1n : step.tickNext);
+        result.tick = zeroForOne ? step.tickNext - 1n : step.tickNext;
       } else if (result.sqrtPriceX96 !== step.sqrtPriceStartX96) {
-        result.tick = Number(TickMath.getTickAtSqrtPrice(result.sqrtPriceX96));
+        result.tick = TickMath.getTickAtSqrtPrice(result.sqrtPriceX96);
       }
 
       counter++;
     }
 
-    poolState.slot0.tick = Number(newTick);
+    poolState.slot0.tick = newTick;
     poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
 
     if (poolState.liquidity !== result.liquidity) {

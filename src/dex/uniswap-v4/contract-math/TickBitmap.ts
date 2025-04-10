@@ -1,15 +1,6 @@
 import { PoolState } from '../types';
 import { _require } from '../../../utils';
-import { DeepReadonly } from 'ts-essentials';
 import { BitMath } from '../../uniswap-v3/contract-math/BitMath';
-import { BI_MAX_UINT8 } from '../../../bigint-constants';
-import {
-  OUT_OF_RANGE_ERROR_POSTFIX,
-  TICK_BITMAP_BUFFER,
-  TICK_BITMAP_BUFFER_BY_CHAIN,
-  TICK_BITMAP_TO_USE,
-  TICK_BITMAP_TO_USE_BY_CHAIN,
-} from '../../uniswap-v3/constants';
 
 export class TickBitmap {
   static readonly MAX_UINT256: bigint = BigInt(
@@ -17,16 +8,6 @@ export class TickBitmap {
   );
 
   static readonly MAX_UINT8: bigint = 255n;
-
-  static mostSignificantBit(value: number): number {
-    let bit = 0;
-    while (1 << bit <= value) bit++;
-    return bit - 1;
-  }
-
-  static leastSignificantBit(value: number): number {
-    return Math.floor(Math.log2(value & -value));
-  }
 
   static compress(tick: bigint, tickSpacing: bigint): bigint {
     const compressed = tick / tickSpacing;
@@ -71,9 +52,9 @@ export class TickBitmap {
     tick: bigint,
     tickSpacing: bigint,
     lte: boolean,
-    isPricing: boolean = false,
+    isPriceQuery: boolean = false,
   ): [bigint, boolean] {
-    let compressed = BigInt(TickBitmap.compress(tick, tickSpacing));
+    const compressed = TickBitmap.compress(tick, tickSpacing);
 
     let initialized: boolean;
     let next: bigint;
@@ -81,6 +62,7 @@ export class TickBitmap {
     if (lte) {
       const [wordPos, bitPos] = TickBitmap.position(compressed);
       const mask = TickBitmap.MAX_UINT256 >> (TickBitmap.MAX_UINT8 - bitPos);
+
       const value = poolState.tickBitmap[wordPos.toString()] || 0n;
       const masked = value & mask;
 
@@ -92,10 +74,9 @@ export class TickBitmap {
         : (compressed - BigInt.asIntN(24, bitPos)) * tickSpacing;
     } else {
       const [wordPos, bitPos] = TickBitmap.position(compressed + 1n);
-      const mask = ~((1n >> bitPos) - 1n);
+      const mask = ~((1n << bitPos) - 1n);
       const value = poolState.tickBitmap[wordPos.toString()] || 0n;
       const masked = value & mask;
-
       initialized = masked !== 0n;
 
       next = initialized

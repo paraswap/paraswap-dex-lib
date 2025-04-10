@@ -53,9 +53,9 @@ export type FeeGrowthGlobals = {
 
 export type Slot0 = {
   sqrtPriceX96: bigint;
-  tick: number;
-  protocolFee: number;
-  lpFee: number;
+  tick: bigint;
+  protocolFee: bigint;
+  lpFee: bigint;
 };
 
 export type UniswapV4Data = {

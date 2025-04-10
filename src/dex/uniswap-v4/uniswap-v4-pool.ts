@@ -173,9 +173,9 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
 
           return {
             sqrtPriceX96: BigInt(decoded[0]),
-            tick: decoded[1],
-            protocolFee: decoded[2],
-            lpFee: decoded[3],
+            tick: BigInt(decoded[1]),
+            protocolFee: BigInt(decoded[2]),
+            lpFee: BigInt(decoded[3]),
           };
         },
       },
@@ -355,10 +355,10 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
       liquidity: liquidityResult,
       slot0: {
         ...slot0Result,
-        tick: slot0Result.tick === 0 ? parseInt(this.tick) : slot0Result.tick,
+        tick: slot0Result.tick === 0n ? BigInt(this.tick) : slot0Result.tick,
         lpFee:
-          slot0Result.lpFee === 0
-            ? LPFeeLibrary.getInitialLPFee(parseInt(this.fee))
+          slot0Result.lpFee === 0n
+            ? LPFeeLibrary.getInitialLPFee(BigInt(this.fee))
             : slot0Result.lpFee,
         sqrtPriceX96:
           slot0Result.sqrtPriceX96 === 0n
@@ -382,7 +382,12 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
 
     const range = tickBitMapToUse + tickBitMapBuffer;
 
-    const compressedTick = BigInt(tick) / BigInt(tickSpacing);
+    // const compressedTick = BigInt(tick) / BigInt(tickSpacing);
+    const compressedTick = TickBitmap.compress(
+      BigInt(tick),
+      BigInt(tickSpacing),
+    );
+
     const [currentBitMapIndex] = TickBitmap.position(compressedTick);
 
     const leftBitMapIndex = currentBitMapIndex - range;

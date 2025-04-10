@@ -76,7 +76,7 @@ export async function queryAvailablePoolsForPairFromSubgraph(
 
   const poolsQuery = `query ($token0: Bytes!, $token1: Bytes!, $hooks: Bytes!) {
       pools(
-        where: { token0: $token0, token1: $token1, hooks: $hooks, volumeUSD_gt: 0 },
+        where: { token0: $token0, token1: $token1, hooks: $hooks, liquidity_gt: 0 },
         orderBy: volumeUSD
         orderDirection: desc
       ) {
@@ -140,7 +140,7 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
 
   const poolsQuery = `query ($skip: Int!, $hooks: Bytes!) {
       pools(
-        where: { hooks: $hooks, volumeUSD_gt: 0 },
+        where: { hooks: $hooks, liquidity_gt: 0 },
         ${latestBlock ? '' : `block: { number: ${blockNumber} }`}
         orderBy: volumeUSD
         orderDirection: desc

@@ -136,76 +136,18 @@ export class SqrtPriceMath {
     if (sqrtPriceAX96 > sqrtPriceBX96)
       [sqrtPriceAX96, sqrtPriceBX96] = [sqrtPriceBX96, sqrtPriceAX96];
 
-    let numerator1 = BigInt.asIntN(256, liquidity);
-    let numerator2 = sqrtPriceBX96 - sqrtPriceAX96;
+    const _liquidity = BigInt.asUintN(256, liquidity);
 
     return roundUp
-      ? FullMath.mulDivRoundingUp(numerator1, numerator2, FixedPoint96.Q96)
-      : FullMath.mulDiv(numerator1, numerator2, FixedPoint96.Q96);
-  }
-
-  // static getAmount1Delta(
-  //   sqrtPriceAX96: bigint,
-  //   sqrtPriceBX96: bigint,
-  //   liquidity: bigint,
-  //   roundUp: boolean,
-  // ): bigint {
-  //   const numerator = SqrtPriceMath.absDiff(sqrtPriceAX96, sqrtPriceBX96);
-  //   const _liquidity = BigInt.asIntN(256, liquidity);
-  //
-  //   return roundUp
-  //     ? FullMath.mulDivRoundingUp(_liquidity, numerator, FixedPoint96.Q96)
-  //     : FullMath.mulDiv(_liquidity, numerator, FixedPoint96.Q96);
-  //   // return roundUp
-  //   //   ? FullMath.mulDivRoundingUp(
-  //   //       liquidity,
-  //   //       sqrtPriceBX96 - sqrtPriceAX96,
-  //   //       FixedPoint96.Q96,
-  //   //     )
-  //   //   : FullMath.mulDiv(
-  //   //       liquidity,
-  //   //       sqrtPriceBX96 - sqrtPriceAX96,
-  //   //       FixedPoint96.Q96,
-  //   //     );
-  // }
-
-  static getAmount0DeltaSigned(
-    sqrtPriceAX96: bigint,
-    sqrtPriceBX96: bigint,
-    liquidity: bigint,
-  ): bigint {
-    return liquidity < 0n
-      ? -SqrtPriceMath.getAmount0Delta(
-          sqrtPriceAX96,
-          sqrtPriceBX96,
-          -liquidity,
-          false,
+      ? FullMath.mulDivRoundingUp(
+          _liquidity,
+          sqrtPriceBX96 - sqrtPriceAX96,
+          FixedPoint96.Q96,
         )
-      : SqrtPriceMath.getAmount0Delta(
-          sqrtPriceAX96,
-          sqrtPriceBX96,
-          liquidity,
-          true,
-        );
-  }
-
-  static getAmount1DeltaSigned(
-    sqrtPriceAX96: bigint,
-    sqrtPriceBX96: bigint,
-    liquidity: bigint,
-  ): bigint {
-    return liquidity < 0n
-      ? -SqrtPriceMath.getAmount1Delta(
-          sqrtPriceAX96,
-          sqrtPriceBX96,
-          -liquidity,
-          false,
-        )
-      : SqrtPriceMath.getAmount1Delta(
-          sqrtPriceAX96,
-          sqrtPriceBX96,
-          liquidity,
-          true,
+      : FullMath.mulDiv(
+          _liquidity,
+          sqrtPriceBX96 - sqrtPriceAX96,
+          FixedPoint96.Q96,
         );
   }
 }
