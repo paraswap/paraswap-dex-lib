@@ -29,7 +29,8 @@ export class TickBitmap {
   }
 
   static compress(tick: number, tickSpacing: number): number {
-    const compressed = Math.floor(tick / tickSpacing);
+    const compressed =
+      tick < 0 ? Math.ceil(tick / tickSpacing) : Math.floor(tick / tickSpacing);
     if (tick < 0 && tick % tickSpacing !== 0) {
       return compressed - 1;
     }
