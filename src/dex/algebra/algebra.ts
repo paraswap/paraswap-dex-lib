@@ -1,5 +1,5 @@
 import { defaultAbiCoder } from '@ethersproject/abi';
-import { DeepReadonly } from 'ts-essentials';
+import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { AbiItem } from 'web3-utils';
 import { pack } from '@ethersproject/solidity';
 import _ from 'lodash';
@@ -13,6 +13,8 @@ import {
   Address,
   PoolLiquidity,
   Token,
+  DexExchangeParam,
+  NumberAsString,
 } from '../../types';
 import { SwapSide, Network, CACHE_PREFIX } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -49,25 +51,28 @@ import { AlgebraEventPoolV1_1 } from './algebra-pool-v1_1';
 import { AlgebraEventPoolV1_9 } from './algebra-pool-v1_9';
 import { AlgebraFactory, OnPoolCreatedCallback } from './algebra-factory';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import { AlgebraEventPoolV1_9_bidirectional_fee } from './algebra-pool-v1_9_bidirectional_fee';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 type PoolPairsInfo = {
   token0: Address;
   token1: Address;
 };
 
-// const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
-// const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
+const PoolsRegistryHashKey = `${CACHE_PREFIX}_poolsRegistry`;
+
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once in a day
 const ALGEBRA_EFFICIENCY_FACTOR = 3;
 const ALGEBRA_TICK_GAS_COST = 24_000; // Ceiled
 const ALGEBRA_TICK_BASE_OVERHEAD = 75_000;
 const ALGEBRA_POOL_SEARCH_OVERHEAD = 10_000;
 const ALGEBRA_QUOTE_GASLIMIT = 2_000_000;
 
-const MAX_STALE_STATE_BLOCK_AGE = {
-  [Network.ZKEVM]: 150, // approximately 3min
-};
-
-type IAlgebraEventPool = AlgebraEventPoolV1_1 | AlgebraEventPoolV1_9;
+type IAlgebraEventPool =
+  | AlgebraEventPoolV1_1
+  | AlgebraEventPoolV1_9
+  | AlgebraEventPoolV1_9_bidirectional_fee;
 
 export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   private readonly factory: AlgebraFactory;
@@ -93,7 +98,8 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
   private AlgebraPoolImplem:
     | typeof AlgebraEventPoolV1_1
-    | typeof AlgebraEventPoolV1_9;
+    | typeof AlgebraEventPoolV1_9
+    | typeof AlgebraEventPoolV1_9_bidirectional_fee;
 
   readonly SRC_TOKEN_DEX_TRANSFERS = 1;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
@@ -130,7 +136,11 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       `${CACHE_PREFIX}_${network}_${dexKey}_not_existings_pool_set`.toLowerCase();
 
     this.AlgebraPoolImplem =
-      config.version === 'v1.1' ? AlgebraEventPoolV1_1 : AlgebraEventPoolV1_9;
+      config.version === 'v1.1'
+        ? AlgebraEventPoolV1_1
+        : config.version === 'v1.9-bidirectional-fee'
+        ? AlgebraEventPoolV1_9_bidirectional_fee
+        : AlgebraEventPoolV1_9;
 
     this.factory = new AlgebraFactory(
       dexHelper,
@@ -154,23 +164,24 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     // Init listening to new pools creation
     await this.factory.initialize(blockNumber);
 
-    //// COMMENTING DEPRECATED LOGIC: as we now  invalidate pools on creation this is not needed anymore
-    // if (!this.dexHelper.config.isSlave) {
-    //   const cleanExpiredNotExistingPoolsKeys = async () => {
-    //     const maxTimestamp =
-    //       Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
-    //     await this.dexHelper.cache.zremrangebyscore(
-    //       this.notExistingPoolSetKey,
-    //       0,
-    //       maxTimestamp,
-    //     );
-    //   };
+    if (!this.dexHelper.config.isSlave) {
+      const cleanExpiredNotExistingPoolsKeys = async () => {
+        const maxTimestamp =
+          Date.now() - ALGEBRA_CLEAN_NOT_EXISTING_POOL_TTL_MS;
+        await this.dexHelper.cache.zremrangebyscore(
+          this.notExistingPoolSetKey,
+          0,
+          maxTimestamp,
+        );
+      };
 
-    //   this.intervalTask = setInterval(
-    //     cleanExpiredNotExistingPoolsKeys.bind(this),
-    //     ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
-    //   );
-    // }
+      void cleanExpiredNotExistingPoolsKeys();
+
+      this.intervalTask = setInterval(
+        cleanExpiredNotExistingPoolsKeys.bind(this),
+        ALGEBRA_CLEAN_NOT_EXISTING_POOL_INTERVAL_MS,
+      );
+    }
   }
 
   /*
@@ -225,20 +236,6 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     if (pool) {
       if (!pool.initFailed) {
-        if (this.network !== Network.ZKEVM) return pool;
-
-        if (
-          pool.getStaleState() === null ||
-          (pool.getState(blockNumber) === null &&
-            blockNumber - pool.getStateBlockNumber() >
-              MAX_STALE_STATE_BLOCK_AGE[this.network])
-        ) {
-          /* reload state, on zkEVM this would most likely timeout during request life
-           * but would allow to rely on staleState for couple of min for next requests
-           */
-          await pool.initialize(blockNumber, { forceRegenerate: true });
-        }
-
         return pool;
       } else {
         // if init failed then prefer to early return pool with empty state to fallback to rpc call
@@ -269,15 +266,6 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
         this.eventPools[this.getPoolIdentifier(srcAddress, destAddress)] = null;
         return null;
       }
-
-      await this.dexHelper.cache.hset(
-        this.dexmapKey,
-        key,
-        JSON.stringify({
-          token0,
-          token1,
-        }),
-      );
     }
 
     this.logger.trace(`starting to listen to new pool: ${key}`);
@@ -314,7 +302,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       }
     } catch (e) {
       if (e instanceof Error && e.message.endsWith('Pool does not exist')) {
-        /* 
+        /*
          protection against 2 race conditions
           1/ if pool.initialize() promise rejects after the Pool creation event got treated
           2/ if the rpc node we hit on the http request is lagging behind the one we got event from (websocket)
@@ -372,10 +360,13 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
   }
 
   async addMasterPool(poolKey: string, blockNumber: number): Promise<boolean> {
-    const _pairs = await this.dexHelper.cache.hget(this.dexmapKey, poolKey);
+    const _pairs = await this.dexHelper.cache.hget(
+      PoolsRegistryHashKey,
+      `${this.cacheStateKey}_${poolKey}`,
+    );
     if (!_pairs) {
       this.logger.warn(
-        `did not find poolConfig in for key ${this.dexmapKey} ${poolKey}`,
+        `did not find poolConfig in for key ${PoolsRegistryHashKey} ${this.cacheStateKey}_${poolKey}`,
       );
       return false;
     }
@@ -606,37 +597,16 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       let state = pool.getState(blockNumber);
 
       if (state === null) {
-        if (this.network === Network.ZKEVM) {
-          if (pool.initFailed) return null;
+        const rpcPrice = await this.getPricingFromRpc(
+          _srcToken,
+          _destToken,
+          amounts,
+          side,
+          pool,
+          transferFees,
+        );
 
-          if (
-            blockNumber - pool.getStateBlockNumber() <=
-            MAX_STALE_STATE_BLOCK_AGE[this.network]
-          ) {
-            this.logger.warn(
-              `${_srcAddress}_${_destAddress}_${pool.name}_${
-                pool.poolAddress
-              } state fallback to latest early enough state. Current blockNumber=${blockNumber}, stateBlockNumber=${pool.getStateBlockNumber()}`,
-            );
-            state = pool.getStaleState();
-          } else {
-            this.logger.warn(
-              `${_srcAddress}_${_destAddress}_${pool.name}_${pool.poolAddress} state is unhealthy, cannot compute price (no fallback on this chain)`,
-            );
-            return null; // never fallback as takes more time
-          }
-        } else {
-          const rpcPrice = await this.getPricingFromRpc(
-            _srcToken,
-            _destToken,
-            amounts,
-            side,
-            pool,
-            transferFees,
-          );
-
-          return rpcPrice;
-        }
+        return rpcPrice;
       }
 
       if (!state) return null;
@@ -820,7 +790,7 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
 
     if (data.feeOnTransfer) {
       _require(
-        data.path.length !== 1,
+        data.path.length === 1,
         `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
           .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
           .join(' ')}`,
@@ -871,6 +841,79 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
       swapData,
       this.config.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: AlgebraData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    let swapFunction;
+    let swapFunctionParams;
+
+    if (data.feeOnTransfer) {
+      _require(
+        data.path.length === 1,
+        `LOGIC ERROR: multihop is not supported for feeOnTransfer token, passed: ${data.path
+          .map(p => `${p?.tokenIn}->${p?.tokenOut}`)
+          .join(' ')}`,
+      );
+      swapFunction = AlgebraFunctions.exactInputWithFeeToken;
+      swapFunctionParams = {
+        limitSqrtPrice: '0',
+        recipient: recipient,
+        deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+        amountIn: srcAmount,
+        amountOutMinimum: destAmount,
+        tokenIn: data.path[0].tokenIn,
+        tokenOut: data.path[0].tokenOut,
+      };
+    } else {
+      swapFunction =
+        side === SwapSide.SELL
+          ? AlgebraFunctions.exactInput
+          : AlgebraFunctions.exactOutput;
+      const path = this._encodePath(data.path, side);
+      swapFunctionParams =
+        side === SwapSide.SELL
+          ? {
+              recipient: recipient,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountIn: srcAmount,
+              amountOutMinimum: destAmount,
+              path,
+            }
+          : {
+              recipient: recipient,
+              deadline: getLocalDeadlineAsFriendlyPlaceholder(),
+              amountOut: destAmount,
+              amountInMaximum: srcAmount,
+              path,
+            };
+    }
+
+    const exchangeData = this.routerIface.encodeFunctionData(swapFunction, [
+      swapFunctionParams,
+    ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: this.config.router,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.routerIface,
+              swapFunction,
+              'amountOut',
+            )
+          : undefined,
+    };
   }
 
   async getTopPoolsForToken(
@@ -1040,11 +1083,10 @@ export class Algebra extends SimpleExchange implements IDex<AlgebraData> {
     timeout = 30000,
   ) {
     try {
-      const res = await this.dexHelper.httpRequest.post(
+      const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        undefined,
-        { timeout: timeout },
+        { timeout },
       );
       return res.data;
     } catch (e) {

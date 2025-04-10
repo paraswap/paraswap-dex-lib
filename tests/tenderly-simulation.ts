@@ -1,172 +1,698 @@
 /* eslint-disable no-console */
-import { Provider } from '@ethersproject/providers';
-import { Address } from '@paraswap/core';
+import 'dotenv/config';
 import axios from 'axios';
-import { TxObject } from '../src/types';
-import { StateOverrides, StateSimulateApiOverride } from './smart-tokens';
+import { ethers } from 'ethers';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { ETHER_ADDRESS } from '../src/constants';
 
-const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN;
-const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID;
-const TENDERLY_PROJECT = process.env.TENDERLY_PROJECT;
-const TENDERLY_FORK_ID = process.env.TENDERLY_FORK_ID;
-const TENDERLY_FORK_LAST_TX_ID = process.env.TENDERLY_FORK_LAST_TX_ID;
+const TENDERLY_TOKEN = process.env.TENDERLY_TOKEN!;
+const TENDERLY_ACCOUNT_ID = process.env.TENDERLY_ACCOUNT_ID!;
+const TENDERLY_PROJECT = process.env.TENDERLY_PROJECT!;
 
-export type SimulationResult = {
-  success: boolean;
-  gasUsed?: string;
-  url?: string;
-  transaction?: any;
-};
+interface StateObject {
+  // Overrides of storage slots.
+  // In this mapping, the key is variable storage slot,
+  // and the value contains the override.
+  storage?: Record<string, string>; // storage slot -> value
+  balance?: string;
+  nonce?: number;
+  // Bytecode that will override the code associated to the given account.
+  code?: string;
+}
+export type StateOverride = Record<string, StateObject>; // contract -> storage override
 
-export interface TransactionSimulator {
-  forkId: string;
-  setup(): Promise<void>;
-
-  simulate(
-    params: TxObject,
-    stateOverrides?: StateOverrides,
-  ): Promise<SimulationResult>;
+interface TokenStorageSlots {
+  balanceSlot: string;
+  allowanceSlot: string;
+  isVyper?: boolean;
 }
 
-export class EstimateGasSimulation implements TransactionSimulator {
-  forkId: string = '0';
-
-  constructor(private provider: Provider) {}
-
-  async setup() {}
-
-  async simulate(
-    params: TxObject,
-    _: StateOverrides,
-  ): Promise<SimulationResult> {
-    try {
-      const result = await this.provider.estimateGas(params);
-      return {
-        success: true,
-        gasUsed: result.toNumber().toString(),
-      };
-    } catch (e) {
-      console.error(`Estimate gas simulation failed:`, e);
-      return {
-        success: false,
-      };
-    }
-  }
+interface SimulateTransactionRequest {
+  from: string | null;
+  to: string | null;
+  value?: string;
+  data: string;
+  chainId: number;
+  timestamp?: number;
+  blockNumber?: number;
+  stateOverride?: StateOverride;
 }
 
-export class TenderlySimulation implements TransactionSimulator {
-  lastTx: string = '';
-  forkId: string = '';
-  maxGasLimit = 80000000;
+// not fully complete
+interface SimulatedTransactionCall {
+  hash: string;
+  contract_name: string;
+  function_name: string;
+  function_pc: number;
+  function_op: string;
+  function_file_index: number;
+  function_code_start: number;
+  function_line_number: number;
+  function_code_length: number;
+  absolute_position: number;
+  caller_pc: number;
+  caller_op: string;
+  call_type: string;
+  address: string;
+  from: string;
+  from_balance: string;
+  to: string;
+  to_balance: string;
+  value: string | null;
+  caller: {
+    address: string;
+    balance: string;
+  };
+  block_timestamp: string;
+  gas: number;
+  gas_used: number;
+  intrinsic_gas: number;
+  storage_address: string;
+  input: string;
+  storage_slot: string[] | undefined;
+  calls: SimulatedTransactionCall[] | null;
+}
 
-  constructor(private network: Number = 1) {}
+// not fully complete
+interface Simulation {
+  id: string;
+  project_id: string;
+  owner_id: string;
+  network_id: string;
+  block_number: number;
+  transaction_index: number;
+  from: string;
+  to: string;
+  input: string;
+  gas: number;
+  gas_price: string;
+  gas_used: number;
+  value: string;
+  method: string;
+  status: boolean;
+}
 
-  async setup() {
-    // Fork the mainnet
-    if (!TENDERLY_TOKEN)
-      throw new Error(
-        `TenderlySimulation_setup: TENDERLY_TOKEN not found in the env`,
-      );
-
-    if (TENDERLY_FORK_ID) {
-      if (!TENDERLY_FORK_LAST_TX_ID) throw new Error('Always set last tx id');
-      this.forkId = TENDERLY_FORK_ID;
-      this.lastTx = TENDERLY_FORK_LAST_TX_ID;
-      return;
-    }
-
-    try {
-      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
-      let res = await axios.post(
-        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork`,
-        {
-          network_id: this.network.toString(),
-        },
-        {
-          timeout: 20000,
-          headers: {
-            'x-access-key': TENDERLY_TOKEN,
-          },
-        },
-      );
-      this.forkId = res.data.simulation_fork.id;
-      this.lastTx = res.data.root_transaction.id;
-    } catch (e) {
-      console.error(`TenderlySimulation_setup:`, e);
-      throw e;
-    }
-  }
-
-  async simulate(params: TxObject, stateOverrides?: StateOverrides) {
-    let _params = {
-      from: params.from,
-      to: params.to,
-      save: true,
-      root: this.lastTx,
-      value: params.value || '0',
-      gas: this.maxGasLimit,
-      input: params.data,
-      state_objects: {},
+// not complete, all details include a lot more info
+interface SimulatedTransactionDetails {
+  transaction: {
+    hash: string;
+    block_hash: string;
+    block_number: number;
+    from: string;
+    gas: number;
+    gas_price: number;
+    gas_fee_cap: number;
+    gas_tip_cap: number;
+    cumulative_gas_used: number;
+    gas_used: number;
+    effective_gas_price: number;
+    input: string;
+    nonce: number;
+    to: string;
+    index: number;
+    value: string;
+    access_list: null;
+    status: boolean;
+    transaction_info: {
+      call_trace: SimulatedTransactionCall;
     };
-    try {
-      if (stateOverrides) {
-        await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
-        const result = await axios.post(
-          `
-        https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/contracts/encode-states`,
-          stateOverrides,
-          {
-            headers: {
-              'x-access-key': TENDERLY_TOKEN!,
-            },
-          },
-        );
+  };
+}
 
-        _params.state_objects = Object.keys(result.data.stateOverrides).reduce(
-          (acc, contract) => {
-            const _storage = result.data.stateOverrides[contract].value;
+class TokenStorageSlotsCache {
+  private static TOKEN_STORAGE_SLOTS: Record<
+    number,
+    Record<string, TokenStorageSlots>
+  > | null = null;
+  private static readonly TOKEN_STORAGE_SLOTS_FILEPATH = path.join(
+    __dirname,
+    'token-storage-slots.json',
+  );
 
-            acc[contract] = {
-              storage: _storage,
-            };
-            return acc;
-          },
-          {} as Record<Address, StateSimulateApiOverride>,
-        );
-      }
+  private static async loadTokenStorageSlots(): Promise<
+    Record<number, Record<string, TokenStorageSlots>>
+  > {
+    return JSON.parse(
+      await fs.readFile(TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS_FILEPATH, {
+        encoding: 'utf-8',
+      }),
+    );
+  }
 
-      await process.nextTick(() => {}); // https://stackoverflow.com/questions/69169492/async-external-function-leaves-open-handles-jest-supertest-express
-      const { data } = await axios.post(
-        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/fork/${this.forkId}/simulate`,
-        _params,
-        {
-          timeout: 20 * 1000,
-          headers: {
-            'x-access-key': TENDERLY_TOKEN!,
-          },
-        },
-      );
-      const lastTx = data.simulation.id;
-      if (data.transaction.status) {
-        this.lastTx = lastTx;
-        return {
-          success: true,
-          gasUsed: data.transaction.gas_used,
-          url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
-          transaction: data.transaction,
-        };
-      } else {
-        return {
-          success: false,
-          url: `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/fork/${this.forkId}/simulation/${lastTx}`,
-          error: `Simulation failed: ${data.transaction.error_info.error_message} at ${data.transaction.error_info.address}`,
-        };
-      }
-    } catch (e) {
-      console.error(`TenderlySimulation_simulate:`, e);
-      return {
-        success: false,
-      };
+  private static async saveTokenStorageSlots(): Promise<void> {
+    await fs.writeFile(
+      TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS_FILEPATH,
+      JSON.stringify(TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS, null, 2),
+      { encoding: 'utf-8' },
+    );
+  }
+
+  static async getTokenStorageSlots(
+    chainId: number,
+    token: string,
+  ): Promise<TokenStorageSlots | null> {
+    if (!TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS) {
+      TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS =
+        await TokenStorageSlotsCache.loadTokenStorageSlots();
     }
+
+    return (
+      TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS[chainId]?.[
+        token.toLowerCase()
+      ] ?? null
+    );
+  }
+
+  static async setTokenStorageSlots(
+    chainId: number,
+    token: string,
+    slots: TokenStorageSlots,
+  ): Promise<void> {
+    if (!TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS) {
+      TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS =
+        await TokenStorageSlotsCache.loadTokenStorageSlots();
+    }
+
+    TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS ||= {};
+    TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS[chainId] ||= {};
+    TokenStorageSlotsCache.TOKEN_STORAGE_SLOTS[chainId][token.toLowerCase()] =
+      slots;
+
+    void TokenStorageSlotsCache.saveTokenStorageSlots();
+  }
+}
+
+export class TenderlySimulator {
+  // public constants
+  static readonly DEFAULT_OWNER = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+  static readonly DEFAULT_SPENDER =
+    '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
+  // singleton
+  private static instance: TenderlySimulator;
+
+  private constructor() {}
+
+  public static getInstance(): TenderlySimulator {
+    if (!TenderlySimulator.instance) {
+      TenderlySimulator.instance = new TenderlySimulator();
+    }
+
+    return TenderlySimulator.instance;
+  }
+
+  public async simulateTransaction(
+    request: SimulateTransactionRequest,
+  ): Promise<Simulation> {
+    const data = {
+      network_id: request.chainId,
+      from: request.from,
+      to: request.to,
+      input: request.data,
+      value: request.value,
+      save: true,
+      save_if_fails: true,
+      state_objects: request.stateOverride,
+    };
+
+    console.log('Sending transaction simulation with params:');
+    console.log(JSON.stringify(data, null, 2));
+
+    const response = await axios.request({
+      method: 'POST',
+      url: `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/simulate`,
+      headers: {
+        'X-Access-Key': TENDERLY_TOKEN,
+      },
+      data,
+    });
+
+    const simulation = response.data.simulation as Simulation;
+    const url = `https://dashboard.tenderly.co/${TENDERLY_ACCOUNT_ID}/${TENDERLY_PROJECT}/simulator/${simulation.id}`;
+
+    console.log('Successfully simulated a transaction:');
+    console.log(`Simulation URL - ${url}`);
+
+    return simulation;
+  }
+
+  public async getSimulatedTransactionDetails(
+    id: string,
+  ): Promise<SimulatedTransactionDetails | null> {
+    try {
+      const { data } = await axios.post(
+        `https://api.tenderly.co/api/v1/account/${TENDERLY_ACCOUNT_ID}/project/${TENDERLY_PROJECT}/simulations/${id}`,
+        {},
+        { headers: { 'X-Access-Key': TENDERLY_TOKEN } },
+      );
+
+      return data;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+
+  getSLOADCalls = (
+    callTrace: SimulatedTransactionCall,
+  ): SimulatedTransactionCall[] => {
+    const results: SimulatedTransactionCall[] = [];
+
+    if (callTrace.call_type === 'SLOAD') {
+      results.push(callTrace);
+    }
+
+    if (callTrace.calls) {
+      for (const call of callTrace.calls) {
+        results.push(...this.getSLOADCalls(call));
+      }
+    }
+
+    return results;
+  };
+
+  /**
+   *
+   * @param balanceOfSlot storage slot of `balanceOf` mapping
+   * @param owner account's address
+   * @param isVyper `true` if contract is written in Vyper
+   */
+  calculateAddressBalanceSlot(
+    balanceOfSlot: string,
+    owner: string,
+    isVyper = false,
+  ) {
+    return isVyper
+      ? this.calculateVyperAddressBalanceSlot(balanceOfSlot, owner)
+      : this.calculateSolidityAddressBalanceSlot(balanceOfSlot, owner);
+  }
+
+  /**
+   *
+   * @param balanceOfSlot storage slot of `balanceOf` mapping
+   * @param owner account's address
+   */
+  calculateSolidityAddressBalanceSlot(balanceOfSlot: string, owner: string) {
+    return ethers.utils.keccak256(
+      ethers.utils.concat([ethers.utils.hexZeroPad(owner, 32), balanceOfSlot]),
+    );
+  }
+
+  /**
+   *
+   * @param balanceOfSlot storage slot of `balanceOf` mapping
+   * @param owner account's address
+   */
+  calculateVyperAddressBalanceSlot(balanceOfSlot: string, owner: string) {
+    return ethers.utils.keccak256(
+      ethers.utils.concat([balanceOfSlot, ethers.utils.hexZeroPad(owner, 32)]),
+    );
+  }
+
+  /**
+   *
+   * @param allowanceSlot storage slot of `allowance` mapping
+   * @param owner account's address
+   * @param spender spender's address
+   * @param isVyper `true` if contract is written in Vyper
+   */
+  calculateAddressAllowanceSlot(
+    allowanceSlot: string,
+    owner: string,
+    spender: string,
+    isVyper = false,
+  ) {
+    return isVyper
+      ? this.calculateVyperAddressAllowanceSlot(allowanceSlot, owner, spender)
+      : this.calculateSolidityAddressAllowanceSlot(
+          allowanceSlot,
+          owner,
+          spender,
+        );
+  }
+
+  /**
+   *
+   * @param allowanceSlot storage slot of `allowance` mapping
+   * @param owner account's address
+   * @param spender spender's address
+   */
+  calculateSolidityAddressAllowanceSlot(
+    allowanceSlot: string,
+    owner: string,
+    spender: string,
+  ) {
+    const slotHash = ethers.utils.keccak256(
+      ethers.utils.concat([
+        ethers.utils.hexZeroPad(owner, 32),
+        ethers.utils.hexZeroPad(allowanceSlot, 32),
+      ]),
+    );
+
+    return ethers.utils.keccak256(
+      ethers.utils.concat([ethers.utils.hexZeroPad(spender, 32), slotHash]),
+    );
+  }
+
+  /**
+   *
+   * @param allowanceSlot storage slot of `allowance` mapping
+   * @param owner account's address
+   * @param spender spender's address
+   */
+  calculateVyperAddressAllowanceSlot(
+    allowanceSlot: string,
+    owner: string,
+    spender: string,
+  ) {
+    const slotHash = ethers.utils.keccak256(
+      ethers.utils.concat([
+        ethers.utils.hexZeroPad(allowanceSlot, 32),
+        ethers.utils.hexZeroPad(owner, 32),
+      ]),
+    );
+
+    return ethers.utils.keccak256(
+      ethers.utils.concat([slotHash, ethers.utils.hexZeroPad(spender, 32)]),
+    );
+  }
+
+  buildBalanceOfSimulationRequest(
+    chainId: number,
+    token: string,
+    owner: string,
+  ): SimulateTransactionRequest {
+    const iface = new ethers.utils.Interface([
+      'function balanceOf(address owner) view returns (uint)',
+    ]);
+
+    return {
+      from: ethers.constants.AddressZero,
+      to: token,
+      data: iface.encodeFunctionData('balanceOf', [owner]),
+      chainId,
+    };
+  }
+
+  buildAllowanceSimulationRequest(
+    chainId: number,
+    token: string,
+    owner: string,
+    spender: string,
+  ): SimulateTransactionRequest {
+    const iface = new ethers.utils.Interface([
+      'function allowance(address owner, address spender) view returns (uint)',
+    ]);
+
+    return {
+      from: ethers.constants.AddressZero,
+      to: token,
+      data: iface.encodeFunctionData('allowance', [owner, spender]),
+      chainId,
+    };
+  }
+
+  /**
+   * Finds the slot of the `balanceOf` mapping in given token contract's storage.
+   * Supports `Solidity` and `Vyper` contracts
+   * @param chainId token chain id
+   * @param token token address
+   */
+  async findTokenBalanceOfSlot(
+    chainId: number,
+    token: string,
+  ): Promise<{ slot: string; isVyper?: boolean }> {
+    const account = TenderlySimulator.DEFAULT_OWNER;
+
+    const balanceOfSimulationRequest = this.buildBalanceOfSimulationRequest(
+      chainId,
+      token,
+      account,
+    );
+
+    const { id: simulationId } = await this.simulateTransaction(
+      balanceOfSimulationRequest,
+    );
+
+    const simulationDetails = await this.getSimulatedTransactionDetails(
+      simulationId,
+    );
+
+    if (!simulationDetails) {
+      throw `No simulation with id ${simulationId} details found`;
+    }
+
+    const callTrace = simulationDetails.transaction.transaction_info.call_trace;
+
+    const sloadCalls = this.getSLOADCalls(callTrace);
+    // token's storage slots that were read during the `balanceOf` call
+    const readSlots = sloadCalls
+      .map(call => call.storage_slot?.[0])
+      .filter<string>((slot): slot is string => !!slot);
+
+    const startingPoints = [
+      // regular contract
+      0n,
+      // ERC20Upgradeable
+      BigInt(
+        '0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00',
+      ),
+    ];
+
+    for (const startingPoint of startingPoints) {
+      for (let i = startingPoint; i < startingPoint + 1_000n; i += 1n) {
+        const candidateSlot = ethers.utils.defaultAbiCoder.encode(
+          ['uint'],
+          [i],
+        );
+        // try solidity slot
+        const solitidyBalanceOfSlot = this.calculateSolidityAddressBalanceSlot(
+          candidateSlot,
+          account,
+        );
+        if (readSlots.includes(solitidyBalanceOfSlot)) {
+          return { slot: candidateSlot };
+        }
+        // try vyper slot
+        const vyperBalanceOfSlot = this.calculateVyperAddressBalanceSlot(
+          candidateSlot,
+          account,
+        );
+        if (readSlots.includes(vyperBalanceOfSlot)) {
+          return { slot: candidateSlot, isVyper: true };
+        }
+      }
+    }
+
+    throw new Error(
+      `Could not find a 'balanceOf' mapping slot for token ${token} on chain ${chainId}`,
+    );
+  }
+
+  /**
+   * Finds the slot of the `allowance` mapping in given token contract's storage
+   * Supports `Solidity` and `Vyper` contracts
+   * @param chainId token chain id
+   * @param token token address
+   */
+  async findTokenAllowanceSlot(
+    chainId: number,
+    token: string,
+  ): Promise<{ slot: string; isVyper?: boolean }> {
+    const account = TenderlySimulator.DEFAULT_OWNER;
+    const spender = TenderlySimulator.DEFAULT_SPENDER;
+
+    const allowanceSimulationRequest = this.buildAllowanceSimulationRequest(
+      chainId,
+      token,
+      account,
+      spender,
+    );
+
+    const { id: simulationId } = await this.simulateTransaction(
+      allowanceSimulationRequest,
+    );
+
+    const simulationDetails = await this.getSimulatedTransactionDetails(
+      simulationId,
+    );
+
+    if (!simulationDetails) {
+      throw `No simulation with id ${simulationId} details found`;
+    }
+
+    const callTrace = simulationDetails.transaction.transaction_info.call_trace;
+
+    const sloadCalls = this.getSLOADCalls(callTrace);
+    // token's storage slots that were read during the `allowance` call
+    const readSlots = sloadCalls
+      .map(call => call.storage_slot?.[0])
+      .filter<string>((slot): slot is string => !!slot);
+
+    const startingPoints = [
+      // regular contract
+      0n,
+      // ERC20Upgradeable
+      BigInt(
+        '0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00',
+      ),
+    ];
+
+    for (const init of startingPoints) {
+      for (let i = init; i < init + 1000n; i += 1n) {
+        const candidateSlot = ethers.utils.defaultAbiCoder.encode(
+          ['uint'],
+          [i],
+        );
+        // try solidity
+        const solidityAllowanceSlot =
+          this.calculateSolidityAddressAllowanceSlot(
+            candidateSlot,
+            account,
+            spender,
+          );
+        if (readSlots.includes(solidityAllowanceSlot)) {
+          return { slot: candidateSlot };
+        }
+        // try vyper
+        const vyperAllowanceSlot = this.calculateVyperAddressAllowanceSlot(
+          candidateSlot,
+          account,
+          spender,
+        );
+        if (readSlots.includes(vyperAllowanceSlot)) {
+          return { slot: candidateSlot, isVyper: true };
+        }
+      }
+    }
+
+    throw new Error(
+      `Could not find a 'allowance' mapping slot for token ${token} on chain ${chainId}`,
+    );
+  }
+
+  /**
+   * Returns storage slots for the given token contract.
+   * @param chainId Token chain ID
+   * @param token Token address. Doesn't have to be normalized
+   */
+  async getTokenStorageSlots(
+    chainId: number,
+    token: string,
+  ): Promise<TokenStorageSlots> {
+    const normalizedToken = token.toLowerCase();
+
+    if (normalizedToken === ETHER_ADDRESS) {
+      throw new Error('Cannot provide storage slots for native token');
+    }
+
+    // check cache
+    const cachedSlots = await TokenStorageSlotsCache.getTokenStorageSlots(
+      chainId,
+      normalizedToken,
+    );
+
+    // return if cached
+    if (cachedSlots) {
+      return cachedSlots;
+    }
+
+    // find the slots
+    const [balanceSlot, allowanceSlot] = await Promise.all([
+      this.findTokenBalanceOfSlot(chainId, token),
+      this.findTokenAllowanceSlot(chainId, token),
+    ]);
+
+    // save the slots and return
+    const slots: TokenStorageSlots = {
+      balanceSlot: balanceSlot.slot,
+      allowanceSlot: allowanceSlot.slot,
+      isVyper: balanceSlot.isVyper,
+    };
+
+    // no need to await
+    void TokenStorageSlotsCache.setTokenStorageSlots(chainId, token, slots);
+
+    return slots;
+  }
+
+  /**
+   * Adds native balance override to an existing `StateOverride` object
+   * @param stateOverride object to add the override to
+   * @param account address to be given the balance
+   * @param amount token amount in wei
+   */
+  addBalanceOverride(
+    stateOverride: StateOverride,
+    account: string,
+    amount: bigint,
+  ): void {
+    // add the balance override
+    stateOverride[account] ||= {};
+    stateOverride[account].balance = amount.toString();
+  }
+
+  /**
+   * Adds token balance override to an existing `StateOverride` object
+   * @param stateOverride object to add the override to
+   * @param chainId token chain ID
+   * @param token token address
+   * @param account address to be given the balance
+   * @param amount token amount in wei
+   */
+  async addTokenBalanceOverride(
+    stateOverride: StateOverride,
+    chainId: number,
+    token: string,
+    account: string,
+    amount: bigint,
+  ): Promise<void> {
+    // get mapping slots
+    const tokenSlots = await this.getTokenStorageSlots(chainId, token);
+    // calculate balance slot
+    const slotToOverride = this.calculateAddressBalanceSlot(
+      tokenSlots.balanceSlot,
+      account,
+      tokenSlots.isVyper,
+    );
+    // add the balance override
+    stateOverride[token] ||= {};
+    stateOverride[token].storage ||= {};
+    stateOverride[token].storage[slotToOverride] =
+      ethers.utils.defaultAbiCoder.encode(['uint'], [amount]);
+  }
+
+  /**
+   * Adds token allowance override to an existing `StateOverride` object
+   * @param stateOverride object to add the override to
+   * @param chainId token chain ID
+   * @param token token address
+   * @param account owner address
+   * @param spender spender address
+   * @param amount token amount in wei
+   */
+  async addAllowanceOverride(
+    stateOverride: StateOverride,
+    chainId: number,
+    token: string,
+    account: string,
+    spender: string,
+    amount: bigint,
+  ): Promise<void> {
+    // get mapping slots
+    const tokenSlots = await this.getTokenStorageSlots(chainId, token);
+    // calculate allowance slot
+    const slotToOverride = this.calculateAddressAllowanceSlot(
+      tokenSlots.allowanceSlot,
+      account,
+      spender,
+      tokenSlots.isVyper,
+    );
+    // add the allowance override
+    stateOverride[token] ||= {};
+    stateOverride[token].storage ||= {};
+    stateOverride[token].storage[slotToOverride] =
+      ethers.utils.defaultAbiCoder.encode(['uint'], [amount]);
   }
 }

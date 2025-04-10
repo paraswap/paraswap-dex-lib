@@ -3,6 +3,7 @@ import {
   Address,
   SimpleExchangeParam,
   AdapterExchangeParam,
+  DexExchangeParam,
   TxInfo,
   NumberAsString,
   Token,
@@ -17,37 +18,23 @@ import {
 } from '../types';
 import { SwapSide, Network } from '../constants';
 import { IDexHelper } from '../dex-helper/idex-helper';
+import { OptimalRate, OptimalSwap } from '@paraswap/core';
 
-export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
-  needWrapNative: boolean;
-  needsSequentialPreprocessing?: boolean;
+export type Context = {
+  isGlobalSrcToken: boolean;
+  isGlobalDestToken: boolean;
+};
 
-  // Returns the ETH fee required to swap
-  // It is optional for a DEX to implement this
-  // This is a legacy function and will be removed soon
-  getNetworkFee?(
-    srcToken: Address,
-    destToken: Address,
-    srcAmount: NumberAsString,
-    destAmount: NumberAsString,
-    data: ExchangeData,
-    side: SwapSide,
-  ): NumberAsString;
+export type NeedWrapNativeFunc = (
+  priceRoute: OptimalRate,
+  swap: OptimalSwap,
+  se: OptimalSwapExchange<any>,
+) => boolean;
 
-  // If exists, called before getAdapterParam to use async calls and receive data if needed
-  preProcessTransaction?(
-    optimalSwapExchange: OptimalSwapExchange<ExchangeData>,
-    srcToken: Token,
-    destToken: Token,
-    side: SwapSide,
-    options: PreprocessTransactionOptions,
-  ): AsyncOrSync<[OptimalSwapExchange<ExchangeData>, ExchangeTxInfo]>;
-
-  // This is helper a function to support testing if preProcessTransaction is implemented
-  getTokenFromAddress?(address: Address): Token;
-
+export interface IDexTxBuilderV5<ExchangeData, DirectParam = null> {
   // Encode params required by the exchange adapter
-  // Used for multiSwap, buy & megaSwap
+  // V5: Used for multiSwap, buy & megaSwap
+  // V6: NOT used, pass a placeholder
   getAdapterParam(
     srcToken: Address,
     destToken: Address,
@@ -58,8 +45,9 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
   ): AdapterExchangeParam;
 
   // Encode call data used by simpleSwap like routers
-  // Used for simpleSwap & simpleBuy
-  getSimpleParam(
+  // V5: Used for simpleSwap & simpleBuy
+  // V6: NOT used, don't implement
+  getSimpleParam?(
     srcToken: Address,
     destToken: Address,
     srcAmount: NumberAsString,
@@ -86,8 +74,71 @@ export interface IDexTxBuilder<ExchangeData, DirectParam = null> {
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectParam>;
+}
+
+export interface IDexTxBuilderV6<ExchangeData, DirectParam = null> {
+  // Returns params required by generic method
+  getDexParam?(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: ExchangeData,
+    side: SwapSide,
+    context: Context,
+    executorAddress: Address,
+  ): AsyncOrSync<DexExchangeParam>;
+
+  // Returns params for direct method
+  getDirectParamV6?(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod: string,
+  ): TxInfo<DirectParam>;
+}
+
+export interface IDexTxBuilder<ExchangeData, DirectParam = null>
+  extends IDexTxBuilderV5<ExchangeData, DirectParam>,
+    IDexTxBuilderV6<ExchangeData, DirectParam> {
+  needWrapNative: boolean | NeedWrapNativeFunc;
+  needsSequentialPreprocessing?: boolean;
+
+  // Returns the ETH fee required to swap
+  // It is optional for a DEX to implement this
+  // This is a legacy function and will be removed soon
+  getNetworkFee?(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    data: ExchangeData,
+    side: SwapSide,
+  ): NumberAsString;
+
+  // If exists, called before getAdapterParam to use async calls and receive data if needed
+  preProcessTransaction?(
+    optimalSwapExchange: OptimalSwapExchange<ExchangeData>,
+    srcToken: Token,
+    destToken: Token,
+    side: SwapSide,
+    options: PreprocessTransactionOptions,
+  ): AsyncOrSync<[OptimalSwapExchange<ExchangeData>, ExchangeTxInfo]>;
+
+  // This is helper a function to support testing if preProcessTransaction is implemented
+  getTokenFromAddress?(address: Address): Token;
 }
 
 export interface IDexPricing<ExchangeData> {
@@ -194,7 +245,7 @@ export interface IDex<
     IDexPooltracker {}
 
 // Defines the static objects of the IDex class
-export interface DexContructor<
+export interface DexConstructor<
   ExchangeData,
   DirectParam = null,
   OptimizedExchangeData = ExchangeData,

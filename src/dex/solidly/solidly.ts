@@ -9,6 +9,7 @@ import {
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   PoolLiquidity,
   SimpleExchangeParam,
@@ -35,6 +36,15 @@ import {
 } from './types';
 import { SolidlyConfig, Adapters } from './config';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
+import {
+  hexDataLength,
+  hexZeroPad,
+  hexlify,
+  id,
+  solidityPack,
+} from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
+import { Flag, SpecialDex } from '../../executor/types';
 
 const erc20Iface = new Interface(erc20ABI);
 const solidlyPairIface = new Interface(solidlyPair);
@@ -67,16 +77,16 @@ export class Solidly extends UniswapV2 {
       _.omit(SolidlyConfig, [
         'Velodrome',
         'VelodromeV2',
+        'Aerodrome',
         'SpiritSwapV2',
-        'Cone',
         'SolidlyV2',
         'Thena',
-        'SoliSnek',
         'Chronos',
         'Ramses',
         'Equalizer',
         'Velocimeter',
         'Usdfi',
+        'PharaohV1',
       ]),
     );
 
@@ -399,6 +409,7 @@ export class Solidly extends UniswapV2 {
             isFeeTokenInRoute: Object.values(transferFees).some(f => f !== 0),
             pools: [
               {
+                stable: pairParam.stable,
                 address: pairParam.exchange,
                 fee: parseInt(pairParam.fee),
                 direction: pairParam.direction,
@@ -434,6 +445,7 @@ export class Solidly extends UniswapV2 {
     if (!this.subgraphURL) return [];
 
     let stableFieldKey = '';
+    let skipReserveCheck = false;
 
     if (this.dexKey.toLowerCase() === 'solidly') {
       stableFieldKey = 'stable';
@@ -441,8 +453,15 @@ export class Solidly extends UniswapV2 {
       stableFieldKey = 'isStable';
     }
 
+    // aerodrome subgraph has broken reserve and other volume fields with all 0s
+    if (this.dexKey.toLowerCase() === 'aerodrome') {
+      skipReserveCheck = true;
+    }
+
     const query = `query ($token: Bytes!, $count: Int) {
-      pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+      pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token ${
+        skipReserveCheck ? '' : ', reserve0_gt: 1, reserve1_gt: 1'
+      }}) {
         id
         ${stableFieldKey}
         token0 {
@@ -455,7 +474,9 @@ export class Solidly extends UniswapV2 {
         }
         reserveUSD
       }
-      pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token, reserve0_gt: 1, reserve1_gt: 1}) {
+      pools1: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token1: $token ${
+        skipReserveCheck ? '' : ', reserve0_gt: 1, reserve1_gt: 1'
+      }}) {
         id
         ${stableFieldKey}
         token0 {
@@ -470,13 +491,13 @@ export class Solidly extends UniswapV2 {
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -491,7 +512,8 @@ export class Solidly extends UniswapV2 {
           decimals: parseInt(pool.token1.decimals),
         },
       ],
-      liquidityUSD: parseFloat(pool.reserveUSD),
+      liquidityUSD:
+        parseFloat(pool.reserveUSD) || (skipReserveCheck ? 10e5 : 0),
     }));
 
     const pools1 = _.map(data.pools1, pool => ({
@@ -504,7 +526,8 @@ export class Solidly extends UniswapV2 {
           decimals: parseInt(pool.token0.decimals),
         },
       ],
-      liquidityUSD: parseFloat(pool.reserveUSD),
+      liquidityUSD:
+        parseFloat(pool.reserveUSD) || (skipReserveCheck ? 10e5 : 0),
     }));
 
     return _.slice(
@@ -632,6 +655,54 @@ export class Solidly extends UniswapV2 {
       targetExchange: data.router,
       payload,
       networkFee: '0',
+    };
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SolidlyData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+    let exchangeDataTypes = ['bytes4', 'bytes32'];
+
+    const isStable = data.pools.some(pool => !!pool.stable);
+    const isStablePoolAndPoolCount = isStable
+      ? BigNumber.from(1)
+          .shl(255)
+          .or(BigNumber.from(data.pools.length))
+          .toHexString()
+      : hexZeroPad(hexlify(data.pools.length), 32);
+
+    let exchangeDataToPack = [
+      hexZeroPad(hexlify(0), 4),
+      isStablePoolAndPoolCount,
+    ];
+
+    const pools = encodePools(data.pools, this.feeFactor);
+    pools.forEach(pool => {
+      exchangeDataTypes.push('bytes32');
+      exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
+    });
+
+    const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: recipient,
+      specialDexFlag: data.isFeeTokenInRoute
+        ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
+        : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
+      transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
+        ? undefined
+        : data.pools[0].address,
+      returnAmountPos: undefined,
     };
   }
 }

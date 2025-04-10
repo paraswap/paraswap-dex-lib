@@ -1,0 +1,85 @@
+{
+  "blockNumber": 18812876,
+  "network": 1,
+  "srcToken": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "srcDecimals": 18,
+  "srcAmount": "3000000000000000000",
+  "destToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "destDecimals": 6,
+  "destAmount": "6166094711",
+  "bestRoute": [
+    {
+      "percent": 100,
+      "swaps": [
+        {
+          "srcToken": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "srcDecimals": 18,
+          "destToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "destDecimals": 6,
+          "swapExchanges": [
+            {
+              "exchange": "BalancerV1",
+              "srcAmount": "3000000000000000000",
+              "destAmount": "6166094711",
+              "percent": 100,
+              "poolAddresses": [
+                "0x69d460e01070a7ba1bc363885bc8f4f0daa19bf5",
+                "0x1373e57f764a7944bdd7a4bd5ca3007d496934da",
+                "0x2257aaac34bcb27900291f7b84ee2565a6cbac57",
+                "0x8a649274e4d777ffc6851f13d23a86bbfa2f2fbf",
+                "0x9b208194acc0a8ccb2a8dcafeacfbb7dcc093f81"
+              ],
+              "data": {
+                "swaps": [
+                  {
+                    "pool": "0x69d460e01070a7ba1bc363885bc8f4f0daa19bf5",
+                    "tokenInParam": "1800000000000000000",
+                    "tokenOutParam": "0",
+                    "maxPrice": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+                  },
+                  {
+                    "pool": "0x1373e57f764a7944bdd7a4bd5ca3007d496934da",
+                    "tokenInParam": "240000000000000000",
+                    "tokenOutParam": "0",
+                    "maxPrice": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+                  },
+                  {
+                    "pool": "0x2257aaac34bcb27900291f7b84ee2565a6cbac57",
+                    "tokenInParam": "360000000000000000",
+                    "tokenOutParam": "0",
+                    "maxPrice": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+                  },
+                  {
+                    "pool": "0x8a649274e4d777ffc6851f13d23a86bbfa2f2fbf",
+                    "tokenInParam": "420000000000000000",
+                    "tokenOutParam": "0",
+                    "maxPrice": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+                  },
+                  {
+                    "pool": "0x9b208194acc0a8ccb2a8dcafeacfbb7dcc093f81",
+                    "tokenInParam": "180000000000000000",
+                    "tokenOutParam": "0",
+                    "maxPrice": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+                  }
+                ],
+                "gasUSD": "44.84844"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "gasCostUSD": "51.695301",
+  "gasCost": "691600",
+  "side": "SELL",
+  "tokenTransferProxy": "0x216b4b4ba9f3e719726886d34a177484278bfcae",
+  "contractAddress": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57",
+  "contractMethod": "simpleSwap",
+  "partnerFee": 0,
+  "srcUSD": "6406.9200000000",
+  "destUSD": "6166.0947110000",
+  "partner": "any",
+  "maxImpactReached": false,
+  "hmac": "5ea0e6bd17ee8bb01da6aa12bc1606e9a9236bc2"
+}

@@ -10,6 +10,7 @@ import { Adapters, CurveV1Config } from './config';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   ExchangeTxInfo,
   PoolLiquidity,
@@ -60,6 +61,7 @@ import {
   getDexKeysWithNetwork,
   interpolate,
   isDestTokenTransferFeeToBeExchanged,
+  isETHAddress,
   isSrcTokenTransferFeeToBeExchanged,
   Utils,
   uuidToBytes16,
@@ -82,10 +84,15 @@ import {
   CurveSwapFunctions,
   CurveV1SwapType,
   DirectCurveV1Param,
+  DirectCurveV1ParamV6,
+  CurveV1DirectSwap,
 } from './types';
 import { erc20Iface } from '../../lib/utils-interfaces';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
-import { DIRECT_METHOD_NAME } from './constants';
+import { DIRECT_METHOD_NAME, DIRECT_METHOD_NAME_V6 } from './constants';
+import { packCurveData } from '../../lib/curve/encoder';
+import { encodeCurveAssets } from './packer';
+import { hexConcat, hexZeroPad, hexlify } from 'ethers/lib/utils';
 
 const CURVE_DEFAULT_CHUNKS = 10;
 
@@ -96,7 +103,7 @@ const coder = new AbiCoder();
 
 export class CurveV1
   extends SimpleExchange
-  implements IDex<CurveV1Data, DirectCurveV1Param>
+  implements IDex<CurveV1Data, DirectCurveV1Param | CurveV1DirectSwap>
 {
   exchangeRouterInterface: Interface;
   minConversionRate = '1';
@@ -854,7 +861,7 @@ export class CurveV1
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side];
+    return this.adapters?.[side] ?? null;
   }
 
   static getDirectFunctionName(): string[] {
@@ -890,13 +897,11 @@ export class CurveV1
     let isApproved: boolean | undefined;
 
     try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, optimalSwapExchange.data.exchange)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      isApproved = await this.dexHelper.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        this.dexHelper.config.wrapETH(srcToken).address,
+        optimalSwapExchange.data.exchange,
+      );
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,
@@ -932,7 +937,7 @@ export class CurveV1
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<DirectCurveV1Param> {
     if (contractMethod !== DIRECT_METHOD_NAME) {
       throw new Error(`Invalid contract method ${contractMethod}`);
@@ -976,6 +981,101 @@ export class CurveV1
       params: swapParams,
       encoder,
       networkFee: '0',
+    };
+  }
+
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: CurveV1Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod: string,
+  ) {
+    if (contractMethod !== DIRECT_METHOD_NAME_V6) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+    assert(side === SwapSide.SELL, 'Buy not supported');
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const swapParams: DirectCurveV1ParamV6 = [
+      packCurveData(
+        data.exchange,
+        !data.isApproved, // approve flag, if not approved then set to true
+        isETHAddress(destToken) ? 0 : isETHAddress(srcToken) ? 3 : 0,
+        data.underlyingSwap
+          ? CurveV1SwapType.EXCHANGE_UNDERLYING
+          : CurveV1SwapType.EXCHANGE,
+      ).toString(),
+      encodeCurveAssets(data.i, data.j).toString(),
+      srcToken,
+      destToken,
+      fromAmount,
+      toAmount,
+      quotedAmount,
+      metadata,
+      beneficiary,
+    ];
+
+    const encodeParams: CurveV1DirectSwap = [swapParams, partnerAndFee, permit];
+
+    const encoder = (...params: CurveV1DirectSwap) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        DIRECT_METHOD_NAME_V6,
+        [...params],
+      );
+    };
+
+    return {
+      encoder,
+      params: encodeParams,
+      networkFee: '0',
+    };
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DIRECT_METHOD_NAME_V6];
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: CurveV1Data,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, i, j, underlyingSwap } = data;
+    const defaultArgs = [i, j, srcAmount, this.minConversionRate];
+    const swapMethod = underlyingSwap
+      ? CurveSwapFunctions.exchange_underlying
+      : CurveSwapFunctions.exchange;
+    const exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+      swapMethod,
+      defaultArgs,
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      sendEthButSupportsInsertFromAmount: true,
+      dexFuncHasRecipient: false,
+      targetExchange: exchange,
+      returnAmountPos: undefined,
     };
   }
 

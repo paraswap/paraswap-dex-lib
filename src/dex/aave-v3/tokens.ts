@@ -51,16 +51,16 @@ export function getTokenFromASymbol(
 }
 
 export function setTokensOnNetwork(network: Network, tokens: AaveToken[]) {
+  if (Tokens[network] === undefined) {
+    Tokens[network] = {};
+  }
+  if (TokensByAddress[network] === undefined) {
+    TokensByAddress[network] = {};
+  }
+
   for (let token of tokens) {
     token.address = token.address.toLowerCase();
     token.aAddress = token.aAddress.toLowerCase();
-
-    if (Tokens[network] === undefined) {
-      Tokens[network] = {};
-    }
-    if (TokensByAddress[network] === undefined) {
-      TokensByAddress[network] = {};
-    }
     Tokens[network][token.aSymbol] = token;
     TokensByAddress[network][token.aAddress] = token;
     TokensByAddress[network][token.address] = token;

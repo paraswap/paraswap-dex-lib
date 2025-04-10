@@ -19,6 +19,7 @@ import {
   encodeFeePercentForReferrer,
   encodePartnerAddressForFeeLogic,
 } from './payload-encoder';
+import { ParaSwapVersion } from '@paraswap/core';
 
 type SimpleSwapParam = [ConstractSimpleData];
 
@@ -102,9 +103,7 @@ export abstract class SimpleRouterBase<RouterParam>
           // This assumes that the sum of all swaps srcAmount would sum to priceRoute.srcAmount
           // Also that it is a direct swap.
           const _srcAmount =
-            swapIndex > 0 ||
-            this.side === SwapSide.SELL ||
-            this.dexAdapterService.getDexKeySpecial(se.exchange) === 'zerox'
+            swapIndex > 0 || this.side === SwapSide.SELL
               ? se.srcAmount
               : (
                   (BigInt(se.srcAmount) * BigInt(minMaxAmount)) /
@@ -116,7 +115,12 @@ export abstract class SimpleRouterBase<RouterParam>
           // should work if the final slippage check passes.
           const _destAmount = this.side === SwapSide.SELL ? '1' : se.destAmount;
 
-          if (dex.needWrapNative) {
+          const dexNeedWrapNative =
+            typeof dex.needWrapNative === 'function'
+              ? dex.needWrapNative(priceRoute, swap, se)
+              : dex.needWrapNative;
+
+          if (dexNeedWrapNative) {
             if (isETHAddress(swap.srcToken)) {
               if (swapIndex !== 0) {
                 throw new Error('Wrap native srcToken not in swapIndex 0');
@@ -134,7 +138,7 @@ export abstract class SimpleRouterBase<RouterParam>
             }
           }
 
-          const simpleParams = await dex.getSimpleParam(
+          const simpleParams = await dex.getSimpleParam?.(
             _src,
             _dest,
             _srcAmount,
@@ -156,7 +160,7 @@ export abstract class SimpleRouterBase<RouterParam>
       simpleExchangeDataList,
       srcAmountWethToDeposit,
       destAmountWethToWithdraw,
-    } = await rawSimpleParams.reduce<{
+    } = rawSimpleParams.reduce<{
       simpleExchangeDataList: SimpleExchangeParam[];
       srcAmountWethToDeposit: bigint;
       destAmountWethToWithdraw: bigint;
@@ -164,7 +168,11 @@ export abstract class SimpleRouterBase<RouterParam>
       (acc, se) => {
         acc.srcAmountWethToDeposit += BigInt(se.wethDeposit);
         acc.destAmountWethToWithdraw += BigInt(se.wethWithdraw);
-        acc.simpleExchangeDataList.push(se.simpleParams);
+        // V6 doesn't have simpleParams
+        if (se.simpleParams) {
+          acc.simpleExchangeDataList.push(se.simpleParams);
+        }
+
         return acc;
       },
       {
@@ -244,6 +252,7 @@ export abstract class SimpleRouterBase<RouterParam>
       srcAmountWeth.toString(),
       destAmountWeth.toString(),
       this.side,
+      ParaSwapVersion.V5,
     );
   }
 }

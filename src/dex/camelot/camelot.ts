@@ -8,6 +8,7 @@ import {
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
   Log,
   Logger,
@@ -44,6 +45,19 @@ import { SimpleExchange } from '../simple-exchange';
 import { applyTransferFee } from '../../lib/token-transfer-fee';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import { SolidlyData } from '../solidly/types';
+import {
+  OnPoolCreatedCallback,
+  UniswapV2Factory,
+} from '../uniswap-v2/uniswap-v2-factory';
+import {
+  hexDataLength,
+  hexlify,
+  hexZeroPad,
+  id,
+  solidityPack,
+} from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
+import { Flag, SpecialDex } from '../../executor/types';
 
 const DefaultCamelotPoolGasCost = 90 * 1000;
 
@@ -163,6 +177,7 @@ export class Camelot
   feeFactor = 100000;
   factory: Contract;
 
+  needWrapNative = true;
   routerInterface: Interface;
   exchangeRouterInterface: Interface;
 
@@ -170,6 +185,10 @@ export class Camelot
   readonly isFeeOnTransferSupported: boolean = true;
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
   logger: Logger;
+
+  private readonly factoryInst: UniswapV2Factory;
+
+  private newlyCreatedPoolKeys: Set<string> = new Set();
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(CamelotConfig);
@@ -205,7 +224,58 @@ export class Camelot
 
     this.routerInterface = new Interface(ParaSwapABI);
     this.exchangeRouterInterface = new Interface(UniswapV2ExchangeRouterABI);
+
+    this.factoryInst = new UniswapV2Factory(
+      dexHelper,
+      dexKey,
+      factoryAddress,
+      this.logger,
+      this.onPoolCreatedDeleteFromNonExistingSet,
+    );
   }
+
+  async initializePricing(blockNumber: number) {
+    // Init listening to new pools creation
+    await this.factoryInst.initialize(blockNumber);
+  }
+
+  private getPoolIdentifier(token0: string, token1: string) {
+    const [_token0, _token1] =
+      token0.toLowerCase() < token1.toLowerCase()
+        ? [token0, token1]
+        : [token1, token0];
+
+    const poolKey = `${this.dexKey}_${_token0}_${_token1}`.toLowerCase();
+
+    return poolKey;
+  }
+
+  /*
+   * When a non existing pool is queried, it's blacklisted for an arbitrary long period in order to prevent issuing too many rpc calls
+   * Once the pool is created, it gets immediately flagged
+   */
+  onPoolCreatedDeleteFromNonExistingSet: OnPoolCreatedCallback = async ({
+    token0,
+    token1,
+  }) => {
+    const logPrefix = '[onPoolCreatedDeleteFromNonExistingSet]';
+
+    try {
+      const poolKey = this.getPoolIdentifier(token0, token1);
+
+      this.newlyCreatedPoolKeys.add(poolKey);
+
+      // delete entry locally to let local instance discover the pool
+      delete this.pairs[poolKey];
+
+      this.logger.info(`${logPrefix} discovered new pool ${poolKey}`);
+    } catch (e) {
+      this.logger.error(
+        `${logPrefix} LOGIC ERROR on ack new pool (token0=${token0},token1=${token1})`,
+        e,
+      );
+    }
+  };
 
   getPoolStatesMultiCallData(pair: CamelotPair): {
     callEntries: any[];
@@ -328,14 +398,17 @@ export class Camelot
         ? [from, to]
         : [to, from];
 
-    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
+    const key = this.getPoolIdentifier(token0.address, token1.address);
     let pair = this.pairs[key];
     if (pair) return pair;
     const exchange = await this.factory.methods
       .getPair(token0.address, token1.address)
       .call();
     if (exchange === NULL_ADDRESS) {
-      pair = { token0, token1 };
+      // if the pool has been newly created to not allow this op as we can run into race condition between pool discovery and concurrent pricing request touching this pool
+      if (!this.newlyCreatedPoolKeys.has(key)) {
+        pair = { token0, token1 };
+      }
     } else {
       pair = { token0, token1, exchange };
     }
@@ -476,12 +549,9 @@ export class Camelot
       return [];
     }
 
-    const tokenAddress = [from.address.toLowerCase(), to.address.toLowerCase()]
-      .sort((a, b) => (a > b ? 1 : -1))
-      .join('_');
+    const poolKey = this.getPoolIdentifier(from.address, to.address);
 
-    const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-    return [poolIdentifier];
+    return [poolKey];
   }
 
   async getPricesVolume(
@@ -507,14 +577,7 @@ export class Camelot
         return null;
       }
 
-      const tokenAddress = [
-        from.address.toLowerCase(),
-        to.address.toLowerCase(),
-      ]
-        .sort((a, b) => (a > b ? 1 : -1))
-        .join('_');
-
-      const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
+      const poolIdentifier = this.getPoolIdentifier(from.address, to.address);
 
       if (limitPools && limitPools.every(p => p !== poolIdentifier))
         return null;
@@ -583,6 +646,7 @@ export class Camelot
             isFeeTokenInRoute: Object.values(transferFees).some(f => f !== 0),
             pools: [
               {
+                stable: pairParam.stable,
                 address: pairParam.exchange,
                 fee: parseInt(pairParam.fee),
                 direction: pairParam.direction,
@@ -662,13 +726,13 @@ export class Camelot
       }
     }`;
 
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       {
         query,
         variables: { token: tokenAddress.toLowerCase(), count },
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools0 && data.pools1))
@@ -766,5 +830,53 @@ export class Camelot
       swapData,
       data.router,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SolidlyData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error('Buy not supported');
+    let exchangeDataTypes = ['bytes4', 'bytes32'];
+
+    const isStable = data.pools.some(pool => !!pool.stable);
+    const isStablePoolAndPoolCount = isStable
+      ? BigNumber.from(1)
+          .shl(255)
+          .or(BigNumber.from(data.pools.length))
+          .toHexString()
+      : hexZeroPad(hexlify(data.pools.length), 32);
+
+    let exchangeDataToPack = [
+      hexZeroPad(hexlify(0), 4),
+      isStablePoolAndPoolCount,
+    ];
+
+    const pools = encodePools(data.pools, this.feeFactor);
+    pools.forEach(pool => {
+      exchangeDataTypes.push('bytes32');
+      exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
+    });
+
+    const exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      targetExchange: recipient,
+      specialDexFlag: data.isFeeTokenInRoute
+        ? SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK_WITH_FEE
+        : SpecialDex.SWAP_ON_DYSTOPIA_UNISWAP_V2_FORK,
+      transferSrcTokenBeforeSwap: data.isFeeTokenInRoute
+        ? undefined
+        : data.pools[0].address,
+      returnAmountPos: undefined,
+    };
   }
 }

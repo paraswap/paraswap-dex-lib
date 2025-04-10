@@ -4,21 +4,21 @@ import _, { keyBy } from 'lodash';
 import {
   AdapterExchangeParam,
   Address,
+  DexExchangeParam,
   ExchangePrices,
+  ExchangeTxInfo,
   Log,
   Logger,
-  TxInfo,
-  PreprocessTransactionOptions,
-  ExchangeTxInfo,
   PoolLiquidity,
   PoolPrices,
+  PreprocessTransactionOptions,
   SimpleExchangeParam,
   Token,
+  TxInfo,
 } from '../../types';
 import {
   ETHER_ADDRESS,
   MAX_INT,
-  MAX_UINT,
   Network,
   NULL_ADDRESS,
   SUBGRAPH_TIMEOUT,
@@ -29,35 +29,41 @@ import { StablePool } from './pools/stable/StablePool';
 import { WeightedPool } from './pools/weighted/WeightedPool';
 import { PhantomStablePool } from './pools/phantom-stable/PhantomStablePool';
 import { LinearPool } from './pools/linear/LinearPool';
+import { Gyro3Pool } from './pools/gyro/Gyro3Pool';
+import { GyroEPool } from './pools/gyro/GyroEPool';
 import VaultABI from '../../abi/balancer-v2/vault.json';
 import DirectSwapABI from '../../abi/DirectSwap.json';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import {
-  getDexKeysWithNetwork,
   getBigIntPow,
+  getDexKeysWithNetwork,
   uuidToBytes16,
 } from '../../utils';
-import { IDex } from '../../dex/idex';
+import { Context, IDex } from '../../dex/idex';
 import { IDexHelper } from '../../dex-helper';
 import {
-  BalancerParam,
+  BalancerV2BatchSwapParam,
   BalancerPoolTypes,
   BalancerSwap,
   BalancerV2Data,
+  BalancerV2DirectParam,
   OptimizedBalancerV2Data,
   PoolState,
   PoolStateCache,
   PoolStateMap,
   SubgraphPoolAddressDictionary,
-  BalancerV2DirectParam,
   SubgraphPoolBase,
   SwapTypes,
+  BalancerV2DirectParamV6,
+  BalancerV2DirectParamV6Swap,
+  BalancerV2SwapParam,
+  BalancerV2SingleSwap,
 } from './types';
 import {
   getLocalDeadlineAsFriendlyPlaceholder,
   SimpleExchange,
 } from '../simple-exchange';
-import { BalancerConfig, Adapters } from './config';
+import { Adapters, BalancerConfig } from './config';
 import {
   getAllPoolsUsedInPaths,
   isSameAddress,
@@ -66,11 +72,17 @@ import {
 } from './utils';
 import {
   DirectMethods,
+  DirectMethodsV6,
   MIN_USD_LIQUIDITY_TO_FETCH,
   STABLE_GAS_COST,
   VARIABLE_GAS_COST_PER_CYCLE,
 } from './constants';
 import { NumberAsString, OptimalSwapExchange } from '@paraswap/core';
+import { hexConcat, hexlify, hexZeroPad, solidityPack } from 'ethers/lib/utils';
+import BalancerVaultABI from '../../abi/balancer-v2/vault.json';
+import { BigNumber } from 'ethers';
+import { SpecialDex } from '../../executor/types';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 // If you disable some pool, don't forget to clear the cache, otherwise changes won't be applied immediately
 const enabledPoolTypes = [
@@ -91,6 +103,8 @@ const enabledPoolTypes = [
   BalancerPoolTypes.SiloLinear,
   BalancerPoolTypes.TetuLinear,
   BalancerPoolTypes.YearnLinear,
+  BalancerPoolTypes.GyroE,
+  BalancerPoolTypes.Gyro3,
 ];
 
 const disabledPoolIds = [
@@ -111,6 +125,7 @@ const disabledPoolIds = [
   '0x8a6b25e33b12d1bb6929a8793961076bd1f9d3eb0002000000000000000003e8',
   '0x959216bb492b2efa72b15b7aacea5b5c984c3cca000200000000000000000472',
   '0x9b692f571b256140a39a34676bffa30634c586e100000000000000000000059d',
+  '0xe7b1d394f3b40abeaa0b64a545dbcf89da1ecb3f00010000000000000000009a',
 
   // polygon
   '0xb3d658d5b95bf04e2932370dd1ff976fe18dd66a000000000000000000000ace',
@@ -163,34 +178,47 @@ const fetchAllPools = `query ($count: Int) {
     orderBy: totalLiquidity
     orderDirection: desc
     where: {
-      totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
-      totalShares_not_in: ["0", "0.000000000001"],
-      id_not_in: [
-        ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
-      ],
-       address_not_in: [
-        "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
-        "0x2ff1a9dbdacd55297452cfd8a4d94724bc22a5f7",
-        "0xbc0f2372008005471874e426e86ccfae7b4de79d",
-        "0xdba274b4d04097b90a72b62467d828cefd708037",
-        "0xf22ff21e17157340575158ad7394e068048dd98b",
-        "0xf71d0774b214c4cf51e33eb3d30ef98132e4dbaa",
-      ],
-      swapEnabled: true,
-      poolType_in: [
-        ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
+      and: [
+        { 
+          or: [
+            { isInRecoveryMode: false }
+            { isInRecoveryMode: null }
+          ]
+        },
+        {
+          totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()},
+          totalShares_not_in: ["0", "0.000000000001"],
+          id_not_in: [
+            ${disabledPoolIds.map(p => `"${p}"`).join(', ')}
+          ],
+          address_not_in: [
+            "0x0afbd58beca09545e4fb67772faf3858e610bcd0",
+            "0x2ff1a9dbdacd55297452cfd8a4d94724bc22a5f7",
+            "0xbc0f2372008005471874e426e86ccfae7b4de79d",
+            "0xdba274b4d04097b90a72b62467d828cefd708037",
+            "0xf22ff21e17157340575158ad7394e068048dd98b",
+            "0xf71d0774b214c4cf51e33eb3d30ef98132e4dbaa",
+          ],
+          swapEnabled: true,
+          poolType_in: [
+            ${enabledPoolTypes.map(p => `"${p}"`).join(', ')}
+          ]
+        }
       ]
     }
   ) {
     id
     address
     poolType
+    poolTypeVersion
     tokens (orderBy: index) {
       address
       decimals
     }
     mainIndex
     wrappedIndex
+
+    root3Alpha
   }
 }`;
 // skipping low liquidity composableStablePool (0xbd482ffb3e6e50dc1c437557c3bea2b68f3683ee0000000000000000000003c6) with oracle issues. Experimental.
@@ -223,11 +251,23 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
   } = {};
 
   pools: {
-    [type: string]: WeightedPool | StablePool | LinearPool | PhantomStablePool;
+    [type: string]:
+      | WeightedPool
+      | StablePool
+      | LinearPool
+      | PhantomStablePool
+      | Gyro3Pool
+      | GyroEPool;
   };
 
   public allPools: SubgraphPoolBase[] = [];
   vaultDecoder: (log: Log) => any;
+
+  buySupportedPoolTypes: Set<BalancerPoolTypes> = new Set([
+    BalancerPoolTypes.Weighted,
+    BalancerPoolTypes.GyroE,
+    BalancerPoolTypes.ComposableStable,
+  ]);
 
   eventSupportedPoolTypes: BalancerPoolTypes[] = [
     BalancerPoolTypes.Stable,
@@ -286,6 +326,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
       true,
     );
     const linearPool = new LinearPool(this.vaultAddress, this.vaultInterface);
+    const gyro3Pool = new Gyro3Pool(this.vaultAddress, this.vaultInterface);
+    const gyroEPool = new GyroEPool(this.vaultAddress, this.vaultInterface);
 
     this.pools = {};
     this.pools[BalancerPoolTypes.Weighted] = weightedPool;
@@ -307,6 +349,10 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.pools[BalancerPoolTypes.BeefyLinear] = linearPool;
     // Beets uses "Linear" generically for all linear pool types
     this.pools[BalancerPoolTypes.Linear] = linearPool;
+
+    this.pools[BalancerPoolTypes.Gyro3] = gyro3Pool;
+    this.pools[BalancerPoolTypes.GyroE] = gyroEPool;
+
     this.vaultDecoder = (log: Log) => this.vaultInterface.parseLog(log);
     this.addressesSubscribed = [vaultAddress];
 
@@ -365,13 +411,14 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.logger.info(
       `Fetching ${this.parentName}_${this.network} Pools from subgraph`,
     );
+
     const variables = {
       count: MAX_POOL_CNT,
     };
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchAllPools, variables },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools))
@@ -400,6 +447,7 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     this.logger.info(
       `Got ${allPools.length} ${this.parentName}_${this.network} pools from subgraph`,
     );
+
     return allPools;
   }
 
@@ -463,8 +511,8 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
 
     if (
-      subgraphPool.poolType !== BalancerPoolTypes.Weighted &&
-      side === SwapSide.BUY
+      side === SwapSide.BUY &&
+      !this.buySupportedPoolTypes.has(subgraphPool.poolType)
     ) {
       return null;
     }
@@ -591,14 +639,20 @@ export class BalancerV2EventPool extends StatefulEventSubscriber<PoolStateMap> {
 export class BalancerV2
   extends SimpleExchange
   implements
-    IDex<BalancerV2Data, BalancerV2DirectParam, OptimizedBalancerV2Data>
+    IDex<
+      BalancerV2Data,
+      BalancerV2DirectParam | BalancerV2DirectParamV6Swap,
+      OptimizedBalancerV2Data
+    >
 {
   public eventPools: BalancerV2EventPool;
 
   readonly hasConstantPriceLargeAmounts = false;
   readonly isFeeOnTransferSupported = false;
+  readonly needWrapNative = true; // temporary
 
   readonly directSwapIface = new Interface(DirectSwapABI);
+  readonly balancerVaultInterface = new Interface(BalancerVaultABI);
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(BalancerConfig);
@@ -608,7 +662,7 @@ export class BalancerV2
   // In memory pool state for non-event pools
   nonEventPoolStateCache: PoolStateCache;
 
-  eventDisabledPoolsTimer?: NodeJS.Timer;
+  eventDisabledPoolsTimer?: NodeJS.Timeout;
   eventDisabledPools: Address[] = [];
 
   constructor(
@@ -657,10 +711,10 @@ export class BalancerV2
       timestampPast: timeNow - POOL_EVENT_REENABLE_DELAY,
       timestampFuture: timeNow + POOL_EVENT_DISABLED_TTL,
     };
-    const { data } = await this.dexHelper.httpRequest.post(
+    const { data } = await this.dexHelper.httpRequest.querySubgraph(
       this.subgraphURL,
       { query: fetchWeightUpdating, variables },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.gradualWeightUpdates)) {
@@ -736,7 +790,7 @@ export class BalancerV2
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
-    return this.adapters[side] ? this.adapters[side] : null;
+    return this.adapters?.[side] ? this.adapters[side] : null;
   }
 
   async getPoolIdentifiers(
@@ -801,6 +855,7 @@ export class BalancerV2
       }
 
       const allPools = this.getPoolsWithTokenPair(_from, _to);
+
       const allowedPools = limitPools
         ? allPools.filter(({ address }) =>
             limitPools.includes(`${this.dexKey}_${address.toLowerCase()}`),
@@ -814,6 +869,7 @@ export class BalancerV2
         this.logger.error(`getState returned null`);
       }
       const eventPoolStates = { ...(eventPoolStatesRO || {}) };
+
       for (const addr of this.eventDisabledPools) delete eventPoolStates[addr];
 
       // Fetch previously cached non-event pool states
@@ -852,72 +908,85 @@ export class BalancerV2
 
       const poolPrices = allowedPools
         .map((pool: SubgraphPoolBase) => {
-          const poolAddress = pool.address.toLowerCase();
+          try {
+            const poolAddress = pool.address.toLowerCase();
 
-          const path = poolGetPathForTokenInOut(
-            _from.address,
-            _to.address,
-            pool,
-            this.poolAddressMap,
-            side,
-          );
-
-          let pathAmounts = amounts;
-          let resOut: { unit: bigint; prices: bigint[] } | null = null;
-
-          for (let i = 0; i < path.length; i++) {
-            const poolAddress = path[i].pool.address.toLowerCase();
-            const poolState = (eventPoolStates[poolAddress] ||
-              nonEventPoolStates[poolAddress]) as PoolState | undefined;
-            if (!poolState) {
-              this.logger.error(`Unable to find the poolState ${poolAddress}`);
-              return null;
-            }
-
-            const unitVolume = getBigIntPow(
-              (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
-                .decimals,
-            );
-
-            const res = this.eventPools.getPricesPool(
-              path[i].tokenIn,
-              path[i].tokenOut,
-              path[i].pool,
-              poolState,
-              pathAmounts,
-              unitVolume,
+            const path = poolGetPathForTokenInOut(
+              _from.address,
+              _to.address,
+              pool,
+              this.poolAddressMap,
               side,
             );
 
-            if (!res) {
+            let pathAmounts = amounts;
+            let resOut: { unit: bigint; prices: bigint[] } | null = null;
+
+            for (let i = 0; i < path.length; i++) {
+              const poolAddress = path[i].pool.address.toLowerCase();
+              const poolState = (eventPoolStates[poolAddress] ||
+                nonEventPoolStates[poolAddress]) as PoolState | undefined;
+              if (!poolState) {
+                this.logger.error(
+                  `Unable to find the poolState ${poolAddress}`,
+                );
+                return null;
+              }
+
+              const unitVolume = getBigIntPow(
+                (side === SwapSide.SELL ? path[i].tokenIn : path[i].tokenOut)
+                  .decimals,
+              );
+
+              const res = this.eventPools.getPricesPool(
+                path[i].tokenIn,
+                path[i].tokenOut,
+                path[i].pool,
+                poolState,
+                pathAmounts,
+                unitVolume,
+                side,
+              );
+
+              if (!res) {
+                return null;
+              }
+
+              pathAmounts = res.prices;
+
+              if (i === path.length - 1) {
+                resOut = res;
+              }
+            }
+
+            if (!resOut) {
               return null;
             }
 
-            pathAmounts = res.prices;
+            return {
+              unit: resOut.unit,
+              prices: resOut.prices,
+              data: {
+                poolId: pool.id,
+              },
+              poolAddresses: [poolAddress],
+              exchange: this.dexKey,
+              gasCost:
+                STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
+              poolIdentifier: `${this.dexKey}_${poolAddress}`,
+            };
 
-            if (i === path.length - 1) {
-              resOut = res;
-            }
+            // TODO: re-check what should be the current block time stamp
+          } catch (e) {
+            this.logger.warn(
+              `Error_getPrices ${from.symbol || from.address}, ${
+                to.symbol || to.address
+              }, ${side}, ${pool.address}:`,
+              e,
+            );
+
+            return;
           }
-
-          if (!resOut) {
-            return null;
-          }
-
-          return {
-            unit: resOut.unit,
-            prices: resOut.prices,
-            data: {
-              poolId: pool.id,
-            },
-            poolAddresses: [poolAddress],
-            exchange: this.dexKey,
-            gasCost:
-              STABLE_GAS_COST + VARIABLE_GAS_COST_PER_CYCLE * path.length,
-            poolIdentifier: `${this.dexKey}_${poolAddress}`,
-          };
-
-          // TODO: re-check what should be the current block time stamp
         })
         .filter(p => !!p);
       return poolPrices as ExchangePrices<BalancerV2Data>;
@@ -989,13 +1058,13 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): AdapterExchangeParam {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
-      srcAmount,
-      destAmount,
       data,
       side,
+      this.dexHelper.config.data.augustusAddress!,
+      this.dexHelper.config.data.augustusAddress!,
     );
 
     const payload = this.abiCoder.encodeParameter(
@@ -1035,14 +1104,72 @@ export class BalancerV2
     };
   }
 
-  public getBalancerParam(
+  public getBalancerV2SwapParam(
     srcToken: string,
     destToken: string,
-    srcAmount: string,
-    destAmount: string,
     data: OptimizedBalancerV2Data,
     side: SwapSide,
-  ): BalancerParam {
+    recipient: string,
+    sender: string,
+  ): BalancerV2SwapParam {
+    assert(data.swaps.length === 1, 'should have exactly one pool');
+
+    const singleSwap: BalancerV2SingleSwap = {
+      poolId: data.swaps[0].poolId,
+      kind:
+        side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
+      assetIn:
+        srcToken.toLowerCase() === ETHER_ADDRESS ? NULL_ADDRESS : srcToken,
+      assetOut:
+        destToken.toLowerCase() === ETHER_ADDRESS ? NULL_ADDRESS : destToken,
+      amount: data.swaps[0].amount,
+      userData: '0x',
+    };
+
+    const funds = {
+      sender,
+      recipient,
+      fromInternalBalance: false,
+      toInternalBalance: false,
+    };
+
+    const params: BalancerV2SwapParam = [
+      singleSwap,
+      funds,
+      side === SwapSide.SELL ? '1' : MAX_INT,
+      getLocalDeadlineAsFriendlyPlaceholder(),
+    ];
+
+    return params;
+  }
+
+  /*
+      Algorithm to determine balancer (sender, recipient) params:
+
+      if version = 5
+          sender = recipient = augustusV5
+      else (so V6)
+        if direct swap
+            sender = recipient = augustusV6
+        else (so generic swaps)
+          if sell
+            if swap.destToken = priceRoute.destToken <> ETH (need withdraw for eth currently, need fix in future)
+                  sender = executor and recipient = augustusV6 (skip 1 extra transfer)
+              else
+                  sender = recipient = executor
+              # note: we pass sender=null then the address of the executor is inferred contract side
+          else (so buy)
+              sender = recipient = executor
+*/
+  public getBalancerV2BatchSwapParam(
+    srcToken: string,
+    destToken: string,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    recipient: string,
+    sender: string,
+    shouldWalkAssetsBackward?: boolean, // should do for all buy but prefer keep it under control
+  ): BalancerV2BatchSwapParam {
     let swapOffset = 0;
     let swaps: BalancerSwap[] = [];
     let assets: string[] = [];
@@ -1074,17 +1201,35 @@ export class BalancerV2
         path = path.reverse();
       }
 
-      const _swaps = path.map((hop, index) => ({
-        poolId: hop.pool.id,
-        assetInIndex: swapOffset + index,
-        assetOutIndex: swapOffset + index + 1,
-        amount:
+      const _swaps = path.map((hop, index) => {
+        const assetInIndex = shouldWalkAssetsBackward
+          ? swapOffset + path.length - index
+          : swapOffset + index;
+
+        const assetOutIndex = shouldWalkAssetsBackward
+          ? swapOffset + path.length - index - 1
+          : swapOffset + index + 1;
+
+        const amount =
           (side === SwapSide.SELL && index === 0) ||
           (side === SwapSide.BUY && index === path.length - 1)
             ? swapData.amount
-            : '0',
-        userData: '0x',
-      }));
+            : '0';
+
+        if (assetInIndex < 0 || assetOutIndex < 0) {
+          const error = new Error(`Invalid indices in balancer`);
+          this.logger.error(error.message, error);
+          throw error;
+        }
+
+        return {
+          poolId: hop.pool.id,
+          assetInIndex,
+          assetOutIndex,
+          amount,
+          userData: '0x',
+        };
+      });
 
       swapOffset += path.length + 1;
 
@@ -1101,19 +1246,19 @@ export class BalancerV2
     }
 
     const funds = {
-      sender: this.augustusAddress,
-      recipient: this.augustusAddress,
+      sender,
+      recipient,
       fromInternalBalance: false,
       toInternalBalance: false,
     };
 
-    const params: BalancerParam = [
+    const params: BalancerV2BatchSwapParam = [
       side === SwapSide.SELL ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
       side === SwapSide.SELL ? swaps : swaps.reverse(),
-      assets,
+      shouldWalkAssetsBackward ? assets.reverse() : assets,
       funds,
       limits,
-      MAX_UINT,
+      getLocalDeadlineAsFriendlyPlaceholder(),
     ];
 
     return params;
@@ -1152,13 +1297,11 @@ export class BalancerV2
     let isApproved: boolean | undefined;
 
     try {
-      this.erc20Contract.options.address =
-        this.dexHelper.config.wrapETH(srcToken).address;
-      const allowance = await this.erc20Contract.methods
-        .allowance(this.augustusAddress, this.vaultAddress)
-        .call(undefined, 'latest');
-      isApproved =
-        BigInt(allowance.toString()) >= BigInt(optimalSwapExchange.srcAmount);
+      isApproved = await this.dexHelper.augustusApprovals.hasApproval(
+        options.executionContractAddress,
+        this.dexHelper.config.wrapETH(srcToken).address,
+        this.vaultAddress,
+      );
     } catch (e) {
       this.logger.error(
         `preProcessTransaction failed to retrieve allowance info: `,
@@ -1194,7 +1337,7 @@ export class BalancerV2
     deadline: NumberAsString,
     partner: string,
     beneficiary: string,
-    contractMethod?: string,
+    contractMethod: string,
   ): TxInfo<BalancerV2DirectParam> {
     if (
       contractMethod !== DirectMethods.directSell &&
@@ -1208,14 +1351,15 @@ export class BalancerV2
       this.logger.warn(`isApproved is undefined, defaulting to false`);
     }
 
-    const [, swaps, assets, funds, limits, _deadline] = this.getBalancerParam(
-      srcToken,
-      destToken,
-      srcAmount,
-      destAmount,
-      data,
-      side,
-    );
+    const [, swaps, assets, funds, limits, _deadline] =
+      this.getBalancerV2BatchSwapParam(
+        srcToken,
+        destToken,
+        data,
+        side,
+        this.dexHelper.config.data.augustusAddress!,
+        this.dexHelper.config.data.augustusAddress!,
+      );
 
     const swapParams: BalancerV2DirectParam = [
       swaps,
@@ -1251,6 +1395,129 @@ export class BalancerV2
     };
   }
 
+  getDirectParamV6(
+    srcToken: Address,
+    destToken: Address,
+    fromAmount: NumberAsString,
+    toAmount: NumberAsString,
+    quotedAmount: NumberAsString,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    permit: string,
+    uuid: string,
+    partnerAndFee: string,
+    beneficiary: string,
+    blockNumber: number,
+    contractMethod: string,
+  ) {
+    if (!contractMethod) throw new Error(`contractMethod need to be passed`);
+
+    if (!BalancerV2.getDirectFunctionNameV6().includes(contractMethod!)) {
+      throw new Error(`Invalid contract method ${contractMethod}`);
+    }
+
+    const metadata = hexConcat([
+      hexZeroPad(uuidToBytes16(uuid), 16),
+      hexZeroPad(hexlify(blockNumber), 16),
+    ]);
+
+    const balancerBatchSwapParam = this.getBalancerV2BatchSwapParam(
+      srcToken,
+      destToken,
+      data,
+      side,
+      this.dexHelper.config.data.augustusV6Address!,
+      this.dexHelper.config.data.augustusV6Address!,
+      side === SwapSide.BUY,
+    );
+
+    // after getBalancerV2BatchSwapParam runs we may get more swaps so we can't decide on single vs batch before resolving it
+    const [, swaps] = balancerBatchSwapParam;
+    const isSingleSwap = swaps.length === 1;
+
+    const balancerParams = isSingleSwap
+      ? this.getBalancerV2SwapParam(
+          srcToken,
+          destToken,
+          data,
+          side,
+          this.dexHelper.config.data.augustusV6Address!,
+          this.dexHelper.config.data.augustusV6Address!,
+        )
+      : balancerBatchSwapParam;
+
+    const swapParams: BalancerV2DirectParamV6 = [
+      fromAmount,
+      toAmount,
+      quotedAmount,
+      metadata,
+      this.encodeBeneficiaryAndApproveFlag(beneficiary, !data.isApproved),
+    ];
+
+    const encodeParams: BalancerV2DirectParamV6Swap = [
+      swapParams,
+      partnerAndFee,
+      permit,
+      balancerParams.length === 4 // TODO: upgrade ts to use isSingleSwap
+        ? this.encodeBalancerV2SwapParam(balancerParams)
+        : this.encodeBalancerV2BatchSwapParam(balancerParams),
+    ];
+
+    const encoder = (...params: BalancerV2DirectParamV6Swap) => {
+      return this.augustusV6Interface.encodeFunctionData(
+        side === SwapSide.SELL
+          ? DirectMethodsV6.directSell
+          : DirectMethodsV6.directBuy,
+        [...params],
+      );
+    };
+
+    return {
+      encoder,
+      params: encodeParams,
+      networkFee: '0',
+    };
+  }
+
+  private encodeBeneficiaryAndApproveFlag(
+    beneficiary: Address,
+    approveFlag: boolean,
+  ) {
+    const addressBN = BigNumber.from(beneficiary);
+    const flagBN = approveFlag ? BigNumber.from(1).shl(255) : BigNumber.from(0);
+
+    return addressBN.or(flagBN).toString();
+  }
+
+  private encodeBalancerV2SwapParam(param: BalancerV2SwapParam): string {
+    const [singleSwap, funds, limit, deadline] = param;
+
+    const encoded = this.balancerVaultInterface.encodeFunctionData('swap', [
+      singleSwap,
+      funds,
+      limit,
+      deadline,
+    ]);
+
+    return encoded;
+  }
+
+  private encodeBalancerV2BatchSwapParam(
+    param: BalancerV2BatchSwapParam,
+  ): string {
+    const [kind, swaps, assets, funds, limits, deadline] = param;
+
+    const encoded = this.balancerVaultInterface.encodeFunctionData(
+      'batchSwap',
+      [kind, swaps, assets, funds, limits, deadline],
+    );
+    return encoded;
+  }
+
+  static getDirectFunctionNameV6(): string[] {
+    return [DirectMethodsV6.directSell, DirectMethodsV6.directBuy];
+  }
+
   async getSimpleParam(
     srcToken: string,
     destToken: string,
@@ -1259,13 +1526,13 @@ export class BalancerV2
     data: OptimizedBalancerV2Data,
     side: SwapSide,
   ): Promise<SimpleExchangeParam> {
-    const params = this.getBalancerParam(
+    const params = this.getBalancerV2BatchSwapParam(
       srcToken,
       destToken,
-      srcAmount,
-      destAmount,
       data,
       side,
+      this.dexHelper.config.data.augustusAddress!,
+      this.dexHelper.config.data.augustusAddress!,
     );
 
     const swapData = this.eventPools.vaultInterface.encodeFunctionData(
@@ -1281,6 +1548,88 @@ export class BalancerV2
       swapData,
       this.vaultAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: OptimizedBalancerV2Data,
+    side: SwapSide,
+    context: Context,
+    executor: Address,
+  ): DexExchangeParam {
+    const balancerBatchSwapParam = this.getBalancerV2BatchSwapParam(
+      srcToken,
+      destToken,
+      data,
+      side,
+      recipient,
+      side === SwapSide.SELL ? NULL_ADDRESS : executor,
+    );
+
+    const [, swaps] = balancerBatchSwapParam;
+    const isSingleSwap = swaps.length === 1;
+
+    if (isSingleSwap) {
+      const balancerSwapParam = this.getBalancerV2SwapParam(
+        srcToken,
+        destToken,
+        data,
+        side,
+        recipient,
+        executor,
+      );
+
+      const exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+        'swap',
+        balancerSwapParam,
+      );
+
+      return {
+        needWrapNative: this.needWrapNative,
+        dexFuncHasRecipient: true,
+        exchangeData,
+        targetExchange: this.vaultAddress,
+        returnAmountPos:
+          side === SwapSide.SELL
+            ? extractReturnAmountPosition(
+                this.balancerVaultInterface,
+                'swap',
+                'amountCalculated',
+              )
+            : undefined,
+      };
+    }
+
+    let exchangeData = this.eventPools.vaultInterface.encodeFunctionData(
+      'batchSwap',
+      balancerBatchSwapParam,
+    );
+    let specialDexFlag = SpecialDex.DEFAULT;
+
+    if (side === SwapSide.SELL) {
+      const totalAmount = swaps.reduce<BigNumber>((acc, swap) => {
+        return acc.add(swap.amount);
+      }, BigNumber.from(0));
+
+      exchangeData = solidityPack(
+        ['bytes32', 'bytes'],
+        [hexZeroPad(hexlify(totalAmount), 32), exchangeData],
+      );
+      specialDexFlag = SpecialDex.SWAP_ON_BALANCER_V2;
+    }
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData,
+      specialDexFlag,
+      targetExchange: this.vaultAddress,
+      returnAmountPos: undefined,
+    };
   }
 
   async updatePoolState(): Promise<void> {
@@ -1304,9 +1653,21 @@ export class BalancerV2
 
     const query = `query ($poolIds: [String!]!, $count: Int) {
       pools (first: $count, orderBy: totalLiquidity, orderDirection: desc,
-           where: {id_in: $poolIds,
-                   swapEnabled: true,
-                   totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}}) {
+        where: {
+          and: [
+            { 
+              or: [
+                { isInRecoveryMode: false }
+                { isInRecoveryMode: null }
+              ]
+            },
+            {
+              id_in: $poolIds,
+              swapEnabled: true,
+              totalLiquidity_gt: ${MIN_USD_LIQUIDITY_TO_FETCH.toString()}
+            }
+          ]
+      }) {
         address
         totalLiquidity
         tokens {
@@ -1315,7 +1676,7 @@ export class BalancerV2
         }
       }
     }`;
-    const { data } = await this.dexHelper.httpRequest.post<{
+    const { data } = await this.dexHelper.httpRequest.querySubgraph<{
       data: {
         pools: {
           address: string;
@@ -1329,7 +1690,7 @@ export class BalancerV2
         query,
         variables,
       },
-      SUBGRAPH_TIMEOUT,
+      { timeout: SUBGRAPH_TIMEOUT },
     );
 
     if (!(data && data.pools))

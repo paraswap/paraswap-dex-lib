@@ -15,6 +15,7 @@ export type PoolContextConstants = {
   // for all pools
   isWrapNative: boolean;
   isLending: boolean;
+  isStable?: boolean;
 
   // Starting from this point, constants are context relevant for pricing
 
@@ -58,6 +59,7 @@ export type PoolState = {
   offpeg_fee_multiplier?: bigint; // from pool
   basePoolState?: PoolState;
   storedRates?: bigint[]; // from pool, but only for oracle ones
+  n_coins?: number;
 };
 
 export type PoolStateWithUpdateInfo<T> = {
@@ -67,10 +69,15 @@ export type PoolStateWithUpdateInfo<T> = {
 };
 
 export type CurveV1FactoryData = {
-  exchange: Address;
-  i: number;
-  j: number;
-  underlyingSwap: boolean;
+  path: {
+    tokenIn: Address;
+    tokenOut: Address;
+    exchange: Address;
+    i: number;
+    j: number;
+    underlyingSwap: boolean;
+    n_coins: number;
+  }[];
   isApproved?: boolean;
 };
 
@@ -115,6 +122,8 @@ export enum FactoryImplementationNames {
   FACTORY_PLAIN_4_BASIC = 'factory_plain_4_basic',
   FACTORY_PLAIN_4_ETH = 'factory_plain_4_eth',
   FACTORY_PLAIN_4_OPTIMIZED = 'factory_plain_4_optimized',
+
+  FACTORY_STABLE_NG = 'factory_stable_ng',
 }
 
 export enum CustomImplementationNames {
@@ -175,8 +184,15 @@ export type CustomPoolConfig = {
   useForPricing: boolean;
 };
 
+type DexParamFactory = {
+  address: string;
+  maxPlainCoins?: number;
+  isStableNg?: boolean;
+};
+
 export type DexParams = {
-  factoryAddresses: string[] | null;
+  factories: DexParamFactory[] | null;
+  router: Address;
   stateUpdatePeriodMs: number;
   factoryPoolImplementations: Record<Address, FactoryPoolImplementations>;
   customPools: Record<string, CustomPoolConfig>;
@@ -191,8 +207,19 @@ export enum CurveSwapFunctions {
   exchange_underlying = 'exchange_underlying',
 }
 
+export enum CurveRouterSwapType {
+  exchange = 1,
+  exchange_underlying = 2,
+}
+
+export enum CurveRouterPoolType {
+  non_stable = 0,
+  stable = 10,
+}
+
 export type CurveV1FactoryIfaces = {
   exchangeRouter: Interface;
+  curveV1Router: Interface;
   factory: Interface;
   erc20: Interface;
   threePool: Interface;
@@ -222,4 +249,38 @@ export type DirectCurveV1Param = [
   needWrapNative: boolean,
   permit: string,
   uuid: string,
+];
+
+export type CurveV1RouterSwapParam = [
+  number,
+  number,
+  number,
+  CurveRouterPoolType,
+  number,
+];
+
+export type CurveV1RouterParam = {
+  path: string[];
+  swapParams: CurveV1RouterSwapParam[];
+  srcAmount: string;
+  min_dy: string;
+  pools: string[];
+};
+
+export type DirectCurveV1FactoryParamV6 = [
+  curveData: NumberAsString,
+  curveAssets: NumberAsString,
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  quotedAmount: NumberAsString,
+  metadata: string,
+  beneficiary: Address,
+];
+
+export type CurveV1FactoryDirectSwap = [
+  params: DirectCurveV1FactoryParamV6,
+  partnerAndFee: string,
+  permit: string,
 ];

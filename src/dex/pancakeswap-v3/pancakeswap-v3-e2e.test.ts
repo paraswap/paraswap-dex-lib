@@ -323,7 +323,7 @@ describe('PancakeswapV3 E2E', () => {
     );
   });
 
-  describe('PancakeswapV3 Arbitrum', () => {
+  describe('PancakeswapV3 Arbitrum_V6', () => {
     const network = Network.ARBITRUM;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -336,12 +336,14 @@ describe('PancakeswapV3 E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     const pairs: { name: string; sellAmount: string; buyAmount: string }[][] = [
@@ -355,6 +357,18 @@ describe('PancakeswapV3 E2E', () => {
           name: 'USDC',
           sellAmount: '5000000',
           buyAmount: '1000000000000000',
+        },
+      ],
+      [
+        {
+          name: 'USDT',
+          sellAmount: '5000000',
+          buyAmount: '5000000',
+        },
+        {
+          name: 'USDC',
+          sellAmount: '5000000',
+          buyAmount: '5000000',
         },
       ],
     ];
@@ -414,6 +428,27 @@ describe('PancakeswapV3 E2E', () => {
     testForNetwork(
       network,
       dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+    );
+  });
+
+  describe('SwapBasedV3 Base', () => {
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'USDbC';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '11111000000';
+    const tokenBAmount: string = '11111000000';
+    const nativeTokenAmount = '110000000000000000000';
+
+    testForNetwork(
+      network,
+      'SwapBasedV3',
       tokenASymbol,
       tokenBSymbol,
       tokenAAmount,

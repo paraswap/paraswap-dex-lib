@@ -15,7 +15,7 @@ import {
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
 
-const network = Network.ROPSTEN;
+const network = Network.MAINNET;
 const TokenASymbol = 'WETH';
 const TokenA = Tokens[network][TokenASymbol];
 

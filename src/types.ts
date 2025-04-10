@@ -1,4 +1,4 @@
-import { Address } from '@paraswap/core';
+import { Address, ParaSwapVersion } from '@paraswap/core';
 export { BlockHeader } from 'web3-eth';
 export {
   Address,
@@ -15,6 +15,8 @@ export { Logger } from 'log4js';
 import { OptimalRate } from '@paraswap/core';
 import BigNumber from 'bignumber.js';
 import { RFQConfig } from './dex/generic-rfq/types';
+import { Executors, Flag, SpecialDex } from './executor/types';
+import { NeedWrapNativeFunc } from './dex/idex';
 
 // Check: Should the logger be replaced with Logger Interface
 export type LoggerConstructor = (name?: string) => Logger;
@@ -156,6 +158,37 @@ export type AdapterExchangeParam = {
   networkFee: string;
 };
 
+export type DexExchangeParam = {
+  needWrapNative: boolean | NeedWrapNativeFunc;
+  skipApproval?: boolean;
+  wethAddress?: string;
+  exchangeData: string;
+  targetExchange: string;
+  dexFuncHasRecipient: boolean;
+  specialDexFlag?: SpecialDex;
+  transferSrcTokenBeforeSwap?: Address;
+  spender?: Address;
+  sendEthButSupportsInsertFromAmount?: boolean;
+  specialDexSupportsInsertFromAmount?: boolean;
+  swappedAmountNotPresentInExchangeData?: boolean;
+  preSwapUnwrapCalldata?: string;
+  returnAmountPos: number | undefined;
+  insertFromAmountPos?: number;
+  permit2Approval?: boolean;
+};
+
+export type DexExchangeParamWithBooleanNeedWrapNative = DexExchangeParam & {
+  needWrapNative: boolean;
+};
+
+export type DexExchangeBuildParam =
+  DexExchangeParamWithBooleanNeedWrapNative & {
+    approveData?: {
+      target: Address;
+      token: Address;
+    };
+  };
+
 export type AdapterMappings = {
   [side: string]: { name: string; index: number }[];
 };
@@ -194,6 +227,7 @@ export type PoolPrices<T> = {
   exchange: string;
   gasCost: number | number[];
   gasCostL2?: number | number[];
+  calldataGasCost?: number | number[];
   poolAddresses?: Array<Address>;
 };
 
@@ -263,11 +297,13 @@ export type Config = {
   wrappedNativeTokenAddress: Address;
   hasEIP1559: boolean;
   augustusAddress: Address;
+  augustusV6Address: Address;
   augustusRFQAddress: Address;
   tokenTransferProxyAddress: Address;
   multicallV2Address: Address;
   privateHttpProvider: string;
   adapterAddresses: { [name: string]: Address };
+  executorsAddresses?: { [name: string]: Address };
   uniswapV2ExchangeRouterAddress: Address;
   rfqConfigs: Record<string, RFQConfig>;
   rpcPollingMaxAllowedStateDelayInBlocks: number;
@@ -277,7 +313,11 @@ export type Config = {
   uniswapV3EventLoggingSampleRate?: number;
   swaapV2AuthToken?: string;
   dexalotAuthToken?: string;
+  bebopAuthName?: string;
+  bebopAuthToken?: string;
+  idleDaoAuthToken?: string;
   forceRpcFallbackDexs: string[];
+  apiKeyTheGraph: string;
 };
 
 export type BigIntAsString = string;
@@ -289,10 +329,15 @@ export type ExchangeTxInfo = {
 export type PreprocessTransactionOptions = {
   slippageFactor: BigNumber;
   txOrigin: Address;
+  userAddress: Address;
+  executionContractAddress: Address;
   hmac?: string;
   mockRfqAndLO?: boolean;
   isDirectMethod?: boolean;
   partner?: string;
+  recipient: string;
+  version: ParaSwapVersion;
+  special?: boolean;
 };
 
 export type TransferFeeParams = {
@@ -300,6 +345,13 @@ export type TransferFeeParams = {
   destFee: number;
   srcDexFee: number;
   destDexFee: number;
+};
+
+export type TransferFeeParamsForRoute = {
+  srcTokenTransferFee: number;
+  destTokenTransferFee: number;
+  srcTokenDexTransferFee: number;
+  destTokenDexTransferFee: number;
 };
 
 export type LogLevels = 'info' | 'warn' | 'error' | 'trace' | 'debug';

@@ -13,6 +13,7 @@ import {
   sleep,
 } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
+import * as util from 'util';
 
 async function testPricingOnNetwork(
   swaapV2: SwaapV2,
@@ -72,7 +73,7 @@ describe('Swaap V2', function () {
     const tokens = Tokens[network];
 
     const srcTokenSymbol = 'WETH';
-    const destTokenSymbol = 'USDC';
+    const destTokenSymbol = 'USDCe';
 
     const amountsForSell = [
       0n,
@@ -134,6 +135,82 @@ describe('Swaap V2', function () {
         checkPoolsLiquidity(
           poolLiquidity,
           Tokens[network][srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+    const dexHelper = new DummyDexHelper(network);
+
+    beforeAll(async () => {
+      swaapV2 = new SwaapV2(network, dexKey, dexHelper);
+      if (swaapV2.initializePricing) {
+        await swaapV2.initializePricing(0);
+        await sleep(5000);
+      }
+    });
+
+    const tokens = Tokens[network];
+    const srcTokenSymbol = 'USDbC';
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const swaapV2 = new SwaapV2(network, dexKey, dexHelper);
+      const poolLiquidity = await swaapV2.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(
+        `${srcTokenSymbol} Top Pools:`,
+        util.inspect(poolLiquidity, false, null, true),
+      );
+
+      if (!swaapV2.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          tokens[srcTokenSymbol].address,
+          dexKey,
+        );
+      }
+    });
+  });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+    const dexHelper = new DummyDexHelper(network);
+
+    beforeAll(async () => {
+      swaapV2 = new SwaapV2(network, dexKey, dexHelper);
+      if (swaapV2.initializePricing) {
+        await swaapV2.initializePricing(0);
+        await sleep(5000);
+      }
+    });
+
+    const tokens = Tokens[network];
+    const srcTokenSymbol = 'USDC';
+
+    it('getTopPoolsForToken', async function () {
+      // We have to check without calling initializePricing, because
+      // pool-tracker is not calling that function
+      const swaapV2 = new SwaapV2(network, dexKey, dexHelper);
+      const poolLiquidity = await swaapV2.getTopPoolsForToken(
+        tokens[srcTokenSymbol].address,
+        10,
+      );
+      console.log(
+        `${srcTokenSymbol} Top Pools:`,
+        util.inspect(poolLiquidity, false, null, true),
+      );
+
+      if (!swaapV2.hasConstantPriceLargeAmounts) {
+        checkPoolsLiquidity(
+          poolLiquidity,
+          tokens[srcTokenSymbol].address,
           dexKey,
         );
       }

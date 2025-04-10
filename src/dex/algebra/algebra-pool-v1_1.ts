@@ -38,7 +38,6 @@ import {
   _reduceTickBitmap,
   _reduceTicks,
 } from '../uniswap-v3/contract-math/utils';
-import { Constants } from './lib/Constants';
 import { Network, NULL_ADDRESS } from '../../constants';
 import { TickTable } from './lib/TickTable';
 import {
@@ -53,7 +52,7 @@ const MAX_BATCH_SIZE = 100;
 const MAX_NUMBER_OF_BATCH_REQUEST_HALVING = 3;
 
 export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1> {
-  handlers: {
+  protected handlers: {
     [event: string]: (
       event: any,
       state: DeepReadonly<PoolStateV1_1>,
@@ -95,6 +94,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     readonly poolInitCodeHash: string,
     readonly poolDeployer: string,
     private readonly forceManualStateGeneration: boolean = false,
+    private readonly areTicksCompressed: boolean = true,
   ) {
     super(parentName, `${token0}_${token1}`, dexHelper, logger, true, mapKey);
     this.token0 = token0.toLowerCase();
@@ -130,6 +130,13 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     options?: InitializeStateOptions<PoolStateV1_1>,
   ) {
     await super.initialize(blockNumber, options);
+  }
+
+  protected getPoolIdentifierData() {
+    return {
+      token0: this.token0,
+      token1: this.token1,
+    };
   }
 
   protected async processBlockLogs(
@@ -328,7 +335,8 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
       globalState: { tick },
     } = _stateWithoutTicksAndTickBitmap;
     const currentBitmapIndex = int16(
-      (BigInt(tick) / Constants.TICK_SPACING) >> 8n,
+      (BigInt(tick) / BigInt(_stateWithoutTicksAndTickBitmap.tickSpacing)) >>
+        8n,
     );
 
     const buffer = this.getBitmapRangeToRequest();
@@ -625,7 +633,7 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
     };
     const currentTick = globalState.tick;
     const startTickBitmap = TickTable.position(
-      BigInt(currentTick) / Constants.TICK_SPACING,
+      BigInt(currentTick) / BigInt(_state.tickSpacing),
     )[0];
 
     return {
@@ -633,15 +641,15 @@ export class AlgebraEventPoolV1_1 extends StatefulEventSubscriber<PoolStateV1_1>
       blockTimestamp: bigIntify(_state.blockTimestamp),
       globalState,
       liquidity: bigIntify(_state.liquidity),
-      tickSpacing: Constants.TICK_SPACING,
-      maxLiquidityPerTick: Constants.MAX_LIQUIDITY_PER_TICK,
+      tickSpacing: bigIntify(_state.tickSpacing),
+      maxLiquidityPerTick: bigIntify(_state.maxLiquidityPerTick),
       tickBitmap,
       ticks,
       startTickBitmap,
       isValid: true,
       balance0,
       balance1,
-      areTicksCompressed: true,
+      areTicksCompressed: this.areTicksCompressed,
     };
   }
 

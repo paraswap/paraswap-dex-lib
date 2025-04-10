@@ -63,12 +63,12 @@ export const checkOrder = async (
     );
   }
 
-  const takerBalance = BigInt(
+  const makerAllowance = BigInt(
     balance.allowances[DEFAULT_ID_ERC20_AS_STRING][augustusRFQAddress],
   );
-  if (takerBalance <= makerAmountBigInt) {
+  if (makerAllowance <= makerAmountBigInt) {
     throw new Error(
-      `maker does not have enough allowance (request ${makerAmountBigInt} value ${takerBalance}`,
+      `maker does not have enough allowance (request ${makerAmountBigInt} value ${makerAllowance}`,
     );
   }
 };

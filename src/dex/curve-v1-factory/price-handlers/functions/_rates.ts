@@ -109,6 +109,8 @@ const implementations: Record<ImplementationNames, _rates> = {
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_ETH_EMA2]: notExist,
   [ImplementationNames.FACTORY_PLAIN_2_CRV_EMA]: notExist,
+
+  [ImplementationNames.FACTORY_STABLE_NG]: notExist,
 };
 
 export default implementations;

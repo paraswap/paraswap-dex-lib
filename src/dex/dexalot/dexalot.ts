@@ -11,6 +11,8 @@ import {
   OptimalSwapExchange,
   PreprocessTransactionOptions,
   TransferFeeParams,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import {
   SwapSide,
@@ -66,6 +68,7 @@ import { BI_MAX_UINT256 } from '../../bigint-constants';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { Method } from '../../dex-helper/irequest-wrapper';
+import { SpecialDex } from '../../executor/types';
 
 export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   readonly isStatePollingDex = true;
@@ -236,10 +239,14 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedPairs(): Promise<PairDataMap | null> {
-    const cachedPairs = await this.dexHelper.cache.get(
+    const cachedPairs = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.pairsCacheKey,
+      // as local cache just uses passed ttl (instead of getting actual ttl from cache)
+      // pass shorter interval to avoid getting stale data
+      // (same logic is used in other places)
+      DEXALOT_API_PAIRS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedPairs) {
@@ -250,10 +257,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedPrices(): Promise<PriceDataMap | null> {
-    const cachedPrices = await this.dexHelper.cache.get(
+    const cachedPrices = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.pricesCacheKey,
+      DEXALOT_API_PRICES_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedPrices) {
@@ -264,10 +272,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedTokensAddr(): Promise<TokenAddrDataMap | null> {
-    const cachedTokensAddr = await this.dexHelper.cache.get(
+    const cachedTokensAddr = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.tokensAddrCacheKey,
+      DEXALOT_API_PAIRS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedTokensAddr) {
@@ -278,10 +287,11 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
   }
 
   async getCachedTokens(): Promise<TokenDataMap | null> {
-    const cachedTokens = await this.dexHelper.cache.get(
+    const cachedTokens = await this.dexHelper.cache.getAndCacheLocally(
       this.dexKey,
       this.network,
       this.tokensCacheKey,
+      DEXALOT_API_PAIRS_POLLING_INTERVAL_MS / 1000,
     );
 
     if (cachedTokens) {
@@ -590,13 +600,15 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
             .multipliedBy(10000)
             .toFixed(0)
         : options.slippageFactor.minus(1).multipliedBy(10000).toFixed(0);
+
       const rfqParams = {
         makerAsset: ethers.utils.getAddress(makerToken.address),
         takerAsset: ethers.utils.getAddress(takerToken.address),
         makerAmount: isBuy ? optimalSwapExchange.destAmount : undefined,
         takerAmount: isSell ? optimalSwapExchange.srcAmount : undefined,
-        userAddress: options.txOrigin,
+        userAddress: options.userAddress,
         chainid: this.network,
+        executor: options.executionContractAddress,
         partner: options.partner,
         slippage: slippageBps,
       };
@@ -718,14 +730,14 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       ];
     } catch (e) {
       if (isAxiosError(e) && e.response && e.response.data) {
-        const errorData: RFQResponseError = e.response.data;
+        const errorData = e.response.data as RFQResponseError;
         if (errorData.ReasonCode === 'FQ-009') {
           this.logger.warn(
-            `${this.dexKey}-${this.network}: Encountered rate limited user=${options.txOrigin}. Adding to local rate limit cache`,
+            `${this.dexKey}-${this.network}: Encountered rate limited user=${options.userAddress}. Adding to local rate limit cache`,
           );
-          await this.setRateLimited(options.txOrigin, errorData.RetryAfter);
+          await this.setRateLimited(options.userAddress, errorData.RetryAfter);
         } else {
-          await this.setBlacklist(options.txOrigin);
+          await this.setBlacklist(options.userAddress);
           this.logger.error(
             `${this.dexKey}-${this.network}: Failed to fetch RFQ for ${swapIdentifier}: ${errorData.Reason}`,
           );
@@ -975,6 +987,56 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       swapData,
       this.mainnetRFQAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: DexalotData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { quoteData } = data;
+
+    assert(
+      quoteData !== undefined,
+      `${this.dexKey}-${this.network}: quoteData undefined`,
+    );
+
+    const swapFunction = 'partialSwap';
+    const swapFunctionParams = [
+      [
+        quoteData.nonceAndMeta,
+        quoteData.expiry,
+        quoteData.makerAsset,
+        quoteData.takerAsset,
+        quoteData.maker,
+        quoteData.taker,
+        quoteData.makerAmount,
+        quoteData.takerAmount,
+      ],
+      quoteData.signature,
+      // might be overwritten on Executors
+      quoteData.takerAmount,
+    ];
+
+    const exchangeData = this.rfqInterface.encodeFunctionData(
+      swapFunction,
+      swapFunctionParams,
+    );
+
+    return {
+      exchangeData,
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      targetExchange: this.mainnetRFQAddress,
+      returnAmountPos: undefined,
+      specialDexFlag: SpecialDex.SWAP_ON_DEXALOT,
+      // cannot modify amount due to signature checks
+      specialDexSupportsInsertFromAmount: false,
+    };
   }
 
   async getTopPoolsForToken(

@@ -9,6 +9,8 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -29,6 +31,7 @@ import { SynthetixState } from './synthetix-state';
 // There are so many ABIs, where I need only one or two functions
 // So, I decided to unite them into one combined interface
 import CombinedSynthetixABI from '../../abi/synthetix/CombinedSynthetix.abi.json';
+import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -42,7 +45,7 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
   synthetixState: SynthetixState;
 
   // It is intermediate measure before we have event base Oracles
-  statePollingTimer?: NodeJS.Timer;
+  statePollingTimer?: NodeJS.Timeout;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(SynthetixConfig);
@@ -320,6 +323,52 @@ export class Synthetix extends SimpleExchange implements IDex<SynthetixData> {
       swapData,
       exchange,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: SynthetixData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    if (side === SwapSide.BUY) throw new Error(`Buy not supported`);
+
+    const { exchange, srcKey, destKey } = data;
+
+    const swapData =
+      this.network === Network.OPTIMISM
+        ? this.combinedIface.encodeFunctionData('exchange', [
+            srcKey,
+            srcAmount,
+            destKey,
+          ])
+        : this.combinedIface.encodeFunctionData('exchangeAtomically', [
+            srcKey,
+            srcAmount,
+            destKey,
+            this.config.trackingCode,
+            '1',
+          ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: exchange,
+      returnAmountPos:
+        side === SwapSide.SELL
+          ? extractReturnAmountPosition(
+              this.combinedIface,
+              this.network === Network.OPTIMISM
+                ? 'exchange'
+                : 'exchangeAtomically',
+              'amountReceived',
+            )
+          : undefined,
+    };
   }
 
   async updatePoolState(): Promise<void> {

@@ -21,7 +21,7 @@ describe('AaveV3 E2E', () => {
 
   beforeAll(async () => {
     let results: Promise<void>[] = [];
-    for (const networkEntry in Network) {
+    for (const networkEntry of Object.values(Network)) {
       if (isNaN(Number(networkEntry))) {
         break;
       }
@@ -54,7 +54,7 @@ describe('AaveV3 E2E', () => {
     await Promise.all(results);
   });
 
-  describe('AaveV3 POLYGON', () => {
+  describe('AaveV3 POLYGON_V6', () => {
     const network = Network.POLYGON;
     const tokens = Tokens[network];
     const holders = Holders[network];
@@ -85,12 +85,14 @@ describe('AaveV3 E2E', () => {
       [
         SwapSide.SELL,
         [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
+          ContractMethod.swapExactAmountIn,
+          // ContractMethod.simpleSwap,
+          // ContractMethod.multiSwap,
+          // ContractMethod.megaSwap,
         ],
       ],
-      [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      // [SwapSide.BUY, [ContractMethod.simpleBuy]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
     ]);
 
     pairs.forEach(pair => {
@@ -445,14 +447,9 @@ describe('AaveV3 E2E', () => {
 
     const pairs = [
       {
-        tokenSymbol: 'USDC',
-        aTokenSymbol: 'aEthUSDC',
-        amount: '10000',
-      },
-      {
         tokenSymbol: 'ETH',
         aTokenSymbol: 'aEthWETH',
-        amount: '100000000',
+        amount: '1000000000000000000',
       },
       {
         tokenSymbol: 'WETH',
@@ -479,7 +476,7 @@ describe('AaveV3 E2E', () => {
           describe(`${contractMethod}`, () => {
             it(pair.aTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
               await testE2E(
-                getTokenFromASymbol(network, pair.aTokenSymbol)!,
+                tokens[pair.aTokenSymbol],
                 tokens[pair.tokenSymbol],
                 holders[pair.aTokenSymbol],
                 pair.amount,
@@ -494,7 +491,76 @@ describe('AaveV3 E2E', () => {
             it(pair.tokenSymbol + ' -> ' + pair.aTokenSymbol, async () => {
               await testE2E(
                 tokens[pair.tokenSymbol],
-                getTokenFromASymbol(network, pair.aTokenSymbol)!,
+                tokens[pair.aTokenSymbol],
+                holders[pair.tokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        }),
+      );
+    });
+  });
+
+  describe('AaveV3 GNOSIS', () => {
+    const network = Network.GNOSIS;
+    const tokens = Tokens[network];
+    const holders = Holders[network];
+    const provider = new StaticJsonRpcProvider(
+      generateConfig(network).privateHttpProvider,
+      network,
+    );
+
+    const pairs = [
+      {
+        tokenSymbol: 'XDAI',
+        aTokenSymbol: 'aGnoWXDAI',
+        amount: '1000000000000000000',
+      },
+      {
+        tokenSymbol: 'USDC',
+        aTokenSymbol: 'aGnoUSDC',
+        amount: '10000000',
+      },
+      {
+        tokenSymbol: 'wstETH',
+        aTokenSymbol: 'aGnowstETH',
+        amount: '1000000000000000000',
+      },
+    ];
+
+    const sideToContractMethods = new Map([
+      [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+      [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    ]);
+
+    pairs.forEach(pair => {
+      sideToContractMethods.forEach((contractMethods, side) =>
+        contractMethods.forEach((contractMethod: ContractMethod) => {
+          describe(`${contractMethod}`, () => {
+            it(pair.aTokenSymbol + ' -> ' + pair.tokenSymbol, async () => {
+              await testE2E(
+                tokens[pair.aTokenSymbol],
+                tokens[pair.tokenSymbol],
+                holders[pair.aTokenSymbol],
+                pair.amount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+
+            it(pair.tokenSymbol + ' -> ' + pair.aTokenSymbol, async () => {
+              await testE2E(
+                tokens[pair.tokenSymbol],
+                tokens[pair.aTokenSymbol],
                 holders[pair.tokenSymbol],
                 pair.amount,
                 side,

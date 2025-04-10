@@ -1,4 +1,4 @@
-import { Address, Token } from '../../types';
+import { Address, NumberAsString, Token } from '../../types';
 
 export type PoolState = {
   tin: bigint; // toll in
@@ -13,6 +13,7 @@ export type MakerPsmData = {
   gemJoinAddress: Address;
   gemDecimals: number;
   toll: string;
+  isApproved?: boolean;
 };
 
 export type PoolConfig = {
@@ -27,3 +28,18 @@ export type DexParams = {
   vatAddress: Address;
   pools: PoolConfig[];
 };
+
+export type MakerPsmParams = [
+  srcToken: Address,
+  destToken: Address,
+  fromAmount: NumberAsString,
+  toAmount: NumberAsString,
+  toll: NumberAsString,
+  to18ConversionFactor: NumberAsString,
+  exchange: Address,
+  gemJoinAddress: Address,
+  metadata: string,
+  beneficiaryDirectionApproveFlag: NumberAsString,
+];
+
+export type MakerPsmDirectPayload = [params: MakerPsmParams, permit: string];

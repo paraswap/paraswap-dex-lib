@@ -5,40 +5,37 @@ import { Network, SwapSide } from '../../constants';
 export const BalancerConfig: DexConfigMap<DexParams> = {
   BalancerV2: {
     [Network.MAINNET]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
+      subgraphURL: 'C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
     [Network.POLYGON]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-polygon-v2',
+      subgraphURL: 'H9oPAbXnobBRq1cB3HDmbZ1E8MWQyJYQjT1QDJMrdbNp',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
     [Network.ARBITRUM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2',
+      subgraphURL: '98cQDy6tufTJtshDCuhh9z2kWXsQWBHVh2bqnLHsGAeS',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
     [Network.AVALANCHE]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-avalanche-v2',
+      subgraphURL: '7asfmtQA1KYu6CP7YVm5kv4bGxVyfAHEiptt2HMFgkHu',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
     [Network.BASE]: {
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest',
+      subgraphURL: 'E7XyutxXVLrp8njmjF16Hh38PCJuHm12RRyMt5ma4ctX',
+      vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    },
+    [Network.GNOSIS]: {
+      subgraphURL: 'EJezH1Cp31QkKPaBDerhVPRWsKVZLrDfzjrLqpmv6cGg',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
   },
   BeetsFi: {
     [Network.FANTOM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx',
+      subgraphURL: '4XKeW12D2RAhqefPYT3MLoT64p1JnT5TBLnYaNeSLA8k',
       vaultAddress: '0x20dd72ed959b6147912c2e529f0a0c651c33c9ce',
     },
     [Network.OPTIMISM]: {
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-optimism',
+      subgraphURL: 'F5jeL2nMXZt5LU6kSway7Vi2PTUcqDbw1gMQEbrmiVdJ',
       vaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     },
   },

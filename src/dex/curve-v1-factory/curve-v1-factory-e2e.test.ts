@@ -1,19 +1,33 @@
 import dotenv from 'dotenv';
-dotenv.config();
-
 import { testE2E } from '../../../tests/utils-e2e';
-import { Tokens, Holders } from '../../../tests/constants-e2e';
-import { Network, ContractMethod, SwapSide } from '../../constants';
+import { Holders, Tokens } from '../../../tests/constants-e2e';
+import { ContractMethod, Network } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
+import { SwapSide } from '@paraswap/core';
 
-function testForNetwork(
+dotenv.config();
+
+export function testForNetwork(
   network: Network,
-  dexKey: string,
+  dexKey: string | string[],
   tokenASymbol: string,
   tokenBSymbol: string,
   tokenAAmount: string,
   tokenBAmount: string,
+  sideToContractMethods: Map<SwapSide, ContractMethod[]> = new Map([
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountInOnCurveV1,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.directCurveV1Swap,
+        // ContractMethod.multiSwap,
+        // ContractMethod.megaSwap,
+      ],
+    ],
+  ]),
 ) {
   const provider = new StaticJsonRpcProvider(
     generateConfig(network).privateHttpProvider,
@@ -21,18 +35,6 @@ function testForNetwork(
   );
   const tokens = Tokens[network];
   const holders = Holders[network];
-
-  const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.simpleSwap,
-        ContractMethod.multiSwap,
-        ContractMethod.megaSwap,
-        ContractMethod.directCurveV1Swap,
-      ],
-    ],
-  ]);
 
   describe(`${network}`, () => {
     sideToContractMethods.forEach((contractMethods, side) =>
@@ -44,12 +46,17 @@ function testForNetwork(
                 tokens[tokenASymbol],
                 tokens[tokenBSymbol],
                 holders[tokenASymbol],
-                tokenAAmount,
+                side === SwapSide.SELL ? tokenAAmount : tokenBAmount,
                 side,
                 dexKey,
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                5000,
               );
             });
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
@@ -57,12 +64,17 @@ function testForNetwork(
                 tokens[tokenBSymbol],
                 tokens[tokenASymbol],
                 holders[tokenBSymbol],
-                tokenBAmount,
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
                 side,
                 dexKey,
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                5000,
               );
             });
           });
@@ -73,25 +85,78 @@ function testForNetwork(
 }
 
 describe('CurveV1Factory E2E', () => {
-  const dexKey = 'CurveV1Factory';
+  const dexKey = ['CurveV1Factory'];
 
   describe('Mainnet', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'USDT';
-    const tokenBSymbol: string = 'USDD';
+    describe('USDT -> USDD', () => {
+      const tokenASymbol: string = 'USDT';
+      const tokenBSymbol: string = 'USDD';
 
-    const tokenAAmount: string = '100000000';
-    const tokenBAmount: string = '111000000000000000000';
+      const tokenAAmount: string = '100000000';
+      const tokenBAmount: string = '111000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('GHO -> USDC', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '100000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('GHO -> crvUSD', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('GHO -> USDT', () => {
+      const tokenASymbol: string = 'GHO';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '10000000000000000000';
+      const tokenBAmount: string = '1000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
   describe('Mainnet Native', () => {
     const network = Network.MAINNET;
@@ -112,42 +177,63 @@ describe('CurveV1Factory E2E', () => {
     );
   });
 
-  describe('Mainnet crvUSD', () => {
-    const network = Network.MAINNET;
-
-    const tokenASymbol: string = 'crvUSD';
-    const tokenBSymbol: string = 'USDT';
-
-    const tokenAAmount: string = '10000000000000000000';
-    const tokenBAmount: string = '10000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
-  });
   describe('Mainnet ng pool', () => {
     const network = Network.MAINNET;
 
-    const tokenASymbol: string = 'ETH';
-    const tokenBSymbol: string = 'STETH';
+    describe('Dynamic needWrapNative', () => {
+      describe('ETH -> STETH', () => {
+        const tokenASymbol: string = 'ETH';
+        const tokenBSymbol: string = 'STETH';
 
-    const tokenAAmount: string = '1000000000000000000';
-    const tokenBAmount: string = '1000000000000000000';
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '1000000000000000000';
 
-    testForNetwork(
-      network,
-      dexKey,
-      tokenASymbol,
-      tokenBSymbol,
-      tokenAAmount,
-      tokenBAmount,
-    );
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+
+      describe('WETH -> STETH', () => {
+        const tokenASymbol: string = 'WETH';
+        const tokenBSymbol: string = 'STETH';
+
+        const tokenAAmount: string = '1000000000000000000';
+        const tokenBAmount: string = '1000000000000000000';
+
+        testForNetwork(
+          network,
+          dexKey,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenAAmount,
+          tokenBAmount,
+        );
+      });
+    });
+
+    describe('crvUSD -> USDT', () => {
+      const tokenASymbol: string = 'crvUSD';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '10000000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
+
   describe('Mainnet SBTC2 pool', () => {
     const network = Network.MAINNET;
 
@@ -166,14 +252,14 @@ describe('CurveV1Factory E2E', () => {
       tokenBAmount,
     );
   });
-  describe('Polygon', () => {
+  describe('Polygon_V6', () => {
     const network = Network.POLYGON;
 
     const tokenASymbol: string = 'USDC';
     const tokenBSymbol: string = 'axlUSDC';
 
-    const tokenAAmount: string = '111000000';
-    const tokenBAmount: string = '111000000';
+    const tokenAAmount: string = '1110000';
+    const tokenBAmount: string = '1110000';
 
     testForNetwork(
       network,
@@ -204,7 +290,7 @@ describe('CurveV1Factory E2E', () => {
   //   );
   // });
 
-  describe('Polygon amUSDC', () => {
+  describe('Polygon amUSDC V6', () => {
     const network = Network.POLYGON;
 
     const tokenASymbol: string = 'deUSDC';
@@ -314,5 +400,42 @@ describe('CurveV1Factory E2E', () => {
       tokenAAmount,
       tokenBAmount,
     );
+  });
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    describe('USDC -> crvUSD', () => {
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '10000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+
+    describe('USDM -> crvUSD', () => {
+      const tokenASymbol: string = 'USDM';
+      const tokenBSymbol: string = 'crvUSD';
+
+      const tokenAAmount: string = '1000000000000000000';
+      const tokenBAmount: string = '1000000000000000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
 });

@@ -15,8 +15,18 @@ export const NomiswapV2Config: DexConfigMap<DexParams> = {
         '0x83eb759f5ea0525124f03d4ac741bb4af0bb1c703d5f694bd42a8bd72e495a01',
       poolGasCost: 120 * 1000,
       feeCode: 0, // this is ignored as Nomiswap uses dynamic fees,
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/nominex/nomiswap-exchange-subgraph',
+      subgraphURL: '5CBKsDihF7KeBrNX4bgtb4tVFqy41PguVm88zBGpd4Hi',
+    },
+  },
+  // not exactly the same, but swapFee logic works in the same way
+  SwaprV2: {
+    [Network.GNOSIS]: {
+      factoryAddress: '0x5D48C95AdfFD4B40c1AAADc4e08fc44117E02179',
+      initCode:
+        '0xfcee8e246628cf9708fcb9d6f5d4aa0d96b62bb50f1af012a75a3292849e2dca',
+      poolGasCost: 120 * 1000,
+      feeCode: 25, // this is ignored as SwaprV2 uses dynamic fees,
+      subgraphURL: 'EWoa3JwNntAWtaLsLixTU25smp4R5tzGvs9rFXx9NHKZ',
     },
   },
 };

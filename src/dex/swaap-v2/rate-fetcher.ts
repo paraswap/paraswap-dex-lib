@@ -19,6 +19,7 @@ import {
   getQuoteResponseValidator,
   getTokensResponseValidator,
   notifyResponseValidator,
+  getQuoteResponseWithRecipientValidator,
 } from './validators';
 import { normalizeTokenAddress } from './utils';
 import {
@@ -91,7 +92,7 @@ export class RateFetcher {
 
   stop() {
     this.rateFetcher.stopPolling();
-    this.tokensFetcher.startPolling();
+    this.tokensFetcher.stopPolling();
   }
 
   private handleTokensResponse(resp: SwaapV2TokensResponse): void {
@@ -118,27 +119,28 @@ export class RateFetcher {
       return;
     }
 
-    const levels = Object.keys(resp.levels)
-      .map(pairName => {
-        const pair = resp.levels[pairName];
-        if (!pair) {
-          return;
-        }
-        const levels = resp.levels[pairName];
+    const levels = Object.keys(resp.levels).reduce<
+      Record<string, SwaapV2PriceLevels>
+    >((memo, pairName) => {
+      const pair = resp.levels[pairName];
+      if (!pair) {
+        return memo;
+      }
 
-        if (!levels.asks || !levels.bids) {
-          return;
-        }
+      if (!pair.asks || !pair.bids) {
+        return memo;
+      }
 
-        const pairSplit = pairName.split('/');
+      const pairSplit = pairName.split('/');
+      const baseAddress = pairSplit[0];
+      const quoteAddress = pairSplit[1];
+      pair.base = normalizeTokenAddress(baseAddress);
+      pair.quote = normalizeTokenAddress(quoteAddress);
 
-        const baseAddress = pairSplit[0];
-        const quoteAddress = pairSplit[1];
-        pair.base = normalizeTokenAddress(baseAddress);
-        pair.quote = normalizeTokenAddress(quoteAddress);
-        return pair;
-      })
-      .filter((p: SwaapV2PriceLevels | undefined) => p !== null);
+      memo[pairName] = pair;
+
+      return memo;
+    }, {});
 
     this.dexHelper.cache.setex(
       this.dexKey,
@@ -156,7 +158,8 @@ export class RateFetcher {
     srcAmount: string,
     side: SwaapV2OrderType,
     userAddress: Address,
-    aggregatorRecipient: Address,
+    sender: Address,
+    recipient: Address,
     tolerance: number,
     requestParameters: RequestConfig,
   ): Promise<SwaapV2QuoteResponse> {
@@ -170,8 +173,8 @@ export class RateFetcher {
     const _payload: SwaapV2QuoteRequest = {
       network_id: networkId,
       origin: userAddress,
-      sender: aggregatorRecipient,
-      recipient: aggregatorRecipient,
+      sender,
+      recipient,
       timestamp: Math.round(Date.now() / 1000),
       order_type: side,
       token_in: srcToken.address,
@@ -200,7 +203,7 @@ export class RateFetcher {
       );
       const quoteResp = validateAndCast<SwaapV2QuoteResponse>(
         data,
-        getQuoteResponseValidator,
+        getQuoteResponseWithRecipientValidator(recipient),
       );
 
       return {

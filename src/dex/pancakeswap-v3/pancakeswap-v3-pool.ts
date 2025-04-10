@@ -124,6 +124,14 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
     await super.initialize(blockNumber, options);
   }
 
+  protected getPoolIdentifierData() {
+    return {
+      token0: this.token0,
+      token1: this.token1,
+      fee: this.feeCode,
+    };
+  }
+
   protected async processBlockLogs(
     state: DeepReadonly<PoolState>,
     logs: Readonly<Log>[],
@@ -242,6 +250,33 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
     return TICK_BITMAP_TO_USE + TICK_BITMAP_BUFFER;
   }
 
+  async checkState(
+    blockNumber: number,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const state = this.getState(blockNumber);
+    if (state) {
+      return state;
+    }
+
+    this.logger.error(
+      `PancakeV3: No state found for ${this.name} ${this.addressesSubscribed[0]} for bn: ${blockNumber}`,
+    );
+    return null;
+  }
+
+  _setState(state: any, blockNumber: number, reason?: string): void {
+    // if (this.parentName === 'PancakeswapV3') {
+    //   this.logger.info(
+    //     `PancakeV3: Setting state: ${!!state ? 'non-empty' : 'empty'} for '${
+    //       this.name
+    //     }' for bn: '${blockNumber}' due to reason: '${
+    //       reason ?? 'outside_of_event_subscriber'
+    //     }'`,
+    //   );
+    // }
+    super._setState(state, blockNumber);
+  }
+
   async generateState(blockNumber: number): Promise<Readonly<PoolState>> {
     const callData = this._getStateRequestCallData();
 
@@ -291,6 +326,7 @@ export class PancakeSwapV3EventPool extends StatefulEventSubscriber<PoolState> {
     const requestedRange = this.getBitmapRangeToRequest();
 
     return {
+      networkId: this.dexHelper.config.data.network,
       pool: _state.pool,
       blockTimestamp: bigIntify(_state.blockTimestamp),
       slot0: {

@@ -13,8 +13,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       algebraStateMulticall: '0xfb948e6e23eb58ec7320ddb60df9115de07141ec',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/sameepsi/quickswap-v3',
+      subgraphURL: '5AK9Y4tk27ZWrPKvSAUQmffXWyQvjWqyJ2GNEZUWTirU',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x2d98e2fa9da15aa6dc9581ab097ced7af697cb92',
       version: 'v1.1',
@@ -28,8 +27,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 3,
       initRetryFrequency: 30,
       algebraStateMulticall: '0xa6bc273A238867dD74F2bBbD5fBbA3c941C939B9',
-      subgraphURL:
-        'https://api.studio.thegraph.com/query/44554/quickswap-v3-02/0.0.7',
+      subgraphURL: '3L5Y5brtgvzDoAFGaPs63xz27KdviCdzRuY12spLSBGU',
       uniswapMulticall: '0x61530d6E1c7A47BBB3e48e8b8EdF7569DcFeE121',
       deployer: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
       version: 'v1.1',
@@ -46,8 +44,7 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       algebraStateMulticall: '0xcd7C50ba57136b6B461168D1f634E2CffA4c298D',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/iliaazhel/zyberswap-info',
+      subgraphURL: '7ZP9MeeuXno2y9pWR5LzA96UtYuZYWTA4WYZDZR7ghbN',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x24e85f5f94c6017d2d87b434394e87df4e4d56e3',
       version: 'v1.1',
@@ -61,10 +58,11 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       algebraStateMulticall: '0x30F6B9b6485ff0B67E881f5ac80D3F1c70A4B23d',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/iliaazhel/zyberswap-info-optimism-pp',
+      subgraphURL: '3CA9ffebLkS3N2otXaSj8XaDDdspty75upBjKTUS79qY',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0xc0d4323426c709e8d04b5b130e7f059523464a91',
+      // optimism fork uses v1.9-bidirectional-fee (with TickSpacing event and simple `fee` in globalState),
+      // not sure why v1.1 is used here
       version: 'v1.1',
     },
   },
@@ -78,11 +76,29 @@ export const AlgebraConfig: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       algebraStateMulticall: '0x2cB568442a102dF518b3D37CBD0d2884523C940B',
-      subgraphURL:
-        'https://api.thegraph.com/subgraphs/name/camelotlabs/camelot-amm-v3',
+      subgraphURL: '7mPnp1UqmefcCycB8umy4uUkTkFxMoHn1Y7ncBUscePp',
       uniswapMulticall: '0x1F98415757620B543A52E61c46B32eB19261F984',
       deployer: '0x6dd3fb9653b10e806650f107c3b5a0a6ff974f65',
       version: 'v1.9',
+      // looks like it isn't used as we override it with dexHelper.config.data.forceRpcFallbackDexs in constructor
+      forceRPC: true,
+    },
+  },
+  SwaprV3: {
+    [Network.GNOSIS]: {
+      factory: '0xA0864cCA6E114013AB0e27cbd5B6f4c8947da766',
+      router: '0xfFB643E73f280B97809A8b41f7232AB401a04ee1',
+      quoter: '0xcBaD9FDf0D2814659Eb26f600EFDeAF005Eda0F7',
+      initHash:
+        '0xbce37a54eab2fcd71913a0d40723e04238970e7fc1159bfd58ad5b79531697e7',
+      chunksCount: 10,
+      initRetryFrequency: 10,
+      // AlgebraStateMulticall
+      algebraStateMulticall: '0x49C46f7f88110ccA234ef27Cd664510f7bbF5998',
+      subgraphURL: 'YwkNWffc8UTH77wDqGWgMShMq1uXdiQsD5wrD5MzKwJ',
+      uniswapMulticall: '0x4dfa9a980efE4802E969AC33968E3d6E59B8a19e',
+      deployer: '0xC1b576AC6Ec749d5Ace1787bF9Ec6340908ddB47',
+      version: 'v1.9-bidirectional-fee',
       forceRPC: true,
     },
   },
@@ -104,5 +120,9 @@ export const Adapters: Record<number, AdapterMappings> = {
   [Network.OPTIMISM]: {
     [SwapSide.SELL]: [{ name: 'OptimismAdapter01', index: 3 }],
     [SwapSide.BUY]: [{ name: 'OptimismBuyAdapter', index: 2 }],
+  },
+  [Network.BASE]: {
+    [SwapSide.SELL]: [{ name: 'BaseAdapter01', index: 10 }],
+    [SwapSide.BUY]: [{ name: 'BaseBuyAdapter', index: 6 }],
   },
 };

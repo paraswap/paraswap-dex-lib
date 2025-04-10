@@ -13,6 +13,8 @@ import {
   OptimalSwapExchange,
   ExchangeTxInfo,
   PreprocessTransactionOptions,
+  NumberAsString,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network, LIMIT_ORDER_PROVIDERS } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -36,6 +38,7 @@ import {
   ONE_ORDER_GASCOST,
 } from './constant';
 import BigNumber from 'bignumber.js';
+import { SpecialDex } from '../../executor/types';
 
 const BLACKLIST_CACHE_PREFIX = `lo_blacklist`;
 
@@ -64,7 +67,7 @@ export class ParaSwapLimitOrders
     super(dexHelper, dexKey);
     this.augustusRFQAddress =
       dexHelper.config.data.augustusRFQAddress.toLowerCase();
-    this.logger = dexHelper.getLogger(dexKey);
+    this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
   }
 
   get limitOrderProviderName() {
@@ -365,6 +368,41 @@ export class ParaSwapLimitOrders
       swapData,
       this.augustusRFQAddress,
     );
+  }
+
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: ParaSwapLimitOrdersData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const { orderInfos } = data;
+
+    if (orderInfos === null) {
+      throw new Error(
+        `Error_${this.dexKey}_getAdapterParam payload is not received. It may be because of` +
+          `not calling preProcessTransaction before`,
+      );
+    }
+
+    const isSell = side === SwapSide.SELL;
+    const swapData = this.rfqIface.encodeFunctionData(
+      isSell ? 'tryBatchFillOrderTakerAmount' : 'tryBatchFillOrderMakerAmount',
+      [orderInfos, isSell ? srcAmount : destAmount, recipient],
+    );
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: true,
+      exchangeData: swapData,
+      specialDexFlag: SpecialDex.SWAP_ON_AUGUSTUS_RFQ,
+      targetExchange: this.augustusRFQAddress,
+      specialDexSupportsInsertFromAmount: true,
+      returnAmountPos: undefined,
+    };
   }
 
   async getTopPoolsForToken(

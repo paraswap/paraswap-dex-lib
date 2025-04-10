@@ -7,6 +7,7 @@ import {
   SimpleExchangeParam,
   PoolLiquidity,
   Logger,
+  DexExchangeParam,
 } from '../../types';
 import { SwapSide, Network } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
@@ -24,6 +25,7 @@ import {
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, WethConfig } from './config';
 import { BI_POWS } from '../../bigint-constants';
+import { NumberAsString, ParaSwapVersion } from '@paraswap/core';
 
 export class Weth
   extends SimpleExchange
@@ -92,11 +94,13 @@ export class Weth
 
     if (!isWETHSwap) return null;
 
+    const gasCost = isETHAddress(srcToken.address) ? 6_500 : 9000;
+
     return [
       {
         prices: amounts,
         unit: this.unitPrice,
-        gasCost: this.poolGasCost,
+        gasCost,
         exchange: this.dexKey,
         poolAddresses: [this.address],
         data: null,
@@ -148,6 +152,30 @@ export class Weth
     );
   }
 
+  getDexParam(
+    srcToken: Address,
+    destToken: Address,
+    srcAmount: NumberAsString,
+    destAmount: NumberAsString,
+    recipient: Address,
+    data: WethData,
+    side: SwapSide,
+  ): DexExchangeParam {
+    const swapData = isETHAddress(srcToken)
+      ? this.erc20Interface.encodeFunctionData(WethFunctions.deposit)
+      : this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+          srcAmount,
+        ]);
+
+    return {
+      needWrapNative: this.needWrapNative,
+      dexFuncHasRecipient: false,
+      exchangeData: swapData,
+      targetExchange: this.address,
+      returnAmountPos: undefined,
+    };
+  }
+
   async getTopPoolsForToken(
     tokenAddress: Address,
     limit: number,
@@ -159,6 +187,7 @@ export class Weth
     srcAmount: string,
     destAmount: string,
     side: SwapSide,
+    version: ParaSwapVersion,
   ): DepositWithdrawReturn {
     const wethToken = this.address;
 
@@ -181,14 +210,18 @@ export class Weth
     }
 
     if (needWithdraw || destAmount !== '0') {
-      const opType = WethFunctions.withdrawAllWETH;
-      const withdrawWethData = this.simpleSwapHelper.encodeFunctionData(
-        opType,
-        [wethToken],
-      );
+      const withdrawWethData =
+        version === ParaSwapVersion.V5
+          ? this.simpleSwapHelper.encodeFunctionData(
+              WethFunctions.withdrawAllWETH,
+              [wethToken],
+            )
+          : this.erc20Interface.encodeFunctionData(WethFunctions.withdraw, [
+              destAmount,
+            ]);
 
       withdraw = {
-        callee: this.augustusAddress,
+        callee: this.augustusAddress, // FXME CALLEE NOT USED IN V6
         calldata: withdrawWethData,
         value: '0',
       };

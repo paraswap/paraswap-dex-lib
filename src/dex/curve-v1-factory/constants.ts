@@ -28,6 +28,8 @@ export const NETWORK_ID_TO_NAME: Record<number, string> = {
   [Network.AVALANCHE]: 'avalanche',
   [Network.ARBITRUM]: 'arbitrum',
   [Network.OPTIMISM]: 'optimism',
+  [Network.BASE]: 'base',
+  [Network.GNOSIS]: 'xdai',
 };
 
 // They are hardcoded in factory contract. If factory is changing, must be
@@ -36,3 +38,4 @@ export const FACTORY_MAX_PLAIN_COINS = 4;
 export const FACTORY_MAX_PLAIN_IMPLEMENTATIONS_FOR_COIN = 10;
 
 export const DIRECT_METHOD_NAME = 'directCurveV1Swap';
+export const DIRECT_METHOD_NAME_V6 = 'swapExactAmountInOnCurveV1';

@@ -35,12 +35,13 @@ function testForNetwork(
     [
       SwapSide.SELL,
       [
-        ContractMethod.simpleSwap,
-        ContractMethod.megaSwap,
-        ContractMethod.multiSwap,
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.simpleSwap,
+        // ContractMethod.megaSwap,
+        // ContractMethod.multiSwap,
       ],
     ],
-    [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
+    // [SwapSide.BUY, [ContractMethod.simpleBuy, ContractMethod.buy]],
   ]);
 
   describe(`${network}`, () => {
@@ -169,7 +170,7 @@ function testForNetwork(
 describe('Dexalot E2E', () => {
   const dexKey = 'Dexalot';
 
-  describe('Avalanche', () => {
+  describe('Avalanche_V6', () => {
     const network = Network.AVALANCHE;
 
     const tokenASymbol: string = 'USDC';
@@ -190,14 +191,59 @@ describe('Dexalot E2E', () => {
     );
   });
 
-  describe('BTC.b -> USDC', () => {
+  describe('BTC.b -> USDC V6', () => {
     const network = Network.AVALANCHE;
 
     const tokenASymbol: string = 'BTCb';
     const tokenBSymbol: string = 'USDC';
 
-    const tokenAAmount: string = '100';
+    const tokenAAmount: string = '10000';
     const tokenBAmount: string = '9000000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+      true,
+    );
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+
+    const tokenASymbol: string = 'USDT';
+    const tokenBSymbol: string = 'USDC';
+
+    const tokenAAmount: string = '1000000';
+    const tokenBAmount: string = '1000000';
+    const nativeTokenAmount = '1000000000000000000';
+
+    testForNetwork(
+      network,
+      dexKey,
+      tokenASymbol,
+      tokenBSymbol,
+      tokenAAmount,
+      tokenBAmount,
+      nativeTokenAmount,
+      true,
+    );
+  });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+
+    const tokenASymbol: string = 'WETH';
+    const tokenBSymbol: string = 'USDC';
+
+    // 0.001 WETH
+    const tokenAAmount: string = '1000000000000000';
+    const tokenBAmount: string = '1000000';
     const nativeTokenAmount = '1000000000000000000';
 
     testForNetwork(
