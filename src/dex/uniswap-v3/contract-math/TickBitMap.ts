@@ -73,8 +73,7 @@ export class TickBitMap {
       state.tickBitmap[stringWordPos] = 0n;
     }
 
-    state.tickBitmap[stringWordPos] =
-      state.tickBitmap[stringWordPos] || 0n ^ mask;
+    state.tickBitmap[stringWordPos] ^= mask;
   }
 
   static nextInitializedTickWithinOneWord(

@@ -90,10 +90,8 @@ export class UniswapV3EventPool extends StatefulEventSubscriber<PoolState> {
 
     // Add handlers
     this.handlers['Swap'] = this.handleSwapEvent.bind(this);
-
     this.handlers['Burn'] = this.handleBurnEvent.bind(this);
     this.handlers['Mint'] = this.handleMintEvent.bind(this);
-
     this.handlers['SetFeeProtocol'] = this.handleSetFeeProtocolEvent.bind(this);
     this.handlers['IncreaseObservationCardinalityNext'] =
       this.handleIncreaseObservationCardinalityNextEvent.bind(this);
