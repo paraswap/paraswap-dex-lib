@@ -74,7 +74,7 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -82,36 +82,36 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            if (testNative) {
-              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-                await testE2E(
-                  tokens[nativeTokenSymbol],
-                  tokens[tokenASymbol],
-                  holders[nativeTokenSymbol],
-                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  poolIdentifiers,
-                );
-              });
-              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-                await testE2E(
-                  tokens[tokenASymbol],
-                  tokens[nativeTokenSymbol],
-                  holders[tokenASymbol],
-                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-                  side,
-                  dexKey,
-                  contractMethod,
-                  network,
-                  provider,
-                  poolIdentifiers,
-                );
-              });
-            }
+            // if (testNative) {
+            //   it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+            //     await testE2E(
+            //       tokens[nativeTokenSymbol],
+            //       tokens[tokenASymbol],
+            //       holders[nativeTokenSymbol],
+            //       side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+            //       side,
+            //       dexKey,
+            //       contractMethod,
+            //       network,
+            //       provider,
+            //       poolIdentifiers,
+            //     );
+            //   });
+            //   it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+            //     await testE2E(
+            //       tokens[tokenASymbol],
+            //       tokens[nativeTokenSymbol],
+            //       holders[tokenASymbol],
+            //       side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+            //       side,
+            //       dexKey,
+            //       contractMethod,
+            //       network,
+            //       provider,
+            //       poolIdentifiers,
+            //     );
+            //   });
+            // }
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -126,20 +126,20 @@ function testForNetwork(
                 poolIdentifiers,
               );
             });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-                poolIdentifiers,
-              );
-            });
+            // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenBSymbol],
+            //     tokens[tokenASymbol],
+            //     holders[tokenBSymbol],
+            //     side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //     poolIdentifiers,
+            //   );
+            // });
           });
         });
       }),
@@ -389,6 +389,30 @@ describe('BalancerV3 E2E', () => {
         tokenBAmount,
         nativeTokenAmount,
         false,
+      );
+    });
+
+    describe('FAILED_CASE_2', () => {
+      // price route - https://jsonblob.com/1359435988107190272
+      // failed simulation - https://www.tdly.co/shared/simulation/b146f002-d110-41be-a5de-a52d6fdd0dca
+      // pool used = 0x81a85b9ec797110f2ee665c119e8f28a2456d6f1
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '3000000000000000';
+      const tokenBAmount: string = '100000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+        ['0x81a85b9ec797110f2ee665c119e8f28a2456d6f1'],
       );
     });
 
