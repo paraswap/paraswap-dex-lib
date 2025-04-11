@@ -93,6 +93,7 @@ export class PancakeswapV3
       _.pick(PancakeswapV3Config, [
         'PancakeswapV3',
         'DackieSwapV3',
+        'NinemmSwapV3',
         'SwapBasedV3',
       ]),
     );
