@@ -407,6 +407,67 @@ describe('BalancerV3 EventPool', function () {
     });
   });
 
+  describe.only('Base SwapFeePercentageChanged', function () {
+    const network = Network.BASE;
+    const dexHelper = new DummyDexHelper(network);
+    const logger = dexHelper.getLogger(dexKey);
+    let balancerV3Pool: BalancerV3EventPool;
+
+    // vault -> EventMappings
+    const eventsToTest: Record<Address, EventMappings> = {
+      [BalancerV3Config.BalancerV3[network].vaultAddress]: {
+        SwapFeePercentageChanged: {
+          blockNumbers: [28785522, 28787443, 28789357],
+          poolAddress: [
+            '0x81a85b9ec797110f2ee665c119e8f28a2456d6f1',
+            '0x81a85b9ec797110f2ee665c119e8f28a2456d6f1',
+            '0x81a85b9ec797110f2ee665c119e8f28a2456d6f1',
+          ],
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      balancerV3Pool = new BalancerV3EventPool(
+        dexKey,
+        network,
+        dexHelper,
+        logger,
+      );
+    });
+
+    Object.entries(eventsToTest).forEach(
+      ([vaultAddress, events]: [string, EventMappings]) => {
+        describe(`Events for Vault: ${vaultAddress}`, () => {
+          Object.entries(events).forEach(
+            ([eventName, eventData]: [string, EventData]) => {
+              describe(`${eventName}`, () => {
+                eventData.blockNumbers.forEach((blockNumber: number, i) => {
+                  it(`Pool: ${eventData.poolAddress[i]} State after ${blockNumber}`, async function () {
+                    await testEventSubscriber(
+                      balancerV3Pool,
+                      balancerV3Pool.addressesSubscribed,
+                      (_blockNumber: number) =>
+                        fetchPoolState(
+                          balancerV3Pool,
+                          _blockNumber,
+                          eventData.poolAddress[i],
+                        ),
+                      blockNumber,
+                      `${dexKey}_${vaultAddress}`,
+                      dexHelper.provider,
+                      stateCompare,
+                    );
+                  });
+                });
+              });
+            },
+          );
+        });
+      },
+    );
+  });
+
   // If need to run through block interval up to a block number
   // describe.skip('Base', function () {
   //   const network = Network.BASE;
