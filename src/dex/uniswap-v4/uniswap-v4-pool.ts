@@ -89,27 +89,12 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     options?: InitializeStateOptions<PoolState>,
   ) {
     super.initialize(blockNumber, options);
-    // await super.initialize(blockNumber, {
-    //   state: {
-    //     id: this.poolId,
-    //     token0: this.token0.toLowerCase(),
-    //     token1: this.token1.toLowerCase(),
-    //     fee: this.fee,
-    //     hooks: this.hooks,
-    //     tickSpacing: parseInt(this.tickSpacing),
-    //     ticks: {},
-    //     tickBitmap: {},
-    //     positions: {},
-    //     feeGrowthGlobal0X128: 0n,
-    //     feeGrowthGlobal1X128: 0n,
-    //     slot0: {
-    //       sqrtPriceX96: this.sqrtPriceX96,
-    //       tick: parseInt(this.tick),
-    //       protocolFee: 0,
-    //       lpFee: LPFeeLibrary.getInitialLPFee(parseInt(this.fee)),
-    //     },
-    //   } as PoolState,
-    // });
+  }
+
+  getPoolIdentifierData() {
+    return {
+      poolId: this.poolId,
+    };
   }
 
   protected _getPositionInfoCallData(
