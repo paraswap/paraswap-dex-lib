@@ -1647,6 +1647,10 @@ export const Tokens: {
       address: '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b',
       decimals: 18,
     },
+    cbBTC: {
+      address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf',
+      decimals: 8,
+    },
     WETH: {
       address: '0x4200000000000000000000000000000000000006',
       decimals: 18,
@@ -2214,6 +2218,7 @@ export const Holders: {
     waBasGHO: '0x450C01300B83bE379113256038b4Dd3b45d23B5e',
     USDS: '0x87549A7DF7a002f756118EB19b59C2317E227017',
     sUSDS: '0xC9716E991396AA933Fa7A481003a5953bcBabC17',
+    cbBTC: '0x88fC6C82672081dA02f60996785fe8Cf67A2A85b',
   },
   [Network.SEPOLIA]: {
     bal: '0xDb4ff41B4C1222c2b1869A67Be115070688989a2',

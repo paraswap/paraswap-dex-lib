@@ -1,20 +1,84 @@
-import { SubgraphPool } from './types';
+import { SubgraphPool, Tick } from './types';
 import { SUBGRAPH_TIMEOUT } from './constants';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from 'log4js';
+import { Address } from '@paraswap/core';
+import { NULL_ADDRESS } from '../../constants';
 
-export async function querySinglePoolFromSubgraphById(
+export async function queryTicksForPool(
   dexHelper: IDexHelper,
+  logger: Logger,
+  dexKey: string,
   subgraphUrl: string,
   blockNumber: number,
   id: string,
-): Promise<SubgraphPool | null> {
-  const ticksLimit = 200;
+  latestBlock = false,
+): Promise<Tick[]> {
+  const ticksLimit = 300;
 
   const poolQuery = `query {
       pools(
-        block: { number: ${blockNumber} },
+        ${latestBlock ? '' : `block: { number: ${blockNumber} }`}
         where: {id: "${id}"}
+      ) {
+        ticks(first: ${ticksLimit}) {
+          id
+          liquidityGross
+          liquidityNet
+          tickIdx
+        }
+      }
+  }`;
+
+  const res = await dexHelper.httpRequest.querySubgraph<{
+    data: {
+      pools: SubgraphPool[];
+    };
+    errors?: { message: string }[];
+  }>(
+    subgraphUrl,
+    {
+      query: poolQuery,
+      variables: {},
+    },
+    { timeout: SUBGRAPH_TIMEOUT },
+  );
+
+  if (res.errors && res.errors.length) {
+    if (res.errors[0].message.includes('missing block')) {
+      logger.info(
+        `${dexKey}: subgraph query ticks fallback to the latest block...`,
+      );
+      return queryTicksForPool(
+        dexHelper,
+        logger,
+        dexKey,
+        subgraphUrl,
+        blockNumber,
+        id,
+        true,
+      );
+    } else {
+      throw new Error(res.errors[0].message);
+    }
+  }
+
+  return res.data.pools[0]?.ticks || [];
+}
+
+export async function queryAvailablePoolsForPairFromSubgraph(
+  dexHelper: IDexHelper,
+  subgraphUrl: string,
+  srcToken: Address,
+  destToken: Address,
+): Promise<SubgraphPool[]> {
+  const ticksLimit = 300;
+
+  const poolsQuery = `query ($token0: Bytes!, $token1: Bytes!, $hooks: Bytes!) {
+      pools(
+        where: { token0: $token0, token1: $token1, hooks: $hooks, liquidity_gt: 0 },
+        orderBy: volumeUSD
+        orderDirection: desc
       ) {
         id
         fee: feeTier
@@ -26,31 +90,40 @@ export async function querySinglePoolFromSubgraphById(
           address: id
         }
         hooks
+        tick
+        ticks(first: ${ticksLimit}) {
+          id
+          liquidityGross
+          liquidityNet
+          tickIdx
+        }
       }
-  }`;
+    }`;
 
-  //        tick
-  //        ticks(first: ${ticksLimit}) {
-  //           id
-  //           liquidityGross
-  //           liquidityNet
-  //           tickIdx
-  //         }
+  const [token0, token1] =
+    parseInt(srcToken, 16) < parseInt(destToken, 16)
+      ? [srcToken, destToken]
+      : [destToken, srcToken];
 
-  const { data } = await dexHelper.httpRequest.querySubgraph<{
+  const res = await dexHelper.httpRequest.querySubgraph<{
     data: {
       pools: SubgraphPool[];
     };
+    errors?: { message: string }[];
   }>(
     subgraphUrl,
     {
-      query: poolQuery,
-      variables: {},
+      query: poolsQuery,
+      variables: { token0, token1, hooks: NULL_ADDRESS },
     },
     { timeout: SUBGRAPH_TIMEOUT },
   );
 
-  return data.pools[0] || null;
+  if (res.errors && res.errors.length) {
+    throw new Error(res.errors[0].message);
+  }
+
+  return res.data.pools;
 }
 
 export async function queryOnePageForAllAvailablePoolsFromSubgraph(
@@ -63,10 +136,11 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
   limit: number,
   latestBlock = false,
 ): Promise<SubgraphPool[]> {
-  const ticksLimit = 200;
+  const ticksLimit = 300;
 
-  const poolsQuery = `query ($skip: Int!) {
+  const poolsQuery = `query ($skip: Int!, $hooks: Bytes!) {
       pools(
+        where: { hooks: $hooks, liquidity_gt: 0 },
         ${latestBlock ? '' : `block: { number: ${blockNumber} }`}
         orderBy: volumeUSD
         orderDirection: desc
@@ -83,18 +157,15 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
           address: id
         }
         hooks
+        tick
+        ticks(first: ${ticksLimit}) {
+          id
+          liquidityGross
+          liquidityNet
+          tickIdx
+        }
       }
     }`;
-
-  // console.log('poolsQuery: ', poolsQuery);
-
-  //tick
-  // ticks(first: ${ticksLimit}) {
-  //   id
-  //   liquidityGross
-  //   liquidityNet
-  //   tickIdx
-  // }
 
   const res = await dexHelper.httpRequest.querySubgraph<{
     data: {
@@ -105,27 +176,27 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
     subgraphUrl,
     {
       query: poolsQuery,
-      variables: { skip: skip },
+      variables: { skip: skip, hooks: NULL_ADDRESS },
     },
     { timeout: SUBGRAPH_TIMEOUT },
   );
 
-  if (
-    res.errors &&
-    res.errors.length &&
-    res.errors[0].message.includes('missing block')
-  ) {
-    logger.info(`${dexKey}: subgraph fallback to the latest block...`);
-    return queryOnePageForAllAvailablePoolsFromSubgraph(
-      dexHelper,
-      logger,
-      dexKey,
-      subgraphUrl,
-      blockNumber,
-      skip,
-      limit,
-      true,
-    );
+  if (res.errors && res.errors.length) {
+    if (res.errors[0].message.includes('missing block')) {
+      logger.info(`${dexKey}: subgraph fallback to the latest block...`);
+      return queryOnePageForAllAvailablePoolsFromSubgraph(
+        dexHelper,
+        logger,
+        dexKey,
+        subgraphUrl,
+        blockNumber,
+        skip,
+        limit,
+        true,
+      );
+    } else {
+      throw new Error(res.errors[0].message);
+    }
   }
 
   return res.data.pools;

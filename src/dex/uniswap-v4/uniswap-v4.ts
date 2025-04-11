@@ -1,15 +1,16 @@
-import { omit } from 'lodash';
 import {
   AdapterExchangeParam,
   Address,
   DexExchangeParam,
+  ExchangePrices,
   NumberAsString,
+  PoolLiquidity,
+  PoolPrices,
   Token,
 } from '../../types';
 import { Logger } from 'log4js';
-import { Network, NULL_ADDRESS, SwapSide } from '../../constants';
+import { Network, NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
-import { ExchangePrices, PoolPrices, PoolLiquidity } from '../../types';
 import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../idex';
 import { SimpleExchange } from '../simple-exchange';
@@ -22,8 +23,15 @@ import { BI_POWS } from '../../bigint-constants';
 import { Interface } from '@ethersproject/abi';
 import { generalDecoder } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
-import { swapExactInputSingleCalldata } from './encoder';
+import {
+  swapExactInputSingleCalldata,
+  swapExactOutputSingleCalldata,
+} from './encoder';
 import { UniswapV4PoolManager } from './uniswap-v4-pool-manager';
+import { DeepReadonly } from 'ts-essentials';
+import { PoolState } from '../uniswap-v4/types';
+import { uniswapV4PoolMath } from './contract-math/uniswap-v4-pool-math';
+import { SwapSide } from '@paraswap/core';
 
 export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -53,9 +61,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       dexHelper,
       dexKey,
       network,
-      UniswapV4Config[dexKey][network].poolManager,
-      UniswapV4Config[dexKey][network].stateView,
-      UniswapV4Config[dexKey][network].subgraphURL,
+      UniswapV4Config[dexKey][network],
       this.logger,
     );
   }
@@ -79,6 +85,32 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     return pools.map(pool => pool.id);
   }
 
+  protected _getOutputs(
+    pool: Pool,
+    state: DeepReadonly<PoolState>,
+    amounts: bigint[],
+    zeroForOne: boolean,
+    side: SwapSide,
+  ): bigint[] | null {
+    try {
+      const outputsResult = uniswapV4PoolMath.queryOutputs(
+        pool,
+        state,
+        amounts,
+        zeroForOne,
+        side,
+      );
+
+      return outputsResult;
+    } catch (e) {
+      this.logger.debug(
+        `${this.dexKey}: received error in _getOutputs while calculating outputs`,
+        e,
+      );
+      return null;
+    }
+  }
+
   async getPricesVolume(
     from: Token,
     to: Token,
@@ -87,17 +119,21 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV4Data> | null> {
-    if (side === SwapSide.BUY) return null;
-
     const pools: Pool[] = await this.poolManager.getAvailablePoolsForPair(
       from.address.toLowerCase(),
       to.address.toLowerCase(),
       blockNumber,
     );
 
-    const availablePools =
+    let availablePools =
       limitPools?.filter(t => pools.find(p => p.id === t)) ??
       pools.map(t => t.id);
+
+    // availablePools = availablePools.filter(
+    //   poolId =>
+    //     poolId.toLowerCase() ===
+    //     '0xe87077fd043c1a6afa5256104acb1d1eb5ca5bc031ee57f9d96c8172ead4bef8'.toLowerCase(),
+    // );
 
     const pricesPromises = availablePools.map(async poolId => {
       const pool = pools.find(p => p.id === poolId)!;
@@ -106,7 +142,28 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         from.address.toLowerCase() === pool.key.currency0.toLowerCase() ||
         (isETHAddress(from.address) && pool.key.currency0 === NULL_ADDRESS);
 
-      const prices = await this.queryPrice(zeroForOne, amounts, pool);
+      // const prices = await this.queryPriceFromRpc(
+      //   zeroForOne,
+      //   amounts,
+      //   pool,
+      //   side,
+      //   blockNumber,
+      // );
+
+      const eventPool = this.poolManager.eventPools[poolId];
+      const poolState = await eventPool.getOrGenerateState(blockNumber);
+
+      const prices = this._getOutputs(
+        pool,
+        poolState,
+        amounts,
+        zeroForOne,
+        side,
+      );
+
+      if (prices === null) {
+        return null;
+      }
 
       if (prices?.every(price => price === 0n || price === 1n)) {
         return null;
@@ -119,7 +176,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
           exchange: this.dexKey,
           pool: {
             id: pool.id,
-            key: omit(pool.key, ['tick', 'ticks']),
+            key: pool.key,
           },
           zeroForOne,
         },
@@ -150,14 +207,21 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     return [];
   }
 
-  async queryPrice(
+  async queryPriceFromRpc(
     zeroForOne: boolean,
     amounts: bigint[],
     pool: Pool,
+    side: SwapSide,
+    blockNumber: number,
   ): Promise<bigint[]> {
+    const funcName =
+      side === SwapSide.SELL
+        ? 'quoteExactInputSingle'
+        : 'quoteExactOutputSingle';
+
     const calls = amounts.map(amount => ({
       target: this.quoterAddress,
-      callData: this.quoterIface.encodeFunctionData('quoteExactInputSingle', [
+      callData: this.quoterIface.encodeFunctionData(funcName, [
         {
           poolKey: pool.key,
           zeroForOne,
@@ -176,6 +240,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     const results = await this.dexHelper.multiWrapper!.tryAggregate(
       false,
       calls,
+      blockNumber,
     );
     return results.map(result => (result.success ? result.returnData : 0n));
   }
@@ -189,16 +254,29 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     data: UniswapV4Data,
     side: SwapSide,
   ): DexExchangeParam {
-    const exchangeData = swapExactInputSingleCalldata(
-      srcToken,
-      destToken,
-      data.pool.key,
-      data.zeroForOne,
-      BigInt(srcAmount),
-      // destMinAmount (can be 0 on dex level)
-      BigInt(0),
-      recipient,
-    );
+    let exchangeData: string;
+    if (side === SwapSide.SELL) {
+      exchangeData = swapExactInputSingleCalldata(
+        srcToken,
+        destToken,
+        data.pool.key,
+        data.zeroForOne,
+        BigInt(srcAmount),
+        // destMinAmount (can be 0 on dex level)
+        BigInt(0),
+        recipient,
+      );
+    } else {
+      exchangeData = swapExactOutputSingleCalldata(
+        srcToken,
+        destToken,
+        data.pool.key,
+        data.zeroForOne,
+        BigInt(destAmount),
+        BigInt(srcAmount),
+        recipient,
+      );
+    }
 
     return {
       needWrapNative: this.needWrapNative,

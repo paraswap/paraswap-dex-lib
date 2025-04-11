@@ -136,3 +136,95 @@ export function swapExactInputSingleCalldata(
     [input],
   ]);
 }
+
+interface ExactOutputSingleParams {
+  poolKey: PoolKey;
+  zeroForOne: boolean;
+  amountOut: bigint;
+  amountInMaximum: bigint;
+  hookData: string;
+}
+
+export function swapExactOutputSingleCalldata(
+  srcToken: Address,
+  destToken: Address,
+  poolKey: PoolKey,
+  zeroForOne: boolean,
+  amountOut: bigint,
+  amountInMaximum: bigint,
+  recipient: Address,
+): string {
+  const command = ethers.utils.solidityPack(['uint8'], [Commands.V4_SWAP]);
+
+  const actions = ethers.utils.solidityPack(
+    ['uint8', 'uint8', 'uint8'],
+    [Actions.SWAP_EXACT_OUT_SINGLE, Actions.SETTLE, Actions.TAKE],
+  );
+
+  const exactOutputSingleParams: ExactOutputSingleParams = {
+    poolKey,
+    zeroForOne,
+    amountOut,
+    amountInMaximum,
+    hookData: '0x', // empty bytes
+  };
+
+  // encode SWAP_EXACT_OUTPUT_SINGLE
+  const swap = ethers.utils.defaultAbiCoder.encode(
+    [
+      /*
+        ExactOutputSingleParams {
+          PoolKey poolKey;
+          bool zeroForOne;
+          uint128 amountOut;
+          uint128 amountInMaximum;
+          bytes hookData;
+        }
+      */
+      'tuple((address,address,uint24,int24,address) poolKey, bool zeroForOne, uint128 amountOut, uint128 amountInMaximum, bytes hookData)',
+    ],
+    [
+      [
+        [
+          poolKey.currency0,
+          poolKey.currency1,
+          poolKey.fee,
+          poolKey.tickSpacing,
+          poolKey.hooks,
+        ],
+        exactOutputSingleParams.zeroForOne,
+        exactOutputSingleParams.amountOut,
+        exactOutputSingleParams.amountInMaximum,
+        exactOutputSingleParams.hookData,
+      ],
+    ],
+  );
+
+  // encode SETTLE
+  const settle = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'uint256', 'bool'],
+    // destToken, amountIn (`OPEN_DELTA` to settle all needed funds), takeFundsFromMsgSender (Executor in our case)
+    [
+      isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,
+      ActionConstants.OPEN_DELTA,
+      true,
+    ],
+  );
+
+  // encode TAKE
+  const take = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'address', 'uint256'],
+    // srcToken, recipient, amountOut (`OPEN_DELTA` to take all funds)
+    [isETHAddress(destToken) ? NULL_ADDRESS : destToken, recipient, amountOut],
+  );
+
+  const input = ethers.utils.defaultAbiCoder.encode(
+    ['bytes', 'bytes[]'],
+    [actions, [swap, settle, take]],
+  );
+
+  return routerIface.encodeFunctionData('execute(bytes,bytes[])', [
+    command,
+    [input],
+  ]);
+}

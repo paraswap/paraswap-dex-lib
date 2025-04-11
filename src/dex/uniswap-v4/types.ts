@@ -1,25 +1,61 @@
-import { Address } from '../../types';
+import { Address, NumberAsString } from '../../types';
+
+export type ModifyLiquidityParams = {
+  liquidityDelta: bigint;
+  tickLower: bigint;
+  tickUpper: bigint;
+  owner: string;
+  tickSpacing: bigint;
+  salt: string;
+};
+
+export type TickInfo = {
+  liquidityGross: bigint;
+  liquidityNet: bigint;
+  feeGrowthOutside0X128: bigint;
+  feeGrowthOutside1X128: bigint;
+};
+
+export type PositionState = {
+  liquidity: bigint;
+  feeGrowthInside0LastX128: bigint;
+  feeGrowthInside1LastX128: bigint;
+};
 
 export type Tick = {
-  id: string;
   tickIdx: string;
   liquidityGross: string;
   liquidityNet: string;
 };
 
-export type PoolManagerState = {
-  _pools: PoolState[];
-};
+export type PoolManagerState = Record<string, never>;
 
 export type PoolState = {
   id: string;
-  token0: Address;
-  token1: Address;
+  token0: string;
+  token1: string;
   fee: string;
-  tickSpacing: string;
   hooks: string;
-  tick?: number;
-  ticks?: Tick[];
+  feeGrowthGlobal0X128: bigint;
+  feeGrowthGlobal1X128: bigint;
+  liquidity: bigint;
+  slot0: Slot0;
+  tickSpacing: number;
+  ticks: Record<NumberAsString, TickInfo>;
+  positions: Record<string, PositionState>;
+  tickBitmap: Record<NumberAsString, bigint>;
+};
+
+export type FeeGrowthGlobals = {
+  feeGrowthGlobal0: bigint;
+  feeGrowthGlobal1: bigint;
+};
+
+export type Slot0 = {
+  sqrtPriceX96: bigint;
+  tick: bigint;
+  protocolFee: bigint;
+  lpFee: bigint;
 };
 
 export type UniswapV4Data = {
@@ -31,6 +67,11 @@ export type UniswapV4Data = {
 export type Pool = {
   id: string;
   key: PoolKey;
+};
+
+export type OutputResult = {
+  outputs: bigint[];
+  tickCounts: number[];
 };
 
 export type SubgraphPool = {
@@ -64,16 +105,7 @@ export type PoolKey = {
   // The pool LP fee, capped at 1_000_000. If the highest bit is 1, the pool has a dynamic fee and must be exactly equal to 0x800000
   fee: string;
   // Ticks that involve positions must be a multiple of tick spacing
-  tickSpacing: string;
+  tickSpacing: number;
   // The hooks of the pool
   hooks: Address;
-
-  tick?: string;
-
-  ticks?: {
-    id: string;
-    tickIdx: string;
-    liquidityGross: string;
-    liquidityNet: string;
-  }[];
 };
