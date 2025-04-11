@@ -16,7 +16,7 @@ export const OUT_OF_RANGE_ERROR_POSTFIX = `INVALID_TICK_BIT_MAP_RANGES`;
 
 export const SUBGRAPH_TIMEOUT = 30 * 1000;
 
-export const POOL_CACHE_REFRESH_INTERVAL = 60 * 5; // 5 minutes
+export const POOL_CACHE_REFRESH_INTERVAL = 60 * 60; // 1 hour
 
 export const POOLS_INITIALIZATION_LIMIT = 5;
 

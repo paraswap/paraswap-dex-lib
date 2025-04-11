@@ -28,7 +28,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     [event: string]: (event: any, log: Log) => AsyncOrSync<PoolManagerState>;
   } = {};
 
-  pools: SubgraphPool[] = [];
+  private pools: SubgraphPool[] = [];
 
   eventPools: Record<string, UniswapV4Pool> = {};
 
@@ -38,7 +38,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
 
   poolManagerIface: Interface;
 
-  private poolsCacheKey = 'pools_states';
+  private subgraphPoolsCacheKey = 'subgraph_pools';
 
   constructor(
     readonly dexHelper: IDexHelper,
@@ -130,6 +130,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
           );
           await eventPool.initialize(blockNumber);
 
+          // Add new Pool
           this.pools.push(pool);
           this.eventPools[pool.id.toLowerCase()] = eventPool;
         }),
@@ -160,70 +161,48 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     srcToken: Address,
     destToken: Address,
   ): Promise<SubgraphPool[]> {
-    return queryAvailablePoolsForPairFromSubgraph(
-      this.dexHelper,
-      this.config.subgraphURL,
-      srcToken,
-      destToken,
+    const cachedSubgraphPools = await this.dexHelper.cache.getAndCacheLocally(
+      this.parentName,
+      this.network,
+      this.subgraphPoolsCacheKey,
+      POOL_CACHE_REFRESH_INTERVAL,
     );
-  }
 
-  // private async queryAllAvailablePools(
-  //   blockNumber: number,
-  //   limit?: number,
-  // ): Promise<SubgraphPool[]> {
-  //   // const cachedPools = await this.dexHelper.cache.getAndCacheLocally(
-  //   //   this.parentName,
-  //   //   this.network,
-  //   //   this.poolsCacheKey,
-  //   //   POOL_CACHE_REFRESH_INTERVAL,
-  //   // );
-  //   //
-  //   // if (cachedPools) {
-  //   //   const pools = JSON.parse(cachedPools);
-  //   //   return pools;
-  //   // }
-  //
-  //   let pools: SubgraphPool[] = [];
-  //   let curPage = 0;
-  //   const defaultLimit = 1000;
-  //   let currentSubgraphPools: SubgraphPool[] =
-  //     await queryOnePageForAllAvailablePoolsFromSubgraph(
-  //       this.dexHelper,
-  //       this.logger,
-  //       this.parentName,
-  //       this.config.subgraphURL,
-  //       blockNumber,
-  //       curPage * limit,
-  //       limit || defaultLimit,
-  //     );
-  //   pools = pools.concat(currentSubgraphPools);
-  //
-  //   while (currentSubgraphPools.length === limit) {
-  //     curPage++;
-  //     currentSubgraphPools = await queryOnePageForAllAvailablePoolsFromSubgraph(
-  //       this.dexHelper,
-  //       this.logger,
-  //       this.parentName,
-  //       this.config.subgraphURL,
-  //       blockNumber,
-  //       curPage * limit,
-  //       limit,
-  //     );
-  //
-  //     pools = pools.concat(currentSubgraphPools);
-  //   }
-  //   //
-  //   // this.dexHelper.cache.setexAndCacheLocally(
-  //   //   this.parentName,
-  //   //   this.network,
-  //   //   this.poolsCacheKey,
-  //   //   POOL_CACHE_REFRESH_INTERVAL,
-  //   //   JSON.stringify(pools),
-  //   // );
-  //
-  //   return pools;
-  // }
+    let pools: SubgraphPool[];
+    if (cachedSubgraphPools) {
+      pools = JSON.parse(cachedSubgraphPools);
+    } else {
+      pools = [];
+    }
+
+    const poolsForPair = pools.filter(
+      pool =>
+        (pool.token0.address === srcToken &&
+          pool.token1.address === destToken) ||
+        (pool.token0.address === destToken && pool.token1.address === srcToken),
+    );
+
+    if (poolsForPair.length > 0) return poolsForPair;
+
+    const newlyRequestedPoolsForPair =
+      await queryAvailablePoolsForPairFromSubgraph(
+        this.dexHelper,
+        this.config.subgraphURL,
+        srcToken,
+        destToken,
+      );
+
+    newlyRequestedPoolsForPair.forEach(pool => pools.push(pool));
+    await this.dexHelper.cache.setexAndCacheLocally(
+      this.parentName,
+      this.network,
+      this.subgraphPoolsCacheKey,
+      POOL_CACHE_REFRESH_INTERVAL,
+      JSON.stringify(pools),
+    );
+
+    return pools;
+  }
 
   async handleInitializeEvent(
     event: LogDescription,

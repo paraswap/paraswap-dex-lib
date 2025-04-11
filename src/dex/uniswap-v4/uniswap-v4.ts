@@ -204,6 +204,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     tokenAddress: Address,
     count: number,
   ): Promise<PoolLiquidity[]> {
+    const _tokenAddress = tokenAddress.toLowerCase();
     return [];
   }
 
