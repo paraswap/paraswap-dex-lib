@@ -1,6 +1,6 @@
 import { PoolState, TickInfo, ModifyLiquidityParams, Pool } from '../types';
 import { TickMath } from './TickMath';
-import { TickBitmap } from './TickBitmap';
+import { TickBitMap } from './TickBitMap';
 import { Tick } from './Tick';
 import { _require } from '../../../utils';
 import { LiquidityMath } from './LiquidityMath';
@@ -205,7 +205,7 @@ class UniswapV4PoolMath {
     ) {
       step.sqrtPriceStartX96 = result.sqrtPriceX96;
 
-      const [next, initialized] = TickBitmap.nextInitializedTickWithinOneWord(
+      const [next, initialized] = TickBitMap.nextInitializedTickWithinOneWord(
         _poolState,
         BigInt(result.tick),
         BigInt(params.tickSpacing),
@@ -449,7 +449,7 @@ class UniswapV4PoolMath {
       }
 
       if (flippedLower) {
-        TickBitmap.flipTick(
+        TickBitMap.flipTick(
           poolState,
           tickLower,
           BigInt(poolState.tickSpacing),
@@ -457,7 +457,7 @@ class UniswapV4PoolMath {
       }
 
       if (flippedUpper) {
-        TickBitmap.flipTick(
+        TickBitMap.flipTick(
           poolState,
           tickUpper,
           BigInt(poolState.tickSpacing),
@@ -628,7 +628,7 @@ class UniswapV4PoolMath {
     ) {
       step.sqrtPriceStartX96 = result.sqrtPriceX96;
 
-      const [next, initialized] = TickBitmap.nextInitializedTickWithinOneWord(
+      const [next, initialized] = TickBitMap.nextInitializedTickWithinOneWord(
         poolState,
         BigInt(result.tick),
         BigInt(paramsTickSpacing),

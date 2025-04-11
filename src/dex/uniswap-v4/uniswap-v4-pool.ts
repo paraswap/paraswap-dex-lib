@@ -28,7 +28,7 @@ import {
   TICK_BITMAP_TO_USE,
   TICK_BITMAP_TO_USE_BY_CHAIN,
 } from './constants';
-import { TickBitmap } from './contract-math/TickBitmap';
+import { TickBitMap } from './contract-math/TickBitMap';
 import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
 import { NumberAsString } from '@paraswap/core';
 import { extractSuccessAndValue, uint256ToBigInt } from '../../lib/decoders';
@@ -245,11 +245,11 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     }
 
     ticks.map(tick => {
-      const compressed = TickBitmap.compress(
+      const compressed = TickBitMap.compress(
         BigInt(tick.tickIdx),
         BigInt(tickSpacing),
       );
-      const [wordPos] = TickBitmap.position(compressed);
+      const [wordPos] = TickBitMap.position(compressed);
 
       callData.push({
         target: this.config.stateView,
@@ -399,12 +399,12 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
 
     const range = tickBitMapToUse + tickBitMapBuffer;
 
-    const compressedTick = TickBitmap.compress(
+    const compressedTick = TickBitMap.compress(
       BigInt(tick),
       BigInt(tickSpacing),
     );
 
-    const [currentBitMapIndex] = TickBitmap.position(compressedTick);
+    const [currentBitMapIndex] = TickBitMap.position(compressedTick);
 
     const leftBitMapIndex = currentBitMapIndex - range;
     const rightBitMapIndex = currentBitMapIndex + range;

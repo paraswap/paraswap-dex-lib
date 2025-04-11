@@ -2,7 +2,7 @@ import { PoolState } from '../types';
 import { _require } from '../../../utils';
 import { BitMath } from '../../uniswap-v3/contract-math/BitMath';
 
-export class TickBitmap {
+export class TickBitMap {
   static readonly MAX_UINT256: bigint = BigInt(
     '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
   );
@@ -33,8 +33,8 @@ export class TickBitmap {
       'tick % tickSpacing === 0n',
     );
 
-    const compressed = TickBitmap.compress(tick, tickSpacing);
-    const [wordPos, bitPos] = TickBitmap.position(compressed);
+    const compressed = TickBitMap.compress(tick, tickSpacing);
+    const [wordPos, bitPos] = TickBitMap.position(compressed);
 
     const mask = 1n << bitPos;
 
@@ -53,14 +53,14 @@ export class TickBitmap {
     tickSpacing: bigint,
     lte: boolean,
   ): [bigint, boolean] {
-    const compressed = TickBitmap.compress(tick, tickSpacing);
+    const compressed = TickBitMap.compress(tick, tickSpacing);
 
     let initialized: boolean;
     let next: bigint;
 
     if (lte) {
-      const [wordPos, bitPos] = TickBitmap.position(compressed);
-      const mask = TickBitmap.MAX_UINT256 >> (TickBitmap.MAX_UINT8 - bitPos);
+      const [wordPos, bitPos] = TickBitMap.position(compressed);
+      const mask = TickBitMap.MAX_UINT256 >> (TickBitMap.MAX_UINT8 - bitPos);
 
       const value = poolState.tickBitmap[wordPos.toString()] || 0n;
       const masked = value & mask;
@@ -72,7 +72,7 @@ export class TickBitmap {
           tickSpacing
         : (compressed - BigInt.asIntN(24, bitPos)) * tickSpacing;
     } else {
-      const [wordPos, bitPos] = TickBitmap.position(compressed + 1n);
+      const [wordPos, bitPos] = TickBitMap.position(compressed + 1n);
       const mask = ~((1n << bitPos) - 1n);
       const value = poolState.tickBitmap[wordPos.toString()] || 0n;
       const masked = value & mask;
@@ -83,7 +83,7 @@ export class TickBitmap {
             1n +
             BigInt.asIntN(24, BitMath.leastSignificantBit(masked) - bitPos)) *
           tickSpacing
-        : (compressed + 1n + BigInt.asIntN(24, TickBitmap.MAX_UINT8 - bitPos)) *
+        : (compressed + 1n + BigInt.asIntN(24, TickBitMap.MAX_UINT8 - bitPos)) *
           tickSpacing;
     }
 
