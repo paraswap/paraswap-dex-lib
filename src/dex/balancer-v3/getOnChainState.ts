@@ -86,7 +86,10 @@ const poolOnChain: Record<
       poolAddress: string,
       data: any,
       startIndex: number,
-    ): Omit<CommonMutableState, 'erc4626Rates'> => {
+    ): Omit<
+      CommonMutableState,
+      'erc4626Rates' | 'erc4626MaxDeposit' | 'erc4626MaxMint'
+    > => {
       const resultTokenRates = decodeThrowError(
         contractInterface,
         'getPoolTokenRates',
@@ -241,6 +244,26 @@ const poolOnChain: Record<
       };
     },
   },
+  // nothing to encode/decode for this pool
+  // as all of the values are immutable and returned from the API
+  ['GYROE']: {
+    count: 0,
+    ['encode']: (
+      network: number,
+      contractInterface: Interface,
+      address: string,
+    ): callData[] => {
+      return [];
+    },
+    ['decode']: (
+      contractInterface: Interface,
+      poolAddress: string,
+      data: any,
+      startIndex: number,
+    ) => {
+      return {};
+    },
+  },
 };
 
 export function decodeThrowError(
@@ -271,12 +294,30 @@ export function getErc4626MultiCallData(
   );
 
   // query result for 1e18 (this maintains correct scaling for different token decimals in maths)
-  const erc4626MultiCallData: callData[] = uniqueErc4626Tokens.map(token => {
-    return {
-      target: token,
-      callData: erc4626Interface.encodeFunctionData('convertToAssets', [WAD]),
-    };
-  });
+  const erc4626MultiCallData: callData[] = uniqueErc4626Tokens.flatMap(
+    token => {
+      return [
+        {
+          target: token,
+          callData: erc4626Interface.encodeFunctionData('convertToAssets', [
+            WAD,
+          ]),
+        },
+        {
+          target: token,
+          callData: erc4626Interface.encodeFunctionData('maxDeposit', [
+            '0x0000000000000000000000000000000000000000',
+          ]),
+        },
+        {
+          target: token,
+          callData: erc4626Interface.encodeFunctionData('maxMint', [
+            '0x0000000000000000000000000000000000000000',
+          ]),
+        },
+      ];
+    },
+  );
   return erc4626MultiCallData;
 }
 
@@ -285,12 +326,22 @@ export function decodeErc4626MultiCallData(
   erc4626MultiCallData: callData[],
   dataResultErc4626: any[],
 ) {
+  // We only need to process third of the erc4626MultiCallData entries
+  // since each entry corresponds to three results
+  const thirdLength = Math.floor(erc4626MultiCallData.length / 3);
+
   return Object.fromEntries(
-    erc4626MultiCallData.map((multiCallData, i) => {
+    Array.from({ length: thirdLength }).map((_, i) => {
+      const rateIndex = i * 3;
+      const maxDepositIndex = i * 3 + 1;
+      const maxMintIndex = i * 3 + 2;
+      const multiCallData = erc4626MultiCallData[rateIndex];
+
+      // Decode convertToAssets
       const rate = decodeThrowError(
         erc4626Interface,
         'convertToAssets',
-        dataResultErc4626[i],
+        dataResultErc4626[rateIndex],
         multiCallData.target,
       );
       if (!rate)
@@ -298,11 +349,41 @@ export function decodeErc4626MultiCallData(
           `Failed to get result for convertToAssets for ${multiCallData.target}`,
         );
 
-      return [multiCallData.target, BigInt(rate[0])];
+      // Decode maxDeposit
+      const maxDeposit = decodeThrowError(
+        erc4626Interface,
+        'maxDeposit',
+        dataResultErc4626[maxDepositIndex],
+        multiCallData.target,
+      );
+      if (!maxDeposit)
+        throw new Error(
+          `Failed to get result for maxDeposit for ${multiCallData.target}`,
+        );
+
+      // Decode maxMint
+      const maxMint = decodeThrowError(
+        erc4626Interface,
+        'maxMint',
+        dataResultErc4626[maxMintIndex],
+        multiCallData.target,
+      );
+      if (!maxMint)
+        throw new Error(
+          `Failed to get result for maxMint for ${multiCallData.target}`,
+        );
+
+      return [
+        multiCallData.target,
+        {
+          rate: BigInt(rate[0]),
+          maxDeposit: BigInt(maxDeposit[0]),
+          maxMint: BigInt(maxMint[0]),
+        },
+      ];
     }),
   );
 }
-
 // Any data from API will be immutable. Mutable data such as balances, etc will be fetched via onchain/event state.
 export async function getOnChainState(
   network: number,
@@ -387,7 +468,15 @@ export async function getOnChainState(
           ...poolMutableData,
           erc4626Rates: pool.tokens.map(t => {
             if (!tokensWithRates[t]) return null;
-            return tokensWithRates[t];
+            return tokensWithRates[t].rate;
+          }),
+          erc4626MaxDeposit: pool.tokens.map(t => {
+            if (!tokensWithRates[t]) return null;
+            return tokensWithRates[t].maxDeposit;
+          }),
+          erc4626MaxMint: pool.tokens.map(t => {
+            if (!tokensWithRates[t]) return null;
+            return tokensWithRates[t].maxMint;
           }),
         },
       ];

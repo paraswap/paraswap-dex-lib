@@ -317,8 +317,8 @@ export class MaverickV2EventPool extends StatefulEventSubscriber<PoolState> {
         from.address.toLowerCase() === this.tokenA.address.toLowerCase(),
         exactOutput,
         from.address.toLowerCase() === this.tokenA.address.toLowerCase()
-          ? tempState.activeTick + 20n
-          : tempState.activeTick - 20n,
+          ? tempState.activeTick + 100n
+          : tempState.activeTick - 100n,
       );
 
       if (output[0] === 0n && output[1] === 0n) {
