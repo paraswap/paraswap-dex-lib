@@ -275,10 +275,7 @@ class UniswapV4PoolMath {
         if (step.initialized) {
           const [feeGrowthGlobal0X128, feeGrowthGlobal1X128] = zeroForOne
             ? [step.feeGrowthGlobalX128, _poolState.feeGrowthGlobal1X128]
-            : [
-                _poolState.feeGrowthGlobal0X128,
-                _poolState.feeGrowthGlobal1X128,
-              ];
+            : [_poolState.feeGrowthGlobal0X128, step.feeGrowthGlobalX128];
 
           let liquidityNet = Tick.cross(
             _poolState,
@@ -703,7 +700,7 @@ class UniswapV4PoolMath {
         if (step.initialized) {
           const [feeGrowthGlobal0X128, feeGrowthGlobal1X128] = zeroForOne
             ? [step.feeGrowthGlobalX128, poolState.feeGrowthGlobal1X128]
-            : [poolState.feeGrowthGlobal0X128, poolState.feeGrowthGlobal1X128];
+            : [poolState.feeGrowthGlobal0X128, step.feeGrowthGlobalX128];
 
           let liquidityNet = Tick.cross(
             poolState,

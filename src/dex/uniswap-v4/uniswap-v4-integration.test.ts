@@ -74,7 +74,7 @@ async function checkOnChainPricing(
     zeroForOne,
   );
 
-  console.log('readerCallData: ', readerCallData);
+  // console.log('readerCallData: ', readerCallData);
 
   let readerResult;
   try {
@@ -1229,6 +1229,17 @@ describe('UniswapV4 integration tests', () => {
           6n * BI_POWS[18],
           7n * BI_POWS[18],
           8n * BI_POWS[18],
+          9n * BI_POWS[18],
+          10n * BI_POWS[18],
+          11n * BI_POWS[18],
+          12n * BI_POWS[18],
+          13n * BI_POWS[18],
+          14n * BI_POWS[18],
+          15n * BI_POWS[18],
+          16n * BI_POWS[18],
+          17n * BI_POWS[18],
+          18n * BI_POWS[18],
+          100n * BI_POWS[18],
         ];
 
         const pools = await uniswapV4.getPoolIdentifiers(

@@ -247,6 +247,229 @@ describe('UniswapV4 events', () => {
       });
     });
   });
+
+  describe('Base', () => {
+    const network = Network.BASE;
+    const config = UniswapV4Config[dexKey][network];
+
+    describe('UniswapV4Pool USDC / cbBTC (0x179492f1f9c7b2e2518a01eda215baab8adf0b02dd3a90fe68059c0cac5686f5)', () => {
+      const blockNumbers: { [eventName: string]: number[] } = {
+        // ['Donate']: // Donate event was never triggered
+        // ['ProtocolFeeUpdated']: // Donate event was never triggered
+        ['ModifyLiquidity']: [
+          28769672, // https://basescan.org/tx/0xcf89ac69b362322e72e66f367deb7fd70e443c75a670ee6d776dbd66d31ce02b#eventlog
+          28772018, // https://basescan.org/tx/0xb6074302a632141f286540d6fac95d102f6641ae5c2ef4b18535e8a1d6fcc37c#eventlog
+          28772093, // https://basescan.org/tx/0x6a2ab3f6a2e45c7ea65082a81bd5cd35472b8727a3e5e0693ea5a24988bc94e0#eventlog
+          28773278, // https://basescan.org/tx/0x834d5d629f8bd0ac537c58e65d9c6afed6553eeddd8478df379d6aa6a8c6c791#eventlog
+          28773287, // https://basescan.org/tx/0x989b76384cbc08e84b9de87a2889faafecbfff6c0953c32c19ea9f0fc07c0479#eventlog
+          28775737, // https://basescan.org/tx/0x6e32b9edda897793b055c7a84205250e273dfe5f87e8ad181f0cf2ab8beb2aeb#eventlog
+          28775760, // https://basescan.org/tx/0xa620ba1f49bf25aaa80af2a5582d377ae9a573984412d9044b4bcfeb9aca9d64#eventlog
+          28775904, // https://basescan.org/tx/0x2c275d8e192739a6f3f91469a9f80eb4a22b088883a950d2268f9488916c65c8#eventlog
+          28776340, // https://basescan.org/tx/0xc495ceca6a1eedacbb4aa602bd15880e40aa2995c7a7efea7118c56a046410fb#eventlog
+          28776956, // https://basescan.org/tx/0xb6666033fe1233f04d399e46ef63f624c1c1dbb64a7dc08f0f6ee178efee6437#eventlog
+          28778021, // https://basescan.org/tx/0xf60e94d78edf257ca64b8a9312fa4eb84fd1b4c92dace44f5e7c90dfda4bb0fe#eventlog
+          28778140, // https://basescan.org/tx/0x45ff50ec811c46f3c83eae58c9b46d8f32d919dca3b9752fe8352771455cf9c7#eventlog
+          28780771, // https://basescan.org/tx/0xe0c071db23f24801813a09d19efdaffcff85c513dde58644accef23ed0cab5af#eventlog
+          28782584, // https://basescan.org/tx/0x367b4f01d4858219517cfbf4879f6b883c44be2ebc03c3d31ba6751ac6c0d397#eventlog
+          28783799, // https://basescan.org/tx/0x989606fa8a559bdc9a3c95e9d0398945f41bcc1dbe562ce5d17f98a2dabe922d#eventlog
+          28784941, // https://basescan.org/tx/0xb114ea24e8cfe42f12c037c8a8abdbc0a9685f471dfcf31104be604b6cad69d0#eventlog
+          28786299, // https://basescan.org/tx/0x9ce4aba15f4f5c7814c8724440bf2c39013dea6882a766f2f9a65a556072875a#eventlog
+        ],
+        ['Swap']: [
+          25716446, //  https://basescan.org/tx/0x32c16727adfc86f207d0a0774d81c2d919b00dd74de1d9a8bf942445fa6859c7#eventlog
+          25720511, //  https://basescan.org/tx/0xc015fdefa5c802f77c7e35cd90916ebfb119bd2597045434d0ce9d139171a70b#eventlog
+          25720820, //  https://basescan.org/tx/0xe4348c4ed28dccfbb5d40444d028fa5a8e3a67baa2c2fb71f205575a2ec2ab74#eventlog
+          25728236, //  https://basescan.org/tx/0x77cd1ff402ad10befb399725def83a4fcc2f1c93140f83d51c2f92891ddeb154#eventlog
+          25728287, //  https://basescan.org/tx/0xf8d4fea3c2933c3659676c5f37bd6a653fd8ffe096b5192b2adece7909b45ac3#eventlog
+          25729604, //  https://basescan.org/tx/0x3e98af5239b1d2247fa6df78e0e88da2ef948784bcb54057f9c6aed9d1d8ae8a#eventlog
+          25729612, //  https://basescan.org/tx/0xcf85535217af11546f656f5797d6659fb93c880d88ef973c9870f1b63eb3a927#eventlog
+          25729620, //  https://basescan.org/tx/0xaf5bb4e2116be190f967ea8d48abf12669ee9e71a57039708f983c568454bfbb#eventlog
+          25729632, //  https://basescan.org/tx/0x2e26515807402af3e09b5fa0e01d4f9f66489037d2e094a4103ae12c76d01313#eventlog
+          25729633, //  https://basescan.org/tx/0xad69f7f8d658137809945567d9fba3e44fa008c1ad7e96d38872e310b652dba3#eventlog
+          25729719, //  https://basescan.org/tx/0x0785300a97d04d9c375857ab1634625bb43f154fef64585c282706e5b808d1e2#eventlog
+          25729804, //  https://basescan.org/tx/0xb2c25484d77ec98bff335a7b758f9686fa55d2b1bf99e5f3229f69646c6ff379#eventlog
+          25730288, //  https://basescan.org/tx/0x00a0d93c307a0791e442ca42e8da5c44eda50a4fa583c5d21ea23e2df910a620#eventlog
+          25730754, //  https://basescan.org/tx/0x542e6e91a7cc42866c9b818be16b444016e9eb5edb10b5a7495df1ca73c2a983#eventlog
+          25733731, //  https://basescan.org/tx/0x173cebf3554356b54b836adfcd19213dfdd74908cad01cf02d094380bd98e738#eventlog
+          25734052, //  https://basescan.org/tx/0x0529bf1638ce64fdd51be0e3e043aa3bb3500c6618b1ad4933d021341681f4ad#eventlog
+          25734569, //  https://basescan.org/tx/0x8c83ae7aee1ba1023c6ba15edebdbb59321a90bb9d78e7caa53a1e58331343bc#eventlog
+          25734691, //  https://basescan.org/tx/0x3df94650247a9468a1e9d0bdc69c41adbd68662bb5f736341a4248679598ac2a#eventlog
+          25737094, //  https://basescan.org/tx/0x55c77ecf02f75913f4bcb063eb5ed0c30cae3c88a0e53d7ecda09258d0f71f8f#eventlog
+          25738812, //  https://basescan.org/tx/0x54a41e34f39ef4875238668542a49b87406d0e5f40af6d1439bc493519c16127#eventlog
+          25739241, //  https://basescan.org/tx/0x9e98932ed1dc91abcdbc726f33a1e0eb8ec05f94ab2e86771fdac90e8839a24d#eventlog
+          25740277, //  https://basescan.org/tx/0xbc84f503a38c5d5c1cb5a65d6f8346a582922736d8149151949de97d3762e0cf#eventlog
+          25740717, //  https://basescan.org/tx/0x8f009da04b7134a7a91ceb81af8d7071a22264277c13f6d61ce1f45a8ba114f5#eventlog
+          25745943, //  https://basescan.org/tx/0xf45669294c214058587fad550c3e4270276c810e98ecd29a3abf55bd007b2cc0#eventlog
+          25746062, //  https://basescan.org/tx/0x7a3362293c904f31e785a02cf50ca09dc51aa3d9cc56604aecdac35399f2819f#eventlog
+          25746427, //  https://basescan.org/tx/0x1f894e46030bdd221330830281d1098f37cfb82969fe6685fa2ed3718696f6ab#eventlog
+          25746545, //  https://basescan.org/tx/0x2670df4dabaf66a294d6c3e885615a8363b33b224e9c31b4cfd10cd734425151#eventlog
+          25746591, //  https://basescan.org/tx/0x20fc01f810ef0f27c3c85f7debc634ef8c8e189b964401734c48be42b714a694#eventlog
+          25746602, //  https://basescan.org/tx/0x5e3cd2fa8e36e70a764b15db905d2777fab3aa1ff3b6ee691a1b0af9399fb2f4#eventlog
+          25751541, //  https://basescan.org/tx/0x5f09495ee389f8506db913597338c1ed73adaa317eb3d4766013c2cc1329984b#eventlog
+          25751593, //  https://basescan.org/tx/0xa838dd44e7be33133abefa66069a688d6f4d349a9f63351b6f42543d0d2e6f92#eventlog
+        ],
+      };
+
+      Object.keys(blockNumbers).forEach((event: string) => {
+        blockNumbers[event].forEach((blockNumber: number) => {
+          it(`${event}:${blockNumber} - should return correct state`, async function () {
+            const dexHelper = new DummyDexHelper(network);
+
+            const logger = dexHelper.getLogger(dexKey);
+
+            const uniswapV4Pool = new UniswapV4Pool(
+              dexHelper,
+              dexKey,
+              network,
+              config,
+              logger,
+              '',
+              '0x179492f1f9c7b2e2518a01eda215baab8adf0b02dd3a90fe68059c0cac5686f5', // initial params from Initialize event https://basescan.org/tx/0x22851562a729cf18348d1633c263221aa11795ac5e5871f3eff28a2fa24da104#eventlog
+              '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+              '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf',
+              '3000',
+              '0x0000000000000000000000000000000000000000',
+              2462569646102515538650341413n,
+              '-69426',
+              '60',
+            );
+
+            await uniswapV4Pool.initialize(blockNumber);
+
+            await testEventSubscriber(
+              uniswapV4Pool,
+              uniswapV4Pool.addressesSubscribed,
+              (_blockNumber: number) =>
+                fetchPoolStateFromContract(
+                  uniswapV4Pool,
+                  _blockNumber,
+                  config.poolManager,
+                ),
+              blockNumber,
+              `${dexKey}_${config.poolManager}`,
+              dexHelper.provider,
+            );
+          });
+        });
+      });
+    });
+  });
+
+  describe('Arbitrum', () => {
+    const network = Network.ARBITRUM;
+    const config = UniswapV4Config[dexKey][network];
+
+    describe('UniswapV4Pool WBTC / USDC (0x70bf44c3a9b6b047bf60e5a05968225dbf3d6a5b9e8a95a73727e48921e889c1)', () => {
+      const blockNumbers: { [eventName: string]: number[] } = {
+        // ['Donate']: // Donate event was never triggered
+        // ['ProtocolFeeUpdated']: // Donate event was never triggered
+        ['ModifyLiquidity']: [
+          300609996, // https://arbiscan.io/tx/0x6326a3e2c882b8d89d38fcf26f701a0e0ac29dc2f5f1dbe67fee4c42d69ff310#eventlog
+          300616500, // https://arbiscan.io/tx/0x3ade08513cfd69d7b5257ce4f71105c3a74654af2dc324b4ba54b5809f4aa9e9#eventlog
+          300619476, // https://arbiscan.io/tx/0xbc14ea27b956b884db106f9a5b491c26a9b46a03f29de937a50dd185083795e8#eventlog
+          300712544, // https://arbiscan.io/tx/0xf4601e5d49fa092a341621bfe7eb3a8ccf6b51508973b595c449b1faa27d8587#eventlog
+          300713444, // https://arbiscan.io/tx/0xd9fb66f7e85b20bae81c602a65e4e5c578d285106f115aa143ce113c20fccbf3#eventlog
+          300735876, // https://arbiscan.io/tx/0xf4956aa5791dd07215f16155566abde6457059e9a03b2751e1be284ee4bb24b3#eventlog
+          300737264, // https://arbiscan.io/tx/0x73ac8b5985505d21f0f92cb24a0077221185763aa34dc47a9a94e646b37da2e6#eventlog
+          300787648, // https://arbiscan.io/tx/0x3ba260c678d7b90124cb1e964558242685e256c95dbf9a0bef44efdaa9c3e476#eventlog
+          300812706, // https://arbiscan.io/tx/0x2b49800cc4dfe49ebf38ca34aa44db9304b3083ef3d68baa588091011bcebce0#eventlog
+          300817983, // https://arbiscan.io/tx/0xd976d0cad07fbe99e4c84e3d93e524be4412eb9a25264959e3f2f99e83b9481e#eventlog
+          300819341, // https://arbiscan.io/tx/0xa1ce2bad0828160fa30d27a194bb14aa3af10a049dd3620f23ad6024232c77e1#eventlog
+          300836138, // https://arbiscan.io/tx/0xe9737bce03765af328f37b35e1d2fff074f50c460a70cabc88d77228321f11c9#eventlog
+          300836829, // https://arbiscan.io/tx/0x3b3d64de90aa10759da37957c4ffbb25c04c048e229533f3b2a23b61ee67cab2#eventlog
+          300855772, // https://arbiscan.io/tx/0xf257ac911c28e2dee415cce729d668de4033b4fb4b4c84dd1cf35bd7522c8ef7#eventlog
+          300858777, // https://arbiscan.io/tx/0x0cd0e99335f0f1a325365c4224b47ff93e280cd1130f9ee46f800eb600b3160c#eventlog
+          300886621, // https://arbiscan.io/tx/0xd28c71d3d7b8594a58650111c68a4f3580c03bf56164838033a35d958a24a622#eventlog
+          301222058, // https://arbiscan.io/tx/0x1e5ee36045dccc99a511066ab17832f0c1ce31972abd0a349bdb8266dee7697e#eventlog
+          301226704, // https://arbiscan.io/tx/0xf689f97753b477502eb1147da34224a2af72289b9904c52d483a58f798648605#eventlog
+          301250492, // https://arbiscan.io/tx/0xb7d854407f1522f1135823dfdd5926ae68c6a974b0e28b48649fc19b551b4dcf#eventlog
+          301267089, // https://arbiscan.io/tx/0x5c0a942ddf1dec7e9133e48593c9209c259d077ed2ff95d80317a970c7475553#eventlog
+          301589740, // https://arbiscan.io/tx/0x54b39cb704c25c31015c7dc9751ed4cecfcf832d1699ccefa7b6f388363d9c59#eventlog
+          301594939, // https://arbiscan.io/tx/0x88b8e550b677211d804bfbbda7a8f8be0542d819c31ee614f7c8ca4c6abba010#eventlog
+          302651250, // https://arbiscan.io/tx/0xbcb1d64d47af7810357f3180c0346aa5c408a711dc8315ef7a035bb54b9d4c95#eventlog
+        ],
+        ['Swap']: [
+          300609999, // https://arbiscan.io/tx/0x701993a23b31e2e3046aca11ad747bc4dac06cdf34aa35b2d7bc0cfcd2bef176#eventlog
+          300610971, // https://arbiscan.io/tx/0xdd517a376b9673b1e6d6490bac035d612c1967de5cab997bda4d7e4814568854#eventlog
+          300618540, // https://arbiscan.io/tx/0x10fc57046270127d0733f2c13dc46cfa3defd0b1ad620c3d4b946319dd6fcea9#eventlog
+          300632123, // https://arbiscan.io/tx/0xb1e652edc424b8c303795c09b7129e8d0ed6d4f59bf1c341a609751fda16969f#eventlog
+          300634236, // https://arbiscan.io/tx/0x10b4b1d71835bc1ac978b3bd3b86d51dbc7354a3db78d1b39f550888e82b097a#eventlog
+          300667526, // https://arbiscan.io/tx/0x886463a7bc7106167c04fed05ea805611a443cc05e6ba0b65a67ad63b1bc9cd5#eventlog
+          300673728, // https://arbiscan.io/tx/0x31fcc0187c2dd7dd4cf46c7fe2c9e169327c6ffe53d38251ebb5c4b6f5e0ca70#eventlog
+          300677834, // https://arbiscan.io/tx/0xde7f0b56b645e5cf2d15c3e48e533d60aa28d8404f3052bb2d41d0c76c91cf3f#eventlog
+          300680162, // https://arbiscan.io/tx/0xab4a601f99ad2cfd7affe499d522ca684a4942c15bee77882de0d26a8bbc3eb2#eventlog
+          300681178, // https://arbiscan.io/tx/0x1af0919fce568864cae86b705b535953c6b255c5a94bdfe24663b109f51838f7#eventlog
+          300702430, // https://arbiscan.io/tx/0x75f6699a664397ce4a75caa3b80443e0dc700a808bd50f6e9acbbc1309f102dd#eventlog
+          300705314, // https://arbiscan.io/tx/0x93b379e61edf3dc50eeb259a3f30c86886dc21ecc19a42d0ba0ccd291f8806b5#eventlog
+          300711580, // https://arbiscan.io/tx/0x6bce12aec59b5ea140c3e7fc0bf36472fe3b22bb08adeea7a773f4ea7ebc4d8f#eventlog
+          300713661, // https://arbiscan.io/tx/0x7af2d79085a8ab2a204d26205a97903bae87942d27ad43c98a9f9036fc64c270#eventlog
+          300714009, // https://arbiscan.io/tx/0x188b7503cbac73b67cb9792734e2c4fbead17038c83e33dd9f58e6b1fad69249#eventlog
+          300715125, // https://arbiscan.io/tx/0x34a0c599993bfd8fd9d2705dbdabb65b926b9d170919fcb846d10ea5f78f8292#eventlog
+          300715498, // https://arbiscan.io/tx/0x96ba44b5a1f96d0922620943434ea50cae01977f06c0c580594818ac60f24223#eventlog
+          300715572, // https://arbiscan.io/tx/0xcc4d1a2d07e0a654abc7a2dae2a5803ec400671cec9747ae8a1634d129f8efc7#eventlog
+          300717181, // https://arbiscan.io/tx/0x9883a66bed9c822ebf89a10206ddb680cee418442c35cc8f746cbaba0e63f221#eventlog
+          300730496, // https://arbiscan.io/tx/0x881cd80b118f209af835ed129c16d012fd582fb09e4b7b2e0fa3779378685b14#eventlog
+          300747830, // https://arbiscan.io/tx/0xc1c7a7e7e49e341f1a4e2c9af73f0aad5505a410972460c308896f9ab02ae672#eventlog
+          300871839, // https://arbiscan.io/tx/0xab21d071c3220f53479446cec04b8a7ebeb28080f9b813b5aaed3d884762a5b5#eventlog
+          300872353, // https://arbiscan.io/tx/0x1ef6f42e1be0dd07616d37685fce154a9c54513842d36347ceda133eb70fc10f#eventlog
+          300873412, // https://arbiscan.io/tx/0xba6583c72b1c5eab6c9d41be65bf81146414b36850a6355da0740ca0de1b9fbd#eventlog
+          300877260, // https://arbiscan.io/tx/0x954c00273e5715ffa7d90103195625d764f0a5cc9da7f6a77078c265039f2d5b#eventlog
+          300907163, // https://arbiscan.io/tx/0x488d3dcc6acf1dbba713cc6392f27bbd2e1bd0ce7c02a0f6c596be396f229596#eventlog
+          300923819, // https://arbiscan.io/tx/0xafca8b83b29a86df9ef50a437645ee9631666c93ee52e156ea1255fb71fa0e9f#eventlog
+          301004076, // https://arbiscan.io/tx/0x5eaf2e5747a9a585075fbb731149580e3d36f42de74643d19e3f50f17dce984c#eventlog
+          301037642, // https://arbiscan.io/tx/0x4e6a7ca5e38dd5789e2839c1f071876eb1e5425c43f083b5591a6845af745000#eventlog
+          301045881, // https://arbiscan.io/tx/0xd7d73a7d473773c2584cf1a0d3f3c4f3cb8c5ed030d8acb2ae18837d5f6f451d#eventlog
+          301164164, // https://arbiscan.io/tx/0xcf4d6e61dc6ec9fb0d94e1d11b174a2113f94cb76281175296564280457c1447#eventlog
+          301221780, // https://arbiscan.io/tx/0x5f295631c9b1fdd38563eda6b923fe718a648a5d1c506b43cd415088d9306ded#eventlog
+          301223061, // https://arbiscan.io/tx/0x0434ef95a4c1bdfe35851d1e753184a2732610a90aca93b8dd701a3606375a00#eventlog
+          301226368, // https://arbiscan.io/tx/0x7e17229dfa87d43853969ad26eb0cb7e4376caea115a4f02d24f6f04b92a8ffe#eventlog
+        ],
+      };
+
+      Object.keys(blockNumbers).forEach((event: string) => {
+        blockNumbers[event].forEach((blockNumber: number) => {
+          it(`${event}:${blockNumber} - should return correct state`, async function () {
+            const dexHelper = new DummyDexHelper(network);
+
+            const logger = dexHelper.getLogger(dexKey);
+
+            const uniswapV4Pool = new UniswapV4Pool(
+              dexHelper,
+              dexKey,
+              network,
+              config,
+              logger,
+              '',
+              '0x70bf44c3a9b6b047bf60e5a05968225dbf3d6a5b9e8a95a73727e48921e889c1', // initial params from Initialize event https://arbiscan.io/tx/0x6326a3e2c882b8d89d38fcf26f701a0e0ac29dc2f5f1dbe67fee4c42d69ff310#eventlog
+              '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
+              '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+              '3000',
+              '0x0000000000000000000000000000000000000000',
+              2530339182490235575176398027343n,
+              '69279',
+              '60',
+            );
+
+            await uniswapV4Pool.initialize(blockNumber);
+
+            await testEventSubscriber(
+              uniswapV4Pool,
+              uniswapV4Pool.addressesSubscribed,
+              (_blockNumber: number) =>
+                fetchPoolStateFromContract(
+                  uniswapV4Pool,
+                  _blockNumber,
+                  config.poolManager,
+                ),
+              blockNumber,
+              `${dexKey}_${config.poolManager}`,
+              dexHelper.provider,
+            );
+          });
+        });
+      });
+    });
+  });
 });
 
 // describe('UniswapV4PoolManager', () => {

@@ -49,7 +49,8 @@ export class Tick {
     info.feeGrowthOutside1X128 =
       feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
 
-    return info.liquidityNet;
+    const liquidityNet = info.liquidityNet;
+    return liquidityNet;
   }
 
   static update(
