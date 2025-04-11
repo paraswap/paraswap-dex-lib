@@ -53,7 +53,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
       `${parentName} PoolManager`,
       dexHelper,
       logger,
-      true,
+      false,
       mapKey,
     );
 
