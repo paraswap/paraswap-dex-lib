@@ -10,6 +10,7 @@ import { Interface, Result } from '@ethersproject/abi';
 import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
 import { PoolKey } from './types';
 import * as util from 'util';
+import { checkPoolsLiquidity } from '../../../tests/utils';
 
 const quoterIface = new Interface(QuoterAbi);
 
@@ -330,6 +331,36 @@ describe('UniswapV4 integration tests', () => {
         );
 
         expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+
+      it('WETH getTopPoolsForToken', async function () {
+        const poolLiquidity = await uniswapV4.getTopPoolsForToken(
+          TokenA.address,
+          10,
+        );
+        console.log(
+          `${TokenASymbol} Top Pools:`,
+          util.inspect(poolLiquidity, false, null, true),
+        );
+
+        if (!uniswapV4.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+        }
+      });
+
+      it('USDC getTopPoolsForToken', async function () {
+        const poolLiquidity = await uniswapV4.getTopPoolsForToken(
+          TokenB.address,
+          10,
+        );
+        console.log(
+          `${TokenASymbol} Top Pools:`,
+          util.inspect(poolLiquidity, false, null, true),
+        );
+
+        if (!uniswapV4.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+        }
       });
     });
 
@@ -1482,6 +1513,30 @@ describe('UniswapV4 integration tests', () => {
         );
 
         expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+
+      it('ETH getTopPoolsForToken', async () => {
+        const poolLiquidity = await uniswapV4.getTopPoolsForToken(
+          TokenA.address,
+          10,
+        );
+        console.log(`${TokenASymbol} Top Pools:`, poolLiquidity);
+
+        if (!uniswapV4.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(poolLiquidity, TokenA.address, dexKey);
+        }
+      });
+
+      it('USDC getTopPoolsForToken', async () => {
+        const poolLiquidity = await uniswapV4.getTopPoolsForToken(
+          TokenB.address,
+          10,
+        );
+        console.log(`${TokenASymbol} Top Pools:`, util.inspect(poolLiquidity));
+
+        if (!uniswapV4.hasConstantPriceLargeAmounts) {
+          checkPoolsLiquidity(poolLiquidity, TokenB.address, dexKey);
+        }
       });
     });
 

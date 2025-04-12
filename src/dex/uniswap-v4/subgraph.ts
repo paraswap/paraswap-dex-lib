@@ -1,4 +1,4 @@
-import { SubgraphPool, Tick } from './types';
+import { SubgraphConnectorPool, SubgraphPool, Tick } from './types';
 import { SUBGRAPH_TIMEOUT } from './constants';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from 'log4js';
@@ -64,6 +64,76 @@ export async function queryTicksForPool(
   }
 
   return res.data.pools[0]?.ticks || [];
+}
+
+export async function queryAvailablePoolsForToken(
+  dexHelper: IDexHelper,
+  logger: Logger,
+  dexKey: string,
+  subgraphUrl: string,
+  tokenAddress: string,
+  limit: number,
+): Promise<{
+  pools0: SubgraphConnectorPool[];
+  pools1: SubgraphConnectorPool[];
+}> {
+  const poolsQuery = `query ($token: Bytes!, $hooks: Bytes!, $count: Int) {
+      pools0: pools(
+        where: { token0: $token, hooks: $hooks, liquidity_gt: 0 }
+        orderBy: volumeUSD
+        orderDirection: desc
+        first: $count
+      ) {
+      id
+      volumeUSD
+      token0 {
+        address: id
+        decimals
+      }
+      token1 {
+        address: id
+        decimals
+      }
+    }
+    pools1: pools(
+      where: { token1: $token, hooks: $hooks, liquidity_gt: 0 }
+      orderBy: volumeUSD
+      orderDirection: desc
+      first: $count
+    ) {
+      id
+      volumeUSD
+      token0 {
+        address: id
+        decimals
+      }
+      token1 {
+        address: id
+        decimals
+      }
+    }
+  }`;
+
+  const res = await dexHelper.httpRequest.querySubgraph<{
+    data: {
+      pools0: SubgraphConnectorPool[];
+      pools1: SubgraphConnectorPool[];
+    };
+    errors?: { message: string }[];
+  }>(
+    subgraphUrl,
+    {
+      query: poolsQuery,
+      variables: { token: tokenAddress, count: limit, hooks: NULL_ADDRESS },
+    },
+    { timeout: SUBGRAPH_TIMEOUT },
+  );
+
+  if (res.errors && res.errors.length) {
+    throw new Error(res.errors[0].message);
+  }
+
+  return { pools0: res.data.pools0, pools1: res.data.pools1 };
 }
 
 export async function queryAvailablePoolsForPairFromSubgraph(

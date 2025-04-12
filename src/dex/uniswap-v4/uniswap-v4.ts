@@ -9,7 +9,7 @@ import {
   Token,
 } from '../../types';
 import { Logger } from 'log4js';
-import { Network, NULL_ADDRESS } from '../../constants';
+import { ETHER_ADDRESS, Network, NULL_ADDRESS } from '../../constants';
 import { IDexHelper } from '../../dex-helper';
 import { getDexKeysWithNetwork, isETHAddress } from '../../utils';
 import { IDex } from '../idex';
@@ -32,6 +32,9 @@ import { DeepReadonly } from 'ts-essentials';
 import { PoolState } from '../uniswap-v4/types';
 import { uniswapV4PoolMath } from './contract-math/uniswap-v4-pool-math';
 import { SwapSide } from '@paraswap/core';
+import { queryAvailablePoolsForToken } from './subgraph';
+import _ from 'lodash';
+import { UNISWAPV4_EFFICIENCY_FACTOR } from './constants';
 
 export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   readonly hasConstantPriceLargeAmounts = false;
@@ -202,10 +205,66 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
 
   async getTopPoolsForToken(
     tokenAddress: Address,
-    count: number,
+    limit: number,
   ): Promise<PoolLiquidity[]> {
-    const _tokenAddress = tokenAddress.toLowerCase();
-    return [];
+    let _tokenAddress = tokenAddress.toLowerCase();
+    if (isETHAddress(_tokenAddress)) _tokenAddress = NULL_ADDRESS;
+
+    const { pools0, pools1 } = await queryAvailablePoolsForToken(
+      this.dexHelper,
+      this.logger,
+      this.dexKey,
+      UniswapV4Config[this.dexKey][this.network].subgraphURL,
+      _tokenAddress,
+      limit,
+    );
+
+    if (!(pools0 || pools1)) {
+      this.logger.error(
+        `Error_${this.dexKey}_Subgraph: couldn't fetch the pools from the subgraph`,
+      );
+      return [];
+    }
+
+    const connectors0: PoolLiquidity[] = _.map(pools0, pool => ({
+      exchange: this.dexKey,
+      address: this.poolManagerAddress,
+      connectorTokens: [
+        {
+          address:
+            pool.token1.address.toLowerCase() === NULL_ADDRESS
+              ? ETHER_ADDRESS
+              : pool.token1.address.toLowerCase(),
+          decimals: parseInt(pool.token1.decimals),
+        },
+      ],
+      liquidityUSD: parseFloat(pool.volumeUSD) * UNISWAPV4_EFFICIENCY_FACTOR,
+    }));
+
+    const connectors1: PoolLiquidity[] = _.map(pools1, pool => ({
+      exchange: this.dexKey,
+      address: this.poolManagerAddress,
+      connectorTokens: [
+        {
+          address:
+            pool.token0.address.toLowerCase() === NULL_ADDRESS
+              ? ETHER_ADDRESS
+              : pool.token0.address.toLowerCase(),
+          decimals: parseInt(pool.token0.decimals),
+        },
+      ],
+      liquidityUSD: parseFloat(pool.volumeUSD) * UNISWAPV4_EFFICIENCY_FACTOR,
+    }));
+
+    const pools: PoolLiquidity[] = _.slice(
+      _.sortBy(_.concat(connectors0, connectors1), [
+        pool => -1 * pool.liquidityUSD,
+      ]),
+      0,
+      limit,
+    );
+
+    return pools;
   }
 
   async queryPriceFromRpc(

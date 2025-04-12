@@ -74,6 +74,19 @@ export type OutputResult = {
   tickCounts: number[];
 };
 
+export type SubgraphConnectorPool = {
+  id: string;
+  volumeUSD: string;
+  token0: {
+    address: string;
+    decimals: string;
+  };
+  token1: {
+    address: string;
+    decimals: string;
+  };
+};
+
 export type SubgraphPool = {
   id: string;
   fee: string;
