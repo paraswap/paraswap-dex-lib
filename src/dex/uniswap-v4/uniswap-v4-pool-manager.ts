@@ -15,7 +15,7 @@ import {
   queryOnePageForAllAvailablePoolsFromSubgraph,
 } from './subgraph';
 import { isETHAddress } from '../../utils';
-import { NULL_ADDRESS } from '../../constants';
+import { CACHE_PREFIX, NULL_ADDRESS } from '../../constants';
 import {
   POOL_CACHE_REFRESH_INTERVAL,
   POOLS_INITIALIZATION_LIMIT,
@@ -30,7 +30,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
 
   private pools: SubgraphPool[] = [];
 
-  eventPools: Record<string, UniswapV4Pool> = {};
+  private eventPools: Record<string, UniswapV4Pool | null> = {};
 
   logDecoder: (log: Log) => any;
 
@@ -38,7 +38,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
 
   poolManagerIface: Interface;
 
-  private subgraphPoolsCacheKey = 'subgraph_pools';
+  private poolsCacheKey = 'pools_cache';
 
   constructor(
     readonly dexHelper: IDexHelper,
@@ -71,6 +71,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     blockNumber: number,
     options?: InitializeStateOptions<PoolManagerState>,
   ) {
+    this.pools = await this.queryAllAvailablePools(blockNumber);
     return super.initialize(blockNumber, options);
   }
 
@@ -90,6 +91,51 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     return {};
   }
 
+  public async getEventPool(
+    poolId: string,
+    blockNumber: number,
+  ): Promise<UniswapV4Pool | null> {
+    const _poolId = poolId.toLowerCase();
+    let eventPool = this.eventPools[_poolId];
+
+    if (eventPool === null) return null; // non existing pool
+
+    if (eventPool) {
+      return eventPool;
+    }
+
+    const subgraphPool = this.pools.find(
+      pool => pool.id.toLowerCase() === _poolId,
+    );
+
+    if (!subgraphPool) {
+      this.eventPools[_poolId] = null;
+      return null;
+    }
+
+    eventPool = new UniswapV4Pool(
+      this.dexHelper,
+      this.parentName,
+      this.network,
+      this.config,
+      this.logger,
+      '',
+      _poolId,
+      subgraphPool.token0.address.toLowerCase(),
+      subgraphPool.token1.address.toLowerCase(),
+      subgraphPool.fee,
+      subgraphPool.hooks,
+      0n,
+      subgraphPool.tick,
+      subgraphPool.tickSpacing,
+    );
+
+    await eventPool.initialize(blockNumber);
+    this.eventPools[_poolId] = eventPool;
+
+    return this.eventPools[_poolId];
+  }
+
   public async getAvailablePoolsForPair(
     srcToken: Address,
     destToken: Address,
@@ -101,102 +147,83 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     const _src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
     const _dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
 
-    let pools = this.pools.filter(
-      pool =>
-        (pool.token0.address === _src && pool.token1.address === _dest) ||
-        (pool.token0.address === _dest && pool.token1.address === _src),
-    );
+    return this.pools
+      .filter(
+        pool =>
+          (pool.token0.address === _src && pool.token1.address === _dest) ||
+          (pool.token0.address === _dest && pool.token1.address === _src),
+      )
+      .sort((a, b) => {
+        const volumeA = parseInt(a.volumeUSD || '0');
+        const volumeB = parseInt(b.volumeUSD || '0');
+        if (volumeA >= volumeB) {
+          return -1;
+        }
 
-    if (pools.length === 0) {
-      const newPoolsToInit = await this.queryPoolsForPair(_src, _dest);
-
-      await Promise.all(
-        newPoolsToInit.map(async pool => {
-          const eventPool = new UniswapV4Pool(
-            this.dexHelper,
-            this.parentName,
-            this.network,
-            this.config,
-            this.logger,
-            '',
-            pool.id.toLowerCase(),
-            pool.token0.address.toLowerCase(),
-            pool.token1.address.toLowerCase(),
-            pool.fee,
-            pool.hooks,
-            0n,
-            pool.tick,
-            pool.tickSpacing,
-          );
-          await eventPool.initialize(blockNumber);
-
-          // Add new Pool
-          this.pools.push(pool);
-          this.eventPools[pool.id.toLowerCase()] = eventPool;
-        }),
-      );
-
-      if (newPoolsToInit.length > 0) {
-        pools = this.pools.filter(
-          pool =>
-            (pool.token0.address === _src && pool.token1.address === _dest) ||
-            (pool.token0.address === _dest && pool.token1.address === _src),
-        );
-      }
-    }
-
-    return pools.map(pool => ({
-      id: pool.id,
-      key: {
-        currency0: pool.token0.address,
-        currency1: pool.token1.address,
-        fee: pool.fee,
-        tickSpacing: parseInt(pool.tickSpacing),
-        hooks: pool.hooks,
-      },
-    }));
+        return 1;
+      })
+      .map(pool => ({
+        id: pool.id,
+        key: {
+          currency0: pool.token0.address,
+          currency1: pool.token1.address,
+          fee: pool.fee,
+          tickSpacing: parseInt(pool.tickSpacing),
+          hooks: pool.hooks,
+        },
+      }));
   }
 
-  private async queryPoolsForPair(
-    srcToken: Address,
-    destToken: Address,
+  private async queryAllAvailablePools(
+    blockNumber: number,
   ): Promise<SubgraphPool[]> {
-    const cachedSubgraphPools = await this.dexHelper.cache.getAndCacheLocally(
+    const cachedPools = await this.dexHelper.cache.getAndCacheLocally(
       this.parentName,
       this.network,
-      this.subgraphPoolsCacheKey,
+      this.poolsCacheKey,
       POOL_CACHE_REFRESH_INTERVAL,
     );
 
-    let pools: SubgraphPool[];
-    if (cachedSubgraphPools) {
-      pools = JSON.parse(cachedSubgraphPools);
-    } else {
-      pools = [];
+    if (cachedPools) {
+      const pools = JSON.parse(cachedPools);
+      return pools;
     }
 
-    const poolsForPair = pools.filter(
-      pool =>
-        (pool.token0.address === srcToken &&
-          pool.token1.address === destToken) ||
-        (pool.token0.address === destToken && pool.token1.address === srcToken),
-    );
+    const defaultPerPageLimit = 1000;
+    let pools: SubgraphPool[] = [];
+    let curPage = 0;
 
-    if (poolsForPair.length > 0) return poolsForPair;
-
-    const newlyRequestedPoolsForPair =
-      await queryAvailablePoolsForPairFromSubgraph(
+    let currentSubgraphPools: SubgraphPool[] =
+      await queryOnePageForAllAvailablePoolsFromSubgraph(
         this.dexHelper,
+        this.logger,
+        this.parentName,
         this.config.subgraphURL,
-        srcToken,
-        destToken,
+        blockNumber,
+        curPage * defaultPerPageLimit,
+        defaultPerPageLimit,
+      );
+    pools = pools.concat(currentSubgraphPools);
+
+    while (currentSubgraphPools.length === defaultPerPageLimit) {
+      curPage++;
+      currentSubgraphPools = await queryOnePageForAllAvailablePoolsFromSubgraph(
+        this.dexHelper,
+        this.logger,
+        this.parentName,
+        this.config.subgraphURL,
+        blockNumber,
+        curPage * defaultPerPageLimit,
+        defaultPerPageLimit,
       );
 
-    newlyRequestedPoolsForPair.forEach(pool => pools.push(pool));
-    await this.dexHelper.cache.setexAndCacheLocally(
+      pools = pools.concat(currentSubgraphPools);
+    }
+
+    this.dexHelper.cache.setexAndCacheLocally(
       this.parentName,
       this.network,
-      this.subgraphPoolsCacheKey,
+      this.poolsCacheKey,
       POOL_CACHE_REFRESH_INTERVAL,
       JSON.stringify(pools),
     );

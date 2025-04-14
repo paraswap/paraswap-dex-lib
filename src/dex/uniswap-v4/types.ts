@@ -58,6 +58,10 @@ export type Slot0 = {
   lpFee: bigint;
 };
 
+export type PoolPairsInfo = {
+  poolId: string;
+};
+
 export type UniswapV4Data = {
   exchange: Address;
   zeroForOne: boolean;
@@ -91,6 +95,7 @@ export type SubgraphPool = {
   id: string;
   fee: string;
   hooks: string;
+  volumeUSD?: string;
   token0: {
     address: string;
   };

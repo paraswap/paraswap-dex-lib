@@ -16,10 +16,12 @@ export const OUT_OF_RANGE_ERROR_POSTFIX = `INVALID_TICK_BIT_MAP_RANGES`;
 
 export const SUBGRAPH_TIMEOUT = 30 * 1000;
 
-export const POOL_CACHE_REFRESH_INTERVAL = 60 * 60; // 1 hour
+export const POOL_CACHE_REFRESH_INTERVAL = 60 * 60 * 24; // 24 hours
 
 export const POOLS_INITIALIZATION_LIMIT = 5;
 
 export const SWAP_EVENT_MAX_CYCLES = 10_000;
 
 export const UNISWAPV4_EFFICIENCY_FACTOR = 3;
+
+export const POOL_MIN_TVL_USD = 10;
