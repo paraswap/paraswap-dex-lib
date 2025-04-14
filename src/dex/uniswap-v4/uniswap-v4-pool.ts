@@ -5,6 +5,7 @@ import {
 import {
   DexParams,
   FeeGrowthGlobals,
+  PoolPairsInfo,
   PoolState,
   PositionState,
   Slot0,
@@ -34,6 +35,7 @@ import { NumberAsString } from '@paraswap/core';
 import { extractSuccessAndValue, uint256ToBigInt } from '../../lib/decoders';
 import { LPFeeLibrary } from './contract-math/LPFeeLibrary';
 import { queryTicksForPool } from './subgraph';
+import { CACHE_PREFIX } from '../../constants';
 
 export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -67,7 +69,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     public readonly tick: string,
     public readonly tickSpacing: string,
   ) {
-    super(parentName, `${parentName} Pool`, dexHelper, logger, true, mapKey);
+    super(parentName, poolId, dexHelper, logger, true, mapKey);
 
     this.stateViewIface = new Interface(UniswapV4StateViewABI);
     this.poolManagerIface = new Interface(UniswapV4PoolManagerABI);
@@ -91,7 +93,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     super.initialize(blockNumber, options);
   }
 
-  getPoolIdentifierData() {
+  getPoolIdentifierData(): PoolPairsInfo {
     return {
       poolId: this.poolId,
     };

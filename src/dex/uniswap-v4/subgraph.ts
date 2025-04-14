@@ -1,5 +1,5 @@
 import { SubgraphConnectorPool, SubgraphPool, Tick } from './types';
-import { SUBGRAPH_TIMEOUT } from './constants';
+import { POOL_MIN_TVL_USD, SUBGRAPH_TIMEOUT } from './constants';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from 'log4js';
 import { Address } from '@paraswap/core';
@@ -77,9 +77,9 @@ export async function queryAvailablePoolsForToken(
   pools0: SubgraphConnectorPool[];
   pools1: SubgraphConnectorPool[];
 }> {
-  const poolsQuery = `query ($token: Bytes!, $hooks: Bytes!, $count: Int) {
+  const poolsQuery = `query ($token: Bytes!, $hooks: Bytes!, $minTVL: Int!, $count: Int) {
       pools0: pools(
-        where: { token0: $token, hooks: $hooks, liquidity_gt: 0 }
+        where: { token0: $token, hooks: $hooks, liquidity_gt: 0, totalValueLockedUSD_gte: $minTVL }
         orderBy: volumeUSD
         orderDirection: desc
         first: $count
@@ -96,7 +96,7 @@ export async function queryAvailablePoolsForToken(
       }
     }
     pools1: pools(
-      where: { token1: $token, hooks: $hooks, liquidity_gt: 0 }
+      where: { token1: $token, hooks: $hooks, liquidity_gt: 0, totalValueLockedUSD_gte: $minTVL }
       orderBy: volumeUSD
       orderDirection: desc
       first: $count
@@ -124,7 +124,12 @@ export async function queryAvailablePoolsForToken(
     subgraphUrl,
     {
       query: poolsQuery,
-      variables: { token: tokenAddress, count: limit, hooks: NULL_ADDRESS },
+      variables: {
+        token: tokenAddress,
+        count: limit,
+        hooks: NULL_ADDRESS,
+        minTVL: POOL_MIN_TVL_USD,
+      },
     },
     { timeout: SUBGRAPH_TIMEOUT },
   );
@@ -144,10 +149,10 @@ export async function queryAvailablePoolsForPairFromSubgraph(
 ): Promise<SubgraphPool[]> {
   const ticksLimit = 300;
 
-  const poolsQuery = `query ($token0: Bytes!, $token1: Bytes!, $hooks: Bytes!) {
+  const poolsQuery = `query ($token0: Bytes!, $token1: Bytes!, $minTVL: Int!, $hooks: Bytes!) {
       pools(
-        where: { token0: $token0, token1: $token1, hooks: $hooks, liquidity_gt: 0 },
-        orderBy: volumeUSD
+        where: { token0: $token0, token1: $token1, hooks: $hooks, liquidity_gt: 0, totalValueLockedUSD_gte: $minTVL },
+        orderBy: totalValueLockedUSD
         orderDirection: desc
       ) {
         id
@@ -184,7 +189,12 @@ export async function queryAvailablePoolsForPairFromSubgraph(
     subgraphUrl,
     {
       query: poolsQuery,
-      variables: { token0, token1, hooks: NULL_ADDRESS },
+      variables: {
+        token0,
+        token1,
+        minTVL: POOL_MIN_TVL_USD,
+        hooks: NULL_ADDRESS,
+      },
     },
     { timeout: SUBGRAPH_TIMEOUT },
   );
@@ -208,17 +218,18 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
 ): Promise<SubgraphPool[]> {
   const ticksLimit = 300;
 
-  const poolsQuery = `query ($skip: Int!, $hooks: Bytes!) {
+  const poolsQuery = `query ($skip: Int!, $minTVL: Int!, $hooks: Bytes!) {
       pools(
-        where: { hooks: $hooks, liquidity_gt: 0 },
+        where: { hooks: $hooks, liquidity_gt: 0, totalValueLockedUSD_gte: $minTVL },
         ${latestBlock ? '' : `block: { number: ${blockNumber} }`}
-        orderBy: volumeUSD
+        orderBy: totalValueLockedUSD
         orderDirection: desc
         skip: $skip
         first: ${limit}
       ) {
         id
         fee: feeTier
+        volumeUSD
         tickSpacing
         token0 {
           address: id
@@ -246,7 +257,11 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
     subgraphUrl,
     {
       query: poolsQuery,
-      variables: { skip: skip, hooks: NULL_ADDRESS },
+      variables: {
+        skip: skip,
+        hooks: NULL_ADDRESS,
+        minTVL: POOL_MIN_TVL_USD,
+      },
     },
     { timeout: SUBGRAPH_TIMEOUT },
   );
