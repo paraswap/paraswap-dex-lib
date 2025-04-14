@@ -8,10 +8,15 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import ResolverABI from '../../abi/fluid-dex/resolver.abi.json';
 import DexFactoryABI from '../../abi/fluid-dex/dexFactory.abi.json';
 import { CommonAddresses, Pool } from './types';
-import { MultiResult } from '../../lib/multi-wrapper';
+import { MultiCallParams, MultiResult } from '../../lib/multi-wrapper';
 import { Address } from '../../types';
-import { generalDecoder } from '../../lib/decoders';
+import {
+  generalDecoder,
+  uint24ToNumber,
+  uint8ToNumber,
+} from '../../lib/decoders';
 import { Contract } from 'ethers';
+import { ETHER_ADDRESS } from '../../constants';
 
 type OnPoolCreatedCallback = (pools: readonly Pool[]) => void;
 
@@ -63,21 +68,6 @@ export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
 
     return pools;
   }
-
-  decodePool = (result: MultiResult<BytesLike> | BytesLike): Pool => {
-    return generalDecoder(
-      result,
-      ['tuple(address pool, address token0, address token1, uint256 fee)'],
-      undefined,
-      decoded => {
-        return {
-          address: decoded[0].toLowerCase(),
-          token0: decoded[1].toLowerCase(),
-          token1: decoded[2].toLowerCase(),
-        };
-      },
-    );
-  };
 
   /**
    * The function is called every time any of the subscribed
@@ -140,12 +130,44 @@ export class FluidDexFactory extends StatefulEventSubscriber<Pool[]> {
       blockTag: blockNumber,
     });
 
-    const pools: Pool[] = rawResult.map((result: any) => ({
-      address: result[0],
-      token0: result[1],
-      token1: result[2],
-    }));
+    const pools: Omit<Pool, 'decimals0' | 'decimals1'>[] = rawResult.map(
+      (result: any) => ({
+        address: result[0],
+        token0: result[1].toLowerCase(),
+        token1: result[2].toLowerCase(),
+      }),
+    );
 
-    return pools;
+    const tokens = [
+      ...new Set(
+        [...pools.map(p => p.token0), ...pools.map(p => p.token1)].filter(
+          t => t !== ETHER_ADDRESS,
+        ),
+      ),
+    ];
+
+    const decimalsCalls: MultiCallParams<number>[] = [];
+
+    tokens.forEach(token => {
+      decimalsCalls.push({
+        target: token,
+        callData: '0x313ce567', // `decimals()`
+        decodeFunction: uint8ToNumber,
+      });
+    });
+
+    const decimals = await this.dexHelper.multiWrapper.aggregate(decimalsCalls);
+
+    const addressToDecimals = Object.fromEntries(
+      tokens.map((t, i) => [t, decimals[i]]),
+    );
+
+    addressToDecimals[ETHER_ADDRESS] = 18;
+
+    return pools.map(pool => ({
+      ...pool,
+      decimals0: addressToDecimals[pool.token0],
+      decimals1: addressToDecimals[pool.token1],
+    }));
   }
 }
