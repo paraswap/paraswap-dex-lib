@@ -36,6 +36,7 @@ import {
 import { StableSurge, StableSurgeHookState } from './hooks/stableSurgeHook';
 
 export const WAD = BI_POWS[18];
+const FEE_SCALING_FACTOR = BI_POWS[11];
 
 export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
   handlers: {
@@ -374,7 +375,11 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       return null;
     }
     const newState = _.cloneDeep(state) as PoolStateMap;
-    newState[poolAddress].swapFee = BigInt(event.args.swapFeePercentage);
+    // The contract is truncating the value before storing and will have a min step of 0.0000001% (effectively 5 decimal places of precision)
+    // See: https://github.com/balancer/balancer-v3-monorepo/blob/2f8cf5c78adef2a8b35beae0c90b590eb9f4f865/pkg/interfaces/contracts/vault/VaultTypes.sol#L436
+    const value = BigInt(event.args.swapFeePercentage);
+    newState[poolAddress].swapFee =
+      (value / FEE_SCALING_FACTOR) * FEE_SCALING_FACTOR;
     return newState;
   }
 
