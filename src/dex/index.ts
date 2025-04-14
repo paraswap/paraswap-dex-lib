@@ -106,6 +106,7 @@ import { MWrappedM } from './usual/m-wrapped-m';
 import { WrappedMM } from './usual/wrapped-m-m';
 import { UsualPP } from './usual-pp/usual-pp';
 import { Ekubo } from './ekubo/ekubo';
+import { Stabull } from './stabull/stabull';
 
 const LegacyDexes = [
   CurveV2,
@@ -206,6 +207,7 @@ const Dexes = [
   UsualMUsd0,
   UsualPP,
   Ekubo,
+  Stabull,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
