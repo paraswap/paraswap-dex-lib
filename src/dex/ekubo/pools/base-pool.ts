@@ -24,7 +24,7 @@ export interface Quote {
   skipAhead: number;
 }
 
-const BASE_GAS_COST = 75_000;
+const BASE_GAS_COST = 60_000;
 const GAS_COST_OF_ONE_INITIALIZED_TICK_CROSSED = 20_000;
 const GAS_COST_OF_ONE_TICK_SPACING_CROSSED = 4_000;
 
