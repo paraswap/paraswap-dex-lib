@@ -10,6 +10,8 @@ import { generateConfig } from '../../config';
 
 jest.setTimeout(1000 * 60 * 3);
 
+// todo: check failing eth -> aWeth tests
+//  https://dashboard.tenderly.co/paraswap/paraswap/simulator/38314855-f284-49d1-a9df-545e37f92cb1
 describe('AaveV2 E2E', () => {
   describe('AaveV2 MAINNET', () => {
     const dexKey = 'AaveV2';

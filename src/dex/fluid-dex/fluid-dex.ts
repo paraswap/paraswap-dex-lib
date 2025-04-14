@@ -99,8 +99,10 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     return pools.map(pool => ({
       id: `FluidDex_${pool.address.toLowerCase()}`,
       address: pool.address.toLowerCase(),
-      token0: pool.token0.toLowerCase(),
-      token1: pool.token1.toLowerCase(),
+      token0: pool.token0,
+      decimals0: pool.decimals0,
+      token1: pool.token1,
+      decimals1: pool.decimals1,
     }));
   }
 
@@ -136,21 +138,6 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     this.pools = this.generateFluidDexPoolsFromPoolsFactory(poolsFromFactory);
     this.logger.info(`${this.dexKey}: pools list was updated ...`);
   }
-
-  decodePools = (result: MultiResult<BytesLike> | BytesLike): Pool[] => {
-    return generalDecoder(
-      result,
-      ['tuple(address pool, address token0, address token1)[]'],
-      undefined,
-      decoded => {
-        return decoded.map((decodedPool: any) => ({
-          address: decodedPool[0][0].toLowerCase(),
-          token0: decodedPool[0][1].toLowerCase(),
-          token1: decodedPool[0][2].toLowerCase(),
-        }));
-      },
-    );
-  };
 
   // Returns list of pool identifiers that can be used
   // for a given swap. poolIdentifiers must be unique
@@ -330,8 +317,47 @@ export class FluidDex extends SimpleExchange implements IDex<FluidDexData> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    //@TODO
-    return [];
+    const dexReserves = this.liquidityProxy.getStaleState();
+
+    if (!dexReserves) {
+      return [];
+    }
+
+    const tokenPools = this.pools.filter(
+      pool => pool.token0 === tokenAddress || pool.token1 === tokenAddress,
+    );
+
+    const poolsLiquidity = await Promise.all(
+      tokenPools.map(async pool => {
+        const reserves = dexReserves.poolsReserves.find(
+          r => r.pool === pool.address,
+        );
+        if (!reserves) return null;
+
+        const connectorToken =
+          tokenAddress === pool.token0
+            ? { address: pool.token1, decimals: pool.decimals1 }
+            : { address: pool.token0, decimals: pool.decimals0 };
+
+        const token0Liquidity = await this.dexHelper.getTokenUSDPrice(
+          { address: pool.token0, decimals: pool.decimals0 },
+          reserves.dexLimits.withdrawableToken0.available,
+        );
+        const token1Liquidity = await this.dexHelper.getTokenUSDPrice(
+          { address: pool.token1, decimals: pool.decimals1 },
+          reserves.dexLimits.withdrawableToken1.available,
+        );
+
+        return {
+          exchange: this.dexKey,
+          address: pool.address,
+          connectorTokens: [connectorToken],
+          liquidityUSD: token0Liquidity + token1Liquidity,
+        };
+      }),
+    );
+
+    return poolsLiquidity.filter(l => l !== null);
   }
 
   async getDexParam(

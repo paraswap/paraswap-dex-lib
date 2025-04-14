@@ -134,7 +134,10 @@ describe('AaveV3', function () {
 
     it('getTopPoolsForToken', async function () {
       const dexHelper = new DummyDexHelper(network);
+      const blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
       const aaveV3 = new AaveV3(network, dexKey, dexHelper);
+
+      await aaveV3.initializePricing(blockNumber);
 
       const poolLiquidity = await aaveV3.getTopPoolsForToken(
         TokenA.address,

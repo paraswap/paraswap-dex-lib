@@ -23,7 +23,11 @@ import { IDexHelper } from '../../dex-helper/idex-helper';
 import { Data, Param, PoolAndWethFunctions } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { Adapters, Config } from './config';
-import { getATokenIfAaveV3Pair, setTokensOnNetwork } from './tokens';
+import {
+  getATokenIfAaveV3Pair,
+  setTokensOnNetwork,
+  getAaveV3TokenByAddress,
+} from './tokens';
 
 import WETH_GATEWAY_ABI from '../../abi/aave-v3-weth-gateway.json';
 import POOL_ABI from '../../abi/AaveV3_lending_pool.json';
@@ -326,6 +330,26 @@ export class AaveV3 extends SimpleExchange implements IDex<Data, Param> {
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
-    return [];
+    const aaveToken = getAaveV3TokenByAddress(this.network, tokenAddress);
+
+    if (!aaveToken) {
+      return [];
+    }
+
+    const isAaveToken = aaveToken.aAddress === tokenAddress.toLowerCase();
+
+    return [
+      {
+        exchange: this.dexKey,
+        address: aaveToken.address,
+        connectorTokens: [
+          {
+            address: isAaveToken ? aaveToken.address : aaveToken.aAddress,
+            decimals: aaveToken.decimals,
+          },
+        ],
+        liquidityUSD: 1e9,
+      },
+    ];
   }
 }

@@ -84,7 +84,9 @@ export type FluidDexPool = {
   id: string;
   address: Address;
   token0: Address;
+  decimals0: number;
   token1: Address;
+  decimals1: number;
 };
 
 export type DexParams = {
@@ -100,5 +102,7 @@ export type CommonAddresses = {
 export type Pool = {
   address: Address;
   token0: Address;
+  decimals0: number;
   token1: Address;
+  decimals1: number;
 };
