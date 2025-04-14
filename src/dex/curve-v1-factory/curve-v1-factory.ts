@@ -805,9 +805,33 @@ export class CurveV1Factory
       );
     }
 
-    return pools.map(pool =>
-      this.getPoolIdentifier(pool.address, pool.isMetaPool),
-    );
+    return pools
+      .filter(pool => {
+        // same filtering as on pricing ./curve-v1-factory.ts#L975
+        let poolData = pool.getPoolData(srcTokenAddress, destTokenAddress);
+        const state = pool.getState();
+
+        if (!state) {
+          return false;
+        }
+
+        if (poolData === null && !this.needWrapNativeForPricing) {
+          if (isETHAddress(srcTokenAddress)) {
+            poolData = pool.getPoolData(wethAddress, destTokenAddress);
+          } else if (isETHAddress(destTokenAddress)) {
+            poolData = pool.getPoolData(srcTokenAddress, wethAddress);
+          }
+        }
+
+        if (poolData === null) {
+          return false;
+        }
+
+        const j = poolData.path[0].j;
+        // same as for price-handlers/price-handler.ts#L104
+        return state.balances[j] > 0n;
+      })
+      .map(pool => this.getPoolIdentifier(pool.address, pool.isMetaPool));
   }
 
   async getPricesVolume(
