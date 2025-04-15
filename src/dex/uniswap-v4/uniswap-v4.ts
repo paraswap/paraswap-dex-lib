@@ -162,7 +162,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       blockNumber,
     );
 
-    let availablePools =
+    const availablePools =
       limitPools?.filter(t => pools.find(p => p.id === t)) ??
       pools.map(t => t.id);
 
@@ -364,7 +364,6 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         data.pool.key,
         data.zeroForOne,
         BigInt(destAmount),
-        BigInt(srcAmount),
         recipient,
       );
     }

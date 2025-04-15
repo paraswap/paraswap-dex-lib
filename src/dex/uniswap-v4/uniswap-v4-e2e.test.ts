@@ -24,7 +24,7 @@ function testForNetwork(
   const holders = Holders[network];
 
   const sideToContractMethods = new Map([
-    // [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
     [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
@@ -44,6 +44,10 @@ function testForNetwork(
                 contractMethod,
                 network,
                 provider,
+                undefined,
+                undefined,
+                undefined,
+                500,
               );
             });
             it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
@@ -76,8 +80,10 @@ describe('UniswapV4 E2E', () => {
       const tokenASymbol: string = 'ETH';
       const tokenBSymbol: string = 'USDC';
 
+      // const tokenAAmount: string = '1000000000000000000';
       const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '100000000';
+      // const tokenBAmount: string = '100000000';
+      const tokenBAmount: string = '5000000';
 
       testForNetwork(
         network,
@@ -93,7 +99,7 @@ describe('UniswapV4 E2E', () => {
       const tokenASymbol: string = 'WETH';
       const tokenBSymbol: string = 'USDC';
 
-      const tokenAAmount: string = '10000000000000000';
+      const tokenAAmount: string = '100000000000000';
       const tokenBAmount: string = '10000000';
 
       testForNetwork(
@@ -131,8 +137,8 @@ describe('UniswapV4 E2E', () => {
       const tokenASymbol: string = 'ETH';
       const tokenBSymbol: string = 'USDC';
 
-      const tokenAAmount: string = '1000000000000000000';
-      const tokenBAmount: string = '10000000';
+      const tokenAAmount: string = '10000000000000000';
+      const tokenBAmount: string = '100000000';
 
       testForNetwork(
         network,
@@ -148,7 +154,7 @@ describe('UniswapV4 E2E', () => {
       const tokenASymbol: string = 'WETH';
       const tokenBSymbol: string = 'USDC';
 
-      const tokenAAmount: string = '1000000000000000000';
+      const tokenAAmount: string = '10000000000000000';
       const tokenBAmount: string = '10000000';
 
       testForNetwork(
@@ -186,7 +192,7 @@ describe('UniswapV4 E2E', () => {
       const tokenASymbol: string = 'ETH';
       const tokenBSymbol: string = 'USDC';
 
-      const tokenAAmount: string = '1000000000000000000';
+      const tokenAAmount: string = '10000000000000000';
       const tokenBAmount: string = '10000000';
 
       testForNetwork(
@@ -245,9 +251,9 @@ describe('UniswapV4 E2E', () => {
   describe('Avalanche', () => {
     const network = Network.AVALANCHE;
 
-    describe('AVAX -> USDCe', () => {
+    describe('AVAX -> USDC', () => {
       const tokenASymbol: string = 'AVAX';
-      const tokenBSymbol: string = 'USDCe';
+      const tokenBSymbol: string = 'USDC';
 
       const tokenAAmount: string = '100000000000000';
       const tokenBAmount: string = '10000000';

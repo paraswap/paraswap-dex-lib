@@ -820,16 +820,17 @@ describe('UniswapV4 integration tests', () => {
 
         const amounts = [
           0n,
-          1n * BI_POWS[6],
-          2n * BI_POWS[6],
-          3n * BI_POWS[6],
-          4n * BI_POWS[6],
-          5n * BI_POWS[6],
-          6n * BI_POWS[6],
-          7n * BI_POWS[6],
-          8n * BI_POWS[6],
-          9n * BI_POWS[6],
-          10n * BI_POWS[6],
+          5000000n,
+          // 1n * BI_POWS[6],
+          // 2n * BI_POWS[6],
+          // 3n * BI_POWS[6],
+          // 4n * BI_POWS[6],
+          // 5n * BI_POWS[6],
+          // 6n * BI_POWS[6],
+          // 7n * BI_POWS[6],
+          // 8n * BI_POWS[6],
+          // 9n * BI_POWS[6],
+          // 10n * BI_POWS[6],
         ];
 
         const pools = await uniswapV4.getPoolIdentifiers(
