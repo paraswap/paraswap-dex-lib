@@ -151,7 +151,6 @@ export function swapExactOutputSingleCalldata(
   poolKey: PoolKey,
   zeroForOne: boolean,
   amountOut: bigint,
-  amountInMaximum: bigint,
   recipient: Address,
 ): string {
   const command = ethers.utils.solidityPack(['uint8'], [Commands.V4_SWAP]);
@@ -161,11 +160,13 @@ export function swapExactOutputSingleCalldata(
     [Actions.SWAP_EXACT_OUT_SINGLE, Actions.SETTLE, Actions.TAKE],
   );
 
+  const MAX_UINT128 = 340282366920938463463374607431768211455n;
+
   const exactOutputSingleParams: ExactOutputSingleParams = {
     poolKey,
     zeroForOne,
     amountOut,
-    amountInMaximum,
+    amountInMaximum: MAX_UINT128,
     hookData: '0x', // empty bytes
   };
 
