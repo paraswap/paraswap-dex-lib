@@ -105,6 +105,14 @@ export class StabullEventPool extends StatefulEventSubscriber<PoolState> {
     };
   }
 
+  /**
+   * Handles a transfer event and updates the pool state accordingly.
+   *
+   * @param event - The transfer event object containing details about the transfer.
+   * @param state - The current state of the pool.
+   * @param log - The log object containing additional information about the event.
+   * @returns The updated pool state if the transfer involves the pool, otherwise null.
+   */
   handleTransfer(
     event: any,
     state: DeepReadonly<PoolState>,

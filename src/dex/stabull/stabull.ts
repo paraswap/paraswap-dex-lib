@@ -5,7 +5,6 @@ import {
   ExchangePrices,
   PoolPrices,
   AdapterExchangeParam,
-  SimpleExchangeParam,
   PoolLiquidity,
   Logger,
   DexExchangeParam,
@@ -23,8 +22,6 @@ import curveABI from '../../abi/stabull/stabull-curve.json';
 import routerABI from '../../abi/stabull/stabull-router.json';
 import { AbiItem } from 'web3-utils';
 import { ethers } from 'ethers';
-import Web3 from 'web3';
-import { O } from '@bgd-labs/aave-address-book/dist/AaveV2EthereumAMM-Do6MxnjE';
 
 export class Stabull extends SimpleExchange implements IDex<StabullData> {
   private pools: any = {};
@@ -481,6 +478,13 @@ export class Stabull extends SimpleExchange implements IDex<StabullData> {
     }
   }
 
+  /**
+   * Finds the pool address for the given source and destination token addresses.
+   *
+   * @param srcTokenAddress - The address of the source token.
+   * @param destTokenAddress - The address of the destination token.
+   * @returns The pool address if a pool containing both tokens is found, otherwise null.
+   */
   findPoolForTokens(
     srcTokenAddress: string,
     destTokenAddress: string,
@@ -502,6 +506,20 @@ export class Stabull extends SimpleExchange implements IDex<StabullData> {
     return foundPoolAddress || null;
   }
 
+  /**
+   * Retrieves the decentralized exchange (DEX) parameters for a swap operation.
+   *
+   * @param srcToken - The address of the source token.
+   * @param destToken - The address of the destination token.
+   * @param srcAmount - The amount of the source token to swap.
+   * @param destAmount - The desired amount of the destination token.
+   * @param recipient - The address of the recipient.
+   * @param data - Additional data required for the swap.
+   * @param side - The side of the swap (SELL or BUY).
+   * @param options - Options for global tokens.
+   * @param executorAddress - The address of the executor.
+   * @returns A promise that resolves to the DEX exchange parameters.
+   */
   async getDexParam(
     srcToken: string,
     destToken: string,
@@ -634,8 +652,14 @@ export class Stabull extends SimpleExchange implements IDex<StabullData> {
     }
   }
 
-  // This is a helper method to determine if two tokens share a curve
-  // You would need to implement this based on your pool data structure
+  /**
+   * Determines if two tokens share a curve based on the pool configuration.
+   *
+   * @param token1 - The address of the first token.
+   * @param token2 - The address of the second token.
+   * @param poolConfig - The configuration of the pool.
+   * @returns True if both tokens are in the pool, otherwise false.
+   */
   tokensShareCurve(
     token1: string,
     token2: string,
@@ -655,7 +679,13 @@ export class Stabull extends SimpleExchange implements IDex<StabullData> {
     return token1Included && token2Included;
   }
 
-  // Helper to find the appropriate curve for a token pair
+  /**
+   * Finds the appropriate curve (pool) for a given token pair.
+   *
+   * @param token1 - The address of the first token.
+   * @param token2 - The address of the second token.
+   * @returns The address of the curve (pool) if found, otherwise throws an error.
+   */
   findCurveForTokenPair(token1: string, token2: string): string {
     const foundPoolAddress = Object.keys(this.poolsConfig).find(poolAddress =>
       this.tokensShareCurve(token1, token2, this.poolsConfig[poolAddress]),
@@ -668,7 +698,15 @@ export class Stabull extends SimpleExchange implements IDex<StabullData> {
     return this.poolsConfig[foundPoolAddress].pool;
   }
 
-  // Helper to get the required intermediary amount for a multi-hop swap
+  /**
+   * Calculates the required intermediary amount for a multi-hop swap.
+   *
+   * @param intermediaryToken - The address of the intermediary token.
+   * @param destToken - The address of the destination token.
+   * @param destAmount - The desired amount of the destination token.
+   * @param curveAddress - The address of the curve (pool).
+   * @returns A promise that resolves to the required intermediary amount.
+   */
   async getRequiredIntermediaryAmount(
     intermediaryToken: string,
     destToken: string,
@@ -699,11 +737,23 @@ export class Stabull extends SimpleExchange implements IDex<StabullData> {
       .toString();
   }
 
+  /**
+   * Returns the allowance target address for a token pair.
+   *
+   * @param srcToken - The address of the source token.
+   * @param destToken - The address of the destination token.
+   * @returns The allowance target address (router address).
+   */
   getAllowanceTarget(srcToken: string, destToken: string): string {
     return StabullConfig.Stabull[this.network].router;
   }
 
-  // Update this to match the expected interface signature
+  /**
+   * Retrieves token details from its address.
+   *
+   * @param address - The address of the token.
+   * @returns The token details, including address, decimals, and symbol.
+   */
   getTokenFromAddress(address: string): Token {
     // Check if this is the native token address
     if (
@@ -723,32 +773,4 @@ export class Stabull extends SimpleExchange implements IDex<StabullData> {
       symbol: '',
     };
   }
-
-  //   // Encode call data used by simpleSwap like routers
-  // // Used for simpleSwap & simpleBuy
-  // // Hint: this.buildSimpleParamWithoutWETHConversion
-  // // could be useful
-  // async getSimpleParam(
-  //   srcToken: string,
-  //   destToken: string,
-  //   srcAmount: string,
-  //   destAmount: string,
-  //   data: Test1Data,
-  //   side: SwapSide,
-  // ): Promise<SimpleExchangeParam> {
-  //   // TODO: complete me!
-  //   const { exchange } = data;
-
-  //   // Encode here the transaction arguments
-  //   const swapData = '';
-
-  //   return this.buildSimpleParamWithoutWETHConversion(
-  //     srcToken,
-  //     srcAmount,
-  //     destToken,
-  //     destAmount,
-  //     swapData,
-  //     exchange,
-  //   );
-  // }
 }

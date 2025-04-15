@@ -1,5 +1,3 @@
-import { Address } from '../../types';
-
 export type PoolState = {
   reserves0: string;
   reserves1: string;

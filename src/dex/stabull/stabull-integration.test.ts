@@ -7,13 +7,8 @@ import { DummyDexHelper } from '../../dex-helper/index';
 import { Network, SwapSide } from '../../constants';
 import { BI_POWS } from '../../bigint-constants';
 import { Stabull } from './stabull';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
+import { checkPoolPrices, checkConstantPoolPrices } from '../../../tests/utils';
 import { Tokens } from '../../../tests/constants-e2e';
-import curveABI from '../../abi/stabull/stabull-curve.json';
 import routerABI from '../../abi/stabull/stabull-router.json';
 
 // Define router addresses for different networks with proper type

@@ -80,6 +80,8 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
+            // Native token swap test cases are removed as native token swpas are not supported in the stabull
+
             // it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
             //   await testE2E(
             //     tokens[nativeTokenSymbol],
@@ -168,22 +170,6 @@ describe('Stabull E2E', () => {
       tokenBAmount,
       nativeTokenAmount,
     );
-
-    // Additional test case for Mainnet
-    it('should handle direct swaps with higher amounts', async () => {
-      // Example of an additional test
-      const largeTokenAAmount = '200000000';
-
-      // Implement with proper assertions
-      // Use try/catch for better error reporting
-      try {
-        // Your test logic here
-        expect(true).toBe(true); // Replace with actual test logic
-      } catch (error) {
-        console.error('Test failed with error:', error);
-        throw error;
-      }
-    });
   });
 
   describe('Polygon USDCn to NZDS Direct swap', () => {
