@@ -347,26 +347,25 @@ describe('BalancerV3 E2E', () => {
       );
     });
 
-    // No holders for tokens
-    // describe('Boosted Path', () => {
-    //   const tokenASymbol: string = 'waArbWETH';
-    //   const tokenBSymbol: string = 'waArbwstETH';
-    //
-    //   const tokenAAmount: string = '10000000000000';
-    //   const tokenBAmount: string = '10000000000000';
-    //   const nativeTokenAmount = '0';
-    //
-    //   testForNetwork(
-    //     network,
-    //     dexKey,
-    //     tokenASymbol,
-    //     tokenBSymbol,
-    //     tokenAAmount,
-    //     tokenBAmount,
-    //     nativeTokenAmount,
-    //     false,
-    //   );
-    // });
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'waArbWETH';
+      const tokenBSymbol: string = 'waArbwstETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
   });
 
   describe('Base', () => {
@@ -476,25 +475,24 @@ describe('BalancerV3 E2E', () => {
       );
     });
 
-    // No holders for waBasWETH
-    // describe('Boosted Path', () => {
-    //   const tokenASymbol: string = 'waBaswstETH';
-    //   const tokenBSymbol: string = 'waBasWETH';
-    //
-    //   const tokenAAmount: string = '10000000000000';
-    //   const tokenBAmount: string = '10000000000000';
-    //   const nativeTokenAmount = '0';
-    //
-    //   testForNetwork(
-    //     network,
-    //     dexKey,
-    //     tokenASymbol,
-    //     tokenBSymbol,
-    //     tokenAAmount,
-    //     tokenBAmount,
-    //     nativeTokenAmount,
-    //     false,
-    //   );
-    // });
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'waBaswstETH';
+      const tokenBSymbol: string = 'waBasWETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
   });
 });
