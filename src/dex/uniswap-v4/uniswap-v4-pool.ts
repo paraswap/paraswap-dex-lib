@@ -35,7 +35,6 @@ import { NumberAsString } from '@paraswap/core';
 import { extractSuccessAndValue, uint256ToBigInt } from '../../lib/decoders';
 import { LPFeeLibrary } from './contract-math/LPFeeLibrary';
 import { queryTicksForPool } from './subgraph';
-import { CACHE_PREFIX } from '../../constants';
 
 export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
   handlers: {
