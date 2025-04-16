@@ -10,16 +10,10 @@ import { Interface } from 'ethers/lib/utils';
 import { IDexHelper } from '../../dex-helper';
 import { AsyncOrSync, DeepReadonly } from 'ts-essentials';
 import { LogDescription } from '@ethersproject/abi/lib.esm';
-import {
-  queryAvailablePoolsForPairFromSubgraph,
-  queryOnePageForAllAvailablePoolsFromSubgraph,
-} from './subgraph';
+import { queryOnePageForAllAvailablePoolsFromSubgraph } from './subgraph';
 import { isETHAddress } from '../../utils';
-import { CACHE_PREFIX, NULL_ADDRESS } from '../../constants';
-import {
-  POOL_CACHE_REFRESH_INTERVAL,
-  POOLS_INITIALIZATION_LIMIT,
-} from './constants';
+import { NULL_ADDRESS } from '../../constants';
+import { POOL_CACHE_REFRESH_INTERVAL } from './constants';
 import { FactoryState } from '../uniswap-v3/types';
 import { UniswapV4Pool } from './uniswap-v4-pool';
 
@@ -119,7 +113,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
       this.network,
       this.config,
       this.logger,
-      '',
+      this.mapKey,
       _poolId,
       subgraphPool.token0.address.toLowerCase(),
       subgraphPool.token1.address.toLowerCase(),
@@ -265,7 +259,7 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
       this.network,
       this.config,
       this.logger,
-      '',
+      this.mapKey,
       id,
       currency0.toLowerCase(),
       currency1.toLowerCase(),

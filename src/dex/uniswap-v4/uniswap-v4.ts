@@ -67,6 +67,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       network,
       UniswapV4Config[dexKey][network],
       this.logger,
+      this.cacheStateKey,
     );
   }
 
