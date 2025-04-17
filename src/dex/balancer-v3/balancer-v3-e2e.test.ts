@@ -495,4 +495,50 @@ describe('BalancerV3 E2E', () => {
       );
     });
   });
+
+  describe('Avalanche', () => {
+    const network = Network.AVALANCHE;
+
+    describe('Boosted Stable with StableSurge Hook', () => {
+      // https://balancer.fi/pools/avalanche/v3/0x99a9a471dbe0dcc6855b4cd4bbabeccb1280f5e8
+      const tokenASymbol: string = 'sAVAX';
+      const tokenBSymbol: string = 'WAVAX';
+
+      const tokenAAmount: string = '10000000000000000';
+      const tokenBAmount: string = '10000000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    describe('Boosted ECLP', () => {
+      // https://balancer.fi/pools/avalanche/v3/0x58374fff35d1f3023bbfc646fb9ecd2b180ca0b0
+      const tokenASymbol: string = 'USDC';
+      const tokenBSymbol: string = 'WAVAX';
+
+      const tokenAAmount: string = '1000000';
+      const tokenBAmount: string = '10000000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+  });
 });
