@@ -371,6 +371,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
 
     return {
       needWrapNative: this.needWrapNative,
+      sendEthButSupportsInsertFromAmount: true,
       dexFuncHasRecipient: true,
       exchangeData,
       targetExchange: this.routerAddress,
