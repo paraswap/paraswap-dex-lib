@@ -37,16 +37,24 @@ describe('AaveGsm EventPool Mainnet', function () {
   // poolAddress -> EventMappings
   const eventsToTest: Record<Address, EventMappings> = {
     [AaveGsmConfig[dexKey][network].GSM_USDT]: {
-      FeeStrategyUpdated: [], // Hasn't been emitted yet
-      BuyAsset: [20634073],
-      SellAsset: [20641217, 20641520, 20641913],
-      ExposureCapUpdated: [], // Hasn't been emitted yet
+      FeeStrategyUpdated: [],
+      BuyAsset: [],
+      SellAsset: [22065512], // SellAsset, FeeStrategyUpdated,
+      ExposureCapUpdated: [22069460],
+    },
+    [AaveGsmConfig[dexKey][network].GSM_USDC]: {
+      FeeStrategyUpdated: [],
+      BuyAsset: [],
+      SellAsset: [22065512, 22130398], // SellAsset, FeeStrategyUpdated for first
+      ExposureCapUpdated: [22069460],
     },
   };
 
   beforeEach(async () => {
     aaveGsmPool = new AaveGsmEventPool(
       AaveGsmConfig[dexKey][network].GSM_USDT,
+      AaveGsmConfig[dexKey][network].waEthUSDT,
+      AaveGsmConfig[dexKey][network].POOL,
       dexKey,
       network,
       dexHelper,
@@ -62,7 +70,7 @@ describe('AaveGsm EventPool Mainnet', function () {
             describe(`${eventName}`, () => {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
-                  await testEventSubscriber(
+                  await testEventSubscriber<PoolState>(
                     aaveGsmPool,
                     aaveGsmPool.addressesSubscribed,
                     (_blockNumber: number) =>

@@ -169,6 +169,27 @@ describe('FluidDex E2E', () => {
       );
     });
   });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+
+    describe('USDC -> USDT', () => {
+      const tokenASymbol: string = 'USDCn';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '1000000';
+      const tokenBAmount: string = '1000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
+  });
 });
 
 function NewColReservesOne(): CollateralReserves {

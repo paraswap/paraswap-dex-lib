@@ -530,10 +530,17 @@ export class Cables extends SimpleExchange implements IDex<any> {
 
       await this.setTokensMap();
 
+      if (
+        !this.tokensMap[normalizedSrcToken.address] ||
+        !this.tokensMap[normalizedDestToken.address]
+      ) {
+        return null;
+      }
+
       normalizedSrcToken.symbol =
         this.tokensMap[normalizedSrcToken.address].symbol;
       normalizedDestToken.symbol =
-        this.tokensMap[normalizedDestToken.address!].symbol;
+        this.tokensMap[normalizedDestToken.address].symbol;
 
       // ---------- Pools ----------
       let pools =

@@ -341,7 +341,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.studio.thegraph.com/query/59130/v3alb/0.3',
+      subgraphURL: '6Cz9KkQ7mj4B3DCKorR4W9y72ice2wCTD2qU68tAhJnp',
     },
   },
   OkuTradeV3: {
