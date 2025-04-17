@@ -9,7 +9,7 @@ import {
   PoolState,
   PositionState,
   Slot0,
-  Tick,
+  SubgraphTick,
   TickInfo,
 } from './types';
 import { IDexHelper } from '../../dex-helper';
@@ -134,7 +134,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     poolId: string,
     tick: string,
     tickSpacing: string,
-    ticks: Tick[],
+    ticks: SubgraphTick[],
   ) {
     let callData: MultiCallParams<
       bigint | Slot0 | FeeGrowthGlobals | TickInfo | [bigint, bigint]
@@ -287,14 +287,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
   }
 
   async generateState(blockNumber: number): Promise<PoolState> {
-    const ticks = await queryTicksForPool(
-      this.dexHelper,
-      this.logger,
-      this.parentName,
-      this.config.subgraphURL,
-      blockNumber,
-      this.poolId,
-    );
+    const ticks = await this.getTicks(blockNumber);
 
     const callData = this._getStateRequestCallDataPerPool(
       this.poolId,
@@ -390,6 +383,43 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     };
   }
 
+  async getTicks(blockNumber: number): Promise<SubgraphTick[]> {
+    const defaultPerPageLimit = 1000;
+    let curPage = 0;
+    let ticks: SubgraphTick[] = [];
+
+    let currentTicks = await queryTicksForPool(
+      this.dexHelper,
+      this.logger,
+      this.parentName,
+      this.config.subgraphURL,
+      blockNumber,
+      this.poolId,
+      curPage * defaultPerPageLimit,
+      defaultPerPageLimit,
+    );
+
+    ticks = ticks.concat(currentTicks);
+
+    while (currentTicks.length === defaultPerPageLimit) {
+      curPage++;
+      currentTicks = await queryTicksForPool(
+        this.dexHelper,
+        this.logger,
+        this.parentName,
+        this.config.subgraphURL,
+        blockNumber,
+        this.poolId,
+        curPage * defaultPerPageLimit,
+        defaultPerPageLimit,
+      );
+
+      ticks = ticks.concat(currentTicks);
+    }
+
+    return ticks;
+  }
+
   getBitmapRangeToRequest(tick: string, tickSpacing: string): [bigint, bigint] {
     const networkId = this.dexHelper.config.data.network;
 
@@ -436,7 +466,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
           return newState;
         } catch (e) {
           this.logger.error(
-            `${this.parentName}: PoolManagr ${this.config.poolManager} (pool id ${this.poolId}), ` +
+            `${this.parentName}: PoolManager ${this.config.poolManager} (pool id ${this.poolId}), ` +
               `network=${this.dexHelper.config.data.network}: Unexpected ` +
               `error while handling event on blockNumber=${blockHeader.number}, ` +
               `blockHash=${blockHeader.hash} and parentHash=${

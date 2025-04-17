@@ -22,12 +22,6 @@ export type PositionState = {
   feeGrowthInside1LastX128: bigint;
 };
 
-export type Tick = {
-  tickIdx: string;
-  liquidityGross: string;
-  liquidityNet: string;
-};
-
 export type PoolManagerState = Record<string, never>;
 
 export type PoolState = {
@@ -91,6 +85,12 @@ export type SubgraphConnectorPool = {
   };
 };
 
+export type SubgraphTick = {
+  tickIdx: string;
+  liquidityGross: string;
+  liquidityNet: string;
+};
+
 export type SubgraphPool = {
   id: string;
   fee: string;
@@ -104,7 +104,7 @@ export type SubgraphPool = {
   };
   tick: string;
   tickSpacing: string;
-  ticks: Tick[];
+  ticks: SubgraphTick[];
 };
 
 export type DexParams = {
