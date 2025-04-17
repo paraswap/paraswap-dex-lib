@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { PoolKey } from './types';
+import { PoolKey, UniswapV4Data } from './types';
 import { Address } from '../../types';
 import RouterAbi from '../../abi/uniswap-v4/router.abi.json';
 import { Interface } from '@ethersproject/abi';
@@ -41,6 +41,14 @@ enum ActionConstants {
   ADDRESS_THIS = '0x0000000000000000000000000000000000000002',
 }
 
+type PathKey = {
+  intermediateCurrency: string;
+  fee: bigint;
+  tickSpacing: bigint;
+  hooks: string;
+  hookData: string;
+};
+
 interface ExactInputSingleParams {
   poolKey: PoolKey;
   zeroForOne: boolean;
@@ -49,6 +57,85 @@ interface ExactInputSingleParams {
   hookData: string;
 }
 
+interface ExactInputParams {
+  currencyIn: string;
+  amountIn: bigint;
+  amountOutMinimum: bigint;
+  path: PathKey[];
+}
+
+interface ExactOutputSingleParams {
+  poolKey: PoolKey;
+  zeroForOne: boolean;
+  amountOut: bigint;
+  amountInMaximum: bigint;
+  hookData: string;
+}
+
+interface ExactOutputParams {
+  currencyOut: string;
+  amountOut: bigint;
+  amountInMaximum: bigint;
+  path: PathKey[];
+}
+
+const MAX_UINT128 = 340282366920938463463374607431768211455n;
+
+function encodeActions(actions: Actions[]): string {
+  const types = actions.map(() => 'uint8');
+  return ethers.utils.solidityPack(types, actions);
+}
+
+function encodeInputForExecute(
+  actions: string,
+  actionValues: string[],
+): string {
+  const command = ethers.utils.solidityPack(['uint8'], [Commands.V4_SWAP]);
+
+  const input = ethers.utils.defaultAbiCoder.encode(
+    ['bytes', 'bytes[]'],
+    [actions, actionValues],
+  );
+
+  return routerIface.encodeFunctionData('execute(bytes,bytes[])', [
+    command,
+    [input],
+  ]);
+}
+
+function encodeSettle(
+  srcToken: string,
+  amountIn: ActionConstants | bigint,
+  takeFundsFromMsgSender: boolean,
+): string {
+  const settle = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'uint256', 'bool'],
+    // srcToken, amountIn (`OPEN_DELTA` to settle all needed funds), takeFundsFromMsgSender (Executor in our case)
+    [
+      isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,
+      amountIn,
+      takeFundsFromMsgSender,
+    ],
+  );
+
+  return settle;
+}
+
+function encodeTake(
+  destToken: string,
+  recipient: string,
+  amountOut: ActionConstants | bigint,
+) {
+  const take = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'address', 'uint256'],
+    // destToken, recipient, amountOut (`OPEN_DELTA` to take all funds)
+    [isETHAddress(destToken) ? NULL_ADDRESS : destToken, recipient, amountOut],
+  );
+
+  return take;
+}
+
+// Single hop encoding for SELL side
 export function swapExactInputSingleCalldata(
   srcToken: Address,
   destToken: Address,
@@ -58,12 +145,11 @@ export function swapExactInputSingleCalldata(
   amountOutMinimum: bigint,
   recipient: Address,
 ): string {
-  const command = ethers.utils.solidityPack(['uint8'], [Commands.V4_SWAP]);
-
-  const actions = ethers.utils.solidityPack(
-    ['uint8', 'uint8', 'uint8'],
-    [Actions.SWAP_EXACT_IN_SINGLE, Actions.SETTLE, Actions.TAKE],
-  );
+  const actions = encodeActions([
+    Actions.SWAP_EXACT_IN_SINGLE,
+    Actions.SETTLE,
+    Actions.TAKE,
+  ]);
 
   const exactInputSingleParams: ExactInputSingleParams = {
     poolKey,
@@ -104,47 +190,85 @@ export function swapExactInputSingleCalldata(
     ],
   );
 
-  // encode SETTLE
-  const settle = ethers.utils.defaultAbiCoder.encode(
-    ['address', 'uint256', 'bool'],
-    // srcToken, amountIn (`OPEN_DELTA` to settle all needed funds), takeFundsFromMsgSender (Executor in our case)
-    [
-      isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,
-      ActionConstants.OPEN_DELTA,
-      true,
-    ],
-  );
+  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
+  const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
 
-  // encode TAKE
-  const take = ethers.utils.defaultAbiCoder.encode(
-    ['address', 'address', 'uint256'],
-    // destToken, recipient, amountOut (`OPEN_DELTA` to take all funds)
-    [
-      isETHAddress(destToken) ? NULL_ADDRESS : destToken,
-      recipient,
-      ActionConstants.OPEN_DELTA,
-    ],
-  );
+  return encodeInputForExecute(actions, [swap, settle, take]);
+}
 
-  const input = ethers.utils.defaultAbiCoder.encode(
-    ['bytes', 'bytes[]'],
-    [actions, [swap, settle, take]],
-  );
-
-  return routerIface.encodeFunctionData('execute(bytes,bytes[])', [
-    command,
-    [input],
+// Multi-hop encoding
+export function swapExactInputCalldata(
+  srcToken: Address,
+  destToken: Address,
+  data: UniswapV4Data,
+  amountIn: bigint,
+  amountOutMinimum: bigint,
+  recipient: Address,
+): string {
+  const actions = encodeActions([
+    Actions.SWAP_EXACT_IN,
+    Actions.SETTLE,
+    Actions.TAKE,
   ]);
+
+  const exactInputParams: ExactInputParams = {
+    currencyIn: data.path[0].tokenIn,
+    amountIn,
+    amountOutMinimum,
+    path: data.path.map(path => ({
+      intermediateCurrency: path.tokenOut,
+      fee: BigInt(path.pool.key.fee),
+      tickSpacing: BigInt(path.pool.key.tickSpacing),
+      hooks: NULL_ADDRESS,
+      hookData: '0x',
+    })),
+  };
+
+  // encode SWAP_EXACT_IN
+  const swap = ethers.utils.defaultAbiCoder.encode(
+    [
+      /*
+        PathKey {
+          Currency intermediateCurrency;
+          uint24 fee;
+          int24 tickSpacing;
+          IHooks hooks;
+          bytes hookData;
+        }
+        ExactInputParams {
+          address currencyIn;
+          PathKey[] path;
+          uint128 amountIn;
+          uint128 amountOutMinimum;
+        }
+      */
+      'tuple(address currencyIn, tuple(address,uint24,int24,int24,address,bytes)[] path, uint128 amountIn, uint128 amountOutMinimum)',
+    ],
+    [
+      [
+        exactInputParams.currencyIn,
+        exactInputParams.path.map(pathKey => {
+          return [
+            pathKey.intermediateCurrency,
+            pathKey.fee,
+            pathKey.tickSpacing,
+            pathKey.hooks,
+            pathKey.hookData,
+          ];
+        }),
+        exactInputParams.amountIn,
+        exactInputParams.amountOutMinimum,
+      ],
+    ],
+  );
+
+  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
+  const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
+
+  return encodeInputForExecute(actions, [swap, settle, take]);
 }
 
-interface ExactOutputSingleParams {
-  poolKey: PoolKey;
-  zeroForOne: boolean;
-  amountOut: bigint;
-  amountInMaximum: bigint;
-  hookData: string;
-}
-
+// Single hop encoding for BUY side
 export function swapExactOutputSingleCalldata(
   srcToken: Address,
   destToken: Address,
@@ -153,15 +277,11 @@ export function swapExactOutputSingleCalldata(
   amountOut: bigint,
   recipient: Address,
 ): string {
-  const command = ethers.utils.solidityPack(['uint8'], [Commands.V4_SWAP]);
-
-  const actions = ethers.utils.solidityPack(
-    ['uint8', 'uint8', 'uint8'],
-    [Actions.SWAP_EXACT_OUT_SINGLE, Actions.SETTLE, Actions.TAKE],
-  );
-
-  const MAX_UINT128 = 340282366920938463463374607431768211455n;
-
+  const actions = encodeActions([
+    Actions.SWAP_EXACT_OUT_SINGLE,
+    Actions.SETTLE,
+    Actions.TAKE,
+  ]);
   const exactOutputSingleParams: ExactOutputSingleParams = {
     poolKey,
     zeroForOne,
@@ -201,31 +321,8 @@ export function swapExactOutputSingleCalldata(
     ],
   );
 
-  // encode SETTLE
-  const settle = ethers.utils.defaultAbiCoder.encode(
-    ['address', 'uint256', 'bool'],
-    // destToken, amountIn (`OPEN_DELTA` to settle all needed funds), takeFundsFromMsgSender (Executor in our case)
-    [
-      isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,
-      ActionConstants.OPEN_DELTA,
-      true,
-    ],
-  );
+  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
+  const take = encodeTake(destToken, recipient, amountOut);
 
-  // encode TAKE
-  const take = ethers.utils.defaultAbiCoder.encode(
-    ['address', 'address', 'uint256'],
-    // srcToken, recipient, amountOut (`OPEN_DELTA` to take all funds)
-    [isETHAddress(destToken) ? NULL_ADDRESS : destToken, recipient, amountOut],
-  );
-
-  const input = ethers.utils.defaultAbiCoder.encode(
-    ['bytes', 'bytes[]'],
-    [actions, [swap, settle, take]],
-  );
-
-  return routerIface.encodeFunctionData('execute(bytes,bytes[])', [
-    command,
-    [input],
-  ]);
+  return encodeInputForExecute(actions, [swap, settle, take]);
 }

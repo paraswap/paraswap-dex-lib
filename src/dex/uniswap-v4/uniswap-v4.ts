@@ -24,6 +24,7 @@ import { Interface } from '@ethersproject/abi';
 import { generalDecoder } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
 import {
+  swapExactInputCalldata,
   swapExactInputSingleCalldata,
   swapExactOutputSingleCalldata,
 } from './encoder';
@@ -378,7 +379,19 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         );
       }
     } else {
+      // Multi-hop
       exchangeData = '0x';
+
+      if (side === SwapSide.SELL) {
+        exchangeData = swapExactInputCalldata(
+          srcToken,
+          destToken,
+          data,
+          BigInt(srcAmount),
+          0n,
+          recipient,
+        );
+      }
     }
 
     return {
