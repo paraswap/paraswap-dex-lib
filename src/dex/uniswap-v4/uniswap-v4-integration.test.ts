@@ -6,7 +6,7 @@ import { Network, SwapSide } from '../../constants';
 import { UniswapV4 } from './uniswap-v4';
 import { Tokens } from '../../../tests/constants-e2e';
 import { BI_POWS } from '../../bigint-constants';
-import { Interface, Result } from '@ethersproject/abi';
+import { Interface, Result, defaultAbiCoder } from '@ethersproject/abi';
 import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
 import { PoolKey } from './types';
 import * as util from 'util';
@@ -1284,6 +1284,80 @@ describe('UniswapV4 integration tests', () => {
             const res = await checkOnChainPricing(
               dexHelper,
               'quoteExactOutputSingle',
+              blockNumber,
+              '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203',
+              price.prices,
+              price.data.pool.key,
+              price.data.zeroForOne,
+              amounts,
+            );
+            if (res === false) falseChecksCounter++;
+          }),
+        );
+
+        expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+    });
+
+    describe('USDC -> WBTC', () => {
+      const TokenASymbol = 'USDC';
+      const TokenA = Tokens[network][TokenASymbol];
+
+      const TokenBSymbol = 'WBTC';
+      const TokenB = Tokens[network][TokenBSymbol];
+
+      beforeEach(async () => {
+        // blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        blockNumber = 22296347;
+        uniswapV4 = new UniswapV4(network, dexKey, dexHelper);
+        await uniswapV4.initializePricing(blockNumber);
+      });
+
+      it('USDC -> WBTC getPoolIdentifiers and getPricesVolume SELL', async () => {
+        console.log('BLOCK NUMBER: ', blockNumber);
+
+        const amounts = [0n, 300016000000000000n];
+
+        console.log(
+          'amount: ',
+          defaultAbiCoder.encode(['uint128'], [amounts[1]]),
+        );
+
+        const pools = await uniswapV4.getPoolIdentifiers(
+          TokenA,
+          TokenB,
+          SwapSide.SELL,
+          blockNumber,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await uniswapV4.getPricesVolume(
+          TokenA,
+          TokenB,
+          amounts,
+          SwapSide.SELL,
+          blockNumber,
+          pools,
+        );
+
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          poolPrices,
+        );
+
+        expect(poolPrices).not.toBeNull();
+
+        let falseChecksCounter = 0;
+        await Promise.all(
+          poolPrices!.map(async price => {
+            const res = await checkOnChainPricing(
+              dexHelper,
+              'quoteExactInputSingle',
               blockNumber,
               '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203',
               price.prices,
