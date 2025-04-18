@@ -41,7 +41,7 @@ function computeSqrtSaleRatioX128(
 
 export function calculateNextSqrtRatio(
   sqrtRatio: bigint,
-  liqudity: bigint,
+  liquidity: bigint,
   saleRateToken0: bigint,
   saleRateToken1: bigint,
   timeElapsed: number,
@@ -52,13 +52,13 @@ export function calculateNextSqrtRatio(
     saleRateToken1,
   );
 
-  if (liqudity === 0n) {
+  if (liquidity === 0n) {
     return sqrtSaleRatio;
   }
 
   const saleRate =
     (sqrt(saleRateToken0 * saleRateToken1) * (TWO_POW_64 - fee)) / TWO_POW_64;
-  const exponent = (saleRate * BigInt(timeElapsed) * 12392656037n) / liqudity;
+  const exponent = (saleRate * BigInt(timeElapsed) * 12392656037n) / liquidity;
 
   if (exponent >= EXPONENT_LIMIT) {
     return sqrtSaleRatio;
