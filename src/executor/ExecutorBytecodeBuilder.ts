@@ -197,6 +197,30 @@ export abstract class ExecutorBytecodeBuilder<S = {}, D = {}> {
       Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP,
     );
 
+    // add additional approval 0 for special cases
+    if (
+      DISABLED_MAX_UNIT_APPROVAL_TOKENS?.[
+        this.dexHelper.config.data.network as Network
+      ]?.includes(tokenAddr)
+    ) {
+      let resetApprove = this.erc20Interface.encodeFunctionData('approve', [
+        PERMIT2_ADDRESS,
+        0,
+      ]);
+
+      approvalCalldata = hexConcat([
+        this.buildCallData(
+          tokenAddr,
+          resetApprove,
+          0,
+          APPROVE_CALLDATA_DEST_TOKEN_POS,
+          SpecialDex.DEFAULT,
+          Flag.DONT_INSERT_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP,
+        ),
+        approvalCalldata,
+      ]);
+    }
+
     // second, give approval for spender on Permit2 contract
     // (with this approval, spender can interact with Permit2 on behalf of the executor)
     let permit2Data = this.permit2Interface.encodeFunctionData('approve', [
