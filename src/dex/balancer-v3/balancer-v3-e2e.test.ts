@@ -74,7 +74,7 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -82,36 +82,36 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            // if (testNative) {
-            //   it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
-            //     await testE2E(
-            //       tokens[nativeTokenSymbol],
-            //       tokens[tokenASymbol],
-            //       holders[nativeTokenSymbol],
-            //       side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
-            //       side,
-            //       dexKey,
-            //       contractMethod,
-            //       network,
-            //       provider,
-            //       poolIdentifiers,
-            //     );
-            //   });
-            //   it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
-            //     await testE2E(
-            //       tokens[tokenASymbol],
-            //       tokens[nativeTokenSymbol],
-            //       holders[tokenASymbol],
-            //       side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
-            //       side,
-            //       dexKey,
-            //       contractMethod,
-            //       network,
-            //       provider,
-            //       poolIdentifiers,
-            //     );
-            //   });
-            // }
+            if (testNative) {
+              it(`${nativeTokenSymbol} -> ${tokenASymbol}`, async () => {
+                await testE2E(
+                  tokens[nativeTokenSymbol],
+                  tokens[tokenASymbol],
+                  holders[nativeTokenSymbol],
+                  side === SwapSide.SELL ? nativeTokenAmount : tokenAAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  poolIdentifiers,
+                );
+              });
+              it(`${tokenASymbol} -> ${nativeTokenSymbol}`, async () => {
+                await testE2E(
+                  tokens[tokenASymbol],
+                  tokens[nativeTokenSymbol],
+                  holders[tokenASymbol],
+                  side === SwapSide.SELL ? tokenAAmount : nativeTokenAmount,
+                  side,
+                  dexKey,
+                  contractMethod,
+                  network,
+                  provider,
+                  poolIdentifiers,
+                );
+              });
+            }
             it(`${tokenASymbol} -> ${tokenBSymbol}`, async () => {
               await testE2E(
                 tokens[tokenASymbol],
@@ -126,20 +126,20 @@ function testForNetwork(
                 poolIdentifiers,
               );
             });
-            // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenBSymbol],
-            //     tokens[tokenASymbol],
-            //     holders[tokenBSymbol],
-            //     side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //     poolIdentifiers,
-            //   );
-            // });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+                poolIdentifiers,
+              );
+            });
           });
         });
       }),
@@ -347,26 +347,25 @@ describe('BalancerV3 E2E', () => {
       );
     });
 
-    // No holders for tokens
-    // describe('Boosted Path', () => {
-    //   const tokenASymbol: string = 'waArbWETH';
-    //   const tokenBSymbol: string = 'waArbwstETH';
-    //
-    //   const tokenAAmount: string = '10000000000000';
-    //   const tokenBAmount: string = '10000000000000';
-    //   const nativeTokenAmount = '0';
-    //
-    //   testForNetwork(
-    //     network,
-    //     dexKey,
-    //     tokenASymbol,
-    //     tokenBSymbol,
-    //     tokenAAmount,
-    //     tokenBAmount,
-    //     nativeTokenAmount,
-    //     false,
-    //   );
-    // });
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'waArbWETH';
+      const tokenBSymbol: string = 'waArbwstETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
   });
 
   describe('Base', () => {
@@ -476,26 +475,25 @@ describe('BalancerV3 E2E', () => {
       );
     });
 
-    // No holders for waBasWETH
-    // describe('Boosted Path', () => {
-    //   const tokenASymbol: string = 'waBaswstETH';
-    //   const tokenBSymbol: string = 'waBasWETH';
-    //
-    //   const tokenAAmount: string = '10000000000000';
-    //   const tokenBAmount: string = '10000000000000';
-    //   const nativeTokenAmount = '0';
-    //
-    //   testForNetwork(
-    //     network,
-    //     dexKey,
-    //     tokenASymbol,
-    //     tokenBSymbol,
-    //     tokenAAmount,
-    //     tokenBAmount,
-    //     nativeTokenAmount,
-    //     false,
-    //   );
-    // });
+    describe('Boosted Path', () => {
+      const tokenASymbol: string = 'waBaswstETH';
+      const tokenBSymbol: string = 'waBasWETH';
+
+      const tokenAAmount: string = '10000000000000';
+      const tokenBAmount: string = '10000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
   });
 
   describe('Avalanche', () => {
