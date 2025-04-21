@@ -85,13 +85,6 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
       this.handleModifyLiquidityEvent.bind(this);
   }
 
-  async initialize(
-    blockNumber: number,
-    options?: InitializeStateOptions<PoolState>,
-  ) {
-    super.initialize(blockNumber, options);
-  }
-
   getPoolIdentifierData(): PoolPairsInfo {
     return {
       poolId: this.poolId,

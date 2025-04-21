@@ -158,7 +158,7 @@ export abstract class StatefulEventSubscriber<State>
       } else {
         // if you are not a slave instance always generate new state
         this.logger.info(
-          `${this.parentName}: ${this.name}: cache generating state`,
+          `${this.parentName}: ${this.name}: cache generating state in_5`,
         );
         const state = await this.generateState(blockNumber);
         this.setState(state, blockNumber, 'initialize_5');
