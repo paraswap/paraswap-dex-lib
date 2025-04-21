@@ -279,7 +279,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
   async getOrGenerateState(blockNumber: number): Promise<PoolState> {
     let state = this.getState(blockNumber);
 
-    this.logger.info(
+    this.logger.warn(
       `${this.parentName}: No state found on block ${blockNumber} for pool ${this.poolId}, generating new one`,
     );
     if (!state) {
