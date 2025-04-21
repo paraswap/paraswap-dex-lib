@@ -1,6 +1,6 @@
 {
   "name": "@paraswap/dex-lib",
-  "version": "4.2.3-univ4-fixes.0",
+  "version": "4.2.3-univ4-fixes.1",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "https://github.com/paraswap/paraswap-dex-lib",
