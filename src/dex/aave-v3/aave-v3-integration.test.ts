@@ -84,6 +84,7 @@ describe('AaveV3', function () {
           blockNumber,
           pools,
         );
+
         console.log(
           `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
           poolPrices,
@@ -91,6 +92,12 @@ describe('AaveV3', function () {
 
         expect(poolPrices).not.toBeNull();
         checkConstantPoolPrices(poolPrices!, amounts, dexKey);
+
+        const topPoolsA = await aaveV3.getTopPoolsForToken(TokenA.address, 10);
+        const topPoolsB = await aaveV3.getTopPoolsForToken(TokenB.address, 10);
+
+        expect(topPoolsA.length).toBeGreaterThan(0);
+        expect(topPoolsB.length).toBeGreaterThan(0);
       });
 
       it('getPoolIdentifiers and getPricesVolume BUY', async function () {

@@ -237,6 +237,9 @@ export type PoolLiquidity = {
   address: Address;
   connectorTokens: Token[];
   liquidityUSD: number;
+  // `true` if there's available swap for token => connectorToken, `false` for connectorToken => token swap,
+  // undefined if swap is available in both directions token <=> connectorToken
+  tradeDirection?: boolean;
 };
 
 export interface Log {

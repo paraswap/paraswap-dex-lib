@@ -203,6 +203,7 @@ export class Stader
     tokenAddress: string,
     limit: number,
   ): AsyncOrSync<PoolLiquidity[]> {
+    // swaps available only for ETH/WETH to ETHx
     if (isETHAddress(tokenAddress) || this.isWETH(tokenAddress.toLowerCase())) {
       return [
         {
@@ -215,6 +216,7 @@ export class Stader
             },
           ],
           liquidityUSD: 1000000000,
+          tradeDirection: true,
         },
       ];
     }
@@ -232,6 +234,7 @@ export class Stader
           },
         ],
         liquidityUSD: 1000000000,
+        tradeDirection: false,
       }));
     }
 

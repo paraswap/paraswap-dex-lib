@@ -150,6 +150,8 @@ export class Usual extends SimpleExchange implements IDex<UsualBondData> {
           isFromToken ? this.config.toToken : this.config.fromToken,
         ],
         liquidityUSD: 1000000000, // Just returning a big number so this DEX will be preferred
+        // specify that trade is available only fromToken => toToken
+        tradeDirection: isFromToken,
       },
     ];
   }

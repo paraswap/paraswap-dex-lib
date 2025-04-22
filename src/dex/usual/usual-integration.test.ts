@@ -201,21 +201,31 @@ describe('WrappedM<>UsualM', function () {
       );
     });
 
-    it('getTopPoolsForToken: WrappedM', async function () {
+    it.only('getTopPoolsForToken: WrappedM', async function () {
       const tokenA = Tokens[network]['WrappedM'];
+      const tokenB = Tokens[network]['UsualM'];
       const dexHelper = new DummyDexHelper(network);
       const usualMWrappedM = new UsualMWrappedM(network, dexKey, dexHelper);
 
-      const poolLiquidity = await usualMWrappedM.getTopPoolsForToken(
+      const poolLiquidityA = await usualMWrappedM.getTopPoolsForToken(
         tokenA.address,
+        10,
+      );
+
+      const poolLiquidityB = await usualMWrappedM.getTopPoolsForToken(
+        tokenB.address,
         10,
       );
       console.log(
         `${tokenA.symbol} Top Pools:`,
-        JSON.stringify(poolLiquidity, null, 2),
+        JSON.stringify(poolLiquidityA, null, 2),
       );
 
-      checkPoolsLiquidity(poolLiquidity, tokenA.address, dexKey);
+      // swap is available only from WrappedM to UsualM
+      expect(poolLiquidityA[0].tradeDirection).toBe(true);
+      expect(poolLiquidityB[0].tradeDirection).toBe(false);
+
+      checkPoolsLiquidity(poolLiquidityA, tokenA.address, dexKey);
     });
 
     it('getTopPoolsForToken: UsualM', async function () {
