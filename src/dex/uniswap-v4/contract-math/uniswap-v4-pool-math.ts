@@ -15,7 +15,6 @@ import { DeepReadonly } from 'ts-essentials';
 import { SwapSide } from '@paraswap/core';
 import { SWAP_EVENT_MAX_CYCLES } from '../constants';
 import { LPFeeLibrary } from './LPFeeLibrary';
-import _ from 'lodash';
 
 type StepComputations = {
   sqrtPriceStartX96: bigint;
@@ -103,7 +102,7 @@ class UniswapV4PoolMath {
   }
 
   _swap(poolState: PoolState, params: SwapParams): [bigint, bigint] {
-    const _poolState = _.cloneDeep(poolState); // we don't need to modify existing poolState
+    const _poolState = Object.assign({}, poolState); // we don't need to modify existing poolState
     const slot0Start = _poolState.slot0;
     const zeroForOne = params.zeroForOne;
 
