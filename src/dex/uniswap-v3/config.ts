@@ -131,7 +131,7 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'EYDEhZr1WBdD1J5DyWehSyXjEk1edvogsSaHv2ZxxZxG',
+      subgraphURL: '5nnoU1nUFeWqtXgbpC54L9PWdpgo7Y9HYinR3uTMsfzs',
     },
     [Network.POLYGON]: {
       factory: '0x917933899c6a5f8e37f31e19f92cdbff7e8ff0e2',
@@ -215,7 +215,8 @@ export const UniswapV3Config: DexConfigMap<DexParams> = {
       chunksCount: 10,
       initRetryFrequency: 10,
       initHash: `0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54`,
-      subgraphURL: 'https://api.studio.thegraph.com/query/32073/v3-base/v0.0.1',
+      subgraphType: 'deployments',
+      subgraphURL: 'QmWWh7RgdXHcxaSwhJMpH1SB7D9rFZRGLZVwRfg2BPKsHt',
     },
   },
   ChronosV3: {

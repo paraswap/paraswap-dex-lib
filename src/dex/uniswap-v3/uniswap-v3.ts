@@ -16,7 +16,12 @@ import {
   Token,
   TxInfo,
 } from '../../types';
-import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
+import {
+  CACHE_PREFIX,
+  Network,
+  SUBGRAPH_TIMEOUT,
+  SwapSide,
+} from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   getBigIntPow,
@@ -132,6 +137,11 @@ export class UniswapV3
     readonly quoterIface = new Interface(UniswapV3QuoterV2ABI),
     protected config = UniswapV3Config[dexKey][network],
     protected poolsToPreload = PoolsToPreload[dexKey]?.[network] || [],
+    protected subgraphType:
+      | 'subgraphs'
+      | 'deployments'
+      | undefined = UniswapV3Config[dexKey] &&
+      UniswapV3Config[dexKey][network].subgraphType,
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey + '-' + network);
@@ -1393,7 +1403,7 @@ export class UniswapV3
       const res = await this.dexHelper.httpRequest.querySubgraph(
         this.config.subgraphURL,
         { query, variables },
-        { timeout },
+        { timeout, type: this.subgraphType },
       );
       return res?.data ?? {};
     } catch (e) {
