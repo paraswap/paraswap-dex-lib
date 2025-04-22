@@ -12,10 +12,9 @@ import { ProtocolFeeLibrary } from './ProtocolFeeLibrary';
 import { SwapMath } from './SwapMath';
 import { BalanceDelta, toBalanceDelta } from './BalanceDelta';
 import { DeepReadonly } from 'ts-essentials';
-import { SwapSide } from '@paraswap/core';
+import { NumberAsString, SwapSide } from '@paraswap/core';
 import { SWAP_EVENT_MAX_CYCLES } from '../constants';
 import { LPFeeLibrary } from './LPFeeLibrary';
-import clone from 'clone';
 
 type StepComputations = {
   sqrtPriceStartX96: bigint;
@@ -103,9 +102,16 @@ class UniswapV4PoolMath {
   }
 
   _swap(poolState: PoolState, params: SwapParams): [bigint, bigint] {
-    const _poolState = clone(poolState); // (lodash's _.cloneDeep is very slow) we don't need to modify existing poolState
-    const slot0Start = _poolState.slot0;
+    const slot0Start = poolState.slot0;
     const zeroForOne = params.zeroForOne;
+
+    // making a copy because we don't need to modify existing poolState.ticks
+    const ticksCopy = Object.keys(poolState.ticks).reduce<
+      Record<NumberAsString, TickInfo>
+    >((memo, index) => {
+      memo[index] = { ...poolState.ticks[index] };
+      return memo;
+    }, {} as Record<NumberAsString, TickInfo>);
 
     const protocolFee = zeroForOne
       ? ProtocolFeeLibrary.getZeroForOneFee(BigInt(slot0Start.protocolFee))
@@ -116,7 +122,7 @@ class UniswapV4PoolMath {
 
     let result = {
       sqrtPriceX96: slot0Start.sqrtPriceX96,
-      liquidity: _poolState.liquidity,
+      liquidity: poolState.liquidity,
       tick: slot0Start.tick,
     };
 
@@ -206,7 +212,7 @@ class UniswapV4PoolMath {
       step.sqrtPriceStartX96 = result.sqrtPriceX96;
 
       const [next, initialized] = TickBitMap.nextInitializedTickWithinOneWord(
-        _poolState,
+        poolState,
         BigInt(result.tick),
         BigInt(params.tickSpacing),
         zeroForOne,
@@ -274,11 +280,11 @@ class UniswapV4PoolMath {
       if (result.sqrtPriceX96 === step.sqrtPriceNextX96) {
         if (step.initialized) {
           const [feeGrowthGlobal0X128, feeGrowthGlobal1X128] = zeroForOne
-            ? [step.feeGrowthGlobalX128, _poolState.feeGrowthGlobal1X128]
-            : [_poolState.feeGrowthGlobal0X128, step.feeGrowthGlobalX128];
+            ? [step.feeGrowthGlobalX128, poolState.feeGrowthGlobal1X128]
+            : [poolState.feeGrowthGlobal0X128, step.feeGrowthGlobalX128];
 
           let liquidityNet = Tick.cross(
-            _poolState,
+            ticksCopy,
             step.tickNext,
             feeGrowthGlobal0X128,
             feeGrowthGlobal1X128,
@@ -690,7 +696,7 @@ class UniswapV4PoolMath {
             : [poolState.feeGrowthGlobal0X128, step.feeGrowthGlobalX128];
 
           let liquidityNet = Tick.cross(
-            poolState,
+            poolState.ticks,
             step.tickNext,
             feeGrowthGlobal0X128,
             feeGrowthGlobal1X128,
