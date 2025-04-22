@@ -179,8 +179,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         blockNumber,
       );
 
-      const poolState =
-        (await eventPool?.getOrGenerateState(blockNumber)) || null;
+      const poolState = (await eventPool?.getState(blockNumber)) || null;
 
       let prices: bigint[] | null;
       if (poolState) {
