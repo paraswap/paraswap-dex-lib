@@ -15,6 +15,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { SwapSide } from '@paraswap/core';
 import { SWAP_EVENT_MAX_CYCLES } from '../constants';
 import { LPFeeLibrary } from './LPFeeLibrary';
+import clone from 'clone';
 
 type StepComputations = {
   sqrtPriceStartX96: bigint;
@@ -102,7 +103,7 @@ class UniswapV4PoolMath {
   }
 
   _swap(poolState: PoolState, params: SwapParams): [bigint, bigint] {
-    const _poolState = Object.assign({}, poolState); // we don't need to modify existing poolState
+    const _poolState = clone(poolState); // (lodash's _.cloneDeep is very slow) we don't need to modify existing poolState
     const slot0Start = _poolState.slot0;
     const zeroForOne = params.zeroForOne;
 
@@ -299,19 +300,6 @@ class UniswapV4PoolMath {
       }
 
       counter++;
-    }
-
-    _poolState.slot0.tick = result.tick;
-    _poolState.slot0.sqrtPriceX96 = result.sqrtPriceX96;
-
-    if (_poolState.liquidity !== result.liquidity) {
-      _poolState.liquidity = result.liquidity;
-    }
-
-    if (!zeroForOne) {
-      _poolState.feeGrowthGlobal1X128 = step.feeGrowthGlobalX128;
-    } else {
-      _poolState.feeGrowthGlobal0X128 = step.feeGrowthGlobalX128;
     }
 
     if (zeroForOne !== params.amountSpecified < 0) {
