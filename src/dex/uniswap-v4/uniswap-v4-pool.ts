@@ -89,7 +89,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     blockNumber: number,
     options?: InitializeStateOptions<PoolState>,
   ) {
-    super.initialize(blockNumber, options);
+    await super.initialize(blockNumber, options);
   }
 
   getPoolIdentifierData(): PoolPairsInfo {
