@@ -27,12 +27,7 @@ export class Tick {
   }
 
   static clear(poolState: PoolState, tick: bigint): void {
-    poolState.ticks[Number(tick)] = {
-      liquidityGross: 0n,
-      liquidityNet: 0n,
-      feeGrowthOutside0X128: 0n,
-      feeGrowthOutside1X128: 0n,
-    };
+    delete poolState.ticks[Number(tick)];
   }
 
   static cross(

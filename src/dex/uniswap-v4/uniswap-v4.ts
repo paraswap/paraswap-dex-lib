@@ -112,7 +112,15 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       blockNumber,
     );
 
-    return pools.map(pool => pool.id);
+    const eventPools = (
+      await Promise.all(
+        pools.map(async pool =>
+          this.poolManager.getEventPool(pool.id, blockNumber),
+        ),
+      )
+    ).filter(pool => pool !== null);
+
+    return eventPools.map(eventPool => eventPool!.poolId);
   }
 
   protected _getOutputs(
@@ -183,11 +191,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
 
       let prices: bigint[] | null;
       if (poolState) {
-        // const label = `_getOutputs_${pool.id}`;
-        // console.time(label);
         prices = this._getOutputs(pool, poolState, amounts, zeroForOne, side);
-        // console.log('TICKS LENGTH: ', Object.keys(poolState.ticks).length);
-        // console.timeEnd(label);
       } else {
         this.logger.warn(
           `${this.dexKey}-${this.network}: pool ${poolId} state was not found...falling back to rpc`,

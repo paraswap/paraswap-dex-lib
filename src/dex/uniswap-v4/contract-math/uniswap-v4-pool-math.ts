@@ -106,13 +106,11 @@ class UniswapV4PoolMath {
     const zeroForOne = params.zeroForOne;
 
     // making a copy because we don't need to modify existing poolState.ticks
-    // console.time('ticksCopy');
     let ticksCopy: Record<NumberAsString, TickInfo> = {};
     // eslint-disable-next-line no-restricted-syntax
     for (const key in poolState.ticks) {
       ticksCopy[key] = { ...poolState.ticks[key] };
     }
-    // console.timeEnd('ticksCopy');
 
     const protocolFee = zeroForOne
       ? ProtocolFeeLibrary.getZeroForOneFee(BigInt(slot0Start.protocolFee))
