@@ -106,12 +106,13 @@ class UniswapV4PoolMath {
     const zeroForOne = params.zeroForOne;
 
     // making a copy because we don't need to modify existing poolState.ticks
-    const ticksCopy = Object.keys(poolState.ticks).reduce<
-      Record<NumberAsString, TickInfo>
-    >((memo, index) => {
-      memo[index] = { ...poolState.ticks[index] };
-      return memo;
-    }, {} as Record<NumberAsString, TickInfo>);
+    // console.time('ticksCopy');
+    let ticksCopy: Record<NumberAsString, TickInfo> = {};
+    // eslint-disable-next-line no-restricted-syntax
+    for (const key in poolState.ticks) {
+      ticksCopy[key] = { ...poolState.ticks[key] };
+    }
+    // console.timeEnd('ticksCopy');
 
     const protocolFee = zeroForOne
       ? ProtocolFeeLibrary.getZeroForOneFee(BigInt(slot0Start.protocolFee))
@@ -133,7 +134,7 @@ class UniswapV4PoolMath {
     const swapFee =
       protocolFee === 0n
         ? lpFee
-        : ProtocolFeeLibrary.calculateSwapFee(protocolFee, BigInt(lpFee));
+        : ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee);
 
     if (swapFee >= SwapMath.MAX_SWAP_FEE) {
       _require(

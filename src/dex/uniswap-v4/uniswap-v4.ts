@@ -186,6 +186,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         // const label = `_getOutputs_${pool.id}`;
         // console.time(label);
         prices = this._getOutputs(pool, poolState, amounts, zeroForOne, side);
+        // console.log('TICKS LENGTH: ', Object.keys(poolState.ticks).length);
         // console.timeEnd(label);
       } else {
         this.logger.warn(
