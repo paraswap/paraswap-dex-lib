@@ -2,6 +2,7 @@ import { _require } from '../../../utils';
 import { TickMath } from './TickMath';
 import { PoolState, TickInfo } from '../types';
 import { LiquidityMath } from './LiquidityMath';
+import { NumberAsString } from '@paraswap/core';
 
 export class Tick {
   static check(tickLower: bigint, tickUpper: bigint) {
@@ -35,12 +36,12 @@ export class Tick {
   }
 
   static cross(
-    poolState: PoolState,
+    ticks: Record<NumberAsString, TickInfo>,
     tick: bigint,
     feeGrowthGlobal0X128: bigint,
     feeGrowthGlobal1X128: bigint,
   ): bigint {
-    const info = poolState.ticks[Number(tick)];
+    const info = ticks[Number(tick)];
 
     _require(Boolean(info), 'Tick not initialized');
 
