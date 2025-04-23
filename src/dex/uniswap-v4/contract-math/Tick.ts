@@ -41,9 +41,17 @@ export class Tick {
     feeGrowthGlobal0X128: bigint,
     feeGrowthGlobal1X128: bigint,
   ): bigint {
-    const info = ticks[Number(tick)];
+    let info = ticks[Number(tick)];
 
-    _require(Boolean(info), 'Tick not initialized');
+    if (!info) {
+      ticks[Number(tick)] = {
+        liquidityGross: 0n,
+        liquidityNet: 0n,
+        feeGrowthOutside0X128: 0n,
+        feeGrowthOutside1X128: 0n,
+      };
+      info = ticks[Number(tick)];
+    }
 
     info.feeGrowthOutside0X128 =
       feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;

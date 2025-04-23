@@ -183,7 +183,10 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
 
       let prices: bigint[] | null;
       if (poolState) {
+        const label = `_getOutputs_${pool.id}`;
+        console.time(label);
         prices = this._getOutputs(pool, poolState, amounts, zeroForOne, side);
+        console.timeEnd(label);
       } else {
         this.logger.warn(
           `${this.dexKey}-${this.network}: pool ${poolId} state was not found...falling back to rpc`,
