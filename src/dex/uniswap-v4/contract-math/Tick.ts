@@ -32,20 +32,21 @@ export class Tick {
 
   static cross(
     ticks: Record<NumberAsString, TickInfo>,
-    tick: bigint,
+    _tick: bigint,
     feeGrowthGlobal0X128: bigint,
     feeGrowthGlobal1X128: bigint,
   ): bigint {
-    let info = ticks[Number(tick)];
+    const tick = Number(_tick);
+    let info = ticks[tick];
 
     if (!info) {
-      ticks[Number(tick)] = {
+      ticks[tick] = {
         liquidityGross: 0n,
         liquidityNet: 0n,
         feeGrowthOutside0X128: 0n,
         feeGrowthOutside1X128: 0n,
       };
-      info = ticks[Number(tick)];
+      info = ticks[tick];
     }
 
     info.feeGrowthOutside0X128 =
