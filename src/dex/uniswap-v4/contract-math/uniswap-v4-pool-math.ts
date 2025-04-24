@@ -13,7 +13,10 @@ import { SwapMath } from './SwapMath';
 import { BalanceDelta, toBalanceDelta } from './BalanceDelta';
 import { DeepReadonly } from 'ts-essentials';
 import { NumberAsString, SwapSide } from '@paraswap/core';
-import { SWAP_EVENT_MAX_CYCLES } from '../constants';
+import {
+  MAX_PRICING_COMPUTATION_STEPS_ALLOWED,
+  SWAP_EVENT_MAX_CYCLES,
+} from '../constants';
 import { LPFeeLibrary } from './LPFeeLibrary';
 
 type StepComputations = {
@@ -206,14 +209,14 @@ class UniswapV4PoolMath {
         amountSpecifiedRemaining === 0n ||
         result.sqrtPriceX96 === params.sqrtPriceLimitX96
       ) &&
-      counter <= SWAP_EVENT_MAX_CYCLES
+      counter <= MAX_PRICING_COMPUTATION_STEPS_ALLOWED
     ) {
       step.sqrtPriceStartX96 = result.sqrtPriceX96;
 
       const [next, initialized] = TickBitMap.nextInitializedTickWithinOneWord(
         poolState,
-        BigInt(result.tick),
-        BigInt(params.tickSpacing),
+        result.tick,
+        params.tickSpacing,
         zeroForOne,
       );
       step.tickNext = next;
@@ -243,7 +246,7 @@ class UniswapV4PoolMath {
         ),
         result.liquidity,
         amountSpecifiedRemaining,
-        BigInt(swapFee),
+        swapFee,
       );
 
       result.sqrtPriceX96 = resultSqrtPriceNextX96;
@@ -264,7 +267,7 @@ class UniswapV4PoolMath {
           swapFee === protocolFee
             ? step.feeAmount
             : ((step.amountIn + step.feeAmount) * BigInt(protocolFee)) /
-              BigInt(ProtocolFeeLibrary.PIPS_DENOMINATOR);
+              ProtocolFeeLibrary.PIPS_DENOMINATOR;
         step.feeAmount -= delta;
       }
 
@@ -305,6 +308,10 @@ class UniswapV4PoolMath {
       }
 
       counter++;
+    }
+
+    if (counter >= MAX_PRICING_COMPUTATION_STEPS_ALLOWED) {
+      return [0n, 0n];
     }
 
     if (zeroForOne !== params.amountSpecified < 0) {

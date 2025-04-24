@@ -20,6 +20,8 @@ export const POOL_CACHE_REFRESH_INTERVAL = 60 * 60 * 24; // 24 hours
 
 export const SWAP_EVENT_MAX_CYCLES = 10_000;
 
+export const MAX_PRICING_COMPUTATION_STEPS_ALLOWED = 128;
+
 export const UNISWAPV4_EFFICIENCY_FACTOR = 3;
 
 export const POOL_MIN_TVL_USD = 50;

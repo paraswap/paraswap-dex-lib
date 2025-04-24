@@ -11,6 +11,7 @@ import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
 import { PoolKey } from './types';
 import * as util from 'util';
 import { checkPoolsLiquidity } from '../../../tests/utils';
+import { Address } from '../../types';
 
 const quoterIface = new Interface(QuoterAbi);
 
@@ -75,7 +76,7 @@ async function checkOnChainPricing(
     zeroForOne,
   );
 
-  // console.log('readerCallData: ', readerCallData);
+  console.log('readerCallData: ', readerCallData);
 
   let readerResult;
   try {
@@ -2486,6 +2487,144 @@ describe('UniswapV4 integration tests', () => {
             const res = await checkOnChainPricing(
               dexHelper,
               'quoteExactOutputSingle',
+              blockNumber,
+              '0x3972c00f7ed4885e145823eb7c655375d275a1c5',
+              price.prices,
+              price.data.pool.key,
+              price.data.zeroForOne,
+              amounts,
+            );
+            if (res === false) falseChecksCounter++;
+          }),
+        );
+
+        expect(falseChecksCounter).toBeLessThan(poolPrices!.length);
+      });
+    });
+
+    describe('USDT -> DAI', () => {
+      const TokenASymbol = 'USDT';
+      const TokenA = Tokens[network][TokenASymbol];
+
+      const TokenBSymbol = 'DAI';
+      const TokenB = Tokens[network][TokenBSymbol];
+
+      beforeEach(async () => {
+        blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
+        uniswapV4 = new UniswapV4(network, dexKey, dexHelper);
+        await uniswapV4.initializePricing(blockNumber);
+      });
+
+      // test to debug latency issues
+      it.skip('USDT -> DAI getPoolIdentifiers and getPricesVolume SELL', async () => {
+        console.log('BLOCK: ', blockNumber);
+
+        const amounts = [
+          0n,
+          58000000n,
+          116000000n,
+          174000000n,
+          232000000n,
+          290000000n,
+          348000000n,
+          406000000n,
+          464000000n,
+          522000000n,
+          580000000n,
+          638000000n,
+          696000000n,
+          754000000n,
+          812000000n,
+          870000000n,
+          928000000n,
+          986000000n,
+          1044000000n,
+          1102000000n,
+          1160000000n,
+          1218000000n,
+          1276000000n,
+          1334000000n,
+          1392000000n,
+          1450000000n,
+          1508000000n,
+          1566000000n,
+          1624000000n,
+          1682000000n,
+          1740000000n,
+          1798000000n,
+          1856000000n,
+          1914000000n,
+          1972000000n,
+          2030000000n,
+          2088000000n,
+          2146000000n,
+          2204000000n,
+          2262000000n,
+          2320000000n,
+          2378000000n,
+          2436000000n,
+          2494000000n,
+          2552000000n,
+          2610000000n,
+          2668000000n,
+          2726000000n,
+          2784000000n,
+          2842000000n,
+          2900000000n,
+        ];
+
+        // const readerCallData = getReaderCalldata(
+        //   '0x3972c00f7ed4885e145823eb7c655375d275a1c5',
+        //   quoterIface,
+        //   amounts.slice(1),
+        //   'quoteExactInputSingle',
+        //   {
+        //     currency0: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+        //     currency1: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+        //     fee: '100',
+        //     tickSpacing: 1,
+        //     hooks: '0x0000000000000000000000000000000000000000',
+        //   },
+        //   false,
+        // );
+        //
+        // console.log('readerCallData: ', readerCallData);
+
+        const pools = await uniswapV4.getPoolIdentifiers(
+          TokenA,
+          TokenB,
+          SwapSide.SELL,
+          blockNumber,
+        );
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Identifiers: `,
+          pools,
+        );
+
+        expect(pools.length).toBeGreaterThan(0);
+
+        const poolPrices = await uniswapV4.getPricesVolume(
+          TokenA,
+          TokenB,
+          amounts,
+          SwapSide.SELL,
+          blockNumber,
+          pools,
+        );
+
+        console.log(
+          `${TokenASymbol} <> ${TokenBSymbol} Pool Prices: `,
+          util.inspect(poolPrices, false, null, true),
+        );
+
+        expect(poolPrices).not.toBeNull();
+
+        let falseChecksCounter = 0;
+        await Promise.all(
+          poolPrices!.map(async price => {
+            const res = await checkOnChainPricing(
+              dexHelper,
+              'quoteExactInputSingle',
               blockNumber,
               '0x3972c00f7ed4885e145823eb7c655375d275a1c5',
               price.prices,

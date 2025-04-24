@@ -204,6 +204,23 @@ describe('UniswapV4 E2E', () => {
         tokenBAmount,
       );
     });
+
+    describe('DAI -> USDT', () => {
+      const tokenASymbol: string = 'DAI';
+      const tokenBSymbol: string = 'USDT';
+
+      const tokenAAmount: string = '10000000000000000';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
 
   describe('Optimism', () => {
