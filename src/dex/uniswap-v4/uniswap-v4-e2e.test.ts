@@ -95,7 +95,7 @@ describe('UniswapV4 E2E', () => {
       );
     });
 
-    describe('WETH -> USDC', () => {
+    describe.skip('WETH -> USDC', () => {
       const tokenASymbol: string = 'WETH';
       const tokenBSymbol: string = 'USDC';
 

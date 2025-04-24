@@ -27,23 +27,27 @@ export class Tick {
   }
 
   static clear(poolState: PoolState, tick: bigint): void {
-    poolState.ticks[Number(tick)] = {
-      liquidityGross: 0n,
-      liquidityNet: 0n,
-      feeGrowthOutside0X128: 0n,
-      feeGrowthOutside1X128: 0n,
-    };
+    delete poolState.ticks[Number(tick)];
   }
 
   static cross(
     ticks: Record<NumberAsString, TickInfo>,
-    tick: bigint,
+    _tick: bigint,
     feeGrowthGlobal0X128: bigint,
     feeGrowthGlobal1X128: bigint,
   ): bigint {
-    const info = ticks[Number(tick)];
+    const tick = Number(_tick);
+    let info = ticks[tick];
 
-    _require(Boolean(info), 'Tick not initialized');
+    if (!info) {
+      ticks[tick] = {
+        liquidityGross: 0n,
+        liquidityNet: 0n,
+        feeGrowthOutside0X128: 0n,
+        feeGrowthOutside1X128: 0n,
+      };
+      info = ticks[tick];
+    }
 
     info.feeGrowthOutside0X128 =
       feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
