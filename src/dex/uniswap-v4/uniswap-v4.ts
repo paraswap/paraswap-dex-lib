@@ -165,9 +165,9 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     blockNumber: number,
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV4Data> | null> {
-    const label = `getPricesVolume_${from.address}_${to.address}`;
-    // eslint-disable-next-line no-console
-    console.time(label);
+    const reqId = Math.floor(Math.random() * 10000);
+    const getPricesVolumeStart = Date.now();
+
     const pools: Pool[] = await this.poolManager.getAvailablePoolsForPair(
       from.address.toLowerCase(),
       to.address.toLowerCase(),
@@ -194,12 +194,11 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
 
       let prices: bigint[] | null;
       if (poolState) {
-        const label = `_getOutputs_${pool.id}`;
-        // eslint-disable-next-line no-console
-        console.time(label);
+        const getOutputsStart = Date.now();
         prices = this._getOutputs(pool, poolState, amounts, zeroForOne, side);
-        // eslint-disable-next-line no-console
-        console.timeEnd(label);
+        this.logger.info(
+          `_getOutputs_${pool.id}_${reqId}: ${Date.now() - getOutputsStart} ms`,
+        );
       } else {
         this.logger.warn(
           `${this.dexKey}-${this.network}: pool ${poolId} state was not found...falling back to rpc`,
@@ -240,8 +239,11 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     });
 
     const prices = await Promise.all(pricesPromises);
-    // eslint-disable-next-line no-console
-    console.timeEnd(label);
+    this.logger.info(
+      `getPricesVolume_${from.address}_${to.address}_${reqId}: ${
+        Date.now() - getPricesVolumeStart
+      } ms`,
+    );
     return prices.filter(res => res !== null);
   }
 
