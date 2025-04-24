@@ -108,7 +108,7 @@ class UniswapV4PoolMath {
     // making a copy because we don't need to modify existing poolState.ticks
     let ticksCopy: Record<NumberAsString, TickInfo> = {};
     // eslint-disable-next-line no-restricted-syntax
-    for (const key in poolState.ticks) {
+    for (const key of Object.keys(poolState.ticks)) {
       ticksCopy[key] = { ...poolState.ticks[key] };
     }
 
