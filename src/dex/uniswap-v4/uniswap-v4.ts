@@ -197,7 +197,11 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         const getOutputsStart = Date.now();
         prices = this._getOutputs(pool, poolState, amounts, zeroForOne, side);
         this.logger.info(
-          `_getOutputs_${pool.id}_${reqId}: ${Date.now() - getOutputsStart} ms`,
+          `_getOutputs_${pool.id}_${reqId}: ${
+            Date.now() - getOutputsStart
+          } ms (src: ${from.address}, dest: ${
+            to.address
+          }, amounts: ${JSON.stringify(amounts)})`,
         );
       } else {
         this.logger.warn(
