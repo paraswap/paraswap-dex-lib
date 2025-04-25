@@ -11,7 +11,6 @@ import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
 import { PoolKey } from './types';
 import * as util from 'util';
 import { checkPoolsLiquidity } from '../../../tests/utils';
-import { Address } from '../../types';
 
 const quoterIface = new Interface(QuoterAbi);
 

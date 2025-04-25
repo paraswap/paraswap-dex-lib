@@ -129,6 +129,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
+    reqId: number,
   ): bigint[] | null {
     try {
       const outputsResult = uniswapV4PoolMath.queryOutputs(
@@ -137,6 +138,8 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
         amounts,
         zeroForOne,
         side,
+        this.logger,
+        reqId,
       );
 
       if (
@@ -195,7 +198,14 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       let prices: bigint[] | null;
       if (poolState) {
         const getOutputsStart = Date.now();
-        prices = this._getOutputs(pool, poolState, amounts, zeroForOne, side);
+        prices = this._getOutputs(
+          pool,
+          poolState,
+          amounts,
+          zeroForOne,
+          side,
+          reqId,
+        );
         this.logger.info(
           `_getOutputs_${pool.id}_${reqId}: ${
             Date.now() - getOutputsStart

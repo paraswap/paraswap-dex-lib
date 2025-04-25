@@ -18,6 +18,8 @@ import {
   SWAP_EVENT_MAX_CYCLES,
 } from '../constants';
 import { LPFeeLibrary } from './LPFeeLibrary';
+import { Logger } from 'log4js';
+import { log } from 'async';
 
 type StepComputations = {
   sqrtPriceStartX96: bigint;
@@ -45,6 +47,8 @@ class UniswapV4PoolMath {
     amounts: bigint[],
     zeroForOne: boolean,
     side: SwapSide,
+    logger: Logger,
+    reqId: number,
   ): bigint[] | null {
     const isSell = side === SwapSide.SELL;
 
@@ -55,15 +59,20 @@ class UniswapV4PoolMath {
         }
 
         const amountSpecified = -amount;
-        const [amount0, amount1] = this._swap(poolState, {
-          zeroForOne,
-          amountSpecified,
-          tickSpacing: BigInt(pool.key.tickSpacing),
-          sqrtPriceLimitX96: zeroForOne
-            ? TickMath.MIN_SQRT_PRICE + 1n
-            : TickMath.MAX_SQRT_PRICE - 1n,
-          lpFeeOverride: 0n,
-        } as SwapParams);
+        const [amount0, amount1] = this._swap(
+          poolState,
+          {
+            zeroForOne,
+            amountSpecified,
+            tickSpacing: BigInt(pool.key.tickSpacing),
+            sqrtPriceLimitX96: zeroForOne
+              ? TickMath.MIN_SQRT_PRICE + 1n
+              : TickMath.MAX_SQRT_PRICE - 1n,
+            lpFeeOverride: 0n,
+          } as SwapParams,
+          logger,
+          reqId,
+        );
 
         const amountSpecifiedActual =
           zeroForOne === amountSpecified < 0n ? amount0 : amount1;
@@ -82,15 +91,20 @@ class UniswapV4PoolMath {
 
         const amountSpecified = amount;
 
-        const [amount0, amount1] = this._swap(poolState, {
-          zeroForOne,
-          amountSpecified: amount,
-          tickSpacing: BigInt(pool.key.tickSpacing),
-          sqrtPriceLimitX96: zeroForOne
-            ? TickMath.MIN_SQRT_PRICE + 1n
-            : TickMath.MAX_SQRT_PRICE - 1n,
-          lpFeeOverride: 0n,
-        } as SwapParams);
+        const [amount0, amount1] = this._swap(
+          poolState,
+          {
+            zeroForOne,
+            amountSpecified: amount,
+            tickSpacing: BigInt(pool.key.tickSpacing),
+            sqrtPriceLimitX96: zeroForOne
+              ? TickMath.MIN_SQRT_PRICE + 1n
+              : TickMath.MAX_SQRT_PRICE - 1n,
+            lpFeeOverride: 0n,
+          } as SwapParams,
+          logger,
+          reqId,
+        );
 
         const amountSpecifiedActual =
           zeroForOne === amountSpecified < 0n ? amount0 : amount1;
@@ -104,7 +118,12 @@ class UniswapV4PoolMath {
     }
   }
 
-  _swap(poolState: PoolState, params: SwapParams): [bigint, bigint] {
+  _swap(
+    poolState: PoolState,
+    params: SwapParams,
+    logger: Logger,
+    reqId: number,
+  ): [bigint, bigint] {
     const slot0Start = poolState.slot0;
     const zeroForOne = params.zeroForOne;
 
@@ -309,6 +328,10 @@ class UniswapV4PoolMath {
 
       counter++;
     }
+
+    logger.info(
+      `_swap_iterations_counter_${poolState.id}_${reqId}: ${counter} (amount: ${params.amountSpecified})`,
+    );
 
     if (counter >= MAX_PRICING_COMPUTATION_STEPS_ALLOWED) {
       return [0n, 0n];
