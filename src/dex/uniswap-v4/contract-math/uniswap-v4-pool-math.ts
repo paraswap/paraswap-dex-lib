@@ -600,6 +600,7 @@ class UniswapV4PoolMath {
     newSwapFee: bigint,
     amount0: bigint,
     amount1: bigint,
+    logger: Logger,
   ) {
     const slot0Start = poolState.slot0;
 
@@ -746,6 +747,12 @@ class UniswapV4PoolMath {
       }
 
       counter++;
+    }
+
+    if (counter >= SWAP_EVENT_MAX_CYCLES) {
+      logger.info(
+        `Swap event (amount0: ${amount0}, amount1: ${amount1}, newSqrtPriceX96: ${newSqrtPriceX96}, newTick: ${newTick}, newLiquidity: ${newLiquidity}, newSwapFee: ${newSwapFee}) max cycles are reached  ${counter} for pool: ${poolState.id}`,
+      );
     }
 
     poolState.slot0.tick = newTick;

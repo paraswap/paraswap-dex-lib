@@ -544,6 +544,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
       resultSwapFee,
       amount0,
       amount1,
+      this.logger,
     );
 
     return poolState;
