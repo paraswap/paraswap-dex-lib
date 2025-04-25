@@ -282,7 +282,7 @@ export function swapExactOutputSingleCalldata(
   recipient: Address,
 ): string {
   const actions = encodeActions([
-    Actions.SWAP_EXACT_OUT,
+    Actions.SWAP_EXACT_OUT_SINGLE,
     Actions.SETTLE,
     Actions.TAKE,
   ]);
