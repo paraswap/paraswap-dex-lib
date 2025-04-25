@@ -19,7 +19,6 @@ import {
 } from '../constants';
 import { LPFeeLibrary } from './LPFeeLibrary';
 import { Logger } from 'log4js';
-import { log } from 'async';
 
 type StepComputations = {
   sqrtPriceStartX96: bigint;
