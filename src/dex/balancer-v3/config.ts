@@ -96,5 +96,19 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
         },
       ],
     },
+    [Network.AVALANCHE]: {
+      vaultAddress: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
+      apiNetworkName: 'AVALANCHE',
+      balancerRouterAddress: '0xF39CA6ede9BF7820a952b52f3c94af526bAB9015',
+      balancerBatchRouterAddress: '0xc9b36096f5201ea332Db35d6D195774ea0D5988f',
+      hooks: [
+        {
+          type: 'StableSurge',
+          apiName: 'STABLE_SURGE',
+          factory: '0x18CC3C68A5e64b40c846Aa6E45312cbcBb94f71b', // Pools with StableSurge hook will always be deployed from this factory
+          address: '0x86705ee19c0509ff68f1118c55ee2ebde383d122', // Address of the hook that will be used by pools
+        },
+      ],
+    },
   },
 };

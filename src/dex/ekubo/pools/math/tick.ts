@@ -1,10 +1,10 @@
-import { MAX_U256 } from './constants';
+import { MAX_U256, TWO_POW_128, TWO_POW_160, TWO_POW_96 } from './constants';
 
 export const MIN_TICK = -88722835;
 export const MAX_TICK = 88722835;
 export const MAX_SQRT_RATIO: bigint =
-  6276949602062853172742588666638147158083741740262337144812n;
-export const MIN_SQRT_RATIO: bigint = 18447191164202170526n;
+  6276949602062853172742588666607187473671941430179807625216n;
+export const MIN_SQRT_RATIO: bigint = 18447191164202170524n;
 export const FULL_RANGE_TICK_SPACING = 0;
 
 export function toSqrtRatio(tick: number): bigint {
@@ -97,6 +97,16 @@ export function toSqrtRatio(tick: number): bigint {
 
   if (tick > 0 && !sign) {
     ratio = MAX_U256 / ratio;
+  }
+
+  if (ratio >= TWO_POW_160) {
+    ratio = (ratio >> 98n) << 98n;
+  } else if (ratio >= TWO_POW_128) {
+    ratio = (ratio >> 66n) << 66n;
+  } else if (ratio >= TWO_POW_96) {
+    ratio = (ratio >> 34n) << 34n;
+  } else {
+    ratio = (ratio >> 2n) << 2n;
   }
 
   return ratio;

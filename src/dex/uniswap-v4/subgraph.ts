@@ -1,4 +1,4 @@
-import { SubgraphConnectorPool, SubgraphPool, Tick } from './types';
+import { SubgraphConnectorPool, SubgraphPool, SubgraphTick } from './types';
 import { POOL_MIN_TVL_USD, SUBGRAPH_TIMEOUT } from './constants';
 import { IDexHelper } from '../../dex-helper';
 import { Logger } from 'log4js';
@@ -12,34 +12,35 @@ export async function queryTicksForPool(
   subgraphUrl: string,
   blockNumber: number,
   id: string,
+  skip: number,
+  limit: number,
   latestBlock = false,
-): Promise<Tick[]> {
-  const ticksLimit = 300;
-
-  const poolQuery = `query {
-      pools(
+): Promise<SubgraphTick[]> {
+  const ticksQuery = `query($poolId: Bytes!, $skip: Int!) {
+      ticks(
+        where: {pool_: {id: $poolId}}
+        first: ${limit}
+        skip: $skip
+        orderBy: createdAtBlockNumber
+        orderDirection: asc
         ${latestBlock ? '' : `block: { number: ${blockNumber} }`}
-        where: {id: "${id}"}
       ) {
-        ticks(first: ${ticksLimit}) {
-          id
-          liquidityGross
-          liquidityNet
-          tickIdx
-        }
+        liquidityNet
+        liquidityGross
+        tickIdx
       }
   }`;
 
   const res = await dexHelper.httpRequest.querySubgraph<{
     data: {
-      pools: SubgraphPool[];
+      ticks: SubgraphTick[];
     };
     errors?: { message: string }[];
   }>(
     subgraphUrl,
     {
-      query: poolQuery,
-      variables: {},
+      query: ticksQuery,
+      variables: { poolId: id, skip },
     },
     { timeout: SUBGRAPH_TIMEOUT },
   );
@@ -56,6 +57,8 @@ export async function queryTicksForPool(
         subgraphUrl,
         blockNumber,
         id,
+        skip,
+        limit,
         true,
       );
     } else {
@@ -63,7 +66,7 @@ export async function queryTicksForPool(
     }
   }
 
-  return res.data.pools[0]?.ticks || [];
+  return res.data.ticks || [];
 }
 
 export async function queryAvailablePoolsForToken(
@@ -216,8 +219,6 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
   limit: number,
   latestBlock = false,
 ): Promise<SubgraphPool[]> {
-  const ticksLimit = 300;
-
   const poolsQuery = `query ($skip: Int!, $minTVL: Int!, $hooks: Bytes!) {
       pools(
         where: { hooks: $hooks, liquidity_gt: 0, totalValueLockedUSD_gte: $minTVL },
@@ -239,12 +240,6 @@ export async function queryOnePageForAllAvailablePoolsFromSubgraph(
         }
         hooks
         tick
-        ticks(first: ${ticksLimit}) {
-          id
-          liquidityGross
-          liquidityNet
-          tickIdx
-        }
       }
     }`;
 
