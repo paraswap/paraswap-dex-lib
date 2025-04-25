@@ -169,7 +169,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     limitPools?: string[],
   ): Promise<ExchangePrices<UniswapV4Data> | null> {
     const reqId = Math.floor(Math.random() * 10000);
-    const getPricesVolumeStart = Date.now();
+    // const getPricesVolumeStart = Date.now();
 
     const pools: Pool[] = await this.poolManager.getAvailablePoolsForPair(
       from.address.toLowerCase(),
@@ -253,11 +253,11 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     });
 
     const prices = await Promise.all(pricesPromises);
-    this.logger.info(
-      `getPricesVolume_${from.address}_${to.address}_${reqId}: ${
-        Date.now() - getPricesVolumeStart
-      } ms`,
-    );
+    // this.logger.info(
+    //   `getPricesVolume_${from.address}_${to.address}_${reqId}: ${
+    //     Date.now() - getPricesVolumeStart
+    //   } ms`,
+    // );
     return prices.filter(res => res !== null);
   }
 

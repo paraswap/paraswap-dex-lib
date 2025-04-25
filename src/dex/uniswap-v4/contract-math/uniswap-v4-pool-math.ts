@@ -328,9 +328,9 @@ class UniswapV4PoolMath {
       counter++;
     }
 
-    logger.info(
-      `_swap_iterations_counter_${poolState.id}_${reqId}: ${counter} (amount: ${params.amountSpecified})`,
-    );
+    // logger.info(
+    //   `_swap_iterations_counter_${poolState.id}_${reqId}: ${counter} (amount: ${params.amountSpecified})`,
+    // );
 
     if (counter >= MAX_PRICING_COMPUTATION_STEPS_ALLOWED) {
       return [0n, 0n];
