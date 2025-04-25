@@ -196,7 +196,7 @@ export function swapExactInputSingleCalldata(
   return encodeInputForExecute(actions, [swap, settle, take]);
 }
 
-// Multi-hop encoding
+// Multi-hop encoding for SELL side
 export function swapExactInputCalldata(
   srcToken: Address,
   destToken: Address,
@@ -242,12 +242,12 @@ export function swapExactInputCalldata(
           uint128 amountOutMinimum;
         }
       */
-      'tuple(address currencyIn, tuple(address,uint24,int24,int24,address,bytes)[] path, uint128 amountIn, uint128 amountOutMinimum)',
+      'tuple(address currencyIn, (address,uint24,int24,address,bytes)[] path, uint128 amountIn, uint128 amountOutMinimum)',
     ],
     [
-      [
-        exactInputParams.currencyIn,
-        exactInputParams.path.map(pathKey => {
+      {
+        currencyIn: exactInputParams.currencyIn,
+        path: exactInputParams.path.map(pathKey => {
           return [
             pathKey.intermediateCurrency,
             pathKey.fee,
@@ -256,9 +256,9 @@ export function swapExactInputCalldata(
             pathKey.hookData,
           ];
         }),
-        exactInputParams.amountIn,
-        exactInputParams.amountOutMinimum,
-      ],
+        amountIn: exactInputParams.amountIn,
+        amountOutMinimum: exactInputParams.amountOutMinimum,
+      },
     ],
   );
 
@@ -278,7 +278,7 @@ export function swapExactOutputSingleCalldata(
   recipient: Address,
 ): string {
   const actions = encodeActions([
-    Actions.SWAP_EXACT_OUT_SINGLE,
+    Actions.SWAP_EXACT_OUT,
     Actions.SETTLE,
     Actions.TAKE,
   ]);
@@ -318,6 +318,77 @@ export function swapExactOutputSingleCalldata(
         exactOutputSingleParams.amountInMaximum,
         exactOutputSingleParams.hookData,
       ],
+    ],
+  );
+
+  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
+  const take = encodeTake(destToken, recipient, amountOut);
+
+  return encodeInputForExecute(actions, [swap, settle, take]);
+}
+
+// Multi-hop encoding for SELL side
+export function swapExactOutputCalldata(
+  srcToken: Address,
+  destToken: Address,
+  data: UniswapV4Data,
+  amountOut: bigint,
+  recipient: Address,
+): string {
+  const actions = encodeActions([
+    Actions.SWAP_EXACT_OUT,
+    Actions.SETTLE,
+    Actions.TAKE,
+  ]);
+
+  const exactOutputParams: ExactOutputParams = {
+    currencyOut: data.path[data.path.length - 1].tokenOut,
+    amountOut,
+    amountInMaximum: MAX_UINT128,
+    path: data.path.reverse().map(path => ({
+      intermediateCurrency: path.tokenIn,
+      fee: BigInt(path.pool.key.fee),
+      tickSpacing: BigInt(path.pool.key.tickSpacing),
+      hooks: NULL_ADDRESS,
+      hookData: '0x',
+    })),
+  };
+
+  // encode SWAP_EXACT_OUTPUT
+  const swap = ethers.utils.defaultAbiCoder.encode(
+    [
+      /*
+         PathKey {
+          Currency intermediateCurrency;
+          uint24 fee;
+          int24 tickSpacing;
+          IHooks hooks;
+          bytes hookData;
+        }
+        ExactOutputParams {
+          address currencyOut;
+          PathKey[] path;
+          uint128 amountOut;
+          uint128 amountInMaximum;
+        }
+      */
+      'tuple(address currencyOut, (address,uint24,int24,address,bytes)[] path, uint128 amountOut, uint128 amountInMaximum)',
+    ],
+    [
+      {
+        currencyOut: exactOutputParams.currencyOut,
+        path: exactOutputParams.path.map(pathKey => {
+          return [
+            pathKey.intermediateCurrency,
+            pathKey.fee,
+            pathKey.tickSpacing,
+            pathKey.hooks,
+            pathKey.hookData,
+          ];
+        }),
+        amountOut: exactOutputParams.amountOut,
+        amountInMaximum: exactOutputParams.amountInMaximum,
+      },
     ],
   );
 
