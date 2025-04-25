@@ -197,7 +197,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
 
       let prices: bigint[] | null;
       if (poolState) {
-        const getOutputsStart = Date.now();
+        // const getOutputsStart = Date.now();
         prices = this._getOutputs(
           pool,
           poolState,
@@ -206,13 +206,13 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
           side,
           reqId,
         );
-        this.logger.info(
-          `_getOutputs_${pool.id}_${reqId}: ${
-            Date.now() - getOutputsStart
-          } ms (src: ${from.address}, dest: ${
-            to.address
-          }, amounts: ${JSON.stringify(amounts)})`,
-        );
+        // this.logger.info(
+        //   `_getOutputs_${pool.id}_${reqId}: ${
+        //     Date.now() - getOutputsStart
+        //   } ms (src: ${from.address}, dest: ${
+        //     to.address
+        //   }, amounts: ${JSON.stringify(amounts)})`,
+        // );
       } else {
         this.logger.warn(
           `${this.dexKey}-${this.network}: pool ${poolId} state was not found...falling back to rpc`,
