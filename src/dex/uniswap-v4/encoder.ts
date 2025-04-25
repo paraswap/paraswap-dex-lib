@@ -212,11 +212,15 @@ export function swapExactInputCalldata(
   ]);
 
   const exactInputParams: ExactInputParams = {
-    currencyIn: data.path[0].tokenIn,
+    currencyIn: isETHAddress(data.path[0].tokenIn)
+      ? NULL_ADDRESS
+      : data.path[0].tokenIn,
     amountIn,
     amountOutMinimum,
     path: data.path.map(path => ({
-      intermediateCurrency: path.tokenOut,
+      intermediateCurrency: isETHAddress(path.tokenOut)
+        ? NULL_ADDRESS
+        : path.tokenOut,
       fee: BigInt(path.pool.key.fee),
       tickSpacing: BigInt(path.pool.key.tickSpacing),
       hooks: NULL_ADDRESS,
@@ -342,11 +346,15 @@ export function swapExactOutputCalldata(
   ]);
 
   const exactOutputParams: ExactOutputParams = {
-    currencyOut: data.path[data.path.length - 1].tokenOut,
+    currencyOut: isETHAddress(data.path[data.path.length - 1].tokenOut)
+      ? NULL_ADDRESS
+      : data.path[data.path.length - 1].tokenOut,
     amountOut,
     amountInMaximum: MAX_UINT128,
-    path: data.path.reverse().map(path => ({
-      intermediateCurrency: path.tokenIn,
+    path: data.path.map(path => ({
+      intermediateCurrency: isETHAddress(path.tokenIn)
+        ? NULL_ADDRESS
+        : path.tokenIn,
       fee: BigInt(path.pool.key.fee),
       tickSpacing: BigInt(path.pool.key.tickSpacing),
       hooks: NULL_ADDRESS,

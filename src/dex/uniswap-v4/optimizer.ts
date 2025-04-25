@@ -2,7 +2,9 @@ import { UnoptimizedRate, OptimalSwap } from '../../types';
 import _ from 'lodash';
 import { UniswapV4Config } from './config';
 
-const UniswapV4AndForks = Object.keys(UniswapV4Config);
+const UniswapV4AndForks = Object.keys(UniswapV4Config).map(dexKey =>
+  dexKey.toLowerCase(),
+);
 
 export function uniswapV4Merge(or: UnoptimizedRate): UnoptimizedRate {
   const fixRoute = (rawRate: OptimalSwap[]): OptimalSwap[] => {
