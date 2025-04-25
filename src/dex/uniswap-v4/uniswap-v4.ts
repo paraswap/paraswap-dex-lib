@@ -390,53 +390,53 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   ): DexExchangeParam {
     let exchangeData: string;
 
-    // if (data.path.length === 1) {
-    //   // Single hop
-    //   const path = data.path[0];
-    //   if (side === SwapSide.SELL) {
-    //     exchangeData = swapExactInputSingleCalldata(
-    //       srcToken,
-    //       destToken,
-    //       path.pool.key,
-    //       path.zeroForOne,
-    //       BigInt(srcAmount),
-    //       // destMinAmount (can be 0 on dex level)
-    //       0n,
-    //       recipient,
-    //     );
-    //   } else {
-    //     exchangeData = swapExactOutputSingleCalldata(
-    //       srcToken,
-    //       destToken,
-    //       path.pool.key,
-    //       path.zeroForOne,
-    //       BigInt(destAmount),
-    //       recipient,
-    //     );
-    //   }
-    // } else {
-    // Multi-hop
-    exchangeData = '0x';
-
-    if (side === SwapSide.SELL) {
-      exchangeData = swapExactInputCalldata(
-        srcToken,
-        destToken,
-        data,
-        BigInt(srcAmount),
-        0n,
-        recipient,
-      );
+    if (data.path.length === 1) {
+      // Single hop
+      const path = data.path[0];
+      if (side === SwapSide.SELL) {
+        exchangeData = swapExactInputSingleCalldata(
+          srcToken,
+          destToken,
+          path.pool.key,
+          path.zeroForOne,
+          BigInt(srcAmount),
+          // destMinAmount (can be 0 on dex level)
+          0n,
+          recipient,
+        );
+      } else {
+        exchangeData = swapExactOutputSingleCalldata(
+          srcToken,
+          destToken,
+          path.pool.key,
+          path.zeroForOne,
+          BigInt(destAmount),
+          recipient,
+        );
+      }
     } else {
-      exchangeData = swapExactOutputCalldata(
-        srcToken,
-        destToken,
-        data,
-        BigInt(destAmount),
-        recipient,
-      );
+      // Multi-hop
+      exchangeData = '0x';
+
+      if (side === SwapSide.SELL) {
+        exchangeData = swapExactInputCalldata(
+          srcToken,
+          destToken,
+          data,
+          BigInt(srcAmount),
+          0n,
+          recipient,
+        );
+      } else {
+        exchangeData = swapExactOutputCalldata(
+          srcToken,
+          destToken,
+          data,
+          BigInt(destAmount),
+          recipient,
+        );
+      }
     }
-    // }
 
     return {
       needWrapNative: this.needWrapNative,
