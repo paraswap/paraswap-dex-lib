@@ -1742,7 +1742,7 @@ export const Tokens: {
   [Network.SEPOLIA]: {
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
     WETH: {
-      address: '0x7b79995e5f793a07bc00c21412e50ecae098e7f9',
+      address: '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14',
       decimals: 18,
     },
     bal: {
@@ -1774,7 +1774,27 @@ export const Tokens: {
       decimals: 6,
     },
     DAI: {
-      address: `0xB77EB1A70A96fDAAeB31DB1b42F2b8b5846b2613`,
+      address: `0x5fbad067f69eBbc276410D78fF52823be133eD48`,
+      decimals: 18,
+    },
+    USDT: {
+      address: `0x7db5fA1170D15e8D02deFB483b833EB1f3bAAC38`,
+      decimals: 6,
+    },
+    AWESOME1: {
+      address: `0x63DC6b0f80d067aF637C69b21949caA475AB813C`,
+      decimals: 18,
+    },
+    AWESOME2: {
+      address: `0xF8415EeE2509FCD26C392ECC9844D13c1Ad9c3E7`,
+      decimals: 18,
+    },
+    fwUSDC: {
+      address: '0x76AC72683C5b7F22C6B5Ed85B5B1511702464F7e',
+      decimals: 18,
+    },
+    fwDAI: {
+      address: '0x09D8486e42Aa76229a563bFa0f07CA301aCd29C9',
       decimals: 18,
     },
   },

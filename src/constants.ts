@@ -47,7 +47,7 @@ export enum Network {
   SEPOLIA = 11155111,
   GNOSIS = 100,
 }
-export const SUBGRAPH_TIMEOUT = 20 * 1000;
+export const SUBGRAPH_TIMEOUT = 30 * 1000;
 
 export enum LIMIT_ORDER_PROVIDERS {
   PARASWAP = 'ParaSwapLimitOrderProvider',

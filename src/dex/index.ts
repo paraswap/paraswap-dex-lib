@@ -10,6 +10,7 @@ import { UniswapV3 } from './uniswap-v3/uniswap-v3';
 import { BalancerV2 } from './balancer-v2/balancer-v2';
 import { balancerV2Merge } from './balancer-v2/optimizer';
 import { UniswapV2 } from './uniswap-v2/uniswap-v2';
+import { RingV2 } from './ring-v2/ring-v2';
 import { UniswapV2Alias } from './uniswap-v2/constants';
 import { uniswapMerge } from './uniswap-v2/optimizer';
 import { BiSwap } from './uniswap-v2/biswap';
@@ -136,6 +137,7 @@ const Dexes = [
   BalancerV3,
   UniswapV2,
   UniswapV3,
+  RingV2,
   Algebra,
   PancakeswapV3,
   VelodromeSlipstream,

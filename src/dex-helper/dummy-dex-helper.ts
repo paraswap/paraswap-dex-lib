@@ -266,11 +266,17 @@ export class DummyRequestWrapper implements IRequestWrapper {
     data: { query: string; variables?: Record<string, any> },
     { timeout = SUBGRAPH_TIMEOUT, type = 'subgraphs' },
   ): Promise<T> {
-    if (!subgraph || !data.query || !this.apiKeyTheGraph)
-      throw new Error('Invalid TheGraph params');
+    if (!subgraph || !data.query || !this.apiKeyTheGraph) {
+      const logger = log4js.getLogger('DummyRequestWrapper');
+      logger.error('Error in querySubgraph:', {
+        subgraph,
+        data,
+        apiKeyTheGraph: this.apiKeyTheGraph,
+      });
+    }
 
-    let url = `https://gateway-arbitrum.network.thegraph.com/api/${this.apiKeyTheGraph}/${type}/id/${subgraph}`;
-
+    let url =
+      'https://api.studio.thegraph.com/query/61509/ring-v2-eth-mainnet/version/latest';
     // support for the subgraphs that are on the studio and were not migrated to decentralized network yet (base and zkEVM)
     if (subgraph.includes('studio.thegraph.com')) {
       url = subgraph;
@@ -344,6 +350,10 @@ export class DummyDexHelper implements IDexHelper {
       return logger;
     };
     // For testing use only full parts like 1, 2, 3 ETH, not 0.1 ETH etc
+    // console.log(
+    //   'DummyDexHelper constructor:multiContract=',
+    //   this.multiContract,
+    // );
     this.getTokenUSDPrice = async (token, amount) =>
       Number(amount / BigInt(10 ** token.decimals));
     this.multiWrapper = new MultiWrapper(

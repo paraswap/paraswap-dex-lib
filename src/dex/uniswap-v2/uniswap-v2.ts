@@ -275,6 +275,7 @@ export class UniswapV2
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
+    this.logger.debug(`factoryAddress: ${factoryAddress}`);
     this.factory = new dexHelper.web3Provider.eth.Contract(
       uniswapV2factoryABI as any,
       factoryAddress,
@@ -361,6 +362,7 @@ export class UniswapV2
     params: UniswapV2PoolOrderedParams[],
   ): Promise<bigint> {
     let price = amount;
+    this.logger.debug(`getSellPricePath Amount: ${amount}`);
     for (const param of params) {
       price = await this.getSellPrice(param, price);
     }
@@ -368,7 +370,10 @@ export class UniswapV2
   }
 
   async findPair(from: Token, to: Token) {
-    if (from.address.toLowerCase() === to.address.toLowerCase()) return null;
+    if (from.address.toLowerCase() === to.address.toLowerCase()) {
+      this.logger.debug('Same token pair:', { from, to });
+      return null;
+    }
     const [token0, token1] =
       from.address.toLowerCase() < to.address.toLowerCase()
         ? [from, to]
@@ -376,10 +381,18 @@ export class UniswapV2
 
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
-    if (pair) return pair;
+    if (pair) {
+      this.logger.debug('[findPair]Pair found:', { pair });
+      return pair;
+    }
+    this.logger.debug('[findPair] factory and methods:', {
+      factory: this.factory,
+      methods: this.factory.methods,
+    });
     const exchange = await this.factory.methods
       .getPair(token0.address, token1.address)
       .call();
+    this.logger.debug(`[findPair]exchange = ${exchange}`);
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
     } else {
@@ -472,6 +485,7 @@ export class UniswapV2
       const pairState = reserves[i];
       const pair = pairsToFetch[i];
       if (!pair.pool) {
+        this.logger.debug('Adding pool:', { pair });
         await this.addPool(
           pair,
           pairState.reserves0,
@@ -489,10 +503,17 @@ export class UniswapV2
     blockNumber: number,
     tokenDexTransferFee: number,
   ): Promise<UniswapV2PoolOrderedParams | null> {
+    this.logger.debug('Get Pair Ordered Params:', { from, to });
+    this.logger.debug(`Block Number: ${blockNumber}`);
+    this.logger.debug(`Token Dex Transfer Fee: ${tokenDexTransferFee}`);
     const pair = await this.findPair(from, to);
-    if (!(pair && pair.pool && pair.exchange)) return null;
+    if (!(pair && pair.pool && pair.exchange)) {
+      this.logger.debug('Pair not found:', { pair });
+      return null;
+    }
     const pairState = pair.pool.getState(blockNumber);
     if (!pairState) {
+      this.logger.debug('Pair State not found:', { pairState });
       this.logger.error(
         `Error_orderPairParams expected reserves, got none (maybe the pool doesn't exist) ${
           from.symbol || from.address
@@ -500,6 +521,7 @@ export class UniswapV2
       );
       return null;
     }
+    this.logger.debug('Pair State:', { pairState });
     const fee = (pairState.feeCode + tokenDexTransferFee).toString();
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
@@ -589,7 +611,7 @@ export class UniswapV2
         blockNumber,
         transferFees.srcDexFee,
       );
-
+      this.logger.debug('Pair Param:', { pairParam });
       if (!pairParam) return null;
 
       const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
@@ -600,7 +622,12 @@ export class UniswapV2
         isSell ? transferFees.srcFee : transferFees.destFee,
         isSell ? SRC_TOKEN_PARASWAP_TRANSFERS : DEST_TOKEN_PARASWAP_TRANSFERS,
       );
-
+      this.logger.debug(
+        'Unit Volume With Fee:',
+        unitVolumeWithFee,
+        'isSell=',
+        isSell,
+      );
       const unit = isSell
         ? await this.getSellPricePath(unitVolumeWithFee, [pairParam])
         : await this.getBuyPricePath(unitVolumeWithFee, [pairParam]);
@@ -627,6 +654,7 @@ export class UniswapV2
         isSell ? this.DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
       );
 
+      this.logger.debug(`Unit Out With Fee: ${unitOutWithFee}`);
       // As uniswapv2 just has one pool per token pair
       return [
         {
@@ -688,7 +716,11 @@ export class UniswapV2
     tokenAddress: Address,
     count: number,
   ): Promise<PoolLiquidity[]> {
-    if (!this.subgraphURL) return [];
+    if (!this.subgraphURL) {
+      this.logger.error('Subgraph URL not set');
+      return [];
+    }
+    this.logger.debug(`Subgraph URL: ${this.subgraphURL}`);
     const query = `
       query ($token: Bytes!, $count: Int) {
         pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
@@ -726,8 +758,12 @@ export class UniswapV2
       { timeout: SUBGRAPH_TIMEOUT, type: this.subgraphType },
     );
 
-    if (!(data && data.pools0 && data.pools1))
+    this.logger.debug('Subgraph Data:', { data });
+    // Commented logs removed as they were already commented out
+    if (!(data && data.pools0 && data.pools1)) {
+      this.logger.error('Subgraph query failed');
       throw new Error("Couldn't fetch the pools from the subgraph");
+    }
     const pools0 = _.map(data.pools0, pool => ({
       exchange: this.dexKey,
       address: pool.id.toLowerCase(),

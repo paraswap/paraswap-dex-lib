@@ -247,6 +247,9 @@ export class LocalParaswapSDK implements IParaSwapSDK {
               swap.swapExchanges = await Promise.all(
                 swap.swapExchanges.map(async se => {
                   // Search in dexLib dexes
+                  // Log exchange info using proper logger
+                  const logger = this.dexHelper.getLogger('LocalParaswapSDK');
+                  logger.debug(`Processing exchange: ${se.exchange}`);
                   const dexLibExchange = this.pricingHelper.getDexByKey(
                     se.exchange,
                   );

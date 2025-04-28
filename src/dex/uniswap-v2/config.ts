@@ -171,6 +171,14 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       poolGasCost: 80 * 1000,
       feeCode: 30,
     },
+    [Network.SEPOLIA]: {
+      subgraphURL: 'QmZzsQGDmQFbzYkv2qx4pVnD6aVnuhKbD3t1ea7SAvV7zE',
+      factoryAddress: '0x509166db8Fb9571F8C34EfcD7347809B34dE4e04',
+      initCode:
+        '0x7bb8e653f17062363b5ba1ef7e234a8df49ac9c5b8efa399b9771220727e9730',
+      poolGasCost: 80 * 1000,
+      feeCode: 30,
+    },
   },
   ApeSwap: {
     [Network.BSC]: {

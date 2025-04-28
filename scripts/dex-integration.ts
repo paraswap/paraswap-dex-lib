@@ -108,7 +108,9 @@ async function initIntegration(argv: IOptions) {
 
 function testIntegration(argv: IOptions) {
   const dexNameParam = checkArgvName(argv);
-
+  console.log(
+    `shuizhu:start integration test for ${dexNameParam}. Please wait...`,
+  );
   const importLocal = require('import-local');
 
   if (!importLocal(__filename)) {

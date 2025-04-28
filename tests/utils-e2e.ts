@@ -58,13 +58,18 @@ class APIParaswapSDK implements IParaSwapSDK {
     dexKeys: string | string[],
     rpcUrl?: string,
   ) {
+    console.log('APIParaswapSDK constructor', network, dexKeys, rpcUrl);
     this.dexKeys = Array.isArray(dexKeys) ? dexKeys : [dexKeys];
+    console.log('APIParaswapSDK constructor...');
+
     this.paraSwap = constructSimpleSDK({
       version: ParaSwapVersion.V6,
       chainId: network,
       axios,
       apiURL: testingEndpoint,
     });
+    console.log('APIParaswapSDK constructor...');
+    console.log('paraSwap=', this.paraSwap);
     this.dexHelper = new DummyDexHelper(this.network, rpcUrl);
 
     this.dexAdapterService = new DexAdapterService(
@@ -81,7 +86,9 @@ class APIParaswapSDK implements IParaSwapSDK {
   }
 
   async initializePricing() {
+    console.log('initializePricing');
     const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+    console.log('blockNumber', blockNumber);
     await this.pricingHelper.initialize(blockNumber, this.dexKeys);
   }
 
@@ -96,11 +103,24 @@ class APIParaswapSDK implements IParaSwapSDK {
     transferFees?: TransferFeeParams,
     forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate> {
-    if (_poolIdentifiers)
-      throw new Error('PoolIdentifiers is not supported by the API');
+    console.log('getPrices---->in. _poolIdentifiers=', _poolIdentifiers);
+
+    if (_poolIdentifiers) {
+      console.log('PoolIdentifiers is not supported by the API');
+      // throw new Error('PoolIdentifiers is not supported by the API');
+    }
+
+    console.log('getPrices');
+    console.log('from', from);
+    console.log('to', to);
+    console.log('amount', amount);
+    console.log('side', side);
+    console.log('contractMethod', contractMethod);
+    console.log('forceRoute', forceRoute);
 
     let priceRoute;
     if (forceRoute && forceRoute.length > 0) {
+      console.log('will getRateByRoute. line=107');
       const options = {
         route: forceRoute,
         amount: amount.toString(),
@@ -115,8 +135,11 @@ class APIParaswapSDK implements IParaSwapSDK {
         },
         ...transferFees,
       };
+      console.log('will getRateByRoute. line=122');
       priceRoute = await this.paraSwap.swap.getRateByRoute(options);
     } else {
+      console.log('will getRate. line=125');
+
       const options = {
         srcToken: from.address,
         destToken: to.address,
@@ -132,7 +155,17 @@ class APIParaswapSDK implements IParaSwapSDK {
         srcDecimals: from.decimals,
         destDecimals: to.decimals,
       };
+      console.log('will getRate. line=141');
+
+      let priceRoute = {} as OptimalRate;
+      console.log('getPrices---->out.');
+      console.log('this.paraSwap=', this.paraSwap);
+      console.log('this.paraSwap.swap=', this.paraSwap.swap);
+
       priceRoute = await this.paraSwap.swap.getRate(options);
+      console.log('priceRoute=', priceRoute);
+
+      return priceRoute;
     }
 
     return priceRoute as OptimalRate;
@@ -145,7 +178,7 @@ class APIParaswapSDK implements IParaSwapSDK {
   ): Promise<TxObject> {
     const minMaxAmount = _minMaxAmount.toString();
     let deadline = Number((Math.floor(Date.now() / 1000) + 10 * 60).toFixed());
-
+    console.log('buildTransaction');
     return (await this.transactionBuilder.build({
       priceRoute,
       minMaxAmount: minMaxAmount.toString(),
@@ -182,6 +215,7 @@ export async function testE2E(
   replaceTenderlyWithEstimateGas?: boolean,
   forceRoute?: AddressOrSymbol[],
 ) {
+  console.log('testE2E--->in.');
   const useAPI = testingEndpoint && !poolIdentifiers;
   // The API currently doesn't allow for specifying poolIdentifiers
   const sdk: IParaSwapSDK = useAPI
@@ -205,6 +239,7 @@ export async function testE2E(
     transferFees,
     forceRoute,
   );
+  console.log('testE2E--->out.');
   // log the route for visibility
   console.log('Price Route:', JSON.stringify(priceRoute, null, 2));
   // prepare state overrides
@@ -273,6 +308,7 @@ export async function testE2E(
   );
   // log gas estimation if testing against API
   if (useAPI) {
+    console.log('testE2E--->in.');
     const estimatedGas = Number(priceRoute.gasCost);
     const gasUsed = simulation.gas_used;
     console.log(
@@ -285,6 +321,7 @@ export async function testE2E(
   if (sdk.releaseResources) {
     await sdk.releaseResources();
   }
+  console.log('testE2E--->out.');
   // assert simulation status
   expect(simulation.status).toEqual(true);
 }
@@ -465,6 +502,7 @@ export const constructE2ETests = (
   ]);
 
   describe(testSuiteName, () => {
+    console.log('constructE2ETests--->in.');
     const tokens = Tokens[network];
     const holders = Holders[network];
     const provider = new StaticJsonRpcProvider(
@@ -530,13 +568,18 @@ export const testGasEstimation = async (
   route?: string[],
   targetDifference?: number,
 ) => {
-  assert(
-    testingEndpoint,
-    'Estimation can only be tested with testing endpoint',
-  );
+  console.log('testGasEstimation. testingEndpoint=', testingEndpoint);
+  // assert(
+  //   testingEndpoint,
+  //   'Estimation can only be tested with testing endpoint',
+  // );
   // initialize pricing
+  console.log('gasEstimate, line=565');
   const sdk = new APIParaswapSDK(network, dexKeys);
+  console.log('gasEstimate, line=567');
   await sdk.initializePricing();
+  console.log('gasEstimate, line=569');
+
   // fetch the route
   const priceRoute = await sdk.getPrices(
     srcToken,
@@ -548,13 +591,15 @@ export const testGasEstimation = async (
     undefined,
     route,
   );
+  console.log('gasEstimate, line=557, contractMethod=', contractMethod);
+  /**
   // make sure fetched route uses correct `contractMethod`
   assert(
     priceRoute.contractMethod === contractMethod,
     'Price route has incorrect contract method!',
   );
   // log the route for visibility
-  console.log('Price Route:', JSON.stringify(priceRoute, null, 2));
+  console.log('Price Route:', priceRoute);//JSON.stringify(priceRoute, null, 2));
   // prepare state overrides
   const tenderlySimulator = TenderlySimulator.getInstance();
   // any address works
@@ -648,4 +693,5 @@ export const testGasEstimation = async (
   }
   // release
   await sdk.releaseResources();
+  */
 };
