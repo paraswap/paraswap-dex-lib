@@ -20,9 +20,11 @@ import { MiroMigratorData, MiroMigratorFunctions } from './types';
 import { SimpleExchange } from '../simple-exchange';
 import { MiroMigratorConfig } from './config';
 import { BI_POWS } from '../../bigint-constants';
-import MiroMigratorAbi from '../../abi/miro-migrator/MiroMigrator.abi.json';
 import { Interface } from '@ethersproject/abi';
-import { MIRO_MIGRATION_GAS_COST } from './constants';
+import MiroMigratorAbi from '../../abi/miro-migrator/MiroMigrator.abi.json';
+import ERC20ABI from '../../abi/erc20.json';
+import { MIRO_MIGRATION_GAS_COST, TRANSFER_TOPIC } from './constants';
+import { MiroMigratorEventState } from './miro-migrator-state';
 
 export class MiroMigrator
   extends SimpleExchange
@@ -34,6 +36,7 @@ export class MiroMigrator
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(MiroMigratorConfig);
+  public readonly eventPool: MiroMigratorEventState;
 
   logger: Logger;
 
@@ -52,6 +55,17 @@ export class MiroMigrator
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
+    this.eventPool = new MiroMigratorEventState(
+      this.dexKey,
+      this.network,
+      this.dexHelper,
+      this.logger,
+      this.migratorInterface,
+      this.migratorAddress,
+      new Interface(ERC20ABI),
+      this.xyzTokenAddress,
+      TRANSFER_TOPIC,
+    );
   }
 
   isPSP(tokenAddress: Address) {
@@ -94,6 +108,10 @@ export class MiroMigrator
     if (!this.isAppropriatePair(srcToken, destToken)) {
       return null;
     }
+
+    const state = this.eventPool.getState(blockNumber);
+
+    this.logger.debug(srcToken, destToken, amounts, state);
 
     return [
       {
@@ -138,7 +156,7 @@ export class MiroMigrator
   ): Promise<SimpleExchangeParam> {
     const swapData = this.migratorInterface.encodeFunctionData(
       MiroMigratorFunctions.migratePSPtoXYZ,
-      [srcAmount, '0x'], // TODO: add permit data
+      [srcAmount, '0x'],
     );
 
     return this.buildSimpleParamWithoutWETHConversion(
@@ -162,7 +180,7 @@ export class MiroMigrator
   ): DexExchangeParam {
     const swapData = this.migratorInterface.encodeFunctionData(
       MiroMigratorFunctions.migratePSPtoXYZ,
-      [srcAmount, '0x'], // TODO: add permit data
+      [srcAmount, '0x'],
     );
 
     return {

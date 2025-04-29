@@ -1,5 +1,9 @@
 import { Address } from '../../types';
 
+export type MiroMigratorState = {
+  balance: bigint;
+};
+
 export type MiroMigratorData = null;
 
 export type DexParams = {
