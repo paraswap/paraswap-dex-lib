@@ -63,10 +63,7 @@ export class MiroMigrator
   }
 
   isAppropriatePair(srcToken: Token, destToken: Token) {
-    return (
-      (this.isPSP(srcToken.address) && this.isXYZ(destToken.address)) ||
-      (this.isXYZ(srcToken.address) && this.isPSP(destToken.address))
-    );
+    return this.isPSP(srcToken.address) && this.isXYZ(destToken.address);
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
