@@ -23,8 +23,9 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
 
   needWrapNative = false;
 
-  private network: number;
-  private wethAddress: Address =
+  private readonly network: number;
+  private readonly referralAddress: Address;
+  private readonly wethAddress: Address =
     '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'.toLowerCase();
 
   constructor(dexHelper: IDexHelper) {
@@ -32,6 +33,8 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
 
     this.stETHInterface = new Interface(stETHAbi as JsonFragment[]);
     this.erc20Interface = new Interface(ERC20ABI);
+    this.referralAddress =
+      dexHelper.config.data.lidoReferralAddress ?? NULL_ADDRESS;
   }
 
   getAdapterParam(
@@ -59,7 +62,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
   ): Promise<SimpleExchangeParam> {
     const swapData = this.stETHInterface.encodeFunctionData(
       stETHFunctions.submit,
-      [NULL_ADDRESS],
+      [this.referralAddress],
     );
 
     return {
@@ -85,7 +88,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
   ): DexExchangeParam {
     const swapData = this.stETHInterface.encodeFunctionData(
       stETHFunctions.submit,
-      [NULL_ADDRESS],
+      [this.referralAddress],
     );
 
     return {

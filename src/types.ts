@@ -318,6 +318,7 @@ export type Config = {
   idleDaoAuthToken?: string;
   forceRpcFallbackDexs: string[];
   apiKeyTheGraph: string;
+  lidoReferralAddress?: Address;
 };
 
 export type BigIntAsString = string;
