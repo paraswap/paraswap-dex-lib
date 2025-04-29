@@ -174,6 +174,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
 
   async getUpdatedPoolState(
     existingPoolState: DeepReadonly<PoolStateMap>,
+    blockNumber: number,
   ): Promise<DeepReadonly<PoolStateMap> | null> {
     // Get all latest pools from API
     const apiPoolStateMap = await getPoolsApi(
@@ -198,18 +199,15 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     }
 
     // Only get on-chain state for new pools
-    const newOnChainPools = await getOnChainState(
+    const latestOnChainPools = await getOnChainState(
       this.network,
-      newApiPools,
+      apiPoolStateMap,
       this.dexHelper,
       this.interfaces,
+      blockNumber,
     );
 
-    // Merge existing pools with new pools
-    return {
-      ...existingPoolState,
-      ...newOnChainPools,
-    };
+    return latestOnChainPools;
   }
 
   liquidityAddedEvent(
@@ -512,7 +510,10 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const blockNumber = await this.dexHelper.provider.getBlockNumber();
     // We just want the current saved state
     const currentState = this.getStaleState() || {};
-    const updatedPoolState = await this.getUpdatedPoolState(currentState);
+    const updatedPoolState = await this.getUpdatedPoolState(
+      currentState,
+      blockNumber,
+    );
     if (updatedPoolState) this.setState(updatedPoolState, blockNumber);
   }
 
