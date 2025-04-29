@@ -33,7 +33,7 @@ export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigrator
   ) {
     super(parentName, 'miro_migrator_state', dexHelper, logger);
     this.logDecoder = (log: Log) => this.migratorInterface.parseLog(log);
-    this.addressesSubscribed = [migratorAddress];
+    this.addressesSubscribed = [xyzAddress];
   }
 
   protected async processLog(
