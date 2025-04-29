@@ -36,7 +36,7 @@ export class MiroMigrator
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(MiroMigratorConfig);
-  public readonly eventPool: MiroMigratorEventState;
+  public readonly eventState: MiroMigratorEventState;
 
   logger: Logger;
 
@@ -55,7 +55,7 @@ export class MiroMigrator
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventPool = new MiroMigratorEventState(
+    this.eventState = new MiroMigratorEventState(
       this.dexKey,
       this.network,
       this.dexHelper,
@@ -84,6 +84,10 @@ export class MiroMigrator
     return null;
   }
 
+  async initializePricing(blockNumber: number) {
+    this.eventState.initialize(blockNumber);
+  }
+
   async getPoolIdentifiers(
     srcToken: Token,
     destToken: Token,
@@ -109,7 +113,7 @@ export class MiroMigrator
       return null;
     }
 
-    const state = this.eventPool.getState(blockNumber);
+    const state = this.eventState.getState(blockNumber);
 
     this.logger.debug(srcToken, destToken, amounts, state);
 
