@@ -198,7 +198,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       return null;
     }
 
-    // Only get on-chain state for new pools
+    // Get on-chain state for all pools to ensure correct state
     const latestOnChainPools = await getOnChainState(
       this.network,
       apiPoolStateMap,
