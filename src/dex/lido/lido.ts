@@ -24,8 +24,7 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
 
   private readonly network: number;
   private readonly referralAddress: Address;
-  private readonly wethAddress: Address =
-    '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'.toLowerCase();
+  private readonly wethAddress: Address;
 
   constructor(dexHelper: IDexHelper) {
     this.network = dexHelper.config.data.network;
@@ -34,6 +33,8 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
     this.erc20Interface = new Interface(ERC20ABI);
     this.referralAddress =
       dexHelper.config.data.lidoReferralAddress ?? NULL_ADDRESS;
+    this.wethAddress =
+      dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
   }
 
   getAdapterParam(
