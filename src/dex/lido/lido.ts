@@ -14,7 +14,6 @@ import { LidoData, stETHFunctions } from './types';
 import { stETH } from './config';
 import { WethFunctions } from '../weth/types';
 import ERC20ABI from '../../abi/erc20.json';
-import { extractReturnAmountPosition } from '../../executor/utils';
 
 export class Lido implements IDexTxBuilder<LidoData, any> {
   static dexKeys = ['lido'];
@@ -101,13 +100,6 @@ export class Lido implements IDexTxBuilder<LidoData, any> {
             srcAmount,
           ])
         : undefined,
-      returnAmountPos:
-        _side === SwapSide.SELL
-          ? extractReturnAmountPosition(
-              this.stETHInterface,
-              stETHFunctions.submit,
-            )
-          : undefined,
     };
   }
 }
