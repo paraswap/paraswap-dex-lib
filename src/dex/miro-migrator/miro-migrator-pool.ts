@@ -4,18 +4,18 @@ import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import { MiroMigratorState } from './types';
+import { PoolState } from './types';
 import { uint256ToBigInt } from '../../lib/decoders';
 import MiroMigratorAbi from '../../abi/miro-migrator/MiroMigrator.abi.json';
 import ERC20ABI from '../../abi/erc20.json';
 
-export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigratorState> {
+export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
     [event: string]: (
       event: any,
-      state: DeepReadonly<MiroMigratorState>,
+      state: DeepReadonly<PoolState>,
       log: Readonly<Log>,
-    ) => DeepReadonly<MiroMigratorState> | null;
+    ) => DeepReadonly<PoolState> | null;
   } = {};
 
   logDecoder: (log: Log) => any;
@@ -39,9 +39,9 @@ export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigrator
   }
 
   protected async processLog(
-    state: DeepReadonly<MiroMigratorState>,
+    state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
-  ): Promise<DeepReadonly<MiroMigratorState> | null> {
+  ): Promise<DeepReadonly<PoolState> | null> {
     try {
       const event = this.logDecoder(log);
 
@@ -68,7 +68,7 @@ export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigrator
 
   async generateState(
     blockNumber: number | 'latest' = 'latest',
-  ): Promise<DeepReadonly<MiroMigratorState>> {
+  ): Promise<DeepReadonly<PoolState>> {
     const calls = [
       {
         target: this.xyzAddress,
@@ -88,7 +88,7 @@ export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigrator
     return { balance: balance.returnData };
   }
 
-  async getOrGenerateState(blockNumber: number): Promise<MiroMigratorState> {
+  async getOrGenerateState(blockNumber: number): Promise<PoolState> {
     let state = this.getState(blockNumber);
     if (!state) {
       state = await this.generateState(blockNumber);
@@ -99,9 +99,9 @@ export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigrator
 
   async handleTransferTo(
     event: any,
-    state: DeepReadonly<MiroMigratorState>,
+    state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
-  ): Promise<DeepReadonly<MiroMigratorState>> {
+  ): Promise<DeepReadonly<PoolState>> {
     return {
       balance: state.balance + BigInt(event.args.value),
     };
@@ -109,9 +109,9 @@ export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigrator
 
   async handleTransferFrom(
     event: any,
-    state: DeepReadonly<MiroMigratorState>,
+    state: DeepReadonly<PoolState>,
     log: Readonly<Log>,
-  ): Promise<DeepReadonly<MiroMigratorState>> {
+  ): Promise<DeepReadonly<PoolState>> {
     return {
       balance: state.balance - BigInt(event.args.value),
     };

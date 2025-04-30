@@ -23,7 +23,7 @@ import { BI_POWS } from '../../bigint-constants';
 import { Interface } from '@ethersproject/abi';
 import MiroMigratorAbi from '../../abi/miro-migrator/MiroMigrator.abi.json';
 import { MIRO_MIGRATION_GAS_COST, TRANSFER_TOPIC } from './constants';
-import { MiroMigratorEventState } from './miro-migrator-state';
+import { MiroMigratorEventPool } from './miro-migrator-pool';
 
 export class MiroMigrator
   extends SimpleExchange
@@ -35,7 +35,7 @@ export class MiroMigrator
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
     getDexKeysWithNetwork(MiroMigratorConfig);
-  public readonly eventState: MiroMigratorEventState;
+  public readonly eventPool: MiroMigratorEventPool;
 
   logger: Logger;
 
@@ -54,7 +54,7 @@ export class MiroMigrator
   ) {
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
-    this.eventState = new MiroMigratorEventState(
+    this.eventPool = new MiroMigratorEventPool(
       this.dexKey,
       this.network,
       this.dexHelper,
@@ -82,7 +82,7 @@ export class MiroMigrator
   }
 
   async initializePricing(blockNumber: number) {
-    this.eventState.initialize(blockNumber);
+    this.eventPool.initialize(blockNumber);
   }
 
   async getPoolIdentifiers(
@@ -110,7 +110,7 @@ export class MiroMigrator
       return null;
     }
 
-    const state = await this.eventState.getOrGenerateState(blockNumber);
+    const state = await this.eventPool.getOrGenerateState(blockNumber);
     if (!state) return null;
 
     const prices: bigint[] = [];

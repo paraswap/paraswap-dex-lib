@@ -1,6 +1,6 @@
 import { Address } from '../../types';
 
-export type MiroMigratorState = {
+export type PoolState = {
   balance: bigint;
 };
 

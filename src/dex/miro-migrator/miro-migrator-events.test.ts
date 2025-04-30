@@ -2,26 +2,26 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { MiroMigratorEventState } from './miro-migrator-state';
+import { MiroMigratorEventPool } from './miro-migrator-pool';
 import { Network } from '../../constants';
 import { Address } from '../../types';
 import { DummyDexHelper } from '../../dex-helper/index';
 import { testEventSubscriber } from '../../../tests/utils-events';
-import { MiroMigratorState } from './types';
+import { PoolState } from './types';
 import { TRANSFER_TOPIC } from './constants';
 import { MiroMigratorConfig } from './config';
 
 jest.setTimeout(50 * 1000);
 
-async function fetchMiroMigratorState(
-  miroMigratorEventState: MiroMigratorEventState,
+async function fetchPoolState(
+  miroMigratorPool: MiroMigratorEventPool,
   blockNumber: number,
   poolAddress: string,
-): Promise<MiroMigratorState> {
-  const eventState = miroMigratorEventState.getState(blockNumber);
+): Promise<PoolState> {
+  const eventState = miroMigratorPool.getState(blockNumber);
   if (eventState) return eventState;
-  const onChainState = await miroMigratorEventState.generateState(blockNumber);
-  miroMigratorEventState.setState(onChainState, blockNumber);
+  const onChainState = await miroMigratorPool.generateState(blockNumber);
+  miroMigratorPool.setState(onChainState, blockNumber);
   return onChainState;
 }
 
@@ -33,7 +33,7 @@ describe('MiroMigrator EventPool Optimism', function () {
   const network = Network.OPTIMISM;
   const dexHelper = new DummyDexHelper(network);
   const logger = dexHelper.getLogger(dexKey);
-  let miroMigratorState: MiroMigratorEventState;
+  let miroMigratorPool: MiroMigratorEventPool;
 
   const eventsToTest: Record<Address, EventMappings> = {
     [MiroMigratorConfig[dexKey][network].xyzTokenAddress]: {
@@ -42,7 +42,7 @@ describe('MiroMigrator EventPool Optimism', function () {
   };
 
   beforeEach(async () => {
-    miroMigratorState = new MiroMigratorEventState(
+    miroMigratorPool = new MiroMigratorEventPool(
       dexKey,
       network,
       dexHelper,
@@ -62,11 +62,11 @@ describe('MiroMigrator EventPool Optimism', function () {
               blockNumbers.forEach((blockNumber: number) => {
                 it(`State after ${blockNumber}`, async function () {
                   await testEventSubscriber(
-                    miroMigratorState,
-                    miroMigratorState.addressesSubscribed,
+                    miroMigratorPool,
+                    miroMigratorPool.addressesSubscribed,
                     (_blockNumber: number) =>
-                      fetchMiroMigratorState(
-                        miroMigratorState,
+                      fetchPoolState(
+                        miroMigratorPool,
                         _blockNumber,
                         poolAddress,
                       ),
