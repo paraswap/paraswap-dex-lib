@@ -34,7 +34,7 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
     protected xyzInterface: Interface = new Interface(ERC20ABI),
   ) {
     super(parentName, 'state', dexHelper, logger);
-    this.logDecoder = (log: Log) => this.migratorInterface.parseLog(log);
+    this.logDecoder = (log: Log) => this.xyzInterface.parseLog(log);
     this.addressesSubscribed = [xyzAddress];
   }
 
@@ -47,14 +47,14 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
 
       if (
         log.topics[0] === this.transferTopic &&
-        event.args.to.toLowerCase() === this.migratorAddress.toLowerCase()
+        event.args.dst.toLowerCase() === this.migratorAddress.toLowerCase()
       ) {
         return this.handleTransferTo(event, state, log);
       }
 
       if (
         log.topics[0] === this.transferTopic &&
-        event.args.from.toLowerCase() === this.migratorAddress.toLowerCase()
+        event.args.src.toLowerCase() === this.migratorAddress.toLowerCase()
       ) {
         return this.handleTransferFrom(event, state, log);
       }
@@ -103,7 +103,7 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState>> {
     return {
-      balance: state.balance + BigInt(event.args.value),
+      balance: state.balance + BigInt(event.args.wad),
     };
   }
 
@@ -113,7 +113,7 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
     log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState>> {
     return {
-      balance: state.balance - BigInt(event.args.value),
+      balance: state.balance - BigInt(event.args.wad),
     };
   }
 }
