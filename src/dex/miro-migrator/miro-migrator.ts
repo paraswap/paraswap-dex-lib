@@ -113,12 +113,18 @@ export class MiroMigrator
     const state = await this.eventState.getOrGenerateState(blockNumber);
     if (!state) return null;
 
-    const requstedAmount = amounts[amounts.length - 1];
-    if (requstedAmount > state.balance) return null;
+    const prices: bigint[] = [];
+    for (const amount of amounts) {
+      if (amount > state.balance) {
+        prices.push(0n);
+      } else {
+        prices.push(amount);
+      }
+    }
 
     return [
       {
-        prices: amounts,
+        prices,
         unit: this.unitPrice,
         gasCost: MIRO_MIGRATION_GAS_COST,
         exchange: this.dexKey,
