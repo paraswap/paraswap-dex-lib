@@ -114,8 +114,16 @@ export class MiroMigrator
     }
 
     const state = this.eventState.getState(blockNumber);
+    if (!state) return null;
+    this.logger.debug(
+      `${this.dexKey}: amounts: ${amounts}, state balance: ${state.balance}`,
+    );
 
-    this.logger.debug(srcToken, destToken, amounts, state);
+    const availableAmounts = amounts.filter(amount => amount <= state.balance);
+    this.logger.debug(
+      `${this.dexKey}: available amounts: ${availableAmounts}, state balance: ${state.balance}`,
+    );
+    if (availableAmounts.length === 0) return null;
 
     return [
       {
