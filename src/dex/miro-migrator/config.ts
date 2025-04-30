@@ -5,9 +5,9 @@ import { Network } from '../../constants';
 export const MiroMigratorConfig: DexConfigMap<DexParams> = {
   MiroMigrator: {
     [Network.OPTIMISM]: {
-      migratorAddress: '0x5032433fB65D7db8e8B90Cb239d50fDFD941fb6b',
-      pspTokenAddress: '0x326Aec8d7d99d1D6022c57C5f6194D2a7867227d',
-      xyzTokenAddress: '0xa2781111F824Ca1Cd98454B2C9722BAefC898e99',
+      migratorAddress: '0x5032433fb65d7db8e8b90cb239d50fdfd941fb6b',
+      pspTokenAddress: '0x326aec8d7d99d1d6022c57c5f6194d2a7867227d',
+      xyzTokenAddress: '0xa2781111f824ca1cd98454b2c9722baefc898e99',
     },
   },
 };
