@@ -19,7 +19,6 @@ async function fetchPoolState(
   poolAddress: string,
 ): Promise<PoolState> {
   const onChainState = await miroMigratorPool.generateState(blockNumber);
-  miroMigratorPool.setState(onChainState, blockNumber);
   return onChainState;
 }
 
