@@ -215,10 +215,9 @@ export class MiroMigrator
         address: this.migratorAddress,
         connectorTokens: [
           {
-            address:
-              tokenAddress === this.pspTokenAddress
-                ? this.xyzTokenAddress
-                : this.pspTokenAddress,
+            address: this.isPSP(tokenAddress)
+              ? this.xyzTokenAddress
+              : this.pspTokenAddress,
             decimals: 18,
           },
         ],
