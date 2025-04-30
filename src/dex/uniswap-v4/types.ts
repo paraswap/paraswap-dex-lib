@@ -57,9 +57,12 @@ export type PoolPairsInfo = {
 };
 
 export type UniswapV4Data = {
-  exchange: Address;
-  zeroForOne: boolean;
-  pool: Pool;
+  path: {
+    tokenIn: Address;
+    tokenOut: Address;
+    zeroForOne: boolean;
+    pool: Pool;
+  }[];
 };
 
 export type Pool = {
