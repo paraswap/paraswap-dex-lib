@@ -119,11 +119,11 @@ export class MiroMigrator
       `${this.dexKey}: amounts: ${amounts}, state balance: ${state.balance}`,
     );
 
-    const availableAmounts = amounts.filter(amount => amount <= state.balance);
+    const requstedAmount = amounts[amounts.length - 1];
     this.logger.debug(
-      `${this.dexKey}: available amounts: ${availableAmounts}, state balance: ${state.balance}`,
+      `${this.dexKey}: requested amount: ${requstedAmount}, state balance: ${state.balance}`,
     );
-    if (availableAmounts.length === 0) return null;
+    if (requstedAmount > state.balance) return null;
 
     return [
       {
