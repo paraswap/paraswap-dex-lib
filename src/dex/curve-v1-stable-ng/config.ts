@@ -15,7 +15,9 @@ const CurveV1StableNgConfig: DexConfigMap<DexParams> = {
       ],
       router: '0x16C6521Dff6baB339122a0FE25a9116693265353', // https://github.com/curvefi/curve-router-ng
       stateUpdatePeriodMs: 5 * 1000,
-      disabledPools: new Set([]),
+      disabledPools: new Set([
+        '0x37636263da44423349788326b860311f5db0dd20', // USDC - USDT - SPANK
+      ]),
       disabledImplementations: new Set([]),
       factoryPoolImplementations: {
         '0xdcc91f930b42619377c200ba05b7513f2958b202': {
