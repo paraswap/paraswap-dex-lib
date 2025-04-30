@@ -115,21 +115,15 @@ export class MiroMigrator
 
     const state = this.eventState.getState(blockNumber);
     if (!state) return null;
-    this.logger.debug(
-      `${this.dexKey}: amounts: ${amounts}, state balance: ${state.balance}`,
-    );
 
     const requstedAmount = amounts[amounts.length - 1];
-    this.logger.debug(
-      `${this.dexKey}: requested amount: ${requstedAmount}, state balance: ${state.balance}`,
-    );
     if (requstedAmount > state.balance) return null;
 
     return [
       {
         prices: amounts,
         unit: this.unitPrice,
-        gasCost: MIRO_MIGRATION_GAS_COST, // TODO: investigate this one
+        gasCost: MIRO_MIGRATION_GAS_COST,
         exchange: this.dexKey,
         poolAddresses: [this.migratorAddress],
         data: null,
