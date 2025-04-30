@@ -199,13 +199,20 @@ export class MiroMigrator
     tokenAddress: Address,
     limit: number,
   ): Promise<PoolLiquidity[]> {
+    if (!this.isPSP(tokenAddress) && !this.isXYZ(tokenAddress)) {
+      return [];
+    }
+
     return [
       {
         exchange: this.dexKey,
-        address: this.xyzTokenAddress,
+        address: this.migratorAddress,
         connectorTokens: [
           {
-            address: this.pspTokenAddress,
+            address:
+              tokenAddress === this.pspTokenAddress
+                ? this.xyzTokenAddress
+                : this.pspTokenAddress,
             decimals: 18,
           },
         ],
