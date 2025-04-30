@@ -22,7 +22,6 @@ import { MiroMigratorConfig } from './config';
 import { BI_POWS } from '../../bigint-constants';
 import { Interface } from '@ethersproject/abi';
 import MiroMigratorAbi from '../../abi/miro-migrator/MiroMigrator.abi.json';
-import ERC20ABI from '../../abi/erc20.json';
 import { MIRO_MIGRATION_GAS_COST, TRANSFER_TOPIC } from './constants';
 import { MiroMigratorEventState } from './miro-migrator-state';
 
@@ -60,9 +59,7 @@ export class MiroMigrator
       this.network,
       this.dexHelper,
       this.logger,
-      this.migratorInterface,
       this.migratorAddress,
-      new Interface(ERC20ABI),
       this.xyzTokenAddress,
       TRANSFER_TOPIC,
     );
@@ -113,7 +110,7 @@ export class MiroMigrator
       return null;
     }
 
-    const state = this.eventState.getState(blockNumber);
+    const state = await this.eventState.getOrGenerateState(blockNumber);
     if (!state) return null;
 
     const requstedAmount = amounts[amounts.length - 1];

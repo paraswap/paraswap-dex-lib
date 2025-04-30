@@ -9,14 +9,14 @@ import { ContractMethodV6 } from '@paraswap/core';
 
 describe('MiroMigrator Gas Estimation', () => {
   const dexKey = 'MiroMigrator';
-  const network = Network.MAINNET;
+  const network = Network.OPTIMISM;
 
-  describe('swapExactAmountIn', () => {
-    const PSP = Tokens[network]['testPSP'];
-    const XYZ = Tokens[network]['testXYZ'];
-    const amount = 10000000000000000000n;
+  const PSP = Tokens[network]['testPSP'];
+  const XYZ = Tokens[network]['testXYZ'];
+  const amount = 10000000000000000000n;
 
-    it('SELL -> migratePSPtoXYZ', async () => {
+  describe('migratePSPtoXYZ', () => {
+    it('swapExactAmountIn', async () => {
       await testGasEstimation(
         network,
         PSP,
@@ -28,7 +28,7 @@ describe('MiroMigrator Gas Estimation', () => {
       );
     });
 
-    it('BUY -> migratePSPtoXYZ', async () => {
+    it('swapExactAmountOut', async () => {
       await testGasEstimation(
         network,
         PSP,

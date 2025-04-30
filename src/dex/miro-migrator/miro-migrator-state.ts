@@ -6,6 +6,8 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { MiroMigratorState } from './types';
 import { uint256ToBigInt } from '../../lib/decoders';
+import MiroMigratorAbi from '../../abi/miro-migrator/MiroMigrator.abi.json';
+import ERC20ABI from '../../abi/erc20.json';
 
 export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigratorState> {
   handlers: {
@@ -25,13 +27,13 @@ export class MiroMigratorEventState extends StatefulEventSubscriber<MiroMigrator
     protected network: number,
     protected dexHelper: IDexHelper,
     logger: Logger,
-    protected migratorInterface: Interface,
     protected migratorAddress: string,
-    protected xyzInterface: Interface,
     protected xyzAddress: string,
     protected transferTopic: string,
+    protected migratorInterface: Interface = new Interface(MiroMigratorAbi),
+    protected xyzInterface: Interface = new Interface(ERC20ABI),
   ) {
-    super(parentName, 'miro_migrator_state', dexHelper, logger);
+    super(parentName, 'state', dexHelper, logger);
     this.logDecoder = (log: Log) => this.migratorInterface.parseLog(log);
     this.addressesSubscribed = [xyzAddress];
   }
