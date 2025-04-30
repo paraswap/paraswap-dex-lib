@@ -326,7 +326,7 @@ export function swapExactOutputSingleCalldata(
   );
 
   const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
-  const take = encodeTake(destToken, recipient, amountOut);
+  const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
 
   return encodeInputForExecute(actions, [swap, settle, take]);
 }
@@ -401,7 +401,7 @@ export function swapExactOutputCalldata(
   );
 
   const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
-  const take = encodeTake(destToken, recipient, amountOut);
+  const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
 
   return encodeInputForExecute(actions, [swap, settle, take]);
 }
