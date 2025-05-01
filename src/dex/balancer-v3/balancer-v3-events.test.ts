@@ -543,7 +543,7 @@ describe('BalancerV3 EventPool', function () {
     const logger = dexHelper.getLogger(dexKey);
     let balancerV3Pool: BalancerV3EventPool;
 
-    // UpdateWeightRunner -> EventMappings
+    // vault -> EventMappings
     const eventsToTest: Record<Address, EventMappings> = {
       [BalancerV3Config.BalancerV3[network].vaultAddress]: {
         VaultAuxiliary: {
