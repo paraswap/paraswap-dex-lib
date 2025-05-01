@@ -1,251 +1,125 @@
-/* eslint-disable no-console */
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Interface, Result } from '@ethersproject/abi';
-import { DummyDexHelper } from '../../dex-helper/index';
+import { DummyDexHelper } from '../../dex-helper';
 import { Network, SwapSide } from '../../constants';
-import { BI_POWS } from '../../bigint-constants';
 import { RingV2 } from './ring-v2';
-import {
-  checkPoolPrices,
-  checkPoolsLiquidity,
-  checkConstantPoolPrices,
-} from '../../../tests/utils';
-import { Tokens } from '../../../tests/constants-e2e';
+import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
+import { BI_POWS } from '../../bigint-constants';
 
-/*
-  README
-  ======
+const WETH = {
+  address: '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14',
+  decimals: 18,
+};
 
-  This test script adds tests for RingV2 general integration
-  with the DEX interface. The test cases below are example tests.
-  It is recommended to add tests which cover RingV2 specific
-  logic.
+//mainnet, test for mainnet, ethereum
+const USDC = {
+  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  decimals: 6,
+};
 
-  You can run this individual test script by running:
-  `npx jest src/dex/<dex-name>/<dex-name>-integration.test.ts`
+const fwWBTC = {
+  address: '0x2078f336fdd260f708bec4a20c82b063274e1b23',
+  decimals: 8,
+};
 
-  (This comment should be removed from the final implementation)
-*/
+const taoPad = {
+  address: '0x5483dc6abda5f094865120b2d251b5744fc2ecb5',
+  decimals: 18,
+};
 
-function getReaderCalldata(
-  exchangeAddress: string,
-  readerIface: Interface,
-  amounts: bigint[],
-  funcName: string,
-  // TODO: Put here additional arguments you need
-) {
-  return amounts.map(amount => ({
-    target: exchangeAddress,
-    callData: readerIface.encodeFunctionData(funcName, [
-      // TODO: Put here additional arguments to encode them
-      amount,
-    ]),
-  }));
-}
+const USDT = {
+  address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+  decimals: 6,
+};
 
-function decodeReaderResult(
-  results: Result,
-  readerIface: Interface,
-  funcName: string,
-) {
-  // TODO: Adapt this function for your needs
-  return results.map(result => {
-    const parsed = readerIface.decodeFunctionResult(funcName, result);
-    return BigInt(parsed[0]._hex);
-  });
-}
+const fwUSDC = {
+  address: '0x76AC72683C5b7F22C6B5Ed85B5B1511702464F7e',
+  decimals: 18,
+};
 
-async function checkOnChainPricing(
-  ringV2: RingV2,
-  funcName: string,
-  blockNumber: number,
-  prices: bigint[],
-  amounts: bigint[],
-) {
-  const exchangeAddress = ''; // TODO: Put here the real exchange address
+const fwDAI = {
+  address: '0x09D8486e42Aa76229a563bFa0f07CA301aCd29C9',
+  decimals: 18,
+};
 
-  // TODO: Replace dummy interface with the real one
-  // Normally you can get it from ringV2.Iface or from eventPool.
-  // It depends on your implementation
-  const readerIface = new Interface('');
+const DAI = {
+  address: '0x5fbad067f69eBbc276410D78fF52823be133eD48',
+  decimals: 18,
+};
 
-  const readerCallData = getReaderCalldata(
-    exchangeAddress,
-    readerIface,
-    amounts.slice(1),
-    funcName,
-  );
-  const readerResult = (
-    await ringV2.dexHelper.multiContract.methods
-      .aggregate(readerCallData)
-      .call({}, blockNumber)
-  ).returnData;
+// const DAI = {
+//   address: '0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11',
+//   decimals: 18,
+// };
 
-  const expectedPrices = [0n].concat(
-    decodeReaderResult(readerResult, readerIface, funcName),
-  );
+const AWESOME1 = {
+  address: '0x63DC6b0f80d067aF637C69b21949caA475AB813C',
+  decimals: 18,
+};
 
-  expect(prices).toEqual(expectedPrices);
-}
+const AWESOME2 = {
+  address: '0xF8415EeE2509FCD26C392ECC9844D13c1Ad9c3E7',
+  decimals: 18,
+};
 
-async function testPricingOnNetwork(
-  ringV2: RingV2,
-  network: Network,
-  dexKey: string,
-  blockNumber: number,
-  srcTokenSymbol: string,
-  destTokenSymbol: string,
-  side: SwapSide,
-  amounts: bigint[],
-  funcNameToCheck: string,
-) {
-  const networkTokens = Tokens[network];
+const amounts = [0n, BI_POWS[18], 2000000000000000000n];
 
-  const pools = await ringV2.getPoolIdentifiers(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    side,
-    blockNumber,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Identifiers: `,
-    pools,
-  );
-
-  expect(pools.length).toBeGreaterThan(0);
-
-  const poolPrices = await ringV2.getPricesVolume(
-    networkTokens[srcTokenSymbol],
-    networkTokens[destTokenSymbol],
-    amounts,
-    side,
-    blockNumber,
-    pools,
-  );
-  console.log(
-    `${srcTokenSymbol} <> ${destTokenSymbol} Pool Prices: `,
-    poolPrices,
-  );
-
-  expect(poolPrices).not.toBeNull();
-  if (ringV2.hasConstantPriceLargeAmounts) {
-    checkConstantPoolPrices(poolPrices!, amounts, dexKey);
-  } else {
-    checkPoolPrices(poolPrices!, amounts, side, dexKey);
-  }
-
-  // Check if onchain pricing equals to calculated ones
-  await checkOnChainPricing(
-    ringV2,
-    funcNameToCheck,
-    blockNumber,
-    poolPrices![0].prices,
-    amounts,
-  );
-}
+const dexKey = 'RingV2';
 
 describe('RingV2', function () {
-  const dexKey = 'RingV2';
-  let blockNumber: number;
-  let ringV2: RingV2;
+  console.log('RingV2 Integration Tests');
+  /** pass*/
+  it('getPoolIdentifiers and getPricesVolume', async function () {
+    const dexHelper = new DummyDexHelper(Network.SEPOLIA);
+    const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
+    const ringV2 = new RingV2(Network.SEPOLIA, dexKey, dexHelper);
 
-  describe('Mainnet', () => {
-    const network = Network.MAINNET;
-    const dexHelper = new DummyDexHelper(network);
+    const pools = await ringV2.getPoolIdentifiers(
+      fwUSDC,
+      fwDAI,
+      // AWESOME1,
+      // AWESOME2,
+      SwapSide.SELL,
+      blocknumber,
+    );
+    console.log('WETH <> DAI Pool Identifiers: ', pools);
 
-    const tokens = Tokens[network];
-
-    // TODO: Put here token Symbol to check against
-    // Don't forget to update relevant tokens in constant-e2e.ts
-    const srcTokenSymbol = 'srcTokenSymbol';
-    const destTokenSymbol = 'destTokenSymbol';
-
-    const amountsForSell = [
-      0n,
-      1n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      2n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      3n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      4n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      5n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      6n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      7n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      8n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      9n * BI_POWS[tokens[srcTokenSymbol].decimals],
-      10n * BI_POWS[tokens[srcTokenSymbol].decimals],
-    ];
-
-    const amountsForBuy = [
-      0n,
-      1n * BI_POWS[tokens[destTokenSymbol].decimals],
-      2n * BI_POWS[tokens[destTokenSymbol].decimals],
-      3n * BI_POWS[tokens[destTokenSymbol].decimals],
-      4n * BI_POWS[tokens[destTokenSymbol].decimals],
-      5n * BI_POWS[tokens[destTokenSymbol].decimals],
-      6n * BI_POWS[tokens[destTokenSymbol].decimals],
-      7n * BI_POWS[tokens[destTokenSymbol].decimals],
-      8n * BI_POWS[tokens[destTokenSymbol].decimals],
-      9n * BI_POWS[tokens[destTokenSymbol].decimals],
-      10n * BI_POWS[tokens[destTokenSymbol].decimals],
-    ];
-
-    beforeAll(async () => {
-      blockNumber = await dexHelper.web3Provider.eth.getBlockNumber();
-      ringV2 = new RingV2(network, dexKey, dexHelper);
-      if (ringV2.initializePricing) {
-        await ringV2.initializePricing(blockNumber);
-      }
-    });
-
-    it('getPoolIdentifiers and getPricesVolume SELL', async function () {
-      await testPricingOnNetwork(
-        ringV2,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.SELL,
-        amountsForSell,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getPoolIdentifiers and getPricesVolume BUY', async function () {
-      await testPricingOnNetwork(
-        ringV2,
-        network,
-        dexKey,
-        blockNumber,
-        srcTokenSymbol,
-        destTokenSymbol,
-        SwapSide.BUY,
-        amountsForBuy,
-        '', // TODO: Put here proper function name to check pricing
-      );
-    });
-
-    it('getTopPoolsForToken', async function () {
-      // We have to check without calling initializePricing, because
-      // pool-tracker is not calling that function
-      const newRingV2 = new RingV2(network, dexKey, dexHelper);
-      if (newRingV2.updatePoolState) {
-        await newRingV2.updatePoolState();
-      }
-      const poolLiquidity = await newRingV2.getTopPoolsForToken(
-        tokens[srcTokenSymbol].address,
-        10,
-      );
-      console.log(`${srcTokenSymbol} Top Pools:`, poolLiquidity);
-
-      if (!newRingV2.hasConstantPriceLargeAmounts) {
-        checkPoolsLiquidity(
-          poolLiquidity,
-          Tokens[network][srcTokenSymbol].address,
-          dexKey,
-        );
-      }
-    });
+    expect(pools.length).toBeGreaterThan(0);
   });
+
+  /** pass
+    const poolPrices = await ringV2.getPricesVolume(
+      fwUSDC,
+      fwDAI,
+      // AWESOME1,
+      // AWESOME2,
+      amounts,
+      SwapSide.SELL,
+      blocknumber,
+      pools,
+    );
+    console.log('WETH <> DAI Pool Prices: ', poolPrices);
+
+    expect(poolPrices).not.toBeNull();
+    checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
+  });
+   */
+
+  //here use ring.info's subgraph
+
+  /** pass
+  it('getTopPoolsForToken', async function () {
+    const dexHelper = new DummyDexHelper(Network.MAINNET);
+    const ringV2 = new RingV2(Network.MAINNET, dexKey, dexHelper);
+
+    const poolLiquidity = await ringV2.getTopPoolsForToken(
+      fwWBTC.address,
+      10,
+    );
+    console.log('WBTC Top Pools:', poolLiquidity);
+
+    checkPoolsLiquidity(poolLiquidity, fwWBTC.address, dexKey);
+  });
+   */
 });
