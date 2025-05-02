@@ -138,15 +138,33 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
+    // Discover WETH pools when ETH src or dest
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+
     const _src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
     const _dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
 
     return this.pools
-      .filter(
-        pool =>
-          (pool.token0.address === _src && pool.token1.address === _dest) ||
-          (pool.token0.address === _dest && pool.token1.address === _src),
-      )
+      .filter(pool => {
+        const checkToken0Src = pool.token0.address === _src;
+        const checkToken1Dest = pool.token1.address === _dest;
+        const checkToken1Src = pool.token1.address === _src;
+        const checkToken0Dest = pool.token0.address === _dest;
+
+        const needCheckWeth = isEthSrc || isEthDest;
+        const checkToken0Weth =
+          needCheckWeth && pool.token0.address === wethAddress;
+        const checkToken1Weth =
+          needCheckWeth && pool.token1.address === wethAddress;
+
+        return (
+          ((checkToken0Src || (isEthSrc && checkToken0Weth)) &&
+            (checkToken1Dest || (isEthDest && checkToken1Weth))) ||
+          ((checkToken0Dest || (isEthDest && checkToken0Weth)) &&
+            (checkToken1Src || (isEthSrc && checkToken1Weth)))
+        );
+      })
       .sort((a, b) => {
         const volumeA = parseInt(a.volumeUSD || '0');
         const volumeB = parseInt(b.volumeUSD || '0');
