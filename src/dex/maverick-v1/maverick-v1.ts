@@ -42,6 +42,9 @@ import { SUBGRAPH_TIMEOUT } from '../../constants';
 import RouterABI from '../../abi/maverick-v1/router.json';
 import { NumberAsString } from '@paraswap/core';
 import { extractReturnAmountPosition } from '../../executor/utils';
+import { formatUnits } from 'ethers/lib/utils';
+import { uint256ToBigInt } from '../../lib/decoders';
+import { MultiCallParams } from '../../lib/multi-wrapper';
 
 const MAX_POOL_CNT = 1000;
 
@@ -511,7 +514,7 @@ export class MaverickV1
           decimals: parseInt(pool.tokenB.decimals),
         },
       ],
-      liquidityUSD: parseFloat(pool.balanceUSD) * EFFICIENCY_FACTOR,
+      liquidityUSD: parseFloat(pool.balanceUSD),
     }));
 
     const pools1 = _.map(res.pools1, pool => ({
@@ -523,14 +526,123 @@ export class MaverickV1
           decimals: parseInt(pool.tokenA.decimals),
         },
       ],
-      liquidityUSD: parseFloat(pool.balanceUSD) * EFFICIENCY_FACTOR,
+      liquidityUSD: parseFloat(pool.balanceUSD),
     }));
 
-    const pools = _.slice(
-      _.sortBy(_.concat(pools0, pools1), [pool => -1 * pool.liquidityUSD]),
-      0,
-      limit,
+    const allPools = pools0.concat(pools1);
+
+    const tokenDecimals: Record<string, number> = allPools.reduce(
+      (a, c) => ({
+        ...a,
+        [c.connectorTokens[0].address]: c.connectorTokens[0].decimals,
+      }),
+      {},
     );
-    return pools;
+
+    const tokenDecimal =
+      res.pools0?.[0]?.tokenA?.decimals ?? res.pools1?.[0]?.tokenB?.decimals;
+    tokenDecimals[_tokenAddress] = parseInt(tokenDecimal);
+
+    // just to optimize in case same tokens are used in multiple pools
+    const normalizedUsdPrices = await Promise.all(
+      Object.keys(tokenDecimals).map(t =>
+        this.dexHelper.getTokenUSDPrice(
+          {
+            address: t,
+            decimals: tokenDecimals[t],
+          },
+          BigInt(1 * 10 ** tokenDecimals[t]),
+        ),
+      ),
+    );
+
+    const usdPrices = Object.fromEntries(
+      Object.keys(tokenDecimals).map((t, i) => [t, normalizedUsdPrices[i]]),
+    );
+
+    const poolBalances = await this._getPoolBalances(
+      allPools.map(p => [
+        p.address,
+        tokenAddress,
+        p.connectorTokens[0].address,
+      ]),
+    );
+
+    const pools = allPools.map((pool, i) => {
+      const _connectorTokenAddress = pool.connectorTokens[0].address;
+      const tokenBalance = poolBalances[i][0];
+      const connectorTokenBalance = poolBalances[i][1];
+
+      const tokenUsdPrice = usdPrices[_tokenAddress];
+      const connectorTokenUsdPrice = usdPrices[_connectorTokenAddress];
+
+      // by default use liquidityUSD from subgraph
+      let tokenUsdLiquidity = pool.liquidityUSD / 2;
+
+      if (tokenBalance && tokenUsdPrice && tokenDecimals[_tokenAddress]) {
+        const amount = formatUnits(tokenBalance, tokenDecimals[_tokenAddress]);
+        tokenUsdLiquidity = Number(amount) * tokenUsdPrice * EFFICIENCY_FACTOR;
+      }
+
+      // by default use liquidityUSD from subgraph
+      let connectorTokenUsdLiquidity = pool.liquidityUSD / 2;
+
+      if (
+        connectorTokenBalance &&
+        connectorTokenUsdPrice &&
+        tokenDecimals[_connectorTokenAddress]
+      ) {
+        const amount = formatUnits(
+          connectorTokenBalance,
+          tokenDecimals[_connectorTokenAddress],
+        );
+        connectorTokenUsdLiquidity =
+          Number(amount) * connectorTokenUsdPrice * EFFICIENCY_FACTOR;
+      }
+
+      return {
+        ...pool,
+        liquidityUSD: tokenUsdLiquidity + connectorTokenUsdLiquidity,
+      };
+    });
+
+    return pools.slice(0, limit);
+  }
+
+  private async _getPoolBalances(
+    pools: [pool: string, token0: string, token1: string][],
+  ): Promise<[balanceToken0: bigint | null, balanceToken1: bigint | null][]> {
+    const callData: MultiCallParams<bigint>[] = pools
+      .map(pool => [
+        {
+          target: pool[1],
+          callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+            pool[0],
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+        {
+          target: pool[2],
+          callData: this.erc20Interface.encodeFunctionData('balanceOf', [
+            pool[0],
+          ]),
+          decodeFunction: uint256ToBigInt,
+        },
+      ])
+      .flat();
+
+    const balanceOfCalls =
+      await this.dexHelper.multiWrapper.tryAggregate<bigint>(false, callData);
+
+    const balances: [bigint | null, bigint | null][] = [];
+    for (let i = 0; i < balanceOfCalls.length; i += 2) {
+      const balanceToken0 = balanceOfCalls[i];
+      const balanceToken1 = balanceOfCalls[i + 1];
+      balances.push([
+        balanceToken0.success ? balanceToken0.returnData : null,
+        balanceToken1.success ? balanceToken1.returnData : null,
+      ]);
+    }
+    return balances;
   }
 }
