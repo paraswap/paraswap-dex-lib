@@ -136,7 +136,12 @@ export class MiroMigrator
   getCalldataGasCost(
     poolPrices: PoolPrices<MiroMigratorData>,
   ): number | number[] {
-    return CALLDATA_GAS_COST.DEX_NO_PAYLOAD;
+    return (
+      CALLDATA_GAS_COST.FUNCTION_SELECTOR +
+      CALLDATA_GAS_COST.AMOUNT +
+      CALLDATA_GAS_COST.OFFSET_SMALL +
+      CALLDATA_GAS_COST.ZERO
+    );
   }
 
   getAdapterParam(
