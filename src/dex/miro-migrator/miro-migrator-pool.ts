@@ -29,7 +29,7 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
     protected transferTopic: string,
     protected xyzInterface: Interface = new Interface(ERC20ABI),
   ) {
-    super(parentName, 'state', dexHelper, logger);
+    super(parentName, 'xyz', dexHelper, logger);
     this.logDecoder = (log: Log) => this.xyzInterface.parseLog(log);
     this.addressesSubscribed = [xyzAddress];
   }
