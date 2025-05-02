@@ -138,9 +138,9 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
 
-    // Discover WETH pools when ETH src or dest
     const wethAddress =
       this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+    const needCheckWeth = isEthSrc || isEthDest;
 
     const _src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
     const _dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
@@ -152,11 +152,10 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
         const checkToken1Src = pool.token1.address === _src;
         const checkToken0Dest = pool.token0.address === _dest;
 
-        const needCheckWeth = isEthSrc || isEthDest;
         const checkToken0Weth =
-          needCheckWeth && pool.token0.address === wethAddress;
+          needCheckWeth && pool.token0.address === wethAddress; // check token0 to Discover WETH pools when ETH is src or dest
         const checkToken1Weth =
-          needCheckWeth && pool.token1.address === wethAddress;
+          needCheckWeth && pool.token1.address === wethAddress; // check token1 to Discover WETH pools when ETH is src or dest
 
         return (
           ((checkToken0Src || (isEthSrc && checkToken0Weth)) &&
