@@ -74,7 +74,7 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
       blockTag: blockNumber,
     });
 
-    return { balance: BigInt(balance.toString()) };
+    return { balance: balance.toBigInt() };
   }
 
   async getOrGenerateState(blockNumber: number): Promise<PoolState> {
