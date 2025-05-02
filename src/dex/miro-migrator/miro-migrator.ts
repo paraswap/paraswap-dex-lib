@@ -201,7 +201,6 @@ export class MiroMigrator
       dexFuncHasRecipient: false,
       exchangeData: swapData,
       targetExchange: this.migratorAddress,
-      returnAmountPos: undefined,
     };
   }
 
