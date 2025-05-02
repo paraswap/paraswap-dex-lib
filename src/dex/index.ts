@@ -107,6 +107,7 @@ import { WrappedMM } from './usual/wrapped-m-m';
 import { UsualPP } from './usual-pp/usual-pp';
 import { Ekubo } from './ekubo/ekubo';
 import { UniswapV4 } from './uniswap-v4/uniswap-v4';
+import { uniswapV4Merge } from './uniswap-v4/optimizer';
 import { MiroMigrator } from './miro-migrator/miro-migrator';
 
 const LegacyDexes = [
@@ -243,6 +244,7 @@ export class DexAdapterService {
     balancerV3Merge,
     uniswapMerge,
     curveV1Merge,
+    uniswapV4Merge,
   ];
 
   constructor(
