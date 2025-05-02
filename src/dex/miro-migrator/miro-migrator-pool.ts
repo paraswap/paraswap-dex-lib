@@ -6,7 +6,7 @@ import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
 import ERC20ABI from '../../abi/erc20.json';
-import { uint256ToBigInt } from '../../lib/decoders';
+import { Contract } from 'ethers';
 
 export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -28,6 +28,11 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
     protected xyzAddress: string,
     protected transferTopic: string,
     protected xyzInterface: Interface = new Interface(ERC20ABI),
+    protected xyzContract: Contract = new Contract(
+      xyzAddress,
+      ERC20ABI,
+      dexHelper.provider,
+    ),
   ) {
     super(parentName, 'xyz', dexHelper, logger);
     this.logDecoder = (log: Log) => this.xyzInterface.parseLog(log);
@@ -65,23 +70,11 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
   async generateState(
     blockNumber: number | 'latest' = 'latest',
   ): Promise<DeepReadonly<PoolState>> {
-    const calls = [
-      {
-        target: this.xyzAddress,
-        callData: this.xyzInterface.encodeFunctionData('balanceOf', [
-          this.migratorAddress,
-        ]),
-        decodeFunction: uint256ToBigInt,
-      },
-    ];
+    const balance = await this.xyzContract.balanceOf(this.migratorAddress, {
+      blockTag: blockNumber,
+    });
 
-    const [balance] = await this.dexHelper.multiWrapper.tryAggregate<bigint>(
-      true,
-      calls,
-      blockNumber,
-    );
-
-    return { balance: balance.returnData };
+    return { balance: BigInt(balance.toString()) };
   }
 
   async getOrGenerateState(blockNumber: number): Promise<PoolState> {
