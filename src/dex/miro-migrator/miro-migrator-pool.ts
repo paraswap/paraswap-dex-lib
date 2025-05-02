@@ -5,9 +5,8 @@ import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
 import { PoolState } from './types';
-import { uint256ToBigInt } from '../../lib/decoders';
-import MiroMigratorAbi from '../../abi/miro-migrator/MiroMigrator.abi.json';
 import ERC20ABI from '../../abi/erc20.json';
+import { uint256ToBigInt } from '../../lib/decoders';
 
 export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
   handlers: {
@@ -20,8 +19,6 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
 
   logDecoder: (log: Log) => any;
 
-  addressesSubscribed: string[];
-
   constructor(
     readonly parentName: string,
     protected network: number,
@@ -30,7 +27,6 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
     protected migratorAddress: string,
     protected xyzAddress: string,
     protected transferTopic: string,
-    protected migratorInterface: Interface = new Interface(MiroMigratorAbi),
     protected xyzInterface: Interface = new Interface(ERC20ABI),
   ) {
     super(parentName, 'state', dexHelper, logger);
@@ -49,14 +45,14 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
         log.topics[0] === this.transferTopic &&
         event.args.dst.toLowerCase() === this.migratorAddress.toLowerCase()
       ) {
-        return this.handleTransferTo(event, state, log);
+        return this.handleTransferTo(event, state);
       }
 
       if (
         log.topics[0] === this.transferTopic &&
         event.args.src.toLowerCase() === this.migratorAddress.toLowerCase()
       ) {
-        return this.handleTransferFrom(event, state, log);
+        return this.handleTransferFrom(event, state);
       }
 
       return null;
@@ -100,7 +96,6 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
   async handleTransferTo(
     event: any,
     state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState>> {
     return {
       balance: state.balance + BigInt(event.args.wad),
@@ -110,7 +105,6 @@ export class MiroMigratorEventPool extends StatefulEventSubscriber<PoolState> {
   async handleTransferFrom(
     event: any,
     state: DeepReadonly<PoolState>,
-    log: Readonly<Log>,
   ): Promise<DeepReadonly<PoolState>> {
     return {
       balance: state.balance - BigInt(event.args.wad),
