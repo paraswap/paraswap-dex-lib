@@ -148,8 +148,8 @@ export class OSwapEventPool extends StatefulEventSubscriber<OSwapPoolState> {
   ): DeepReadonly<OSwapPoolState> | null {
     return {
       ...state,
-      traderate0: event.args.traderate0.toBigInt(),
-      traderate1: event.args.traderate1.toBigInt(),
+      traderate0: event.args.traderate0.toString(),
+      traderate1: event.args.traderate1.toString(),
     };
   }
 
