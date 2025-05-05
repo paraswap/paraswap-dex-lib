@@ -160,7 +160,7 @@ export class OSwap extends SimpleExchange implements IDex<OSwapData> {
       checkLiquidity &&
       !this.hasEnoughLiquidity(pool, state, from, amount, price, side)
     ) {
-      throw new Error('Not enough liquidity');
+      return 0n;
     }
 
     return price;
