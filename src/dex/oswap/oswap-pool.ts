@@ -85,16 +85,19 @@ export class OSwapEventPool extends StatefulEventSubscriber<OSwapPoolState> {
   async generateState(
     blockNumber: number,
   ): Promise<DeepReadonly<OSwapPoolState>> {
-    const iERC20 = new Interface(ERC20ABI);
     const callData: MultiCallParams<bigint>[] = [
       {
         target: this.pool.token0,
-        callData: iERC20.encodeFunctionData('balanceOf', [this.pool.address]),
+        callData: this.iERC20.encodeFunctionData('balanceOf', [
+          this.pool.address,
+        ]),
         decodeFunction: uint256ToBigInt,
       },
       {
         target: this.pool.token1,
-        callData: iERC20.encodeFunctionData('balanceOf', [this.pool.address]),
+        callData: this.iERC20.encodeFunctionData('balanceOf', [
+          this.pool.address,
+        ]),
         decodeFunction: uint256ToBigInt,
       },
       {
