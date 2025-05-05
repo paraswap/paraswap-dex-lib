@@ -1,5 +1,13 @@
 import { BigNumber } from 'ethers';
-import { MAX_U256 } from './constants';
+import {
+  MAX_U256,
+  TWO_POW_128,
+  TWO_POW_160,
+  TWO_POW_192,
+  TWO_POW_94,
+  TWO_POW_95,
+  TWO_POW_96,
+} from './constants';
 import { MAX_SQRT_RATIO, MIN_SQRT_RATIO } from './tick';
 
 const BIT_MASK = 0xc00000000000000000000000n;
@@ -11,13 +19,6 @@ export function floatSqrtRatioToFixed(sqrtRatioFloat: bigint): bigint {
     (2n + ((sqrtRatioFloat & BIT_MASK) >> 89n))
   );
 }
-
-const TWO_POW_192 = 2n ** 192n;
-const TWO_POW_160 = 2n ** 160n;
-const TWO_POW_128 = 2n ** 128n;
-const TWO_POW_96 = 2n ** 96n;
-const TWO_POW_95 = 2n ** 95n;
-const TWO_POW_94 = 2n ** 94n;
 
 export function fixedSqrtRatioToFloat(sqrtRatioFixed: bigint): bigint {
   if (sqrtRatioFixed >= TWO_POW_192) {

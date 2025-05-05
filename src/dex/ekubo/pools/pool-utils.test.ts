@@ -1,5 +1,6 @@
-import { MAX_TICK, MIN_TICK } from './pools/math/tick';
-import { PoolState, Tick } from './types';
+import { MAX_TICK, MIN_TICK } from './math/tick';
+import { Tick } from '../types';
+import { PoolState } from './pool-utils';
 
 const positiveLiquidity = 10n;
 

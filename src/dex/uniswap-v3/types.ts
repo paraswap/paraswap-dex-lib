@@ -73,6 +73,7 @@ export type DecodeStateMultiCallFunc = (
 ) => DecodedStateMultiCallResultWithRelativeBitmaps;
 
 export type DexParams = {
+  subgraphType?: 'subgraphs' | 'deployments';
   router: Address;
   quoter: Address;
   factory: Address;
