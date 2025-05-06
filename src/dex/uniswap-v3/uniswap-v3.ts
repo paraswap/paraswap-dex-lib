@@ -1343,8 +1343,7 @@ export class UniswapV3
       const tokenUsdPrice = usdPrices[_tokenAddress];
       const connectorTokenUsdPrice = usdPrices[_connectorTokenAddress];
 
-      // by default use liquidityUSD from subgraph
-      let tokenUsdLiquidity = pool.liquidityUSD / 2;
+      let tokenUsdLiquidity = null;
 
       if (tokenBalance && tokenUsdPrice && tokenDecimals[_tokenAddress]) {
         const amount = formatUnits(tokenBalance, tokenDecimals[_tokenAddress]);
@@ -1352,8 +1351,7 @@ export class UniswapV3
           Number(amount) * tokenUsdPrice * UNISWAPV3_EFFICIENCY_FACTOR;
       }
 
-      // by default use liquidityUSD from subgraph
-      let connectorTokenUsdLiquidity = pool.liquidityUSD / 2;
+      let connectorTokenUsdLiquidity = null;
 
       if (
         connectorTokenBalance &&
@@ -1368,9 +1366,17 @@ export class UniswapV3
           Number(amount) * connectorTokenUsdPrice * UNISWAPV3_EFFICIENCY_FACTOR;
       }
 
+      // to handle unbalanced pools, when one token has much higher usd liquidity (e.g. 0xA7B3BCC6c88Da2856867d29F11c67C3A85634882)
+      // take lower liquidity and multiply by 2
+      const liquidityUSD =
+        Math.min(
+          tokenUsdLiquidity ?? pool.liquidityUSD / 2,
+          connectorTokenUsdLiquidity ?? pool.liquidityUSD / 2,
+        ) * 2;
+
       return {
         ...pool,
-        liquidityUSD: tokenUsdLiquidity + connectorTokenUsdLiquidity,
+        liquidityUSD,
       };
     });
 

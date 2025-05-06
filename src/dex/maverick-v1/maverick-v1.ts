@@ -576,16 +576,14 @@ export class MaverickV1
       const tokenUsdPrice = usdPrices[_tokenAddress];
       const connectorTokenUsdPrice = usdPrices[_connectorTokenAddress];
 
-      // by default use liquidityUSD from subgraph
-      let tokenUsdLiquidity = pool.liquidityUSD / 2;
+      let tokenUsdLiquidity = null;
 
       if (tokenBalance && tokenUsdPrice && tokenDecimals[_tokenAddress]) {
         const amount = formatUnits(tokenBalance, tokenDecimals[_tokenAddress]);
         tokenUsdLiquidity = Number(amount) * tokenUsdPrice * EFFICIENCY_FACTOR;
       }
 
-      // by default use liquidityUSD from subgraph
-      let connectorTokenUsdLiquidity = pool.liquidityUSD / 2;
+      let connectorTokenUsdLiquidity = null;
 
       if (
         connectorTokenBalance &&
@@ -600,9 +598,15 @@ export class MaverickV1
           Number(amount) * connectorTokenUsdPrice * EFFICIENCY_FACTOR;
       }
 
+      const liquidityUSD =
+        Math.min(
+          tokenUsdLiquidity ?? pool.liquidityUSD / 2,
+          connectorTokenUsdLiquidity ?? pool.liquidityUSD / 2,
+        ) * 2;
+
       return {
         ...pool,
-        liquidityUSD: tokenUsdLiquidity + connectorTokenUsdLiquidity,
+        liquidityUSD,
       };
     });
 
