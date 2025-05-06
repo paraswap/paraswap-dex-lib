@@ -199,7 +199,9 @@ export class OSwapEventPool extends StatefulEventSubscriber<OSwapPoolState> {
       } else if (tokenAddress === this.pool.token1) {
         balance1 -= amount;
       }
-    } else if (toAddress == this.pool.address) {
+    }
+
+    if (toAddress == this.pool.address) {
       if (tokenAddress === this.pool.token0) {
         balance0 += amount;
       } else if (tokenAddress === this.pool.token1) {
