@@ -531,6 +531,10 @@ export class MaverickV1
 
     const allPools = pools0.concat(pools1);
 
+    if (allPools.length === 0) {
+      return [];
+    }
+
     const tokenDecimals: Record<string, number> = allPools.reduce(
       (a, c) => ({
         ...a,
