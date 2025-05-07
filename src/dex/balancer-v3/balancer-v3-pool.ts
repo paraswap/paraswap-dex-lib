@@ -1,17 +1,11 @@
 import _ from 'lodash';
-import { Interface, defaultAbiCoder } from '@ethersproject/abi';
+import { Interface } from '@ethersproject/abi';
 import { DeepReadonly } from 'ts-essentials';
 import { Log, Logger } from '../../types';
 import { catchParseLogError } from '../../utils';
 import { StatefulEventSubscriber } from '../../stateful-event-subscriber';
 import { IDexHelper } from '../../dex-helper/idex-helper';
-import {
-  PoolState,
-  PoolStateMap,
-  StableMutableState,
-  Step,
-  TokenInfo,
-} from './types';
+import { PoolState, PoolStateMap, Step, TokenInfo } from './types';
 import { getPoolsApi } from './getPoolsApi';
 import vaultExtensionAbi_V3 from '../../abi/balancer-v3/vault-extension.json';
 import {
