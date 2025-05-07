@@ -1,4 +1,4 @@
-import { defaultAbiCoder, Interface } from '@ethersproject/abi';
+import { Interface } from '@ethersproject/abi';
 import _ from 'lodash';
 import { pack } from '@ethersproject/solidity';
 import {
@@ -16,12 +16,7 @@ import {
   Token,
   TxInfo,
 } from '../../types';
-import {
-  CACHE_PREFIX,
-  Network,
-  SUBGRAPH_TIMEOUT,
-  SwapSide,
-} from '../../constants';
+import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
   getBigIntPow,
@@ -69,13 +64,7 @@ import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
-import {
-  hexConcat,
-  hexlify,
-  hexZeroPad,
-  hexValue,
-  formatUnits,
-} from 'ethers/lib/utils';
+import { hexConcat, hexlify, hexZeroPad, hexValue } from 'ethers/lib/utils';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { getBalanceERC20 } from '../../lib/tokens/utils';
 import { MultiCallParams } from '../../lib/multi-wrapper';
