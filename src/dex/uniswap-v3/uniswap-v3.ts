@@ -1298,35 +1298,6 @@ export class UniswapV3
       return [];
     }
 
-    const tokenDecimals: Record<string, number> = allPools.reduce(
-      (a, c) => ({
-        ...a,
-        [c.connectorTokens[0].address]: c.connectorTokens[0].decimals,
-      }),
-      {},
-    );
-
-    const tokenDecimal =
-      res.pools0?.[0]?.token0?.decimals ?? res.pools1?.[0]?.token1?.decimals;
-    tokenDecimals[_tokenAddress] = parseInt(tokenDecimal);
-
-    // just to optimize in case same tokens are used in multiple pools
-    const normalizedUsdPrices = await Promise.all(
-      Object.keys(tokenDecimals).map(t =>
-        this.dexHelper.getTokenUSDPrice(
-          {
-            address: t,
-            decimals: tokenDecimals[t],
-          },
-          BigInt(1 * 10 ** tokenDecimals[t]),
-        ),
-      ),
-    );
-
-    const usdPrices = Object.fromEntries(
-      Object.keys(tokenDecimals).map((t, i) => [t, normalizedUsdPrices[i]]),
-    );
-
     const poolBalances = await this._getPoolBalances(
       allPools.map(p => [
         p.address,
@@ -1335,35 +1306,34 @@ export class UniswapV3
       ]),
     );
 
-    const pools = allPools.map((pool, i) => {
-      const _connectorTokenAddress = pool.connectorTokens[0].address;
-      const tokenBalance = poolBalances[i][0];
-      const connectorTokenBalance = poolBalances[i][1];
+    const tokensAmounts = allPools
+      .map((p, i) => {
+        return [
+          [tokenAddress, poolBalances[i][0]],
+          [p.connectorTokens[0].address, poolBalances[i][1]],
+        ] as [string, bigint | null][];
+      })
+      .flat();
 
-      const tokenUsdPrice = usdPrices[_tokenAddress];
-      const connectorTokenUsdPrice = usdPrices[_connectorTokenAddress];
+    const poolUsdBalances = await this.dexHelper.getUsdTokenAmounts(
+      tokensAmounts,
+    );
+
+    const pools = allPools.map((pool, i) => {
+      const tokenUsdBalance = poolUsdBalances[i * 2];
+      const connectorTokenUsdBalance = poolUsdBalances[i * 2 + 1];
 
       let tokenUsdLiquidity = null;
 
-      if (tokenBalance && tokenUsdPrice && tokenDecimals[_tokenAddress]) {
-        const amount = formatUnits(tokenBalance, tokenDecimals[_tokenAddress]);
-        tokenUsdLiquidity =
-          Number(amount) * tokenUsdPrice * UNISWAPV3_EFFICIENCY_FACTOR;
+      if (tokenUsdBalance) {
+        tokenUsdLiquidity = tokenUsdBalance * UNISWAPV3_EFFICIENCY_FACTOR;
       }
 
       let connectorTokenUsdLiquidity = null;
 
-      if (
-        connectorTokenBalance &&
-        connectorTokenUsdPrice &&
-        tokenDecimals[_connectorTokenAddress]
-      ) {
-        const amount = formatUnits(
-          connectorTokenBalance,
-          tokenDecimals[_connectorTokenAddress],
-        );
+      if (connectorTokenUsdBalance) {
         connectorTokenUsdLiquidity =
-          Number(amount) * connectorTokenUsdPrice * UNISWAPV3_EFFICIENCY_FACTOR;
+          connectorTokenUsdBalance * UNISWAPV3_EFFICIENCY_FACTOR;
       }
 
       // to handle unbalanced pools, when one token has much higher usd liquidity (e.g. 0xA7B3BCC6c88Da2856867d29F11c67C3A85634882)
