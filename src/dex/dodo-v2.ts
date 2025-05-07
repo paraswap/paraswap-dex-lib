@@ -11,7 +11,6 @@ import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
 import { NumberAsString } from '@paraswap/core';
 import { isETHAddress } from '../utils';
-import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 import { extractReturnAmountPosition } from '../executor/utils';
 
@@ -20,6 +19,8 @@ const DODOAproveAddress: { [network: number]: Address } = {
   [Network.BSC]: '0xa128Ba44B2738A558A1fdC06d6303d52D3Cef8c1',
   [Network.POLYGON]: '0x6D310348d5c12009854DFCf72e0DF9027e8cb4f4',
   [Network.ARBITRUM]: '0xA867241cDC8d3b0C07C85cC06F25a0cD3b5474d8',
+  [Network.BASE]: '0x89872650fA1A391f58B4E144222bB02e44db7e3B',
+  [Network.AVALANCHE]: '0xCFea63e3DE31De53D68780Dd65675F169439e470',
 };
 
 export type DodoV2Data = {
