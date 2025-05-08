@@ -106,6 +106,8 @@ import { MWrappedM } from './usual/m-wrapped-m';
 import { WrappedMM } from './usual/wrapped-m-m';
 import { UsualPP } from './usual-pp/usual-pp';
 import { Ekubo } from './ekubo/ekubo';
+import { UniswapV4 } from './uniswap-v4/uniswap-v4';
+import { uniswapV4Merge } from './uniswap-v4/optimizer';
 
 const LegacyDexes = [
   CurveV2,
@@ -136,6 +138,7 @@ const Dexes = [
   BalancerV3,
   UniswapV2,
   UniswapV3,
+  UniswapV4,
   Algebra,
   PancakeswapV3,
   VelodromeSlipstream,
@@ -239,6 +242,7 @@ export class DexAdapterService {
     balancerV3Merge,
     uniswapMerge,
     curveV1Merge,
+    uniswapV4Merge,
   ];
 
   constructor(
