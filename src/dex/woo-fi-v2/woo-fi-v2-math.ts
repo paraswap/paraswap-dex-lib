@@ -30,21 +30,18 @@ export class WooFiV2Math {
     fromAmounts: bigint[],
   ): bigint[] | null {
     try {
-      const reachedCapBals = fromAmounts.map(fromAmount => {
-        this.state.tokenInfos[fromToken].reserve + fromAmount > this.state.tokenInfos[fromToken].capBal
+      const { reserve, capBal } = this.state.tokenInfos[fromToken];
+      const amounts = fromAmounts.map(amount => {
+        if (reserve + amount > capBal) return 0n;
+        else return amount;
       });
-      if (reachedCapBals.some(reachedCapBal => reachedCapBal)) {
-        this.logger.error(
-          `From token ${fromToken} reached the cap balance`,
-        );
-        return null;
-      }
+
       if (fromToken === this._quoteToken) {
-        return this._querySellQuote(toToken, fromAmounts);
+        return this._querySellQuote(toToken, amounts);
       } else if (toToken === this._quoteToken) {
-        return this._querySellBase(fromToken, fromAmounts);
+        return this._querySellBase(fromToken, amounts);
       } else {
-        return this._queryBaseToBase(fromToken, toToken, fromAmounts);
+        return this._queryBaseToBase(fromToken, toToken, amounts);
       }
     } catch (e) {
       handleMathError(e, this.logger);
