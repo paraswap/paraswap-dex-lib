@@ -70,7 +70,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   VelodromeV2: {
     [Network.OPTIMISM]: {
-      // There is no subgraph for VelodromeV2
+      // RPC pool tracker is used
       factoryAddress: '0xF1046053aa5682b4F9a81b5481394DA16BE5FF5a',
       router: '0xa2f581b012E0f2dcCDe86fCbfb529f4aC5dD4983',
       initCode:
@@ -81,7 +81,6 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   Aerodrome: {
     [Network.BASE]: {
-      // There is no subgraph for Aerodrome
       factoryAddress: '0x420DD381b31aEf6683db6B902084cB0FFECe40Da',
       router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
       subgraphURL: '7uEwiKmfbRQqV8Ec9nvdKrMFVFQv5qaM271gdBvHtywj',
@@ -128,6 +127,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
   },
   PharaohV1: {
     [Network.AVALANCHE]: {
+      // RPC pool tracker is used
       factoryAddress: '0xAAA16c016BF556fcD620328f0759252E29b1AB57',
       router: '0x609AcD8Fc955Dd7E744c7DFFc9930a7A6654DE43',
       initCode:
@@ -148,6 +148,7 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       poolGasCost: 180 * 1000,
     },
     [Network.BASE]: {
+      // RPC pool tracker is used
       factoryAddress: '0xed8db60acc29e14bc867a497d94ca6e3ceb5ec04',
       router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
       initCode:
@@ -168,13 +169,13 @@ export const SolidlyConfig: DexConfigMap<DexParams> = {
       // no subgraph
     },
     [Network.BASE]: {
+      // RPC pool tracker is used
       factoryAddress: '0xe21Aac7F113Bd5DC2389e4d8a8db854a87fD6951',
       router: '0xDCf4EE5B700e2a5Fec458e06B763A4a3E3004494',
       initCode:
         '0xac4013aa7118234c1dd1f9cc4cdd3933d5a426224bc691c1bde3d8930a7e6151', // PairFactory.pairCodeHash
       feeCode: 0, // dynamic fees
       poolGasCost: 180 * 1000, // just same as other forks
-      // no subgraph
     },
   },
   Usdfi: {
