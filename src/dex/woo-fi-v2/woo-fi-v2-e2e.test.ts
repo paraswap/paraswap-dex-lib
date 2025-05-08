@@ -24,15 +24,7 @@ function testForNetwork(
   const holders = Holders[network];
 
   const sideToContractMethods = new Map([
-    [
-      SwapSide.SELL,
-      [
-        ContractMethod.swapExactAmountIn,
-        // ContractMethod.simpleSwap,
-        // ContractMethod.multiSwap,
-        // ContractMethod.megaSwap,
-      ],
-    ],
+    [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
   ]);
 
   describe(`${network}`, () => {
@@ -136,7 +128,7 @@ describe('WooFiV2 E2E', () => {
 
     const baseATokenSymbol = 'WMATIC';
     const baseBTokenSymbol = 'WETH';
-    const quoteTokenSymbol = 'USDC';
+    const quoteTokenSymbol = 'USDCe';
 
     const tokenBaseAAmount = '1000000000000000000';
     const tokenQuoteAmount = '1000000';
@@ -179,7 +171,7 @@ describe('WooFiV2 E2E', () => {
 
     const baseATokenSymbol = 'WETH';
     const baseBTokenSymbol = 'WBTC';
-    const quoteTokenSymbol = 'USDC';
+    const quoteTokenSymbol = 'USDT';
 
     const tokenBaseAAmount = '1000000000000000000';
     const tokenQuoteAmount = '1000000';
