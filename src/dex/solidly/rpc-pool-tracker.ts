@@ -132,8 +132,17 @@ export class SolidlyRpcPoolTracker extends Solidly {
       const connectorToken =
         token === pool.token0.address ? pool.token1 : pool.token0;
 
-      const token0ReserveUSD = usdTokenAmounts[i * 2];
-      const token1ReserveUSD = usdTokenAmounts[i * 2 + 1];
+      let token0ReserveUSD = usdTokenAmounts[i * 2];
+      let token1ReserveUSD = usdTokenAmounts[i * 2 + 1];
+
+      // fallback to non-empty usd reserves
+      if (!token0ReserveUSD && token1ReserveUSD) {
+        token0ReserveUSD = token1ReserveUSD;
+      }
+
+      if (!token1ReserveUSD && token0ReserveUSD) {
+        token1ReserveUSD = token0ReserveUSD;
+      }
 
       return {
         exchange: this.dexKey,
