@@ -85,7 +85,7 @@ describe('WooFiV2 E2E', () => {
     const network = Network.OPTIMISM;
 
     const baseATokenSymbol = 'WETH';
-    const baseBTokenSymbol = 'WBTC';
+    const baseBTokenSymbol = 'USDT';
     const quoteTokenSymbol = 'USDC';
 
     const tokenBaseAAmount = '1000000000000000000';
@@ -144,33 +144,11 @@ describe('WooFiV2 E2E', () => {
     );
   });
 
-  // deprecated
-  describe.skip('Fantom', () => {
-    const network = Network.FANTOM;
-
-    const baseATokenSymbol = 'WFTM';
-    const quoteTokenSymbol = 'USDC';
-    const baseBTokenSymbol = 'ETH';
-
-    const tokenBaseAAmount = '1000000000000000000';
-    const tokenQuoteAmount = '1000000';
-
-    testForNetwork(
-      network,
-      dexKey,
-      baseATokenSymbol,
-      baseBTokenSymbol,
-      quoteTokenSymbol,
-      tokenBaseAAmount,
-      tokenQuoteAmount,
-    );
-  });
-
   describe('Arbitrum', () => {
     const network = Network.ARBITRUM;
 
     const baseATokenSymbol = 'WETH';
-    const baseBTokenSymbol = 'WBTC';
+    const baseBTokenSymbol = 'USDC';
     const quoteTokenSymbol = 'USDT';
 
     const tokenBaseAAmount = '1000000000000000000';
@@ -211,65 +189,21 @@ describe('WooFiV2 E2E', () => {
   describe('Base', () => {
     const network = Network.BASE;
 
-    const baseATokenSymbol = 'USDbC';
-    const baseBTokenSymbol = 'ETH';
+    const baseATokenSymbol = 'WETH';
+    const baseBTokenSymbol = 'USDbC';
+    const quoteTokenSymbol = 'USDC';
 
-    const tokenBaseAAmount = '100000000';
-    const tokenBaseBAmount = '1000000000000000000';
+    const tokenBaseAAmount = '1000000000000000000';
+    const tokenBaseBAmount = '100000000';
 
-    const tokens = Tokens[network];
-    const holders = Holders[network];
-
-    const provider = new StaticJsonRpcProvider(
-      generateConfig(network).privateHttpProvider,
+    testForNetwork(
       network,
-    );
-
-    const sideToContractMethods = new Map([
-      [
-        SwapSide.SELL,
-        [
-          ContractMethod.simpleSwap,
-          ContractMethod.multiSwap,
-          ContractMethod.megaSwap,
-          ContractMethod.swapExactAmountIn,
-        ],
-      ],
-    ]);
-
-    sideToContractMethods.forEach((contractMethods, side) =>
-      describe(`${side}`, () => {
-        contractMethods.forEach((contractMethod: ContractMethod) => {
-          describe(`${contractMethod}`, () => {
-            it(`${baseATokenSymbol} -> ${baseBTokenSymbol}`, async () => {
-              await testE2E(
-                tokens[baseATokenSymbol],
-                tokens[baseBTokenSymbol],
-                holders[baseATokenSymbol],
-                tokenBaseAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${baseBTokenSymbol} -> ${baseATokenSymbol}`, async () => {
-              await testE2E(
-                tokens[baseBTokenSymbol],
-                tokens[baseATokenSymbol],
-                holders[baseBTokenSymbol],
-                tokenBaseBAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-          });
-        });
-      }),
+      dexKey,
+      baseATokenSymbol,
+      baseBTokenSymbol,
+      quoteTokenSymbol,
+      tokenBaseAAmount,
+      tokenBaseBAmount,
     );
   });
 });
