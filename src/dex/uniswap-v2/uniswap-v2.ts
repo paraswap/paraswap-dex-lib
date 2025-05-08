@@ -952,7 +952,6 @@ export class UniswapV2
       switch (contractMethod) {
         case UniswapV2Functions.swapOnUniswap:
         case UniswapV2Functions.buyOnUniswap:
-        case UniswapV2Functions.buyOnUniswap:
           return [srcAmount, destAmount, path];
 
         case UniswapV2Functions.swapOnUniswapFork:
