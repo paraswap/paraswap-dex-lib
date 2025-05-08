@@ -1339,7 +1339,9 @@ export class UniswapV3
       };
     });
 
-    return pools.slice(0, limit);
+    return pools
+      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
+      .slice(0, limit);
   }
 
   private async _getPoolBalances(
