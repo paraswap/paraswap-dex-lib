@@ -385,7 +385,7 @@ export class UniswapV2
         ? [from, to]
         : [to, from];
 
-    const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
+    const key = this.getPoolIdentifier(token0.address, token1.address);
     let pair = this.pairs[key];
     if (pair) return pair;
     const exchange = await this.factory.methods
