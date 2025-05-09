@@ -741,7 +741,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         !response.sellTokens ||
         !response.expiry
       ) {
-        const baseMessage = `Bebop quote failed on chain ${this.network} Sell: ${params.sell_tokens}. Buy: ${params.buy_tokens}.`;
+        const baseMessage = `Bebop quote ${response.quoteId} failed on chain ${this.network} Sell: ${params.sell_tokens}. Buy: ${params.buy_tokens}.`;
         if (response.error) {
           const errorMessage = `${baseMessage} Code: ${response.error.errorCode}, Message: ${response.error.message}`;
           throw new Error(errorMessage);
