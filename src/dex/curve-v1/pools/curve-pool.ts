@@ -108,7 +108,7 @@ export abstract class CurvePool extends StatefulEventSubscriber<PoolState> {
   }
 
   protected getRates() {
-    const result = _.cloneDeep(this.PRECISION_MUL);
+    const result = this.PRECISION_MUL.map(v => bigNumberify(v));
     return result.map(r => r.times(this.LENDING_PRECISION));
   }
 
