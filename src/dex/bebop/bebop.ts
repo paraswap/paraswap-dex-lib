@@ -721,7 +721,6 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     };
 
     let quoteId: string | undefined;
-    let throwError = true;
 
     try {
       const response: BebopData = await this.dexHelper.httpRequest.get(
@@ -768,7 +767,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         )
           .times(options.slippageFactor)
           .toFixed(0);
-        if (quoteAmount < BigInt(requiredAmountWithSlippage) || throwError) {
+        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
           throw new SlippageError(
             `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`,
           );
@@ -783,7 +782,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         )
           .times(options.slippageFactor)
           .toFixed(0);
-        if (quoteAmount > BigInt(requiredAmountWithSlippage) || throwError) {
+        if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
           throw new SlippageError(
             `Slipped, factor: ${
               options.slippageFactor
