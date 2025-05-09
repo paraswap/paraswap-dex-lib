@@ -720,6 +720,8 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       source: this.bebopAuthName,
     };
 
+    let quoteId: string | undefined;
+
     try {
       const response: BebopData = await this.dexHelper.httpRequest.get(
         `${BEBOP_API_URL}/pmm/${
@@ -735,13 +737,15 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         throw new Error('Failed to get quote');
       }
 
+      quoteId = response.quoteId;
+
       if (
         !response.tx ||
         !response.buyTokens ||
         !response.sellTokens ||
         !response.expiry
       ) {
-        const baseMessage = `Bebop quote ${response.quoteId} failed on chain ${this.network} Sell: ${params.sell_tokens}. Buy: ${params.buy_tokens}.`;
+        const baseMessage = `Bebop quote failed on chain ${this.network} Sell: ${params.sell_tokens}. Buy: ${params.buy_tokens}.`;
         if (response.error) {
           const errorMessage = `${baseMessage} Code: ${response.error.errorCode}, Message: ${response.error.message}`;
           throw new Error(errorMessage);
@@ -796,7 +800,10 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
         { deadline: BigInt(response.expiry) },
       ];
     } catch (e: any) {
-      const message = `${this.dexKey}-${this.network}: ${e}`;
+      const message = `${this.dexKey}-${this.network} ${
+        quoteId ? `quoteId: ${quoteId}` : ''
+      }: ${e}`;
+
       this.logger.error(message);
       if (!e?.isSlippageError) {
         this.restrict();
