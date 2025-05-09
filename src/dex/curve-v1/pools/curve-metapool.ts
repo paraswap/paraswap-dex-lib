@@ -201,7 +201,7 @@ export abstract class CurveMetapool extends StatefulEventSubscriber<MetapoolStat
   }
 
   protected getRates() {
-    const result = _.cloneDeep(this.PRECISION_MUL);
+    const result = this.PRECISION_MUL.map(v => bigNumberify(v));
     return result.map(r => r.times(this.LENDING_PRECISION));
   }
 
