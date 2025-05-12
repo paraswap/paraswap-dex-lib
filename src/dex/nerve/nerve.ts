@@ -138,19 +138,21 @@ export class Nerve
 
   async getStates(
     pools?: NerveEventPool[],
-    blockNumber?: number,
+    // null means to get states for the latest `updated` block
+    // and update to latest `on-chain` block in case state is invalid
+    blockNumber?: number | null,
   ): Promise<DeepReadonly<{ state: PoolState; pool: NerveEventPool }[]>> {
     const _pools = pools === undefined ? this.allPools : pools;
 
     const _blockNumber =
-      blockNumber === undefined
+      blockNumber === undefined || blockNumber === null
         ? await this.dexHelper.web3Provider.eth.getBlockNumber()
         : blockNumber;
 
     // TODO: Need to batch this RPC calls in one multicall
     return Promise.all(
       _pools.map(async eventPool => {
-        let state = eventPool.getState(_blockNumber);
+        let state = eventPool.getState(blockNumber === null ? 0 : _blockNumber);
         if (!state || !state.isValid) {
           this.logger.info(
             `State for ${this.dexKey} pool ${eventPool.name} on ${this.network} is stale or invalid on block ${_blockNumber}. Generating new one`,
@@ -439,7 +441,8 @@ export class Nerve
     return Promise.all(
       // As the state is readonly we spread it to receive a copy,
       // It is not a deep copy, so we shouldn't alter the nested objects
-      [...(await this.getStates(selectedPools))]
+      // get the latest state, block number doesn't matter as we update states with updatePoolState
+      [...(await this.getStates(selectedPools, null))]
         .sort((a, b) => {
           const diff = b.state.lpToken_supply - a.state.lpToken_supply;
           if (diff === 0n) {
