@@ -481,7 +481,7 @@ export class Nerve
           }
 
           return {
-            exchange: pool.name,
+            exchange: this.dexKey,
             address: pool.address,
             connectorTokens: _(pool.tokens)
               .uniqBy('address')
