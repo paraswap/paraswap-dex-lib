@@ -73,7 +73,11 @@ export class Nerve
     return Object.values(this.eventPools);
   }
 
-  async setupEventPool(poolConfig: NervePoolConfig, blockNumber: number) {
+  async setupEventPool(
+    poolConfig: NervePoolConfig,
+    blockNumber: number,
+    subscribe = true,
+  ) {
     const poolIdentifier = Nerve.getIdentifier(this.dexKey, poolConfig.address);
 
     if (!poolConfig.isMetapool) {
@@ -86,8 +90,12 @@ export class Nerve
       );
       this.eventPools[poolIdentifier] = newPool;
 
-      // Generate first state for the blockNumber and subscribe to logs
-      await newPool.initialize(blockNumber);
+      if (subscribe) {
+        // Generate first state for the blockNumber and subscribe to logs
+        await newPool.initialize(blockNumber);
+      } else {
+        await newPool.generateState(blockNumber);
+      }
     } else {
       this.logger.warn(
         `We don't support metapools for Nerve. Check config: ${poolConfig.name}`,
@@ -102,6 +110,26 @@ export class Nerve
         async poolConfig => await this.setupEventPool(poolConfig, blockNumber),
       ),
     );
+  }
+
+  async updatePoolState(): Promise<void> {
+    const blockNumber = await this.dexHelper.web3Provider.eth.getBlockNumber();
+
+    await Promise.all(
+      Object.values(this.poolConfigs).map(
+        async poolConfig => await this.updateEventPool(poolConfig, blockNumber),
+      ),
+    );
+  }
+
+  async updateEventPool(poolConfig: NervePoolConfig, blockNumber: number) {
+    const poolIdentifier = Nerve.getIdentifier(this.dexKey, poolConfig.address);
+
+    if (this.eventPools[poolIdentifier]) {
+      await this.eventPools[poolIdentifier].generateState(blockNumber);
+    } else {
+      await this.setupEventPool(poolConfig, blockNumber, false);
+    }
   }
 
   getAdapters(side: SwapSide): { name: string; index: number }[] | null {
