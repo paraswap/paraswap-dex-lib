@@ -36,7 +36,7 @@ export class PoolsHelper {
 
       return await dexInstance.updatePoolState();
     } catch (e) {
-      this.logger.error('Error_updateDexPoolState:', e);
+      this.logger.error(`Error_updateDexPoolState, dex: ${dexKey}`, e);
     }
   }
 
