@@ -51,13 +51,27 @@ describe('BalancerEventHook', function () {
           blockNumbers: [
             21824387, 21825432, 21825615, 21825831, 21830728, 21830728,
           ],
-          hookAddress: ['0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA'],
+          hookAddress: [
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+          ],
         },
         MaxSurgeFeePercentageChanged: {
           blockNumbers: [
             21824387, 21825432, 21825615, 21825831, 21830728, 21830728,
           ],
-          hookAddress: ['0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA'],
+          hookAddress: [
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+            '0xb18fA0cb5DE8cecB8899AAE6e38b1B7ed77885dA',
+          ],
         },
       },
     };

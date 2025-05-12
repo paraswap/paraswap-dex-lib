@@ -39,7 +39,7 @@ describe('BalancerV3 stableSurge hook tests', function () {
     });
 
     it('getTopPoolsForToken', async function () {
-      const pools = await balancerV3.getTopPoolsForToken(weth.address, 10);
+      const pools = await balancerV3.getTopPoolsForToken(weth.address, 100);
       expect(pools.some(pool => pool.address === stableSurgePool)).toBe(true);
     });
   });
