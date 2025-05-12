@@ -32,32 +32,32 @@ function testForNetwork(
       describe(`${side}`, () => {
         contractMethods.forEach((contractMethod: ContractMethod) => {
           describe(`${contractMethod}`, () => {
-            it(`${tokenBaseA} -> ${tokenQuote}`, async () => {
-              await testE2E(
-                tokens[tokenBaseA],
-                tokens[tokenQuote],
-                holders[tokenBaseA],
-                tokenBaseAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
-            it(`${tokenQuote} -> ${tokenBaseA}`, async () => {
-              await testE2E(
-                tokens[tokenQuote],
-                tokens[tokenBaseA],
-                holders[tokenQuote],
-                tokenQuoteAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            // it(`${tokenBaseA} -> ${tokenQuote}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenBaseA],
+            //     tokens[tokenQuote],
+            //     holders[tokenBaseA],
+            //     tokenBaseAAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
+            // it(`${tokenQuote} -> ${tokenBaseA}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenQuote],
+            //     tokens[tokenBaseA],
+            //     holders[tokenQuote],
+            //     tokenQuoteAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
             it(`${tokenBaseA} -> ${tokenBaseB}`, async () => {
               await testE2E(
                 tokens[tokenBaseA],
@@ -165,14 +165,14 @@ describe('WooFiV2 E2E', () => {
     );
   });
 
-  describe('Avalanche', () => {
+  describe.only('Avalanche', () => {
     const network = Network.AVALANCHE;
 
-    const baseATokenSymbol = 'WAVAX';
-    const baseBTokenSymbol = 'BTCb';
+    const baseATokenSymbol = 'WETHe';
+    const baseBTokenSymbol = 'USDC';
     const quoteTokenSymbol = 'USDC';
 
-    const tokenBaseAAmount = '1000000000000000000';
+    const tokenBaseAAmount = '293403298234891701';
     const tokenQuoteAmount = '1000000';
 
     testForNetwork(

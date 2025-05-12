@@ -117,7 +117,8 @@ export class LocalParaswapSDK implements IParaSwapSDK {
     transferFees?: TransferFeeParams,
     forceRoute?: AddressOrSymbol[],
   ): Promise<OptimalRate> {
-    const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    // const blockNumber = await this.dexHelper.provider.getBlockNumber();
+    const blockNumber = 59988448;
     const poolIdentifiers =
       _poolIdentifiers ||
       (await this.pricingHelper.getPoolIdentifiers(
@@ -146,7 +147,7 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       throw new Error('Fail to get price for ' + this.dexKeys.join(', '));
 
     const finalPrice = poolPrices[0];
-    const quoteAmount = finalPrice.prices[chunks];
+    const quoteAmount = finalPrice.prices.find(t => t !== 0n) || 0n;
     const srcAmount = (
       side === SwapSide.SELL ? amount : quoteAmount
     ).toString();

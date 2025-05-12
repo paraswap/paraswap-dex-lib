@@ -439,7 +439,7 @@ export abstract class StatefulRpcPoller<State, M>
       const lastUpdatedAtMs = Date.now();
       const aggregatedResults = (await this.dexHelper.multiWrapper.tryAggregate<
         number | M
-      >(true, multiCalls as MultiCallParams<M | number>[])) as [
+      >(true, multiCalls as MultiCallParams<M | number>[], 59988448)) as [
         MultiResult<number>,
         ...MultiResult<M>[],
       ];

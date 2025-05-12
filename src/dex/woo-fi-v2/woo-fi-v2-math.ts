@@ -32,8 +32,11 @@ export class WooFiV2Math {
     try {
       const { reserve, capBal } = this.state.tokenInfos[fromToken];
       const amounts = fromAmounts.map(amount => {
-        if (reserve + amount > capBal) return 0n;
-        else return amount;
+        if (reserve + amount > capBal) {
+          return 0n;
+        } else {
+          return amount;
+        }
       });
 
       if (fromToken === this._quoteToken) {
