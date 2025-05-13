@@ -372,14 +372,24 @@ class UniswapV4PoolMath {
     return MAX_UINT128 / numTicks;
   }
 
-  checkPoolInitialized(poolState: PoolState) {
+  checkPoolInitialized(
+    poolState: PoolState,
+    skipRequireCheck = false,
+  ): boolean {
     const { sqrtPriceX96 } = poolState.slot0;
-    _require(
-      sqrtPriceX96 !== 0n,
-      '',
-      { sqrtPriceX96 },
-      `Pool ${poolState.id} is not initialized`,
-    );
+
+    const condition = sqrtPriceX96 !== 0n;
+
+    if (!skipRequireCheck) {
+      _require(
+        condition,
+        '',
+        { sqrtPriceX96 },
+        `Pool ${poolState.id} is not initialized`,
+      );
+    }
+
+    return condition;
   }
 
   getFeeGrowthInside(

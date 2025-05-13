@@ -134,6 +134,15 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     reqId: number,
   ): bigint[] | null {
     try {
+      const isPoolInitialized = uniswapV4PoolMath.checkPoolInitialized(
+        state,
+        true,
+      );
+
+      if (!isPoolInitialized) {
+        return null;
+      }
+
       const outputsResult = uniswapV4PoolMath.queryOutputs(
         pool,
         state,
