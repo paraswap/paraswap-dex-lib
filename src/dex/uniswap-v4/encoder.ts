@@ -9,6 +9,8 @@ import { NULL_ADDRESS } from '../../constants';
 const routerIface = new Interface(RouterAbi);
 
 enum Commands {
+  WRAP_ETH = 11, // 0x0b -> 11
+  UNWRAP_WETH = 12, // 0x0c -> 12
   V4_SWAP = 16, // 0x10 -> 16
 }
 
@@ -79,42 +81,71 @@ interface ExactOutputParams {
   path: PathKey[];
 }
 
-const MAX_UINT128 = 340282366920938463463374607431768211455n;
-
 function encodeActions(actions: Actions[]): string {
   const types = actions.map(() => 'uint8');
   return ethers.utils.solidityPack(types, actions);
 }
 
 function encodeInputForExecute(
-  actions: string,
-  actionValues: string[],
+  srcToken: Address,
+  destToken: Address,
+  data: UniswapV4Data,
+  amountIn: bigint,
+  encodedActions: string,
+  encodedActionValues: string[],
 ): string {
-  const command = ethers.utils.solidityPack(['uint8'], [Commands.V4_SWAP]);
+  const isEthSrc = isETHAddress(srcToken);
+  const isWethPool =
+    data.path[0].tokenIn === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+
+  let types = ['uint8'];
+  let commands = [Commands.V4_SWAP];
+
+  // if (isEthSrc && isWethPool) {
+  types.unshift('uint8');
+  commands.unshift(Commands.WRAP_ETH);
+
+  const wrapInput = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'uint256'],
+    [ActionConstants.ADDRESS_THIS, amountIn],
+  );
+  // }
+
+  const command = ethers.utils.solidityPack(types, commands);
 
   const input = ethers.utils.defaultAbiCoder.encode(
     ['bytes', 'bytes[]'],
-    [actions, actionValues],
+    [encodedActions, encodedActionValues],
   );
 
   return routerIface.encodeFunctionData('execute(bytes,bytes[])', [
     command,
-    [input],
+    // [input],
+    [wrapInput, input],
   ]);
 }
 
 function encodeSettle(
   srcToken: string,
+  data: UniswapV4Data,
   amountIn: ActionConstants | bigint,
   takeFundsFromMsgSender: boolean,
 ): string {
+  const isEthSrc = isETHAddress(srcToken);
+  const isWethPool =
+    data.path[0].tokenIn === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+
   const settle = ethers.utils.defaultAbiCoder.encode(
     ['address', 'uint256', 'bool'],
     // srcToken, amountIn (`OPEN_DELTA` to settle all needed funds), takeFundsFromMsgSender (Executor in our case)
     [
-      isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,
+      isEthSrc && isWethPool
+        ? '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+        : isEthSrc
+        ? NULL_ADDRESS
+        : srcToken,
       amountIn,
-      takeFundsFromMsgSender,
+      isEthSrc && isWethPool ? false : takeFundsFromMsgSender,
     ],
   );
 
@@ -139,12 +170,14 @@ function encodeTake(
 export function swapExactInputSingleCalldata(
   srcToken: Address,
   destToken: Address,
-  poolKey: PoolKey,
-  zeroForOne: boolean,
+  data: UniswapV4Data,
   amountIn: bigint,
   amountOutMinimum: bigint,
   recipient: Address,
 ): string {
+  const path = data.path[0];
+  const poolKey = path.pool.key;
+
   const actions = encodeActions([
     Actions.SWAP_EXACT_IN_SINGLE,
     Actions.SETTLE,
@@ -153,7 +186,7 @@ export function swapExactInputSingleCalldata(
 
   const exactInputSingleParams: ExactInputSingleParams = {
     poolKey,
-    zeroForOne,
+    zeroForOne: path.zeroForOne,
     amountIn,
     amountOutMinimum,
     hookData: '0x', // empty bytes
@@ -190,10 +223,14 @@ export function swapExactInputSingleCalldata(
     ],
   );
 
-  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
+  const settle = encodeSettle(srcToken, data, ActionConstants.OPEN_DELTA, true);
   const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
 
-  return encodeInputForExecute(actions, [swap, settle, take]);
+  return encodeInputForExecute(srcToken, destToken, data, amountIn, actions, [
+    swap,
+    settle,
+    take,
+  ]);
 }
 
 // Multi-hop encoding for SELL side
@@ -266,21 +303,27 @@ export function swapExactInputCalldata(
     ],
   );
 
-  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
+  const settle = encodeSettle(srcToken, data, ActionConstants.OPEN_DELTA, true);
   const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
 
-  return encodeInputForExecute(actions, [swap, settle, take]);
+  return encodeInputForExecute(srcToken, destToken, data, 0n, actions, [
+    swap,
+    settle,
+    take,
+  ]);
 }
 
 // Single hop encoding for BUY side
 export function swapExactOutputSingleCalldata(
   srcToken: Address,
   destToken: Address,
-  poolKey: PoolKey,
-  zeroForOne: boolean,
+  data: UniswapV4Data,
   amountOut: bigint,
+  amountInMaximum: bigint,
   recipient: Address,
 ): string {
+  const path = data.path[0];
+  const poolKey = path.pool.key;
   const actions = encodeActions([
     Actions.SWAP_EXACT_OUT_SINGLE,
     Actions.SETTLE,
@@ -288,9 +331,9 @@ export function swapExactOutputSingleCalldata(
   ]);
   const exactOutputSingleParams: ExactOutputSingleParams = {
     poolKey,
-    zeroForOne,
+    zeroForOne: path.zeroForOne,
     amountOut,
-    amountInMaximum: MAX_UINT128,
+    amountInMaximum,
     hookData: '0x', // empty bytes
   };
 
@@ -325,10 +368,14 @@ export function swapExactOutputSingleCalldata(
     ],
   );
 
-  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
+  const settle = encodeSettle(srcToken, data, ActionConstants.OPEN_DELTA, true);
   const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
 
-  return encodeInputForExecute(actions, [swap, settle, take]);
+  return encodeInputForExecute(srcToken, destToken, data, 0n, actions, [
+    swap,
+    settle,
+    take,
+  ]);
 }
 
 // Multi-hop encoding for SELL side
@@ -337,6 +384,7 @@ export function swapExactOutputCalldata(
   destToken: Address,
   data: UniswapV4Data,
   amountOut: bigint,
+  amountInMaximum: bigint,
   recipient: Address,
 ): string {
   const actions = encodeActions([
@@ -350,7 +398,7 @@ export function swapExactOutputCalldata(
       ? NULL_ADDRESS
       : data.path[data.path.length - 1].tokenOut,
     amountOut,
-    amountInMaximum: MAX_UINT128,
+    amountInMaximum,
     path: data.path.map(path => ({
       intermediateCurrency: isETHAddress(path.tokenIn)
         ? NULL_ADDRESS
@@ -400,8 +448,12 @@ export function swapExactOutputCalldata(
     ],
   );
 
-  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
+  const settle = encodeSettle(srcToken, data, ActionConstants.OPEN_DELTA, true);
   const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
 
-  return encodeInputForExecute(actions, [swap, settle, take]);
+  return encodeInputForExecute(srcToken, destToken, data, 0n, actions, [
+    swap,
+    settle,
+    take,
+  ]);
 }

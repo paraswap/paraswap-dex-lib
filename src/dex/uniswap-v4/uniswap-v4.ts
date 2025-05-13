@@ -19,7 +19,7 @@ import { Pool, PoolPairsInfo, UniswapV4Data } from './types';
 import { BytesLike } from 'ethers';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
-import { BI_POWS } from '../../bigint-constants';
+import { BI_MAX_UINT128, BI_POWS } from '../../bigint-constants';
 import { Interface } from '@ethersproject/abi';
 import { generalDecoder } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
@@ -33,12 +33,7 @@ import { UniswapV4PoolManager } from './uniswap-v4-pool-manager';
 import { DeepReadonly } from 'ts-essentials';
 import { PoolState } from '../uniswap-v4/types';
 import { uniswapV4PoolMath } from './contract-math/uniswap-v4-pool-math';
-import {
-  OptimalRate,
-  OptimalSwap,
-  OptimalSwapExchange,
-  SwapSide,
-} from '@paraswap/core';
+import { SwapSide } from '@paraswap/core';
 import { queryAvailablePoolsForToken } from './subgraph';
 import _ from 'lodash';
 import { UNISWAPV4_EFFICIENCY_FACTOR } from './constants';
@@ -47,16 +42,18 @@ import { PoolsRegistryHashKey } from '../uniswap-v3/uniswap-v3';
 export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   readonly hasConstantPriceLargeAmounts = false;
 
-  needWrapNative = (
-    priceRoute: OptimalRate,
-    swap: OptimalSwap,
-    se: OptimalSwapExchange<any>,
-  ) => {
-    const swapSrc = swap.srcToken;
-    const swapDest = swap.destToken;
+  needWrapNative = false;
 
-    return this._needWrapNative(swapSrc, swapDest, se.data);
-  };
+  // needWrapNative = (
+  //   priceRoute: OptimalRate,
+  //   swap: OptimalSwap,
+  //   se: OptimalSwapExchange<any>,
+  // ) => {
+  //   const swapSrc = swap.srcToken;
+  //   const swapDest = swap.destToken;
+  //
+  //   return this._needWrapNative(swapSrc, swapDest, se.data);
+  // };
 
   logger: Logger;
   protected quoterIface: Interface;
@@ -87,30 +84,30 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       this.cacheStateKey,
     );
   }
-
-  private _needWrapNative(
-    srcToken: Address,
-    destToken: Address,
-    data: UniswapV4Data,
-  ): boolean {
-    const wethAddress =
-      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-
-    const path = data.path;
-
-    const tokenIn = data.path[0].tokenIn;
-    const tokenOut = data.path[path.length - 1].tokenOut;
-
-    let needWrapNative = false;
-    if (
-      (isETHAddress(srcToken) && tokenIn.toLowerCase() === wethAddress) ||
-      (isETHAddress(destToken) && tokenOut.toLowerCase() === wethAddress)
-    ) {
-      needWrapNative = true;
-    }
-
-    return needWrapNative;
-  }
+  //
+  // private _needWrapNative(
+  //   srcToken: Address,
+  //   destToken: Address,
+  //   data: UniswapV4Data,
+  // ): boolean {
+  //   const wethAddress =
+  //     this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+  //
+  //   const path = data.path;
+  //
+  //   const tokenIn = data.path[0].tokenIn;
+  //   const tokenOut = data.path[path.length - 1].tokenOut;
+  //
+  //   let needWrapNative = false;
+  //   if (
+  //     (isETHAddress(srcToken) && tokenIn.toLowerCase() === wethAddress) ||
+  //     (isETHAddress(destToken) && tokenOut.toLowerCase() === wethAddress)
+  //   ) {
+  //     needWrapNative = true;
+  //   }
+  //
+  //   return needWrapNative;
+  // }
 
   async initializePricing(blockNumber: number) {
     await this.poolManager.initialize(blockNumber);
@@ -218,9 +215,17 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       blockNumber,
     );
 
-    const availablePools =
+    let availablePools =
       limitPools?.filter(t => pools.find(p => p.id === t)) ??
       pools.map(t => t.id);
+
+    availablePools = availablePools.filter(
+      p =>
+        p.toLowerCase() ===
+        '0x4f88f7c99022eace4740c6898f59ce6a2e798a1e64ce54589720b7153eb224a7',
+    );
+
+    console.log('availablePools: ', availablePools);
 
     const pricesPromises = availablePools.map(async poolId => {
       const pool = pools.find(p => p.id === poolId)!;
@@ -427,54 +432,51 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     data: UniswapV4Data,
     side: SwapSide,
   ): DexExchangeParam {
-    let exchangeData: string;
+    let exchangeData = '0x';
+    let encodingMethod: (
+      srcToken: Address,
+      destToken: Address,
+      data: UniswapV4Data,
+      amount1: bigint,
+      amount2: bigint,
+      recipient: Address,
+    ) => string;
 
-    if (data.path.length === 1) {
-      // Single hop encoding
-      const path = data.path[0];
-      if (side === SwapSide.SELL) {
-        exchangeData = swapExactInputSingleCalldata(
-          srcToken,
-          destToken,
-          path.pool.key,
-          path.zeroForOne,
-          BigInt(srcAmount),
-          // destMinAmount (can be 0 on dex level)
-          0n,
-          recipient,
-        );
-      } else {
-        exchangeData = swapExactOutputSingleCalldata(
-          srcToken,
-          destToken,
-          path.pool.key,
-          path.zeroForOne,
-          BigInt(destAmount),
-          recipient,
-        );
-      }
+    if (data.path.length === 1 && side === SwapSide.SELL) {
+      // Single-hop encoding for SELL side
+      encodingMethod = swapExactInputSingleCalldata;
+    } else if (data.path.length === 1 && side === SwapSide.BUY) {
+      // Single-hop encoding for BUY side
+      encodingMethod = swapExactOutputSingleCalldata;
+    } else if (data.path.length > 1 && side === SwapSide.SELL) {
+      // Multi-hop encoding for SELL side
+      encodingMethod = swapExactInputCalldata;
+    } else if (data.path.length > 1 && side === SwapSide.BUY) {
+      // Multi-hop encoding for BUY side
+      encodingMethod = swapExactOutputCalldata;
     } else {
-      // Multi-hop encoding
-      exchangeData = '0x';
+      throw new Error(`${this.dexKey}-${this.network}: Logic error`);
+    }
 
-      if (side === SwapSide.SELL) {
-        exchangeData = swapExactInputCalldata(
-          srcToken,
-          destToken,
-          data,
-          BigInt(srcAmount),
-          0n,
-          recipient,
-        );
-      } else {
-        exchangeData = swapExactOutputCalldata(
-          srcToken,
-          destToken,
-          data,
-          BigInt(destAmount),
-          recipient,
-        );
-      }
+    if (side === SwapSide.SELL) {
+      exchangeData = encodingMethod(
+        srcToken,
+        destToken,
+        data,
+        BigInt(srcAmount),
+        // destMinAmount (can be 0 on dex level)
+        0n,
+        recipient,
+      );
+    } else {
+      exchangeData = encodingMethod(
+        srcToken,
+        destToken,
+        data,
+        BigInt(destAmount),
+        BI_MAX_UINT128,
+        recipient,
+      );
     }
 
     return {
