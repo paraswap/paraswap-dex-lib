@@ -354,7 +354,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
 
       const toAmountIndex = exchangeData
         .replace('0x', '')
-        .indexOf(toAmount.replace('0x', ''));
+        .lastIndexOf(toAmount.replace('0x', ''));
 
       toAmountPos =
         (toAmountIndex !== -1 ? toAmountIndex : exchangeData.length) / 2;
