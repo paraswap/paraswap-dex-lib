@@ -144,7 +144,8 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
           hookState[hookAddress] = await getStableSurgeHookState(
             this.interfaces[1],
             hookAddress,
-            hookConfig.factory,
+            hookConfig.factoryAddress,
+            hookConfig.factoryDeploymentBlock,
             this.dexHelper,
             blockNumber,
           );
@@ -175,7 +176,8 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
           currentState[hookAddress] = await getStableSurgeHookState(
             this.interfaces[1],
             hookAddress,
-            hookConfig.factory,
+            hookConfig.factoryAddress,
+            hookConfig.factoryDeploymentBlock,
             this.dexHelper,
             blockNumber,
           );
