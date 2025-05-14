@@ -80,6 +80,11 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
           factory: '0x86e67E115f96DF37239E0479441303De0de7bc2b', // Pools with StableSurge hook will always be deployed from this factory
           address: '0x0Fa0f9990D7969a7aE6f9961d663E4A201Ed6417', // Address of the hook that will be used by pools
         },
+        {
+          type: 'Akron',
+          apiName: 'AKRON',
+          address: '0xD221aFFABdD3C1281ea14C5781DEc6B0fCA8937E',
+        },
       ],
     },
     [Network.BASE]: {
@@ -93,6 +98,11 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
           apiName: 'STABLE_SURGE',
           factory: '0x4fb47126Fa83A8734991E41B942Ac29A3266C968', // Pools with StableSurge hook will always be deployed from this factory
           address: '0xb2007B8B7E0260042517f635CFd8E6dD2Dd7f007', // Address of the hook that will be used by pools
+        },
+        {
+          type: 'Akron',
+          apiName: 'AKRON',
+          address: '0xA45570815dbE7BF7010c41f1f74479bE322D02bd',
         },
       ],
     },

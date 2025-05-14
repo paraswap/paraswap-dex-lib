@@ -33,7 +33,7 @@ export interface CommonMutableState {
   scalingFactors: bigint[];
 }
 
-type CommonPoolState = CommonImmutablePoolState & CommonMutableState;
+export type CommonPoolState = CommonImmutablePoolState & CommonMutableState;
 
 export type PoolState =
   | CommonPoolState

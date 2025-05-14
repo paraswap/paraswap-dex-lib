@@ -27,15 +27,19 @@ import {
   thresholdSurgePercentageChangedEvent,
 } from './stableSurgeHook';
 import stableSurgeHookAbi from '../../../abi/balancer-v3/stableSurgeHook.json';
+import { AkronHookState, AkronConfig, Akron } from './akronHook';
 
 // Add each supported hook state here
-export type HookState = DirectionalFeeHookState | StableSurgeHookState;
+export type HookState =
+  | DirectionalFeeHookState
+  | StableSurgeHookState
+  | AkronHookState;
 
 export type HookStateMap = {
   [address: string]: HookState;
 };
 
-export type HookConfig = DirectionalFeeConfig | StableSurgeConfig;
+export type HookConfig = DirectionalFeeConfig | StableSurgeConfig | AkronConfig;
 
 export type HooksConfigMap = {
   [hookAddress: string]: HookConfig;
@@ -144,6 +148,12 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
             this.dexHelper,
             blockNumber,
           );
+        } else if (hookConfig.type === Akron.type) {
+          // this hook does not need to be updated by event subscriber. Values filled from pool at swap time
+          hookState[hookAddress] = {
+            weights: [],
+            minimumSwapFeePercentage: 0n,
+          };
         }
       }),
     );

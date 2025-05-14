@@ -34,6 +34,7 @@ import {
   HooksConfigMap,
 } from './hooks/balancer-hook-event-subscriber';
 import { StableSurge, StableSurgeHookState } from './hooks/stableSurgeHook';
+import { isAkronPoolState } from './hooks/akronHook';
 
 export const WAD = BI_POWS[18];
 const FEE_SCALING_FACTOR = BI_POWS[11];
@@ -485,6 +486,15 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
           };
         }
       }
+
+      // if weighted and akron then update hookState similar to above
+      if (isAkronPoolState(step.poolState)) {
+        hookState = {
+          weights: step.poolState.weights,
+          minimumSwapFeePercentage: step.poolState.swapFee,
+        };
+      }
+
       // try/catch as the swap can fail for e.g. wrapAmountTooSmall, etc
       try {
         outputAmountRaw = this.vault.swap(
