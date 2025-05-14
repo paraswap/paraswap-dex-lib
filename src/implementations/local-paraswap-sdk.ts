@@ -147,7 +147,11 @@ export class LocalParaswapSDK implements IParaSwapSDK {
       throw new Error('Fail to get price for ' + this.dexKeys.join(', '));
 
     const finalPrice = poolPrices[0];
-    const quoteAmount = finalPrice.prices.find(t => t !== 0n) || 0n;
+    const quoteAmount = finalPrice.prices[chunks];
+
+    if (quoteAmount === 0n)
+      throw new Error('Fail to get price for ' + this.dexKeys.join(', '));
+
     const srcAmount = (
       side === SwapSide.SELL ? amount : quoteAmount
     ).toString();

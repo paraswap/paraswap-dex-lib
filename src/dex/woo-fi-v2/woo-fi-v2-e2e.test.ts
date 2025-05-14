@@ -171,19 +171,38 @@ describe('WooFiV2 E2E', () => {
     const baseATokenSymbol = 'WETHe';
     const baseBTokenSymbol = 'USDC';
     const quoteTokenSymbol = 'USDC';
-
-    const tokenBaseAAmount = '293403298234891701';
+    // const tokenBaseAAmount = '293403298234891701';
     const tokenQuoteAmount = '1000000';
+    const cap = 200000000000000000000n;
+    const reserve = 199799304628356074746n;
 
-    testForNetwork(
-      network,
-      dexKey,
-      baseATokenSymbol,
-      baseBTokenSymbol,
-      quoteTokenSymbol,
-      tokenBaseAAmount,
-      tokenQuoteAmount,
-    );
+    describe('should work', () => {
+      const allowedTokenBaseAAmount = (cap - reserve).toString();
+
+      testForNetwork(
+        network,
+        dexKey,
+        baseATokenSymbol,
+        baseBTokenSymbol,
+        quoteTokenSymbol,
+        allowedTokenBaseAAmount,
+        tokenQuoteAmount,
+      );
+    });
+
+    describe('should not work', () => {
+      const notAllowedTokenBaseAAmount = (cap - reserve + 1n).toString();
+
+      testForNetwork(
+        network,
+        dexKey,
+        baseATokenSymbol,
+        baseBTokenSymbol,
+        quoteTokenSymbol,
+        notAllowedTokenBaseAAmount,
+        tokenQuoteAmount,
+      );
+    });
   });
 
   describe('Base', () => {
