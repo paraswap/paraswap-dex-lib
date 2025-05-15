@@ -214,6 +214,7 @@ export class GenericSwapTransactionBuilder {
   protected async _build(
     priceRoute: OptimalRate,
     minMaxAmount: string,
+    quotedAmount: string,
     userAddress: Address,
     referrerAddress: Address | undefined,
     partnerAddress: Address,
@@ -262,7 +263,7 @@ export class GenericSwapTransactionBuilder {
         priceRoute.destToken,
         isSell ? priceRoute.srcAmount : minMaxAmount,
         isSell ? minMaxAmount : priceRoute.destAmount,
-        isSell ? priceRoute.destAmount : priceRoute.srcAmount,
+        quotedAmount,
         hexConcat([
           hexZeroPad(uuidToBytes16(uuid), 16),
           hexZeroPad(hexlify(priceRoute.blockNumber), 16),
@@ -290,6 +291,7 @@ export class GenericSwapTransactionBuilder {
   protected async _buildDirect(
     priceRoute: OptimalRate,
     minMaxAmount: string,
+    quotedAmount: string,
     referrerAddress: Address | undefined,
     partnerAddress: Address,
     partnerFeePercent: string,
@@ -330,11 +332,6 @@ export class GenericSwapTransactionBuilder {
         ? minMaxAmount
         : swapExchange.destAmount;
 
-    const expectedAmount =
-      priceRoute.side === SwapSide.SELL
-        ? priceRoute.destAmount
-        : priceRoute.srcAmount;
-
     const partnerAndFee = this.buildFeesV6({
       referrerAddress,
       partnerAddress,
@@ -351,7 +348,7 @@ export class GenericSwapTransactionBuilder {
       priceRoute.destToken,
       srcAmount,
       destAmount,
-      expectedAmount,
+      quotedAmount,
       swapExchange.data,
       priceRoute.side,
       permit,
@@ -412,6 +409,7 @@ export class GenericSwapTransactionBuilder {
   public async build({
     priceRoute,
     minMaxAmount,
+    quotedAmount,
     userAddress,
     referrerAddress,
     partnerAddress,
@@ -431,6 +429,7 @@ export class GenericSwapTransactionBuilder {
   }: {
     priceRoute: OptimalRate;
     minMaxAmount: string;
+    quotedAmount?: string;
     userAddress: Address;
     referrerAddress?: Address;
     partnerAddress: Address;
@@ -448,6 +447,13 @@ export class GenericSwapTransactionBuilder {
     beneficiary?: Address;
     onlyParams?: boolean;
   }): Promise<TxObject | (string | string[])[]> {
+    // if quotedAmount wasn't passed, use the amount from the route
+    const _quotedAmount = quotedAmount
+      ? quotedAmount
+      : priceRoute.side === SwapSide.SELL
+      ? priceRoute.destAmount
+      : priceRoute.srcAmount;
+
     // if beneficiary is not defined, then in smart contract it will be replaced to msg.sender
     const _beneficiary =
       beneficiary !== NULL_ADDRESS &&
@@ -464,6 +470,7 @@ export class GenericSwapTransactionBuilder {
       ({ encoder, params } = await this._buildDirect(
         priceRoute,
         minMaxAmount,
+        _quotedAmount,
         referrerAddress,
         partnerAddress,
         partnerFeePercent,
@@ -479,6 +486,7 @@ export class GenericSwapTransactionBuilder {
       ({ encoder, params } = await this._build(
         priceRoute,
         minMaxAmount,
+        _quotedAmount,
         userAddress,
         referrerAddress,
         partnerAddress,
