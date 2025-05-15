@@ -52,6 +52,8 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
 
   poolManagerIface: Interface;
 
+  validState = true;
+
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
@@ -493,6 +495,11 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
                 blockHeader.parentHash
               } for ${this.parentName}, ${JSON.stringify(event)}`,
             e,
+          );
+
+          this.validState = false;
+          this.logger.warn(
+            `${this.parentName}: Pool id ${this.poolId}: set validState = false due to unexpected error while handling event`,
           );
         }
       }

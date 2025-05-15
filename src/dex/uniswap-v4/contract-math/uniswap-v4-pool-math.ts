@@ -389,30 +389,30 @@ class UniswapV4PoolMath {
   ): { feeGrowthInside0X128: bigint; feeGrowthInside1X128: bigint } {
     let lower: TickInfo = poolState.ticks[tickLower.toString()];
     let upper: TickInfo = poolState.ticks[tickUpper.toString()];
-    const tickCurrent = BigInt(poolState.slot0?.tick!);
+    const tickCurrent = BigInt(poolState.slot0.tick);
 
     let feeGrowthInside0X128: bigint;
     let feeGrowthInside1X128: bigint;
 
     if (tickCurrent < tickLower) {
       feeGrowthInside0X128 =
-        lower.feeGrowthOutside0X128! - upper.feeGrowthOutside0X128!;
+        lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128;
       feeGrowthInside1X128 =
-        lower.feeGrowthOutside1X128! - upper.feeGrowthOutside1X128!;
+        lower.feeGrowthOutside1X128 - upper.feeGrowthOutside1X128;
     } else if (tickCurrent >= tickUpper) {
       feeGrowthInside0X128 =
-        upper.feeGrowthOutside0X128! - lower.feeGrowthOutside0X128!;
+        upper.feeGrowthOutside0X128 - lower.feeGrowthOutside0X128;
       feeGrowthInside1X128 =
-        upper.feeGrowthOutside1X128! - lower.feeGrowthOutside1X128!;
+        upper.feeGrowthOutside1X128 - lower.feeGrowthOutside1X128;
     } else {
       feeGrowthInside0X128 =
-        BigInt(poolState.feeGrowthGlobal0X128!) -
-        BigInt(lower.feeGrowthOutside0X128!) -
-        BigInt(upper.feeGrowthOutside0X128!);
+        BigInt(poolState.feeGrowthGlobal0X128) -
+        BigInt(lower.feeGrowthOutside0X128) -
+        BigInt(upper.feeGrowthOutside0X128);
       feeGrowthInside1X128 =
-        BigInt(poolState.feeGrowthGlobal1X128!) -
-        BigInt(lower.feeGrowthOutside1X128!) -
-        BigInt(upper.feeGrowthOutside1X128!);
+        BigInt(poolState.feeGrowthGlobal1X128) -
+        BigInt(lower.feeGrowthOutside1X128) -
+        BigInt(upper.feeGrowthOutside1X128);
     }
 
     return { feeGrowthInside0X128, feeGrowthInside1X128 };

@@ -208,6 +208,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
           side,
           reqId,
         );
+
         // this.logger.info(
         //   `_getOutputs_${pool.id}_${reqId}: ${
         //     Date.now() - getOutputsStart
