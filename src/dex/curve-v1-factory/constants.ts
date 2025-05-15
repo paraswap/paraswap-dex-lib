@@ -20,7 +20,7 @@ export const LIQUIDITY_FETCH_TIMEOUT_MS = 1_500;
 export const CONVERGENCE_ERROR_PREFIX = 'didnt_converge';
 
 // Pooltracker relevant variables
-export const CURVE_API_URL = 'https://api.curve.fi/api/getPools';
+export const CURVE_API_URL = 'https://api.curve.finance/v1/getPools';
 export const NETWORK_ID_TO_NAME: Record<number, string> = {
   [Network.MAINNET]: 'ethereum',
   [Network.POLYGON]: 'polygon',
