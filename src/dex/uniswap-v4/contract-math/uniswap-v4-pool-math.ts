@@ -755,6 +755,16 @@ class UniswapV4PoolMath {
       );
     }
 
+    const currentTick = result.tick;
+    const currentPrice = result.sqrtPriceX96;
+
+    _require(
+      currentPrice === newSqrtPriceX96 && currentTick === newTick,
+      'LOGIC ERROR: calculated (currentPrice,currentTick) and (newSqrtPriceX96, newTick) from event should always be equal at the end',
+      { currentPrice, newSqrtPriceX96, currentTick, newTick },
+      'currentPrice === newSqrtPriceX96 && currentTick === newTick',
+    );
+
     poolState.slot0.tick = newTick;
     poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
 

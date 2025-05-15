@@ -94,7 +94,6 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
 
     if (eventPool === null) return null; // non existing pool
 
-    // Skip event pools with non valid state
     if (eventPool) {
       return eventPool;
     }
