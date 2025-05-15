@@ -109,7 +109,7 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
         {
           type: 'Akron',
           apiName: 'AKRON',
-          address: '0xD221aFFABdD3C1281ea14C5781DEc6B0fCA8937E',
+          hookAddress: '0xD221aFFABdD3C1281ea14C5781DEc6B0fCA8937E',
         },
       ],
     },
@@ -136,7 +136,7 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
         {
           type: 'Akron',
           apiName: 'AKRON',
-          address: '0xA45570815dbE7BF7010c41f1f74479bE322D02bd',
+          hookAddress: '0xA45570815dbE7BF7010c41f1f74479bE322D02bd',
         },
       ],
     },

@@ -10,7 +10,7 @@ export const Akron = {
 export type AkronConfig = {
   type: typeof Akron.type;
   apiName: typeof Akron.apiName;
-  address: string;
+  hookAddress: string;
 };
 
 export type AkronHookState = {
