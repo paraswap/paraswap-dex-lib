@@ -106,6 +106,7 @@ import { MWrappedM } from './usual/m-wrapped-m';
 import { WrappedMM } from './usual/wrapped-m-m';
 import { UsualPP } from './usual-pp/usual-pp';
 import { Ekubo } from './ekubo/ekubo';
+import { Stabull } from './stabull/stabull';
 import { UniswapV4 } from './uniswap-v4/uniswap-v4';
 import { uniswapV4Merge } from './uniswap-v4/optimizer';
 
@@ -209,6 +210,7 @@ const Dexes = [
   UsualMUsd0,
   UsualPP,
   Ekubo,
+  Stabull,
 ];
 
 export type LegacyDexConstructor = new (dexHelper: IDexHelper) => IDexTxBuilder<
