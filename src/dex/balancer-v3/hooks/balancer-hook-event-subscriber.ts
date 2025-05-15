@@ -23,15 +23,19 @@ import {
 } from './stableSurgeHook';
 import stableSurgeHookAbi from '../../../abi/balancer-v3/stableSurgeHook.json';
 import { combineInterfaces } from '../utils';
+import { AkronHookState, AkronConfig, Akron } from './akronHook';
 
 // Add each supported hook state here
-export type HookState = DirectionalFeeHookState | StableSurgeHookState;
+export type HookState =
+  | DirectionalFeeHookState
+  | StableSurgeHookState
+  | AkronHookState;
 
 export type HookStateMap = {
   [address: string]: HookState;
 };
 
-export type HookConfig = DirectionalFeeConfig | StableSurgeConfig;
+export type HookConfig = DirectionalFeeConfig | StableSurgeConfig | AkronConfig;
 
 export type HooksConfigMap = {
   [hookAddress: string]: HookConfig;
@@ -136,10 +140,17 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
           hookState[hookAddress] = await getStableSurgeHookState(
             this.interfaces[1],
             hookAddress,
-            hookConfig.factory,
+            hookConfig.factoryAddress,
+            hookConfig.factoryDeploymentBlock,
             this.dexHelper,
             blockNumber,
           );
+        } else if (hookConfig.type === Akron.type) {
+          // this hook does not need to be updated by event subscriber. Values filled from pool at swap time
+          hookState[hookAddress] = {
+            weights: [],
+            minimumSwapFeePercentage: 0n,
+          };
         }
       }),
     );
@@ -161,7 +172,8 @@ export class BalancerEventHook extends StatefulEventSubscriber<HookStateMap> {
           currentState[hookAddress] = await getStableSurgeHookState(
             this.interfaces[1],
             hookAddress,
-            hookConfig.factory,
+            hookConfig.factoryAddress,
+            hookConfig.factoryDeploymentBlock,
             this.dexHelper,
             blockNumber,
           );

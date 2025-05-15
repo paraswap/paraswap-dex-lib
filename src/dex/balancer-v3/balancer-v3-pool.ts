@@ -29,12 +29,13 @@ import {
 } from './hooks/balancer-hook-event-subscriber';
 import { StableSurge, StableSurgeHookState } from './hooks/stableSurgeHook';
 import {
-  isQuantAMMPool,
+  isQuantAMMPoolState,
   QauntAMMPoolState,
   updateLatestQuantAMMState,
   updateQuantAMMPoolState,
 } from './quantAMMPool';
 import { combineInterfaces } from './utils';
+import { isAkronPoolState } from './hooks/akronHook';
 
 export const WAD = BI_POWS[18];
 const FEE_SCALING_FACTOR = BI_POWS[11];
@@ -431,7 +432,7 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
     const newState = _.cloneDeep(state) as PoolStateMap;
 
     // Update the pool's weights and timestamps
-    if (isQuantAMMPool(newState[poolAddress]))
+    if (isQuantAMMPoolState(newState[poolAddress]))
       updateQuantAMMPoolState(
         newState[poolAddress] as QauntAMMPoolState,
         event.args.weights,
@@ -528,11 +529,18 @@ export class BalancerV3EventPool extends StatefulEventSubscriber<PoolStateMap> {
       }
 
       // Update QuantAMM pool state with latest timestamp
-      if (isQuantAMMPool(step.poolState))
+      if (isQuantAMMPoolState(step.poolState))
         updateLatestQuantAMMState(
           step.poolState as QauntAMMPoolState,
           BigInt(timestamp),
         );
+      // if weighted and akron then update hookState similar to above
+      if (isAkronPoolState(step.poolState)) {
+        hookState = {
+          weights: step.poolState.weights,
+          minimumSwapFeePercentage: step.poolState.swapFee,
+        };
+      }
 
       // try/catch as the swap can fail for e.g. wrapAmountTooSmall, etc
       try {

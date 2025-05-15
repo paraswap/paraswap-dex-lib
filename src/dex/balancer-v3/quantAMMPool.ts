@@ -31,7 +31,7 @@ export function isQuantAMMMutableState(
   );
 }
 
-export function isQuantAMMPool(poolState: PoolState | BufferState) {
+export function isQuantAMMPoolState(poolState: PoolState | BufferState) {
   return (
     poolState.poolType === 'QUANT_AMM_WEIGHTED' &&
     isQuantAMMMutableState(poolState)
