@@ -52,8 +52,6 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
 
   poolManagerIface: Interface;
 
-  validState = true;
-
   constructor(
     readonly dexHelper: IDexHelper,
     parentName: string,
@@ -402,6 +400,7 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
       ticks: ticksResults,
       tickBitmap: tickBitMapResults,
       positions: {},
+      isValid: true,
     };
   }
 
@@ -465,6 +464,18 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
     return [leftBitMapIndex, rightBitMapIndex];
   }
 
+  protected async processBlockLogs(
+    state: DeepReadonly<PoolState>,
+    logs: Readonly<Log>[],
+    blockHeader: Readonly<BlockHeader>,
+  ): Promise<DeepReadonly<PoolState> | null> {
+    const newState = await super.processBlockLogs(state, logs, blockHeader);
+    if (newState && !newState.isValid) {
+      return await this.generateState(blockHeader.number);
+    }
+    return newState;
+  }
+
   protected async processLog(
     state: PoolState,
     log: Readonly<Log>,
@@ -497,10 +508,8 @@ export class UniswapV4Pool extends StatefulEventSubscriber<PoolState> {
             e,
           );
 
-          this.validState = false;
-          this.logger.warn(
-            `${this.parentName}: Pool id ${this.poolId}: set validState = false due to unexpected error while handling event`,
-          );
+          _state.isValid = false;
+          return _state;
         }
       }
     } catch (e) {
