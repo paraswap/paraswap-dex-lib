@@ -2,10 +2,10 @@ import { Solidly } from '../solidly';
 import { SolidlyPair } from '../types';
 import { Network } from '../../../constants';
 import { IDexHelper } from '../../../dex-helper';
-import { Interface } from '@ethersproject/abi';
 import { getDexKeysWithNetwork } from '../../../utils';
 import { SolidlyConfig } from '../config';
 import _ from 'lodash';
+import { BytesLike, Interface } from 'ethers';
 
 const velocimeterFactoryABI = [
   {
@@ -43,7 +43,7 @@ export class Velocimeter extends Solidly {
         pair.exchange,
       ]),
     };
-    const callDecoder = (values: any[]) =>
+    const callDecoder = (values: BytesLike) =>
       parseInt(
         velocimeterFactoryIface
           .decodeFunctionResult('getFee', values)[0]

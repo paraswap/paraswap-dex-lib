@@ -3,10 +3,9 @@ import { Network } from '../../../constants';
 import { getDexKeysWithNetwork } from '../../../utils';
 import { SolidlyConfig } from '../config';
 import _ from 'lodash';
-import { Address, PoolLiquidity } from '../../../types';
 import { SolidlyPair } from '../types';
-import { Interface } from '@ethersproject/abi';
 import { IDexHelper } from '../../../dex-helper';
+import { BytesLike, Interface } from 'ethers';
 
 const VelodromeV2FactoryABI = [
   {
@@ -48,7 +47,7 @@ export class VelodromeV2 extends Solidly {
         pair.stable,
       ]),
     };
-    const callDecoder = (values: any[]) =>
+    const callDecoder = (values: BytesLike) =>
       parseInt(
         velodromeV2FactoryIface
           .decodeFunctionResult('getFee', values)[0]
