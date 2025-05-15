@@ -1,4 +1,11 @@
-import { ethers } from 'ethers';
+import {
+  concat,
+  dataLength,
+  ethers,
+  solidityPacked,
+  toBeHex,
+  zeroPadValue,
+} from 'ethers';
 import { DexExchangeBuildParam } from '../types';
 import {
   Address,
@@ -15,10 +22,6 @@ import {
   ExecutorBytecodeBuilder,
   SingleSwapCallDataParams,
 } from './ExecutorBytecodeBuilder';
-
-const {
-  utils: { hexlify, hexDataLength, hexConcat, hexZeroPad, solidityPack },
-} = ethers;
 
 export type Executor03SingleSwapCallDataParams = {
   swap: OptimalSwap;
@@ -171,7 +174,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       maybeWethCallData,
     });
 
-    swapCallData = hexConcat([dexCallData]);
+    swapCallData = concat([dexCallData]);
 
     if (
       flags.dexes[index] % 4 !== 1 && // not sendEth
@@ -188,7 +191,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
         curExchangeParam.permit2Approval,
       );
 
-      swapCallData = hexConcat([approveCallData, swapCallData]);
+      swapCallData = concat([approveCallData, swapCallData]);
     }
 
     if (
@@ -215,7 +218,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
         Flag.SEND_ETH_EQUAL_TO_FROM_AMOUNT_DONT_CHECK_BALANCE_AFTER_SWAP, // 9
       );
 
-      swapCallData = hexConcat([
+      swapCallData = concat([
         approveWethCalldata,
         depositCallData,
         swapCallData,
@@ -238,7 +241,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
           swap.destToken,
         );
 
-        swapCallData = hexConcat([swapCallData, transferCallData]);
+        swapCallData = concat([swapCallData, transferCallData]);
       }
 
       // withdraw WETH
@@ -247,7 +250,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
           this.getWETHAddress(curExchangeParam),
           maybeWethCallData.withdraw.calldata,
         );
-        swapCallData = hexConcat([swapCallData, withdrawCallData]);
+        swapCallData = concat([swapCallData, withdrawCallData]);
       }
 
       // send ETH to augustus
@@ -256,7 +259,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
         (!curExchangeParam.dexFuncHasRecipient || maybeWethCallData?.withdraw)
       ) {
         const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
-        swapCallData = hexConcat([swapCallData, finalSpecialFlagCalldata]);
+        swapCallData = concat([swapCallData, finalSpecialFlagCalldata]);
       }
     }
 
@@ -334,7 +337,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       if (exchangeParam.insertFromAmountPos) {
         fromAmountPos = exchangeParam.insertFromAmountPos;
       } else {
-        const fromAmount = ethers.utils.defaultAbiCoder.encode(
+        const fromAmount = ethers.AbiCoder.defaultAbiCoder().encode(
           ['uint256'],
           [swap.swapExchanges[swapExchangeIndex].srcAmount],
         );
@@ -347,7 +350,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
           (fromAmountIndex !== -1 ? fromAmountIndex : exchangeData.length) / 2;
       }
 
-      const toAmount = ethers.utils.defaultAbiCoder.encode(
+      const toAmount = ethers.AbiCoder.defaultAbiCoder().encode(
         ['uint256'],
         [swap.swapExchanges[swapExchangeIndex].destAmount],
       );
@@ -406,7 +409,7 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
 
     let swapsCalldata = orderedExchangeParams.reduce<string>(
       (acc, ep, index) =>
-        hexConcat([
+        concat([
           acc,
           this.buildSingleSwapCallData({
             priceRoute,
@@ -421,12 +424,12 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       '0x',
     );
 
-    return solidityPack(
+    return solidityPacked(
       ['bytes32', 'bytes', 'bytes'],
       [
-        hexZeroPad(hexlify(32), 32), // calldata offset
-        hexZeroPad(
-          hexlify(hexDataLength(swapsCalldata) + BYTES_96_LENGTH), // calldata length  (96 bytes = bytes12(0) + msg.sender)
+        zeroPadValue(toBeHex(32), 32), // calldata offset
+        zeroPadValue(
+          toBeHex(dataLength(swapsCalldata) + BYTES_96_LENGTH), // calldata length  (96 bytes = bytes12(0) + msg.sender)
           32,
         ),
         swapsCalldata, // // calldata
@@ -450,22 +453,22 @@ export class Executor03BytecodeBuilder extends ExecutorBytecodeBuilder<
       .replace('0x', '')
       .indexOf(srcTokenAddressLowered.replace('0x', ''));
 
-    const srcTokenPos = hexZeroPad(hexlify(srcTokenAddrIndex / 2), 8);
+    const srcTokenPos = zeroPadValue(toBeHex(srcTokenAddrIndex / 2), 8);
 
     const destTokenAddrIndex = callData
       .replace('0x', '')
       .indexOf(destTokenAddressLowered.replace('0x', ''));
 
-    const destTokenPos = hexZeroPad(hexlify(destTokenAddrIndex / 2), 8);
+    const destTokenPos = zeroPadValue(toBeHex(destTokenAddrIndex / 2), 8);
 
-    return solidityPack(
+    return solidityPacked(
       ['bytes4', 'bytes4', 'bytes8', 'bytes8', 'bytes8', 'bytes'],
       [
-        hexZeroPad(hexlify(hexDataLength(callData)), 4), // calldata size
-        hexZeroPad(hexlify(needWithdraw ? 1 : 0), 4), // flag
+        zeroPadValue(toBeHex(dataLength(callData)), 4), // calldata size
+        zeroPadValue(toBeHex(needWithdraw ? 1 : 0), 4), // flag
         destTokenPos, // (8) destTokenPos
         srcTokenPos, // (8) srcTokenPos
-        hexZeroPad(hexlify(Math.ceil(percentage * 100)), 8), // percentage
+        zeroPadValue(toBeHex(Math.ceil(percentage * 100)), 8), // percentage
         callData, // swap calldata
       ],
     );

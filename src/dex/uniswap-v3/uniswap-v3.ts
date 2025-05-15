@@ -1,6 +1,4 @@
-import { defaultAbiCoder, Interface } from '@ethersproject/abi';
 import _ from 'lodash';
-import { pack } from '@ethersproject/solidity';
 import {
   AdapterExchangeParam,
   Address,
@@ -16,14 +14,10 @@ import {
   Token,
   TxInfo,
 } from '../../types';
-import {
-  CACHE_PREFIX,
-  Network,
-  SUBGRAPH_TIMEOUT,
-  SwapSide,
-} from '../../constants';
+import { CACHE_PREFIX, Network, SwapSide } from '../../constants';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import {
+  encodeV6Metadata,
   getBigIntPow,
   getDexKeysWithNetwork,
   interpolate,
@@ -69,7 +63,7 @@ import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { OptimalSwapExchange } from '@paraswap/core';
 import { OnPoolCreatedCallback, UniswapV3Factory } from './uniswap-v3-factory';
-import { hexConcat, hexlify, hexZeroPad, hexValue } from 'ethers/lib/utils';
+import { zeroPadValue, solidityPacked, Interface, toBeHex } from 'ethers';
 import { extractReturnAmountPosition } from '../../executor/utils';
 import { getBalanceERC20 } from '../../lib/tokens/utils';
 import { MultiCallParams } from '../../lib/multi-wrapper';
@@ -1034,10 +1028,8 @@ export class UniswapV3
 
     const path = this._encodePathV6(data.path, side);
 
-    const metadata = hexConcat([
-      hexZeroPad(uuidToBytes16(uuid), 16),
-      hexZeroPad(hexlify(blockNumber), 16),
-    ]);
+    const metadata = encodeV6Metadata(uuid, blockNumber);
+
     const uniData: UniswapV3ParamsDirectBase = [
       srcToken,
       destToken,
@@ -1435,8 +1427,8 @@ export class UniswapV3
     );
 
     return side === SwapSide.BUY
-      ? pack(types.reverse(), _path.reverse())
-      : pack(types, _path);
+      ? solidityPacked(types.reverse(), _path.reverse())
+      : solidityPacked(types, _path);
   }
 
   private _encodePathV6(
@@ -1489,7 +1481,7 @@ export class UniswapV3
     const directionEncoded = (tokenInSorted === t0 ? '8' : '0').padEnd(24, '0');
     const token0Encoded = tokenInSorted.slice(2).padEnd(64, '0');
     const token1Encoded = tokenOutSorted.slice(2).padEnd(64, '0');
-    const feeEncoded = hexZeroPad(hexValue(parseInt(fee)), 20).slice(2);
+    const feeEncoded = zeroPadValue(toBeHex(parseInt(fee)), 20).slice(2);
 
     return directionEncoded + token0Encoded + token1Encoded + feeEncoded;
   }
