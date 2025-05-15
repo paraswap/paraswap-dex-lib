@@ -702,6 +702,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
     side: SwapSide,
     options: PreprocessTransactionOptions,
   ): Promise<[OptimalSwapExchange<BebopData>, ExchangeTxInfo]> {
+    this.logger.info('Transaction options', options);
     const isSell = side === SwapSide.SELL;
     const isBuy = side === SwapSide.BUY;
 
@@ -720,6 +721,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
       skip_validation: true,
       source: this.bebopAuthName,
     };
+    this.logger.info('Transaction params', params);
 
     let quoteId: string | undefined;
 
