@@ -42,18 +42,8 @@ import { PoolsRegistryHashKey } from '../uniswap-v3/uniswap-v3';
 export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   readonly hasConstantPriceLargeAmounts = false;
 
+  // to prevent wrap/unwrap on v6 contract level, because we are doing wrap/unwrap on UniV4 Router level, check tx encoder for details
   needWrapNative = false;
-
-  // needWrapNative = (
-  //   priceRoute: OptimalRate,
-  //   swap: OptimalSwap,
-  //   se: OptimalSwapExchange<any>,
-  // ) => {
-  //   const swapSrc = swap.srcToken;
-  //   const swapDest = swap.destToken;
-  //
-  //   return this._needWrapNative(swapSrc, swapDest, se.data);
-  // };
 
   logger: Logger;
   protected quoterIface: Interface;
@@ -84,30 +74,6 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       this.cacheStateKey,
     );
   }
-  //
-  // private _needWrapNative(
-  //   srcToken: Address,
-  //   destToken: Address,
-  //   data: UniswapV4Data,
-  // ): boolean {
-  //   const wethAddress =
-  //     this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
-  //
-  //   const path = data.path;
-  //
-  //   const tokenIn = data.path[0].tokenIn;
-  //   const tokenOut = data.path[path.length - 1].tokenOut;
-  //
-  //   let needWrapNative = false;
-  //   if (
-  //     (isETHAddress(srcToken) && tokenIn.toLowerCase() === wethAddress) ||
-  //     (isETHAddress(destToken) && tokenOut.toLowerCase() === wethAddress)
-  //   ) {
-  //     needWrapNative = true;
-  //   }
-  //
-  //   return needWrapNative;
-  // }
 
   async initializePricing(blockNumber: number) {
     await this.poolManager.initialize(blockNumber);
@@ -219,13 +185,13 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       limitPools?.filter(t => pools.find(p => p.id === t)) ??
       pools.map(t => t.id);
 
-    availablePools = availablePools.filter(
-      p =>
-        p.toLowerCase() ===
-        '0x4f88f7c99022eace4740c6898f59ce6a2e798a1e64ce54589720b7153eb224a7',
-    );
+    // availablePools = availablePools.filter(
+    //   p =>
+    //     p.toLowerCase() ===
+    //     '0x4f88f7c99022eace4740c6898f59ce6a2e798a1e64ce54589720b7153eb224a7',
+    // );
 
-    console.log('availablePools: ', availablePools);
+    console.log('availablePools: ', pools);
 
     const pricesPromises = availablePools.map(async poolId => {
       const pool = pools.find(p => p.id === poolId)!;
@@ -432,7 +398,6 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     data: UniswapV4Data,
     side: SwapSide,
   ): DexExchangeParam {
-    let exchangeData = '0x';
     let encodingMethod: (
       srcToken: Address,
       destToken: Address,
@@ -440,6 +405,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       amount1: bigint,
       amount2: bigint,
       recipient: Address,
+      dexHelper: IDexHelper,
     ) => string;
 
     if (data.path.length === 1 && side === SwapSide.SELL) {
@@ -455,29 +421,20 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       // Multi-hop encoding for BUY side
       encodingMethod = swapExactOutputCalldata;
     } else {
-      throw new Error(`${this.dexKey}-${this.network}: Logic error`);
+      throw new Error(
+        `${this.dexKey}-${this.network}: Logic error for side: ${side}, data.path.length: ${data.path.length}`,
+      );
     }
 
-    if (side === SwapSide.SELL) {
-      exchangeData = encodingMethod(
-        srcToken,
-        destToken,
-        data,
-        BigInt(srcAmount),
-        // destMinAmount (can be 0 on dex level)
-        0n,
-        recipient,
-      );
-    } else {
-      exchangeData = encodingMethod(
-        srcToken,
-        destToken,
-        data,
-        BigInt(destAmount),
-        BI_MAX_UINT128,
-        recipient,
-      );
-    }
+    const exchangeData = encodingMethod(
+      srcToken,
+      destToken,
+      data,
+      BigInt(srcAmount),
+      side === SwapSide.SELL ? 0n : BigInt(destAmount),
+      recipient,
+      this.dexHelper,
+    );
 
     return {
       needWrapNative: this.needWrapNative,
