@@ -7,6 +7,7 @@ export enum SUPPORTED_POOLS {
   WEIGHTED = 'WEIGHTED',
   STABLE = 'STABLE',
   GYROE = 'GYROE',
+  QUANT_AMM_WEIGHTED = 'QUANT_AMM_WEIGHTED',
 }
 
 export const disabledPoolIds: Record<string, Record<number, string[]>> = {
@@ -85,6 +86,8 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
             '0xBDbADc891BB95DEE80eBC491699228EF0f7D6fF1'.toLowerCase(), // Address of the hook that will be used by pools
         },
       ],
+      quantAmmUpdateWeightRunnerAddress:
+        '0x21Ae9576a393413D6d91dFE2543dCb548Dbb8748',
     },
     [Network.ARBITRUM]: {
       vaultAddress: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
@@ -112,6 +115,8 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
           hookAddress: '0xD221aFFABdD3C1281ea14C5781DEc6B0fCA8937E',
         },
       ],
+      quantAmmUpdateWeightRunnerAddress:
+        '0x8Ca4e2a74B84c1feb9ADe19A0Ce0bFcd57e3f6F7',
     },
     [Network.BASE]: {
       vaultAddress: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',
@@ -139,6 +144,8 @@ export const BalancerV3Config: DexConfigMap<DexParams> = {
           hookAddress: '0xA45570815dbE7BF7010c41f1f74479bE322D02bd',
         },
       ],
+      quantAmmUpdateWeightRunnerAddress:
+        '0x8Ca4e2a74B84c1feb9ADe19A0Ce0bFcd57e3f6F7',
     },
     [Network.AVALANCHE]: {
       vaultAddress: '0xbA1333333333a1BA1108E8412f11850A5C319bA9',

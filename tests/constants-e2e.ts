@@ -1789,6 +1789,10 @@ export const Tokens: {
       address: `0xB77EB1A70A96fDAAeB31DB1b42F2b8b5846b2613`,
       decimals: 18,
     },
+    WBTC: {
+      address: `0x29f2d40b0605204364af54ec677bd022da425d03`,
+      decimals: 8,
+    },
   },
 };
 
