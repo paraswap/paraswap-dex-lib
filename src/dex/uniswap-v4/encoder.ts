@@ -5,10 +5,15 @@ import RouterAbi from '../../abi/uniswap-v4/router.abi.json';
 import { Interface } from '@ethersproject/abi';
 import { isETHAddress } from '../../utils';
 import { NULL_ADDRESS } from '../../constants';
+import { IDexHelper } from '../../dex-helper';
+import { SwapSide } from '@paraswap/core/build/constants';
+import { BI_MAX_UINT128 } from '../../bigint-constants';
 
 const routerIface = new Interface(RouterAbi);
 
 enum Commands {
+  WRAP_ETH = 11, // 0x0b -> 11
+  UNWRAP_WETH = 12, // 0x0c -> 12
   V4_SWAP = 16, // 0x10 -> 16
 }
 
@@ -79,42 +84,160 @@ interface ExactOutputParams {
   path: PathKey[];
 }
 
-const MAX_UINT128 = 340282366920938463463374607431768211455n;
-
 function encodeActions(actions: Actions[]): string {
   const types = actions.map(() => 'uint8');
   return ethers.utils.solidityPack(types, actions);
 }
 
 function encodeInputForExecute(
-  actions: string,
-  actionValues: string[],
+  dexHelper: IDexHelper,
+  srcToken: Address,
+  destToken: Address,
+  data: UniswapV4Data,
+  side: SwapSide,
+  amountIn: bigint,
+  amountOut: bigint,
+  recipient: string,
+  encodedActions: string,
+  encodedActionValues: string[],
 ): string {
-  const command = ethers.utils.solidityPack(['uint8'], [Commands.V4_SWAP]);
+  const wethAddr =
+    dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+
+  const isEthSrc = isETHAddress(srcToken);
+  const isEthDest = isETHAddress(destToken);
+  const isWethSrc = srcToken.toLowerCase() === wethAddr;
+  const isWethDest = destToken.toLowerCase() === wethAddr;
+
+  const firstPool = data.path[0];
+  const lastPool = data.path[data.path.length - 1];
+
+  const isWethPoolForSrc =
+    firstPool.tokenIn.toLowerCase() === wethAddr ||
+    firstPool.tokenOut.toLowerCase() === wethAddr;
+  const isWethPoolForDest =
+    lastPool.tokenOut.toLowerCase() === wethAddr ||
+    lastPool.tokenIn.toLowerCase() === wethAddr;
+
+  const isEthPoolForSrc =
+    firstPool.tokenIn.toLowerCase() === NULL_ADDRESS ||
+    firstPool.tokenOut.toLowerCase() === NULL_ADDRESS;
+  const isEthPoolForDest =
+    lastPool.tokenOut.toLowerCase() === NULL_ADDRESS ||
+    lastPool.tokenIn.toLowerCase() === NULL_ADDRESS;
 
   const input = ethers.utils.defaultAbiCoder.encode(
     ['bytes', 'bytes[]'],
-    [actions, actionValues],
+    [encodedActions, encodedActionValues],
   );
+
+  let types = ['uint8'];
+  let commands = [Commands.V4_SWAP];
+  let inputs = [input];
+
+  // Wrap ETH on Router for WETH pool
+  if (isEthSrc && isWethPoolForSrc) {
+    types.unshift('uint8');
+    commands.unshift(Commands.WRAP_ETH);
+
+    const wrapInput = ethers.utils.defaultAbiCoder.encode(
+      ['address', 'uint256'],
+      [ActionConstants.ADDRESS_THIS, amountIn],
+    );
+
+    inputs.unshift(wrapInput);
+  }
+
+  // Unwrap WETH on Router for ETH pool
+  if (isWethSrc && isEthPoolForSrc) {
+    console.log('IN isWethSrc && isEthPoolForSrc');
+    types.unshift('uint8');
+    commands.unshift(Commands.UNWRAP_WETH);
+
+    const unwrapInput = ethers.utils.defaultAbiCoder.encode(
+      ['address', 'uint256'],
+      [ActionConstants.ADDRESS_THIS, amountIn],
+    );
+    inputs.unshift(unwrapInput);
+  }
+
+  // Unwrap ETH on Router for WETH pool
+  if (isEthDest && isWethPoolForDest) {
+    types.push('uint8');
+    commands.push(Commands.UNWRAP_WETH);
+
+    const unwrapInput = ethers.utils.defaultAbiCoder.encode(
+      ['address', 'uint256'],
+      [recipient, ActionConstants.OPEN_DELTA],
+    );
+    inputs.push(unwrapInput);
+  }
+
+  // Wrap ETH on Router for ETH pool
+  if (isWethDest && isEthPoolForDest) {
+    types.push('uint8');
+    commands.push(Commands.WRAP_ETH);
+
+    const wrapInput = ethers.utils.defaultAbiCoder.encode(
+      ['address', 'uint256'],
+      [recipient, ActionConstants.OPEN_DELTA],
+    );
+
+    inputs.push(wrapInput);
+  }
+
+  const command = ethers.utils.solidityPack(types, commands);
 
   return routerIface.encodeFunctionData('execute(bytes,bytes[])', [
     command,
-    [input],
+    inputs,
   ]);
 }
 
 function encodeSettle(
+  dexHelper: IDexHelper,
   srcToken: string,
+  data: UniswapV4Data,
   amountIn: ActionConstants | bigint,
   takeFundsFromMsgSender: boolean,
 ): string {
+  const wethAddr =
+    dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+  const isEthSrc = isETHAddress(srcToken);
+  const isWethSrc = srcToken.toLowerCase() === wethAddr;
+  const firstPool = data.path[0];
+
+  const isWethPool =
+    firstPool.tokenIn.toLowerCase() === wethAddr ||
+    firstPool.tokenOut.toLowerCase() === wethAddr;
+  const isEthPool =
+    firstPool.tokenIn.toLowerCase() === NULL_ADDRESS ||
+    firstPool.tokenOut.toLowerCase() === NULL_ADDRESS;
+
+  console.log(
+    'src token: ',
+    isEthSrc && isWethPool
+      ? wethAddr
+      : isWethSrc && isEthPool
+      ? NULL_ADDRESS
+      : srcToken,
+  );
+  console.log(
+    'takeFundsFromMsgSender:',
+    isEthSrc && isWethPool ? false : takeFundsFromMsgSender,
+  );
+
   const settle = ethers.utils.defaultAbiCoder.encode(
     ['address', 'uint256', 'bool'],
     // srcToken, amountIn (`OPEN_DELTA` to settle all needed funds), takeFundsFromMsgSender (Executor in our case)
     [
-      isETHAddress(srcToken) ? NULL_ADDRESS : srcToken,
+      isEthSrc && isWethPool
+        ? wethAddr
+        : isWethSrc && isEthPool
+        ? NULL_ADDRESS
+        : srcToken,
       amountIn,
-      takeFundsFromMsgSender,
+      isEthSrc && isWethPool ? false : takeFundsFromMsgSender,
     ],
   );
 
@@ -122,14 +245,52 @@ function encodeSettle(
 }
 
 function encodeTake(
+  dexHelper: IDexHelper,
   destToken: string,
+  data: UniswapV4Data,
   recipient: string,
   amountOut: ActionConstants | bigint,
 ) {
+  const wethAddr =
+    dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+
+  const isEthDest = isETHAddress(destToken);
+  const isWethDest = destToken.toLowerCase() === wethAddr;
+  const lastPool = data.path[data.path.length - 1];
+  const isWethPool =
+    lastPool.tokenOut.toLowerCase() === wethAddr ||
+    lastPool.tokenIn.toLowerCase() === wethAddr;
+  const isEthPool =
+    lastPool.tokenOut.toLowerCase() === NULL_ADDRESS ||
+    lastPool.tokenIn.toLowerCase() === NULL_ADDRESS;
+
+  console.log(
+    'DEST TOKEN: ',
+    isEthDest && isWethPool
+      ? wethAddr
+      : isWethDest && isEthPool
+      ? NULL_ADDRESS
+      : destToken,
+  );
+  console.log(
+    'TAKE RECIPIENT: ',
+    (isEthDest && isWethPool) || (isWethDest && isEthPool)
+      ? ActionConstants.ADDRESS_THIS
+      : recipient,
+  );
+
   const take = ethers.utils.defaultAbiCoder.encode(
     ['address', 'address', 'uint256'],
     // destToken, recipient, amountOut (`OPEN_DELTA` to take all funds)
-    [isETHAddress(destToken) ? NULL_ADDRESS : destToken, recipient, amountOut],
+    [
+      isEthDest && isWethPool
+        ? wethAddr
+        : isWethDest && isEthPool
+        ? NULL_ADDRESS
+        : destToken,
+      isEthDest && isWethPool ? ActionConstants.ADDRESS_THIS : recipient,
+      amountOut,
+    ],
   );
 
   return take;
@@ -139,12 +300,15 @@ function encodeTake(
 export function swapExactInputSingleCalldata(
   srcToken: Address,
   destToken: Address,
-  poolKey: PoolKey,
-  zeroForOne: boolean,
+  data: UniswapV4Data,
   amountIn: bigint,
   amountOutMinimum: bigint,
   recipient: Address,
+  dexHelper: IDexHelper,
 ): string {
+  const path = data.path[0];
+  const poolKey = path.pool.key;
+
   const actions = encodeActions([
     Actions.SWAP_EXACT_IN_SINGLE,
     Actions.SETTLE,
@@ -153,7 +317,7 @@ export function swapExactInputSingleCalldata(
 
   const exactInputSingleParams: ExactInputSingleParams = {
     poolKey,
-    zeroForOne,
+    zeroForOne: path.zeroForOne,
     amountIn,
     amountOutMinimum,
     hookData: '0x', // empty bytes
@@ -190,10 +354,34 @@ export function swapExactInputSingleCalldata(
     ],
   );
 
-  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
-  const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
+  const settle = encodeSettle(
+    dexHelper,
+    srcToken,
+    data,
+    ActionConstants.OPEN_DELTA,
+    true,
+  );
 
-  return encodeInputForExecute(actions, [swap, settle, take]);
+  const take = encodeTake(
+    dexHelper,
+    destToken,
+    data,
+    recipient,
+    ActionConstants.OPEN_DELTA,
+  );
+
+  return encodeInputForExecute(
+    dexHelper,
+    srcToken,
+    destToken,
+    data,
+    SwapSide.SELL,
+    amountIn,
+    amountOutMinimum,
+    recipient,
+    actions,
+    [swap, settle, take],
+  );
 }
 
 // Multi-hop encoding for SELL side
@@ -204,6 +392,7 @@ export function swapExactInputCalldata(
   amountIn: bigint,
   amountOutMinimum: bigint,
   recipient: Address,
+  dexHelper: IDexHelper,
 ): string {
   const actions = encodeActions([
     Actions.SWAP_EXACT_IN,
@@ -266,21 +455,48 @@ export function swapExactInputCalldata(
     ],
   );
 
-  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
-  const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
+  const settle = encodeSettle(
+    dexHelper,
+    srcToken,
+    data,
+    ActionConstants.OPEN_DELTA,
+    true,
+  );
+  const take = encodeTake(
+    dexHelper,
+    destToken,
+    data,
+    recipient,
+    ActionConstants.OPEN_DELTA,
+  );
 
-  return encodeInputForExecute(actions, [swap, settle, take]);
+  return encodeInputForExecute(
+    dexHelper,
+    srcToken,
+    destToken,
+    data,
+    SwapSide.SELL,
+    0n,
+    amountOutMinimum,
+    recipient,
+    actions,
+    [swap, settle, take],
+  );
 }
 
 // Single hop encoding for BUY side
 export function swapExactOutputSingleCalldata(
   srcToken: Address,
   destToken: Address,
-  poolKey: PoolKey,
-  zeroForOne: boolean,
+  data: UniswapV4Data,
+  amountIn: bigint,
   amountOut: bigint,
   recipient: Address,
+  dexHelper: IDexHelper,
 ): string {
+  const path = data.path[0];
+  const poolKey = path.pool.key;
+  const amountInMaximum = BI_MAX_UINT128;
   const actions = encodeActions([
     Actions.SWAP_EXACT_OUT_SINGLE,
     Actions.SETTLE,
@@ -288,9 +504,9 @@ export function swapExactOutputSingleCalldata(
   ]);
   const exactOutputSingleParams: ExactOutputSingleParams = {
     poolKey,
-    zeroForOne,
+    zeroForOne: path.zeroForOne,
     amountOut,
-    amountInMaximum: MAX_UINT128,
+    amountInMaximum,
     hookData: '0x', // empty bytes
   };
 
@@ -325,10 +541,33 @@ export function swapExactOutputSingleCalldata(
     ],
   );
 
-  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
-  const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
+  const settle = encodeSettle(
+    dexHelper,
+    srcToken,
+    data,
+    ActionConstants.OPEN_DELTA,
+    true,
+  );
+  const take = encodeTake(
+    dexHelper,
+    destToken,
+    data,
+    recipient,
+    ActionConstants.OPEN_DELTA,
+  );
 
-  return encodeInputForExecute(actions, [swap, settle, take]);
+  return encodeInputForExecute(
+    dexHelper,
+    srcToken,
+    destToken,
+    data,
+    SwapSide.BUY,
+    amountIn,
+    amountOut,
+    recipient,
+    actions,
+    [swap, settle, take],
+  );
 }
 
 // Multi-hop encoding for SELL side
@@ -336,8 +575,10 @@ export function swapExactOutputCalldata(
   srcToken: Address,
   destToken: Address,
   data: UniswapV4Data,
+  amountIn: bigint,
   amountOut: bigint,
   recipient: Address,
+  dexHelper: IDexHelper,
 ): string {
   const actions = encodeActions([
     Actions.SWAP_EXACT_OUT,
@@ -345,12 +586,13 @@ export function swapExactOutputCalldata(
     Actions.TAKE,
   ]);
 
+  const amountInMaximum = BI_MAX_UINT128;
   const exactOutputParams: ExactOutputParams = {
     currencyOut: isETHAddress(data.path[data.path.length - 1].tokenOut)
       ? NULL_ADDRESS
       : data.path[data.path.length - 1].tokenOut,
     amountOut,
-    amountInMaximum: MAX_UINT128,
+    amountInMaximum,
     path: data.path.map(path => ({
       intermediateCurrency: isETHAddress(path.tokenIn)
         ? NULL_ADDRESS
@@ -400,8 +642,31 @@ export function swapExactOutputCalldata(
     ],
   );
 
-  const settle = encodeSettle(srcToken, ActionConstants.OPEN_DELTA, true);
-  const take = encodeTake(destToken, recipient, ActionConstants.OPEN_DELTA);
+  const settle = encodeSettle(
+    dexHelper,
+    srcToken,
+    data,
+    ActionConstants.OPEN_DELTA,
+    true,
+  );
+  const take = encodeTake(
+    dexHelper,
+    destToken,
+    data,
+    recipient,
+    ActionConstants.OPEN_DELTA,
+  );
 
-  return encodeInputForExecute(actions, [swap, settle, take]);
+  return encodeInputForExecute(
+    dexHelper,
+    srcToken,
+    destToken,
+    data,
+    SwapSide.BUY,
+    amountIn,
+    amountOut,
+    recipient,
+    actions,
+    [swap, settle, take],
+  );
 }

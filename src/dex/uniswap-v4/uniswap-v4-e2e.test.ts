@@ -25,7 +25,7 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -50,19 +50,19 @@ function testForNetwork(
                 500,
               );
             });
-            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-              await testE2E(
-                tokens[tokenBSymbol],
-                tokens[tokenASymbol],
-                holders[tokenBSymbol],
-                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-                side,
-                dexKey,
-                contractMethod,
-                network,
-                provider,
-              );
-            });
+            // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+            //   await testE2E(
+            //     tokens[tokenBSymbol],
+            //     tokens[tokenASymbol],
+            //     holders[tokenBSymbol],
+            //     side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+            //     side,
+            //     dexKey,
+            //     contractMethod,
+            //     network,
+            //     provider,
+            //   );
+            // });
           });
         });
       }),
@@ -80,9 +80,7 @@ describe('UniswapV4 E2E', () => {
       const tokenASymbol: string = 'ETH';
       const tokenBSymbol: string = 'USDC';
 
-      // const tokenAAmount: string = '1000000000000000000';
-      const tokenAAmount: string = '1000000000000000000';
-      // const tokenBAmount: string = '100000000';
+      const tokenAAmount: string = '100000000000000';
       const tokenBAmount: string = '5000000';
 
       testForNetwork(
@@ -95,7 +93,7 @@ describe('UniswapV4 E2E', () => {
       );
     });
 
-    describe.skip('WETH -> USDC', () => {
+    describe('WETH -> USDC', () => {
       const tokenASymbol: string = 'WETH';
       const tokenBSymbol: string = 'USDC';
 

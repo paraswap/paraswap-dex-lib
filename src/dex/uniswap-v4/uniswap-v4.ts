@@ -19,7 +19,7 @@ import { Pool, PoolPairsInfo, UniswapV4Data } from './types';
 import { BytesLike } from 'ethers';
 import * as CALLDATA_GAS_COST from '../../calldata-gas-cost';
 import QuoterAbi from '../../abi/uniswap-v4/quoter.abi.json';
-import { BI_POWS } from '../../bigint-constants';
+import { BI_MAX_UINT128, BI_POWS } from '../../bigint-constants';
 import { Interface } from '@ethersproject/abi';
 import { generalDecoder } from '../../lib/decoders';
 import { MultiResult } from '../../lib/multi-wrapper';
@@ -41,6 +41,8 @@ import { PoolsRegistryHashKey } from '../uniswap-v3/uniswap-v3';
 
 export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
   readonly hasConstantPriceLargeAmounts = false;
+
+  // to prevent wrap/unwrap on v6 contract level, because we are doing wrap/unwrap on UniV4 Router level, check tx encoder for details
   needWrapNative = false;
 
   logger: Logger;
@@ -173,15 +175,23 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     const reqId = Math.floor(Math.random() * 10000);
     // const getPricesVolumeStart = Date.now();
 
-    const pools: Pool[] = await this.poolManager.getAvailablePoolsForPair(
+    let pools: Pool[] = await this.poolManager.getAvailablePoolsForPair(
       from.address.toLowerCase(),
       to.address.toLowerCase(),
       blockNumber,
     );
 
-    const availablePools =
+    let availablePools =
       limitPools?.filter(t => pools.find(p => p.id === t)) ??
       pools.map(t => t.id);
+
+    // availablePools = availablePools.filter(
+    //   p =>
+    //     p.toLowerCase() ===
+    //     '0x4f88f7c99022eace4740c6898f59ce6a2e798a1e64ce54589720b7153eb224a7',
+    // );
+
+    console.log('availablePools: ', pools);
 
     const pricesPromises = availablePools.map(async poolId => {
       const pool = pools.find(p => p.id === poolId)!;
@@ -389,55 +399,43 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     data: UniswapV4Data,
     side: SwapSide,
   ): DexExchangeParam {
-    let exchangeData: string;
+    let encodingMethod: (
+      srcToken: Address,
+      destToken: Address,
+      data: UniswapV4Data,
+      amount1: bigint,
+      amount2: bigint,
+      recipient: Address,
+      dexHelper: IDexHelper,
+    ) => string;
 
-    if (data.path.length === 1) {
-      // Single hop
-      const path = data.path[0];
-      if (side === SwapSide.SELL) {
-        exchangeData = swapExactInputSingleCalldata(
-          srcToken,
-          destToken,
-          path.pool.key,
-          path.zeroForOne,
-          BigInt(srcAmount),
-          // destMinAmount (can be 0 on dex level)
-          0n,
-          recipient,
-        );
-      } else {
-        exchangeData = swapExactOutputSingleCalldata(
-          srcToken,
-          destToken,
-          path.pool.key,
-          path.zeroForOne,
-          BigInt(destAmount),
-          recipient,
-        );
-      }
+    if (data.path.length === 1 && side === SwapSide.SELL) {
+      // Single-hop encoding for SELL side
+      encodingMethod = swapExactInputSingleCalldata;
+    } else if (data.path.length === 1 && side === SwapSide.BUY) {
+      // Single-hop encoding for BUY side
+      encodingMethod = swapExactOutputSingleCalldata;
+    } else if (data.path.length > 1 && side === SwapSide.SELL) {
+      // Multi-hop encoding for SELL side
+      encodingMethod = swapExactInputCalldata;
+    } else if (data.path.length > 1 && side === SwapSide.BUY) {
+      // Multi-hop encoding for BUY side
+      encodingMethod = swapExactOutputCalldata;
     } else {
-      // Multi-hop
-      exchangeData = '0x';
-
-      if (side === SwapSide.SELL) {
-        exchangeData = swapExactInputCalldata(
-          srcToken,
-          destToken,
-          data,
-          BigInt(srcAmount),
-          0n,
-          recipient,
-        );
-      } else {
-        exchangeData = swapExactOutputCalldata(
-          srcToken,
-          destToken,
-          data,
-          BigInt(destAmount),
-          recipient,
-        );
-      }
+      throw new Error(
+        `${this.dexKey}-${this.network}: Logic error for side: ${side}, data.path.length: ${data.path.length}`,
+      );
     }
+
+    const exchangeData = encodingMethod(
+      srcToken,
+      destToken,
+      data,
+      BigInt(srcAmount),
+      side === SwapSide.SELL ? 0n : BigInt(destAmount),
+      recipient,
+      this.dexHelper,
+    );
 
     return {
       needWrapNative: this.needWrapNative,
