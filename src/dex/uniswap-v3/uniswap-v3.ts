@@ -1325,13 +1325,9 @@ export class UniswapV3
           connectorTokenUsdBalance * UNISWAPV3_EFFICIENCY_FACTOR;
       }
 
+      // take connectorToken liquidity by default
       // to handle unbalanced pools, when one token has much higher usd liquidity (e.g. 0xA7B3BCC6c88Da2856867d29F11c67C3A85634882)
-      // take lower liquidity and multiply by 2
-      const liquidityUSD =
-        Math.min(
-          tokenUsdLiquidity ?? pool.liquidityUSD / 2,
-          connectorTokenUsdLiquidity ?? pool.liquidityUSD / 2,
-        ) * 2;
+      const liquidityUSD = connectorTokenUsdLiquidity ?? tokenUsdLiquidity ?? 0;
 
       return {
         ...pool,
