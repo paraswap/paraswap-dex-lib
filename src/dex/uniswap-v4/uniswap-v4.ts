@@ -208,7 +208,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
       const poolState = (await eventPool?.getState(blockNumber)) || null;
 
       let prices: bigint[] | null;
-      if (poolState) {
+      if (poolState !== null && poolState.isValid) {
         // const getOutputsStart = Date.now();
         prices = this._getOutputs(
           pool,
@@ -218,6 +218,7 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
           side,
           reqId,
         );
+
         // this.logger.info(
         //   `_getOutputs_${pool.id}_${reqId}: ${
         //     Date.now() - getOutputsStart
