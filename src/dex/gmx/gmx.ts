@@ -297,7 +297,7 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     await Promise.all(
       tokens.map(async token => {
         const maxAmountIn = await this.pool?.getMaxAmountIn(
-          _tokenAddress,
+          tokenAddress,
           token.address,
         );
         if (maxAmountIn) {
@@ -307,16 +307,17 @@ export class GMX extends SimpleExchange implements IDex<GMXData> {
     );
 
     const usdMaxAmountIn = await this.dexHelper.getUsdTokenAmounts(
-      Object.entries(maxAmounts),
+      // maxAmounts are in the asked token, so replace token address
+      Object.entries(maxAmounts).map(([_, amount]) => [tokenAddress, amount]),
     );
 
-    return [
-      {
-        exchange: this.dexKey,
-        address: this.params.vault,
-        connectorTokens: tokens,
-        liquidityUSD: usdMaxAmountIn.reduce((a, b) => a + b),
-      },
-    ];
+    return Object.keys(maxAmounts).map((connectorToken, i) => ({
+      exchange: this.dexKey,
+      address: this.params.vault,
+      connectorTokens: [
+        this.supportedTokens.find(t => connectorToken === t.address)!,
+      ],
+      liquidityUSD: usdMaxAmountIn[i],
+    }));
   }
 }
