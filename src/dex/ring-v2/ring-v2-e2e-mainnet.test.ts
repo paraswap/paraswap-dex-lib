@@ -1,39 +1,101 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { testE2E } from '../../../tests/utils-e2e';
+import { newTestE2E, testE2E } from '../../../tests/utils-e2e';
 import { Tokens, Holders } from '../../../tests/constants-e2e';
 import { Network, ContractMethod, SwapSide } from '../../constants';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { generateConfig } from '../../config';
 import { RingV2FunctionsV6 } from './types';
+import { Token } from '../../types';
+
+const network = Network.MAINNET;
+const tokens = Tokens[network];
+const holders = Holders[network];
+const provider = new StaticJsonRpcProvider(
+  generateConfig(network).privateHttpProvider,
+  network,
+);
 
 describe('RingV2 E2E Mainnet', () => {
-  const network = Network.MAINNET;
-  const tokens = Tokens[network];
-  const holders = Holders[network];
-  const provider = new StaticJsonRpcProvider(
-    generateConfig(network).privateHttpProvider,
-    network,
-  );
+  const sideToContractMethods = new Map([
+    [
+      SwapSide.SELL,
+      [
+        ContractMethod.swapExactAmountIn,
+        // ContractMethod.swapExactAmountInOnRingV2,
+        ContractMethod.simpleSwap,
+        ContractMethod.multiSwap,
+        ContractMethod.megaSwap,
+      ],
+    ],
+    [
+      SwapSide.BUY,
+      [
+        ContractMethod.swapExactAmountOut,
+        // ContractMethod.swapExactAmountOutOnRingV2,
+        ContractMethod.simpleBuy,
+        ContractMethod.buy,
+      ],
+    ],
+  ]);
 
-  describe('RingV2', () => {
-    const dexKey = 'RingV2';
-    console.log('[!!!!]RingV2 E2E Mainnet Tests');
-    describe('RingV2 Simpleswap', () => {
-      it('WETH -> DAI', async () => {
-        await testE2E(
-          tokens.USDC,
-          tokens.USDT,
-          holders.USDC,
-          '1000000',
-          SwapSide.SELL,
-          dexKey,
-          ContractMethod.simpleSwap,
-          network,
-          provider,
-        );
+  const dexKey = 'RingV2';
+  const tokens_for_test = [
+    //tokenA, tokenB, sell amount, buy amount
+    [tokens.cbBTC, tokens.UNI, '1000000'],
+    [tokens.UNI, tokens.WETH, '10000000'],
+  ];
+
+  sideToContractMethods.forEach((contractMethods, side) =>
+    contractMethods.forEach((contractMethod: ContractMethod) => {
+      console.log(`start test: contractMethod=${contractMethod}, side=${side}`);
+      describe(`RingV2 ${contractMethod}`, () => {
+        if (side == SwapSide.SELL) {
+          tokens_for_test.forEach(token_pair => {
+            const tokenA = token_pair[0] as Token;
+            const tokenB = token_pair[1] as Token;
+            const sellamount = token_pair[2] as string;
+
+            console.log(`sell:a->b::${tokenA.symbol} --> ${tokenB.symbol}`);
+            it(`${tokenA.symbol} --> ${tokenB.symbol}`, async () => {
+              await testE2E(
+                tokenA,
+                tokenB,
+                holders.ETH,
+                sellamount,
+                SwapSide.SELL,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        } //buy
+        else {
+          tokens_for_test.forEach(token_pair => {
+            const tokenA = token_pair[0] as Token;
+            const tokenB = token_pair[1] as Token;
+            const buyamount = token_pair[2] as string;
+            console.log(`buy:a->b::${tokenA.symbol} --> ${tokenB.symbol}`);
+
+            it(`${tokenA.symbol} --> ${tokenB.symbol}`, async () => {
+              await testE2E(
+                tokenA,
+                tokenB,
+                holders.ETH,
+                buyamount,
+                SwapSide.BUY,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
+          });
+        }
       });
-    });
-  });
+    }),
+  );
 });

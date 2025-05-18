@@ -197,6 +197,7 @@ export const Tokens: {
     WETH: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
+      symbol: 'WETH',
     },
     PSP: {
       address: '0xcafe001067cdef266afb7eb5a286dcfd277f3de5',
@@ -486,6 +487,16 @@ export const Tokens: {
     crvUSD: {
       address: '0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E',
       decimals: 18,
+    },
+    cbBTC: {
+      address: '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf',
+      decimals: 8,
+      symbol: 'cbBTC',
+    },
+    UNI: {
+      address: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
+      decimals: 18,
+      symbol: 'UNI',
     },
     wibBTC: {
       address: '0x8751d4196027d4e6da63716fa7786b5174f04c15',
@@ -1742,7 +1753,7 @@ export const Tokens: {
   [Network.SEPOLIA]: {
     ETH: { address: ETHER_ADDRESS, decimals: 18 },
     WETH: {
-      address: '0x7b79995e5f793a07bc00c21412e50ecae098e7f9',
+      address: '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14',
       decimals: 18,
     },
     bal: {
@@ -1773,8 +1784,32 @@ export const Tokens: {
       address: `0x978206fae13faf5a8d293fb614326b237684b750`,
       decimals: 6,
     },
+    USDT: {
+      address: `0x7db5fA1170D15e8D02deFB483b833EB1f3bAAC38`,
+      decimals: 6,
+    },
+    AWESOME1: {
+      address: `0x63DC6b0f80d067aF637C69b21949caA475AB813C`,
+      decimals: 18,
+    },
+    AWESOME2: {
+      address: `0xF8415EeE2509FCD26C392ECC9844D13c1Ad9c3E7`,
+      decimals: 18,
+    },
+    USDC: {
+      address: '0xA7a151d60Bbd522d3611C2dB3F1F972Ee9904B3e',
+      decimals: 18,
+    },
     DAI: {
-      address: `0xB77EB1A70A96fDAAeB31DB1b42F2b8b5846b2613`,
+      address: '0x5fbad067f69eBbc276410D78fF52823be133eD48',
+      decimals: 18,
+    },
+    fwUSDC: {
+      address: '0x76AC72683C5b7F22C6B5Ed85B5B1511702464F7e',
+      decimals: 18,
+    },
+    fwDAI: {
+      address: '0x09D8486e42Aa76229a563bFa0f07CA301aCd29C9',
       decimals: 18,
     },
   },

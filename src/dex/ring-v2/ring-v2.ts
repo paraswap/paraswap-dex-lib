@@ -54,7 +54,7 @@ import {
 import ringV2ABI from '../../abi/ring-v2/uniswap-v2-pool.json';
 import ringV2factoryABI from '../../abi/ring-v2/uniswap-v2-factory.json';
 import ParaSwapABI from '../../abi/IParaswap.json';
-import RingV2ExchangeRouterABI from '../../abi/UniswapV2ExchangeRouter.json';
+import RingV2ExchangeRouterABI from '../../abi/RingV2ExchangeRouter.json';
 import { Contract } from 'web3-eth-contract';
 import { RingV2Config, Adapters } from './config';
 import { Ringv2ConstantProductPool } from './ring-v2-constant-product-pool';
@@ -70,6 +70,7 @@ import {
   hexConcat,
 } from 'ethers/lib/utils';
 import { BigNumber } from 'ethers';
+import { computeFWTokenAddress, getFWTokenForToken } from './fw-token-helper';
 
 const rebaseTokens = _rebaseTokens as { chainId: number; address: string }[];
 
@@ -161,6 +162,7 @@ export class RingV2EventPool extends StatefulEventSubscriber<RingV2PoolState> {
     if (!LogCallTopics.includes(log.topics[0])) return null;
 
     const event = this.decoder(log);
+    this.logger.debug('event=${event}');
     switch (event.name) {
       case 'Sync':
         return {
@@ -383,10 +385,10 @@ export class RingV2
       this.logger.debug('[findPair]Pair found:', { pair });
       return pair;
     }
-    this.logger.debug('[findPair] factory and methods:', {
-      factory: this.factory,
-      methods: this.factory.methods,
-    });
+    // this.logger.debug('[findPair] factory and methods:', {
+    //   factory: this.factory,
+    //   methods: this.factory.methods,
+    // });
     const exchange = await this.factory.methods
       .getPair(token0.address, token1.address)
       .call();
@@ -551,8 +553,11 @@ export class RingV2
     side: SwapSide,
     blockNumber: number,
   ): Promise<string[]> {
-    const from = this.dexHelper.config.wrapETH(_from);
-    const to = this.dexHelper.config.wrapETH(_to);
+    // const from = this.dexHelper.config.wrapETH(_from);
+    // const to = this.dexHelper.config.wrapETH(_to);
+
+    const from = getFWTokenForToken(_from, this.network);
+    const to = getFWTokenForToken(_to, this.network);
 
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [];
@@ -582,9 +587,13 @@ export class RingV2
     },
   ): Promise<ExchangePrices<RingV2Data> | null> {
     try {
-      const from = this.dexHelper.config.wrapETH(_from);
-      const to = this.dexHelper.config.wrapETH(_to);
+      this.logger.debug(`origin_from=${_from.address}`);
+      this.logger.debug(`origin_to=${_to.address}`);
 
+      // const from = this.dexHelper.config.wrapETH(_from);
+      // const to = this.dexHelper.config.wrapETH(_to);
+      const from = getFWTokenForToken(_from, this.network);
+      const to = getFWTokenForToken(_to, this.network);
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
       }
@@ -598,8 +607,10 @@ export class RingV2
 
       const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
 
-      if (limitPools && limitPools.every(p => p !== poolIdentifier))
+      if (limitPools && limitPools.every(p => p !== poolIdentifier)) {
+        this.logger.debug('Pool not in limitPools');
         return null;
+      }
 
       await this.batchCatchUpPairs([[from, to]], blockNumber);
       const isSell = side === SwapSide.SELL;
@@ -610,7 +621,10 @@ export class RingV2
         transferFees.srcDexFee,
       );
       this.logger.debug('Pair Param:', { pairParam });
-      if (!pairParam) return null;
+      if (!pairParam) {
+        this.logger.debug('No pair parameters found');
+        return null;
+      }
 
       const unitAmount = getBigIntPow(isSell ? from.decimals : to.decimals);
 
@@ -653,6 +667,13 @@ export class RingV2
       );
 
       this.logger.debug(`Unit Out With Fee: ${unitOutWithFee}`);
+
+      this.logger.debug(
+        `this.factoryAddress=${this.factoryAddress}. initCode=${this.initCode}`,
+      );
+      this.logger.debug(
+        `this.router=${this.router}. pairParam.exchange=${pairParam.exchange}`,
+      );
       // As ringv2 just has one pool per token pair
       return [
         {
@@ -679,6 +700,8 @@ export class RingV2
         },
       ];
     } catch (e) {
+      this.logger.debug('Error in getPricesVolume');
+
       if (blockNumber === 0)
         this.logger.error(
           `Error_getPricesVolume: Aurelius block manager not yet instantiated`,
@@ -895,6 +918,10 @@ export class RingV2
     data: RingData,
     side: SwapSide,
   ): DexExchangeParam {
+    this.logger.debug(
+      `getDexParam--->in. dexKey=${this.dexKey}. srcToken=${srcToken}.dstToken=${destToken}`,
+    );
+
     const pools = encodePools(data.pools, this.feeFactor);
 
     let exchangeData: string;
@@ -903,47 +930,54 @@ export class RingV2
     let targetExchange: Address;
     let dexFuncHasRecipient: boolean;
 
-    // if (this.dexKey === 'BakerySwap') {
-    //   const weth = this.getWETHAddress(srcToken, destToken, data.weth);
+    let ttl = 1200;
+    const deadline = `0x${(
+      Math.floor(new Date().getTime() / 1000) + ttl
+    ).toString(16)}`;
 
-    //   exchangeData = this.exchangeRouterInterface.encodeFunctionData(
-    //     RingV2Functions.swap,
-    //     [srcToken, srcAmount, destAmount, weth, pools],
-    //   );
-    //   specialDexFlag = SpecialDex.DEFAULT;
-    //   targetExchange = data.router;
-    //   dexFuncHasRecipient = false;
-    // } else if (side === SwapSide.SELL) {
-
-    if (side === SwapSide.SELL) {
-      // 28 bytes are prepended in the Bytecode builder
-      const exchangeDataTypes = ['bytes4', 'bytes32', 'bytes32'];
-      const exchangeDataToPack = [
-        hexZeroPad(hexlify(0), 4),
-        hexZeroPad(hexlify(data.pools.length), 32), // pool count
-        hexZeroPad(hexlify(BigNumber.from(srcAmount)), 32),
-      ];
-      pools.forEach(pool => {
-        exchangeDataTypes.push('bytes32');
-        exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
-      });
-
-      exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
-      specialDexFlag = SpecialDex.SWAP_ON_UNISWAP_V2_FORK;
-      transferSrcTokenBeforeSwap = data.pools[0].address;
-      targetExchange = recipient;
-      dexFuncHasRecipient = true;
-    } else {
-      const weth = this.getWETHAddress(srcToken, destToken, data.weth);
-
-      exchangeData = this.exchangeRouterInterface.encodeFunctionData(
-        RingV2Functions.buy,
-        [srcToken, srcAmount, destAmount, weth, pools],
+    const RING_V2_DEX_KEY = 'RingV2' as const;
+    if (this.dexKey !== RING_V2_DEX_KEY) {
+      throw new Error(
+        `Invalid dex key: ${this.dexKey}. Expected: ${RING_V2_DEX_KEY}`,
       );
-      specialDexFlag = SpecialDex.DEFAULT;
-      targetExchange = data.router;
-      dexFuncHasRecipient = false;
     }
+
+    this.logger.debug(`is this the ring dex=${this.dexKey}. side=${side}`);
+    const fwAddress = computeFWTokenAddress(srcToken, this.network);
+    const fwAddress_to = computeFWTokenAddress(destToken, this.network);
+    let path: Address[] = [fwAddress, fwAddress_to];
+    //
+    if (isETHAddress(srcToken)) {
+      if (side == SwapSide.SELL) {
+        exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+          RingV2Functions.swapExactETHForTokens,
+          [destAmount, path, recipient, deadline],
+        );
+      } else {
+        exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+          RingV2Functions.swapETHForExactTokens,
+          [srcAmount, path, recipient, deadline],
+        );
+      }
+    } else {
+      if (side == SwapSide.SELL) {
+        exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+          RingV2Functions.swapExactTokensForTokens,
+          [srcAmount, destAmount, path, recipient, deadline],
+        );
+      } else {
+        exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+          RingV2Functions.swapTokensForExactTokens,
+          [destAmount, srcAmount, path, recipient, deadline],
+        );
+      }
+    }
+
+    specialDexFlag = SpecialDex.SWAP_ON_UNISWAP_V2_FORK;
+    specialDexFlag = SpecialDex.DEFAULT;
+    // transferSrcTokenBeforeSwap
+    targetExchange = data.router;
+    dexFuncHasRecipient = true;
 
     return {
       needWrapNative: this.needWrapNative,
@@ -955,6 +989,72 @@ export class RingV2
       transferSrcTokenBeforeSwap,
       returnAmountPos: undefined,
     };
+
+    /**
+    const pools = encodePools(data.pools, this.feeFactor);
+    
+        this.logger.debug(`getDexParam.data==${data.router}, side=${side}`)
+    
+        let exchangeData: string;
+        let specialDexFlag: SpecialDex;
+        let transferSrcTokenBeforeSwap: Address | undefined;
+        let targetExchange: Address;
+        let dexFuncHasRecipient: boolean;
+    
+        // if (this.dexKey === 'BakerySwap') {
+        //   const weth = this.getWETHAddress(srcToken, destToken, data.weth);
+    
+        //   exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+            // UniswapV2Functions.swap,
+        //     [srcToken, srcAmount, destAmount, weth, pools],
+        //   );
+        //   specialDexFlag = SpecialDex.DEFAULT;
+        //   targetExchange = data.router;
+        //   dexFuncHasRecipient = false;
+        // } else if (side === SwapSide.SELL) {
+    
+        // 这个 exchangeData 不是直接传给 pool 的 swap 方法的参数，而是传给 ParaSwap 的 Executor 合约的参数。
+        if (side === SwapSide.SELL) {
+          // 28 bytes are prepended in the Bytecode builder
+          const exchangeDataTypes = ['bytes4', 'bytes32', 'bytes32'];
+          const exchangeDataToPack = [
+            hexZeroPad(hexlify(0), 4),
+            hexZeroPad(hexlify(data.pools.length), 32), // pool count
+            hexZeroPad(hexlify(BigNumber.from(srcAmount)), 32),
+          ];
+          pools.forEach(pool => {
+            exchangeDataTypes.push('bytes32');
+            exchangeDataToPack.push(hexZeroPad(hexlify(BigNumber.from(pool)), 32));
+          });
+    
+          exchangeData = solidityPack(exchangeDataTypes, exchangeDataToPack);
+          specialDexFlag = SpecialDex.SWAP_ON_UNISWAP_V2_FORK;
+          transferSrcTokenBeforeSwap = data.pools[0].address;
+          targetExchange = recipient;
+          dexFuncHasRecipient = true;
+        } else {
+          const weth = this.getWETHAddress(srcToken, destToken, data.weth);
+    
+          exchangeData = this.exchangeRouterInterface.encodeFunctionData(
+            RingV2Functions.buy,
+            [srcToken, srcAmount, destAmount, weth, pools],
+          );
+          specialDexFlag = SpecialDex.DEFAULT;
+          targetExchange = data.router;
+          dexFuncHasRecipient = false;
+        }
+    
+        return {
+          needWrapNative: this.needWrapNative,
+          specialDexSupportsInsertFromAmount: true,
+          dexFuncHasRecipient,
+          exchangeData,
+          targetExchange,
+          specialDexFlag,
+          transferSrcTokenBeforeSwap,
+          returnAmountPos: undefined,
+        };
+        */
   }
 
   // TODO: Move to new ringv2&forks router interface

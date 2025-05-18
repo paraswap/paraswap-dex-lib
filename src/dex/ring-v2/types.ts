@@ -18,16 +18,22 @@ export type RingData = {
 export enum RingV2Functions {
   swap = 'swap',
   buy = 'buy',
-  swapOnRing = 'swapOnRing',
-  buyOnRing = 'buyOnRing',
-  swapOnRingFork = 'swapOnRingFork',
-  buyOnRingFork = 'buyOnRingFork',
-  swapOnRingV2Fork = 'swapOnRingV2Fork',
-  buyOnRingV2Fork = 'buyOnRingV2Fork',
-  swapOnRingV2ForkWithPermit = 'swapOnRingV2ForkWithPermit',
-  buyOnRingV2ForkWithPermit = 'buyOnRingV2ForkWithPermit',
+  swapOnRing = 'swapOnUniswap',
+  buyOnRing = 'buyOnUniswap',
+  swapOnRingFork = 'swapOnUniswapFork',
+  buyOnRingFork = 'buyOnUniswapFork',
+  swapOnRingV2Fork = 'swapOnUniswapV2Fork',
+  buyOnRingV2Fork = 'buyOnUniswapV2Fork',
+  swapOnRingV2ForkWithPermit = 'swapOnUniswapV2ForkWithPermit',
+  buyOnRingV2ForkWithPermit = 'buyOnUniswapV2ForkWithPermit',
+  swapExactTokensForTokens = 'swapExactTokensForTokens',
+  swapExactETHForTokens = 'swapExactETHForTokens',
+  swapTokensForExactTokens = 'swapTokensForExactTokens',
+  swapTokensForExactETH = 'swapTokensForExactETH',
+  swapETHForExactTokens = 'swapETHForExactTokens',
 }
-
+//ring_todo, augu sdk has no swapExactAmountInOnRingV2
+//sdk
 export enum RingV2FunctionsV6 {
   swap = 'swapExactAmountInOnRingV2',
   buy = 'swapExactAmountOutOnRingV2',

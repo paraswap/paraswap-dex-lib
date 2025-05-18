@@ -122,12 +122,14 @@ export const Adapters: {
 export const RingV2Config: DexConfigMap<DexParams> = {
   RingV2: {
     [Network.MAINNET]: {
-      subgraphURL: 'EYCKATKGBKLWvSfwvBjzfCBmGwYNdVkduYXVivCsLRFu',
-      factoryAddress: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      subgraphURL:
+        'https://api.studio.thegraph.com/query/61509/ring-v2-eth-mainnet/version/latest',
+      factoryAddress: '0xeb2A625B704d73e82946D8d026E1F588Eed06416',
       initCode:
-        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+        '0xa7ae6a5ec37f0c21bbdac560794258c4089b8ae3ffa6e3909b53c6091764a676',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      router: '0x39d1d8fcC5E6EEAf567Bce4e29B94fec956D3519',
     },
     [Network.ARBITRUM]: {
       factoryAddress: '0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9',
@@ -178,6 +180,7 @@ export const RingV2Config: DexConfigMap<DexParams> = {
         '0x7bb8e653f17062363b5ba1ef7e234a8df49ac9c5b8efa399b9771220727e9730',
       poolGasCost: 80 * 1000,
       feeCode: 30,
+      router: '0x0F9f35B8b9015917a7A28821E596865532836567',
     },
   },
 };

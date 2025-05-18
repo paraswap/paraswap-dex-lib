@@ -8,13 +8,13 @@ import { checkPoolPrices, checkPoolsLiquidity } from '../../../tests/utils';
 import { BI_POWS } from '../../bigint-constants';
 
 const WETH = {
-  address: '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14',
+  address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
   decimals: 18,
 };
 
 //mainnet, test for mainnet, ethereum
 const USDC = {
-  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
   decimals: 6,
 };
 
@@ -43,16 +43,6 @@ const fwDAI = {
   decimals: 18,
 };
 
-const DAI = {
-  address: '0x5fbad067f69eBbc276410D78fF52823be133eD48',
-  decimals: 18,
-};
-
-// const DAI = {
-//   address: '0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11',
-//   decimals: 18,
-// };
-
 const AWESOME1 = {
   address: '0x63DC6b0f80d067aF637C69b21949caA475AB813C',
   decimals: 18,
@@ -71,27 +61,25 @@ describe('RingV2', function () {
   console.log('RingV2 Integration Tests');
   /** pass*/
   it('getPoolIdentifiers and getPricesVolume', async function () {
-    const dexHelper = new DummyDexHelper(Network.SEPOLIA);
+    const dexHelper = new DummyDexHelper(Network.MAINNET);
     const blocknumber = await dexHelper.web3Provider.eth.getBlockNumber();
-    const ringV2 = new RingV2(Network.SEPOLIA, dexKey, dexHelper);
+    const ringV2 = new RingV2(Network.MAINNET, dexKey, dexHelper);
 
     const pools = await ringV2.getPoolIdentifiers(
-      fwUSDC,
-      fwDAI,
+      USDC,
+      WETH,
       // AWESOME1,
       // AWESOME2,
       SwapSide.SELL,
       blocknumber,
     );
-    console.log('WETH <> DAI Pool Identifiers: ', pools);
+    console.log('USDC <> WETH Pool Identifiers: ', pools);
 
     expect(pools.length).toBeGreaterThan(0);
-  });
 
-  /** pass
     const poolPrices = await ringV2.getPricesVolume(
-      fwUSDC,
-      fwDAI,
+      USDC,
+      WETH,
       // AWESOME1,
       // AWESOME2,
       amounts,
@@ -99,12 +87,11 @@ describe('RingV2', function () {
       blocknumber,
       pools,
     );
-    console.log('WETH <> DAI Pool Prices: ', poolPrices);
+    console.log('USDC <> WETH Pool Prices: ', poolPrices);
 
     expect(poolPrices).not.toBeNull();
     checkPoolPrices(poolPrices!, amounts, SwapSide.SELL, dexKey);
   });
-   */
 
   //here use ring.info's subgraph
 
