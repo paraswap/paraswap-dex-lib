@@ -162,7 +162,6 @@ export class RingV2EventPool extends StatefulEventSubscriber<RingV2PoolState> {
     if (!LogCallTopics.includes(log.topics[0])) return null;
 
     const event = this.decoder(log);
-    this.logger.debug('event=${event}');
     switch (event.name) {
       case 'Sync':
         return {
@@ -275,7 +274,6 @@ export class RingV2
     super(dexHelper, dexKey);
     this.logger = dexHelper.getLogger(dexKey);
 
-    this.logger.debug(`factoryAddress: ${factoryAddress}`);
     this.factory = new dexHelper.web3Provider.eth.Contract(
       ringV2factoryABI as any,
       factoryAddress,
@@ -362,7 +360,6 @@ export class RingV2
     params: RingV2PoolOrderedParams[],
   ): Promise<bigint> {
     let price = amount;
-    this.logger.debug(`getSellPricePath Amount: ${amount}`);
     for (const param of params) {
       price = await this.getSellPrice(param, price);
     }
@@ -371,7 +368,6 @@ export class RingV2
 
   async findPair(from: Token, to: Token) {
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
-      this.logger.debug('Same token pair:', { from, to });
       return null;
     }
     const [token0, token1] =
@@ -382,7 +378,6 @@ export class RingV2
     const key = `${token0.address.toLowerCase()}-${token1.address.toLowerCase()}`;
     let pair = this.pairs[key];
     if (pair) {
-      this.logger.debug('[findPair]Pair found:', { pair });
       return pair;
     }
     // this.logger.debug('[findPair] factory and methods:', {
@@ -392,7 +387,6 @@ export class RingV2
     const exchange = await this.factory.methods
       .getPair(token0.address, token1.address)
       .call();
-    this.logger.debug(`[findPair]exchange = ${exchange}`);
     if (exchange === NULL_ADDRESS) {
       pair = { token0, token1 };
     } else {
@@ -485,7 +479,6 @@ export class RingV2
       const pairState = reserves[i];
       const pair = pairsToFetch[i];
       if (!pair.pool) {
-        this.logger.debug('Adding pool:', { pair });
         await this.addPool(
           pair,
           pairState.reserves0,
@@ -503,9 +496,6 @@ export class RingV2
     blockNumber: number,
     tokenDexTransferFee: number,
   ): Promise<RingV2PoolOrderedParams | null> {
-    this.logger.debug('Get Pair Ordered Params:', { from, to });
-    this.logger.debug(`Block Number: ${blockNumber}`);
-    this.logger.debug(`Token Dex Transfer Fee: ${tokenDexTransferFee}`);
     const pair = await this.findPair(from, to);
     if (!(pair && pair.pool && pair.exchange)) {
       this.logger.debug('Pair not found:', { pair });
@@ -521,7 +511,6 @@ export class RingV2
       );
       return null;
     }
-    this.logger.debug('Pair State:', { pairState });
     const fee = (pairState.feeCode + tokenDexTransferFee).toString();
     const pairReversed =
       pair.token1.address.toLowerCase() === from.address.toLowerCase();
@@ -587,9 +576,6 @@ export class RingV2
     },
   ): Promise<ExchangePrices<RingV2Data> | null> {
     try {
-      this.logger.debug(`origin_from=${_from.address}`);
-      this.logger.debug(`origin_to=${_to.address}`);
-
       // const from = this.dexHelper.config.wrapETH(_from);
       // const to = this.dexHelper.config.wrapETH(_to);
       const from = getFWTokenForToken(_from, this.network);
@@ -620,7 +606,6 @@ export class RingV2
         blockNumber,
         transferFees.srcDexFee,
       );
-      this.logger.debug('Pair Param:', { pairParam });
       if (!pairParam) {
         this.logger.debug('No pair parameters found');
         return null;
@@ -666,14 +651,14 @@ export class RingV2
         isSell ? this.DEST_TOKEN_DEX_TRANSFERS : SRC_TOKEN_PARASWAP_TRANSFERS,
       );
 
-      this.logger.debug(`Unit Out With Fee: ${unitOutWithFee}`);
+      // this.logger.debug(`Unit Out With Fee: ${unitOutWithFee}`);
 
-      this.logger.debug(
-        `this.factoryAddress=${this.factoryAddress}. initCode=${this.initCode}`,
-      );
-      this.logger.debug(
-        `this.router=${this.router}. pairParam.exchange=${pairParam.exchange}`,
-      );
+      // this.logger.debug(
+      //   `this.factoryAddress=${this.factoryAddress}. initCode=${this.initCode}`,
+      // );
+      // this.logger.debug(
+      //   `this.router=${this.router}. pairParam.exchange=${pairParam.exchange}`,
+      // );
       // As ringv2 just has one pool per token pair
       return [
         {
@@ -741,7 +726,7 @@ export class RingV2
       this.logger.error('Subgraph URL not set');
       return [];
     }
-    this.logger.debug(`Subgraph URL: ${this.subgraphURL}`);
+    // this.logger.debug(`Subgraph URL: ${this.subgraphURL}`);
     const query = `
       query ($token: Bytes!, $count: Int) {
         pools0: pairs(first: $count, orderBy: reserveUSD, orderDirection: desc, where: {token0: $token, reserve0_gt: 1, reserve1_gt: 1}) {
@@ -779,7 +764,7 @@ export class RingV2
       { timeout: SUBGRAPH_TIMEOUT, type: this.subgraphType },
     );
 
-    this.logger.debug('Subgraph Data:', { data });
+    // this.logger.debug('Subgraph Data:', { data });
     // Commented logs removed as they were already commented out
     if (!(data && data.pools0 && data.pools1)) {
       this.logger.error('Subgraph query failed');
@@ -918,9 +903,9 @@ export class RingV2
     data: RingData,
     side: SwapSide,
   ): DexExchangeParam {
-    this.logger.debug(
-      `getDexParam--->in. dexKey=${this.dexKey}. srcToken=${srcToken}.dstToken=${destToken}`,
-    );
+    // this.logger.debug(
+    //   `getDexParam--->in. dexKey=${this.dexKey}. srcToken=${srcToken}.dstToken=${destToken}`,
+    // );
 
     const pools = encodePools(data.pools, this.feeFactor);
 
@@ -942,7 +927,6 @@ export class RingV2
       );
     }
 
-    this.logger.debug(`is this the ring dex=${this.dexKey}. side=${side}`);
     const fwAddress = computeFWTokenAddress(srcToken, this.network);
     const fwAddress_to = computeFWTokenAddress(destToken, this.network);
     let path: Address[] = [fwAddress, fwAddress_to];
