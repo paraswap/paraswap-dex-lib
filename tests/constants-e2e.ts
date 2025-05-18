@@ -84,6 +84,7 @@ export const Tokens: {
     ETH: {
       address: ETHER_ADDRESS,
       decimals: 18,
+      symbol: 'ETH',
     },
     ETHx: {
       address: '0xA35b1B31Ce002FBF2058D22F30f95D405200A15b',
@@ -169,6 +170,7 @@ export const Tokens: {
     USDT: {
       address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimals: 6,
+      symbol: 'USDT',
     },
     STETH: {
       address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',

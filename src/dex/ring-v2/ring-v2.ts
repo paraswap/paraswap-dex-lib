@@ -497,6 +497,7 @@ export class RingV2
     tokenDexTransferFee: number,
   ): Promise<RingV2PoolOrderedParams | null> {
     const pair = await this.findPair(from, to);
+    // console.log(`getPairOrderedParams.pair=${pair}`)
     if (!(pair && pair.pool && pair.exchange)) {
       this.logger.debug('Pair not found:', { pair });
       return null;
@@ -545,8 +546,11 @@ export class RingV2
     // const from = this.dexHelper.config.wrapETH(_from);
     // const to = this.dexHelper.config.wrapETH(_to);
 
-    const from = getFWTokenForToken(_from, this.network);
-    const to = getFWTokenForToken(_to, this.network);
+    const newSrcToken = this.dexHelper.config.wrapETH(_from);
+    const newDestToken = this.dexHelper.config.wrapETH(_to);
+
+    const from = getFWTokenForToken(newSrcToken, this.network);
+    const to = getFWTokenForToken(newDestToken, this.network);
 
     if (from.address.toLowerCase() === to.address.toLowerCase()) {
       return [];
@@ -576,10 +580,11 @@ export class RingV2
     },
   ): Promise<ExchangePrices<RingV2Data> | null> {
     try {
-      // const from = this.dexHelper.config.wrapETH(_from);
-      // const to = this.dexHelper.config.wrapETH(_to);
-      const from = getFWTokenForToken(_from, this.network);
-      const to = getFWTokenForToken(_to, this.network);
+      const newSrcToken = this.dexHelper.config.wrapETH(_from);
+      const newDestToken = this.dexHelper.config.wrapETH(_to);
+
+      const from = getFWTokenForToken(newSrcToken, this.network);
+      const to = getFWTokenForToken(newDestToken, this.network);
       if (from.address.toLowerCase() === to.address.toLowerCase()) {
         return null;
       }
@@ -592,7 +597,7 @@ export class RingV2
         .join('_');
 
       const poolIdentifier = `${this.dexKey}_${tokenAddress}`;
-
+      // console.log(`PriceVolume.poolIdentifier=${poolIdentifier}`)
       if (limitPools && limitPools.every(p => p !== poolIdentifier)) {
         this.logger.debug('Pool not in limitPools');
         return null;
@@ -927,8 +932,11 @@ export class RingV2
       );
     }
 
-    const fwAddress = computeFWTokenAddress(srcToken, this.network);
-    const fwAddress_to = computeFWTokenAddress(destToken, this.network);
+    const newSrcToken = this.dexHelper.config.wrapETH(srcToken);
+    const newDestToken = this.dexHelper.config.wrapETH(destToken);
+
+    const fwAddress = computeFWTokenAddress(newSrcToken, this.network);
+    const fwAddress_to = computeFWTokenAddress(newDestToken, this.network);
     let path: Address[] = [fwAddress, fwAddress_to];
     //
     if (isETHAddress(srcToken)) {
@@ -957,7 +965,6 @@ export class RingV2
       }
     }
 
-    specialDexFlag = SpecialDex.SWAP_ON_UNISWAP_V2_FORK;
     specialDexFlag = SpecialDex.DEFAULT;
     // transferSrcTokenBeforeSwap
     targetExchange = data.router;

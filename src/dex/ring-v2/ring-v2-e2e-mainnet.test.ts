@@ -18,6 +18,8 @@ const provider = new StaticJsonRpcProvider(
 );
 
 describe('RingV2 E2E Mainnet', () => {
+  const dexKey = 'RingV2';
+
   const sideToContractMethods = new Map([
     [
       SwapSide.SELL,
@@ -40,7 +42,6 @@ describe('RingV2 E2E Mainnet', () => {
     ],
   ]);
 
-  const dexKey = 'RingV2';
   const tokens_for_test = [
     //tokenA, tokenB, sell amount, buy amount
     [tokens.cbBTC, tokens.UNI, '1000000'],
@@ -98,4 +99,68 @@ describe('RingV2 E2E Mainnet', () => {
       });
     }),
   );
+
+  //Test sell with ETH
+  describe(`RingV2 SimpleSwap`, () => {
+    const tokenA = tokens.USDC;
+    const tokenB = tokens.ETH;
+    const sellamount = '1000000';
+
+    console.log(`sell:a->b::${tokenA.symbol} --> ${tokenB.symbol}`);
+    it(`${tokenA.symbol} --> ${tokenB.symbol}`, async () => {
+      await testE2E(
+        tokenA,
+        tokenB,
+        holders.ETH,
+        sellamount,
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
+  });
+
+  // describe(`RingV2 swapExactAmountIn`, () => {
+  //   const tokenA = tokens.ETH;
+  //   const tokenB = tokens.USDT;
+  //   const sellamount = '1000';
+
+  //   console.log(`sell:a->b::${tokenA.symbol} --> ${tokenB.symbol}`);
+  //   it(`${tokenA.symbol} --> ${tokenB.symbol}`, async () => {
+  //     await testE2E(
+  //       tokenA,
+  //       tokenB,
+  //       holders.ETH,
+  //       sellamount,
+  //       SwapSide.SELL,
+  //       dexKey,
+  //       ContractMethod.simpleSwap,
+  //       network,
+  //       provider,
+  //     );
+  //   });
+  // });
+
+  //test buy with ETH
+  describe(`RingV2 SimpleBuy`, () => {
+    const tokenA = tokens.USDC;
+    const tokenB = tokens.ETH;
+    const sellamount = '1000000';
+
+    it(`${tokenA.symbol} --> ${tokenB.symbol}`, async () => {
+      await testE2E(
+        tokenA,
+        tokenB,
+        holders.ETH,
+        sellamount,
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.simpleBuy,
+        network,
+        provider,
+      );
+    });
+  });
 });
