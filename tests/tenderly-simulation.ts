@@ -214,6 +214,7 @@ export class TenderlySimulator {
       save: true,
       save_if_fails: true,
       state_objects: request.stateOverride,
+      block_number: request.blockNumber,
     };
 
     console.log('Sending transaction simulation with params:');
