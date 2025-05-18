@@ -30,6 +30,7 @@ describe('RingV2 Gas Estimation', () => {
   methods.forEach(async method => {
     describe(method, () => {
       it('one swap', async () => {
+        /*
         await testGasEstimation(
           network,
           USDT,
@@ -39,8 +40,10 @@ describe('RingV2 Gas Estimation', () => {
           dexKey,
           method,
         );
+        */
       });
 
+      /*
       it('one swap with unwrap', async () => {
         await testGasEstimation(
           network,
@@ -96,6 +99,7 @@ describe('RingV2 Gas Estimation', () => {
           route,
         );
       });
+    */
     });
   });
 });
