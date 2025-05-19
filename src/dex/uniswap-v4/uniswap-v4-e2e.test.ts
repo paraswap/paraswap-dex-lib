@@ -263,6 +263,23 @@ describe('UniswapV4 E2E', () => {
         tokenBAmount,
       );
     });
+
+    describe('USDCe -> USDCn', () => {
+      const tokenASymbol: string = 'USDCe';
+      const tokenBSymbol: string = 'USDCn';
+
+      const tokenAAmount: string = '3195795';
+      const tokenBAmount: string = '10000000';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+      );
+    });
   });
 
   describe('Avalanche', () => {
