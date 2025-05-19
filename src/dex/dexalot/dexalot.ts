@@ -667,8 +667,16 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           .toFixed(0);
 
         if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(quoteAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = new BigNumber(1)
+            .minus(quoted.div(expected))
+            .multipliedBy(100)
+            .toFixed(10);
+
           isFailOnSlippage = true;
-          slippageErrorMessage = `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`;
+          slippageErrorMessage = `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
           this.logger.warn(
             `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
           );
@@ -689,8 +697,17 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           .toFixed(0);
 
         if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(quoteAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = quoted
+            .div(expected)
+            .minus(1)
+            .multipliedBy(100)
+            .toFixed(10);
+
           isFailOnSlippage = true;
-          slippageErrorMessage = `Slipped, factor: ${quoteAmount.toString()} > ${requiredAmountWithSlippage}`;
+          slippageErrorMessage = `Slipped, factor: ${quoteAmount.toString()} > ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
           this.logger.warn(
             `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
           );

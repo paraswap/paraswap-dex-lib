@@ -577,8 +577,16 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           .toFixed(0);
 
         if (quoteTokenAmount < BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(quoteTokenAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = new BigNumber(1)
+            .minus(quoted.div(expected))
+            .multipliedBy(100)
+            .toFixed(10);
+
           isFailOnSlippage = true;
-          slippageErrorMessage = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage}`;
+          slippageErrorMessage = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
           this.logger.warn(
             `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
           );
@@ -597,8 +605,17 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           .toFixed(0);
 
         if (quoteTokenAmount > BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(quoteTokenAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = quoted
+            .div(expected)
+            .minus(1)
+            .multipliedBy(100)
+            .toFixed(10);
+
           isFailOnSlippage = true;
-          slippageErrorMessage = `Slipped, factor: ${quoteTokenAmount.toString()} > ${requiredAmountWithSlippage}`;
+          slippageErrorMessage = `Slipped, factor: ${quoteTokenAmount.toString()} > ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
           this.logger.warn(
             `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
           );

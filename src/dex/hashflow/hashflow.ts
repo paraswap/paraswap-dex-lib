@@ -638,8 +638,16 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           .toFixed(0);
 
         if (quoteTokenAmount < BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(quoteTokenAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = new BigNumber(1)
+            .minus(quoted.div(expected))
+            .multipliedBy(100)
+            .toFixed(10);
+
           isFailOnSlippage = true;
-          slippageErrorMessage = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage}`;
+          slippageErrorMessage = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
 
           if (
             new BigNumber(1)
@@ -662,8 +670,17 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
             .toFixed(0);
 
           if (BigInt(baseTokenAmount) > BigInt(requiredAmountWithSlippage)) {
+            const quoted = new BigNumber(baseTokenAmount.toString());
+            const expected = new BigNumber(requiredAmountWithSlippage);
+
+            const slippedPercentage = quoted
+              .div(expected)
+              .minus(1)
+              .multipliedBy(100)
+              .toFixed(10);
+
             isFailOnSlippage = true;
-            slippageErrorMessage = `Slipped, factor: ${baseTokenAmount.toString()} > ${requiredAmountWithSlippage}`;
+            slippageErrorMessage = `Slipped, factor: ${baseTokenAmount.toString()} > ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
             this.logger.warn(
               `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
             );
