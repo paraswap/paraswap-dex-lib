@@ -25,7 +25,7 @@ function testForNetwork(
 
   const sideToContractMethods = new Map([
     [SwapSide.SELL, [ContractMethod.swapExactAmountIn]],
-    // [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
+    [SwapSide.BUY, [ContractMethod.swapExactAmountOut]],
   ]);
 
   describe(`${network}`, () => {
@@ -50,19 +50,19 @@ function testForNetwork(
                 500,
               );
             });
-            // it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
-            //   await testE2E(
-            //     tokens[tokenBSymbol],
-            //     tokens[tokenASymbol],
-            //     holders[tokenBSymbol],
-            //     side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
-            //     side,
-            //     dexKey,
-            //     contractMethod,
-            //     network,
-            //     provider,
-            //   );
-            // });
+            it(`${tokenBSymbol} -> ${tokenASymbol}`, async () => {
+              await testE2E(
+                tokens[tokenBSymbol],
+                tokens[tokenASymbol],
+                holders[tokenBSymbol],
+                side === SwapSide.SELL ? tokenBAmount : tokenAAmount,
+                side,
+                dexKey,
+                contractMethod,
+                network,
+                provider,
+              );
+            });
           });
         });
       }),

@@ -12,6 +12,7 @@ import { BI_MAX_UINT128 } from '../../bigint-constants';
 const routerIface = new Interface(RouterAbi);
 
 enum Commands {
+  PERMIT2_TRANSFER_FROM = 2, // 0x02 -> 2
   WRAP_ETH = 11, // 0x0b -> 11
   UNWRAP_WETH = 12, // 0x0c -> 12
   V4_SWAP = 16, // 0x10 -> 16
@@ -150,7 +151,6 @@ function encodeInputForExecute(
 
   // Unwrap WETH on Router for ETH pool
   if (isWethSrc && isEthPoolForSrc) {
-    console.log('IN isWethSrc && isEthPoolForSrc');
     types.unshift('uint8');
     commands.unshift(Commands.UNWRAP_WETH);
 
@@ -159,6 +159,15 @@ function encodeInputForExecute(
       [ActionConstants.ADDRESS_THIS, amountIn],
     );
     inputs.unshift(unwrapInput);
+
+    // Need to make transfer before the swap to make unwrap
+    types.unshift('uint8');
+    commands.unshift(Commands.PERMIT2_TRANSFER_FROM);
+    const transferInput = ethers.utils.defaultAbiCoder.encode(
+      ['address', 'address', 'uint256'],
+      [wethAddr, ActionConstants.ADDRESS_THIS, amountIn],
+    );
+    inputs.unshift(transferInput);
   }
 
   // Unwrap ETH on Router for WETH pool
@@ -180,7 +189,7 @@ function encodeInputForExecute(
 
     const wrapInput = ethers.utils.defaultAbiCoder.encode(
       ['address', 'uint256'],
-      [recipient, ActionConstants.OPEN_DELTA],
+      [recipient, ActionConstants.CONTRACT_BALANCE],
     );
 
     inputs.push(wrapInput);
@@ -214,26 +223,13 @@ function encodeSettle(
     firstPool.tokenIn.toLowerCase() === NULL_ADDRESS ||
     firstPool.tokenOut.toLowerCase() === NULL_ADDRESS;
 
-  console.log(
-    'src token: ',
-    isEthSrc && isWethPool
-      ? wethAddr
-      : isWethSrc && isEthPool
-      ? NULL_ADDRESS
-      : srcToken,
-  );
-  console.log(
-    'takeFundsFromMsgSender:',
-    isEthSrc && isWethPool ? false : takeFundsFromMsgSender,
-  );
-
   const settle = ethers.utils.defaultAbiCoder.encode(
     ['address', 'uint256', 'bool'],
     // srcToken, amountIn (`OPEN_DELTA` to settle all needed funds), takeFundsFromMsgSender (Executor in our case)
     [
       isEthSrc && isWethPool
         ? wethAddr
-        : isWethSrc && isEthPool
+        : (isEthSrc && isEthPool) || (isWethSrc && isEthPool)
         ? NULL_ADDRESS
         : srcToken,
       amountIn,
@@ -264,31 +260,18 @@ function encodeTake(
     lastPool.tokenOut.toLowerCase() === NULL_ADDRESS ||
     lastPool.tokenIn.toLowerCase() === NULL_ADDRESS;
 
-  console.log(
-    'DEST TOKEN: ',
-    isEthDest && isWethPool
-      ? wethAddr
-      : isWethDest && isEthPool
-      ? NULL_ADDRESS
-      : destToken,
-  );
-  console.log(
-    'TAKE RECIPIENT: ',
-    (isEthDest && isWethPool) || (isWethDest && isEthPool)
-      ? ActionConstants.ADDRESS_THIS
-      : recipient,
-  );
-
   const take = ethers.utils.defaultAbiCoder.encode(
     ['address', 'address', 'uint256'],
     // destToken, recipient, amountOut (`OPEN_DELTA` to take all funds)
     [
       isEthDest && isWethPool
         ? wethAddr
-        : isWethDest && isEthPool
+        : (isWethDest && isEthPool) || (isEthDest && isEthPool)
         ? NULL_ADDRESS
         : destToken,
-      isEthDest && isWethPool ? ActionConstants.ADDRESS_THIS : recipient,
+      (isEthDest && isWethPool) || (isWethDest && isEthPool)
+        ? ActionConstants.ADDRESS_THIS
+        : recipient,
       amountOut,
     ],
   );

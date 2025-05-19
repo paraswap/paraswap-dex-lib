@@ -175,6 +175,8 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     const reqId = Math.floor(Math.random() * 10000);
     // const getPricesVolumeStart = Date.now();
 
+    const wethAddr =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
     let pools: Pool[] = await this.poolManager.getAvailablePoolsForPair(
       from.address.toLowerCase(),
       to.address.toLowerCase(),
@@ -191,14 +193,15 @@ export class UniswapV4 extends SimpleExchange implements IDex<UniswapV4Data> {
     //     '0x4f88f7c99022eace4740c6898f59ce6a2e798a1e64ce54589720b7153eb224a7',
     // );
 
-    console.log('availablePools: ', pools);
-
     const pricesPromises = availablePools.map(async poolId => {
       const pool = pools.find(p => p.id === poolId)!;
 
       const zeroForOne =
         from.address.toLowerCase() === pool.key.currency0.toLowerCase() ||
-        (isETHAddress(from.address) && pool.key.currency0 === NULL_ADDRESS);
+        (isETHAddress(from.address) && pool.key.currency0 === NULL_ADDRESS) || // ETH is src and native ETH pool
+        (isETHAddress(from.address) && pool.key.currency0 === wethAddr) || // ETH is src and WETH pool
+        (from.address.toLowerCase() === wethAddr &&
+          pool.key.currency0 === NULL_ADDRESS); // WETH is src and native ETH pool
 
       const eventPool = await this.poolManager.getEventPool(
         poolId,
