@@ -6,6 +6,7 @@ import { Interface } from '@ethersproject/abi';
 import { getDexKeysWithNetwork } from '../../../utils';
 import { SolidlyConfig } from '../config';
 import _ from 'lodash';
+import { BytesLike } from 'ethers';
 
 const EqualizerFactoryABI = [
   {
@@ -43,7 +44,7 @@ export class Equalizer extends Solidly {
         pair.exchange,
       ]),
     };
-    const callDecoder = (values: any[]) =>
+    const callDecoder = (values: BytesLike) =>
       parseInt(
         equalizerFactoryIface
           .decodeFunctionResult('getRealFee', values)[0]

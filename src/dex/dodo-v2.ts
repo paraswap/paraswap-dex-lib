@@ -1,4 +1,4 @@
-import { Interface, JsonFragment } from '@ethersproject/abi';
+import { Interface, JsonFragment } from 'ethers';
 import { SwapSide, MAX_UINT, Network } from '../constants';
 import {
   AdapterExchangeParam,
@@ -11,7 +11,6 @@ import { SimpleExchange } from './simple-exchange';
 import DodoV2ProxyABI from '../abi/dodo-v2-proxy.json';
 import { NumberAsString } from '@paraswap/core';
 import { isETHAddress } from '../utils';
-import Web3 from 'web3';
 import { IDexHelper } from '../dex-helper';
 import { extractReturnAmountPosition } from '../executor/utils';
 
