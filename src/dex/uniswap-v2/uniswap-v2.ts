@@ -242,7 +242,7 @@ export class UniswapV2
   readonly DEST_TOKEN_DEX_TRANSFERS = 1;
 
   public static dexKeysWithNetwork: { key: string; networks: Network[] }[] =
-    getDexKeysWithNetwork(UniswapV2Config);
+    getDexKeysWithNetwork(_.omit(UniswapV2Config, 'PancakeSwapV2'));
 
   constructor(
     protected network: Network,

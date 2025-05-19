@@ -170,6 +170,10 @@ class DummyCache implements ICache {
     return this.hashStorage[mapKey]?.[key] ?? null;
   }
 
+  async hlen(mapKey: string): Promise<number> {
+    return Object.keys(this.hashStorage[mapKey] ?? {}).length;
+  }
+
   async hmget(mapKey: string, keys: string[]): Promise<(string | null)[]> {
     return keys.map(key => this.hashStorage?.[mapKey]?.[key] ?? null);
   }
