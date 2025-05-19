@@ -145,7 +145,8 @@ export class UniswapV2RpcPoolTracker extends UniswapV2 {
       isDynamicFees, // dynamic fees
     );
 
-    this.cacheKey = `${CACHE_PREFIX}_${this.dexKey}_pools`.toLowerCase();
+    this.cacheKey =
+      `${CACHE_PREFIX}_${this.dexKey}_${this.network}_pools`.toLowerCase();
   }
 
   async initializePricing() {
