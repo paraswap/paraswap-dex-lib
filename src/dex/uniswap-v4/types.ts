@@ -38,6 +38,7 @@ export type PoolState = {
   ticks: Record<NumberAsString, TickInfo>;
   positions: Record<string, PositionState>;
   tickBitmap: Record<NumberAsString, bigint>;
+  isValid: boolean;
 };
 
 export type FeeGrowthGlobals = {

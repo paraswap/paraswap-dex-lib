@@ -389,30 +389,30 @@ class UniswapV4PoolMath {
   ): { feeGrowthInside0X128: bigint; feeGrowthInside1X128: bigint } {
     let lower: TickInfo = poolState.ticks[tickLower.toString()];
     let upper: TickInfo = poolState.ticks[tickUpper.toString()];
-    const tickCurrent = BigInt(poolState.slot0?.tick!);
+    const tickCurrent = BigInt(poolState.slot0.tick);
 
     let feeGrowthInside0X128: bigint;
     let feeGrowthInside1X128: bigint;
 
     if (tickCurrent < tickLower) {
       feeGrowthInside0X128 =
-        lower.feeGrowthOutside0X128! - upper.feeGrowthOutside0X128!;
+        lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128;
       feeGrowthInside1X128 =
-        lower.feeGrowthOutside1X128! - upper.feeGrowthOutside1X128!;
+        lower.feeGrowthOutside1X128 - upper.feeGrowthOutside1X128;
     } else if (tickCurrent >= tickUpper) {
       feeGrowthInside0X128 =
-        upper.feeGrowthOutside0X128! - lower.feeGrowthOutside0X128!;
+        upper.feeGrowthOutside0X128 - lower.feeGrowthOutside0X128;
       feeGrowthInside1X128 =
-        upper.feeGrowthOutside1X128! - lower.feeGrowthOutside1X128!;
+        upper.feeGrowthOutside1X128 - lower.feeGrowthOutside1X128;
     } else {
       feeGrowthInside0X128 =
-        BigInt(poolState.feeGrowthGlobal0X128!) -
-        BigInt(lower.feeGrowthOutside0X128!) -
-        BigInt(upper.feeGrowthOutside0X128!);
+        BigInt(poolState.feeGrowthGlobal0X128) -
+        BigInt(lower.feeGrowthOutside0X128) -
+        BigInt(upper.feeGrowthOutside0X128);
       feeGrowthInside1X128 =
-        BigInt(poolState.feeGrowthGlobal1X128!) -
-        BigInt(lower.feeGrowthOutside1X128!) -
-        BigInt(upper.feeGrowthOutside1X128!);
+        BigInt(poolState.feeGrowthGlobal1X128) -
+        BigInt(lower.feeGrowthOutside1X128) -
+        BigInt(upper.feeGrowthOutside1X128);
     }
 
     return { feeGrowthInside0X128, feeGrowthInside1X128 };
@@ -754,6 +754,16 @@ class UniswapV4PoolMath {
         `Swap event (amount0: ${amount0}, amount1: ${amount1}, newSqrtPriceX96: ${newSqrtPriceX96}, newTick: ${newTick}, newLiquidity: ${newLiquidity}, newSwapFee: ${newSwapFee}) max cycles are reached  ${counter} for pool: ${poolState.id}`,
       );
     }
+
+    const currentTick = result.tick;
+    const currentPrice = result.sqrtPriceX96;
+
+    _require(
+      currentPrice === newSqrtPriceX96 && currentTick === newTick,
+      'LOGIC ERROR: calculated (currentPrice,currentTick) and (newSqrtPriceX96, newTick) from event should always be equal at the end',
+      { currentPrice, newSqrtPriceX96, currentTick, newTick },
+      'currentPrice === newSqrtPriceX96 && currentTick === newTick',
+    );
 
     poolState.slot0.tick = newTick;
     poolState.slot0.sqrtPriceX96 = newSqrtPriceX96;
