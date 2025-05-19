@@ -128,6 +128,8 @@ export class UniswapV2RpcPoolTracker extends UniswapV2 {
   private cacheKey: string;
   public pools: Record<string, Pool> = {};
 
+  readonly isStatePollingDex = true;
+
   constructor(
     protected network: Network,
     dexKey: string,
