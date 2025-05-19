@@ -1245,7 +1245,7 @@ export class UniswapV3
       return [];
     }
 
-    const pools0 = _.map(res.pools0, pool => ({
+    const pools0: PoolLiquidity[] = _.map(res.pools0, pool => ({
       exchange: this.dexKey,
       address: pool.id.toLowerCase(),
       poolIdentifier: this.getPoolIdentifier(
@@ -1263,7 +1263,7 @@ export class UniswapV3
       liquidityUSD: parseFloat(pool.totalValueLockedUSD),
     }));
 
-    const pools1 = _.map(res.pools1, pool => ({
+    const pools1: PoolLiquidity[] = _.map(res.pools1, pool => ({
       exchange: this.dexKey,
       address: pool.id.toLowerCase(),
       poolIdentifier: this.getPoolIdentifier(
@@ -1325,9 +1325,19 @@ export class UniswapV3
           connectorTokenUsdBalance * UNISWAPV3_EFFICIENCY_FACTOR;
       }
 
-      // take connectorToken liquidity by default
-      // to handle unbalanced pools, when one token has much higher usd liquidity (e.g. 0xA7B3BCC6c88Da2856867d29F11c67C3A85634882)
-      const liquidityUSD = connectorTokenUsdLiquidity ?? tokenUsdLiquidity ?? 0;
+      // connectorToken.liquidityUSD should specify how much liquidity is available for connectorToken -> token swaps
+      // it allows to handle unbalanced pools, when one token has much higher usd liquidity (e.g. 0xA7B3BCC6c88Da2856867d29F11c67C3A85634882)
+      if (tokenUsdLiquidity) {
+        // there's always only one connectorToken
+        pool.connectorTokens[0] = {
+          ...pool.connectorTokens[0],
+          liquidityUSD: tokenUsdLiquidity,
+        };
+      }
+
+      // the amount of connectorToken liquidity is the amount available for token -> connectorToken swaps
+      // take connectorTokenUsdLiquidity by default, in case there's no usd prices fallback to tokenUsdLiquidity
+      const liquidityUSD = connectorTokenUsdLiquidity || tokenUsdLiquidity || 0;
 
       return {
         ...pool,

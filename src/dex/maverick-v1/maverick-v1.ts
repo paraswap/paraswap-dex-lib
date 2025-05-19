@@ -504,7 +504,7 @@ export class MaverickV1
       return [];
     }
 
-    const pools0 = _.map(res.pools0, pool => ({
+    const pools0: PoolLiquidity[] = _.map(res.pools0, pool => ({
       exchange: this.dexKey,
       address: pool.id.toLowerCase(),
       connectorTokens: [
@@ -516,7 +516,7 @@ export class MaverickV1
       liquidityUSD: parseFloat(pool.balanceUSD),
     }));
 
-    const pools1 = _.map(res.pools1, pool => ({
+    const pools1: PoolLiquidity[] = _.map(res.pools1, pool => ({
       exchange: this.dexKey,
       address: pool.id.toLowerCase(),
       connectorTokens: [
@@ -572,11 +572,14 @@ export class MaverickV1
           connectorTokenUsdBalance * EFFICIENCY_FACTOR;
       }
 
-      const liquidityUSD =
-        Math.min(
-          tokenUsdLiquidity ?? pool.liquidityUSD / 2,
-          connectorTokenUsdLiquidity ?? pool.liquidityUSD / 2,
-        ) * 2;
+      if (tokenUsdLiquidity) {
+        pool.connectorTokens[0] = {
+          ...pool.connectorTokens[0],
+          liquidityUSD: tokenUsdLiquidity,
+        };
+      }
+
+      const liquidityUSD = connectorTokenUsdLiquidity || tokenUsdLiquidity || 0;
 
       return {
         ...pool,

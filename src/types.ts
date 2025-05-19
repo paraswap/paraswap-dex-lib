@@ -235,7 +235,11 @@ export type PoolLiquidity = {
   poolIdentifier?: string;
   exchange: string;
   address: Address;
-  connectorTokens: Token[];
+  // by default, PoolLiquidity.liquidityUSD is the liquidity for token <=> connectorToken swaps
+  // but in case available liquidity is different,
+  // then PoolLiquidity.liquidityUSD is the liquidity for token => connectorToken swaps
+  // and PoolLiquidity.connectorTokens.liquidityUSD is the liquidity for connectorToken => token swaps
+  connectorTokens: (Token & { liquidityUSD?: number })[];
   liquidityUSD: number;
   // `true` if there's available swap for token => connectorToken, `false` for connectorToken => token swap,
   // undefined if swap is available in both directions token <=> connectorToken
