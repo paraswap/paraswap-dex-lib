@@ -569,57 +569,53 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
 
       let isFailOnSlippage = false;
       let slippageErrorMessage = '';
+      let isTooStrictSlippage = false;
 
       if (side === SwapSide.SELL) {
-        if (
-          quoteTokenAmount <
-          BigInt(
-            new BigNumber(destAmount.toString())
-              .times(slippageFactor)
-              .toFixed(0),
-          )
-        ) {
+        const requiredAmountWithSlippage = new BigNumber(destAmount.toString())
+          .multipliedBy(slippageFactor)
+          .toFixed(0);
+
+        if (quoteTokenAmount < BigInt(requiredAmountWithSlippage)) {
           isFailOnSlippage = true;
-          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
-          slippageErrorMessage = message;
-          this.logger.warn(message);
+          slippageErrorMessage = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage}`;
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
+          );
+
+          if (
+            new BigNumber(1)
+              .minus(slippageFactor)
+              .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+          ) {
+            isTooStrictSlippage = true;
+          }
         }
       } else {
-        if (
-          quoteTokenAmount >
-          BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
-        ) {
-          isFailOnSlippage = true;
-          const message = `${this.dexKey}-${
-            this.network
-          }: too much slippage on quote ${side} baseTokenAmount ${srcAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
-          slippageErrorMessage = message;
-          this.logger.warn(message);
-        }
-      }
+        const requiredAmountWithSlippage = new BigNumber(srcAmount.toString())
+          .multipliedBy(slippageFactor)
+          .toFixed(0);
 
-      let isTooStrictSlippage = false;
-      if (
-        isFailOnSlippage &&
-        side === SwapSide.SELL &&
-        new BigNumber(1)
-          .minus(slippageFactor)
-          .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
-      } else if (
-        isFailOnSlippage &&
-        side === SwapSide.BUY &&
-        slippageFactor
-          .minus(1)
-          .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
+        if (quoteTokenAmount > BigInt(requiredAmountWithSlippage)) {
+          isFailOnSlippage = true;
+          slippageErrorMessage = `Slipped, factor: ${quoteTokenAmount.toString()} > ${requiredAmountWithSlippage}`;
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
+          );
+
+          if (
+            slippageFactor
+              .minus(1)
+              .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+          ) {
+            isTooStrictSlippage = true;
+          }
+        }
       }
 
       if (isFailOnSlippage && isTooStrictSlippage) {
         throw new TooStrictSlippageCheckError(slippageErrorMessage);
-      } else if (isFailOnSlippage && !isTooStrictSlippage) {
+      } else if (isFailOnSlippage) {
         throw new SlippageCheckError(slippageErrorMessage);
       }
 

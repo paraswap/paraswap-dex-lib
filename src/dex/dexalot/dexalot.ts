@@ -657,65 +657,57 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
       const slippageFactor = options.slippageFactor;
       let isFailOnSlippage = false;
       let slippageErrorMessage = '';
+      let isTooStrictSlippage = false;
 
       if (isSell) {
-        if (
-          BigInt(order.makerAmount) <
-          BigInt(
-            new BigNumber(optimalSwapExchange.destAmount.toString())
-              .times(slippageFactor)
-              .toFixed(0),
-          )
-        ) {
+        const requiredAmount = optimalSwapExchange.destAmount;
+        const quoteAmount = BigInt(order.makerAmount);
+        const requiredAmountWithSlippage = new BigNumber(requiredAmount)
+          .multipliedBy(slippageFactor)
+          .toFixed(0);
+
+        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
           isFailOnSlippage = true;
-          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${order.makerAmount} / destAmount ${optimalSwapExchange.destAmount} < ${slippageFactor}`;
-          slippageErrorMessage = message;
-          this.logger.warn(message);
+          slippageErrorMessage = `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage}`;
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
+          );
+
+          if (
+            new BigNumber(1)
+              .minus(slippageFactor)
+              .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+          ) {
+            isTooStrictSlippage = true;
+          }
         }
       } else {
-        if (
-          BigInt(order.takerAmount) >
-          BigInt(
-            slippageFactor
-              .times(optimalSwapExchange.srcAmount.toString())
-              .toFixed(0),
-          )
-        ) {
-          isFailOnSlippage = true;
-          const message = `${this.dexKey}-${
-            this.network
-          }: too much slippage on quote ${side} baseTokenAmount ${
-            order.takerAmount
-          } / srcAmount ${
-            optimalSwapExchange.srcAmount
-          } > ${slippageFactor.toFixed()}`;
-          slippageErrorMessage = message;
-          this.logger.warn(message);
-        }
-      }
+        const requiredAmount = optimalSwapExchange.srcAmount;
+        const quoteAmount = BigInt(order.takerAmount);
+        const requiredAmountWithSlippage = new BigNumber(requiredAmount)
+          .multipliedBy(slippageFactor)
+          .toFixed(0);
 
-      let isTooStrictSlippage = false;
-      if (
-        isFailOnSlippage &&
-        isSell &&
-        new BigNumber(1)
-          .minus(slippageFactor)
-          .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
-      } else if (
-        isFailOnSlippage &&
-        isBuy &&
-        slippageFactor
-          .minus(1)
-          .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
+        if (quoteAmount > BigInt(requiredAmountWithSlippage)) {
+          isFailOnSlippage = true;
+          slippageErrorMessage = `Slipped, factor: ${quoteAmount.toString()} > ${requiredAmountWithSlippage}`;
+          this.logger.warn(
+            `${this.dexKey}-${this.network}: ${slippageErrorMessage}`,
+          );
+
+          if (
+            slippageFactor
+              .minus(1)
+              .lt(DEXALOT_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+          ) {
+            isTooStrictSlippage = true;
+          }
+        }
       }
 
       if (isFailOnSlippage && isTooStrictSlippage) {
         throw new TooStrictSlippageCheckError(slippageErrorMessage);
-      } else if (isFailOnSlippage && !isTooStrictSlippage) {
+      } else if (isFailOnSlippage) {
         throw new SlippageCheckError(slippageErrorMessage);
       }
 
