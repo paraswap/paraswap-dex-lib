@@ -273,7 +273,7 @@ export class UniswapV2
       UniswapV2Config[dexKey][network].subgraphType,
   ) {
     super(dexHelper, dexKey);
-    this.logger = dexHelper.getLogger(dexKey);
+    this.logger = dexHelper.getLogger(`${dexKey}-${network}`);
 
     this.factory = new dexHelper.web3Provider.eth.Contract(
       uniswapV2factoryABI as any,
