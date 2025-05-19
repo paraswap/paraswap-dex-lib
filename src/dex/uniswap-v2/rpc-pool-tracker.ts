@@ -145,6 +145,9 @@ export class UniswapV2RpcPoolTracker extends UniswapV2 {
   }
 
   async initializePricing() {
+    this.logger.info(
+      `PancakeSwapV2: Initializing pools for ${this.dexKey} on ${this.network}...`,
+    );
     if (!this.dexHelper.config.isSlave) {
       await this.updatePools(true);
 
