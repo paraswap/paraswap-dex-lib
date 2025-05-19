@@ -130,6 +130,8 @@ export class UniswapV2RpcPoolTracker extends UniswapV2 {
 
   readonly isStatePollingDex = true;
 
+  private updateInterval: NodeJS.Timeout | null = null;
+
   constructor(
     protected network: Network,
     dexKey: string,
@@ -153,7 +155,7 @@ export class UniswapV2RpcPoolTracker extends UniswapV2 {
     if (!this.dexHelper.config.isSlave) {
       await this.updatePools(true);
 
-      setInterval(async () => {
+      this.updateInterval = setInterval(async () => {
         await this.updatePools();
       }, UPDATE_POOL_INTERVAL);
     }
@@ -476,5 +478,12 @@ export class UniswapV2RpcPoolTracker extends UniswapV2 {
     return poolsWithLiquidity
       .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
       .slice(0, limit);
+  }
+
+  releaseResources() {
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
+      this.updateInterval = null;
+    }
   }
 }
