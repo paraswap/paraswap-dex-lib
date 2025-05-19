@@ -72,3 +72,7 @@ export const IS_CAP_SURPLUS_MASK = BigNumber.from('1').shl(92);
 export const IS_SKIP_BLACKLIST_MASK = BigNumber.from('1').shl(93);
 export const IS_REFERRAL_MASK = BigNumber.from('1').shl(94);
 export const IS_TAKE_SURPLUS_MASK = BigNumber.from('1').shl(95);
+
+// used for PoolTracker data
+export const NO_USD_LIQUIDITY = -1;
+export const UNLIMITED_USD_LIQUIDITY = 1234567890;
