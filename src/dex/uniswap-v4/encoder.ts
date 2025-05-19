@@ -208,7 +208,6 @@ function encodeSettle(
   srcToken: string,
   data: UniswapV4Data,
   amountIn: ActionConstants | bigint,
-  takeFundsFromMsgSender: boolean,
 ): string {
   const wethAddr =
     dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
@@ -233,7 +232,7 @@ function encodeSettle(
         ? NULL_ADDRESS
         : srcToken,
       amountIn,
-      isEthSrc && isWethPool ? false : takeFundsFromMsgSender,
+      isEthSrc && isWethPool ? false : true,
     ],
   );
 
@@ -342,7 +341,6 @@ export function swapExactInputSingleCalldata(
     srcToken,
     data,
     ActionConstants.OPEN_DELTA,
-    true,
   );
 
   const take = encodeTake(
@@ -443,7 +441,6 @@ export function swapExactInputCalldata(
     srcToken,
     data,
     ActionConstants.OPEN_DELTA,
-    true,
   );
   const take = encodeTake(
     dexHelper,
@@ -529,7 +526,6 @@ export function swapExactOutputSingleCalldata(
     srcToken,
     data,
     ActionConstants.OPEN_DELTA,
-    true,
   );
   const take = encodeTake(
     dexHelper,
@@ -630,7 +626,6 @@ export function swapExactOutputCalldata(
     srcToken,
     data,
     ActionConstants.OPEN_DELTA,
-    true,
   );
   const take = encodeTake(
     dexHelper,
