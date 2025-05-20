@@ -456,7 +456,7 @@ export function swapExactInputCalldata(
     destToken,
     data,
     SwapSide.SELL,
-    0n,
+    amountIn,
     amountOutMinimum,
     recipient,
     actions,
