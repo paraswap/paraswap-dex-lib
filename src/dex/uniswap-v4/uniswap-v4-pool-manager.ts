@@ -135,18 +135,52 @@ export class UniswapV4PoolManager extends StatefulEventSubscriber<PoolManagerSta
     destToken: Address,
     blockNumber: number,
   ): Promise<Pool[]> {
+    const wethAddress =
+      this.dexHelper.config.data.wrappedNativeTokenAddress.toLowerCase();
+
     const isEthSrc = isETHAddress(srcToken);
     const isEthDest = isETHAddress(destToken);
+
+    const isWethSrc = srcToken.toLowerCase() === wethAddress;
+    const isWethDest = destToken.toLowerCase() === wethAddress;
+
+    const needCheckWeth = isEthSrc || isEthDest;
+    const needCheckETH = isWethSrc || isWethDest;
 
     const _src = isEthSrc ? NULL_ADDRESS : srcToken.toLowerCase();
     const _dest = isEthDest ? NULL_ADDRESS : destToken.toLowerCase();
 
     return this.pools
-      .filter(
-        pool =>
-          (pool.token0.address === _src && pool.token1.address === _dest) ||
-          (pool.token0.address === _dest && pool.token1.address === _src),
-      )
+      .filter(pool => {
+        const checkToken0Src = pool.token0.address === _src;
+        const checkToken1Dest = pool.token1.address === _dest;
+        const checkToken1Src = pool.token1.address === _src;
+        const checkToken0Dest = pool.token0.address === _dest;
+
+        const checkToken0Weth =
+          needCheckWeth && pool.token0.address === wethAddress; // check token0 to discover WETH pools when ETH is src or dest
+        const checkToken0ETH =
+          needCheckETH && pool.token0.address === NULL_ADDRESS; // check token0 to discover ETH pools when WETH is src or dest
+        const checkToken1Weth =
+          needCheckWeth && pool.token1.address === wethAddress; // check token1 to discover WETH pools when ETH is src or dest
+        const checkToken1ETH =
+          needCheckETH && pool.token1.address === NULL_ADDRESS; // check token1 to discover ETH pools when WETH is src or dest
+
+        return (
+          ((checkToken0Src ||
+            (isEthSrc && checkToken0Weth) ||
+            (isWethSrc && checkToken0ETH)) &&
+            (checkToken1Dest ||
+              (isEthDest && checkToken1Weth) ||
+              (isWethDest && checkToken1ETH))) ||
+          ((checkToken0Dest ||
+            (isEthDest && checkToken0Weth) ||
+            (isWethDest && checkToken0ETH)) &&
+            (checkToken1Src ||
+              (isEthSrc && checkToken1Weth) ||
+              (isWethSrc && checkToken1ETH)))
+        );
+      })
       .sort((a, b) => {
         const volumeA = parseInt(a.volumeUSD || '0');
         const volumeB = parseInt(b.volumeUSD || '0');
