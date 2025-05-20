@@ -222,7 +222,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
             .toFixed(10);
 
           throw new SlippageError(
-            `Slipped, factor: ${quoteAmount.toString()} > ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`,
+            `Slipped, factor: ${quoteAmount.toString()} > ${requiredAmountWithSlippage} (${slippedPercentage}%)`,
           );
         }
       } else {
@@ -234,7 +234,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
           .multipliedBy(options.slippageFactor)
           .toFixed(0);
 
-        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
+        if (quoteAmount < BigInt(requiredAmountWithSlippage) || true) {
           const quoted = new BigNumber(quoteAmount.toString());
           const expected = new BigNumber(requiredAmountWithSlippage);
 
@@ -244,7 +244,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
             .toFixed(10);
 
           throw new SlippageError(
-            `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`,
+            `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage} (${slippedPercentage}%)`,
           );
         }
       }

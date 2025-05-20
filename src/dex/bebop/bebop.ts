@@ -769,7 +769,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
           .times(options.slippageFactor)
           .toFixed(0);
 
-        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
+        if (quoteAmount < BigInt(requiredAmountWithSlippage) || true) {
           const quoted = new BigNumber(quoteAmount.toString());
           const expected = new BigNumber(requiredAmountWithSlippage);
 
@@ -779,7 +779,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
             .toFixed(10);
 
           throw new SlippageError(
-            `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`,
+            `Slipped, factor: ${quoteAmount.toString()} < ${requiredAmountWithSlippage} (${slippedPercentage}%)`,
           );
         }
       } else {
@@ -804,7 +804,7 @@ export class Bebop extends SimpleExchange implements IDex<BebopData> {
             .toFixed(10);
 
           throw new SlippageError(
-            `Slipped, factor: ${quoteAmount.toString()} > ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`,
+            `Slipped, factor: ${quoteAmount.toString()} > ${requiredAmountWithSlippage} (${slippedPercentage}%)`,
           );
         }
       }

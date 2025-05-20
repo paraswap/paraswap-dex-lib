@@ -381,7 +381,10 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         .multipliedBy(slippageFactor)
         .toFixed(0);
 
-      if (BigInt(makerAssetAmountFilled) < BigInt(requiredAmountWithSlippage)) {
+      if (
+        BigInt(makerAssetAmountFilled) < BigInt(requiredAmountWithSlippage) ||
+        true
+      ) {
         const quoted = new BigNumber(makerAssetAmountFilled.toString());
         const expected = new BigNumber(requiredAmountWithSlippage);
 
@@ -390,7 +393,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
           .multipliedBy(100)
           .toFixed(10);
 
-        const message = `Slipped, factor: ${makerAssetAmountFilled.toString()} < ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
+        const message = `Slipped, factor: ${makerAssetAmountFilled.toString()} < ${requiredAmountWithSlippage} (${slippedPercentage}%)`;
         this.logger.warn(`${this.dexKey}: ${message}`);
         throw new SlippageCheckError(message);
       }
@@ -415,7 +418,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
           .multipliedBy(100)
           .toFixed(10);
 
-        const message = `Slipped, factor: ${takerAssetAmount.toString()} > ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
+        const message = `Slipped, factor: ${takerAssetAmount.toString()} > ${requiredAmountWithSlippage} (${slippedPercentage}%)`;
         this.logger.warn(`${this.dexKey}: ${message}`);
         throw new SlippageCheckError(message);
       }
