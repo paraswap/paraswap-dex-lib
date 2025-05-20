@@ -29,7 +29,8 @@ type Pool = {
 };
 
 const UPDATE_POOL_INTERVAL = 10 * 60 * 1000; // 10 minutes
-const BATCH_SIZE = 1000;
+const INIT_BATCH_SIZE = 1000;
+const READ_BATCH_SIZE = 10_000;
 
 const FactoryABI = [
   {
@@ -182,14 +183,14 @@ export class UniswapV2RpcPoolTracker extends UniswapV2 {
   async initPools(fromIndex: number, toIndex: number) {
     this.logger.info(`Initializing pools from ${fromIndex} to ${toIndex}...`);
 
-    for (let i = fromIndex; i < toIndex; i += BATCH_SIZE) {
+    for (let i = fromIndex; i < toIndex; i += INIT_BATCH_SIZE) {
       this.logger.info(
-        `Fetching pools from ${i} to ${Math.min(i + BATCH_SIZE, toIndex)}`,
+        `Fetching pools from ${i} to ${Math.min(i + INIT_BATCH_SIZE, toIndex)}`,
       );
 
       const fetchedPools = await this.fetchPools(
         i,
-        Math.min(i + BATCH_SIZE, toIndex),
+        Math.min(i + INIT_BATCH_SIZE, toIndex),
       );
       const pools = Object.fromEntries(
         Object.entries(fetchedPools).map(([key, value]) => [
@@ -209,13 +210,16 @@ export class UniswapV2RpcPoolTracker extends UniswapV2 {
     for (
       let batchStart = fromIndex;
       batchStart < toIndex;
-      batchStart += BATCH_SIZE
+      batchStart += READ_BATCH_SIZE
     ) {
-      const batchEnd = Math.min(batchStart + BATCH_SIZE, toIndex);
+      const batchEnd = Math.min(batchStart + READ_BATCH_SIZE, toIndex);
       const keys = [];
       for (let i = batchStart; i < batchEnd; i++) {
         keys.push(i.toString());
       }
+      this.logger.info(
+        `Getting cached pools from ${batchStart} to ${batchEnd}`,
+      );
       const pools = await this.dexHelper.cache.hmget(this.cacheKey, keys);
 
       pools.forEach((pool, idx) => {
