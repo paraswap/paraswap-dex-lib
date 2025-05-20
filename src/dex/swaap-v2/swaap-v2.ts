@@ -581,7 +581,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
             .multipliedBy(100)
             .toFixed(10);
 
-          const errorMsg = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
+          const errorMsg = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage} (${slippedPercentage}%)`;
 
           if (
             new BigNumber(1)
@@ -608,7 +608,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
             .multipliedBy(100)
             .toFixed(10);
 
-          const errorMsg = `Slipped, factor: ${quoteTokenAmount.toString()} > ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
+          const errorMsg = `Slipped, factor: ${quoteTokenAmount.toString()} > ${requiredAmountWithSlippage} (${slippedPercentage}%)`;
 
           if (
             slippageFactor
