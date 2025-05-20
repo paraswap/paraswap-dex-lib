@@ -561,6 +561,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
     const _destTokenAddress = _destToken.address.toLowerCase();
 
     let rfq: RfqResponse;
+    let quoteId: string | undefined;
 
     try {
       rfq = await this.api.requestQuote({
@@ -579,33 +580,36 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         marketMakers: [mm],
       });
 
+      quoteId = rfq.rfqId;
+
       if (rfq.status !== 'success') {
-        const message = `${this.dexKey}-${
-          this.network
-        }: Failed to fetch RFQ for ${this.getPairName(
-          _srcTokenAddress,
-          _destTokenAddress,
-        )}: ${JSON.stringify(rfq)}`;
-        this.logger.warn(message);
-        throw new RfqError(message, `${rfq?.error?.code}` as ErrorCode);
-      } else if (!rfq.quotes[0].quoteData) {
-        const message = `${this.dexKey}-${
-          this.network
-        }: Failed to fetch RFQ for ${this.getPairName(
-          _srcTokenAddress,
-          _destTokenAddress,
-        )}. Missing quote data`;
-        this.logger.warn(message);
-        throw new RfqError(message, 'MISSING_QUOTE_DATA');
-      } else if (!rfq.quotes[0].signature) {
-        const message = `${this.dexKey}-${
-          this.network
-        }: Failed to fetch RFQ for ${this.getPairName(
-          _srcTokenAddress,
-          _destTokenAddress,
-        )}. Missing signature`;
-        this.logger.warn(message);
-        throw new RfqError(message, 'MISSING_SIGNATURE_DATA');
+        throw new RfqError(
+          `Failed to fetch RFQ for ${this.getPairName(
+            _srcTokenAddress,
+            _destTokenAddress,
+          )}: ${JSON.stringify(rfq)}`,
+          `${rfq?.error?.code}` as ErrorCode,
+        );
+      }
+
+      if (!rfq.quotes[0].quoteData) {
+        throw new RfqError(
+          `Failed to fetch RFQ for ${this.getPairName(
+            _srcTokenAddress,
+            _destTokenAddress,
+          )}. Missing quote data`,
+          'MISSING_QUOTE_DATA',
+        );
+      }
+
+      if (!rfq.quotes[0].signature) {
+        throw new RfqError(
+          `Failed to fetch RFQ for ${this.getPairName(
+            _srcTokenAddress,
+            _destTokenAddress,
+          )}. Missing signature`,
+          'MISSING_SIGNATURE_DATA',
+        );
       }
 
       assert(
@@ -628,68 +632,64 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
 
       const slippageFactor = options.slippageFactor;
 
-      let isFailOnSlippage = false;
-      let slippageErrorMessage = '';
-
       if (side === SwapSide.SELL) {
-        if (
-          quoteTokenAmount <
-          BigInt(
-            new BigNumber(destAmount.toString())
-              .times(slippageFactor)
-              .toFixed(0),
-          )
-        ) {
-          isFailOnSlippage = true;
-          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
-          slippageErrorMessage = message;
-          this.logger.warn(message);
+        const requiredAmountWithSlippage = new BigNumber(destAmount.toString())
+          .multipliedBy(slippageFactor)
+          .toFixed(0);
+
+        if (quoteTokenAmount < BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(quoteTokenAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = new BigNumber(1)
+            .minus(quoted.div(expected))
+            .multipliedBy(100)
+            .toFixed(10);
+
+          const errorMsg = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
+
+          if (
+            new BigNumber(1)
+              .minus(slippageFactor)
+              .lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+          ) {
+            throw new TooStrictSlippageCheckError(errorMsg);
+          }
+
+          throw new SlippageCheckError(errorMsg);
         }
       } else {
         if (quoteTokenAmount < destAmount) {
-          isFailOnSlippage = true;
-          // Won't receive enough assets
-          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side}  quoteTokenAmount ${quoteTokenAmount} < destAmount ${destAmount}`;
-          slippageErrorMessage = message;
-          this.logger.warn(message);
-        } else {
-          if (
-            baseTokenAmount >
-            BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
-          ) {
-            isFailOnSlippage = true;
-            const message = `${this.dexKey}-${
-              this.network
-            }: too much slippage on quote ${side} baseTokenAmount ${baseTokenAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
-            slippageErrorMessage = message;
-            this.logger.warn(message);
-          }
+          const errorMsg = `Slipped, insufficient output: ${quoteTokenAmount.toString()} < ${destAmount.toString()}`;
+          throw new SlippageCheckError(errorMsg);
         }
-      }
 
-      let isTooStrictSlippage = false;
-      if (
-        isFailOnSlippage &&
-        side === SwapSide.SELL &&
-        new BigNumber(1)
-          .minus(slippageFactor)
-          .lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
-      } else if (
-        isFailOnSlippage &&
-        side === SwapSide.BUY &&
-        slippageFactor
-          .minus(1)
-          .lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
-      }
+        const requiredAmountWithSlippage = new BigNumber(srcAmount.toString())
+          .multipliedBy(slippageFactor)
+          .toFixed(0);
 
-      if (isFailOnSlippage && isTooStrictSlippage) {
-        throw new TooStrictSlippageCheckError(slippageErrorMessage);
-      } else if (isFailOnSlippage && !isTooStrictSlippage) {
-        throw new SlippageCheckError(slippageErrorMessage);
+        if (baseTokenAmount > BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(baseTokenAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = quoted
+            .div(expected)
+            .minus(1)
+            .multipliedBy(100)
+            .toFixed(10);
+
+          const errorMsg = `Slipped, factor: ${baseTokenAmount.toString()} > ${requiredAmountWithSlippage} (percentage: ${slippedPercentage}%)`;
+
+          if (
+            slippageFactor
+              .minus(1)
+              .lt(HASHFLOW_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+          ) {
+            throw new TooStrictSlippageCheckError(errorMsg);
+          }
+
+          throw new SlippageCheckError(errorMsg);
+        }
       }
 
       return [
@@ -704,31 +704,33 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
         { deadline: minDeadline },
       ];
     } catch (e) {
+      const prefix = `${this.dexKey}-${this.network}${
+        quoteId ? ` quoteId=${quoteId}` : ''
+      }`;
+
       if (
         e instanceof Error &&
         e.message?.toLowerCase().includes('user is restricted')
       ) {
         this.logger.warn(
-          `${this.dexKey}-${this.network}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
+          `${prefix}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
         );
         await this.setBlacklist(options.userAddress);
+      } else if (e instanceof TooStrictSlippageCheckError) {
+        this.logger.warn(
+          `${prefix}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction ${e}`,
+        );
       } else {
-        if (e instanceof TooStrictSlippageCheckError) {
-          this.logger.warn(
-            `${this.dexKey}-${this.network}: Market Maker ${mm} failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
-          );
-        } else {
-          this.logger.warn(
-            `${this.dexKey}-${this.network} MM unknown preprocess transaction error: ${e}`,
-          );
-          const code =
-            e instanceof RfqError || e instanceof SlippageCheckError
-              ? e?.code || UNKNOWN_ERROR_CODE
-              : UNKNOWN_ERROR_CODE;
-          await this.restrictMM(mm, code).catch(err =>
-            this.logger.warn(`Failed to restrict MM ${mm}: ${err}`),
-          );
-        }
+        this.logger.warn(`${prefix}: MM preprocess error ${e}`);
+
+        const code =
+          e instanceof RfqError || e instanceof SlippageCheckError
+            ? e.code || UNKNOWN_ERROR_CODE
+            : UNKNOWN_ERROR_CODE;
+
+        await this.restrictMM(mm, code).catch(err =>
+          this.logger.warn(`${prefix}: Failed to restrict MM ${mm}: ${err}`),
+        );
       }
 
       throw e;
