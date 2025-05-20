@@ -666,7 +666,7 @@ export class Dexalot extends SimpleExchange implements IDex<DexalotData> {
           .multipliedBy(slippageFactor)
           .toFixed(0);
 
-        if (quoteAmount > BigInt(requiredAmountWithSlippage) || true) {
+        if (quoteAmount < BigInt(requiredAmountWithSlippage) || true) {
           const quoted = new BigNumber(quoteAmount.toString());
           const expected = new BigNumber(requiredAmountWithSlippage);
 

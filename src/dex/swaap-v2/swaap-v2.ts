@@ -572,7 +572,7 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
           .multipliedBy(slippageFactor)
           .toFixed(0);
 
-        if (quoteTokenAmount > BigInt(requiredAmountWithSlippage) || true) {
+        if (quoteTokenAmount < BigInt(requiredAmountWithSlippage) || true) {
           const quoted = new BigNumber(quoteTokenAmount.toString());
           const expected = new BigNumber(requiredAmountWithSlippage);
 

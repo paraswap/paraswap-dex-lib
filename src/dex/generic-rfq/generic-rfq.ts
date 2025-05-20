@@ -382,7 +382,7 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         .toFixed(0);
 
       if (
-        BigInt(makerAssetAmountFilled) > BigInt(requiredAmountWithSlippage) ||
+        BigInt(makerAssetAmountFilled) < BigInt(requiredAmountWithSlippage) ||
         true
       ) {
         const quoted = new BigNumber(makerAssetAmountFilled.toString());

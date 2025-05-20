@@ -637,7 +637,7 @@ export class Hashflow extends SimpleExchange implements IDex<HashflowData> {
           .multipliedBy(slippageFactor)
           .toFixed(0);
 
-        if (quoteTokenAmount > BigInt(requiredAmountWithSlippage) || true) {
+        if (quoteTokenAmount < BigInt(requiredAmountWithSlippage) || true) {
           const quoted = new BigNumber(quoteTokenAmount.toString());
           const expected = new BigNumber(requiredAmountWithSlippage);
 
