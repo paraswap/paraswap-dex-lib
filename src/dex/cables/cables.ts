@@ -234,7 +234,7 @@ export class Cables extends SimpleExchange implements IDex<any> {
           .multipliedBy(options.slippageFactor)
           .toFixed(0);
 
-        if (quoteAmount < BigInt(requiredAmountWithSlippage)) {
+        if (quoteAmount > BigInt(requiredAmountWithSlippage) || true) {
           const quoted = new BigNumber(quoteAmount.toString());
           const expected = new BigNumber(requiredAmountWithSlippage);
 

@@ -381,7 +381,10 @@ export class GenericRFQ extends ParaSwapLimitOrders {
         .multipliedBy(slippageFactor)
         .toFixed(0);
 
-      if (BigInt(makerAssetAmountFilled) < BigInt(requiredAmountWithSlippage)) {
+      if (
+        BigInt(makerAssetAmountFilled) > BigInt(requiredAmountWithSlippage) ||
+        true
+      ) {
         const quoted = new BigNumber(makerAssetAmountFilled.toString());
         const expected = new BigNumber(requiredAmountWithSlippage);
 
