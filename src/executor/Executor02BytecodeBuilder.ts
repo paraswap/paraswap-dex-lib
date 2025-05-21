@@ -391,9 +391,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (
       doesAnyDexOnSwapNeedsWrapNative &&
       isETHAddress(srcTokenAddress) &&
-      !wrapWasAddedInSwapExchange &&
-      // prevent using srcTokenPos in the end of the horizontal path
-      exchangeParamIndex !== NOT_EXISTING_EXCHANGE_PARAM_INDEX
+      !wrapWasAddedInSwapExchange
     ) {
       srcTokenAddress =
         exchangeParamIndex > -1
@@ -1221,7 +1219,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         route.percent,
         route.swaps[0],
         NOT_EXISTING_EXCHANGE_PARAM_INDEX,
-        Object.values(addedWrapToSwapMap).includes(true),
+        Object.values(addedWrapToSwapMap).includes(true) ||
+          Object.values(appendedWrapToSwapExchangeMap).includes(true),
       );
     }
 
