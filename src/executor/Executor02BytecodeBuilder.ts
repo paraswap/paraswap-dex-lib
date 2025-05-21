@@ -1219,7 +1219,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         route.percent,
         route.swaps[0],
         NOT_EXISTING_EXCHANGE_PARAM_INDEX,
-        Object.values(addedWrapToSwapMap).includes(true),
+        Object.values(addedWrapToSwapMap).includes(true) ||
+          Object.values(appendedWrapToSwapExchangeMap).includes(true),
       );
     }
 
