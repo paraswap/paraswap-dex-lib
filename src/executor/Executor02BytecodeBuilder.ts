@@ -391,7 +391,9 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (
       doesAnyDexOnSwapNeedsWrapNative &&
       isETHAddress(srcTokenAddress) &&
-      !wrapWasAddedInSwapExchange
+      !wrapWasAddedInSwapExchange &&
+      // prevent using srcTokenPos in the end of the horizontal path
+      exchangeParamIndex !== NOT_EXISTING_EXCHANGE_PARAM_INDEX
     ) {
       srcTokenAddress =
         exchangeParamIndex > -1
