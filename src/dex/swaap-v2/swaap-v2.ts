@@ -514,10 +514,12 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
     const normalizedDestToken = this.normalizeToken(destToken);
 
     const tolerance = (
-      options.slippageFactor > BN_1
+      options.slippageFactor.gt(BN_1)
         ? options.slippageFactor.minus(BN_1)
         : BN_1.minus(options.slippageFactor)
     ).toNumber();
+
+    let quoteId: string | undefined;
 
     try {
       const quote = await this.rateFetcher.getQuote(
@@ -533,33 +535,31 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         this.getQuoteReqParams(),
       );
 
+      quoteId = quote.id;
+
       if (!quote.success) {
-        const message = `${this.dexKey}-${
-          this.network
-        }: Failed to fetch RFQ for ${getPairName(
-          normalizedSrcToken.address,
-          normalizedDestToken.address,
-        )}: ${JSON.stringify(quote)}`;
-        this.logger.warn(message);
-        throw new SwaapV2QuoteError(message);
-      } else if (!quote.calldata) {
-        const message = `${this.dexKey}-${
-          this.network
-        }: Failed to fetch RFQ for ${getPairName(
-          normalizedSrcToken.address,
-          normalizedDestToken.address,
-        )}. Missing quote data`;
-        this.logger.warn(message);
-        throw new SwaapV2QuoteError(message);
-      } else if (!quote.router) {
-        const message = `${this.dexKey}-${
-          this.network
-        }: Failed to fetch RFQ for ${getPairName(
-          normalizedSrcToken.address,
-          normalizedDestToken.address,
-        )}. Missing router address`;
-        this.logger.warn(message);
-        throw new SwaapV2QuoteError(message);
+        throw new SwaapV2QuoteError(
+          `Failed to fetch RFQ for ${getPairName(
+            normalizedSrcToken.address,
+            normalizedDestToken.address,
+          )}: ${JSON.stringify(quote)}`,
+        );
+      }
+      if (!quote.calldata) {
+        throw new SwaapV2QuoteError(
+          `Failed to fetch RFQ for ${getPairName(
+            normalizedSrcToken.address,
+            normalizedDestToken.address,
+          )}. Missing quote data`,
+        );
+      }
+      if (!quote.router) {
+        throw new SwaapV2QuoteError(
+          `Failed to fetch RFQ for ${getPairName(
+            normalizedSrcToken.address,
+            normalizedDestToken.address,
+          )}. Missing router address`,
+        );
       }
 
       const srcAmount = BigInt(optimalSwapExchange.srcAmount);
@@ -567,60 +567,59 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
       const quoteTokenAmount = BigInt(quote.amount);
       const slippageFactor = options.slippageFactor;
 
-      let isFailOnSlippage = false;
-      let slippageErrorMessage = '';
-
       if (side === SwapSide.SELL) {
-        if (
-          quoteTokenAmount <
-          BigInt(
-            new BigNumber(destAmount.toString())
-              .times(slippageFactor)
-              .toFixed(0),
-          )
-        ) {
-          isFailOnSlippage = true;
-          const message = `${this.dexKey}-${this.network}: too much slippage on quote ${side} quoteTokenAmount ${quoteTokenAmount} / destAmount ${destAmount} < ${slippageFactor}`;
-          slippageErrorMessage = message;
-          this.logger.warn(message);
+        const requiredAmountWithSlippage = new BigNumber(destAmount.toString())
+          .multipliedBy(slippageFactor)
+          .toFixed(0);
+
+        if (quoteTokenAmount < BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(quoteTokenAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = new BigNumber(1)
+            .minus(quoted.div(expected))
+            .multipliedBy(100)
+            .toFixed(10);
+
+          const errorMsg = `Slipped, factor: ${quoteTokenAmount.toString()} < ${requiredAmountWithSlippage} (${slippedPercentage}%)`;
+
+          if (
+            new BigNumber(1)
+              .minus(slippageFactor)
+              .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+          ) {
+            throw new TooStrictSlippageCheckError(errorMsg);
+          }
+
+          throw new SlippageCheckError(errorMsg);
         }
       } else {
-        if (
-          quoteTokenAmount >
-          BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
-        ) {
-          isFailOnSlippage = true;
-          const message = `${this.dexKey}-${
-            this.network
-          }: too much slippage on quote ${side} baseTokenAmount ${srcAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
-          slippageErrorMessage = message;
-          this.logger.warn(message);
+        const requiredAmountWithSlippage = new BigNumber(srcAmount.toString())
+          .multipliedBy(slippageFactor)
+          .toFixed(0);
+
+        if (quoteTokenAmount > BigInt(requiredAmountWithSlippage)) {
+          const quoted = new BigNumber(quoteTokenAmount.toString());
+          const expected = new BigNumber(requiredAmountWithSlippage);
+
+          const slippedPercentage = quoted
+            .div(expected)
+            .minus(1)
+            .multipliedBy(100)
+            .toFixed(10);
+
+          const errorMsg = `Slipped, factor: ${quoteTokenAmount.toString()} > ${requiredAmountWithSlippage} (${slippedPercentage}%)`;
+
+          if (
+            slippageFactor
+              .minus(1)
+              .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
+          ) {
+            throw new TooStrictSlippageCheckError(errorMsg);
+          }
+
+          throw new SlippageCheckError(errorMsg);
         }
-      }
-
-      let isTooStrictSlippage = false;
-      if (
-        isFailOnSlippage &&
-        side === SwapSide.SELL &&
-        new BigNumber(1)
-          .minus(slippageFactor)
-          .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
-      } else if (
-        isFailOnSlippage &&
-        side === SwapSide.BUY &&
-        slippageFactor
-          .minus(1)
-          .lt(SWAAP_MIN_SLIPPAGE_FACTOR_THRESHOLD_FOR_RESTRICTION)
-      ) {
-        isTooStrictSlippage = true;
-      }
-
-      if (isFailOnSlippage && isTooStrictSlippage) {
-        throw new TooStrictSlippageCheckError(slippageErrorMessage);
-      } else if (isFailOnSlippage && !isTooStrictSlippage) {
-        throw new SlippageCheckError(slippageErrorMessage);
       }
 
       const expiryAsBigInt = BigInt(quote.expiration);
@@ -637,36 +636,39 @@ export class SwaapV2 extends SimpleExchange implements IDex<SwaapV2Data> {
         { deadline: minDeadline },
       ];
     } catch (e) {
-      if (isAxiosError(e) && e.response?.status === 403) {
-        await this.setBlacklist(options.userAddress, SWAAP_403_TTL_S);
+      const prefix = `${this.dexKey}-${this.network}${
+        quoteId ? ` quoteId=${quoteId}` : ''
+      }`;
+
+      if (isAxiosError(e)) {
+        if (e.response?.status === 403) {
+          await this.setBlacklist(options.userAddress, SWAAP_403_TTL_S);
+          this.logger.warn(
+            `${prefix}: Encountered blacklisted user=${options.userAddress}. Adding to local blacklist cache`,
+          );
+        }
+
+        if (e.response?.status === 429) {
+          await this.setBlacklist(options.userAddress, SWAAP_429_TTL_S);
+          this.logger.warn(
+            `${prefix}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
+          );
+        }
+      } else if (e instanceof TooStrictSlippageCheckError) {
         this.logger.warn(
-          `${this.dexKey}-${this.network}: Encountered blacklisted user=${options.userAddress}. Adding to local blacklist cache`,
-        );
-      } else if (isAxiosError(e) && e.response?.status === 429) {
-        await this.setBlacklist(options.userAddress, SWAAP_429_TTL_S);
-        this.logger.warn(
-          `${this.dexKey}-${this.network}: Encountered restricted user=${options.userAddress}. Adding to local blacklist cache`,
+          `${prefix}: Too strict slippage, skipping restriction ${e}`,
         );
       } else {
-        if (e instanceof TooStrictSlippageCheckError) {
-          this.logger.warn(
-            `${this.dexKey}-${this.network}: failed to build transaction on side ${side} with too strict slippage. Skipping restriction`,
-          );
-        } else {
-          this.logger.warn(
-            `${this.dexKey}-${this.network}: protocol is restricted`,
-          );
-          const poolIdentifier = getPoolIdentifier(
-            this.dexKey,
-            normalizedSrcToken.address,
-            normalizedDestToken.address,
-          );
-          var message = 'Unknown error';
-          if (e instanceof Error) {
-            message = `${e.name}: ${e.message}`;
-          }
-          await this.restrictPool(message, poolIdentifier);
-        }
+        const message =
+          e instanceof Error ? `${e.name}: ${e.message}` : 'Unknown error';
+        this.logger.warn(`${prefix}: Protocol is restricted ${e}`);
+
+        const poolIdentifier = getPoolIdentifier(
+          this.dexKey,
+          normalizedSrcToken.address,
+          normalizedDestToken.address,
+        );
+        await this.restrictPool(message, poolIdentifier);
       }
 
       throw e;

@@ -377,33 +377,47 @@ export class GenericRFQ extends ParaSwapLimitOrders {
           ? (makerAssetAmount * srcAmount) / takerAssetAmount
           : makerAssetAmount;
 
-      if (
-        makerAssetAmountFilled <
-        BigInt(
-          new BigNumber(destAmount.toString()).times(slippageFactor).toFixed(0),
-        )
-      ) {
-        const message = `${this.dexKey}: too much slippage on quote ${side} makerAssetAmountFilled ${makerAssetAmountFilled} / destAmount ${destAmount} < ${slippageFactor}`;
-        this.logger.warn(message);
+      const requiredAmountWithSlippage = new BigNumber(destAmount.toString())
+        .multipliedBy(slippageFactor)
+        .toFixed(0);
+
+      if (BigInt(makerAssetAmountFilled) < BigInt(requiredAmountWithSlippage)) {
+        const quoted = new BigNumber(makerAssetAmountFilled.toString());
+        const expected = new BigNumber(requiredAmountWithSlippage);
+
+        const slippedPercentage = new BigNumber(1)
+          .minus(quoted.div(expected))
+          .multipliedBy(100)
+          .toFixed(10);
+
+        const message = `Slipped, factor: ${makerAssetAmountFilled.toString()} < ${requiredAmountWithSlippage} (${slippedPercentage}%)`;
+        this.logger.warn(`${this.dexKey}: ${message}`);
         throw new SlippageCheckError(message);
       }
     } else {
       if (makerAssetAmount < destAmount) {
-        // Won't receive enough assets
-        const message = `${this.dexKey}: too much slippage on quote ${side}  makerAssetAmount ${makerAssetAmount} < destAmount ${destAmount}`;
-        this.logger.warn(message);
+        const message = `Slipped, insufficient output: ${makerAssetAmount.toString()} < ${destAmount.toString()}`;
+        this.logger.warn(`${this.dexKey}: ${message}`);
         throw new SlippageCheckError(message);
-      } else {
-        if (
-          takerAssetAmount >
-          BigInt(slippageFactor.times(srcAmount.toString()).toFixed(0))
-        ) {
-          const message = `${
-            this.dexKey
-          }: too much slippage on quote ${side} takerAssetAmount ${takerAssetAmount} / srcAmount ${srcAmount} > ${slippageFactor.toFixed()}`;
-          this.logger.warn(message);
-          throw new SlippageCheckError(message);
-        }
+      }
+
+      const requiredAmountWithSlippage = new BigNumber(srcAmount.toString())
+        .multipliedBy(slippageFactor)
+        .toFixed(0);
+
+      if (takerAssetAmount > BigInt(requiredAmountWithSlippage)) {
+        const quoted = new BigNumber(takerAssetAmount.toString());
+        const expected = new BigNumber(requiredAmountWithSlippage);
+
+        const slippedPercentage = quoted
+          .div(expected)
+          .minus(1)
+          .multipliedBy(100)
+          .toFixed(10);
+
+        const message = `Slipped, factor: ${takerAssetAmount.toString()} > ${requiredAmountWithSlippage} (${slippedPercentage}%)`;
+        this.logger.warn(`${this.dexKey}: ${message}`);
+        throw new SlippageCheckError(message);
       }
     }
 
