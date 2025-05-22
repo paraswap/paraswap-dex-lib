@@ -804,7 +804,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (
       !exchangeParams[exchangeParamIndex].dexFuncHasRecipient &&
       isETHAddress(swap.destToken) &&
-      isLast &&
+      isLastSwap &&
       // don't need to send eth without unwrapping, handling unwrap and sendEth in the end of root branch
       !this.doesRouteNeedsRootUnwrapEth(priceRoute, exchangeParams)
     ) {
