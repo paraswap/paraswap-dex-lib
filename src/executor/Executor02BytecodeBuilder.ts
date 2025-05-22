@@ -169,6 +169,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     const isHorizontalSequence = route.swaps.length > 1; // check if route is a multi-swap (horizontal sequence)
     const isFirstSwap = swapIndex === 0;
     const isLastSwap = !isFirstSwap && swapIndex === route.swaps.length - 1;
+    const isLastInSwap = swapExchangeIndex === swap.swapExchanges.length - 1;
 
     const {
       dexFuncHasRecipient,
@@ -194,15 +195,16 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       swappedAmountNotPresentInExchangeData ||
       (isSpecialDex && !specialDexSupportsInsertFromAmount);
 
+    const needUnwrap =
+      needWrapNative && isEthDest && maybeWethCallData?.withdraw;
+
     const forceBalanceOfCheck =
       (isSpecialDex &&
         isHorizontalSequence &&
         !applyVerticalBranching &&
         !isLastSwap) ||
-      !dexFuncHasRecipient;
-
-    const needUnwrap =
-      needWrapNative && isEthDest && maybeWethCallData?.withdraw;
+      !dexFuncHasRecipient ||
+      (isLastInSwap && needUnwrap);
 
     const needSendEth = isEthSrc && !needWrapNative;
     const needCheckEthBalance = isEthDest && !needWrapNative;
@@ -757,17 +759,17 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
       !curExchangeParam.needWrapNative
     ) {
       const prevSwap = priceRoute.bestRoute[routeIndex].swaps[swapIndex - 1];
-      let eachDexOnPrevSwapReturnsWeth: boolean = false;
+      let anyDexOnPrevSwapReturnsWeth: boolean = false;
 
       if (prevSwap && !prevBranchWasWrapped) {
-        eachDexOnPrevSwapReturnsWeth = this.eachDexOnSwapNeedsWrapNative(
+        anyDexOnPrevSwapReturnsWeth = this.anyDexOnSwapNeedsWrapNative(
           priceRoute,
           prevSwap,
           exchangeParams,
         );
       }
 
-      if (prevBranchWasWrapped || eachDexOnPrevSwapReturnsWeth) {
+      if (prevBranchWasWrapped || anyDexOnPrevSwapReturnsWeth) {
         const withdrawCallData = this.buildUnwrapEthCallData(
           this.getWETHAddress(curExchangeParam),
           maybeWethCallData.withdraw.calldata,
