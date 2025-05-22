@@ -415,6 +415,30 @@ describe('BalancerV3 E2E', () => {
       );
     });
 
+    describe('FAILED_CASE_3', () => {
+      // price route - http://jsonblob.com/1366395544909570048
+      // failed simulation - https://dashboard.tenderly.co/explorer/vnet/dd4e8b66-e7fc-4c78-91d2-437f96796c83/tx/0x98640401b2fe7e54bc91c3160381f3a632a42a32d19b9de6ca50035f21318c94
+      // pool used = 0xaf5b7999f491c42c05b5a2ca80f1d200d617cc8c
+      const tokenASymbol: string = 'WETH';
+      const tokenBSymbol: string = 'USDC';
+
+      const tokenAAmount: string = '3000000000000000';
+      const tokenBAmount: string = '100000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+        ['0xaf5b7999f491c42c05b5a2ca80f1d200d617cc8c'],
+      );
+    });
+
     describe('Stable Path', () => {
       const tokenASymbol: string = 'wstETH';
       const tokenBSymbol: string = 'WETH';
