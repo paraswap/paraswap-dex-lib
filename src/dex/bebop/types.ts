@@ -70,6 +70,7 @@ export type BebopData = {
   sellTokens?: { [address: string]: BebopTokenAmount };
   tx?: BebopTx;
   error?: BebopError;
+  quoteId?: string;
 };
 
 export type DexParams = {

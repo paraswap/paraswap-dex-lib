@@ -1265,6 +1265,10 @@ export const Tokens: {
       address: '0xba5ddd1f9d7f570dc94a51479a000e3bce967196',
       decimals: 18,
     },
+    ZRO: {
+      address: '0x6985884c4392d348587b19cb9eaaf157f13271cd',
+      decimals: 18,
+    },
     MIM: {
       address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A',
       decimals: 18,

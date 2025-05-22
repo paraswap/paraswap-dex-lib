@@ -300,6 +300,20 @@ describe('UniswapV2 E2E Avalanche', () => {
     );
   });
 
+  describe('ArenaDexV2', () => {
+    const dexKey = 'ArenaDexV2';
+
+    testForNetwork(
+      network,
+      dexKey,
+      'ARENA',
+      'WAVAX',
+      '10000000',
+      '10000000',
+      '10000000',
+    );
+  });
+
   describe('TraderJoe', () => {
     const dexKey = 'TraderJoe';
     describe('TraderJoe: Fail: (Joe: K)', () => {

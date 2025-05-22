@@ -38,6 +38,7 @@ export type PoolState = {
   ticks: Record<NumberAsString, TickInfo>;
   positions: Record<string, PositionState>;
   tickBitmap: Record<NumberAsString, bigint>;
+  isValid: boolean;
 };
 
 export type FeeGrowthGlobals = {
@@ -57,9 +58,12 @@ export type PoolPairsInfo = {
 };
 
 export type UniswapV4Data = {
-  exchange: Address;
-  zeroForOne: boolean;
-  pool: Pool;
+  path: {
+    tokenIn: Address;
+    tokenOut: Address;
+    zeroForOne: boolean;
+    pool: Pool;
+  }[];
 };
 
 export type Pool = {

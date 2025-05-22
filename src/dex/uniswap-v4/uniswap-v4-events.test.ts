@@ -587,6 +587,100 @@ describe('UniswapV4 events', () => {
       });
     });
   });
+
+  describe('Polygon', () => {
+    const network = Network.POLYGON;
+    const config = UniswapV4Config[dexKey][network];
+
+    describe('UniswapV4Pool USDCe / USDCn (0x357c3b5c70c1ed81cb269796710ba24ab80cbf63ee0f8a21895410918bcc922b)', () => {
+      const blockNumbers: { [eventName: string]: number[] } = {
+        // ['Donate']: // Donate event was never triggered
+        // ['ProtocolFeeUpdated']: // Donate event was never triggered
+        ['ModifyLiquidity']: [
+          71507938, // https://polygonscan.com/tx/0xb1603c3a3517c88c50cd8fd4a5ab96d24d4fc40898e661d4d9e4397d7f5313da
+          71508006, // https://polygonscan.com/tx/0x2fbff86aceddfa578961d702461e564e88c619407f88a0dbf3c32e34a8514240
+          71508016, // https://polygonscan.com/tx/0x8110df1620a4a989d7389c1f689c9fb7c411eb622ac8d4e111c660cf7746b5f8
+          71512473, // https://polygonscan.com/tx/0x80da9118671533f8a1120cd534d99b452501dc760dcd097a82ea087cf6a28986
+        ],
+        ['Swap']: [
+          71507940, // https://polygonscan.com/tx/0xb2e98c2fd8c6e553d9a1de6b486e0b5bfa0b7bec7105ed8ca03d2b3dea77fa3c
+          71507947, // https://polygonscan.com/tx/0x95d3878c5af2bbe4384747e4b572fdb8ebce1c738014c63e1483adcefbbd9a6a
+          71507956, // https://polygonscan.com/tx/0xe9d7d7cbf0ec2879ba589de03341c1061decdcf39ceb9e6ba819cc28ab23c41a
+          71507956, // https://polygonscan.com/tx/0xe9d7d7cbf0ec2879ba589de03341c1061decdcf39ceb9e6ba819cc28ab23c41a
+          71507962, // https://polygonscan.com/tx/0x6898f1116d5738a2d69ca271cd7966813485c9d5c03e18490ec2a78629ec94b0
+          71508034, // https://polygonscan.com/tx/0xd1feefa4d3ebf8dee3f9c64c582aec83f5ef2278fc0baa72d6ab959fa47551e4
+          71508056, // https://polygonscan.com/tx/0x7d631f12ed3d9f98b0eefe4efe358f2a5bb3b9e997b7c0097286e93712976c37
+          71508064, // https://polygonscan.com/tx/0x38989dd4270c1ef8f6c2fcd264f21260269d029a73afa365b4bcc8e4e87eb13b
+          71508153, // https://polygonscan.com/tx/0x305d20f9cfcda129194835daef4041d08997226ec9ef53d258e68623feba9f34
+          71508209, // https://polygonscan.com/tx/0x8b97afa85e7aa19a900bb839d4e39b18138db71534ef4725c06a701d7f4744d9
+          71508237, // https://polygonscan.com/tx/0xbbf03c928f9ce3bfb81bbde6c662c988cd34043adea17429bbd6d3d712375a0f
+          71508303, // https://polygonscan.com/tx/0x1897bacebe3b4a8e04c09a8ecc8ffb7e0c76eb8f728f3a8f9025f7422bacb98c
+          71508350, // https://polygonscan.com/tx/0x0fe898b669e1f4ff6524a82392bb476f6f1877ac2d6e46080cd799ad3f303f49
+          71508351, // https://polygonscan.com/tx/0x1c7d94d72539527318c7a3c6899904b62030a867701ea2f589414acd814d1665
+          71508374, // https://polygonscan.com/tx/0xbf7c73a3fd8b1a64f026b04057bb636bec914f3918ee051769a0c0f2ce229a2a
+          71508384, // https://polygonscan.com/tx/0xdb12b2b6a32a56d5b9117d857b42da2583822292688f5cfcdbbb680b560c830c
+          71508494, // https://polygonscan.com/tx/0xcea6cd10a9d2457fe83f6a0fba7e3595c2e4c791bdedd22b0f5f1fcd12ab4044
+          71508521, // https://polygonscan.com/tx/0x3c8c3cfd7ce760a26cc074178312a1e836f0a2caf21991b623942bc5c276e402
+          71508526, // https://polygonscan.com/tx/0x3734b906f3c2ff0d183c070744d1f6e5278f0467f5d032aabf9e24a29c93181c
+          71508583, // https://polygonscan.com/tx/0x8a146af6d2e3592e14d4c50f03af82d4d407cadad8279d765fba8b786e0f418e
+          71508611, // https://polygonscan.com/tx/0x53575b977e3f40c8e654d055070e0b0646a9542769e01683520c6af00a7b6669
+          71508619, // https://polygonscan.com/tx/0x5ce137e57fa9c48555a61d20d6213bf07219c1ad068cc7554b3ec1af72ed5c96
+          71508703, // https://polygonscan.com/tx/0x86343df3bc58ac1ce3b9d8a3ffd1b7a0d6f6fe88bdfc564371dee8512c31173b
+          71508730, // https://polygonscan.com/tx/0x763cd97ebabca6a4f616071e25c6b30eff3a0d15dc9238062799cc1fbfc9b92f
+          71508753, // https://polygonscan.com/tx/0x51872bd373dd2ab30e66667354495df6e9998a581bea501917d7961a626deba2
+          71508760, // https://polygonscan.com/tx/0x193ee5aefa3e0621aa18ed63a8bfeacb9eb9df4e222b33d62eeb01653b8d65e8
+          71508776, // https://polygonscan.com/tx/0x5181d5f6d62d41a36537e5c2b58bae75780df8b65ada824b5194724daa745c92
+          71508861, // https://polygonscan.com/tx/0xa7ff01fcd1923ff2e333563fef9963a4cc17507f3074a563e5dd5faf501a22c9
+          71508874, // https://polygonscan.com/tx/0x39582a5fba4b166f6471fcbae5a29b74b35ac1bf6c5af2912e5c15f93d761e69
+          71508938, // https://polygonscan.com/tx/0x8f56ad7568e15ce3baee81dd5508dcc77efa0d49dc703076ee6e72cf26320f08
+          71509046, // https://polygonscan.com/tx/0x6950b448b6afaabae553275eaf5c8b67fc1a0477af7c4c7e4c03019cd6015484
+        ],
+      };
+
+      Object.keys(blockNumbers).forEach((event: string) => {
+        blockNumbers[event].forEach((blockNumber: number) => {
+          it(`${event}:${blockNumber} - should return correct state`, async function () {
+            const dexHelper = new DummyDexHelper(network);
+
+            const logger = dexHelper.getLogger(dexKey);
+
+            const uniswapV4Pool = new UniswapV4Pool(
+              dexHelper,
+              dexKey,
+              network,
+              config,
+              logger,
+              '',
+              '0x357c3b5c70c1ed81cb269796710ba24ab80cbf63ee0f8a21895410918bcc922b', // initial params from Initialize event https://arbiscan.io/tx/0x6326a3e2c882b8d89d38fcf26f701a0e0ac29dc2f5f1dbe67fee4c42d69ff310#eventlog
+              '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+              '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359',
+              '55',
+              '0x0000000000000000000000000000000000000000',
+              79228162514264337593543950336n,
+              '0',
+              '1',
+            );
+
+            await uniswapV4Pool.initialize(blockNumber);
+
+            await testEventSubscriber(
+              uniswapV4Pool,
+              uniswapV4Pool.addressesSubscribed,
+              (_blockNumber: number) =>
+                fetchPoolStateFromContract(
+                  uniswapV4Pool,
+                  _blockNumber,
+                  config.poolManager,
+                ),
+              blockNumber,
+              `${dexKey}_${config.poolManager}`,
+              dexHelper.provider,
+            );
+          });
+        });
+      });
+    });
+  });
 });
 
 // describe('UniswapV4PoolManager', () => {

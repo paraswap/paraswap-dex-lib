@@ -346,6 +346,15 @@ export const UniswapV2Config: DexConfigMap<DexParams> = {
       feeCode: 30,
     },
   },
+  ArenaDexV2: {
+    [Network.AVALANCHE]: {
+      factoryAddress: '0xF16784dcAf838a3e16bEF7711a62D12413c39BD1',
+      initCode:
+        '0xe5982ea9aa099c260fbe1f626ddf304ecab74f9d85fb8c5277156486875ab7fe',
+      poolGasCost: 120 * 1000,
+      feeCode: 30,
+    },
+  },
   PancakeSwap: {
     [Network.BSC]: {
       factoryAddress: '0xBCfCcbde45cE874adCB698cC183deBcF17952812',

@@ -1,27 +1,26 @@
-import { UnoptimizedRate } from '../../types';
-import { OptimalSwap } from '@paraswap/core';
+import { UnoptimizedRate, OptimalSwap } from '../../types';
 import _ from 'lodash';
-import { CurveV1FactoryConfig } from './config';
-import { CurveV1StableNgConfig } from '../curve-v1-stable-ng/config';
+import { UniswapV4Config } from './config';
 
-// We support multihop for CurveV1Factory and CurveV1StableNg pools but not for CurveV1 pools
-const CurveV1FactoryForks = Object.keys(CurveV1FactoryConfig)
-  .concat(Object.keys(CurveV1StableNgConfig))
-  .map(dexName => dexName.toLowerCase());
+const UniswapV4AndForks = Object.keys(UniswapV4Config).map(dexKey =>
+  dexKey.toLowerCase(),
+);
 
-export function curveV1Merge(or: UnoptimizedRate): UnoptimizedRate {
+export function uniswapV4Merge(or: UnoptimizedRate): UnoptimizedRate {
   const fixRoute = (rawRate: OptimalSwap[]): OptimalSwap[] => {
     let lastExchange: false | OptimalSwap = false;
     let optimizedRate = new Array<OptimalSwap>();
     rawRate.forEach((s: OptimalSwap) => {
       if (
         s.swapExchanges.length !== 1 ||
-        !CurveV1FactoryForks.includes(s.swapExchanges[0].exchange.toLowerCase())
+        !UniswapV4AndForks.includes(s.swapExchanges[0].exchange.toLowerCase())
       ) {
         lastExchange = false;
         optimizedRate.push(s);
       } else if (
         lastExchange &&
+        lastExchange.swapExchanges[0].exchange.toLowerCase() ===
+          s.swapExchanges[0].exchange.toLowerCase() &&
         _.last(
           <any[]>lastExchange.swapExchanges[0].data.path,
         )!.tokenOut.toLowerCase() ===
@@ -52,6 +51,5 @@ export function curveV1Merge(or: UnoptimizedRate): UnoptimizedRate {
     ...r,
     swaps: fixRoute(r.swaps),
   }));
-
   return or;
 }
