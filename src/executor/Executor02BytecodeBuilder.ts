@@ -715,8 +715,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         let withdrawCallData = '0x';
 
         const customWethAddress = curExchangeParam.wethAddress;
-        const isLastSimpleWithUnwrap =
-          isSimpleSwap &&
+        const needUnwrap =
           // check if current exchange is the last with needWrapNative
           exchangeParams.reduceRight(
             (acc, exchangeParam, index) =>
@@ -724,10 +723,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
             -1,
           ) === exchangeParamIndex;
 
-        if (
-          customWethAddress ||
-          isLastSimpleWithUnwrap // unwrap after last dex call with unwrap for simple swap case
-        ) {
+        if (customWethAddress || needUnwrap) {
           withdrawCallData = this.buildUnwrapEthCallData(
             this.getWETHAddress(curExchangeParam),
             maybeWethCallData.withdraw.calldata,
@@ -739,7 +735,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
           withdrawCallData,
         ]);
 
-        if (isLastSimpleWithUnwrap || customWethAddress) {
+        if (isSimpleSwap && (needUnwrap || customWethAddress)) {
           const finalSpecialFlagCalldata = this.buildFinalSpecialFlagCalldata();
           swapExchangeCallData = hexConcat([
             swapExchangeCallData,
