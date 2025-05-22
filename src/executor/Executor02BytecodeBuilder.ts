@@ -804,7 +804,7 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
     if (
       !exchangeParams[exchangeParamIndex].dexFuncHasRecipient &&
       isETHAddress(swap.destToken) &&
-      isLast &&
+      isLastSwap &&
       // don't need to send eth without unwrapping, handling unwrap and sendEth in the end of root branch
       !this.doesRouteNeedsRootUnwrapEth(priceRoute, exchangeParams)
     ) {
@@ -1219,7 +1219,8 @@ export class Executor02BytecodeBuilder extends ExecutorBytecodeBuilder<
         route.percent,
         route.swaps[0],
         NOT_EXISTING_EXCHANGE_PARAM_INDEX,
-        Object.values(addedWrapToSwapMap).includes(true),
+        Object.values(addedWrapToSwapMap).includes(true) ||
+          Object.values(appendedWrapToSwapExchangeMap).includes(true),
       );
     }
 
