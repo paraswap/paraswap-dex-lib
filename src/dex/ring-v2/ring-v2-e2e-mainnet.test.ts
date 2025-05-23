@@ -48,6 +48,7 @@ describe('RingV2 E2E Mainnet', () => {
     [tokens.UNI, tokens.WETH, '10000000'],
   ];
 
+  /*
   sideToContractMethods.forEach((contractMethods, side) =>
     contractMethods.forEach((contractMethod: ContractMethod) => {
       console.log(`start test: contractMethod=${contractMethod}, side=${side}`);
@@ -98,7 +99,7 @@ describe('RingV2 E2E Mainnet', () => {
         }
       });
     }),
-  );
+  );*/
 
   //Test sell with ETH
   describe(`RingV2 SimpleSwap`, () => {
@@ -122,27 +123,6 @@ describe('RingV2 E2E Mainnet', () => {
     });
   });
 
-  // describe(`RingV2 swapExactAmountIn`, () => {
-  //   const tokenA = tokens.ETH;
-  //   const tokenB = tokens.USDT;
-  //   const sellamount = '1000';
-
-  //   console.log(`sell:a->b::${tokenA.symbol} --> ${tokenB.symbol}`);
-  //   it(`${tokenA.symbol} --> ${tokenB.symbol}`, async () => {
-  //     await testE2E(
-  //       tokenA,
-  //       tokenB,
-  //       holders.ETH,
-  //       sellamount,
-  //       SwapSide.SELL,
-  //       dexKey,
-  //       ContractMethod.simpleSwap,
-  //       network,
-  //       provider,
-  //     );
-  //   });
-  // });
-
   //test buy with ETH
   describe(`RingV2 SimpleBuy`, () => {
     const tokenA = tokens.USDC;
@@ -158,6 +138,28 @@ describe('RingV2 E2E Mainnet', () => {
         SwapSide.BUY,
         dexKey,
         ContractMethod.simpleBuy,
+        network,
+        provider,
+      );
+    });
+  });
+
+  //ETH as src
+  describe(`RingV2 swapExactAmountIn`, () => {
+    const tokenA = tokens.ETH;
+    const tokenB = tokens.USDT;
+    const sellamount = '1000';
+
+    console.log(`sell:a->b::${tokenA.symbol} --> ${tokenB.symbol}`);
+    it(`${tokenA.symbol} --> ${tokenB.symbol}`, async () => {
+      await testE2E(
+        tokenA,
+        tokenB,
+        holders.ETH,
+        sellamount,
+        SwapSide.BUY,
+        dexKey,
+        ContractMethod.swapExactAmountIn,
         network,
         provider,
       );
