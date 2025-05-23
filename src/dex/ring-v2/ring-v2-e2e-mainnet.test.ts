@@ -48,7 +48,6 @@ describe('RingV2 E2E Mainnet', () => {
     [tokens.UNI, tokens.WETH, '10000000'],
   ];
 
-  /*
   sideToContractMethods.forEach((contractMethods, side) =>
     contractMethods.forEach((contractMethod: ContractMethod) => {
       console.log(`start test: contractMethod=${contractMethod}, side=${side}`);
@@ -99,7 +98,7 @@ describe('RingV2 E2E Mainnet', () => {
         }
       });
     }),
-  );*/
+  );
 
   //Test sell with ETH
   describe(`RingV2 SimpleSwap`, () => {
@@ -159,7 +158,7 @@ describe('RingV2 E2E Mainnet', () => {
         sellamount,
         SwapSide.BUY,
         dexKey,
-        ContractMethod.swapExactAmountIn,
+        ContractMethod.swapExactAmountOut,
         network,
         provider,
       );
