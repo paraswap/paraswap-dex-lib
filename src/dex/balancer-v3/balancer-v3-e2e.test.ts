@@ -565,4 +565,50 @@ describe('BalancerV3 E2E', () => {
       );
     });
   });
+
+  describe('Optimism', () => {
+    const network = Network.OPTIMISM;
+
+    describe('Boosted Stable with StableSurge Hook', () => {
+      // https://balancer.fi/pools/optimism/v3/0x49e75c0df48ad09a0e20e8bbded07ee60dd8bc03
+      const tokenASymbol: string = 'rETH';
+      const tokenBSymbol: string = 'wstETH';
+
+      const tokenAAmount: string = '10000000000000000';
+      const tokenBAmount: string = '10000000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+
+    describe('Boosted Path', () => {
+      // https://balancer.fi/pools/optimism/v3/0x870c0af8a1af0b58b4b0bd31ce4fe72864ae45be
+      const tokenASymbol: string = 'rETH';
+      const tokenBSymbol: string = 'waOptWETH';
+
+      const tokenAAmount: string = '10000000000000000';
+      const tokenBAmount: string = '10000000000000000';
+      const nativeTokenAmount = '0';
+
+      testForNetwork(
+        network,
+        dexKey,
+        tokenASymbol,
+        tokenBSymbol,
+        tokenAAmount,
+        tokenBAmount,
+        nativeTokenAmount,
+        false,
+      );
+    });
+  });
 });
