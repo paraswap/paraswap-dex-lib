@@ -164,4 +164,26 @@ describe('RingV2 E2E Mainnet', () => {
       );
     });
   });
+
+  //ETH as src, sell
+  describe(`RingV2 simpleSwap`, () => {
+    const tokenA = tokens.ETH;
+    const tokenB = tokens.USDT;
+    const sellamount = '10000000000';
+
+    console.log(`sell:a->b::${tokenA.symbol} --> ${tokenB.symbol}`);
+    it(`${tokenA.symbol} --> ${tokenB.symbol}`, async () => {
+      await testE2E(
+        tokenA,
+        tokenB,
+        holders.ETH,
+        sellamount,
+        SwapSide.SELL,
+        dexKey,
+        ContractMethod.simpleSwap,
+        network,
+        provider,
+      );
+    });
+  });
 });
